@@ -1,0 +1,2 @@
+ALTER TABLE retrievals ADD COLUMN etaMinutes INTEGER;
+ALTER TABLE retrievals ADD COLUMN claimedAt INTEGER;

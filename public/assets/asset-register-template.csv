@@ -1,0 +1,21 @@
+Asset ID,Item Description,Category,Serial Number,Purchase Date,Purchase Price,Current Condition,Location,Custodian,Custodian Phone,Custodian Email,Last Inspection Date,Next Inspection Due,Insurance Included,Notes
+A001,Example: Windcaster WS100 Anemometer,Weather Stations,WC-2024-001,2024-03-15,$450.00,Good,Ben Nevis Launch,Jon Pamment,0400 000 000,jon@example.com,2025-01-15,2025-04-15,Yes,Solar powered - battery replaced Jan 2025
+A002,Example: Uniden UH850S UHF Radio,Radios & Communication,UH850S-44521,2023-11-01,$89.00,Good,Club storage box,Safety Officer,,,2025-02-01,2026-02-01,No,Channel 14 programmed for club use
+A003,Example: 2.4m Windsock + Pole,Site Infrastructure,,2024-09-10,$120.00,Fair,Mystic Launch,Site Manager,,,2025-10-01,2026-03-01,No,Fabric fading - replace end of season
+A004,Example: First Aid Kit - Comprehensive,Safety Equipment,,2025-01-20,$85.00,Good,Ben Nevis car park sign post,Safety Officer,,,2025-01-20,2025-07-20,No,Check contents and expiry dates every 6 months
+A005,Example: Club Banner 3m x 1m,Event Equipment,,2024-06-01,$180.00,Good,President storage,President,,,2024-06-01,2026-06-01,No,Used for fly-ins and open days
+A006,Example: Ground Handling Harness - Sup Air,Training Equipment,SA-GH-2289,2024-02-15,$350.00,Good,Club storage box,Training Coordinator,,,2025-02-15,2026-02-15,Yes,Available for loan to student members
+A007,Example: skyhighparagliding.com.au Domain,Digital Assets,,,,Good,Registrar: VentraIP,,,,2025-08-01,2026-08-01,No,Renewal due August annually - login in password manager
+A008,Example: Replit Hosting Account,Digital Assets,,,,Good,replit.com,,,,,,No,Webmaster holds credentials - in password manager
+A009,,Weather Stations,,,,,,,,,,,,
+A010,,Weather Stations,,,,,,,,,,,,
+A011,,Radios & Communication,,,,,,,,,,,,
+A012,,Radios & Communication,,,,,,,,,,,,
+A013,,Site Infrastructure,,,,,,,,,,,,
+A014,,Site Infrastructure,,,,,,,,,,,,
+A015,,Safety Equipment,,,,,,,,,,,,
+A016,,Safety Equipment,,,,,,,,,,,,
+A017,,Training Equipment,,,,,,,,,,,,
+A018,,Event Equipment,,,,,,,,,,,,
+A019,,Tools & Maintenance,,,,,,,,,,,,
+A020,,Digital Assets,,,,,,,,,,,,

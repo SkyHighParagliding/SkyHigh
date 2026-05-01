@@ -1,0 +1,1 @@
+ALTER TABLE contacts ADD COLUMN showAdminEmail INTEGER DEFAULT 0;

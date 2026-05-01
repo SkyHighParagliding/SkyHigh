@@ -1,0 +1,107 @@
+export interface Site {
+  id: string;
+  name: string;
+  type: string;
+  pgRating: string;
+  hgRating: string;
+  windDir: string;
+  windSpeed: string;
+  status: string;
+  hazardLevel: string;
+  lat: number | null;
+  lon: number | null;
+  useLiveWeather: string;
+  liveStationId: string;
+  liveStationIdAlt: string;
+  description: string;
+  launch: string;
+  landing: string;
+  hazards: string[];
+  rules: string[];
+  image: string;
+  siteguideUrl: string;
+  siteContact: string;
+  siteContactPhone: string;
+  navigateTo: string;
+  launchHeight: string;
+  launchHeightHigh: string;
+  launchHeight2: string;
+  landingHeight2: string;
+  hoodedPloversLink: string;
+  hoodedPloversActive: string;
+  emergencyMarker: string;
+  what3words: string;
+  isSkyHighSite: string;
+  crossLeft: string;
+  crossRight: string;
+  overrideHideClosed: string;
+  unassignedText: string;
+  siteguideVersion: string;
+  siteguideScrapedAt: string;
+  isTidal: string;
+  tideStationId: string;
+  skipBulkImport: string;
+  isXCSite: string;
+  essentialInfoImages?: string[];
+  essentialInfoText?: string;
+  temporarilyClosed?: number;
+}
+
+export interface WeatherData {
+  error?: boolean;
+  windSpeed?: number;
+  windGust?: number;
+  windDirection?: number;
+  temperature?: number;
+  humidity?: number;
+  stationLat?: number;
+  stationLon?: number;
+  stationName?: string;
+  observationTime?: string;
+  source?: string;
+  [key: string]: unknown;
+}
+
+export interface BulkWeatherResponse {
+  [siteId: string]: WeatherData;
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  date: string;
+  endDate?: string;
+  location?: string;
+  description?: string;
+  slug?: string;
+  type?: string;
+}
+
+export interface Sponsor {
+  name: string;
+  logo?: string;
+  url?: string;
+  markdown?: string;
+}
+
+export interface TideStation {
+  id: string;
+  name: string;
+}
+
+export interface NearbyStation {
+  id: string;
+  name: string;
+  distanceKm: number;
+  lat: number;
+  lon: number;
+  source: string;
+}
+
+export interface ExternalSite {
+  name: string;
+  url: string;
+  state?: string;
+  stateAbbr?: string;
+  region?: string;
+}

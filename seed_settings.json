@@ -1,0 +1,586 @@
+[
+  {
+    "key": "clubName",
+    "value": "SkyHigh"
+  },
+  {
+    "key": "clubTagline",
+    "value": ""
+  },
+  {
+    "key": "clubPrimaryColor",
+    "value": ""
+  },
+  {
+    "key": "clubLogoOriginal",
+    "value": "/uploads/branding/logo-original-1773805986251.png"
+  },
+  {
+    "key": "clubLogoNav",
+    "value": "/uploads/branding/logo-nav-1773805986251.png"
+  },
+  {
+    "key": "clubLogoFooter",
+    "value": "/uploads/branding/logo-footer-1773805986251.png"
+  },
+  {
+    "key": "clubLogoFavicon",
+    "value": "/uploads/branding/logo-favicon-1773805986251.png"
+  },
+  {
+    "key": "clubLogoSplash",
+    "value": "/uploads/branding/logo-splash-1773805986251.png"
+  },
+  {
+    "key": "activeTemplate",
+    "value": "wonderful-white"
+  },
+  {
+    "key": "xcMapsEnabled",
+    "value": "true"
+  },
+  {
+    "key": "aiSystemPrompt",
+    "value": "You are processing a flying site guide page from an Australian paragliding/hang gliding governing body website.\n\nTASK:\nParse the page content and return a structured JSON object containing site information. The Page Title is the authoritative Site Name — do not confuse it with other sites mentioned as references or nearby alternatives.\n\nCONTENT SECTIONS:\nExtract and preserve the original wording from the source material. Do not rewrite, paraphrase, or embellish — use the source text as closely as possible while keeping it well-structured.\n- siteOverview: A concise summary of the site, its character, and what makes it worth flying.\n- knownHazards: Array of strings. Each hazard as a separate concise bullet point.\n- siteRules: Array of strings. Each rule as a separate concise bullet point.\n- launchArea: Description of the launch area, setup, and access.\n- landingZones: Description of available landing options.\n\nMETADATA EXTRACTION:\nExtract the following fields from the page content and sidebar metadata:\n- name: Site name (from the Page Title).\n- type: \"Coastal\" or \"Inland\".\n- status: \"open\" or \"closed\". Mark as \"closed\" if the page shows a Closed badge, mentions the site is closed/suspended/banned, or flying is not permitted. Default to \"open\".\n- pgRating: Formatted PG rating (see RATING FORMATTING below).\n- hgRating: Formatted HG rating (see RATING FORMATTING below).\n- windDir: Compass direction only (e.g. \"SSW\" or \"S-SW\"). Strip any bearing degrees like \"(214 deg true)\".\n- windSpeed: Paragliding wind range as \"X-Ykts\" (e.g. \"8-16kts\"). No verbose descriptions. Max must never exceed 16kts — clamp if necessary. If not stated on the page, estimate based on site type and format as \"X-Ykts\".\n- lat, lon: Decimal coordinates. Extract from Google Maps URLs in the page links (patterns: \"@-38.478,145.012\", \"q=-38.478,145.012\", \"destination=-38.478,145.012\"). Use the exact coordinate values found in the URL.\n- navigateTo: The full Google Maps URL as found on the page.\n- siteContact: Contact person or club name from sidebar metadata.\n- siteContactPhone: Phone number from sidebar metadata (Australian format: 04xx xxx xxx).\n- launchHeight: Launch height if mentioned.\n- hoodedPloversLink: URL if mentioned.\n- emergencyMarker: Emergency marker ID if mentioned.\n- what3words: What3Words location if explicitly mentioned.\n- weatherStationLink: Weather station URL if mentioned.\n- liveStationId: Weather station ID if mentioned.\n- responsibleClub: Club name from the \"Responsible\" sidebar field, exactly as stated. Empty string if not listed.\n\nPG vs HG WIND SPEED CONVERSION:\nHang gliders fly in winds approximately 3 knots stronger than paragliders. The windSpeed field must always represent paragliding values.\n- PG speeds stated → use directly.\n- HG speeds only → subtract 3kts from both min and max, then clamp max to 16.\n- Both stated → use the PG values.\nExamples:\n  HG 13-14kts → PG windSpeed \"10-11kts\".\n  HG 10-20kts → PG windSpeed \"7-16kts\" (17 clamped).\n\nSIDEBAR METADATA PARSING:\nThe page may include sidebar fields like \"Contact: ...\" and \"Responsible: ...\".\n- Split contact values into name and phone. Phone numbers match Australian formats (04xx xxx xxx). Everything else is the contact name.\n- Examples:\n  \"Contact: Anthony ( 0421 600 870 )\" → siteContact: \"Anthony\", siteContactPhone: \"0421 600 870\"\n  \"Contact: 0421 600 870\" → siteContact: \"\", siteContactPhone: \"0421 600 870\"\n  \"Contact: Dynasoarers 0408 335 559\" → siteContact: \"Dynasoarers\", siteContactPhone: \"0408 335 559\"\n  \"Contact/Responsible: NEVHGC\" → siteContact: \"NEVHGC\", siteContactPhone: \"\", responsibleClub: \"NEVHGC\"\n\nRATING FORMATTING:\nParse the raw rating into separate pgRating and hgRating fields.\n- PG scale: PG1, PG2, PG3, PG4, PG5.\n- HG scale: HG Supervised, HG Intermediate, HG Advanced.\n- IMPORTANT: PG2 is ALWAYS supervised — never output a bare \"PG2\". Always write \"PG2 Supervised\" (or \"PG2 Sup\" when abbreviating). If additional supervision requirements exist, write them after, e.g. \"PG2 Supervised requires PG4/SO\".\n- \"Endorsed\" = site endorsement required. Abbreviate as \"End\" after first use.\n- Supervision requirements formatted as: \"PG2 Supervised requires FI/SSO\" or \"PG2 Supervised requires PG4/SO\" depending on the source text.\n- If unsuitable for PG or HG, return \"Not suitable\". If no info, return empty string.\n- No rating higher than PG5 or HG Advanced.\n- Abbreviate after first use: Endorsed→End, Supervised→Sup, Intermediate→Int, Advanced→Adv, requires→req.\n- Multiple levels separated by \" | \".\nExamples:\n  \"PG4 / HG Intermediate\" → pgRating: \"PG4\", hgRating: \"HG Intermediate\"\n  \"PG5 with endorsement. PG4 endorsed, under supervision of endorsed PG5\" → pgRating: \"PG5 Endorsed | PG4 End requires PG5 End\", hgRating: \"\"\n  \"Advanced HG only\" → pgRating: \"Not suitable\", hgRating: \"HG Advanced\"\n  \"PG2 / HG Supervised\" → pgRating: \"PG2 Supervised\", hgRating: \"HG Supervised\"\n  \"PG2 / HG Supervised. PG2 require PG4/SO supervision.\" → pgRating: \"PG2 Supervised requires PG4/SO\", hgRating: \"HG Supervised requires HG Int\"\n\nJSON OUTPUT FORMAT:\nReturn a single JSON object with these keys:\nname, type, status, pgRating, hgRating, windDir, windSpeed, lat, lon, siteOverview, knownHazards, siteRules, launchArea, landingZones, siteContact, siteContactPhone, navigateTo, launchHeight, hoodedPloversLink, emergencyMarker, what3words, weatherStationLink, liveStationId, responsibleClub.\n\nType constraints:\n- knownHazards, siteRules: arrays of strings.\n- status: \"open\" or \"closed\".\n- All other fields: strings (empty string if not found)."
+  },
+  {
+    "key": "onlineCheckInEnabled",
+    "value": "false"
+  },
+  {
+    "key": "homeHeroTitle",
+    "value": "Welcome to SkyHigh !"
+  },
+  {
+    "key": "homeHeroSubtitle",
+    "value": "SkyHigh is one of Australia's largest and most active free flight paragliding clubs."
+  },
+  {
+    "key": "homeHeroImages",
+    "value": "[\"/uploads/site-57481ba9655b1a16-1920x1080.jpg\",\"/uploads/site-991f7b64fd8fc3b4-1920x1080.jpg\",\"/uploads/site-30d2c9e4a354ea44-1920x1080.jpg\",\"/uploads/site-6ad7d6c14859116b-1920x1080.jpg\",\"/uploads/site-4b9be07d242c2e49-1920x1080.jpg\",\"/uploads/site-713bb96bf3286b4b-1920x1080.jpg\",\"/uploads/site-9a686ee4cf97881e-1920x1080.jpg\"]"
+  },
+  {
+    "key": "homeHeroImageMode",
+    "value": "random"
+  },
+  {
+    "key": "homeHeroStaticImageIndex",
+    "value": "0"
+  },
+  {
+    "key": "alertBannerEnabled",
+    "value": "false"
+  },
+  {
+    "key": "alertBannerText",
+    "value": "Mt Broughton currently closed due to bushfire damage"
+  },
+  {
+    "key": "homeCta1Text",
+    "value": "New Pilots"
+  },
+  {
+    "key": "homeCta1Link",
+    "value": "/page/new-pilots"
+  },
+  {
+    "key": "homeCta2Text",
+    "value": "Explore Sites"
+  },
+  {
+    "key": "homeCta2Link",
+    "value": "/sites"
+  },
+  {
+    "key": "featuredSiteId",
+    "value": ""
+  },
+  {
+    "key": "featuredSiteEnabled",
+    "value": "false"
+  },
+  {
+    "key": "weatherScraperMinInterval",
+    "value": "15"
+  },
+  {
+    "key": "weatherScraperMaxInterval",
+    "value": "30"
+  },
+  {
+    "key": "weatherScraperStartHour",
+    "value": "7"
+  },
+  {
+    "key": "weatherScraperEndHour",
+    "value": "20"
+  },
+  {
+    "key": "homeBox1Desc",
+    "value": ""
+  },
+  {
+    "key": "homeBox2Desc",
+    "value": ""
+  },
+  {
+    "key": "homeBox3Desc",
+    "value": "We fly whenever its on! Connect with local pilots and find mentors through our telegram chat."
+  },
+  {
+    "key": "homeCardsSelection",
+    "value": "[\"sites\",\"safety\",\"schools\"]"
+  },
+  {
+    "key": "homeCardsCycle",
+    "value": "true"
+  },
+  {
+    "key": "homeCardsCyclePinned",
+    "value": ""
+  },
+  {
+    "key": "homeCardSitesTitle",
+    "value": ""
+  },
+  {
+    "key": "homeCardSitesLink",
+    "value": ""
+  },
+  {
+    "key": "homeCardSitesLinkText",
+    "value": ""
+  },
+  {
+    "key": "homeCardSafetyTitle",
+    "value": ""
+  },
+  {
+    "key": "homeCardSafetyLink",
+    "value": ""
+  },
+  {
+    "key": "homeCardSafetyLinkText",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommunityTitle",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommunityLink",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommunityLinkText",
+    "value": ""
+  },
+  {
+    "key": "homeCardEventsTitle",
+    "value": ""
+  },
+  {
+    "key": "homeCardEventsLink",
+    "value": ""
+  },
+  {
+    "key": "homeCardEventsLinkText",
+    "value": ""
+  },
+  {
+    "key": "homeCustomCards",
+    "value": "[]"
+  },
+  {
+    "key": "socialFacebook",
+    "value": "https://www.facebook.com/groups/36791238561"
+  },
+  {
+    "key": "socialInstagram",
+    "value": "https://www.instagram.com/_skyhighparaglidingclub_/"
+  },
+  {
+    "key": "socialYoutube",
+    "value": ""
+  },
+  {
+    "key": "socialTiktok",
+    "value": ""
+  },
+  {
+    "key": "socialTwitter",
+    "value": ""
+  },
+  {
+    "key": "socialLinkedin",
+    "value": ""
+  },
+  {
+    "key": "socialStrava",
+    "value": ""
+  },
+  {
+    "key": "socialWebsite",
+    "value": ""
+  },
+  {
+    "key": "homeSchools",
+    "value": "[{\"name\":\"Bright Flight\",\"url\":\"https://www.brightflight.com.au\"},{\"name\":\"Updraft Paragliding\",\"url\":\"https://updraftparagliding.com.au\"},{\"name\":\"Acitve Flight\",\"url\":\"http://www.activeflight.com.au\"},{\"name\":\"Melbourne Paragliding\",\"url\":\"https://www.melbourneparagliding.com\"}]"
+  },
+  {
+    "key": "homeSponsors",
+    "value": "[{\"name\":\"Melbourne Paragliding\",\"logo\":\"\",\"url\":\"https://www.melbourneparagliding.com\",\"markdown\":\"Melbourne's premier paragliding school offering **tandem flights**, pilot training courses, and equipment sales. Whether you're a first-timer looking for the thrill of flight or an aspiring pilot ready to earn your wings, Melbourne Paragliding has you covered with experienced instructors and breathtaking coastal launch sites.\"},{\"name\":\"Bruce Agnew Photography\",\"logo\":\"\",\"url\":\"https://www.bruceagnew.com\",\"markdown\":\"Capturing the beauty of flight from above and below. Bruce specialises in **aerial and landscape photography**, documenting the paragliding community with stunning imagery. From action shots on launch to sweeping coastal panoramas, his work showcases the magic of free flight.\"}]"
+  },
+  {
+    "key": "homeTelegramGroups",
+    "value": "[{\"name\":\"SkyHigh PG2's Chat\",\"url\":\"https://t.me/+nTrYhee5T085YTQ1\"},{\"name\":\"East Coast Chat\",\"url\":\"https://t.me/+_4u2YkQL3R1hZDJl\"},{\"name\":\"West Coast Chat\",\"url\":\"https://t.me/+jEW9q8g4Ag03OWI1\"},{\"name\":\"Inland Flying Chat\",\"url\":\"https://t.me/joinchat/GVgl6T9tQkE2ZDJl\"},{\"name\":\"Inland Logistics *NO CHAT*\",\"url\":\"https://t.me/joinchat/NA2B2_pGT2c0NjA1\"}]"
+  },
+  {
+    "key": "asset_sheet_url",
+    "value": "https://docs.google.com/spreadsheets/d/1_VFqt4mexD0sGieAcdoodXiCStjBYo5m5tPrMeDbZr0/edit?usp=sharing"
+  },
+  {
+    "key": "windMapMaxAge",
+    "value": "500"
+  },
+  {
+    "key": "windMapParticleCount",
+    "value": "1200"
+  },
+  {
+    "key": "windMapTrailLength",
+    "value": "6"
+  },
+  {
+    "key": "windMapSpeed",
+    "value": "0.8"
+  },
+  {
+    "key": "windMapLineWidth",
+    "value": "1.0"
+  },
+  {
+    "key": "windMapOpacity",
+    "value": "0.65"
+  },
+  {
+    "key": "windMapZoomScaling",
+    "value": "0.5"
+  },
+  {
+    "key": "hideClosedSites",
+    "value": "true"
+  },
+  {
+    "key": "testKey",
+    "value": "testValue"
+  },
+  {
+    "key": "customWidgetTags",
+    "value": "[]"
+  },
+  {
+    "key": "pvDefaultExpectations",
+    "value": "If supply and delivery of materials or contractors are involved, PV require prior notification to:\n1. Have a 3 way contract PV, SH, Contractor confirming public liability insurance.\n2. Ensure PV cover internal cultural herritage requirments.\n3. Ensure materials are acceptable and not likely to introduce contamination\n4. Upload all correspondance using documents at the bottom of this page"
+  },
+  {
+    "key": "qrCodeMode",
+    "value": "informative"
+  },
+  {
+    "key": "imageLibrary",
+    "value": "[{\"wide\":\"/uploads/site-59c0b5489df663e6-1920x1080.jpg\",\"banner\":\"/uploads/site-212dce97e482fcee-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-ca5c6ae7bac9434e-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-20fcb8a9fe852a01-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-0b1ae409936f351f-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-5784e7a3d59cbadf-1920x1080.jpg\",\"banner\":\"/uploads/site-05f4200b1eed082e-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-790adf79ff5c3789-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-77ccd1dca3058283-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-b60fea7357bc3ebd-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-57481ba9655b1a16-1920x1080.jpg\",\"banner\":\"/uploads/site-370ac0da0579e647-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-3516965b12bcce64-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-28e285af7c35c900-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-e4704ba9cfe5e43e-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-669cd9b05c719b85-1920x1080.jpg\",\"banner\":\"/uploads/site-5f05be6d8757831b-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-84e9bf71e9c80023-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-8ed1ddffb9c381a2-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-ce6364ad079a5d70-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-991f7b64fd8fc3b4-1920x1080.jpg\",\"banner\":\"/uploads/site-88562d4f0be9a5c9-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-7bda9bdbb6dcbd12-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-3acb41553b1ec0e8-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-d4c1ecf9ce424db9-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-fbb4d61927e2a103-1920x1080.jpg\",\"banner\":\"/uploads/site-ecdfe9d42153b03d-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-4a93d48bbe2108f1-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-2fe24d6c05d4ffce-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-a0a845e76ef57df0-178x267.jpg\",\"sliderEnabled\":false},{\"wide\":\"/uploads/site-30d2c9e4a354ea44-1920x1080.jpg\",\"banner\":\"/uploads/site-bdf2ded59abe06d9-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-0cce70738ac0afa8-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-24e1191d59a8882c-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-8b89d0458869155a-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-aafbef6b1cb2064f-1920x1080.jpg\",\"banner\":\"/uploads/site-b628ac568c8fd2e8-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-e9db24996369dcc3-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-9b1414eb7d5971b7-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-475bb62489fcc4ed-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-4b5d1f37988fb332-1920x1080.jpg\",\"banner\":\"/uploads/site-c6040c8446a3d13c-1920x600.jpg\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-bf7bf7d369eb1dc5-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-589690b180b92e6b-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-7f1e74c86c71acee-178x267.jpg\",\"sliderEnabled\":false},{\"wide\":\"/uploads/site-6ad7d6c14859116b-1920x1080.jpg\",\"banner\":\"/uploads/site-e183e33388bc5e25-1920x600.jpg\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-9acfad98e87142e5-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-979cc06b00cd287c-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-f568b687c1f10fe1-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-4b9be07d242c2e49-1920x1080.jpg\",\"banner\":\"/uploads/site-c5eafe3f6ce9823a-1920x600.jpg\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-6212eb3af67a2637-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-831b871b96d01fe9-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-c1fdb3eac09ee24d-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-8e60d8b2483e60c9-1920x1080.jpg\",\"banner\":\"/uploads/site-70edbb6ebf9678bf-1920x600.jpg\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-1e6a3ded8261e243-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-da0e61105b359ba1-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-007bb7e5c51fb31d-178x267.jpg\",\"sliderEnabled\":false},{\"wide\":\"/uploads/site-d291fee4698abaad-1920x1080.jpg\",\"banner\":\"/uploads/site-6b195a576135bd00-1920x600.jpg\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-b795577c726ba7db-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-72310d6ddc55efdc-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-20fc9547522e595d-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-713bb96bf3286b4b-1920x1080.jpg\",\"banner\":\"/uploads/site-dd89192fc7102684-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-e280de5f68115bb8-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-92feb182ba17182c-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-6fffd115a2390597-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-9a686ee4cf97881e-1920x1080.jpg\",\"banner\":\"/uploads/site-037cf6006f5a788e-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-da9072d0dc7a265a-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-2ee5af35528b2f31-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-ea7374381ff2affc-178x267.jpg\",\"sliderEnabled\":false},{\"wide\":\"/uploads/site-8389d91305408704-1920x1080.jpg\",\"banner\":\"\",\"category\":\"inland\",\"sliderLg\":\"/uploads/slider-lg-d3a78ec347305cc0-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-9d2bc58c1cfcb28b-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-262db0bf067df56a-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-932ea96c9eac1187-1920x1080.jpg\",\"banner\":\"/uploads/site-0ca00a59fbeaaeed-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-11bc8df422f84c75-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-478521456d7e1d15-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-c82d988cd4512cc3-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-46c14640220f9832-1920x1080.jpg\",\"banner\":\"/uploads/site-5e50879a66fa69c6-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-be2170df711cf298-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-d13e53c7f2f5f142-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-b945f4ada45f355e-178x267.jpg\",\"sliderEnabled\":false},{\"wide\":\"/uploads/site-722728e5c163ae97-1920x1080.jpg\",\"banner\":\"/uploads/site-13869d11d6364994-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-2f219785c1aeae8c-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-d65e98cfc6328488-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-bc9abdb21af45e03-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-953541bee49cc575-1920x1080.jpg\",\"banner\":\"/uploads/site-02d8f12256e34b38-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-6ae372755b7e1885-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-e2ba489eb0133418-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-c726dc3b848929ee-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/site-d311d9fc6aed415e-1920x1080.jpg\",\"banner\":\"/uploads/site-d4c1135a9b9a663a-1920x600.jpg\",\"category\":\"coastal\",\"sliderLg\":\"/uploads/slider-lg-2bd69cc0151e159c-400x267.jpg\",\"sliderSm\":\"/uploads/slider-sm-50951bfa32b5d1df-300x200.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-88543f9cfd99dfeb-178x267.jpg\",\"sliderEnabled\":true},{\"wide\":\"/uploads/hero-FunAtTheBeach-1920x1080.jpg\",\"banner\":\"/uploads/banner-FunAtTheBeach-1920x600.jpg\",\"name\":\"FunAtTheBeach\",\"sliderLg\":\"/uploads/slider-lg-FunAtTheBeach-600x400.jpg\",\"sliderSm\":\"/uploads/slider-sm-FunAtTheBeach-450x300.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-FunAtTheBeach-267x400.jpg\",\"sliderEnabled\":true,\"sliderLgEnabled\":true,\"sliderSmEnabled\":true,\"sliderPortraitEnabled\":true,\"category\":\"coastal\"},{\"wide\":\"/uploads/hero-EnZed_Beach_Scene-1920x1080.jpg\",\"banner\":\"/uploads/banner-EnZed_Beach_Scene-1920x600.jpg\",\"name\":\"EnZed Beach Scene\",\"sliderLg\":\"/uploads/slider-lg-EnZed_Beach_Scene-600x400.jpg\",\"sliderSm\":\"/uploads/slider-sm-EnZed_Beach_Scene-450x300.jpg\",\"sliderPortrait\":\"/uploads/slider-portrait-EnZed_Beach_Scene-267x400.jpg\",\"sliderEnabled\":true,\"sliderLgEnabled\":true,\"sliderSmEnabled\":true,\"sliderPortraitEnabled\":true,\"category\":\"coastal\"}]"
+  },
+  {
+    "key": "aiImagePrompt",
+    "value": "You are an expert photo editor for a paragliding club website. The output image will be used in two ways: a 1920x1080 hero image AND a 1920x600 banner crop from it. ALL subjects (people, paragliders, hang gliders, wings, pilots) must remain fully visible in both formats.\n\nProcess this image following these rules:\n\n1. KEEP ALL SUBJECTS VISIBLE: This is the most important rule. Every person, paraglider wing, hang glider, pilot, and any other subject in the original must be FULLY visible and not cropped in the final image. If the original shows a pilot launching with a wing above, both the pilot on the ground AND the full wing in the sky must be included.\n\n2. EXPAND TO ULTRA-WIDE LANDSCAPE: Generate the output as an ultra-wide landscape image (at least 3:1 width-to-height ratio, ideally wider). This gives enough room for the 1920x600 banner crop to show everything. Expand generously in ALL directions — left, right, top AND bottom — to create plenty of breathing room around the subjects:\n   - Ocean/sea extends as more ocean with consistent waves and water colour.\n   - Beach/sand extends as more beach.\n   - Vegetation/grass/scrub extends as more of the same.\n   - Sky extends as more sky with matching clouds and colour.\n   - Ground/hills extend naturally.\n   - NEVER add people, paragliders, buildings, or objects not in the original.\n   - NEVER replace one terrain type with another (no sea where land was, no land where sea was).\n\n3. ENHANCEMENT: Enhance with warm, vibrant lighting, blue skies, and an inviting sunny-day atmosphere. Keep all landscape features and geography recognisable — only improve mood and lighting.\n\nReturn the final enhanced image."
+  },
+  {
+    "key": "aiTextModels",
+    "value": "[\"gemini-2.5-flash\",\"gemini-flash-latest\",\"gemini-2.0-flash-lite-001\"]"
+  },
+  {
+    "key": "aiImageModels",
+    "value": "[\"gemini-2.5-flash-image\",\"gemini-3.1-flash-image-preview\",\"gemini-3-pro-image-preview\"]"
+  },
+  {
+    "key": "publicSearchCtaMessage",
+    "value": "Enjoying our Smart Search? Please consider **[joining SkyHigh](/new-pilots)** — we'd love to have you!"
+  },
+  {
+    "key": "publicSearchCtaFrequency",
+    "value": "1"
+  },
+  {
+    "key": "publicSearchDocs",
+    "value": "[]"
+  },
+  {
+    "key": "publicSearchCommitteeLink",
+    "value": ""
+  },
+  {
+    "key": "publicSearchPrompt",
+    "value": ""
+  },
+  {
+    "key": "photoSliderEnabled",
+    "value": "true"
+  },
+  {
+    "key": "lastImportedState",
+    "value": "VIC"
+  },
+  {
+    "key": "publicSearchDisclaimer",
+    "value": "General information only. Consult SAFA/CASA docs and Site Rules."
+  },
+  {
+    "key": "asset_appscript_url",
+    "value": "https://script.google.com/macros/s/AKfycbymkcaNhyCKCnw9_HGnLBsJeCp3AL3-z0vy1X3kQxjZaGlhMKbkBOWjybo4UQ_-Ruxh/exec"
+  },
+  {
+    "key": "drive_appscript_url",
+    "value": "https://script.google.com/macros/s/AKfycbzhBiHXtPIC8oIO3PrXB1bBfAjxPJ4MkQuN4jVKLimkZ8c2E0VuRUeifTy-mbJNlXs/exec"
+  },
+  {
+    "key": "clubLogoDarkFavicon",
+    "value": "/uploads/branding/logo-dark-favicon-1773909568174.png"
+  },
+  {
+    "key": "clubLogoDarkFooter",
+    "value": "/uploads/branding/logo-dark-footer-1773909568174.png"
+  },
+  {
+    "key": "clubLogoDarkNav",
+    "value": "/uploads/branding/logo-dark-nav-1773909568174.png"
+  },
+  {
+    "key": "clubLogoDarkOriginal",
+    "value": "/uploads/branding/logo-dark-original-1773909568174.png"
+  },
+  {
+    "key": "clubLogoDarkSplash",
+    "value": "/uploads/branding/logo-dark-splash-1773909568174.png"
+  },
+  {
+    "key": "youtubeCarouselEnabled",
+    "value": "false"
+  },
+  {
+    "key": "photoSliderAutoScroll",
+    "value": "false"
+  },
+  {
+    "key": "photoSliderReverse",
+    "value": "false"
+  },
+  {
+    "key": "youtubeCarouselAutoScroll",
+    "value": "false"
+  },
+  {
+    "key": "youtubeCarouselReverse",
+    "value": "false"
+  },
+  {
+    "key": "youtubeVideos",
+    "value": "[{\"url\":\"https://youtu.be/GkmCiK4agug\"},{\"url\":\"https://youtu.be/LNrew2x2aeE\"},{\"url\":\"https://youtu.be/AabsJnwGYwE\"},{\"url\":\"https://youtu.be/cHqCB3PiMJ8\"},{\"url\":\"https://youtu.be/k71fo_ZJkJs\"},{\"url\":\"https://youtu.be/W68H6ynrjYQ\"},{\"url\":\"https://youtu.be/XcyP6zilOoM\"},{\"url\":\"https://youtu.be/ARCuHC2Iz7A\"},{\"url\":\"https://youtu.be/7ZBt4aDGn9c\"},{\"url\":\"https://youtu.be/SHfRqnymed4\"},{\"url\":\"https://youtu.be/o3HJmKg2jG4\"},{\"url\":\"https://youtu.be/Ci-DkiozZ6Q\"},{\"url\":\"https://youtu.be/P-0gf__ayrI?si=AVhzkV-WHnwfYsm8\"},{\"url\":\"https://youtu.be/L9LaMtPYI5w?si=H6IbUyPHC3R77cyb\"},{\"url\":\"https://youtu.be/xriDpPBy1iA?si=FdZSRG4T0BMHg6OS\"},{\"url\":\"https://youtu.be/zEXBUOy8mwg?si=BzaikFfTI7Q9-HVU\"},{\"url\":\"https://youtu.be/XNg8taeJV5Q?si=7wbk0iTSXtq6aeT7\"},{\"url\":\"https://youtu.be/zcM3Qxb3Q2A?si=pbnAMz09sUJflBvD\"}]"
+  },
+  {
+    "key": "xcAirspaceEnabled",
+    "value": "false"
+  },
+  {
+    "key": "pwaIcon192",
+    "value": "/uploads/branding/pwa-icon-192-1774479523786.png"
+  },
+  {
+    "key": "pwaIcon512",
+    "value": "/uploads/branding/pwa-icon-512-1774479523786.png"
+  },
+  {
+    "key": "xcDistanceRings",
+    "value": "[10,20,50,100]"
+  },
+  {
+    "key": "xcCompetitionsEnabled",
+    "value": "false"
+  },
+  {
+    "key": "flightTrackerEnabled",
+    "value": "true"
+  },
+  {
+    "key": "ftGpsInterval",
+    "value": "3"
+  },
+  {
+    "key": "ftAutoStartSpeed",
+    "value": "15"
+  },
+  {
+    "key": "ftAutoStartAltitude",
+    "value": "10"
+  },
+  {
+    "key": "ftAutoStopSpeed",
+    "value": "3"
+  },
+  {
+    "key": "ftAutoStopDuration",
+    "value": "30"
+  },
+  {
+    "key": "ftPreRecordBuffer",
+    "value": "15"
+  },
+  {
+    "key": "ftGuestCacheExpiry",
+    "value": "48"
+  },
+  {
+    "key": "ftSplineTension",
+    "value": "0.5"
+  },
+  {
+    "key": "ftTrailColor",
+    "value": "#FF4444"
+  },
+  {
+    "key": "ftTrailWidth",
+    "value": "3"
+  },
+  {
+    "key": "ftOfflineTileRadius",
+    "value": "25"
+  },
+  {
+    "key": "ftOfflineZoomMin",
+    "value": "8"
+  },
+  {
+    "key": "ftOfflineZoomMax",
+    "value": "13"
+  },
+  {
+    "key": "ftOfflineLayers",
+    "value": "[\"streets\",\"topo\"]"
+  },
+  {
+    "key": "homeCardCommitteeTitle",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommitteeLink",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommitteeLinkText",
+    "value": ""
+  },
+  {
+    "key": "homeCardCommitteeDesc",
+    "value": ""
+  },
+  {
+    "key": "instagramEmbeds",
+    "value": "[]"
+  },
+  {
+    "key": "homeWeatherCardCount",
+    "value": "6"
+  },
+  {
+    "key": "groundHandlingEnabled",
+    "value": "true"
+  },
+  {
+    "key": "joinPageEnabled",
+    "value": "true"
+  },
+  {
+    "key": "joinHeroTitle",
+    "value": ""
+  },
+  {
+    "key": "joinHeroSubtitle",
+    "value": ""
+  },
+  {
+    "key": "joinTidyhqUrl",
+    "value": "https://skyhigh.tidyhq.com/public/membership_levels"
+  },
+  {
+    "key": "joinTiers",
+    "value": "[{\"name\":\"\",\"price\":\"$35 /yr\",\"description\":\"The SkyHigh Paragliding Club is very keen to help new pilots in their first years of flying. The Club has a nominated Novice Pilot Representative who will organise specific events and provide all sorts of help to new pilots. Please see our Safety Guidelines.\\n\\nIf you don't yet have a Paragliding Pilot License, check out the Training section for a list of License Courses.\\n\\nPlease remember, to fly anywhere in Australia all paragliding pilots must have a valid paragliding license (accredited by a registered CFI) and be a current member of the Sports Aviation Federation Australia (SAFA).  SAFA membership will be automatically checked after payment.\",\"features\":[\"\"]},{\"name\":\"Non-flying Member\",\"price\":\"$0 /Yr\",\"description\":\"SkyHigh welcomes Non-Flying Members. This is useful for those pilots who may not be able to fly for reasons such as injury or for those who would like to join the Club to participate in its social events. Non-flying members cannot participate in club flying events as a pilot.\",\"features\":[\"Non-flying members cannot participate in club flying events as a pilot.\"]}]"
+  },
+  {
+    "key": "joinFaqs",
+    "value": ""
+  },
+  {
+    "key": "hiddenShopProducts",
+    "value": "[\"32f06adfe2ac\"]"
+  },
+  {
+    "key": "satTrackerSpotVisible",
+    "value": "false"
+  },
+  {
+    "key": "satTrackerZoleoVisible",
+    "value": "false"
+  },
+  {
+    "key": "xcMapsTitle",
+    "value": ""
+  },
+  {
+    "key": "xcMapsDescription",
+    "value": "XC distance rings, Bearing Lines, Switchable Airspace Overlay, Switchable Proximity alerts with audio/haptic warnings, Off & Online GPS track logging, Offline tile caching. Uses cellular telecom network as primary, logins for Garmin inreach, Spot or Zoleo as secondary tracking methods.\nRide share style retrieval driver app. You must approve \"location\" when asked, for most features to work. \nPilot display sized for Phone in landscape\nRetrieval driver app sized for Phone in portrait.\nDuty pilot sized for tablet display\nPilots, please sign in on map below or create a login. \nDrivers  & Duty Pilots use the links then sign in or create a login. \nHistory & track log under development. (Take a screen shot to save statistics)"
+  },
+  {
+    "key": "wfParticleCount",
+    "value": "1200"
+  },
+  {
+    "key": "wfTrailLength",
+    "value": "12"
+  },
+  {
+    "key": "wfMaxInfluenceKm",
+    "value": "120"
+  },
+  {
+    "key": "wfFadeStartKm",
+    "value": "80"
+  },
+  {
+    "key": "wfIdwPower",
+    "value": "2"
+  },
+  {
+    "key": "wfSpeedScale",
+    "value": "0.4"
+  },
+  {
+    "key": "wfLineWidth",
+    "value": "1.5"
+  },
+  {
+    "key": "wfOpacity",
+    "value": "0.7"
+  },
+  {
+    "key": "wfMaxParticleSpeed",
+    "value": "4"
+  },
+  {
+    "key": "wfParticleMaxAge",
+    "value": "180"
+  },
+  {
+    "key": "weatherScraperLastRun",
+    "value": "2026-03-31T03:37:54.620Z"
+  }
+]
