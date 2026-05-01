@@ -1,0 +1,2 @@
+ALTER TABLE contacts ADD COLUMN displayCommittee INTEGER DEFAULT 1;
+ALTER TABLE contacts ADD COLUMN displaySafety INTEGER DEFAULT 1;

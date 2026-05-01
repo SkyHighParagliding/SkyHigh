@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+uploads/
+db_backups/
+.DS_Store
+*.log
+.env*
+!.env.example
+*.db-shm
+*.db-wal
+sites.db
