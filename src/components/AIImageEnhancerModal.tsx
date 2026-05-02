@@ -18,6 +18,7 @@ interface AIImageEnhancerModalProps {
   onImageNameChange?: (name: string) => void;
   preloadedImage?: { base64: string; mimeType: string; name: string } | null;
   initialPhotographerCredit?: string;
+  initialHeroImage?: string;
 }
 
 type CropStep = {
@@ -38,9 +39,18 @@ const CROP_STEPS: CropStep[] = [
   { key: "portrait",  label: "Portrait (267×400)",        targetW: 267,  targetH: 400, prefix: "slider-portrait",  resultKey: "sliderPortrait",  buttonLabel: "Save Portrait",        hasZoom: true },
 ];
 
-export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroImages = [], imageName, onImageNameChange, preloadedImage, initialPhotographerCredit }: AIImageEnhancerModalProps) {
+export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroImages = [], imageName, onImageNameChange, preloadedImage, initialPhotographerCredit, initialHeroImage }: AIImageEnhancerModalProps) {
   const { token } = useAuth();
   const [step, setStep] = useState<"upload" | "generating" | "preview" | "crop-wizard">("upload");
+  
+  useEffect(() => {
+    if (isOpen && initialHeroImage) {
+      const nameMatch = initialHeroImage.match(/hero-(.*?)-/);
+      const extractedName = nameMatch ? nameMatch[1].replace(/_/g, " ") : (imageName || "");
+      if (onImageNameChange && !imageName) onImageNameChange(extractedName);
+      enterCropWizard(initialHeroImage, extractedName);
+    }
+  }, [isOpen, initialHeroImage]);
   const [sourcePreview, setSourcePreview] = useState<string>("");
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [resultImage, setResultImage] = useState<string>("");
@@ -784,14 +794,19 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                         key={i}
                         type="button"
                         onClick={() => {
-                          onAccept(src);
-                          handleClose();
+                          const nameMatch = src.match(/hero-(.*?)-/);
+                          const extractedName = nameMatch ? nameMatch[1].replace(/_/g, " ") : (imageName || "");
+                          if (onImageNameChange && !imageName) onImageNameChange(extractedName);
+                          enterCropWizard(src, extractedName);
                         }}
-                        className="relative border-2 border-border-subtle rounded-lg overflow-hidden aspect-video hover:border-sky transition-colors group"
+                        className="relative border-2 border-border-subtle rounded-lg overflow-hidden aspect-video hover:border-sky transition-colors group text-left"
                       >
                         <img src={src} alt={`Hero ${i + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/40 transition-colors flex items-center justify-center">
-                          <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">Use This</span>
+                          <div className="text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Crop className="w-6 h-6 text-white mx-auto mb-1" />
+                            <span className="text-white text-xs font-medium">Create Banner / Sliders</span>
+                          </div>
                         </div>
                       </button>
                     ))}

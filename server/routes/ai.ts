@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import db from "../db.js";
@@ -14,7 +15,8 @@ import { extractEssentialInfo, isAllowedScrapeUrl } from "../utils/essentialInfo
 import { scrapeSiteguidePage, extractResponsibleClub } from "../utils/siteScraper.js";
 import { getAppScriptUrl, isDriveConnected, ensureFolderStructure, uploadFile } from "../googleDrive.js";
 import { applyWatermark, normalizePosition } from "../utils/watermark.js";
-import { saveFile, readFile, fileExists, keyFromUrl, isR2Configured } from "../storage.js";
+import { saveFile, readFile, fileExists, keyFromUrl, isR2Configured, StorageKey } from "../storage.js";
+import { getTextModels, getImageModels, setTextModels, setImageModels, DEFAULT_TEXT_MODELS, DEFAULT_IMAGE_MODELS } from "../utils/aiModels.js";
 
 async function rotateAndCrop(buffer: Buffer, angleDeg: number): Promise<Buffer> {
   const meta = await sharp(buffer).metadata();
@@ -207,9 +209,14 @@ router.put("/rating-prompt", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/parse-rating", requireAuth, asyncHandler(async (req, res) => {
-  const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "API Key not configured. Please add USER_GEMINI_API_KEY to secrets." });
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    if (row?.value) apiKey = row.value;
+  }
+  
+  if (!apiKey) {
+    return res.status(500).json({ error: "API Key not configured. Please add GEMINI_API_KEY to your .env file or database settings." });
   }
 
   const { ratingText } = req.body;
@@ -473,7 +480,7 @@ async function generateSliderImages(
       const id = crypto.randomBytes(8).toString("hex");
       filename = `${size.prefix}-${id}-${size.label}.jpg`;
     }
-    results[size.key] = await saveFile(buf, filename, "image/jpeg");
+    results[size.key] = await saveFile(buf, StorageKey.slider(filename), "image/jpeg");
   }
   return results;
 }
@@ -503,7 +510,7 @@ router.post("/process-image", requireAuth, asyncHandler(async (req, res) => {
     wideFilename = `site-${id}-1920x1080.jpg`;
   }
 
-  const wideUrl = await saveFile(wideBuf, wideFilename, "image/jpeg");
+  const wideUrl = await saveFile(wideBuf, StorageKey.hero(wideFilename), "image/jpeg");
 
   if (sanitized) {
     copyToDriveMarketingFolder(wideBuf, wideFilename).catch(() => {});
@@ -553,7 +560,7 @@ router.post("/save-screenshot", requireAuth, asyncHandler(async (req, res) => {
     result = await applyWatermark(result, photographerCredit.trim(), watermarkSize, normalizePosition(watermarkPosition));
   }
 
-  const savedUrl = await saveFile(result, filename, "image/jpeg");
+  const savedUrl = await saveFile(result, StorageKey.screenshot(filename), "image/jpeg");
 
   res.json({
     imagePath: savedUrl,
@@ -588,7 +595,7 @@ router.post("/process-image-url", requireAuth, asyncHandler(async (req, res) => 
     wideFilename = `site-${id}-1920x1080.jpg`;
   }
 
-  const wideUrl2 = await saveFile(wideBuf, wideFilename, "image/jpeg");
+  const wideUrl2 = await saveFile(wideBuf, StorageKey.hero(wideFilename), "image/jpeg");
 
   if (sanitized) {
     copyToDriveMarketingFolder(wideBuf, wideFilename).catch(() => {});
@@ -647,7 +654,7 @@ router.post("/crop-banner", requireAuth, asyncHandler(async (req, res) => {
   }
 
   bannerBuf = await applyWatermark(bannerBuf, photographerCredit, watermarkSize, normalizePosition(watermarkPosition));
-  const bannerUrl = await saveFile(bannerBuf, bannerFilename, "image/jpeg");
+  const bannerUrl = await saveFile(bannerBuf, StorageKey.banner(bannerFilename), "image/jpeg");
 
   if (sanitized) {
     copyToDriveMarketingFolder(bannerBuf, bannerFilename).catch(() => {});
@@ -711,7 +718,14 @@ router.post("/crop-single", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const finalBuf = await applyWatermark(buf, photographerCredit, watermarkSize, normalizePosition(watermarkPosition));
-  const outUrl = await saveFile(finalBuf, outFilename, "image/jpeg");
+  // Route to the right folder based on the image type prefix
+  const prefixedKey = prefix === "slider-lg" || prefix === "slider-sm" || prefix === "slider-portrait"
+    ? StorageKey.slider(outFilename)
+    : prefix === "hero" ? StorageKey.hero(outFilename)
+    : prefix === "banner" ? StorageKey.banner(outFilename)
+    : prefix === "content" ? StorageKey.content(outFilename)
+    : StorageKey.screenshot(outFilename);
+  const outUrl = await saveFile(finalBuf, prefixedKey, "image/jpeg");
 
   if (sanitized) {
     copyToDriveMarketingFolder(finalBuf, outFilename).catch(() => {});
@@ -750,7 +764,7 @@ router.post("/upload-content-image", requireAuth, upload.single("image"), asyncH
   const filename = `content-${id}-1200x800.jpg`;
   let buf = await resizeAndCompress(req.file.buffer, 1200, 800, 300);
   buf = await applyWatermark(buf, photographerCredit, watermarkSize, normalizePosition(watermarkPosition));
-  const contentUrl = await saveFile(buf, filename, "image/jpeg");
+  const contentUrl = await saveFile(buf, StorageKey.content(filename), "image/jpeg");
   res.json({
     imageUrl: contentUrl,
     size: `${(buf.length / 1024).toFixed(0)}KB`
@@ -767,7 +781,7 @@ router.post("/process-content-image", requireAuth, asyncHandler(async (req, res)
   const filename = `content-${id}-1200x800.jpg`;
   let buf = await resizeAndCompress(imageBuffer, 1200, 800, 300);
   buf = await applyWatermark(buf, photographerCredit || "", watermarkSize, normalizePosition(watermarkPosition));
-  const processedContentUrl = await saveFile(buf, filename, "image/jpeg");
+  const processedContentUrl = await saveFile(buf, StorageKey.content(filename), "image/jpeg");
   res.json({
     imageUrl: processedContentUrl,
     size: `${(buf.length / 1024).toFixed(0)}KB`
@@ -785,7 +799,7 @@ router.post("/upload-hero-image", requireAuth, upload.single("image"), asyncHand
   const filename = `hero-${id}-1920x1080.jpg`;
   let buf = await resizeAndCompress(req.file.buffer, 1920, 1080, 550);
   buf = await applyWatermark(buf, photographerCredit, watermarkSize, normalizePosition(watermarkPosition));
-  const heroUrl = await saveFile(buf, filename, "image/jpeg");
+  const heroUrl = await saveFile(buf, StorageKey.hero(filename), "image/jpeg");
   res.json({
     imageUrl: heroUrl,
     size: `${(buf.length / 1024).toFixed(0)}KB`
@@ -821,41 +835,46 @@ router.post("/watermark-existing", requireAuth, asyncHandler(async (req, res) =>
 }));
 
 router.get("/models", requireAuth, asyncHandler(async (_req, res) => {
-  const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    if (row?.value) apiKey = row.value;
+  }
+
   if (!apiKey) {
     return res.status(500).json({ error: "API Key not configured" });
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const pager = await ai.models.list({ config: { pageSize: 200 } });
-  const models: { name: string; displayName: string; description: string }[] = [];
-
+  const rawModels: any[] = [];
   for await (const m of pager) {
+    rawModels.push(m);
+  }
+  
+  const models = rawModels.map((m: any) => {
     const rawName = (m.name || "").replace(/^models\//, "");
-    if (!rawName) continue;
-    models.push({
+    return {
       name: rawName,
       displayName: m.displayName || rawName,
       description: (m.description || "").substring(0, 200),
-    });
-  }
+    };
+  }).filter((m: any) => m.name);
 
   res.json({ models });
 }));
 
 router.get("/models/config", requireAuth, asyncHandler(async (_req, res) => {
-  const { getTextModels: getT, getImageModels: getI, DEFAULT_TEXT_MODELS: dt, DEFAULT_IMAGE_MODELS: di } = await import("../utils/aiModels.js");
   res.json({
-    textModels: getT(),
-    imageModels: getI(),
-    defaultTextModels: dt,
-    defaultImageModels: di,
+    textModels: await getTextModels(),
+    imageModels: await getImageModels(),
+    defaultTextModels: DEFAULT_TEXT_MODELS,
+    defaultImageModels: DEFAULT_IMAGE_MODELS,
   });
 }));
 
 router.put("/models/config", requireAuth, asyncHandler(async (req, res) => {
   const { textModels, imageModels } = req.body;
-  const { setTextModels, setImageModels } = await import("../utils/aiModels.js");
 
   if (Array.isArray(textModels) && textModels.length > 0 && textModels.every((m: any) => typeof m === "string" && m.trim())) {
     await setTextModels(textModels.map((m: string) => m.trim()));
@@ -864,12 +883,19 @@ router.put("/models/config", requireAuth, asyncHandler(async (req, res) => {
     await setImageModels(imageModels.map((m: string) => m.trim()));
   }
 
-  const { getTextModels: getT, getImageModels: getI } = await import("../utils/aiModels.js");
-  res.json({ textModels: getT(), imageModels: getI() });
+  res.json({ 
+    textModels: await getTextModels(), 
+    imageModels: await getImageModels() 
+  });
 }));
 
 router.post("/models/test", requireAuth, asyncHandler(async (req, res) => {
-  const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    if (row?.value) apiKey = row.value;
+  }
+
   if (!apiKey) {
     return res.status(500).json({ error: "API Key not configured" });
   }

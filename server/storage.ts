@@ -33,12 +33,40 @@ function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
+// ─── Folder structure ──────────────────────────────────────────────────────────
+// Consistent key namespace used identically in both R2 and local /uploads/:
+//
+//   images/hero/          hero & site photos (1920x1080)
+//   images/sites/         site banner images (1920x600)
+//   images/sliders/       slider images (600x400, 450x300, 267x400)
+//   images/content/       rich-text embedded images (1200x800)
+//   images/screenshots/   screenshot captures
+//   images/ai/            AI-enhanced output & watermarked images
+//   images/essential/     scraped siteguide map images
+//   branding/             logo variants, pwa icons
+//   attachments/          page/doc file attachments
+//   submissions/          social media image submissions
+
+/**
+ * Normalise a storage key to ensure it sits in the expected folder hierarchy.
+ *
+ * Existing flat keys (legacy) are returned unchanged so nothing breaks.
+ * New keys should always be passed with their folder prefix already included.
+ */
+export function normaliseKey(key: string): string {
+  return key; // pass-through — callers supply correctly-prefixed keys
+}
+
 /**
  * Save a file buffer to R2 (if configured) or local filesystem.
- * @param buffer   File data
- * @param key      Storage key, e.g. "hero-abc.jpg" or "branding/logo-abc.png"
- * @param contentType  MIME type (default image/jpeg)
- * @returns Publicly accessible URL: https://... (R2) or /uploads/... (local)
+ *
+ * @param buffer       File data
+ * @param key          Storage key with folder prefix, e.g. "images/hero/abc.jpg"
+ *                     Legacy flat keys like "hero-abc.jpg" are also accepted.
+ * @param contentType  MIME type (default "image/jpeg")
+ * @returns            Publicly accessible URL:
+ *                       R2:    https://<R2_PUBLIC_URL>/<key>
+ *                       Local: /uploads/<key>
  */
 export async function saveFile(
   buffer: Buffer,
@@ -124,3 +152,20 @@ export function keyFromUrl(urlOrPath: string): string {
   }
   return urlOrPath.replace(/^\/uploads\//, "");
 }
+
+// ─── Key helpers ───────────────────────────────────────────────────────────────
+// Use these in upload routes to generate correctly-namespaced keys.
+
+export const StorageKey = {
+  hero: (filename: string) => `images/hero/${filename}`,
+  site: (filename: string) => `images/sites/${filename}`,
+  banner: (filename: string) => `images/sites/${filename}`,
+  slider: (filename: string) => `images/sliders/${filename}`,
+  content: (filename: string) => `images/content/${filename}`,
+  screenshot: (filename: string) => `images/screenshots/${filename}`,
+  ai: (filename: string) => `images/ai/${filename}`,
+  essential: (filename: string) => `images/essential/${filename}`,
+  branding: (filename: string) => `branding/${filename}`,
+  attachment: (filename: string) => `attachments/${filename}`,
+  submission: (filename: string) => `submissions/${filename}`,
+};

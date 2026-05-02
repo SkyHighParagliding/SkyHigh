@@ -7,7 +7,7 @@ import db from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
-import { saveFile, deleteFile, readFile, fileExists } from "../storage.js";
+import { saveFile, deleteFile, readFile, fileExists, StorageKey } from "../storage.js";
 
 const router = Router();
 
@@ -74,7 +74,7 @@ router.post("/:slug/attachments", requireAuth, upload.single("file"), asyncHandl
   const ext = path.extname(req.file.originalname) || "";
   const filename = `${id}${ext}`;
 
-  const storedUrl = await saveFile(req.file.buffer, `attachments/${filename}`, req.file.mimetype);
+  const storedUrl = await saveFile(req.file.buffer, StorageKey.attachment(filename), req.file.mimetype);
 
   await db.prepare(
     "INSERT INTO page_attachments (id, pageSlug, filename, originalFilename, fileSize, mimeType) VALUES (?, ?, ?, ?, ?, ?)"

@@ -7,7 +7,12 @@ db_backups/
 .DS_Store
 *.log
 .env*
-!.env.example
+!.env.template
 *.db-shm
 *.db-wal
 sites.db
+db.sqlite
+skyhigh.db
+scratch/
+*.code-workspace
+lint_output.txt

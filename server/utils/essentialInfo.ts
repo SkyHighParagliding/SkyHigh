@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
-import { saveFile } from "../storage.js";
+import { saveFile, StorageKey } from "../storage.js";
 
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -57,7 +57,7 @@ export async function extractEssentialInfo($: cheerio.CheerioAPI, siteId: string
         const ext = fullUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)?.[1] || (isGoogleMap ? 'png' : 'jpg');
         const filename = `essential-${siteId}-${i + 1}.${ext}`;
         const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
-        const savedUrl = await saveFile(buf, filename, contentType);
+        const savedUrl = await saveFile(buf, StorageKey.essential(filename), contentType);
         savedPaths.push(savedUrl);
       }
     } catch (e) {

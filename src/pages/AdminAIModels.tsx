@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Plus, X, GripVertical, RotateCcw, FlaskConical, Check, AlertCircle, Loader2, ChevronUp, ChevronDown, Cpu, ImagePlus, ArrowLeftRight, Zap, Brain, DollarSign, Eye, Image, Sparkles, Clock, BookOpen, Save } from "lucide-react";
 import { useAdminForm } from "@/hooks/useAdminForm";
@@ -123,11 +124,13 @@ export function AdminAIModels() {
   const loadConfig = useCallback(async () => {
     try {
       const data = await api.get<Record<string, string[]>>("/api/ai/models/config", token);
-      setTextModels(data.textModels);
-      setImageModels(data.imageModels);
-      setDefaultTextModels(data.defaultTextModels);
-      setDefaultImageModels(data.defaultImageModels);
-    } catch {} finally {
+      setTextModels(Array.isArray(data.textModels) ? data.textModels : []);
+      setImageModels(Array.isArray(data.imageModels) ? data.imageModels : []);
+      setDefaultTextModels(Array.isArray(data.defaultTextModels) ? data.defaultTextModels : []);
+      setDefaultImageModels(Array.isArray(data.defaultImageModels) ? data.defaultImageModels : []);
+    } catch (e: any) {
+      toast.error("Failed to load AI configuration");
+    } finally {
       setLoading(false);
     }
   }, [token]);
@@ -138,17 +141,20 @@ export function AdminAIModels() {
     setSearching(true);
     try {
       const data = await api.get<{ models: AvailableModel[] }>("/api/ai/models", token);
-      setAvailableModels(data.models);
+      setAvailableModels(Array.isArray(data?.models) ? data.models : []);
       setSearchDone(true);
-    } catch {} finally {
+    } catch (e: any) {
+      console.error("Failed to fetch models:", e);
+      toast.error(e.message || "Failed to fetch available models from Google");
+    } finally {
       setSearching(false);
     }
   };
 
   const saveConfig = () => save(async () => {
     const data = await api.put<Record<string, string[]>>("/api/ai/models/config", { textModels, imageModels }, token);
-    setTextModels(data.textModels);
-    setImageModels(data.imageModels);
+    setTextModels(Array.isArray(data?.textModels) ? data.textModels : []);
+    setImageModels(Array.isArray(data?.imageModels) ? data.imageModels : []);
   });
 
   const testModel = async (model: string, type: "text" | "image") => {
@@ -244,7 +250,8 @@ export function AdminAIModels() {
   const currentChainModels = replacing?.list === "text" ? textModels : replacing?.list === "image" ? imageModels : [];
 
   const filteredModels = (() => {
-    let models = availableModels.filter(m => {
+    const modelsToFilter = Array.isArray(availableModels) ? availableModels : [];
+    let models = modelsToFilter.filter(m => {
       if (replacing && currentChainModels.includes(m.name)) return false;
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
@@ -416,24 +423,24 @@ export function AdminAIModels() {
                   />
                 </div>
                 <p className="text-xs text-foreground-faint flex-1">
-                  {activeTraitFilters.length > 0
-                    ? <><span className="font-medium text-muted-foreground">Sorted by:</span> {activeTraitFilters.map(f => TRAIT_DEFS.find(d => d.key === f)!.label).join(" + ")}</>
+                  {(Array.isArray(activeTraitFilters) ? activeTraitFilters : []).length > 0
+                    ? <><span className="font-medium text-muted-foreground">Sorted by:</span> {(Array.isArray(activeTraitFilters) ? activeTraitFilters : []).map(f => TRAIT_DEFS.find(d => d.key === f)?.label || f).join(" + ")}</>
                     : "Click traits to sort by what matters most"}
                   {replacing ? " (chain models hidden)" : ""}
-                  <span className="text-foreground-ghost mx-1">|</span>{filteredModels.length}/{availableModels.length}
+                  <span className="text-foreground-ghost mx-1">|</span>{(Array.isArray(filteredModels) ? filteredModels : []).length}/{(Array.isArray(availableModels) ? availableModels : []).length}
                 </p>
               </div>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-50">
-              {filteredModels.map((m) => {
-                const inText = textModels.includes(m.name);
-                const inImage = imageModels.includes(m.name);
+              {(Array.isArray(filteredModels) ? filteredModels : []).map((m) => {
+                const inText = (Array.isArray(textModels) ? textModels : []).includes(m.name);
+                const inImage = (Array.isArray(imageModels) ? imageModels : []).includes(m.name);
                 const result = testResults[m.name];
                 const isTesting = testingModel === m.name;
                 const modelTraits = getModelTraits(m.name);
-                const matchCount = activeTraitFilters.length > 0 ? activeTraitFilters.filter(f => modelTraits.includes(f)).length : 0;
-                const isFullMatch = matchCount > 0 && matchCount === activeTraitFilters.length;
+                const matchCount = (Array.isArray(activeTraitFilters) ? activeTraitFilters : []).length > 0 ? (Array.isArray(activeTraitFilters) ? activeTraitFilters : []).filter(f => modelTraits.includes(f)).length : 0;
+                const isFullMatch = matchCount > 0 && matchCount === (Array.isArray(activeTraitFilters) ? activeTraitFilters : []).length;
 
                 return (
                   <div key={m.name} className={`px-4 py-3 flex items-center gap-3 transition-colors ${replacing ? "hover:bg-sky/5 cursor-pointer" : "hover:bg-background"} ${isFullMatch ? "bg-emerald-50/50" : matchCount > 0 ? "bg-amber-50/30" : ""}`}
@@ -579,7 +586,7 @@ function ModelChainPanel({
       </div>
 
       <div className="divide-y divide-gray-50">
-        {models.map((model, idx) => {
+        {(Array.isArray(models) ? models : []).map((model, idx) => {
           const result = testResults[model];
           const isTesting = testingModel === model;
           const isBeingReplaced = replacingModel === model;
@@ -628,7 +635,7 @@ function ModelChainPanel({
                 </button>
                 <button
                   onClick={() => onMove(idx, "down")}
-                  disabled={idx === models.length - 1}
+                  disabled={idx === (Array.isArray(models) ? models : []).length - 1}
                   className="p-1 rounded text-foreground-faint hover:text-navy disabled:opacity-30"
                   title="Move down"
                 >

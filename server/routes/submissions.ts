@@ -8,15 +8,11 @@ import crypto from "crypto";
 import sharp from "sharp";
 import asyncHandler from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
+import { saveFile, deleteFile, readFile, StorageKey } from "../storage.js";
 import createLogger from "../utils/logger.js";
 
 const log = createLogger("submissions");
 const router = Router();
-
-const submissionsDir = path.join(process.cwd(), "uploads", "submissions");
-if (!fs.existsSync(submissionsDir)) {
-  fs.mkdirSync(submissionsDir, { recursive: true });
-}
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -104,7 +100,7 @@ async function checkContentSafety(imageBuffer: Buffer, mimeType: string): Promis
     const base64 = imageBuffer.toString("base64");
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       contents: [
         {
           role: "user",
@@ -176,34 +172,29 @@ router.post("/", upload.array("images", 10), asyncHandler(async (req, res) => {
     const compressed = await compressImage(file.buffer, detectedType);
     const storedFilename = `${id}${compressed.ext}`;
     const storedMimeType = compressed.ext === '.jpg' ? 'image/jpeg' : detectedType;
-    const filePath = path.join(submissionsDir, storedFilename);
 
     if (!safety.safe) {
-      const quarantineDir = path.join(submissionsDir, "quarantine");
-      if (!fs.existsSync(quarantineDir)) {
-        fs.mkdirSync(quarantineDir, { recursive: true });
-      }
-      const quarantinePath = path.join(quarantineDir, storedFilename);
-      fs.writeFileSync(quarantinePath, compressed.buffer);
+      const storageKey = `submissions/quarantine/${storedFilename}`;
+      const storedUrl = await saveFile(compressed.buffer, storageKey, storedMimeType);
 
       await db.prepare(
         `INSERT INTO image_submissions (id, "originalFilename", "storedFilename", "filePath", "fileSize", "mimeType", status, "moderationFlag", "moderationNote", "submitterIp", "photographerCredit")
          VALUES (?, ?, ?, ?, ?, ?, 'quarantined', ?, ?, ?, ?)`
-      ).run(id, file.originalname, storedFilename, `uploads/submissions/quarantine/${storedFilename}`, compressed.buffer.length, storedMimeType, safety.flag || "nsfw", safety.note || "", submitterIp, photographerCredit || null);
+      ).run(id, file.originalname, storedFilename, storedUrl, compressed.buffer.length, storedMimeType, safety.flag || "nsfw", safety.note || "", submitterIp, photographerCredit || null);
 
       log.warn(`Submission ${id} quarantined: ${safety.note}`);
       results.push({ id, filename: file.originalname, status: "quarantined" });
       continue;
     }
 
-    fs.writeFileSync(filePath, compressed.buffer);
+    const storedUrl = await saveFile(compressed.buffer, StorageKey.submission(storedFilename), storedMimeType);
 
     const savedSize = compressed.buffer.length;
     const originalSize = file.buffer.length;
     await db.prepare(
       `INSERT INTO image_submissions (id, "originalFilename", "storedFilename", "filePath", "fileSize", "mimeType", status, "moderationNote", "submitterIp", "photographerCredit")
        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
-    ).run(id, file.originalname, storedFilename, `uploads/submissions/${storedFilename}`, savedSize, storedMimeType, safety.note || null, submitterIp, photographerCredit || null);
+    ).run(id, file.originalname, storedFilename, storedUrl, savedSize, storedMimeType, safety.note || null, submitterIp, photographerCredit || null);
 
     log.info(`Submission ${id} stored: ${file.originalname} (${(originalSize / 1024).toFixed(0)}KB → ${(savedSize / 1024).toFixed(0)}KB)`);
     results.push({ id, filename: file.originalname, status: "pending" });
@@ -228,6 +219,7 @@ router.get("/all", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 function resolveSubmissionPath(filePath: string): string {
+  if (filePath.startsWith("http")) return filePath;
   const cleaned = filePath.replace(/^\/+/, "");
   return path.join(process.cwd(), cleaned);
 }
@@ -261,18 +253,19 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  const fullPath = resolveSubmissionPath(submission.filePath);
-  if (fs.existsSync(fullPath)) {
-    fs.unlinkSync(fullPath);
-  }
+  await deleteFile(submission.filePath);
 
-  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = datetime('now') WHERE id = ?").run(req.params.id);
+  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
   res.json({ success: true });
 }));
 
 router.get("/:id/image", requireAuth, asyncHandler(async (req, res) => {
   const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
   if (!submission) return res.status(404).json({ error: "Submission not found" });
+
+  if (submission.filePath.startsWith("http")) {
+    return res.redirect(submission.filePath);
+  }
 
   const fullPath = resolveSubmissionPath(submission.filePath);
   if (!fs.existsSync(fullPath)) {
@@ -287,12 +280,7 @@ router.post("/:id/process", requireAuth, asyncHandler(async (req, res) => {
   if (!submission) return res.status(404).json({ error: "Submission not found" });
   if (submission.status !== "pending" && submission.status !== "quarantined") return res.status(400).json({ error: `Cannot process submission with status '${submission.status}'` });
 
-  const fullPath = resolveSubmissionPath(submission.filePath);
-  if (!fs.existsSync(fullPath)) {
-    return res.status(404).json({ error: "Image file not found" });
-  }
-
-  const imageBuffer = fs.readFileSync(fullPath);
+  const imageBuffer = await readFile(submission.filePath);
   const base64 = imageBuffer.toString("base64");
 
   res.json({
@@ -309,7 +297,7 @@ router.post("/:id/approve", requireAuth, asyncHandler(async (req, res) => {
   const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  const result = await db.prepare("UPDATE image_submissions SET status = 'approved', reviewedAt = datetime('now') WHERE id = ?").run(req.params.id);
+  const result = await db.prepare("UPDATE image_submissions SET status = 'approved', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: "Submission not found" });
   res.json({ success: true });
 }));
@@ -329,9 +317,8 @@ router.post("/:id/ban-ip", requireAuth, asyncHandler(async (req, res) => {
     );
   }
 
-  const fullPath = resolveSubmissionPath(submission.filePath);
-  if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = datetime('now') WHERE id = ?").run(req.params.id);
+  await deleteFile(submission.filePath);
+  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
 
   log.info(`IP ${submission.submitterIp} banned from submission ${submission.id}`);
   res.json({ success: true, bannedIp: submission.submitterIp });

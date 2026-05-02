@@ -6,7 +6,7 @@ import fs from "fs";
 import db from "../db.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { saveFile, deleteFile } from "../storage.js";
+import { saveFile, deleteFile, StorageKey } from "../storage.js";
 
 const log = createLogger("branding");
 const router = Router();
@@ -46,7 +46,7 @@ router.post("/logo", requireAuth, upload.single("logo"), async (req, res) => {
     const results: Record<string, string> = {};
 
     const originalBuffer = await sharp(req.file.buffer).png().toBuffer();
-    results.clubLogoOriginal = await saveFile(originalBuffer, `branding/logo-original-${timestamp}.png`, "image/png");
+    results.clubLogoOriginal = await saveFile(originalBuffer, StorageKey.branding(`logo-original-${timestamp}.png`), "image/png");
 
     for (const variant of VARIANTS) {
       const filename = `logo-${variant.key.replace("clubLogo", "").toLowerCase()}-${timestamp}.png`;
@@ -70,7 +70,7 @@ router.post("/logo", requireAuth, upload.single("logo"), async (req, res) => {
       const buffer = await pipeline
         .png({ compressionLevel: 9, adaptiveFiltering: true })
         .toBuffer();
-      results[variant.key] = await saveFile(buffer, `branding/${filename}`, "image/png");
+      results[variant.key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
     const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
@@ -100,7 +100,7 @@ router.post("/logo-dark", requireAuth, upload.single("logo"), async (req, res) =
     const results: Record<string, string> = {};
 
     const originalBuffer = await sharp(req.file.buffer).png().toBuffer();
-    results.clubLogoDarkOriginal = await saveFile(originalBuffer, `branding/logo-dark-original-${timestamp}.png`, "image/png");
+    results.clubLogoDarkOriginal = await saveFile(originalBuffer, StorageKey.branding(`logo-dark-original-${timestamp}.png`), "image/png");
 
     const darkVariants: LogoVariant[] = [
       { key: "clubLogoDarkFavicon", height: 128, width: 128, crop: true },
@@ -131,7 +131,7 @@ router.post("/logo-dark", requireAuth, upload.single("logo"), async (req, res) =
       const buffer = await pipeline
         .png({ compressionLevel: 9, adaptiveFiltering: true })
         .toBuffer();
-      results[variant.key] = await saveFile(buffer, `branding/${filename}`, "image/png");
+      results[variant.key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
     const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
@@ -193,7 +193,7 @@ router.post("/pwa-icon", requireAuth, upload.single("logo"), async (req, res) =>
         .resize(size, size, { fit: "cover", position: "centre", kernel: sharp.kernel.lanczos3 })
         .png({ compressionLevel: 9 })
         .toBuffer();
-      results[key] = await saveFile(buffer, `branding/${filename}`, "image/png");
+      results[key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
     const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");

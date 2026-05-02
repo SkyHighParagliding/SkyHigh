@@ -1,2 +1,2 @@
-ALTER TABLE sites ADD COLUMN IF NOT EXISTS "launchHeight2" TEXT;
-ALTER TABLE sites ADD COLUMN IF NOT EXISTS "landingHeight2" TEXT;
+ALTER TABLE sites ADD COLUMN "launchHeight2" TEXT;
+ALTER TABLE sites ADD COLUMN "landingHeight2" TEXT;

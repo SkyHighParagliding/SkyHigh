@@ -506,7 +506,7 @@ export function AdminManual() {
         "SkyHigh Image Wall: All library images are automatically displayed on the public /club-photos page in a mosaic layout. Newest images appear first. Images cycle through Hero → Banner → Landscape Large → Landscape Small → Portrait slots until every unique image is used. Community photo uploads also support photographer credit — enter a name in the upload dialog.",
         "Using Images: Select them on Home Page settings (hero backgrounds) or Site Edit pages (site banners). Use the image toolbar in News/Pages to insert from the library.",
         "Ideal Sizes: Hero backgrounds 1920×1080, site headers 1920×600, general content 1200×800. Images are auto-compressed on upload.",
-        "Permanent Cloud Storage: All uploaded images are stored in Cloudflare R2 cloud storage — not on the server's local drive. This means images are never lost when code updates are published. The upload workflow is exactly the same; the change is invisible to you.",
+        "Permanent Cloud Storage: All uploaded images are stored in Cloudflare R2 cloud storage (or namespaced local storage). They are organized into logical folders: images/sites/, images/hero/, images/sliders/, branding/, and submissions/. This structure ensures high performance and prevents data loss during system updates.",
         "Google Drive & Dropbox: Sharing links are auto-converted to direct image URLs when pasted into image fields."
       ]
     },
@@ -569,7 +569,7 @@ export function AdminManual() {
           </Link>
           <div className="flex items-center gap-2 text-navy font-bold">
             <Book className="w-5 h-5" />
-            <span>Admin Manual v13.7</span>
+            <span>Admin Manual v14.0</span>
           </div>
         </div>
 
@@ -648,6 +648,12 @@ export function AdminManual() {
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                   <p className="text-sm text-gray-300">
                     <strong className="text-white">Procedures Manual:</strong> A separate editable document for committee use — 23 sections covering governance, finance, safety, events, and more. Accessible from the Dashboard.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Settings className="w-5 h-5 text-sky flex-shrink-0" />
+                  <p className="text-sm text-gray-300">
+                    <strong className="text-white">Production Readiness:</strong> The system supports both local SQLite and production-grade PostgreSQL. All core configuration is managed via the <code>.env.template</code> file.
                   </p>
                 </div>
               </div>

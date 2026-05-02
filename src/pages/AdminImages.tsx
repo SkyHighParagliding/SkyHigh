@@ -40,7 +40,7 @@ export function AdminImages() {
     updateSettings, markChanged,
     handlePickExisting, handleSsFileSelect, handleHeroFileSelect,
     handleSaveScreenshot, handleDeleteScreenshot, handleCopyTag,
-    filteredScreenshots, handleSave, handleEnhancedAccept,
+    filteredScreenshots, handleSave, handleEnhancedAccept, handlePickExistingHero, showHeroPicker, setShowHeroPicker,
     handleAddUrl, handleRemoveWide, handleRemoveBanner, handleSetCategory,
     wideImages, bannerImages, sliderImages,
     handleToggleSlider, handleDeleteSliderImage, handleGenerateAllSliders,
@@ -48,6 +48,7 @@ export function AdminImages() {
     handleDeleteSubmission, handleProcessSubmission,
     handleAddBannedIp, handleRemoveBannedIp, handleBanSubmissionIp,
     handleSubmissionEnhancerAccept,
+    initialHeroImage, setInitialHeroImage,
   } = lib;
 
 
@@ -553,7 +554,32 @@ export function AdminImages() {
                     <Button type="button" size="sm" className="text-xs bg-sky hover:bg-sky-light text-white" onClick={() => heroFileInputRef.current?.click()}>
                       <Upload className="w-3 h-3 mr-1" /> Choose File
                     </Button>
+                    {images.filter(p => p.wide).length > 0 && (
+                      <Button type="button" size="sm" className="text-xs bg-sky hover:bg-sky-light text-white" onClick={() => setShowHeroPicker(p => !p)}>
+                        <ImageIcon className="w-3 h-3 mr-1" /> Choose Existing Hero
+                      </Button>
+                    )}
                   </div>
+                  {showHeroPicker && (
+                    <div className="mt-3 border border-sky-200 rounded-lg p-3 bg-white">
+                      <p className="text-xs font-medium text-sky-800 mb-2">Select from Hero Images</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-64 overflow-y-auto">
+                        {images.filter(p => p.wide).map((pair, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="relative group rounded-md overflow-hidden border border-gray-200 hover:border-sky-400 hover:ring-2 hover:ring-sky-200 transition-all aspect-video bg-gray-100"
+                            onClick={() => handlePickExistingHero(pair)}
+                          >
+                            <img src={pair.wide} alt={pair.name || "Hero"} className="w-full h-full object-cover" loading="lazy" />
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <p className="text-[9px] text-white truncate">{pair.name || "Hero"}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -926,13 +952,27 @@ export function AdminImages() {
                           <Mountain className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveWide(originalIndex)}
-                        className="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-700"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <div className="absolute top-1 right-1 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSiteName(pair.name || "");
+                            setInitialHeroImage(pair.wide);
+                            setIsEnhancerOpen(true);
+                          }}
+                          title="Generate Banner & Sliders"
+                          className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-sky hover:bg-sky-50 hover:text-sky-700"
+                        >
+                          <Scissors className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveWide(originalIndex)}
+                          className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1238,13 +1278,14 @@ export function AdminImages() {
 
       <AIImageEnhancerModal
         isOpen={isEnhancerOpen}
-        onClose={() => { setIsEnhancerOpen(false); setSiteName(""); setSubmissionForEnhancer(null); setHeroPreloadedImage(null); if (uploadBranch === "hero") setUploadBranch(""); }}
+        onClose={() => { setIsEnhancerOpen(false); setInitialHeroImage(undefined); setSiteName(""); setSubmissionForEnhancer(null); setHeroPreloadedImage(null); if (uploadBranch === "hero") setUploadBranch(""); }}
         onAccept={submissionForEnhancer ? handleSubmissionEnhancerAccept : handleEnhancedAccept}
         existingHeroImages={images.filter(p => p.wide).map(p => p.wide)}
         imageName={siteName}
         onImageNameChange={setSiteName}
         preloadedImage={submissionForEnhancer || heroPreloadedImage}
         initialPhotographerCredit={submissionForEnhancer?.photographerCredit || ""}
+        initialHeroImage={initialHeroImage}
       />
 
 
