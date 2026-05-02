@@ -6,6 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth, isDevBypassActive } from "../middleware/auth.js";
 import { DEMO_TOKENS, requireDemoSession } from "./demo/state.js";
+import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
 
 const log = createLogger("pilot-auth");
 const router = Router();
@@ -264,15 +265,16 @@ router.put(
     const cleanSpotFeed = typeof spotFeedId === "string" ? spotFeedId.trim() || null : undefined;
     const cleanZoleoImei = typeof zoleoImei === "string" ? zoleoImei.trim() || null : undefined;
 
-    const updates: string[] = [];
-    const params: any[] = [];
-    if (cleanMapshare !== undefined) { updates.push("garminMapshare = ?"); params.push(cleanMapshare); }
-    if (cleanSpotFeed !== undefined) { updates.push("spotFeedId = ?"); params.push(cleanSpotFeed); }
-    if (cleanZoleoImei !== undefined) { updates.push("zoleoImei = ?"); params.push(cleanZoleoImei); }
+    const updateClauses: Array<{ column: string; value: any }> = [];
+    if (cleanMapshare !== undefined) updateClauses.push({ column: "garminMapshare", value: cleanMapshare });
+    if (cleanSpotFeed !== undefined) updateClauses.push({ column: "spotFeedId", value: cleanSpotFeed });
+    if (cleanZoleoImei !== undefined) updateClauses.push({ column: "zoleoImei", value: cleanZoleoImei });
 
-    if (updates.length > 0) {
+    if (updateClauses.length > 0) {
+      const allowedColumns = ["garminMapshare", "spotFeedId", "zoleoImei"];
+      const { sql, params } = buildSafeUpdateClauses(updateClauses, allowedColumns);
       params.push(session.pilotId);
-      await db.prepare(`UPDATE pilots SET ${updates.join(", ")} WHERE id = ?`).run(...params);
+      await db.prepare(`UPDATE pilots SET ${sql} WHERE id = ?`).run(...params);
     }
 
     const pilot = await db.prepare("SELECT id, email, name, firstName, lastName, garminMapshare, spotFeedId, zoleoImei FROM pilots WHERE id = ?").get(session.pilotId) as any;
