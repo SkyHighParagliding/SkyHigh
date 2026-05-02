@@ -227,7 +227,7 @@ const categories: SpecCategory[] = [
         title: "Admin Dashboard",
         details: [
           "Secured by session-based authentication with bcrypt password hashing.",
-          "Smart search bar: AI-powered search across admin features, procedures, sites, news, pages, and Google Drive documents. Returns summarised answer with source citations.",
+          "Smart search bar: AI-powered search across admin features, procedures, sites, news, pages, and Google Drive documents. Returns summarised answer with source citations. Search results support direct deep-linking into specific edit dialogs (e.g. Projects, Contacts, Sites).",
           "Navigation cards organised by category: Content Management, Governance, Management, Settings, Specifications.",
           "Site Features toggles: Online Check-in, Featured Site, Photo Carousel, YouTube Carousel, QR Code mode, XC Maps, Flight Tracker.",
           "XC Maps and Flight Tracker are separate toggles: XC Maps enables the map/airspace/weather UI; Flight Tracker adds pilot sign-in, GPS recording, and live tracking controls.",
