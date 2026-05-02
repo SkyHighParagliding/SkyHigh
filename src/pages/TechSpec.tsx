@@ -230,7 +230,7 @@ const categories: SpecCategory[] = [
           "procedures — procedures manual sections (title, icon, steps JSON, sortOrder)",
           "projects — site works management (status, stakeholders, Parks Vic, budget, insurance)",
           "project_contacts — many-to-many project↔contact links with role",
-          "project_documents — many-to-many project↔document links",
+          "project_documents — many-to-many project↔document links (includes 'linked' flag to distinguish Drive-linked files)",
           "documents — file management (driveFileId, category, mimeType, webViewLink)",
           "external_site_listings — scraped siteguide.org.au listing index (name, url, state, region)",
           "site_archives — version-keyed site snapshots (siteguideVersion UNIQUE, archivedAt, siteCount, siteData JSON). Max 10 retained.",
@@ -366,7 +366,7 @@ const categories: SpecCategory[] = [
         title: "/api/documents, /api/projects, /api/procedures, /api/pageviews",
         details: [
           "Documents: GET /categories, GET /category/:code, GET /search, GET /drive-search, GET /status, POST /upload, DELETE /:id",
-          "Projects: GET /, GET /:id, POST /, PUT /:id, DELETE /:id, POST /:id/contacts, DELETE /:id/contacts/:contactId, POST /:id/documents/upload, POST /:id/documents/link, DELETE /:id/documents/:docId, GET /:id/documents/drive (lists project files directly from Drive via Apps Script), GET+PUT /settings/parks-vic-defaults",
+          "Projects: GET /, GET /:id, POST /, PUT /:id, DELETE /:id, POST /:id/contacts, DELETE /:id/contacts/:contactId, POST /:id/documents/upload, POST /:id/documents/link, DELETE /:id/documents/:docId, GET /:id/documents/drive (lists project files from Drive via Apps Script, with 5-minute in-memory cache), GET+PUT /settings/parks-vic-defaults",
           "Procedures: GET /, GET /:id, POST /, PUT /:id, DELETE /:id",
           "Pageviews: GET /, POST /track, POST /reset/:path, POST /reset-all",
         ],

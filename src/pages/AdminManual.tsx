@@ -229,6 +229,7 @@ export function AdminManual() {
       steps: [
         "Type a query into the search box at the top of the Dashboard and press Enter.",
         "Returns an AI-generated summary with source citations, plus links to matching documents and pages.",
+        "Clicking a search result (like a Project, Contact, Site, Sponsor, or Business) will use deep-linking to open the specific edit dialog or page automatically.",
         "Click 'Edit Prompt' to customise search behaviour."
       ]
     },
