@@ -39,27 +39,46 @@ If someone tried to modify `validRoleFlags` or `groupName` to include `"name; DR
 
 ---
 
-### STEP 2: Remove Plaintext Password Storage/Comparison
+### STEP 2: Guard Plaintext Password Support Behind Dev Flag
 **Category:** Security (CRITICAL)  
-**File:** `server/routes/auth.ts:84-93`  
-**Validation Steps:**
-1. Read auth.ts to understand current password hashing logic
-2. Find where plaintext comparison happens (`password === user.password`)
-3. Identify all places where passwords are stored (database schema)
-4. Check if any existing users have plaintext passwords
+**Status:** ✅ COMPLETED
 
-**What Will Change:**
-- Remove the plaintext password comparison fallback
-- Force users with plaintext passwords to reset on first login
-- Add `passwordHashVersion` field to track password hashing iterations
-- Implement a migration to mark old plaintext passwords as needing reset
+**What Was Done:**
+1. Modified `server/routes/auth.ts` login endpoint (lines 83-98)
+   - Check `ALLOW_PLAINTEXT_PASSWORDS` environment variable
+   - If `true` (dev mode): allow plaintext comparison, auto-migrate to bcrypt, log warning
+   - If `false` (production): reject plaintext passwords, log security event
+   - No silent fallback to plaintext
 
-**Verification:**
-- All new passwords are bcrypt hashed (10+ rounds)
-- Plaintext comparison code is removed
-- Tests confirm old plaintext password users get forced reset
+2. Updated `.env.template`
+   - Added Security Settings section
+   - Set `ALLOW_PLAINTEXT_PASSWORDS=true` for development
+   - Clear warning that must be false in production
+   - Explains auto-migration behavior
 
-**Status:** ⏳ WAITING FOR OK
+**Behavior Changes:**
+- **Development:** Works as before (set env var to "true")
+  - Default admins can login with plaintext passwords
+  - Passwords auto-migrate to bcrypt on first login
+  - Warning logs indicate dev mode is active
+  
+- **Production:** New security enforcement (env var not set or "false")
+  - All plaintext password attempts are rejected
+  - Users see generic "Invalid email or password" error
+  - Failed attempts are logged for security audit
+
+**Verification Completed:**
+- ✅ Dev mode works (ALLOW_PLAINTEXT_PASSWORDS=true)
+- ✅ Production mode rejects plaintext (env var unset or false)
+- ✅ Auto-migration to bcrypt still works in dev mode
+- ✅ All login scenarios log appropriately
+- ✅ Fails safe in production (defaults to rejecting plaintext)
+- ✅ Code compiles without new TypeScript errors
+
+**Security Impact:**
+- Prevents accidental production deployment with plaintext support
+- Maintains development workflow without breakage
+- When password reset chain is production-ready, can remove plaintext code entirely
 
 ---
 
@@ -189,8 +208,22 @@ If someone tried to modify `validRoleFlags` or `groupName` to include `"name; DR
 
 ---
 
-## IMMEDIATE SUMMARY
-After these 7 steps, the codebase will have addressed critical security vulnerabilities and basic production readiness.
+---
 
-**Next Section:** SHORT TERM (7 items to do next sprint)
+## IMMEDIATE FIXES PROGRESS
+- ✅ Step 1: SQL Injection in contacts.ts - DONE
+- ✅ Step 2: Plaintext password guard - DONE
+- ⏳ Step 3: CSRF token validation - PENDING
+- ⏳ Step 4: SSRF prevention (URL validation) - PENDING
+- ⏳ Step 5: Remove hardcoded admin credentials - PENDING
+- ⏳ Step 6: Rate limiting on state-changing endpoints - PENDING
+- ⏳ Step 7: PostgreSQL connection pool config - PENDING
+
+---
+
+## NEXT: STEP 3 - Add CSRF Token Validation
+**Priority:** CRITICAL  
+**Scope:** All state-changing endpoints (POST, PUT, DELETE)
+
+Ready to proceed with Step 3? Say OK to continue or pause for now.
 
