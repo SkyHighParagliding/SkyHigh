@@ -5,7 +5,7 @@ import db from "./db.js";
 
 const _seedFilename = fileURLToPath(import.meta.url);
 const _seedDirname = path.dirname(_seedFilename);
-const rootDir = path.resolve(_seedDirname, '..');
+const seedsDir = path.join(_seedDirname, 'data', 'seeds');
 
 const defaultAiPrompt = `You are processing a flying site guide page from an Australian paragliding/hang gliding governing body website.
 
@@ -133,7 +133,7 @@ let seedSettings: [string, string][] = [
 ];
 
 try {
-  const settingsPath = path.join(rootDir, 'seed_settings.json');
+  const settingsPath = path.join(seedsDir, 'seed_settings.json');
   if (fs.existsSync(settingsPath)) {
     const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
     seedSettings = data.map((s: any) => [s.key, s.value]);
@@ -158,7 +158,7 @@ if (Number(count.count) === 0) {
   
   let seedSites: any[] = [];
   try {
-    const scrapedData = fs.readFileSync(path.join(rootDir, 'scraped_sites.json'), 'utf8');
+    const scrapedData = fs.readFileSync(path.join(seedsDir, 'scraped_sites.json'), 'utf8');
     seedSites = JSON.parse(scrapedData);
   } catch (e) {
     console.log("Could not load scraped_sites.json, using fallback seed data.");
@@ -236,7 +236,7 @@ if (Number(pagesCount.count) === 0) {
   let seedPages = [...coreSeedPages];
 
   try {
-    const pagesPath = path.join(rootDir, 'seed_pages.json');
+    const pagesPath = path.join(seedsDir, 'seed_pages.json');
     if (fs.existsSync(pagesPath)) {
       seedPages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
     }
@@ -272,11 +272,11 @@ const contactsCount = await db.prepare("SELECT COUNT(*) as count FROM contacts")
 if (Number(contactsCount.count) === 0) {
   let seedContacts: any[] = [];
   try {
-    const contactsPath = path.join(rootDir, 'seed_contacts.json');
+    const contactsPath = path.join(seedsDir, 'seed_contacts.json');
     if (fs.existsSync(contactsPath)) {
       seedContacts = JSON.parse(fs.readFileSync(contactsPath, 'utf8'));
     } else {
-      const officersPath = path.join(rootDir, 'seed_officers.json');
+      const officersPath = path.join(seedsDir, 'seed_officers.json');
       if (fs.existsSync(officersPath)) {
         const rawOfficers = JSON.parse(fs.readFileSync(officersPath, 'utf8'));
         seedContacts = rawOfficers.map((o: any) => ({
@@ -305,7 +305,7 @@ if (Number(contactsCount.count) === 0) {
 const projectsCount = await db.prepare("SELECT COUNT(*) as count FROM projects").get() as { count: number | string };
 if (Number(projectsCount.count) === 0) {
   try {
-    const projectsPath = path.join(rootDir, 'seed_projects.json');
+    const projectsPath = path.join(seedsDir, 'seed_projects.json');
     if (fs.existsSync(projectsPath)) {
       const seedProjects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
       if (seedProjects.length > 0) {
@@ -322,7 +322,7 @@ if (Number(projectsCount.count) === 0) {
   }
 
   try {
-    const pcPath = path.join(rootDir, 'seed_project_contacts.json');
+    const pcPath = path.join(seedsDir, 'seed_project_contacts.json');
     if (fs.existsSync(pcPath)) {
       const seedPC = JSON.parse(fs.readFileSync(pcPath, 'utf8'));
       if (seedPC.length > 0) {
@@ -340,7 +340,7 @@ if (Number(projectsCount.count) === 0) {
 const eslCount = await db.prepare("SELECT COUNT(*) as count FROM external_site_listings").get() as { count: number | string };
 if (Number(eslCount.count) === 0) {
   try {
-    const eslPath = path.join(rootDir, 'seed_external_listings.json');
+    const eslPath = path.join(seedsDir, 'seed_external_listings.json');
     if (fs.existsSync(eslPath)) {
       const seedESL = JSON.parse(fs.readFileSync(eslPath, 'utf8'));
       if (seedESL.length > 0) {
@@ -364,7 +364,7 @@ if (Number(proceduresCount.count) === 0) {
 
   let seedProcedures: any[] = [];
   try {
-    const proceduresPath = path.join(rootDir, 'seed_procedures.json');
+    const proceduresPath = path.join(seedsDir, 'seed_procedures.json');
     if (fs.existsSync(proceduresPath)) {
       seedProcedures = JSON.parse(fs.readFileSync(proceduresPath, 'utf8'));
     }
@@ -400,7 +400,7 @@ if (Number(newsCount.count) === 0) {
 
   let seedNews: any[] = [];
   try {
-    const newsPath = path.join(rootDir, 'seed_news.json');
+    const newsPath = path.join(seedsDir, 'seed_news.json');
     if (fs.existsSync(newsPath)) {
       seedNews = JSON.parse(fs.readFileSync(newsPath, 'utf8'));
     }

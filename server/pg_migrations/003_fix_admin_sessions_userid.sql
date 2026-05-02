@@ -1,1 +1,1 @@
-ALTER TABLE admin_sessions ALTER COLUMN "userId" TYPE TEXT;
+-- Fixed in 001

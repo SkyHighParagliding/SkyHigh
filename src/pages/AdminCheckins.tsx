@@ -64,7 +64,7 @@ export function AdminCheckins() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stats?.bySite?.map((site: any) => (
+                  {(Array.isArray(stats?.bySite) ? stats.bySite : []).map((site: any) => (
                     <div key={site.siteName} className="flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground-label">{site.siteName}</span>
                       <span className="text-sm font-bold text-navy bg-muted px-2 py-1 rounded-full">{site.count}</span>
@@ -97,7 +97,7 @@ export function AdminCheckins() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentCheckins.map((checkin) => (
+                      {(Array.isArray(recentCheckins) ? recentCheckins : []).map((checkin) => (
                         <tr key={checkin.id} className="border-b hover:bg-background">
                           <td className="px-4 py-3 font-mono font-medium text-navy">{checkin.id}</td>
                           <td className="px-4 py-3 text-foreground-label">{checkin.siteName}</td>

@@ -483,13 +483,13 @@ export function AdminConnections() {
                                 {syncResult.message}
                               </div>
                             )}
-                            {indexStatus && indexStatus.documents.length > 0 && (
+                            {indexStatus && Array.isArray(indexStatus.documents) && indexStatus.documents.length > 0 && (
                               <details className="text-xs">
                                 <summary className="cursor-pointer font-medium text-sky hover:text-navy">
-                                  Indexed Documents ({indexStatus.documents.length})
+                                  Indexed Documents ({(Array.isArray(indexStatus?.documents) ? indexStatus!.documents : []).length})
                                 </summary>
                                 <div className="mt-2 space-y-1">
-                                  {indexStatus.documents.map((doc) => (
+                                  {(Array.isArray(indexStatus?.documents) ? indexStatus!.documents : []).map((doc) => (
                                     <div key={doc.driveFileId} className="flex items-center gap-2 text-foreground-label py-0.5">
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${doc.readable ? "bg-emerald-500" : "bg-amber-400"}`} />
                                       <span className="truncate flex-1">{doc.name}</span>
@@ -812,7 +812,7 @@ export function AdminConnections() {
                         </tr>
                       </thead>
                       <tbody>
-                        {groupMappings.map(m => (
+                        {(Array.isArray(groupMappings) ? groupMappings : []).map(m => (
                           <tr key={m.id} className="border-b border-border-faint hover:bg-background">
                             <td className="p-3 font-medium">{m.tidyhqGroupName}</td>
                             <td className="p-3">
@@ -855,7 +855,7 @@ export function AdminConnections() {
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                    {webhookLogs.map(entry => (
+                    {(Array.isArray(webhookLogs) ? webhookLogs : []).map(entry => (
                       <div key={entry.id} className="flex items-start gap-3 p-3 rounded-lg bg-background border border-border-faint">
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${groupSyncActionColors[entry.action] || "bg-gray-100 text-gray-600"}`}>
                           {entry.action}
@@ -1091,7 +1091,7 @@ export function AdminConnections() {
                     className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
                   >
                     <option value="">Select a group...</option>
-                    {tidyhqGroups.map(g => (
+                    {(Array.isArray(tidyhqGroups) ? tidyhqGroups : []).map(g => (
                       <option key={g.id} value={String(g.id)}>{g.label} ({g.size} members)</option>
                     ))}
                   </select>

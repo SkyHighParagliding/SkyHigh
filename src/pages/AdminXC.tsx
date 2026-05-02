@@ -514,7 +514,7 @@ export function AdminXC() {
                     Configure which distance rings appear on XC Maps. Up to 20 rings, each between 1–500 km.
                   </p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {[...ringDistances].sort((a, b) => a - b).map(km => (
+                    {(Array.isArray(ringDistances) ? [...ringDistances] : []).sort((a, b) => a - b).map(km => (
                       <span
                         key={km}
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-sm font-medium"
@@ -572,10 +572,10 @@ export function AdminXC() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">XC-Enabled Sites ({xcSites.length})</h4>
+                  <h4 className="text-sm font-medium text-navy mb-2">XC-Enabled Sites ({(Array.isArray(xcSites) ? xcSites : []).length})</h4>
                   {xcSites.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {xcSites.map(s => (
+                      {(Array.isArray(xcSites) ? xcSites : []).map(s => (
                         <Link
                           key={s.id}
                           to={`/admin/sites/${s.id}`}
@@ -778,7 +778,7 @@ export function AdminXC() {
                   <div>
                     <CardTitle className="text-navy text-lg">Competitions</CardTitle>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage XC competitions and events. {competitions.length > 0 && `${competitions.length} competition${competitions.length === 1 ? '' : 's'} total.`}
+                      Manage XC competitions and events. {(Array.isArray(competitions) ? competitions : []).length > 0 && `${(Array.isArray(competitions) ? competitions : []).length} competition${(Array.isArray(competitions) ? competitions : []).length === 1 ? '' : 's'} total.`}
                     </p>
                   </div>
                 </div>
@@ -840,7 +840,7 @@ export function AdminXC() {
                   )}
 
                   <div className="space-y-3">
-                    {filteredComps.map(c => (
+                    {(Array.isArray(filteredComps) ? filteredComps : []).map(c => (
                       <div key={c.id} className={`bg-card rounded-xl border ${showCompForm && compEditingId === c.id ? 'border-2 border-indigo-400 shadow-md' : 'border-border shadow-sm hover:shadow-md'} transition-shadow`}>
                         <div className="p-4">
                           <div className="flex items-start justify-between gap-3">

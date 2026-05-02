@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MapPin, FileText, Activity, Home, Book, Wind, LogOut, BarChart3, ClipboardList, FolderOpen, Briefcase, Contact2, Image as ImageIcon, FileCode2, Wrench, Cpu, Plug, Users, Handshake, Clock, UserPlus, Flag, Store, Navigation, Settings, ShieldAlert, Target } from "lucide-react";
+import { MapPin, FileText, Activity, Home, Book, Wind, LogOut, BarChart3, ClipboardList, FolderOpen, Briefcase, Contact2, Image as ImageIcon, FileCode2, Wrench, Cpu, Plug, Users, Handshake, Clock, UserPlus, Flag, Store, Navigation, Settings, ShieldAlert, Target, Palette } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -329,7 +329,19 @@ export function AdminDashboard() {
                     <Settings className="w-6 h-6 mr-2" />
                     Site Options
                   </CardTitle>
-                  <CardDescription>Feature visibility, check-in settings, homepage components, and branding.</CardDescription>
+                  <CardDescription>Feature visibility, check-in settings, homepage components.</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
+            <Link to="/admin/branding" className="block group">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                    <Palette className="w-6 h-6 mr-2" />
+                    Branding & Templates
+                  </CardTitle>
+                  <CardDescription>Manage logos, colors, and the overall look of your club website.</CardDescription>
                 </CardHeader>
               </Card>
             </Link>

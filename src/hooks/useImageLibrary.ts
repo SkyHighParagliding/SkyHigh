@@ -98,6 +98,7 @@ export function useImageLibrary() {
   const [ssCropTop, setSsCropTop] = useState(0);
   const [ssCropBottom, setSsCropBottom] = useState(0);
   const [ssCropLeft, setSsCropLeft] = useState(0);
+  const [initialHeroImage, setInitialHeroImage] = useState<string | undefined>(undefined);
   const [ssCropRight, setSsCropRight] = useState(0);
   const [ssZoom, setSsZoom] = useState(1);
   const [ssPanX, setSsPanX] = useState(0);
@@ -107,6 +108,7 @@ export function useImageLibrary() {
   const [ssProcessing, setSsProcessing] = useState(false);
   const [pendingSsImage, setPendingSsImage] = useState<{ base64: string; mimeType: string; naturalWidth: number; naturalHeight: number } | null>(null);
   const [showExistingPicker, setShowExistingPicker] = useState(false);
+  const [showHeroPicker, setShowHeroPicker] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState<string | null>(null);
   const [ssViewMode, setSsViewMode] = useState<"grid" | "list">("grid");
   const [ssFilterCategory, setSsFilterCategory] = useState("All");
@@ -412,6 +414,13 @@ export function useImageLibrary() {
     e.target.value = "";
   };
 
+  const handlePickExistingHero = (pair: ImagePair) => {
+    setInitialHeroImage(pair.wide);
+    setSiteName(pair.name || "");
+    setIsEnhancerOpen(true);
+    setShowHeroPicker(false);
+  };
+
   const handleSaveScreenshot = async (crop: boolean) => {
     if (!pendingSsImage || !ssName.trim() || !token) return;
     setSsProcessing(true);
@@ -629,7 +638,7 @@ export function useImageLibrary() {
     ssZoom, setSsZoom, ssPanX, setSsPanX, ssPanY, setSsPanY,
     ssDragging, setSsDragging, ssDragStart, setSsDragStart,
     ssProcessing, pendingSsImage, setPendingSsImage,
-    showExistingPicker, setShowExistingPicker, loadingExisting,
+    showExistingPicker, setShowExistingPicker, showHeroPicker, setShowHeroPicker, loadingExisting,
     ssViewMode, setSsViewMode, ssFilterCategory, setSsFilterCategory,
     ssSearch, setSsSearch, copiedTag, ssFileInputRef,
     submissions, loadingSubmissions, submissionPreview, setSubmissionPreview,
@@ -642,7 +651,7 @@ export function useImageLibrary() {
     settingsLoaded, submissionFilter, setSubmissionFilter,
     lightboxSrc, setLightboxSrc,
     updateSettings, markChanged,
-    handlePickExisting, handleSsFileSelect, handleHeroFileSelect,
+    handlePickExisting, handlePickExistingHero, handleSsFileSelect, handleHeroFileSelect,
     handleSaveScreenshot, handleDeleteScreenshot, handleCopyTag,
     filteredScreenshots, handleSave, handleEnhancedAccept,
     handleAddUrl, handleRemoveWide, handleRemoveBanner, handleSetCategory,
@@ -652,5 +661,6 @@ export function useImageLibrary() {
     handleDeleteSubmission, handleProcessSubmission,
     handleAddBannedIp, handleRemoveBannedIp, handleBanSubmissionIp,
     handleSubmissionEnhancerAccept,
+    initialHeroImage, setInitialHeroImage,
   };
 }
