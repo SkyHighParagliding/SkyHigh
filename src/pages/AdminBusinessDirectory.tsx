@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Store, Phone, Mail, Globe, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminBusinessDirectory, useBusinessDirectoryMutation } from "@/hooks/api";
@@ -44,9 +44,25 @@ export function AdminBusinessDirectory() {
   const [deleteError, setDeleteError] = useState("");
   const [flyoutOpen, setFlyoutOpen] = useState(false);
 
+  const { hash } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    if (hash && hash.startsWith("#biz-") && listings.length > 0) {
+      const id = hash.replace("#biz-", "");
+      const listing = listings.find(l => l.id === id);
+      if (listing) {
+        openEdit(listing);
+        // Scroll to the editing item
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [hash, listings]);
 
   const allCategories = Array.from(new Set([
     ...DEFAULT_CATEGORIES,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Handshake, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarkdownHelpLink } from "@/components/MarkdownHelpLink";
@@ -44,9 +44,21 @@ export function AdminSponsors() {
     deleteLabel: "Sponsor",
   });
 
+  const { hash } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    if (hash && hash.startsWith("#spon-") && sponsors.length > 0) {
+      const id = hash.replace("#spon-", "");
+      const sponsor = sponsors.find(s => s.id === id);
+      if (sponsor) {
+        openEdit(sponsor);
+      }
+    }
+  }, [hash, sponsors]);
 
   const openAdd = () => {
     setEditingId(null);

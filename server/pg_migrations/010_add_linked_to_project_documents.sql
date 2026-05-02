@@ -1,0 +1,1 @@
+ALTER TABLE project_documents ADD COLUMN linked INTEGER DEFAULT 0;

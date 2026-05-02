@@ -57,8 +57,16 @@ The app will be available at `http://localhost:5173`. The Express backend runs o
 
 ## 📦 Architecture Notes
 
-### Database Abstraction
-The project uses a custom database adapter (`server/pgDb.ts`) that allows you to write SQLite-style queries (including `INSERT OR IGNORE` and `datetime` functions) while maintaining full compatibility with PostgreSQL. This is automatically managed via the `DATABASE_URL` environment variable.
+### Database Abstraction & Migrations
+The project uses a custom database adapter (`server/pgDb.ts`) that allows you to write SQLite-style queries (including `INSERT OR IGNORE` and `datetime` functions) while maintaining full compatibility with PostgreSQL. This is automatically managed via the `DATABASE_URL` environment variable. Schema migrations are handled natively by the built-in runner (`server/db.ts`), ensuring structures like `project_documents` stay synchronized between environments.
+
+### Admin Dashboard & Deep Linking
+The Admin Dashboard utilizes a hybrid navigation strategy:
+- `react-router-dom` handles route-level navigation.
+- **URL Hashes** (`#proj-ID`, `#cont-ID`, `#spon-ID`, `#biz-ID`) are used to manage "deep-linked" modal state and sub-page focus. This allows the global admin search to directly link users into specific edit dialogs without full page reloads.
+
+### Google Drive Integration & Caching
+Project file management is integrated directly with Google Drive via Google Apps Script. To ensure a snappy UI, the backend employs an in-memory cache (5-minute TTL) for Drive file listings, automatically invalidating when documents are uploaded, linked, or deleted.
 
 ### Structured Storage
 All media assets are stored using a namespaced hierarchy:

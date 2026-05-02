@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Briefcase, FileText, Users, MapPin, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
+import { AdminProjectEdit } from "./AdminProjectEdit";
 
 interface Project {
   id: string;
@@ -42,15 +43,27 @@ export function AdminProjects() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+   const [showModal, setShowModal] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState<"name" | "date">("date");
 
+  const { hash } = useLocation();
+
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (hash && hash.startsWith("#proj-")) {
+      const id = hash.replace("#proj-", "");
+      if (id) {
+        setEditingProjectId(id);
+      }
+    }
+  }, [hash]);
 
   async function fetchProjects() {
     try {
@@ -135,7 +148,11 @@ export function AdminProjects() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((project) => (
-              <Link key={project.id} to={`/admin/projects/${project.id}`} className="block group">
+              <div
+                key={project.id}
+                onClick={() => setEditingProjectId(project.id)}
+                className="block group cursor-pointer"
+              >
                 <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-teal-500">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -180,7 +197,7 @@ export function AdminProjects() {
                     </div>
                   </CardHeader>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         )}
@@ -212,6 +229,27 @@ export function AdminProjects() {
               <Button onClick={createProject} disabled={!newName.trim() || creating} className="bg-sky hover:bg-navy text-white">
                 {creating ? "Creating..." : "Create Project"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {editingProjectId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-background rounded-2xl shadow-2xl max-w-5xl w-full my-8 relative flex flex-col max-h-[90vh]">
+            <div className="sticky top-0 right-0 p-4 flex justify-end z-10">
+              <button
+                onClick={() => { setEditingProjectId(null); fetchProjects(); }}
+                className="p-2 bg-background/80 backdrop-blur rounded-full shadow-md text-foreground-faint hover:text-red-500 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+              <AdminProjectEdit
+                id={editingProjectId}
+                isDialog={true}
+                onClose={() => { setEditingProjectId(null); fetchProjects(); }}
+              />
             </div>
           </div>
         </div>

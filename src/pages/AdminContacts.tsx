@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -121,10 +121,22 @@ export function AdminContacts() {
       .catch(() => {});
   };
 
+  const { hash } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchContacts();
   }, []);
+
+  useEffect(() => {
+    if (hash && hash.startsWith("#cont-") && contacts.length > 0) {
+      const id = hash.replace("#cont-", "");
+      const contact = contacts.find(c => c.id === id);
+      if (contact) {
+        openEdit(contact);
+      }
+    }
+  }, [hash, contacts]);
 
   const filtered = contacts.filter(c => {
     if (roleFilter !== "all") {

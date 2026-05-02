@@ -264,8 +264,9 @@ function ContactCard({
   );
 }
 
-export function AdminProjectEdit() {
-  const { id } = useParams<{ id: string }>();
+export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: string; isDialog?: boolean; onClose?: () => void }) {
+  const { id: routeId } = useParams<{ id: string }>();
+  const id = propId || routeId;
   const navigate = useNavigate();
   const { token } = useAuth();
 
@@ -314,8 +315,9 @@ export function AdminProjectEdit() {
       let data: Project;
       try {
         data = await api.get<Project>(`/api/projects/${id}`, token);
-      } catch {
-        navigate("/admin/projects");
+      } catch (err) {
+        if (!isDialog) navigate("/admin/projects");
+        onClose?.();
         return;
       }
       setProject(data);
@@ -381,7 +383,8 @@ export function AdminProjectEdit() {
         setPvContact(pvC || null);
       }
     } catch {
-      navigate("/admin/projects");
+      if (!isDialog) navigate("/admin/projects");
+      onClose?.();
     } finally {
       setLoading(false);
     }
@@ -452,7 +455,11 @@ export function AdminProjectEdit() {
     try {
       await api.delete(`/api/projects/${id}`, token);
       toast.success("Project deleted");
-      navigate("/admin/projects");
+      if (isDialog) {
+        onClose?.();
+      } else {
+        navigate("/admin/projects");
+      }
     } catch {}
   };
 
@@ -528,9 +535,10 @@ export function AdminProjectEdit() {
   const linkedContactIds = contacts.map((c) => c.id);
 
   return (
-    <div className="bg-background min-h-screen py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className={`bg-background ${isDialog ? "" : "min-h-screen py-12"}`}>
+      <div className={`${isDialog ? "max-w-full" : "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"}`}>
         <div className="mb-8">
+        {!isDialog && (
           <Link
             to="/admin/projects"
             className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4"
@@ -538,6 +546,7 @@ export function AdminProjectEdit() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Projects
           </Link>
+        )}
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -550,6 +559,11 @@ export function AdminProjectEdit() {
               />
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
+              {isDialog && (
+                <Button variant="outline" onClick={onClose}>
+                  Close
+                </Button>
+              )}
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}

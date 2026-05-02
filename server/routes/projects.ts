@@ -15,6 +15,9 @@ import createLogger from "../utils/logger.js";
 
 const log = createLogger("projects");
 
+const driveFilesCache = new Map<string, { files: any[], folderName: string, timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
@@ -139,6 +142,7 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHandler(async (req, res) => {
+  driveFilesCache.delete(req.params.id);
   const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id) as any;
   if (!project) return res.status(404).json({ error: "Project not found" });
   if (!req.file) return res.status(400).json({ error: "No file provided" });
@@ -220,6 +224,11 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
 }));
 
 router.get("/:id/documents/drive", requireAuth, asyncHandler(async (req, res) => {
+  const cached = driveFilesCache.get(req.params.id);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return res.json({ files: cached.files, source: "drive", folderName: cached.folderName, cached: true });
+  }
+
   const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id) as any;
   if (!project) return res.status(404).json({ error: "Project not found" });
 
@@ -235,6 +244,7 @@ router.get("/:id/documents/drive", requireAuth, asyncHandler(async (req, res) =>
     );
     const data = await response.json() as any;
     if (data.success) {
+      driveFilesCache.set(req.params.id, { files: data.files || [], folderName, timestamp: Date.now() });
       return res.json({ files: data.files || [], source: "drive", folderName });
     }
     return res.json({ files: [], source: "error", error: data.error });
@@ -245,6 +255,7 @@ router.get("/:id/documents/drive", requireAuth, asyncHandler(async (req, res) =>
 }));
 
 router.post("/:id/documents/link", requireAuth, asyncHandler(async (req, res) => {
+  driveFilesCache.delete(req.params.id);
   const { documentId, driveFileId, name, mimeType, webViewLink } = req.body;
 
   const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id);
@@ -277,6 +288,7 @@ router.post("/:id/documents/link", requireAuth, asyncHandler(async (req, res) =>
 }));
 
 router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res) => {
+  driveFilesCache.delete(req.params.id);
   const link = await db.prepare("SELECT * FROM project_documents WHERE projectId = ? AND documentId = ?").get(req.params.id, req.params.docId) as any;
   if (!link) return res.status(404).json({ error: "Document not linked to this project" });
 

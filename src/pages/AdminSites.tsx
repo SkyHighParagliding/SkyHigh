@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Edit, Trash2, X, Search, RefreshCw, AlertTriangle, CheckCircle2, Clock, Loader2, Archive, RotateCcw, Eye, ChevronDown, ChevronRight, Wind } from "lucide-react";
@@ -47,7 +47,19 @@ function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered
       .finally(() => setLoading(false));
   };
 
+  const { hash } = useLocation();
+  const navigate = useNavigate();
+
   useEffect(() => { fetchStatus(); }, []);
+
+  useEffect(() => {
+    if (hash && hash.startsWith("#site-")) {
+      const id = hash.replace("#site-", "");
+      if (id) {
+        navigate(`/admin/sites/${id}/edit`);
+      }
+    }
+  }, [hash, navigate]);
 
   const handleRunCheck = async () => {
     setRunning(true);
