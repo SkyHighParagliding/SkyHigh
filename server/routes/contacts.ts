@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import { tidyhqFetch } from "../utils/tidyhqFetch.js";
+import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
 import { filterByCurrentMembers } from "../utils/tidyhqMemberFilter.js";
 
 const router = Router();
@@ -118,43 +119,41 @@ router.post("/tidyhq-import-group", requireAuth, asyncHandler(async (req, res) =
     const organisation = (tc.organisation || "").trim();
 
     if (existing) {
-      const updates: string[] = [];
-      const params: any[] = [];
+      const updateClauses: Array<{ column: string; value: any }> = [];
 
-      if (firstName) { updates.push("name = ?"); params.push(firstName); }
-      if (lastName) { updates.push("surname = ?"); params.push(lastName); }
-      if (tc.phone) { updates.push("phone = ?"); params.push(tc.phone); }
-      if (organisation) { updates.push("organisation = ?"); params.push(organisation); }
+      if (firstName) updateClauses.push({ column: "name", value: firstName });
+      if (lastName) updateClauses.push({ column: "surname", value: lastName });
+      if (tc.phone) updateClauses.push({ column: "phone", value: tc.phone });
+      if (organisation) updateClauses.push({ column: "organisation", value: organisation });
 
       for (const flag of validRoleFlags) {
         if (roleFlags[flag]) {
-          updates.push(`${flag} = 1`);
+          updateClauses.push({ column: flag, value: 1 });
         }
       }
 
       if (roleFlags.isCommittee) {
-        updates.push("isAdmin = 1");
+        updateClauses.push({ column: "isAdmin", value: 1 });
         const currentPos = (existing.position || "").trim();
         if (!currentPos) {
-          updates.push("position = 'Committee'");
+          updateClauses.push({ column: "position", value: "Committee" });
         }
       }
 
       if (roleFlags.isPosition && groupName) {
         const currentPos = (existing.position || "").trim();
         if (!currentPos || currentPos === "Committee") {
-          updates.push("position = ?");
-          params.push(groupName);
+          updateClauses.push({ column: "position", value: groupName });
         } else if (!currentPos.split(", ").includes(groupName)) {
-          updates.push("position = ?");
-          params.push(`${currentPos}, ${groupName}`);
+          updateClauses.push({ column: "position", value: `${currentPos}, ${groupName}` });
         }
       }
 
-      if (updates.length > 0) {
-        updates.push("updatedAt = datetime('now')");
+      if (updateClauses.length > 0) {
+        const allowedColumns = ["name", "surname", "phone", "organisation", ...validRoleFlags, "isAdmin", "position"];
+        const { sql, params } = buildSafeUpdateClauses(updateClauses, allowedColumns);
         params.push(existing.id);
-        await db.prepare(`UPDATE contacts SET ${updates.join(", ")} WHERE id = ?`).run(...params);
+        await db.prepare(`UPDATE contacts SET ${sql}, updatedAt = datetime('now') WHERE id = ?`).run(...params);
       }
       updated++;
     } else {
