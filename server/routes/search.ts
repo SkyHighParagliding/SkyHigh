@@ -733,7 +733,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       const fields = Object.entries(site)
         .map(([k, v]) => `${k}: ${v ?? "NULL"}`)
         .join(", ");
-      context += `- ${site.name} [path: /admin/sites/${site.id}/edit] — ${fields}\n`;
+      context += `- ${site.name} [path: /admin/sites#site-${site.id}] — ${fields}\n`;
     }
 
     context += "\n\n=== CMS PAGES ===\n";
@@ -750,7 +750,15 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
     if (adminSponsors.length > 0) {
       context += "\n\n=== SPONSORS ===\n";
       for (const s of adminSponsors) {
-        context += `- ${s.name} [path: /admin/sponsors] — URL: ${s.url || "none"}, Sort: ${s.sort_order}${s.markdown ? `, Desc: ${s.markdown.substring(0, 100)}` : ""}\n`;
+        context += `- ${s.name} [path: /admin/sponsors#spon-${s.id}] — URL: ${s.url || "none"}, Sort: ${s.sort_order}${s.markdown ? `, Desc: ${s.markdown.substring(0, 100)}` : ""}\n`;
+      }
+    }
+
+    const businessListings = await db.prepare("SELECT id, businessName, memberName, category FROM business_directory ORDER BY businessName").all() as any[];
+    if (businessListings.length > 0) {
+      context += "\n\n=== BUSINESS DIRECTORY ===\n";
+      for (const b of businessListings) {
+        context += `- ${b.businessName} (Member: ${b.memberName || "unknown"}) [path: /admin/business-directory#biz-${b.id}] — Category: ${b.category}\n`;
       }
     }
 
@@ -768,7 +776,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
         const roleStr = roles.length > 0 ? ` (${roles.join(", ")})` : "";
         const posStr = c.position ? ` — Position: ${c.position}` : "";
         const orgStr = c.organisation ? ` — Org: ${c.organisation}` : "";
-        context += `- ${c.name}${c.surname ? " " + c.surname : ""}${roleStr}${posStr}${orgStr}${c.phone ? " — Ph: " + c.phone : ""}${c.email ? " — " + c.email : ""} [path: /admin/contacts]\n`;
+        context += `- ${c.name}${c.surname ? " " + c.surname : ""}${roleStr}${posStr}${orgStr}${c.phone ? " — Ph: " + c.phone : ""}${c.email ? " — " + c.email : ""} [path: /admin/contacts#cont-${c.id}]\n`;
       }
     }
 
@@ -777,7 +785,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       context += "\n\n=== PROJECTS ===\n";
       for (const p of allProjects) {
         const pvStr = p.parksVic ? " (Parks Victoria)" : "";
-        context += `- ${p.name} [path: /admin/projects] — Status: ${p.status || "Active"}${pvStr}, Site: ${p.relatedSiteId || "none"}\n`;
+        context += `- ${p.name} [path: /admin/projects#proj-${p.id}] — Status: ${p.status || "Active"}${pvStr}, Site: ${p.relatedSiteId || "none"}\n`;
       }
     }
 

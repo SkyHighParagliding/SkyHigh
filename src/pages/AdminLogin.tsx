@@ -288,16 +288,7 @@ export function AdminLogin() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-foreground-label">Password</label>
-                <button
-                  type="button"
-                  className="text-xs text-sky hover:text-navy transition-colors"
-                  onClick={() => switchView("forgot")}
-                >
-                  Forgot password?
-                </button>
-              </div>
+              <label className="block text-sm font-medium text-foreground-label">Password</label>
               <input
                 type="password"
                 value={password}
@@ -306,6 +297,16 @@ export function AdminLogin() {
                 placeholder="Enter your password"
                 required
               />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-xs text-sky hover:text-navy transition-colors"
+                  onClick={() => switchView("forgot")}
+                  tabIndex={-1}
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             <Button
