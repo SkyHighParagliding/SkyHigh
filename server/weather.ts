@@ -10,13 +10,17 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url: string, options: any = {}, retries = 3, backoff = 1000) {
   for (let i = 0; i < retries; i++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout per attempt
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return await response.json();
     } catch (err) {
+      clearTimeout(timeoutId);
       if (i === retries - 1) throw err;
       const wait = backoff * Math.pow(2, i);
       console.warn(`Fetch failed (attempt ${i + 1}/${retries}). Retrying in ${wait}ms...`, err instanceof Error ? err.message : err);

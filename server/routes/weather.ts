@@ -34,11 +34,15 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
   const stations = [];
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const liveWindResponse = await fetch(LIVE_WIND_VIC_URL, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+      },
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (liveWindResponse.ok) {
       const liveWindData = await liveWindResponse.json();
       for (const station of liveWindData) {
@@ -68,12 +72,16 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
     }
     const wuUrl = `https://api.weather.com/v3/location/near?geocode=${lat},${lon}&product=pws&format=json&apiKey=${wuApiKey}`;
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const wuResponse = await fetch(wuUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'application/json'
-      }
+      },
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     
     if (wuResponse.ok) {
       const wuData = await wuResponse.json();
@@ -102,9 +110,13 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
       const wuApiKey = process.env.WU_API_KEY;
       if (wuApiKey && !currentStationId.startsWith('livewind-') && !currentStationId.startsWith('freeflightwx-')) {
         const obsUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${currentStationId}&format=json&units=m&apiKey=${wuApiKey}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         const obsRes = await fetch(obsUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (obsRes.ok) {
           const obsData = await obsRes.json();
           const obs = obsData?.observations?.[0];
@@ -121,9 +133,13 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
           }
         }
       } else if (currentStationId.startsWith('livewind-')) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         const liveWindResponse = await fetch(LIVE_WIND_VIC_URL, {
-          headers: { 'User-Agent': 'Mozilla/5.0' }
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (liveWindResponse.ok) {
           const liveWindData = await liveWindResponse.json();
           const wmoid = currentStationId.replace('livewind-', '');
