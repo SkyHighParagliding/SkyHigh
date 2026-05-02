@@ -83,13 +83,18 @@ router.post("/login", asyncHandler(async (req, res) => {
   let valid = false;
   if (isHashed(user.password)) {
     valid = await bcrypt.compare(password, user.password);
-  } else {
+  } else if (process.env.ALLOW_PLAINTEXT_PASSWORDS === "true") {
+    // Development-only: allow plaintext comparison and auto-migrate
     valid = password === user.password;
     if (valid) {
       const hashed = await bcrypt.hash(password, SALT_ROUNDS);
       await db.prepare("UPDATE contacts SET password = ? WHERE id = ?").run(hashed, user.id);
-      log.info(`Migrated plain-text password to bcrypt for user: ${email}`);
+      log.warn(`PLAINTEXT PASSWORD ALLOWED (DEV MODE): Migrated password to bcrypt for user: ${email}`);
     }
+  } else {
+    // Production: reject plaintext passwords
+    valid = false;
+    log.warn(`Plaintext password attempted for user: ${email} (ALLOW_PLAINTEXT_PASSWORDS not enabled)`);
   }
 
   if (!valid) {
