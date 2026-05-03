@@ -6,6 +6,10 @@
 
 ---
 
+> 📚 **For detailed project documentation**, refer to the [Documentation Index](./wiki-md.md) which includes API reference, implementation summaries, and configuration guides.
+
+---
+
 ## 🚀 Overview
 
 SkyHigh is a comprehensive management platform designed specifically for paragliding and hang gliding clubs. It streamlines site information, member submissions, and administrative tasks using cutting-edge AI and cloud technologies.
