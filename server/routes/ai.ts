@@ -14,6 +14,7 @@ import { generateTextWithFallback, getImageModels } from "../utils/aiModels.js";
 import { extractEssentialInfo, isAllowedScrapeUrl } from "../utils/essentialInfo.js";
 import { scrapeSiteguidePage, extractResponsibleClub } from "../utils/siteScraper.js";
 import { getAppScriptUrl, isDriveConnected, ensureFolderStructure, uploadFile } from "../googleDrive.js";
+import { validateURLSafety } from "../utils/urlValidator.js";
 import { applyWatermark, normalizePosition } from "../utils/watermark.js";
 import { saveFile, readFile, fileExists, keyFromUrl, isR2Configured, StorageKey } from "../storage.js";
 import { getTextModels, getImageModels, setTextModels, setImageModels, DEFAULT_TEXT_MODELS, DEFAULT_IMAGE_MODELS } from "../utils/aiModels.js";
@@ -262,12 +263,31 @@ router.post("/generate", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "URL is required" });
   }
 
-  const scrapeRes = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+  // Validate URL to prevent SSRF attacks
+  const urlValidation = validateURLSafety(url);
+  if (!urlValidation.valid) {
+    return res.status(400).json({ error: `Invalid URL: ${urlValidation.error}` });
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  let scrapeRes: Response;
+  try {
+    scrapeRes = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err.name === "AbortError") {
+      throw new Error("Request timeout fetching the URL");
     }
-  });
-  
+    throw err;
+  }
+
   if (!scrapeRes.ok) {
     throw new Error(`Failed to fetch the URL. Status: ${scrapeRes.status}`);
   }
