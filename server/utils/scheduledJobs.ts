@@ -101,7 +101,23 @@ async function runDriveSync() {
   }
 }
 
+async function prefetchWindGrids() {
+  try {
+    const { fetchVictoriaGrid, fetchWideGrid } = await import("../victoriaGrid.js");
+    await Promise.all([
+      fetchVictoriaGrid(true).catch(e => log.warn(`Victoria grid pre-fetch failed: ${e.message}`)),
+      fetchWideGrid(true).catch(e => log.warn(`Wide grid pre-fetch failed: ${e.message}`))
+    ]);
+    log.info("Wind grid pre-fetch completed");
+  } catch (e: any) {
+    log.error(`Wind grid pre-fetch error: ${e.message}`);
+  }
+}
+
 export async function startScheduledJobs() {
+  cron.schedule("*/50 * * * *", prefetchWindGrids, { timezone: "Australia/Melbourne" });
+  log.info("Wind grid pre-fetch scheduled: every 50 minutes");
+
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));
     const currentHour = melbourneNow.getHours();
