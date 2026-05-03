@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
 
     if (isPublic && isCacheValid()) {
       res.set('Cache-Control', 'public, max-age=30');
-      return res.json(getPublicSitesCache().data);
+      return res.json(getPublicSitesCache());
     }
 
     const { limit, offset } = getPaginationParams(req.query);
