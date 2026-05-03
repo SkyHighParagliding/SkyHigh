@@ -14,8 +14,10 @@ export const siteKeys = {
 export function useSites(isPublic = true) {
   return useQuery({
     queryKey: siteKeys.list(isPublic),
-    queryFn: () =>
-      api.get<Site[]>(isPublic ? '/api/sites?public=true' : '/api/sites'),
+    queryFn: async () => {
+      const response = await api.get<{ data: Site[] }>(isPublic ? '/api/sites?public=true' : '/api/sites');
+      return response.data;
+    },
   });
 }
 

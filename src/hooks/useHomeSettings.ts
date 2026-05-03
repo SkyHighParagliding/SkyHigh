@@ -100,8 +100,8 @@ export function useHomeSettings() {
   };
 
   useEffect(() => {
-    api.get<Array<Record<string, unknown>>>('/api/sites')
-      .then(setSites)
+    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites')
+      .then(response => setSites(response.data))
       .catch(() => {});
 
     if (settings) {

@@ -18,9 +18,9 @@ function WindMapPreviewCard() {
 
   useEffect(() => {
     if (!previewSite) {
-      api.get<Array<{ id: string; name: string; lat: string; lon: string }>>('/api/sites')
-        .then((sites) => {
-          const site = sites.find(s => s.lat && s.lon);
+      api.get<{ data: Array<{ id: string; name: string; lat: string; lon: string }> }>('/api/sites')
+        .then((response) => {
+          const site = response.data.find(s => s.lat && s.lon);
           if (site) setPreviewSite({ id: site.id, name: site.name, lat: parseFloat(site.lat), lon: parseFloat(site.lon) });
         })
         .catch(() => {});

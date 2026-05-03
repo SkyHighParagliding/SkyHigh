@@ -186,8 +186,8 @@ export function AdminSites() {
   const [wtfShowAll, setWtfShowAll] = useState(false);
 
   useEffect(() => {
-    api.get<Array<Record<string, unknown>>>('/api/sites')
-      .then(setSites)
+    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites')
+      .then(response => setSites(response.data))
       .catch(() => {});
     api.get<Record<string, string>>('/api/settings')
       .then(data => {
@@ -244,7 +244,7 @@ export function AdminSites() {
           stopPolling();
           setBulkImporting(false);
           setBulkImportResult(data.summary);
-          api.get<Array<Record<string, unknown>>>('/api/sites').then(setSites).catch(() => {});
+          api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
           if (token) {
             api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
               .then(setArchives)
@@ -317,7 +317,7 @@ export function AdminSites() {
     try {
       const data = await api.post<{ restored: number; version: string }>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/restore`, {}, token);
       setRestoreMessage({ type: "success", text: `Restored ${data.restored} sites from archive version ${data.version}.` });
-      api.get<Array<Record<string, unknown>>>('/api/sites').then(setSites).catch(() => {});
+      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
       api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
         .then(setArchives)
         .catch(() => {});
@@ -380,7 +380,7 @@ export function AdminSites() {
       if (!data.success) throw new Error((data.error as string) || "Failed to apply WTF data");
       setWtfApplyResult(data);
       toast.success("WTF data applied");
-      api.get<Array<Record<string, unknown>>>('/api/sites').then(setSites).catch(() => {});
+      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
     } catch (e: unknown) {
       setWtfApplyResult({ error: e instanceof Error ? e.message : "Failed" });
     } finally {
