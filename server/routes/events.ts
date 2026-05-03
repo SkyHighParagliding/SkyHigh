@@ -1,17 +1,24 @@
 import { Router } from "express";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
+import db from "../db.js";
 
 const log = createLogger("events");
 const router = Router();
 
 let cachedEvents: any[] | null = null;
 let cacheTimestamp = 0;
-const CACHE_TTL = 5 * 60 * 1000;
+
+async function getCacheTtl(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheTidyHqEventsTtl") as { value: string } | undefined;
+  const minutes = parseInt(row?.value || "5", 10);
+  return minutes * 60 * 1000;
+}
 
 async function fetchTidyHQEvents(): Promise<any[]> {
   const now = Date.now();
-  if (cachedEvents && (now - cacheTimestamp) < CACHE_TTL) {
+  const cacheTtl = await getCacheTtl();
+  if (cachedEvents && (now - cacheTimestamp) < cacheTtl) {
     return cachedEvents;
   }
 

@@ -99,11 +99,21 @@ interface CachedContext {
 let publicContextCache: CachedContext | null = null;
 let internalContextCache: { data: string; timestamp: number } | null = null;
 let adminContextCache: { data: string; sites: any[]; timestamp: number } | null = null;
-const CONTEXT_TTL = 300_000; // 5 minutes
+
+async function getContextTtl(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheSearchContextTtl") as { value: string } | undefined;
+  const minutes = parseInt(row?.value || "5", 10);
+  return minutes * 60 * 1000;
+}
 
 // ─── OPTIMIZATION: Asset register caching ───
 let assetCache: { data: string; timestamp: number } | null = null;
-const ASSET_TTL = 600_000; // 10 minutes
+
+async function getAssetTtl(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAssetRegisterTtl") as { value: string } | undefined;
+  const minutes = parseInt(row?.value || "10", 10);
+  return minutes * 60 * 1000;
+}
 
 export function invalidateSearchCaches() {
   publicContextCache = null;
@@ -115,7 +125,8 @@ export function invalidateSearchCaches() {
 registerSearchCacheInvalidator(invalidateSearchCaches);
 
 async function getCachedAssetData(): Promise<string> {
-  if (assetCache && Date.now() - assetCache.timestamp < ASSET_TTL) {
+  const assetTtl = await getAssetTtl();
+  if (assetCache && Date.now() - assetCache.timestamp < assetTtl) {
     return assetCache.data;
   }
 
@@ -178,7 +189,8 @@ async function getCachedAssetData(): Promise<string> {
 
 // ─── Build public context (with weather) ───
 async function buildPublicContext(): Promise<CachedContext> {
-  if (publicContextCache && Date.now() - publicContextCache.timestamp < CONTEXT_TTL) {
+  const contextTtl = await getContextTtl();
+  if (publicContextCache && Date.now() - publicContextCache.timestamp < contextTtl) {
     return publicContextCache;
   }
 
@@ -400,7 +412,8 @@ router.post("/", asyncHandler(async (req, res) => {
   }
 
   let fullContext: string;
-  if (internalContextCache && Date.now() - internalContextCache.timestamp < CONTEXT_TTL) {
+  const contextTtl = await getContextTtl();
+  if (internalContextCache && Date.now() - internalContextCache.timestamp < contextTtl) {
     fullContext = internalContextCache.data;
   } else {
     const procedures = await db.prepare("SELECT id, title, description, steps FROM procedures ORDER BY sortOrder").all() as ProcedureRow[];
@@ -703,7 +716,8 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
 
   let context: string;
   let sitesList: any[];
-  if (adminContextCache && Date.now() - adminContextCache.timestamp < CONTEXT_TTL) {
+  const contextTtl = await getContextTtl();
+  if (adminContextCache && Date.now() - adminContextCache.timestamp < contextTtl) {
     context = adminContextCache.data;
     sitesList = adminContextCache.sites;
   } else {

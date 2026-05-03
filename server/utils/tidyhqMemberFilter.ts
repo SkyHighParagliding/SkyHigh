@@ -1,10 +1,16 @@
 import { tidyhqFetch } from "./tidyhqFetch.js";
 import createLogger from "./logger.js";
+import db from "../db.js";
 
 const log = createLogger("tidyhq-filter");
 
 const CURRENT_MEMBERS_GROUP_ID = 135716;
-const CACHE_TTL_MS = 15 * 60 * 1000;
+
+async function getCacheTtlMs(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheTidyHqMemberTtl") as { value: string } | undefined;
+  const minutes = parseInt(row?.value || "15", 10);
+  return minutes * 60 * 1000;
+}
 
 let cachedEmails: Set<string> | null = null;
 let cacheTimestamp = 0;
@@ -35,7 +41,8 @@ async function fetchCurrentMemberEmails(): Promise<Set<string>> {
 
 async function getCurrentMemberEmails(): Promise<Set<string>> {
   const now = Date.now();
-  if (cachedEmails && now - cacheTimestamp < CACHE_TTL_MS) {
+  const cacheTtlMs = await getCacheTtlMs();
+  if (cachedEmails && now - cacheTimestamp < cacheTtlMs) {
     return cachedEmails;
   }
   cachedEmails = await fetchCurrentMemberEmails();

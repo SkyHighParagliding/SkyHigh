@@ -25,6 +25,14 @@ interface ScheduleSettings {
   schedDriveSyncMinute: string;
   driveSyncEnabled: string;
   autoDownloadZoneData: string;
+  cacheAdminSessionTtl: string;
+  cacheTidyHqMemberTtl: string;
+  cacheBomTideTtl: string;
+  cacheAstroTideTtl: string;
+  cacheTidyHqEventsTtl: string;
+  cacheSearchContextTtl: string;
+  cacheAssetRegisterTtl: string;
+  cacheFreeFlightWxTtl: string;
 }
 
 const DEFAULTS: ScheduleSettings = {
@@ -42,23 +50,34 @@ const DEFAULTS: ScheduleSettings = {
   schedDriveSyncMinute: "0",
   driveSyncEnabled: "false",
   autoDownloadZoneData: "true",
+  cacheAdminSessionTtl: "24",
+  cacheTidyHqMemberTtl: "15",
+  cacheBomTideTtl: "6",
+  cacheAstroTideTtl: "30",
+  cacheTidyHqEventsTtl: "5",
+  cacheSearchContextTtl: "5",
+  cacheAssetRegisterTtl: "10",
+  cacheFreeFlightWxTtl: "30",
 };
 
-interface FutureItem {
+interface CacheTimer {
+  key: keyof ScheduleSettings;
   label: string;
   description: string;
-  currentValue: string;
+  unit: string;
+  min: number;
+  max: number;
 }
 
-const FUTURE_ITEMS: FutureItem[] = [
-  { label: "Admin Session TTL", description: "How long an admin login session lasts before requiring re-authentication", currentValue: "24 hours" },
-  { label: "TidyHQ Member Cache", description: "How long the TidyHQ member email list is cached before refreshing", currentValue: "15 minutes" },
-  { label: "BOM Tide Predictions Cache", description: "How long Bureau of Meteorology tide data is cached", currentValue: "6 hours" },
-  { label: "Astronomical Tide Cache", description: "How long calculated astronomical tide predictions are cached", currentValue: "30 minutes" },
-  { label: "TidyHQ Events Cache", description: "How long the TidyHQ events list is cached", currentValue: "5 minutes" },
-  { label: "Search Context Cache", description: "How long the AI search context is cached before rebuilding", currentValue: "5 minutes" },
-  { label: "Asset Register Cache", description: "How long the asset register context is cached for search", currentValue: "10 minutes" },
-  { label: "FreeFlightWx Cache", description: "How long live weather station data from FreeFlightWx is cached", currentValue: "30 seconds" },
+const CACHE_TIMERS: CacheTimer[] = [
+  { key: "cacheAdminSessionTtl", label: "Admin Session TTL", description: "How long an admin login session lasts before requiring re-authentication", unit: "hours", min: 1, max: 72 },
+  { key: "cacheTidyHqMemberTtl", label: "TidyHQ Member Cache", description: "How long the TidyHQ member email list is cached before refreshing", unit: "minutes", min: 1, max: 1440 },
+  { key: "cacheBomTideTtl", label: "BOM Tide Predictions Cache", description: "How long Bureau of Meteorology tide data is cached", unit: "hours", min: 1, max: 24 },
+  { key: "cacheAstroTideTtl", label: "Astronomical Tide Cache", description: "How long calculated astronomical tide predictions are cached", unit: "minutes", min: 1, max: 1440 },
+  { key: "cacheTidyHqEventsTtl", label: "TidyHQ Events Cache", description: "How long the TidyHQ events list is cached", unit: "minutes", min: 1, max: 1440 },
+  { key: "cacheSearchContextTtl", label: "Search Context Cache", description: "How long the AI search context is cached before rebuilding", unit: "minutes", min: 1, max: 1440 },
+  { key: "cacheAssetRegisterTtl", label: "Asset Register Cache", description: "How long the asset register context is cached for search", unit: "minutes", min: 1, max: 1440 },
+  { key: "cacheFreeFlightWxTtl", label: "FreeFlightWx Cache", description: "How long live weather station data from FreeFlightWx is cached", unit: "seconds", min: 5, max: 3600 },
 ];
 
 function formatTime(hour: string, minute: string): string {
@@ -342,19 +361,28 @@ export function AdminScheduledTasks() {
             <CardHeader>
               <CardTitle className="text-navy flex items-center gap-2">
                 <Lock className="w-5 h-5 text-muted-foreground" /> Cache Timers
-                <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Future Upgrade</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground">These cache durations are currently hardcoded. They will be made configurable in a future update.</p>
+              <p className="text-sm text-muted-foreground">Configure how long various data caches are retained before refreshing.</p>
             </CardHeader>
             <CardContent>
               <div className="divide-y divide-border-faint">
-                {FUTURE_ITEMS.map((item) => (
-                  <div key={item.label} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-foreground-label">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                {CACHE_TIMERS.map((timer) => (
+                  <div key={timer.key} className="py-4 grid grid-cols-12 gap-4 items-start">
+                    <div className="col-span-6">
+                      <p className="text-sm font-medium text-foreground-label">{timer.label}</p>
+                      <p className="text-xs text-muted-foreground">{timer.description}</p>
                     </div>
-                    <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-md whitespace-nowrap">{item.currentValue}</span>
+                    <div className="col-span-3 flex items-center gap-2 justify-end">
+                      <Input
+                        type="number"
+                        min={timer.min}
+                        max={timer.max}
+                        className="w-24"
+                        value={settings[timer.key]}
+                        onChange={(e) => updateField(timer.key, e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-3 text-sm text-muted-foreground text-right">{timer.unit}</div>
                   </div>
                 ))}
               </div>
