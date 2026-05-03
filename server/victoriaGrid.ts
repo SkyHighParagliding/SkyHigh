@@ -171,7 +171,11 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
     console.warn(`Victoria grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
     if (cached) {
-      return JSON.parse(cached.gridData) as VictoriaGrid;
+      try {
+        return JSON.parse(cached.gridData) as VictoriaGrid;
+      } catch (e: any) {
+        console.error("Victoria grid: Failed to parse cached data:", e.message);
+      }
     }
   }
 
@@ -324,7 +328,11 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
     console.warn(`Wide grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
     if (cached) {
-      return JSON.parse(cached.gridData) as VictoriaGrid;
+      try {
+        return JSON.parse(cached.gridData) as VictoriaGrid;
+      } catch (e: any) {
+        console.error("Wide grid: Failed to parse cached data:", e.message);
+      }
     }
   }
 

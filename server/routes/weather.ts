@@ -354,7 +354,11 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
   if (cached) {
     const age = Date.now() - new Date(cached.updatedAt).getTime();
     if (age < 30 * 60 * 1000 && cached.gridSize === gridSize && Math.abs(cached.gridSpacing - gridSpacing) < 0.001) {
-      return res.json(JSON.parse(cached.gridData));
+      try {
+        return res.json(JSON.parse(cached.gridData));
+      } catch {
+        // Corrupted cached data, proceed to regenerate
+      }
     }
   }
 

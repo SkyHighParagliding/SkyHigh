@@ -20,7 +20,12 @@ router.get("/archives/:version/diff", requireAuth, asyncHandler(async (req, res)
   const archive = await db.prepare("SELECT siteData FROM site_archives WHERE siteguideVersion = ?").get(version) as any;
   if (!archive) return res.status(404).json({ error: `Archive not found for version ${version}` });
 
-  const archivedSites = JSON.parse(archive.siteData) as any[];
+  let archivedSites: any[];
+  try {
+    archivedSites = JSON.parse(archive.siteData);
+  } catch (e: any) {
+    return res.status(400).json({ error: `Archive data is corrupted for version ${version}: ${e.message}` });
+  }
   const currentSites = await db.prepare("SELECT * FROM sites").all() as any[];
 
   const currentMap = new Map(currentSites.map((s: any) => [s.id, s]));
@@ -69,7 +74,12 @@ router.post("/archives/:version/restore", requireAuth, asyncHandler(async (req, 
   const archive = await db.prepare("SELECT * FROM site_archives WHERE siteguideVersion = ?").get(version) as any;
   if (!archive) return res.status(404).json({ error: `Archive not found for version ${version}` });
 
-  const sites = JSON.parse(archive.siteData);
+  let sites: any;
+  try {
+    sites = JSON.parse(archive.siteData);
+  } catch (e: any) {
+    return res.status(400).json({ error: `Archive data is corrupted for version ${version}: ${e.message}` });
+  }
   if (!Array.isArray(sites) || sites.length === 0) {
     return res.status(400).json({ error: "Archive contains no site data" });
   }
@@ -92,7 +102,12 @@ router.post("/archives/:version/restore/:siteId", requireAuth, asyncHandler(asyn
   const archive = await db.prepare("SELECT siteData FROM site_archives WHERE siteguideVersion = ?").get(version) as any;
   if (!archive) return res.status(404).json({ error: `Archive not found for version ${version}` });
 
-  const sites = JSON.parse(archive.siteData) as any[];
+  let sites: any;
+  try {
+    sites = JSON.parse(archive.siteData);
+  } catch (e: any) {
+    return res.status(400).json({ error: `Archive data is corrupted for version ${version}: ${e.message}` });
+  }
   const archivedSite = sites.find((s: any) => s.id === siteId);
   if (!archivedSite) return res.status(404).json({ error: `Site ${siteId} not found in archive ${version}` });
 
