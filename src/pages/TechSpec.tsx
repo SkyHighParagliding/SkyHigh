@@ -421,6 +421,7 @@ const categories: SpecCategory[] = [
           "AdminPages.tsx / AdminPageEdit.tsx — CMS page editor",
           "AdminNewsEdit.tsx — News article editor",
           "AdminWeather.tsx — Weather scraper config and wind map settings",
+          "AdminScheduledTasks.tsx — Scheduled job control (siteguide version check, weather fetch, forecast sync, image notifications, document sync) with configurable times and cache TTL settings for 8 cache types (admin session, TidyHQ members, tide predictions, events, search context, asset register, FreeFlightWx). All times Melbourne-based, hourly system check.",
           "AdminAIModels.tsx — AI model fallback chain configuration with live Google model search, in-place model replacement, per-model testing, trait badges (speed/thinking/cost/vision/image-gen/context/legacy/experimental), and clickable trait filters that re-sort the model list by best match with score indicators",
           "AdminCheckins.tsx — Check-in analytics",
           "AdminPageViews.tsx — Page view analytics",

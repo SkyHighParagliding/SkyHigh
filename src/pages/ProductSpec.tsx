@@ -317,7 +317,7 @@ const categories: SpecCategory[] = [
           "Page View Analytics: every visited page logged with view count. Admin pages highlighted with orange badge.",
           "Reset individual or all counters.",
           "Online Check-ins admin: view recent check-in activity, daily count, total count per site.",
-          "Scheduled Tasks: central control for all automated jobs — weather fetch, extended forecast, siteguide check, document sync. Configure times, enable/disable, view cache TTLs.",
+          "Scheduled Tasks: central control for all automated jobs — weather fetch, extended forecast, siteguide check, document sync. Configure job times, enable/disable, and adjust cache durations (TTLs) for session, member, tide, event, search, and weather data.",
           "Scheduled Tasks run on Melbourne time (AEDT/AEST). Hourly cron checks all configurable task times.",
         ],
       },

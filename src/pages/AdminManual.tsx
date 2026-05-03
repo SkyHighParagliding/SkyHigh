@@ -469,7 +469,7 @@ export function AdminManual() {
         "Live Weather Scraper: Fetches live wind data at random intervals (default 15–30 min) during operating hours (default 7 AM – 8 PM). Sleeps overnight.",
         "Google Drive Sync: Automatically indexes documents from Google Drive. Must be enabled and requires Drive connection. Default: 4:00 AM.",
         "Run Now: Use the 'Run Now' button on the Drive Sync card to trigger an immediate sync without waiting for the schedule.",
-        "Cache Timers: The bottom section shows read-only cache durations (session TTL, tide caches, search context, etc.) marked as 'Future Upgrade'.",
+        "Cache Timers: The bottom section shows 8 configurable cache duration settings. Adjust how long various data caches are retained before refreshing: Admin Session TTL (hours), TidyHQ Member Cache (minutes), BOM Tide Predictions Cache (hours), Astronomical Tide Cache (minutes), TidyHQ Events Cache (minutes), Search Context Cache (minutes), Asset Register Cache (minutes), and FreeFlightWx Cache (seconds). Each has min/max constraints. Changes apply on next cache refresh cycle.",
         "Save: Click 'Save All' to apply changes. New schedule times take effect from the next hourly check."
       ]
     },
