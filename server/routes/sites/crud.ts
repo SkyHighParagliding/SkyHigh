@@ -6,6 +6,7 @@ import {
   invalidateSitesCache, getPublicSitesCache, setPublicSitesCache, isCacheValid,
   normaliseWindDir, normaliseWindSpeed, normalisePgRating, getDefaultSiteImage,
 } from "./helpers.js";
+import { getPaginationParams, createPaginatedResponse } from "../../utils/pagination.js";
 
 const safeJsonParse = (json: string | null, fallback: any = []): any => {
   try {
@@ -26,7 +27,8 @@ router.get("/", async (req, res) => {
       return res.json(getPublicSitesCache().data);
     }
 
-    let sites = await db.prepare("SELECT * FROM sites ORDER BY name ASC").all() as any[];
+    const { limit, offset } = getPaginationParams(req.query);
+    let sites = await db.prepare("SELECT * FROM sites ORDER BY name ASC LIMIT ? OFFSET ?").all(limit, offset) as any[];
 
     if (isPublic) {
       const hideClosedSetting = await db.prepare("SELECT value FROM settings WHERE key = 'hideClosedSites'").get() as { value: string } | undefined;
@@ -35,6 +37,7 @@ router.get("/", async (req, res) => {
       }
     }
 
+    const countResult = await db.prepare("SELECT COUNT(*) as count FROM sites").get() as { count: number };
     const mapped = sites.map((s: any) => ({
         ...s,
         hazards: safeJsonParse(s.hazards),
@@ -46,7 +49,7 @@ router.get("/", async (req, res) => {
       res.set('Cache-Control', 'public, max-age=30');
     }
 
-    res.json(mapped);
+    res.json(createPaginatedResponse(mapped, countResult.count, limit, offset));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

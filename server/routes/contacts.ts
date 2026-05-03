@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { tidyhqFetch } from "../utils/tidyhqFetch.js";
 import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
 import { filterByCurrentMembers } from "../utils/tidyhqMemberFilter.js";
+import { getPaginationParams, createPaginatedResponse } from "../utils/pagination.js";
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -28,18 +29,24 @@ router.get("/public/committee", asyncHandler(async (req, res) => {
 }));
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
-  const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC").all();
-  res.json(contacts);
+  const { limit, offset } = getPaginationParams(req.query);
+  const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?").all(limit, offset);
+  const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts").get() as { count: number };
+  const total = countResult.count;
+  res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
 
 router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   const q = req.query.q as string;
-  if (!q) return res.json([]);
+  if (!q) return res.json(createPaginatedResponse([], 0, 50, 0));
   const term = `%${q}%`;
+  const { limit, offset } = getPaginationParams(req.query);
   const contacts = await db.prepare(
-    "SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ? ORDER BY organisation ASC, name ASC"
-  ).all(term, term, term);
-  res.json(contacts);
+    "SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ? ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?"
+  ).all(term, term, term, limit, offset);
+  const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ?").get(term, term, term) as { count: number };
+  const total = countResult.count;
+  res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
 
 router.get("/tidyhq-groups", requireAuth, asyncHandler(async (req, res) => {

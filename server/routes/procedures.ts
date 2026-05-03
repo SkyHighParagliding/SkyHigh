@@ -3,17 +3,20 @@ import db from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
+import { getPaginationParams, createPaginatedResponse } from "../utils/pagination.js";
 
 const router = Router();
 
 router.get("/", asyncHandler(async (req, res) => {
-  const procedures = await db.prepare("SELECT * FROM procedures ORDER BY sortOrder ASC, createdAt ASC").all();
-  const parsed = (procedures as any[]).map(p => {
+  const { limit, offset } = getPaginationParams(req.query);
+  const procedures = await db.prepare("SELECT * FROM procedures ORDER BY sortOrder ASC, createdAt ASC LIMIT ? OFFSET ?").all(limit, offset) as any[];
+  const countResult = await db.prepare("SELECT COUNT(*) as count FROM procedures").get() as { count: number };
+  const parsed = procedures.map(p => {
     let steps: string[];
     try { const s = JSON.parse(p.steps || '[]'); steps = Array.isArray(s) ? s : []; } catch { steps = []; }
     return { ...p, steps };
   });
-  res.json(parsed);
+  res.json(createPaginatedResponse(parsed, countResult.count, limit, offset));
 }));
 
 router.get("/:id", asyncHandler(async (req, res) => {
