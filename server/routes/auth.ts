@@ -59,9 +59,21 @@ async function ensureDefaultAdmin(name: string, email: string, plainPassword: st
   }
 }
 
+// Initialize default admin accounts from environment configuration
 (async () => {
-  await ensureDefaultAdmin("Jon", "jonpamment@gmail.com", "admin");
-  await ensureDefaultAdmin("Admin", "admin@skyhigh.org.au", "admin");
+  const defaultAdminsJson = process.env.DEFAULT_ADMINS;
+  if (defaultAdminsJson) {
+    try {
+      const defaultAdmins = JSON.parse(defaultAdminsJson) as Array<{ name: string; email: string; password: string }>;
+      for (const admin of defaultAdmins) {
+        if (admin.name && admin.email && admin.password) {
+          await ensureDefaultAdmin(admin.name, admin.email, admin.password);
+        }
+      }
+    } catch (err) {
+      log.error(`Failed to parse DEFAULT_ADMINS environment variable: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 })();
 
 router.post("/login", asyncHandler(async (req, res) => {
