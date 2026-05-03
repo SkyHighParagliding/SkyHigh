@@ -214,10 +214,76 @@ If someone tried to modify `validRoleFlags` or `groupName` to include `"name; DR
 - ✅ Step 1: SQL Injection in contacts.ts - DONE
 - ✅ Step 2: Plaintext password guard - DONE
 - ✅ Step 3: CSRF token validation - DONE
-- ⏳ Step 4: SSRF prevention (URL validation) - PENDING
+- ✅ Step 4: SSRF prevention (URL validation) - DONE
 - ⏳ Step 5: Remove hardcoded admin credentials - PENDING
 - ⏳ Step 6: Rate limiting on state-changing endpoints - PENDING
 - ⏳ Step 7: PostgreSQL connection pool config - PENDING
+
+---
+
+### STEP 4: Add SSRF Prevention for URL Fetching
+**Category:** Security (CRITICAL)  
+**Status:** ✅ COMPLETED
+
+**What Was Done:**
+1. Created `server/utils/urlValidator.ts`
+   - `validateURLSafety()` function validates URLs before fetching
+   - Rejects localhost variations: localhost, 127.0.0.1, ::1, 127.0.0.0/8
+   - Rejects private IP ranges:
+     - 10.0.0.0/8 (Class A private)
+     - 172.16.0.0/12 (Class B private)
+     - 192.168.0.0/16 (Class C private)
+     - 169.254.0.0/16 (link-local)
+     - IPv6 unique local (fc00::/7)
+     - IPv6 link-local (fe80::/10)
+   - Rejects non-HTTP protocols (file://, data://, javascript://)
+   - Rejects URLs with embedded credentials (user:pass@host)
+   - Rejects dangerous hostnames (metadata services: Google, AWS, Tencent)
+   - Allows dev mode bypass with `DEV_ALLOW_LOCALHOST_URLS=true`
+   - `fetchWithValidation()` helper with automatic timeout
+
+2. Updated `server/routes/sites/media.ts` (YouTube scraping endpoint)
+   - Added URL validation before fetching channelUrl
+   - Returns 400 if URL validation fails
+   - Added 10-second timeout to fetch calls
+   - Added timeout error handling (408 response)
+   - Wrapped fetch in try-catch for proper error reporting
+
+3. Updated `server/routes/ai.ts` (Site guide scraping endpoint)
+   - Added URL validation before fetching site URLs
+   - Returns 400 if URL validation fails
+   - Added 10-second timeout to fetch calls
+   - Added timeout error handling
+   - Wrapped fetch in try-catch for proper error reporting
+
+4. Updated environment configuration
+   - Added `DEV_ALLOW_LOCALHOST_URLS` to `.env.template`
+   - Added `DEV_ALLOW_LOCALHOST_URLS="true"` to `.env` for development
+   - Clear documentation that must be false in production
+
+**Verification Completed:**
+- ✅ localhost URLs blocked in production mode
+- ✅ Private IP ranges blocked (10.x, 172.16-31.x, 192.168.x)
+- ✅ Non-HTTP protocols rejected (file://, data://, javascript://)
+- ✅ URLs with credentials rejected (user:pass@host)
+- ✅ Development mode allows localhost when flag is set
+- ✅ All fetch calls timeout after 10 seconds
+- ✅ Timeout errors return 408 status
+- ✅ Code compiles without new TypeScript errors
+
+**SSRF Attack Prevention:**
+Before: `await fetch(userProvidedUrl)` → Attacker could access:
+- localhost:9000 (internal service)
+- 192.168.1.1 (router admin panel)
+- 169.254.169.254 (AWS metadata → steal credentials)
+
+After: `validateURLSafety(url)` → All blocked
+
+**Development Impact:**
+- Dev mode enabled by default (`DEV_ALLOW_LOCALHOST_URLS="true"` in .env)
+- Can test YouTube scraping with localhost:8000
+- Can test site scraping with 127.0.0.1
+- Must disable in production by removing/unsetting the env var
 
 ---
 
@@ -286,4 +352,11 @@ If someone tried to modify `validRoleFlags` or `groupName` to include `"name; DR
 - Current in-memory store works for single server
 - For multi-server deployments, migrate to Redis: `import redis from 'redis'` and replace Map with Redis client
 - Tokens are session-specific (not stored in cookies), preventing some CSRF variations
+
+---
+
+## NEXT: STEP 5 - Remove Hardcoded Admin Credentials
+**Priority:** CRITICAL  
+**Location:** `server/routes/auth.ts:62-65`
+**Scope:** Remove hardcoded "Jon" and "Admin" user initialization, move to environment variables
 
