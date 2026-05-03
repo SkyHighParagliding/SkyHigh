@@ -24,6 +24,7 @@ import checkinsRouter from "./server/routes/checkins.js";
 import eventsRouter from "./server/routes/events.js";
 import authRouter from "./server/routes/auth.js";
 import { isDevBypassActive } from "./server/middleware/auth.js";
+import { validationMiddleware } from "./server/middleware/validation.js";
 import pageviewsRouter from "./server/routes/pageviews.js";
 import proceduresRouter from "./server/routes/procedures.js";
 import searchRouter from "./server/routes/search.js";
@@ -149,6 +150,7 @@ async function startServer() {
       }
     },
   }));
+  app.use(validationMiddleware);
   app.use("/uploads/submissions", (_req, res) => {
     res.status(403).json({ error: "Access denied" });
   });
