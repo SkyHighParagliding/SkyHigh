@@ -108,7 +108,11 @@ export async function ensureFolderStructure(db: any): Promise<Record<string, str
       const rootId = existingRoot.value;
       try {
         await drive.files.get({ fileId: rootId, fields: "id" });
-        return JSON.parse(existingCategories.value);
+        try {
+          return JSON.parse(existingCategories.value);
+        } catch (e: any) {
+          log.warn("Failed to parse stored categories:", e.message);
+        }
       } catch {
         log.warn("Stored root folder no longer accessible, recreating...");
       }

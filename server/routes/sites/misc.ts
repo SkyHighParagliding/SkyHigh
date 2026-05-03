@@ -148,7 +148,11 @@ router.get("/:id/emergency-hospitals", asyncHandler(async (req, res) => {
   if (cached) {
     const cachedTime = new Date(cached.cachedAt).getTime();
     if (Date.now() - cachedTime < EMERGENCY_CACHE_TTL_MS) {
-      return res.json({ hospitals: JSON.parse(cached.hospitals), what3words: site.what3words || null });
+      try {
+        return res.json({ hospitals: JSON.parse(cached.hospitals), what3words: site.what3words || null });
+      } catch {
+        // Corrupted cache, continue to fetch fresh data
+      }
     }
   }
 

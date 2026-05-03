@@ -7,6 +7,14 @@ import {
   normaliseWindDir, normaliseWindSpeed, normalisePgRating, getDefaultSiteImage,
 } from "./helpers.js";
 
+const safeJsonParse = (json: string | null, fallback: any = []): any => {
+  try {
+    return JSON.parse(json || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+};
+
 const router = Router();
 
 router.get("/", async (req, res) => {
@@ -29,8 +37,8 @@ router.get("/", async (req, res) => {
 
     const mapped = sites.map((s: any) => ({
         ...s,
-        hazards: JSON.parse(s.hazards || "[]"),
-        rules: JSON.parse(s.rules || "[]"),
+        hazards: safeJsonParse(s.hazards),
+        rules: safeJsonParse(s.rules),
     }));
 
     if (isPublic) {
@@ -50,9 +58,9 @@ router.get("/:id", async (req, res) => {
     if (site) {
       res.json({
           ...site,
-          hazards: JSON.parse(site.hazards || "[]"),
-          rules: JSON.parse(site.rules || "[]"),
-          essentialInfoImages: JSON.parse(site.essentialInfoImages || "[]"),
+          hazards: safeJsonParse(site.hazards),
+          rules: safeJsonParse(site.rules),
+          essentialInfoImages: safeJsonParse(site.essentialInfoImages),
       });
     } else {
       res.status(404).json({ error: "Site not found" });
