@@ -47,6 +47,8 @@ import demoRouter from "./server/routes/demo/index.js";
 import mapMessagesRouter from "./server/routes/mapMessages.js";
 import safetyRouter from "./server/routes/safety.js";
 import { injectServices } from "./server/services/index.js";
+import { getHealthStatus } from "./server/utils/health.js";
+import { errorHandlerMiddleware } from "./server/utils/errorHandler.js";
 
 const log = createLogger("server");
 
@@ -263,15 +265,10 @@ async function startServer() {
     });
   });
 
-  app.get("/health", (req, res) => {
-    res.json({
-      status: "Server is healthy and running!",
-      mode: process.env.NODE_ENV || "development",
-      cwd: process.cwd(),
-      distExists: fs.existsSync(path.join(process.cwd(), "dist")),
-      indexExists: fs.existsSync(path.join(process.cwd(), "index.html")),
-      time: new Date().toISOString()
-    });
+  app.get("/health", async (req, res) => {
+    const health = await getHealthStatus();
+    const statusCode = health.status === 'unhealthy' ? 503 : health.status === 'degraded' ? 200 : 200;
+    res.status(statusCode).json(health);
   });
 
   if (isProduction) {
@@ -309,12 +306,7 @@ async function startServer() {
     }
   }
 
-  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    log.error(`Unhandled error on ${req.method} ${req.url}: ${err.message}`, err.stack?.split("\n").slice(0, 3).join(" | "));
-    if (!res.headersSent) {
-      res.status(err.status || 500).json({ error: err.message || "Internal server error" });
-    }
-  });
+  app.use(errorHandlerMiddleware);
 
   log.info(`Attempting to listen on port ${PORT}...`);
 
