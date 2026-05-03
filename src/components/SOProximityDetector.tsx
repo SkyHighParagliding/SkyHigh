@@ -59,7 +59,8 @@ export function SOProximityDetector() {
   const checkProximity = useCallback(async (latitude: number, longitude: number) => {
     try {
       const res = await fetch("/api/sites?public=true");
-      const sites = await res.json();
+      const response = await res.json();
+      const sites = response.data || response;
       const sitesWithCoords: SiteLocation[] = sites
         .filter((s: any) => s.lat && s.lon)
         .map((s: any) => ({ id: s.id, name: s.name, lat: parseFloat(s.lat), lon: parseFloat(s.lon) }));

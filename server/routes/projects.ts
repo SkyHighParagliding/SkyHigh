@@ -73,7 +73,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
   `).all(req.params.id);
 
   const documents = await db.prepare(`
-    SELECT d.*, pd.linked FROM project_documents pd
+    SELECT d.*, CASE WHEN d.driveFileId IS NOT NULL THEN 1 ELSE 0 END as linked FROM project_documents pd
     JOIN documents d ON d.id = pd.documentId
     WHERE pd.projectId = ?
     ORDER BY d.createdAt DESC
