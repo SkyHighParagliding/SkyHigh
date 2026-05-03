@@ -296,6 +296,7 @@ export function AdminDocuments() {
           </Link>
           <h1 className="text-3xl font-extrabold text-navy mb-2">Document Management</h1>
           <p className="text-muted-foreground">Club filing system aligned with the Procedures Manual folder structure.</p>
+          <p className="text-sm italic text-foreground-secondary mt-2">The Google Drive takes 10-30 seconds to connect and populate the folders below.</p>
         </div>
 
         <div className={`mb-6 p-4 rounded-lg border ${connected ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
