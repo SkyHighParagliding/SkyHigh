@@ -2,6 +2,7 @@ import { Router } from "express";
 import db from "../../db.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
+import { validateURLSafety } from "../../utils/urlValidator.js";
 
 const router = Router();
 
@@ -42,6 +43,12 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "channelUrl is required" });
   }
 
+  // Validate URL to prevent SSRF attacks
+  const urlValidation = validateURLSafety(channelUrl);
+  if (!urlValidation.valid) {
+    return res.status(400).json({ error: `Invalid URL: ${urlValidation.error}` });
+  }
+
   let channelId: string | null = null;
 
   if (channelUrl.includes("channel/UC")) {
@@ -50,15 +57,26 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (!channelId) {
-    const pageRes = await fetch(channelUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; SkyHighBot/1.0)" },
-    });
-    if (!pageRes.ok) {
-      return res.status(400).json({ error: `Failed to fetch channel page: ${pageRes.status}` });
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const pageRes = await fetch(channelUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; SkyHighBot/1.0)" },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!pageRes.ok) {
+        return res.status(400).json({ error: `Failed to fetch channel page: ${pageRes.status}` });
+      }
+      const html = await pageRes.text();
+      const cidMatch = html.match(/channel_id=([^"&\s]+)/);
+      if (cidMatch) channelId = cidMatch[1];
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        return res.status(408).json({ error: "Request timeout fetching channel page" });
+      }
+      return res.status(400).json({ error: `Failed to fetch channel page: ${err.message}` });
     }
-    const html = await pageRes.text();
-    const cidMatch = html.match(/channel_id=([^"&\s]+)/);
-    if (cidMatch) channelId = cidMatch[1];
   }
 
   if (!channelId) {
