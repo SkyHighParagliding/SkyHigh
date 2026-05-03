@@ -15,7 +15,10 @@ export function AdminPageViews() {
   const qc = useQueryClient();
   const { data: pageViews = [] } = useQuery<PageView[]>({
     queryKey: ['admin', 'pageviews'],
-    queryFn: () => api.get<PageView[]>('/api/pageviews', token),
+    queryFn: async () => {
+      const response = await api.get<{ data: PageView[] }>('/api/pageviews', token);
+      return response.data;
+    },
     enabled: !!token,
   });
   const [pvResetMsg, setPvResetMsg] = useState<{type: "success"|"error", text: string}|null>(null);
