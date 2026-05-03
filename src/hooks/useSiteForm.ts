@@ -127,8 +127,8 @@ export function useSiteForm() {
   const [allDbSites, setAllDbSites] = useState<{id: string, siteguideUrl: string}[]>([]);
 
   useEffect(() => {
-    api.get<Array<Record<string, string>>>('/api/sites')
-      .then((data) => setAllDbSites(data.map(s => ({ id: s.id, siteguideUrl: s.siteguideUrl || "" }))))
+    api.get<{ data: Array<Record<string, string>> }>('/api/sites')
+      .then((response) => setAllDbSites(response.data.map(s => ({ id: s.id, siteguideUrl: s.siteguideUrl || "" }))))
       .catch(() => {});
   }, []);
 
