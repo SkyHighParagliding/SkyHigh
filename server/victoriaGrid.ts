@@ -371,6 +371,18 @@ export async function getCachedVictoriaGrid(): VictoriaGrid | null {
   return null;
 }
 
+export async function getCachedWideGrid(): VictoriaGrid | null {
+  try {
+    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    if (cached) {
+      return JSON.parse(cached.gridData) as VictoriaGrid;
+    }
+  } catch (e) {
+    console.error("Wide grid: Cache read error", e);
+  }
+  return null;
+}
+
 function findNearestPoint(grid: VictoriaGrid, lat: number, lon: number): GridPoint | null {
   let bestPoint: GridPoint | null = null;
   let bestDist = Infinity;

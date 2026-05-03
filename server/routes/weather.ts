@@ -441,13 +441,22 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
 
-  const { fetchVictoriaGrid, fetchWideGrid, extractWindParticles } = await import("../victoriaGrid.js");
-  const [grid, wideGrid] = await Promise.all([
-    fetchVictoriaGrid(),
-    fetchWideGrid().catch(e => { log.error("Wide grid fetch failed:", e); return null; })
-  ]);
-  const particles = extractWindParticles(grid, site.lat, site.lon, wideGrid);
+  const { getCachedVictoriaGrid, getCachedWideGrid, extractWindParticles, fetchVictoriaGrid, fetchWideGrid } = await import("../victoriaGrid.js");
+  let grid = await getCachedVictoriaGrid();
+  let wideGrid = await getCachedWideGrid();
 
+  if (!grid) {
+    grid = await fetchVictoriaGrid().catch(e => { log.error("Victoria grid fetch failed:", e); return null; });
+  }
+  if (!grid) {
+    return res.status(503).json({ error: "Wind data temporarily unavailable" });
+  }
+
+  if (!wideGrid) {
+    wideGrid = await fetchWideGrid().catch(e => { log.warn("Wide grid fetch failed:", e); return null; });
+  }
+
+  const particles = extractWindParticles(grid, site.lat, site.lon, wideGrid);
   if (!particles) {
     return res.status(404).json({ error: "No wind data available for this location" });
   }
