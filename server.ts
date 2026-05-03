@@ -77,11 +77,59 @@ const submissionLimiter = rateLimit({
   max: () => {
     try {
       const row = db.prepare("SELECT value FROM settings WHERE key = 'submissionRateLimit'").get() as { value: string } | undefined;
-      const val = row?.value ? parseInt(row.value, 10) : 5;
-      return (val > 0 && val <= 100) ? val : 5;
-    } catch { return 5; }
+      const val = row?.value ? parseInt(row.value, 10) : 20;
+      return (val > 0 && val <= 100) ? val : 20;
+    } catch { return 20; }
   },
   message: { error: "Too many upload attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for general state-changing operations (POST, PUT, DELETE)
+// Authenticated users: 100 requests/hour per user
+const stateChangeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 100,
+  message: { error: "Too many requests. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    // Use authenticated user ID if available, otherwise IP
+    return req.user?.id || req.ip || "unknown";
+  },
+  skip: (req) => {
+    // Skip rate limiting for safe HTTP methods
+    return ["GET", "HEAD", "OPTIONS"].includes(req.method);
+  },
+});
+
+// Rate limiter for bulk delete operations: 20 requests/hour
+const bulkOperationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many bulk operations. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    return req.user?.id || req.ip || "unknown";
+  },
+});
+
+// Rate limiter for public registration: 3 attempts/hour per IP
+const publicRegistrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: "Too many registration attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for password reset requests: 5 per hour per IP
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many password reset attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -132,6 +180,20 @@ async function startServer() {
 
   // CSRF Token endpoint: Allow frontend to fetch token without side effects
   app.get("/api/csrf-token", csrfTokenProvider, getCSRFTokenRoute);
+
+  // Rate limiting: Apply general rate limiter to all state-changing operations
+  // Skips GET/HEAD/OPTIONS (safe methods), limits POST/PUT/DELETE/PATCH
+  app.use("/api/", stateChangeLimiter);
+
+  // Rate limiting: Public registration endpoint
+  app.post("/api/auth/register-provider", publicRegistrationLimiter);
+
+  // Rate limiting: Password reset request endpoints
+  app.post("/api/auth/request-password-reset", passwordResetLimiter);
+  app.post("/api/auth/request-pilot-password-reset", passwordResetLimiter);
+
+  // Rate limiting: Bulk delete operations
+  app.post("/api/contacts/bulk-delete", bulkOperationLimiter);
 
   app.use("/api/sites", sitesRouter);
   app.use("/api/weather", weatherRouter);
