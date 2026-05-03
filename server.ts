@@ -9,6 +9,7 @@ import db from "./server/db.js";
 import "./server/seed.js";
 import { fetchWeatherData } from "./server/weather.js";
 import { cleanExpiredSessions } from "./server/middleware/auth.js";
+import { csrfTokenProvider, csrfTokenValidator, getCSRFTokenRoute } from "./server/middleware/csrf.js";
 import createLogger from "./server/utils/logger.js";
 import { startScheduledJobs } from "./server/utils/scheduledJobs.js";
 
@@ -123,6 +124,14 @@ async function startServer() {
   app.use("/api/auth/login", loginLimiter);
   app.use("/api/search/public", searchLimiter);
   app.use("/api/search/admin", searchLimiter);
+
+  // CSRF Protection: Validate tokens on state-changing requests
+  app.use("/api/", csrfTokenValidator);
+  // CSRF Token Provider: Include token in response headers for authenticated users
+  app.use("/api/", csrfTokenProvider);
+
+  // CSRF Token endpoint: Allow frontend to fetch token without side effects
+  app.get("/api/csrf-token", csrfTokenProvider, getCSRFTokenRoute);
 
   app.use("/api/sites", sitesRouter);
   app.use("/api/weather", weatherRouter);
