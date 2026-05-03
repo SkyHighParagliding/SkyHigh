@@ -1,6 +1,9 @@
 import { fromZonedTime } from 'date-fns-tz';
 import db from "./db.js";
 import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
+import createLogger from "./utils/logger.js";
+
+const log = createLogger("weather");
 
 const LIVE_WIND_VIC_URL = "https://live-wind.com.au/windobs/v3/query_newest_obs_smart_v2.php?state=vic";
 const OPEN_METEO_URL = "http://api.open-meteo.com/v1/forecast";
@@ -23,7 +26,7 @@ async function fetchWithRetry(url: string, options: any = {}, retries = 3, backo
       clearTimeout(timeoutId);
       if (i === retries - 1) throw err;
       const wait = backoff * Math.pow(2, i);
-      console.warn(`Fetch failed (attempt ${i + 1}/${retries}). Retrying in ${wait}ms...`, err instanceof Error ? err.message : err);
+      log.warn(`Fetch failed (attempt ${i + 1}/${retries}). Retrying in ${wait}ms...`, err instanceof Error ? err.message : err);
       await delay(wait);
     }
   }
@@ -94,7 +97,7 @@ export async function fetchWeatherData(isManual = false) {
           }
         });
       } catch (err) {
-        console.error("Weather scraper: Failed to fetch live-wind.com.au data:", err);
+        log.error("Weather scraper: Failed to fetch live-wind.com.au data:", err);
       }
     }
 
@@ -131,7 +134,7 @@ export async function fetchWeatherData(isManual = false) {
         console.log(`Weather scraper: Fetching WU data for site ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (Station: ${stationId})${isManualTrigger ? ' (Manual Trigger)' : ''}...`);
         const wuApiKey = process.env.WU_API_KEY;
         if (!wuApiKey) {
-          console.error("Weather scraper: WU_API_KEY not configured in secrets");
+          log.error("Weather scraper: WU_API_KEY not configured in secrets");
           return;
         }
         const wuUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${stationId}&format=json&units=m&apiKey=${wuApiKey}`;
@@ -161,13 +164,13 @@ export async function fetchWeatherData(isManual = false) {
       try {
         await fetchStationData(site.liveStationId, site.id, site.id, isManual);
       } catch (err) {
-        console.error(`Weather scraper: Failed to fetch primary weather data for ${site.id}:`, err);
+        log.error(`Weather scraper: Failed to fetch primary weather data for ${site.id}:`, err);
       }
       if (site.liveStationIdAlt) {
         try {
           await fetchStationData(site.liveStationIdAlt, site.id, `${site.id}:alt`, isManual);
         } catch (err) {
-          console.error(`Weather scraper: Failed to fetch alt weather data for ${site.id}:`, err);
+          log.error(`Weather scraper: Failed to fetch alt weather data for ${site.id}:`, err);
         }
       }
     }
@@ -189,16 +192,16 @@ export async function fetchWeatherData(isManual = false) {
             console.log(`Weather scraper: Updated ECMWF forecast for ${site.id} (Hour: ${hour})`);
           }
         } catch (err) {
-          console.error(`Weather scraper: Failed to extract forecast for ${site.id}:`, err);
+          log.error(`Weather scraper: Failed to extract forecast for ${site.id}:`, err);
         }
       }
     } catch (err) {
-      console.error("Weather scraper: Failed to process forecasts:", err);
+      log.error("Weather scraper: Failed to process forecasts:", err);
     }
 
     await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run('weatherScraperLastRun', new Date().toISOString());
   } catch (err) {
-    console.error("Weather scraper: CRITICAL ERROR in fetchWeatherData:", err);
+    log.error("Weather scraper: CRITICAL ERROR in fetchWeatherData:", err);
   }
 
   scheduleNextFetch(minInterval, maxInterval);
@@ -209,7 +212,7 @@ async function initExtendedForecast() {
     const { scheduleExtendedForecast } = await import("./extendedForecast.js");
     scheduleExtendedForecast();
   } catch (err) {
-    console.error("Weather scraper: Failed to initialize extended forecast scheduler:", err);
+    log.error("Weather scraper: Failed to initialize extended forecast scheduler:", err);
   }
 }
 
