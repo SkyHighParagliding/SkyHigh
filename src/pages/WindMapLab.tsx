@@ -60,10 +60,10 @@ export function WindMapLab() {
   }, [setpoints]);
 
   useEffect(() => {
-    api.get<Array<Record<string, string>>>("/api/sites")
-      .then((data) =>
+    api.get<{ data: Array<Record<string, string>> }>("/api/sites")
+      .then((response) =>
         setSites(
-          data
+          response.data
             .filter((s) => s.lat && s.lon)
             .map((s) => ({
               id: s.id,
