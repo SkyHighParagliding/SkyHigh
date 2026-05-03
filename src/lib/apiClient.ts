@@ -20,6 +20,42 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
+// CSRF token cache for this session
+let cachedCSRFToken: string | null = null;
+
+/**
+ * Fetch CSRF token from server if not cached
+ */
+async function getCSRFToken(): Promise<string> {
+  if (cachedCSRFToken) return cachedCSRFToken;
+
+  try {
+    const response = await fetch('/api/csrf-token', {
+      credentials: 'include',
+    });
+    if (response.ok) {
+      const data = await response.json() as { csrfToken?: string };
+      if (data.csrfToken) {
+        cachedCSRFToken = data.csrfToken;
+        return data.csrfToken;
+      }
+    }
+  } catch {
+    // Silently fail - CSRF token might not be available if not authenticated
+  }
+  return '';
+}
+
+/**
+ * Update cached CSRF token from response headers
+ */
+function updateCSRFTokenFromResponse(res: Response) {
+  const token = res.headers.get('x-csrf-token');
+  if (token) {
+    cachedCSRFToken = token;
+  }
+}
+
 async function request<T>(url: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', headers = {}, body, signal } = opts;
 
@@ -28,12 +64,24 @@ async function request<T>(url: string, opts: RequestOptions = {}): Promise<T> {
     fetchHeaders['Content-Type'] = 'application/json';
   }
 
+  // Add CSRF token to state-changing requests
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const csrfToken = await getCSRFToken();
+    if (csrfToken) {
+      fetchHeaders['X-CSRF-Token'] = csrfToken;
+    }
+  }
+
   const res = await fetch(url, {
     method,
     headers: fetchHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     signal,
+    credentials: 'include',
   });
+
+  // Update CSRF token from response headers
+  updateCSRFTokenFromResponse(res);
 
   if (!res.ok) {
     let data: unknown;
