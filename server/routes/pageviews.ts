@@ -2,6 +2,7 @@ import { Router } from "express";
 import db from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { getPaginationParams, createPaginatedResponse } from "../utils/pagination.js";
 
 const router = Router();
 
@@ -16,8 +17,10 @@ router.post("/track", asyncHandler(async (req, res) => {
 }));
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
-  const rows = await db.prepare("SELECT * FROM page_views ORDER BY views DESC").all();
-  res.json(rows);
+  const { limit, offset } = getPaginationParams(req.query);
+  const rows = await db.prepare("SELECT * FROM page_views ORDER BY views DESC LIMIT ? OFFSET ?").all(limit, offset);
+  const countResult = await db.prepare("SELECT COUNT(*) as count FROM page_views").get() as { count: number };
+  res.json(createPaginatedResponse(rows, countResult.count, limit, offset));
 }));
 
 router.post("/reset/:path", requireAuth, asyncHandler(async (req, res) => {

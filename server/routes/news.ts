@@ -3,12 +3,16 @@ import db from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
+import { getPaginationParams, createPaginatedResponse } from "../utils/pagination.js";
 
 const router = Router();
 
 router.get("/", asyncHandler(async (req, res) => {
-  const news = await db.prepare("SELECT * FROM news ORDER BY date DESC").all();
-  res.json(news);
+  const { limit, offset } = getPaginationParams(req.query);
+  const data = await db.prepare("SELECT * FROM news ORDER BY date DESC LIMIT ? OFFSET ?").all(limit, offset) as any[];
+  const countResult = await db.prepare("SELECT COUNT(*) as count FROM news").get() as { count: number };
+  const total = countResult.count;
+  res.json(createPaginatedResponse(data, total, limit, offset));
 }));
 
 router.get("/:id", asyncHandler(async (req, res) => {
