@@ -20,7 +20,10 @@ export function useAdminSites() {
   const { token } = useAuth();
   return useQuery({
     queryKey: adminKeys.sites(),
-    queryFn: () => api.get<Site[]>('/api/sites', token),
+    queryFn: async () => {
+      const response = await api.get<{ data: Site[] }>('/api/sites', token);
+      return response.data;
+    },
     enabled: !!token,
   });
 }

@@ -14,7 +14,10 @@ export const adminDataKeys = {
 export function usePageViews(token: string | null) {
   return useQuery<Record<string, unknown>[]>({
     queryKey: adminDataKeys.pageViews,
-    queryFn: () => api.get<Record<string, unknown>[]>('/api/analytics/page-views', token),
+    queryFn: async () => {
+      const response = await api.get<{ data: Record<string, unknown>[] }>('/api/analytics/page-views', token);
+      return response.data;
+    },
     enabled: !!token,
   });
 }

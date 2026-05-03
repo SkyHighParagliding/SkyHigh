@@ -160,9 +160,9 @@ function ContactPicker({
         setResults([]);
         return;
       }
-      api.get<Contact[]>(`/api/contacts/search?q=${encodeURIComponent(q)}`, token)
-        .then((data) => {
-          setResults(data.filter((c) => !excludeIds.includes(c.id)));
+      api.get<{ data: Contact[] }>(`/api/contacts/search?q=${encodeURIComponent(q)}`, token)
+        .then((response) => {
+          setResults(response.data.filter((c) => !excludeIds.includes(c.id)));
           setShowDropdown(true);
         })
         .catch(() => setResults([]));
