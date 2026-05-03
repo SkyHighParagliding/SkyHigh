@@ -165,8 +165,8 @@ export function ProceduresManual() {
 
   async function fetchProcedures() {
     try {
-      const data = await api.get<Procedure[]>("/api/procedures");
-      setProcedures(data);
+      const response = await api.get<{ data: Procedure[] }>("/api/procedures");
+      setProcedures(response.data);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to load procedures");
     } finally {
