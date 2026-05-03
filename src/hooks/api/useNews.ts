@@ -23,6 +23,9 @@ export const newsKeys = {
 export function useNews() {
   return useQuery({
     queryKey: newsKeys.list(),
-    queryFn: () => api.get<NewsItem[]>('/api/news'),
+    queryFn: async () => {
+      const response = await api.get<{ data: NewsItem[] }>('/api/news');
+      return response.data;
+    },
   });
 }

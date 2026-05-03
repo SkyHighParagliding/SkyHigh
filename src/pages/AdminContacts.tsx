@@ -116,8 +116,8 @@ export function AdminContacts() {
   const [groupError, setGroupError] = useState("");
 
   const fetchContacts = () => {
-    api.get<Contact[]>("/api/contacts", token)
-      .then(data => { if (Array.isArray(data)) setContacts(data); })
+    api.get<{ data: Contact[] }>("/api/contacts", token)
+      .then(response => { if (Array.isArray(response.data)) setContacts(response.data); })
       .catch(() => {});
   };
 
