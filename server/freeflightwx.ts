@@ -1,5 +1,12 @@
+import db from "./db.js";
+
 const FETCH_TIMEOUT_MS = 10000;
-const CACHE_TTL_MS = 30000;
+
+async function getCacheTtlMs(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheFreeFlightWxTtl") as { value: string } | undefined;
+  const seconds = parseInt(row?.value || "30", 10);
+  return seconds * 1000;
+}
 
 export interface FreeFlightWxStation {
   slug: string;
@@ -193,7 +200,8 @@ export async function fetchFreeFlightWxData(gaugeUrl: string): Promise<FreeFligh
       const oldestKey = cache.keys().next().value;
       if (oldestKey) cache.delete(oldestKey);
     }
-    cache.set(parsed.baseUrl, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
+    const cacheTtlMs = await getCacheTtlMs();
+    cache.set(parsed.baseUrl, { data: result, expiresAt: Date.now() + cacheTtlMs });
     return result;
   } catch (err: any) {
     clearTimeout(timeout);

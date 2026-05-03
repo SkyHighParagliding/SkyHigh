@@ -1,4 +1,5 @@
 import createLogger from "./utils/logger.js";
+import db from "./db.js";
 
 const log = createLogger("tides");
 
@@ -109,8 +110,18 @@ interface CachedPredictions {
 }
 
 const predictionsCache: Map<string, CachedPredictions> = new Map();
-const BOM_PREDICTIONS_TTL = 6 * 60 * 60 * 1000;
-const ASTRO_PREDICTIONS_TTL = 30 * 60 * 1000;
+
+async function getBomTideTtlMs(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheBomTideTtl") as { value: string } | undefined;
+  const hours = parseInt(row?.value || "6", 10);
+  return hours * 60 * 60 * 1000;
+}
+
+async function getAstroTideTtlMs(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAstroTideTtl") as { value: string } | undefined;
+  const minutes = parseInt(row?.value || "30", 10);
+  return minutes * 60 * 1000;
+}
 
 async function fetchBomTideData(station: TideStation): Promise<TidePrediction[] | null> {
   if (!station.bomPort) return null;
@@ -386,7 +397,7 @@ async function fetchAndCachePredictions(station: TideStation): Promise<CachedPre
 
 export async function getCachedTideData(station: TideStation): Promise<TideData> {
   const cached = predictionsCache.get(station.id);
-  const ttl = cached?.source === "bom" ? BOM_PREDICTIONS_TTL : ASTRO_PREDICTIONS_TTL;
+  const ttl = cached?.source === "bom" ? await getBomTideTtlMs() : await getAstroTideTtlMs();
 
   let activePredictions: CachedPredictions;
   if (cached && Date.now() - cached.cachedAt < ttl) {

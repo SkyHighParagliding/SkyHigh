@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import db from "../db.js";
 
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+async function getSessionTtlMs(): Promise<number> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAdminSessionTtl") as { value: string } | undefined;
+  const hours = parseInt(row?.value || "24", 10);
+  return hours * 60 * 60 * 1000;
+}
 
 export function isDevBypassActive(): boolean {
   return process.env.DEV_BYPASS_AUTH?.toLowerCase() === "true";
@@ -38,7 +42,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   const sessionAge = Date.now() - new Date(session.createdAt).getTime();
-  if (sessionAge > SESSION_TTL_MS) {
+  const sessionTtlMs = await getSessionTtlMs();
+  if (sessionAge > sessionTtlMs) {
     await db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
     return res.status(401).json({ error: "Session expired" });
   }
@@ -72,7 +77,8 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
   }
 
   const sessionAge = Date.now() - new Date(session.createdAt).getTime();
-  if (sessionAge > SESSION_TTL_MS) {
+  const sessionTtlMs = await getSessionTtlMs();
+  if (sessionAge > sessionTtlMs) {
     await db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
     return res.status(401).json({ error: "Session expired" });
   }
@@ -90,6 +96,7 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
 }
 
 export async function cleanExpiredSessions() {
-  const cutoff = new Date(Date.now() - SESSION_TTL_MS).toISOString();
+  const sessionTtlMs = await getSessionTtlMs();
+  const cutoff = new Date(Date.now() - sessionTtlMs).toISOString();
   await db.prepare("DELETE FROM admin_sessions WHERE createdAt < ?").run(cutoff);
 }
