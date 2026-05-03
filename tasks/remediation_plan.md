@@ -215,9 +215,96 @@ If someone tried to modify `validRoleFlags` or `groupName` to include `"name; DR
 - ✅ Step 2: Plaintext password guard - DONE
 - ✅ Step 3: CSRF token validation - DONE
 - ✅ Step 4: SSRF prevention (URL validation) - DONE
-- ⏳ Step 5: Remove hardcoded admin credentials - PENDING
+- ✅ Step 5: Remove hardcoded admin credentials - DONE
 - ⏳ Step 6: Rate limiting on state-changing endpoints - PENDING
 - ⏳ Step 7: PostgreSQL connection pool config - PENDING
+
+---
+
+### STEP 5: Remove Hardcoded Admin Credentials
+**Category:** Security (CRITICAL)  
+**Status:** ✅ COMPLETED
+
+**What Was Done:**
+1. Modified `server/routes/auth.ts` (lines 62-75)
+   - Removed hardcoded email and password strings
+   - Read `DEFAULT_ADMINS` environment variable (JSON array format)
+   - Parse JSON and iterate through admin array
+   - Call `ensureDefaultAdmin()` for each configured admin
+   - Add error handling for malformed JSON with logging
+   - Only create admins if env var is set (production-safe)
+
+2. Updated `.env.template`
+   - Added `DEFAULT_ADMINS` variable with documentation
+   - Showed example format: `[{"name":"Name","email":"email@example.com","password":"password"},...]`
+   - Clear warning that this should be unset in production
+   - Documented that weak passwords should not be used
+
+3. Updated `.env` with development credentials
+   - Set `DEFAULT_ADMINS` with the original admin accounts:
+     - Jon / jonpamment@gmail.com / admin
+     - Admin / admin@skyhigh.org.au / admin
+   - Same as before, but now in environment variable instead of source code
+
+**Before (Vulnerable):**
+```typescript
+// Lines 62-65 - visible in git history and source code
+(async () => {
+  await ensureDefaultAdmin("Jon", "jonpamment@gmail.com", "admin");
+  await ensureDefaultAdmin("Admin", "admin@skyhigh.org.au", "admin");
+})();
+```
+❌ Anyone with repo access sees default passwords
+
+**After (Secure):**
+```typescript
+// Read from environment variable only
+if (process.env.DEFAULT_ADMINS) {
+  const defaultAdmins = JSON.parse(process.env.DEFAULT_ADMINS);
+  for (const admin of defaultAdmins) {
+    await ensureDefaultAdmin(admin.name, admin.email, admin.password);
+  }
+}
+```
+✅ Credentials not in source code, only in .env (which is .gitignored)
+
+**Verification Completed:**
+- ✅ No hardcoded credentials in source code
+- ✅ Development still creates default admins on startup
+- ✅ Can still login with jonpamment@gmail.com / admin
+- ✅ Production mode: no admins created if env var unset
+- ✅ Error handling for malformed JSON
+- ✅ Code compiles without new TypeScript errors
+
+**Development Impact:**
+✅ **No breaking changes**
+- Same login credentials work
+- Same admin accounts created on startup
+- Transparently reads from `.env`
+- Developers unfamiliar with .env can review `.env.template` for documentation
+
+**Production Impact:**
+✅ **Improved security**
+- Leave `DEFAULT_ADMINS` unset in production
+- No default admins auto-created
+- Admins set up manually via proper onboarding flow
+- Credentials never stored in version control
+
+**JSON Format:**
+```json
+[
+  {
+    "name": "Administrator",
+    "email": "admin@example.com",
+    "password": "strong-password-here"
+  },
+  {
+    "name": "Backup Admin",
+    "email": "admin2@example.com",
+    "password": "another-strong-password"
+  }
+]
+```
 
 ---
 
@@ -355,8 +442,8 @@ After: `validateURLSafety(url)` → All blocked
 
 ---
 
-## NEXT: STEP 5 - Remove Hardcoded Admin Credentials
+## NEXT: STEP 6 - Add Rate Limiting to State-Changing Endpoints
 **Priority:** CRITICAL  
-**Location:** `server/routes/auth.ts:62-65`
-**Scope:** Remove hardcoded "Jon" and "Admin" user initialization, move to environment variables
+**Location:** `server.ts` middleware setup
+**Scope:** Apply rate limiting to POST, PUT, DELETE, PATCH endpoints (currently only login is limited)
 
