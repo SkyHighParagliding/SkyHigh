@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
 import db from "./db.js";
+import createLogger from "./utils/logger.js";
+
+const log = createLogger("seed");
 
 const _seedFilename = fileURLToPath(import.meta.url);
 const _seedDirname = path.dirname(_seedFilename);
@@ -139,7 +142,7 @@ try {
     seedSettings = data.map((s: any) => [s.key, s.value]);
   }
 } catch (e) {
-  console.error("Failed to load seed_settings.json", e);
+  log.error("Failed to load seed_settings.json", e);
 }
 
 const insertSetting = await db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
@@ -161,7 +164,7 @@ if (Number(count.count) === 0) {
     const scrapedData = fs.readFileSync(path.join(seedsDir, 'scraped_sites.json'), 'utf8');
     seedSites = JSON.parse(scrapedData);
   } catch (e) {
-    console.log("Could not load scraped_sites.json, using fallback seed data.");
+    log.info("Could not load scraped_sites.json, using fallback seed data.");
     seedSites = [
       {
         id: "portsea",
@@ -241,7 +244,7 @@ if (Number(pagesCount.count) === 0) {
       seedPages = JSON.parse(fs.readFileSync(pagesPath, 'utf8'));
     }
   } catch (e) {
-    console.error("Failed to load seed_pages.json", e);
+    log.error("Failed to load seed_pages.json", e);
   }
 
   const insertManyPages = await db.transaction(async (pages) => {
@@ -289,7 +292,7 @@ if (Number(contactsCount.count) === 0) {
       }
     }
   } catch (e) {
-    console.error("Failed to load seed_contacts.json", e);
+    log.error("Failed to load seed_contacts.json", e);
   }
 
   if (seedContacts.length > 0) {
@@ -318,7 +321,7 @@ if (Number(projectsCount.count) === 0) {
       }
     }
   } catch (e) {
-    console.error("Failed to load seed_projects.json", e);
+    log.error("Failed to load seed_projects.json", e);
   }
 
   try {
@@ -333,7 +336,7 @@ if (Number(projectsCount.count) === 0) {
       }
     }
   } catch (e) {
-    console.error("Failed to load seed_project_contacts.json", e);
+    log.error("Failed to load seed_project_contacts.json", e);
   }
 }
 
@@ -351,7 +354,7 @@ if (Number(eslCount.count) === 0) {
       }
     }
   } catch (e) {
-    console.error("Failed to load seed_external_listings.json", e);
+    log.error("Failed to load seed_external_listings.json", e);
   }
 }
 
@@ -369,7 +372,7 @@ if (Number(proceduresCount.count) === 0) {
       seedProcedures = JSON.parse(fs.readFileSync(proceduresPath, 'utf8'));
     }
   } catch (e) {
-    console.error("Failed to load seed_procedures.json", e);
+    log.error("Failed to load seed_procedures.json", e);
   }
 
   function parseStepsToArray(val: any): string[] {
@@ -405,7 +408,7 @@ if (Number(newsCount.count) === 0) {
       seedNews = JSON.parse(fs.readFileSync(newsPath, 'utf8'));
     }
   } catch (e) {
-    console.error("Failed to load seed_news.json", e);
+    log.error("Failed to load seed_news.json", e);
   }
 
   const insertManyNews = await db.transaction(async (items) => {
@@ -474,7 +477,7 @@ if (Number(ghCount.count) === 0) {
       await insertGH.run(site.id, site.name, site.lat, site.lon, site.windDirections, site.description, site.notes);
     }
   })();
-  console.log(`Seeded ${ghSites.length} ground handling sites`);
+  log.info(`Seeded ${ghSites.length} ground handling sites`);
 }
 
 {
