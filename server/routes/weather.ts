@@ -511,21 +511,21 @@ router.post("/scrape-now", asyncHandler(async (req, res) => {
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchExtendedForecast } = await import("../extendedForecast.js");
-  fetchExtendedForecast().catch(err => console.error("Manual extended forecast fetch failed:", err));
-  res.json({ success: true, message: "Extended forecast fetch triggered" });
+  const { fetchExtendedForecastWithStatus } = await import("../extendedForecast.js");
+  const status = await fetchExtendedForecastWithStatus();
+  res.json(status);
 }));
 
 router.post("/victoria-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
-  fetchVictoriaGrid(true).catch(err => console.error("Manual Victoria grid fetch failed:", err));
-  res.json({ success: true, message: "Victoria grid fetch triggered" });
+  const { fetchVictoriaGridWithStatus } = await import("../victoriaGrid.js");
+  const status = await fetchVictoriaGridWithStatus();
+  res.json(status);
 }));
 
 router.post("/wide-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchWideGrid } = await import("../victoriaGrid.js");
-  fetchWideGrid(true).catch(err => console.error("Manual Wide grid fetch failed:", err));
-  res.json({ success: true, message: "Wide grid fetch triggered" });
+  const { fetchWideGridWithStatus } = await import("../victoriaGrid.js");
+  const status = await fetchWideGridWithStatus();
+  res.json(status);
 }));
 
 export default router;

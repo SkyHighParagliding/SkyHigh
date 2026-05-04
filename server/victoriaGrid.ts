@@ -8,6 +8,15 @@ const WIDE_GRID_CACHE_KEY = "wide_grid";
 const GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
 const WIDE_GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
 
+export interface GridFetchStatus {
+  success: boolean;
+  message: string;
+  pointsFetched?: number;
+  pointsExpected?: number;
+  fetchPercentage?: number;
+  cacheAgeMinutes?: number;
+}
+
 const VIC_LAT_MIN = -39.2;
 const VIC_LAT_MAX = -34.0;
 const VIC_LON_MIN = 141.0;
@@ -618,5 +627,119 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   }
 
   return result;
+}
+
+export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
+  try {
+    const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+    const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
+    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
+
+    const grid = await fetchVictoriaGrid(true);
+
+    if (!grid.points || grid.points.length === 0) {
+      if (cacheAgeMinutes && cacheAgeMinutes < 18 * 60) {
+        return {
+          success: true,
+          message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
+          cacheAgeMinutes,
+          pointsFetched: 0,
+          pointsExpected: 390,
+          fetchPercentage: 0
+        };
+      }
+      return {
+        success: false,
+        message: 'Rate limited and no cached data available',
+        pointsFetched: 0,
+        pointsExpected: 390,
+        fetchPercentage: 0
+      };
+    }
+
+    const expectedPoints = Math.round((VIC_LON_MAX - VIC_LON_MIN) / DELTA + 1) * Math.round((VIC_LAT_MAX - VIC_LAT_MIN) / DELTA + 1);
+    const percentage = Math.round((grid.points.length / expectedPoints) * 100);
+
+    if (percentage < 100) {
+      return {
+        success: true,
+        message: `Partial fetch — ${percentage}% of ${expectedPoints} points (${grid.points.length} points)`,
+        pointsFetched: grid.points.length,
+        pointsExpected: expectedPoints,
+        fetchPercentage: percentage
+      };
+    }
+
+    return {
+      success: true,
+      message: `Downloaded fresh data — ${grid.points.length} points (100%)`,
+      pointsFetched: grid.points.length,
+      pointsExpected: expectedPoints,
+      fetchPercentage: 100
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Error fetching data: ${errorMsg}`
+    };
+  }
+}
+
+export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
+  try {
+    const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
+    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
+
+    const grid = await fetchWideGrid(true);
+
+    if (!grid.points || grid.points.length === 0) {
+      if (cacheAgeMinutes && cacheAgeMinutes < 18 * 60) {
+        return {
+          success: true,
+          message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
+          cacheAgeMinutes,
+          pointsFetched: 0,
+          pointsExpected: 713,
+          fetchPercentage: 0
+        };
+      }
+      return {
+        success: false,
+        message: 'Rate limited and no cached data available',
+        pointsFetched: 0,
+        pointsExpected: 713,
+        fetchPercentage: 0
+      };
+    }
+
+    const expectedPoints = Math.round((WIDE_LON_MAX - WIDE_LON_MIN) / WIDE_DELTA + 1) * Math.round((WIDE_LAT_MAX - WIDE_LAT_MIN) / WIDE_DELTA + 1);
+    const percentage = Math.round((grid.points.length / expectedPoints) * 100);
+
+    if (percentage < 100) {
+      return {
+        success: true,
+        message: `Partial fetch — ${percentage}% of ${expectedPoints} points (${grid.points.length} points)`,
+        pointsFetched: grid.points.length,
+        pointsExpected: expectedPoints,
+        fetchPercentage: percentage
+      };
+    }
+
+    return {
+      success: true,
+      message: `Downloaded fresh data — ${grid.points.length} points (100%)`,
+      pointsFetched: grid.points.length,
+      pointsExpected: expectedPoints,
+      fetchPercentage: 100
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Error fetching data: ${errorMsg}`
+    };
+  }
 }
 
