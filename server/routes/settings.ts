@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
 import { invalidateSitesCache } from "./sites/helpers.js";
+import { fixAllStaleImages } from "../utils/fixStaleImages.js";
 
 const router = Router();
 
@@ -33,6 +34,12 @@ router.put("/", requireAuth, asyncHandler(async (req, res) => {
     invalidateSitesCache();
   }
   res.json({ success: true });
+}));
+
+router.post("/fix-stale-images", requireAuth, asyncHandler(async (req, res) => {
+  const result = await fixAllStaleImages();
+  invalidateSitesCache();
+  res.json(result);
 }));
 
 export default router;
