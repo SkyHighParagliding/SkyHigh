@@ -2,7 +2,10 @@ import db from "./db.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
 import { fromZonedTime } from 'date-fns-tz';
 
-const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast";
+const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
+const OPEN_METEO_URL = OPEN_METEO_API_KEY
+  ? `https://customer-api.open-meteo.com/v1/forecast`
+  : `https://api.open-meteo.com/v1/forecast`;
 const GRID_CACHE_KEY = "victoria_grid";
 const WIDE_GRID_CACHE_KEY = "wide_grid";
 const GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
@@ -149,6 +152,7 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
       timezone: 'Australia/Melbourne',
       forecast_days: '2'
     });
+    if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
     const url = `${OPEN_METEO_URL}?${params.toString()}`;
 
@@ -190,6 +194,7 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
 
   if (completeness < 0.8) {
     console.warn(`Victoria grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
+    if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
     if (cached) {
       try {
@@ -310,6 +315,7 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
       timezone: 'Australia/Melbourne',
       forecast_days: '2'
     });
+    if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
     const url = `${OPEN_METEO_URL}?${params.toString()}`;
 
@@ -350,6 +356,7 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
 
   if (completeness < 0.8) {
     console.warn(`Wide grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
+    if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
     if (cached) {
       try {
