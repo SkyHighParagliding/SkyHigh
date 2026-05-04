@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, LogIn, Mail, ArrowLeft, UserPlus } from "lucide-react";
@@ -8,7 +9,8 @@ import { api } from "@/lib/apiClient";
 type View = "login" | "forgot" | "first-time" | "provider-signup";
 
 export function AdminLogin() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [view, setView] = useState<View>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +20,12 @@ export function AdminLogin() {
   const [successMessage, setSuccessMessage] = useState("");
   const [providerName, setProviderName] = useState("");
   const [providerEmail, setProviderEmail] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/admin");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
