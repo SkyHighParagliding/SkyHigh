@@ -101,22 +101,33 @@ async function runDriveSync() {
   }
 }
 
-async function prefetchWindGrids() {
+async function fetchVictoriaGridDaily() {
   try {
-    const { fetchVictoriaGrid, fetchWideGrid } = await import("../victoriaGrid.js");
-    await Promise.all([
-      fetchVictoriaGrid(true).catch(e => log.warn(`Victoria grid pre-fetch failed: ${e.message}`)),
-      fetchWideGrid(true).catch(e => log.warn(`Wide grid pre-fetch failed: ${e.message}`))
-    ]);
-    log.info("Wind grid pre-fetch completed");
+    const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
+    await fetchVictoriaGrid(true);
+    log.info("Victoria grid daily fetch completed");
   } catch (e: any) {
-    log.error(`Wind grid pre-fetch error: ${e.message}`);
+    log.error(`Victoria grid daily fetch failed: ${e.message}`);
+  }
+}
+
+async function fetchWideGridDaily() {
+  try {
+    const { fetchWideGrid } = await import("../victoriaGrid.js");
+    await fetchWideGrid(true);
+    log.info("Wide grid daily fetch completed");
+  } catch (e: any) {
+    log.error(`Wide grid daily fetch failed: ${e.message}`);
   }
 }
 
 export async function startScheduledJobs() {
-  cron.schedule("*/50 * * * *", prefetchWindGrids, { timezone: "Australia/Melbourne" });
-  log.info("Wind grid pre-fetch scheduled: every 50 minutes");
+  // Daily wind grid pre-fetches: Victoria at 5:00am, Wide at 5:30am (Melbourne time)
+  cron.schedule("0 5 * * *", fetchVictoriaGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Victoria grid daily fetch scheduled: 5:00am Melbourne time");
+
+  cron.schedule("30 5 * * *", fetchWideGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Wide grid daily fetch scheduled: 5:30am Melbourne time");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));

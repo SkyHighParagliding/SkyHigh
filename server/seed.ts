@@ -120,7 +120,7 @@ let seedSettings: [string, string][] = [
   ['weatherScraperEndHour', '20'],
   ['schedSiteguideHour', '5'],
   ['schedSiteguideMinute', '0'],
-  ['schedExtendedForecastHour', '5'],
+  ['schedExtendedForecastHour', '4'],
   ['schedExtendedForecastMinute', '30'],
   ['submissionNotifyHour', '19'],
   ['submissionNotifyEnabled', 'true'],
