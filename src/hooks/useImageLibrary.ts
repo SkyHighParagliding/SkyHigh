@@ -339,25 +339,10 @@ export function useImageLibrary() {
             pairs = legacyWide.map(w => ({ wide: w, banner: "" }));
           }
         }
-        const remoteEntries = pairs.filter(p => p.wide && !p.wide.startsWith("/uploads/"));
-        if (remoteEntries.length > 0 && !localizedRef.current) {
-          localizedRef.current = true;
-          setLocalizing(true);
-          const localized = await Promise.all(
-            pairs.map(async (p) => {
-              if (!p.wide || p.wide.startsWith("/uploads/")) return p;
-              try {
-                const data = await api.post<{ wideImage: string }>("/api/ai/process-image-url", { url: p.wide }, token);
-                return { ...p, wide: data.wideImage };
-              } catch { return p; }
-            })
-          );
-          try { await updateSettings({ imageLibrary: JSON.stringify(localized) }); } catch {}
-          setImages(localized);
-          setSavedImages(localized);
-          setLocalizing(false);
-          return;
-        }
+        // Skip localization for local paths and absolute URLs (including R2)
+        // Only localize relative URLs that don't start with / or http(s)://
+        setImages(pairs);
+        setSavedImages(pairs);
         setImages(pairs);
         setSavedImages(pairs);
       } catch {
