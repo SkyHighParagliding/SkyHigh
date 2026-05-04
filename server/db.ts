@@ -59,6 +59,8 @@ function convertSchemaToSqlite(sql: string): string {
   result = result.replace(/SERIAL PRIMARY KEY/gi, "INTEGER PRIMARY KEY AUTOINCREMENT");
   result = result.replace(/TIMESTAMPTZ/gi, "TEXT");
   result = result.replace(/NOW\(\)::TEXT/gi, "CURRENT_TIMESTAMP");
+  // SQLite doesn't support IF NOT EXISTS on ALTER TABLE ADD COLUMN, so wrap in error handling
+  result = result.replace(/ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+IF NOT EXISTS/gi, "ALTER TABLE $1 ADD COLUMN");
   return result;
 }
 
@@ -104,7 +106,22 @@ async function runSQLiteMigrations(database: any) {
       const sqliteContent = convertSchemaToSqlite(sqlContent);
       database.exec("BEGIN");
       if (sqliteContent.trim()) {
-        database.exec(sqliteContent);
+        // Split into individual statements and execute with error tolerance for idempotent operations
+        const statements = sqliteContent.split(';').filter(s => s.trim());
+        for (const stmt of statements) {
+          try {
+            if (stmt.trim()) {
+              database.exec(stmt.trim() + ';');
+            }
+          } catch (stmtErr: any) {
+            // Log but don't fail on column-already-exists or similar idempotent errors
+            if (stmtErr.message?.includes('already exists') || stmtErr.message?.includes('duplicate')) {
+              log.debug(`Skipping idempotent statement (already applied): ${stmt.substring(0, 50)}...`);
+            } else {
+              throw stmtErr;
+            }
+          }
+        }
       }
       database.prepare("INSERT INTO schema_migrations (version, description) VALUES (?, ?)").run(version, description);
       database.exec("COMMIT");

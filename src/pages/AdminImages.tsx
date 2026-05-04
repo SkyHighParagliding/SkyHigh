@@ -1284,7 +1284,8 @@ export function AdminImages() {
         imageName={siteName}
         onImageNameChange={setSiteName}
         preloadedImage={submissionForEnhancer || heroPreloadedImage}
-        initialPhotographerCredit={submissionForEnhancer?.photographerCredit || ""}
+        initialPhotographerCredit={submissionForEnhancer?.photographerCredit || urlPhotographerCredit}
+        onPhotographerCreditChange={setUrlPhotographerCredit}
         initialHeroImage={initialHeroImage}
       />
 

@@ -65,10 +65,7 @@ export function csrfTokenValidator(req: Request, res: Response, next: NextFuncti
  */
 export function getCSRFTokenRoute(req: Request, res: Response) {
   const user = (req as any).user;
-  if (!user || !user.id) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-
-  const token = getOrCreateCSRFToken(user.id);
+  const userId = user?.id || "anonymous";
+  const token = getOrCreateCSRFToken(userId);
   res.json({ csrfToken: token });
 }

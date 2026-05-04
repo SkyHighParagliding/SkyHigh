@@ -78,11 +78,40 @@ export function useImageLibrary() {
   const [localizing, setLocalizing] = useState(false);
   const localizedRef = useRef(false);
   const [siteName, setSiteName] = useState("");
-  const [urlSiteName, setUrlSiteName] = useState("");
-  const [urlPhotographerCredit, setUrlPhotographerCredit] = useState("");
+  const [urlSiteName, setUrlSiteName] = useState(() => {
+    try {
+      return localStorage.getItem("urlSiteName") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [urlPhotographerCredit, setUrlPhotographerCredit] = useState(() => {
+    try {
+      return localStorage.getItem("urlPhotographerCredit") || "";
+    } catch {
+      return "";
+    }
+  });
   const [urlWatermarkSize, setUrlWatermarkSize] = useState(10);
   const [urlWatermarkPosition, setUrlWatermarkPosition] = useState("bottom-right");
   const [generatingSliders, setGeneratingSliders] = useState(false);
+
+  // Persist URL site name and photographer credit to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("urlSiteName", urlSiteName);
+    } catch {
+      // Silently fail if localStorage is not available
+    }
+  }, [urlSiteName]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("urlPhotographerCredit", urlPhotographerCredit);
+    } catch {
+      // Silently fail if localStorage is not available
+    }
+  }, [urlPhotographerCredit]);
 
   const [screenshots, setScreenshots] = useState<ScreenshotEntry[]>([]);
   const [savedScreenshots, setSavedScreenshots] = useState<ScreenshotEntry[]>([]);
@@ -555,7 +584,6 @@ export function useImageLibrary() {
       markChanged(updated);
       setNewImageUrl("");
       setUrlSiteName("");
-      setUrlPhotographerCredit("");
     } catch (e: unknown) {
       setSaveMessage({ type: "error", text: (e instanceof Error ? e.message : "") || "Failed to process URL" });
     }

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:3001/api/sites/bulk-import/progress)",
+      "Bash(node -e \"const data = require\\('fs'\\).readFileSync\\(0, 'utf8'\\); try { const json = JSON.parse\\(data\\); console.log\\(JSON.stringify\\(json, null, 2\\)\\); } catch\\(e\\) { console.log\\(data\\); }\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -I \"https://siteguide.org.au/Sites/Details/Arthurs%20Seat\")",
+      "PowerShell(Get-Process *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -X POST http://localhost:3001/api/sites/bulk-import -H 'Content-Type: application/json' -H 'Authorization: Bearer b9a25b8370d31cdabeb7dff368dcd17e5a914cfb46b6416bc11fe5b20ee0237b' -d '{\"state\":\"VIC\"}')",
+      "Bash(node -e \"const data = require\\('fs'\\).readFileSync\\(0, 'utf8'\\); console.log\\(JSON.parse\\(data\\)\\);\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(curl -s http://localhost:3001/api/settings)",
+      "Bash(curl -s http://localhost:5173)"
+    ]
+  }
+}

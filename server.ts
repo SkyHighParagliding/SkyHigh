@@ -3,7 +3,7 @@ import express from "express";
 import compression from "compression";
 import fs from "fs";
 import path from "path";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 import db from "./server/db.js";
 import "./server/seed.js";
@@ -80,9 +80,9 @@ const submissionLimiter = rateLimit({
   max: () => {
     try {
       const row = db.prepare("SELECT value FROM settings WHERE key = 'submissionRateLimit'").get() as { value: string } | undefined;
-      const val = row?.value ? parseInt(row.value, 10) : 20;
-      return (val > 0 && val <= 100) ? val : 20;
-    } catch { return 20; }
+      const val = row?.value ? parseInt(row.value, 10) : 100;
+      return (val > 0 && val <= 500) ? val : 100;
+    } catch { return 100; }
   },
   message: { error: "Too many upload attempts. Please try again later." },
   standardHeaders: true,
@@ -98,8 +98,9 @@ const stateChangeLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: any) => {
-    // Use authenticated user ID if available, otherwise IP
-    return req.user?.id || req.ip || "unknown";
+    // Use authenticated user ID if available, otherwise IP with proper IPv6 handling
+    if (req.user?.id) return req.user.id;
+    return ipKeyGenerator(req);
   },
   skip: (req) => {
     // Skip rate limiting for safe HTTP methods
@@ -115,7 +116,8 @@ const bulkOperationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: any) => {
-    return req.user?.id || req.ip || "unknown";
+    if (req.user?.id) return req.user.id;
+    return ipKeyGenerator(req);
   },
 });
 
