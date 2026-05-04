@@ -108,7 +108,7 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
       console.log("Bulk import: Could not fetch siteguide version from About page");
     }
 
-    const archiveVersion = getVersionBeforeLastChange() || getLastDetectedVersion() || `pre-import-${Date.now()}`;
+    const archiveVersion = await getVersionBeforeLastChange() || await getLastDetectedVersion() || `pre-import-${Date.now()}`;
     const archived = await archiveSitesBeforeImport(archiveVersion);
     if (archived) {
       console.log(`Bulk import: Archived current sites under version ${archiveVersion}`);
