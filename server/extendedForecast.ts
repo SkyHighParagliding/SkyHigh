@@ -681,7 +681,7 @@ export async function scheduleExtendedForecast(): void {
 
 export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus> {
   try {
-    const cached = await db.prepare("SELECT fetchedAt FROM extended_forecast_grid LIMIT 1").get() as any;
+    const cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
     const cacheAgeMs = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
@@ -695,7 +695,7 @@ export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus
 
     await fetchExtendedForecast();
 
-    const updated = await db.prepare("SELECT fetchedAt FROM extended_forecast_grid LIMIT 1").get() as any;
+    const updated = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
     const newCacheAgeMs = updated ? Date.now() - new Date(updated.fetchedAt).getTime() : null;
 
     if (newCacheAgeMs && newCacheAgeMs < 60000) {
