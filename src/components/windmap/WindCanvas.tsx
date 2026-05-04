@@ -126,7 +126,7 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
     const gridTL = projection([windGrid.lonMin, windGrid.latMax])!;
     const gridBR = projection([windGrid.lonMax, windGrid.latMin])!;
     const minK = 256 * Math.pow(2, 6);
-    const maxK = 256 * Math.pow(2, 13);
+    const maxK = 256 * Math.pow(2, 20);
 
     const zoom = d3Zoom<HTMLDivElement, unknown>()
       .scaleExtent([minK, maxK])
