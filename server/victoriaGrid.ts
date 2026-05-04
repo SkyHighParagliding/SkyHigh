@@ -29,6 +29,18 @@ const WIDE_LON_MIN = 105;
 const WIDE_LON_MAX = 165;
 const WIDE_DELTA = 2.0;
 
+async function cleanupOldGridData(baseKey: string): Promise<void> {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const result = await db.prepare(`DELETE FROM wind_grid_data WHERE siteId LIKE ? AND siteId < ?`).run(`${baseKey}_%`, `${baseKey}_${sevenDaysAgo}`);
+    if ((result as any).changes > 0) {
+      console.log(`${baseKey}: Cleaned up ${(result as any).changes} old grid records`);
+    }
+  } catch (e) {
+    console.error(`${baseKey}: Cleanup error`, e);
+  }
+}
+
 interface GridPoint {
   lat: number;
   lon: number;
@@ -201,9 +213,12 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
 
   try {
     const jsonStr = JSON.stringify(grid);
+    const today = new Date().toISOString().split('T')[0];
+    const cacheKey = `${GRID_CACHE_KEY}_${today}`;
     await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(GRID_CACHE_KEY, jsonStr, ni, DELTA);
-    console.log(`Victoria grid: Cached ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
+      .run(cacheKey, jsonStr, ni, DELTA);
+    console.log(`Victoria grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
+    await cleanupOldGridData(GRID_CACHE_KEY);
   } catch (e) {
     console.error("Victoria grid: Failed to cache:", e);
   }
@@ -358,9 +373,12 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
 
   try {
     const jsonStr = JSON.stringify(grid);
+    const today = new Date().toISOString().split('T')[0];
+    const cacheKey = `${WIDE_GRID_CACHE_KEY}_${today}`;
     await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(WIDE_GRID_CACHE_KEY, jsonStr, ni, WIDE_DELTA);
-    console.log(`Wide grid: Cached ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
+      .run(cacheKey, jsonStr, ni, WIDE_DELTA);
+    console.log(`Wide grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
+    await cleanupOldGridData(WIDE_GRID_CACHE_KEY);
   } catch (e) {
     console.error("Wide grid: Failed to cache:", e);
   }
@@ -370,7 +388,14 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
 
 export async function getCachedVictoriaGrid(): VictoriaGrid | null {
   try {
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
+
     if (cached) {
       return JSON.parse(cached.gridData) as VictoriaGrid;
     }
@@ -382,7 +407,14 @@ export async function getCachedVictoriaGrid(): VictoriaGrid | null {
 
 export async function getCachedWideGrid(): VictoriaGrid | null {
   try {
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
+
     if (cached) {
       return JSON.parse(cached.gridData) as VictoriaGrid;
     }

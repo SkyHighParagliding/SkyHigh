@@ -219,9 +219,12 @@ export async function fetchExtendedForecast(): Promise<void> {
     };
 
     const gridJson = JSON.stringify(grid);
+    const today = new Date().toISOString().split('T')[0];
     await db.prepare("INSERT OR REPLACE INTO extended_forecasts (id, gridData, fetchedAt) VALUES (?, ?, CURRENT_TIMESTAMP)")
-      .run('extended_grid', gridJson);
-    console.log(`Extended forecast: Saved grid (${allPoints.length} points, ${(gridJson.length / 1024).toFixed(0)}KB)`);
+      .run(`extended_grid_${today}`, gridJson);
+    console.log(`Extended forecast: Saved grid for ${today} (${allPoints.length} points, ${(gridJson.length / 1024).toFixed(0)}KB)`);
+
+    await cleanupOldExtendedForecasts();
 
     await extractAllSiteExtendedForecasts(grid);
 
@@ -589,7 +592,17 @@ export async function getExtendedWindGrid(): any | null {
 
 export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
   try {
-    const row = await db.prepare("SELECT gridData FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
+    const today = new Date().toISOString().split('T')[0];
+    let row = await db.prepare("SELECT gridData FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+
+    if (!row) {
+      const rows = await db.prepare("SELECT id, gridData FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      if (rows.length > 0) {
+        row = rows[0];
+        console.log(`Extended forecast: Today's cache not found, using fallback from ${row.id.replace('extended_grid_', '')}`);
+      }
+    }
+
     if (row) return JSON.parse(row.gridData);
   } catch (e) {
     console.error("Extended forecast: Cache read error", e);
@@ -620,6 +633,18 @@ export async function getAllSiteExtendedForecasts(): Promise<Map<string, SiteExt
     console.error("Extended forecast: Bulk read error", e);
   }
   return map;
+}
+
+async function cleanupOldExtendedForecasts(): Promise<void> {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const result = await db.prepare("DELETE FROM extended_forecasts WHERE id LIKE 'extended_grid_%' AND id < ?").run(`extended_grid_${sevenDaysAgo}`);
+    if ((result as any).changes > 0) {
+      console.log(`Extended forecast: Cleaned up ${(result as any).changes} old forecast records`);
+    }
+  } catch (e) {
+    console.error("Extended forecast: Cleanup error", e);
+  }
 }
 
 let extendedScheduleTimeout: NodeJS.Timeout | null = null;
@@ -666,7 +691,8 @@ export async function scheduleExtendedForecast(): void {
     scheduleExtendedForecast();
   }, Math.max(msUntilNext, 60000));
 
-  const cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
+  const today = new Date().toISOString().split('T')[0];
+  const cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ? OR id LIKE 'extended_grid_%' LIMIT 1").get(`extended_grid_${today}`) as any;
   if (!cached) {
     console.log("Extended forecast: No cached data found, triggering initial fetch in 60s...");
     setTimeout(() => fetchExtendedForecast(), 60000);
