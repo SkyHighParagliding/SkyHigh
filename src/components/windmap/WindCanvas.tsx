@@ -68,13 +68,12 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
     let initialTransform: ZoomTransform;
     const markers = siteMarkersRef.current;
     if (markers && markers.length > 1) {
-      const lats = markers.map(m => m.lat);
-      const lons = markers.map(m => m.lon);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons);
-      const maxLon = Math.max(...lons);
-      const padding = 0.15;
+      // Use wind grid bounds instead of marker bounds for initial focus
+      const minLat = windGrid.latMin;
+      const maxLat = windGrid.latMax;
+      const minLon = windGrid.lonMin;
+      const maxLon = windGrid.lonMax;
+      const padding = 0;
       const latRange = (maxLat - minLat) * (1 + padding * 2);
       const lonRange = (maxLon - minLon) * (1 + padding * 2);
       const centerPt = projection([(minLon + maxLon) / 2, (minLat + maxLat) / 2])!;
@@ -82,8 +81,8 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
       const bottomRight = projection([maxLon + lonRange * padding, minLat - latRange * padding])!;
       const geoW = Math.abs(bottomRight[0] - topLeft[0]);
       const geoH = Math.abs(bottomRight[1] - topLeft[1]);
-      const fitK = Math.min(width / geoW, height / geoH) * 0.85;
-      const clampedK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 13)));
+      const fitK = Math.min(width / geoW, height / geoH) * 0.95;
+      const clampedK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 20)));
       initialTransform = zoomIdentity
         .translate(width / 2 - centerPt[0] * clampedK, height / 2 - centerPt[1] * clampedK)
         .scale(clampedK);
