@@ -476,7 +476,7 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
     grid = await fetchVictoriaGrid();
   } catch (e) {
     log.error("Victoria grid fetch failed:", e);
-    return res.status(503).json({ error: "Wind data temporarily unavailable, please try again shortly" });
+    return res.status(503).json({ error: "Open-Meteo API rate limit exceeded — wind data temporarily unavailable" });
   }
 
   try {
@@ -488,7 +488,7 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
   const result = extractFullWindGrid(grid, wideGrid);
 
   if (!result) {
-    return res.status(503).json({ error: "Wind data processing failed" });
+    return res.status(503).json({ error: "Open-Meteo API rate limit exceeded — wind data temporarily unavailable" });
   }
 
   res.setHeader('Cache-Control', 'public, max-age=1800');
