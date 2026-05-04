@@ -116,7 +116,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
     fetch(url)
       .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          if (res.status === 503) {
+            throw new Error('Wind data temporarily unavailable, please try again in a moment');
+          }
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       })
       .then(data => {

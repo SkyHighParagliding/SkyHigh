@@ -468,13 +468,18 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
   const { fetchVictoriaGrid, fetchWideGrid, extractFullWindGrid } = await import("../victoriaGrid.js");
   const [grid, wideGrid] = await Promise.all([
-    fetchVictoriaGrid(),
+    fetchVictoriaGrid().catch(e => { log.error("Victoria grid fetch failed:", e); return null; }),
     fetchWideGrid().catch(e => { log.error("Wide grid fetch failed:", e); return null; })
   ]);
+
+  if (!grid) {
+    return res.status(503).json({ error: "Wind data temporarily unavailable, please try again shortly" });
+  }
+
   const result = extractFullWindGrid(grid, wideGrid);
 
   if (!result) {
-    return res.status(404).json({ error: "No wind data available" });
+    return res.status(503).json({ error: "Wind data processing failed" });
   }
 
   res.setHeader('Cache-Control', 'public, max-age=1800');
