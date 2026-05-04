@@ -1,7 +1,7 @@
 import db from "./db.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { getCachedVictoriaGrid, getTimeWindow } from "./victoriaGrid.js";
+import { getCachedVictoriaGrid, getTimeWindow, type GridFetchStatus } from "./victoriaGrid.js";
 
 const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast";
 
@@ -676,5 +676,53 @@ export async function scheduleExtendedForecast(): void {
       console.log("Extended forecast: Cached data is stale (>24h), triggering fetch in 60s...");
       setTimeout(() => fetchExtendedForecast(), 60000);
     }
+  }
+}
+
+export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus> {
+  try {
+    const cached = await db.prepare("SELECT fetchedAt FROM extended_forecast_grid LIMIT 1").get() as any;
+    const cacheAgeMs = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : null;
+    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
+
+    if (extendedFetchInProgress) {
+      return {
+        success: true,
+        message: "Fetch already in progress — using existing cache",
+        cacheAgeMinutes
+      };
+    }
+
+    await fetchExtendedForecast();
+
+    const updated = await db.prepare("SELECT fetchedAt FROM extended_forecast_grid LIMIT 1").get() as any;
+    const newCacheAgeMs = updated ? Date.now() - new Date(updated.fetchedAt).getTime() : null;
+
+    if (newCacheAgeMs && newCacheAgeMs < 60000) {
+      return {
+        success: true,
+        message: "Downloaded fresh extended forecast data",
+        cacheAgeMinutes: 0
+      };
+    }
+
+    if (cacheAgeMinutes && cacheAgeMinutes < 24 * 60) {
+      return {
+        success: true,
+        message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
+        cacheAgeMinutes
+      };
+    }
+
+    return {
+      success: false,
+      message: "Extended forecast unavailable — no cached data"
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: `Error fetching extended forecast: ${errorMsg}`
+    };
   }
 }

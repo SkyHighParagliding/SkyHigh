@@ -94,14 +94,14 @@ export function AdminWeather() {
     setMessages(prev => ({ ...prev, [type]: "" }));
     try {
       const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
-      if (data.success || (data.message && !data.message.toLowerCase().includes('error'))) {
-        setMessages(prev => ({ ...prev, [type]: "Downloaded & Cached" }));
-        toast.success(`${type}: Downloaded & Cached`);
-        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 4000);
+      const message = data.message || "Failed to download data";
+      setMessages(prev => ({ ...prev, [type]: message }));
+
+      if (data.success) {
+        toast.success(`${type}: ${message}`);
+        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 5000);
       } else {
-        const errorMsg = data.message || "Failed to download data";
-        setMessages(prev => ({ ...prev, [type]: errorMsg }));
-        toast.error(errorMsg);
+        toast.error(`${type}: ${message}`);
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Network error - check server connection";
@@ -158,7 +158,11 @@ export function AdminWeather() {
                     {loadingType === 'liveWeather' ? "Fetching..." : "Fetch Now"}
                   </Button>
                   {messages.liveWeather && (
-                    <span className={`text-xs font-medium ${messages.liveWeather.includes('failed') || messages.liveWeather.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <span className={`text-xs font-medium ${
+                      messages.liveWeather.toLowerCase().includes('failed') || messages.liveWeather.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.liveWeather.toLowerCase().includes('rate limited') || messages.liveWeather.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      'text-emerald-500'
+                    }`}>
                       {messages.liveWeather}
                     </span>
                   )}
@@ -193,7 +197,11 @@ export function AdminWeather() {
                     {loadingType === 'extended' ? "Fetching..." : "Extended"}
                   </Button>
                   {messages.extended && (
-                    <span className={`text-xs font-medium text-center ${messages.extended.includes('failed') || messages.extended.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <span className={`text-xs font-medium text-center ${
+                      messages.extended.toLowerCase().includes('failed') || messages.extended.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.extended.toLowerCase().includes('rate limited') || messages.extended.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      'text-emerald-500'
+                    }`}>
                       {messages.extended}
                     </span>
                   )}
@@ -210,7 +218,11 @@ export function AdminWeather() {
                     {loadingType === 'victoria' ? "Fetching..." : "Victoria"}
                   </Button>
                   {messages.victoria && (
-                    <span className={`text-xs font-medium text-center ${messages.victoria.includes('failed') || messages.victoria.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <span className={`text-xs font-medium text-center ${
+                      messages.victoria.toLowerCase().includes('failed') || messages.victoria.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.victoria.toLowerCase().includes('rate limited') || messages.victoria.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      'text-emerald-500'
+                    }`}>
                       {messages.victoria}
                     </span>
                   )}
@@ -227,7 +239,11 @@ export function AdminWeather() {
                     {loadingType === 'wide' ? "Fetching..." : "Wide"}
                   </Button>
                   {messages.wide && (
-                    <span className={`text-xs font-medium text-center ${messages.wide.includes('failed') || messages.wide.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <span className={`text-xs font-medium text-center ${
+                      messages.wide.toLowerCase().includes('failed') || messages.wide.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.wide.toLowerCase().includes('rate limited') || messages.wide.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      'text-emerald-500'
+                    }`}>
                       {messages.wide}
                     </span>
                   )}
