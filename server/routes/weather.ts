@@ -516,4 +516,16 @@ router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_re
   res.json({ success: true, message: "Extended forecast fetch triggered" });
 }));
 
+router.post("/victoria-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
+  fetchVictoriaGrid(true).catch(err => console.error("Manual Victoria grid fetch failed:", err));
+  res.json({ success: true, message: "Victoria grid fetch triggered" });
+}));
+
+router.post("/wide-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  const { fetchWideGrid } = await import("../victoriaGrid.js");
+  fetchWideGrid(true).catch(err => console.error("Manual Wide grid fetch failed:", err));
+  res.json({ success: true, message: "Wide grid fetch triggered" });
+}));
+
 export default router;
