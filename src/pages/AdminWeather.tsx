@@ -180,7 +180,7 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 4:30am (Extended), 5:00am (Victoria), and 5:30am (Wide). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Victoria), 5:13am (Wide), and 5:30am (Extended). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
@@ -248,6 +248,30 @@ export function AdminWeather() {
                     </span>
                   )}
                 </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-border space-y-1">
+                {([
+                  { label: "Victoria grid", runKey: "victoriaGridLastRun", resultKey: "victoriaGridLastResult" },
+                  { label: "Wide grid", runKey: "wideGridLastRun", resultKey: "wideGridLastResult" },
+                  { label: "Extended (7-day)", runKey: "extendedForecastLastRun", resultKey: "extendedForecastLastResult" },
+                ] as const).map(({ label, runKey, resultKey }) => {
+                  const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
+                  const lastResult = settings[resultKey as keyof typeof settings] as string | undefined;
+                  const ok = lastResult === "ok";
+                  return (
+                    <div key={label} className="flex items-start gap-2 text-xs">
+                      <span className="text-muted-foreground w-28 shrink-0">{label}</span>
+                      {lastRun ? (
+                        <span className={ok ? "text-emerald-600" : "text-red-500"}>
+                          {ok ? "✓" : "✗"} {new Date(lastRun).toLocaleString("en-AU", { timeZone: "Australia/Melbourne", dateStyle: "short", timeStyle: "short" })}
+                          {!ok && ` — ${lastResult}`}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">Never run</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardHeader>
           </Card>
