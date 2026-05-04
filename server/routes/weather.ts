@@ -511,21 +511,21 @@ router.post("/scrape-now", asyncHandler(async (req, res) => {
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchExtendedForecastWithStatus } = await import("../extendedForecast.js");
-  const status = await fetchExtendedForecastWithStatus();
-  res.json(status);
+  const { fetchExtendedForecast } = await import("../extendedForecast.js");
+  fetchExtendedForecast().catch(() => {});
+  res.json({ success: true, message: "Extended forecast fetch started" });
 }));
 
 router.post("/victoria-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchVictoriaGridWithStatus } = await import("../victoriaGrid.js");
-  const status = await fetchVictoriaGridWithStatus();
-  res.json(status);
+  const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
+  fetchVictoriaGrid(true).catch(() => {});
+  res.json({ success: true, message: "Victoria grid fetch started" });
 }));
 
 router.post("/wide-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchWideGridWithStatus } = await import("../victoriaGrid.js");
-  const status = await fetchWideGridWithStatus();
-  res.json(status);
+  const { fetchWideGrid } = await import("../victoriaGrid.js");
+  fetchWideGrid(true).catch(() => {});
+  res.json({ success: true, message: "Wide grid fetch started" });
 }));
 
 export default router;
