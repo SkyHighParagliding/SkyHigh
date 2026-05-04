@@ -687,7 +687,15 @@ export async function scheduleExtendedForecast(): void {
 
   if (extendedScheduleTimeout) clearTimeout(extendedScheduleTimeout);
   extendedScheduleTimeout = setTimeout(async () => {
-    await fetchExtendedForecast();
+    const ts = new Date().toISOString();
+    try {
+      await fetchExtendedForecast();
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", "ok");
+    } catch (e: any) {
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", e.message || "Unknown error");
+    }
     scheduleExtendedForecast();
   }, Math.max(msUntilNext, 60000));
 

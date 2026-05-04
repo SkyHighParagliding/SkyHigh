@@ -102,32 +102,42 @@ async function runDriveSync() {
 }
 
 async function fetchVictoriaGridDaily() {
+  const ts = new Date().toISOString();
   try {
     const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
     await fetchVictoriaGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastResult", "ok");
     log.info("Victoria grid daily fetch completed");
   } catch (e: any) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastResult", e.message || "Unknown error");
     log.error(`Victoria grid daily fetch failed: ${e.message}`);
   }
 }
 
 async function fetchWideGridDaily() {
+  const ts = new Date().toISOString();
   try {
     const { fetchWideGrid } = await import("../victoriaGrid.js");
     await fetchWideGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastResult", "ok");
     log.info("Wide grid daily fetch completed");
   } catch (e: any) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastResult", e.message || "Unknown error");
     log.error(`Wide grid daily fetch failed: ${e.message}`);
   }
 }
 
 export async function startScheduledJobs() {
-  // Daily wind grid pre-fetches: Victoria at 5:00am, Wide at 5:30am (Melbourne time)
+  // Daily wind grid pre-fetches: Victoria at 5:00am, Wide at 5:13am (Melbourne time)
   cron.schedule("0 5 * * *", fetchVictoriaGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Victoria grid daily fetch scheduled: 5:00am Melbourne time");
 
-  cron.schedule("30 5 * * *", fetchWideGridDaily, { timezone: "Australia/Melbourne" });
-  log.info("Wide grid daily fetch scheduled: 5:30am Melbourne time");
+  cron.schedule("13 5 * * *", fetchWideGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Wide grid daily fetch scheduled: 5:13am Melbourne time");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));
