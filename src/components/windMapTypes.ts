@@ -18,7 +18,7 @@ export const DEFAULT_ZOOM_SETPOINTS: ZoomSetpoints = {
   z10: { speed: 1.55, lineWidth: 1.4, trailLength: 20, opacity: 0.4,  particleCount: 2400 },
 };
 
-export const INITIAL_K = 256 * Math.pow(2, 17);
+export const INITIAL_K = 256 * Math.pow(2, 18);
 
 export const getCompassDirection = (deg: number) => {
   const points = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
