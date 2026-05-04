@@ -82,6 +82,7 @@ const AdminFlightTracker = lazy(() => import("./pages/AdminFlightTracker").then(
 const AdminSafety = lazy(() => import("./pages/AdminSafety").then(m => ({ default: m.AdminSafety })));
 const AdminPublicContacts = lazy(() => import("./pages/AdminPublicContacts").then(m => ({ default: m.AdminPublicContacts })));
 const AdminSiteOptions = lazy(() => import("./pages/AdminSiteOptions").then(m => ({ default: m.AdminSiteOptions })));
+const AdminLogin = lazy(() => import("./pages/AdminLogin").then(m => ({ default: m.AdminLogin })));
 
 function SlugFallback() {
   const { slug } = useParams();
@@ -181,6 +182,7 @@ export default function App() {
             <Route path="xc/demo/duty" element={<Suspense fallback={<PageLoader />}><DutyPilotMap /></Suspense>} />
             <Route path="xc/duty-pilot" element={<Suspense fallback={<PageLoader />}><DutyPilotMap /></Suspense>} />
             <Route path="xc/maps/demo" element={<Suspense fallback={<PageLoader />}><XCMapsDemo /></Suspense>} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="sites" element={<Sites />} />
