@@ -3,7 +3,10 @@ import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./wea
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedVictoriaGrid, getTimeWindow, type GridFetchStatus } from "./victoriaGrid.js";
 
-const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast";
+const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
+const OPEN_METEO_URL = OPEN_METEO_API_KEY
+  ? `https://customer-api.open-meteo.com/v1/forecast`
+  : `https://api.open-meteo.com/v1/forecast`;
 
 const WIDE_LAT_MIN = -39.2;
 const WIDE_LAT_MAX = -34.0;
@@ -160,6 +163,7 @@ export async function fetchExtendedForecast(): Promise<void> {
         timezone: 'Australia/Melbourne',
         forecast_days: '8'
       });
+      if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
       const url = `${OPEN_METEO_URL}?${params.toString()}`;
 
