@@ -94,15 +94,19 @@ export function AdminWeather() {
     setMessages(prev => ({ ...prev, [type]: "" }));
     try {
       const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
-      if (data.success || data.message) {
-        setMessages(prev => ({ ...prev, [type]: data.message || "Triggered successfully!" }));
-        toast.success(data.message || `${type} triggered`);
-        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 3000);
+      if (data.success || (data.message && !data.message.toLowerCase().includes('error'))) {
+        setMessages(prev => ({ ...prev, [type]: "Downloaded & Cached" }));
+        toast.success(`${type}: Downloaded & Cached`);
+        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 4000);
       } else {
-        setMessages(prev => ({ ...prev, [type]: "Update failed." }));
+        const errorMsg = data.message || "Failed to download data";
+        setMessages(prev => ({ ...prev, [type]: errorMsg }));
+        toast.error(errorMsg);
       }
     } catch (err) {
-      setMessages(prev => ({ ...prev, [type]: "Error connecting to server." }));
+      const errorMsg = err instanceof Error ? err.message : "Network error - check server connection";
+      setMessages(prev => ({ ...prev, [type]: errorMsg }));
+      toast.error(errorMsg);
     } finally {
       setLoadingType(null);
     }
