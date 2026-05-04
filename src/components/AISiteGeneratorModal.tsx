@@ -87,6 +87,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
   const handleDiscard = () => {
     setAiResult(null);
     setUrl("");
+    onClose();
   };
 
   const handleConfirmSave = async () => {
@@ -133,7 +134,6 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
     };
     
     onSave(mappedData);
-    onClose();
     handleDiscard();
   };
 
