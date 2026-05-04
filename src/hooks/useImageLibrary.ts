@@ -543,6 +543,20 @@ export function useImageLibrary() {
     setSiteName("");
   };
 
+  const handleBulkUploadAccept = (results: { filename: string; url: string; size: string }[]) => {
+    const newEntries = results.map(result => ({
+      wide: result.url,
+      banner: "",
+      name: result.filename.replace(/\.[^/.]+$/, ""),
+      sliderEnabled: false,
+      sliderLgEnabled: false,
+      sliderSmEnabled: false,
+      sliderPortraitEnabled: false,
+    }));
+    const updated = [...images, ...newEntries];
+    markChanged(updated);
+  };
+
   const handleAddUrl = async () => {
     if (!newImageUrl.trim() || !urlSiteName.trim()) return;
     setProcessingUrl(true);
@@ -666,7 +680,7 @@ export function useImageLibrary() {
     updateSettings, markChanged,
     handlePickExisting, handlePickExistingHero, handleSsFileSelect, handleHeroFileSelect,
     handleSaveScreenshot, handleDeleteScreenshot, handleCopyTag,
-    filteredScreenshots, handleSave, handleEnhancedAccept,
+    filteredScreenshots, handleSave, handleEnhancedAccept, handleBulkUploadAccept,
     handleAddUrl, handleRemoveWide, handleRemoveBanner, handleSetCategory,
     wideImages, bannerImages, sliderImages,
     handleToggleSlider, handleDeleteSliderImage, handleGenerateAllSliders,

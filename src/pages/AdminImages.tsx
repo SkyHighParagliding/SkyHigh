@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Trash2, Image as ImageIcon, Sparkles, Plus, Minus, Loader2, Save, X, Waves, Mountain, GalleryHorizontal, ChevronDown, ChevronUp, Check, Inbox, AlertTriangle, Eye, Play, ShieldBan, ShieldOff, Settings, Bell, Camera, Scissors, Search, Grid3X3, List, Copy, ZoomIn, Tag, BookOpen, FileText, MapPin, Monitor, Upload, Maximize2, GripVertical } from "lucide-react";
+import { ArrowLeft, Trash2, Image as ImageIcon, Sparkles, Plus, Minus, Loader2, Save, X, Waves, Mountain, GalleryHorizontal, ChevronDown, ChevronUp, Check, Inbox, AlertTriangle, Eye, Play, ShieldBan, ShieldOff, Settings, Bell, Camera, Scissors, Search, Grid3X3, List, Copy, ZoomIn, Tag, BookOpen, FileText, MapPin, Monitor, Upload, Maximize2, GripVertical, FolderUp } from "lucide-react";
 import { AIImageEnhancerModal, type SliderData } from "@/components/AIImageEnhancerModal";
+import { BulkUploadDialog } from "@/components/BulkUploadDialog";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useImageLibrary, SCREENSHOT_CATEGORIES } from "@/hooks/useImageLibrary";
 import type { ImagePair, ScreenshotEntry } from "@/hooks/useImageLibrary";
 
 
 export function AdminImages() {
+  const [isBulkUploadDialogOpen, setIsBulkUploadDialogOpen] = useState(false);
   const lib = useImageLibrary();
   const {
     settings, loading, token, images, setImages, savedImages, isEnhancerOpen, setIsEnhancerOpen,
@@ -48,6 +51,7 @@ export function AdminImages() {
     handleDeleteSubmission, handleProcessSubmission,
     handleAddBannedIp, handleRemoveBannedIp, handleBanSubmissionIp,
     handleSubmissionEnhancerAccept,
+    handleBulkUploadAccept,
     initialHeroImage, setInitialHeroImage,
   } = lib;
 
@@ -168,7 +172,7 @@ export function AdminImages() {
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Load from</span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <button
                       type="button"
                       onClick={() => setUploadBranch("hero")}
@@ -214,6 +218,21 @@ export function AdminImages() {
                         {submissions.length > 0
                           ? `${submissions.length} pending — review and process member-submitted photos for hero images or guides.`
                           : "No pending submissions. Member-submitted photos appear here for review."}
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkUploadDialogOpen(true)}
+                      className="border-2 border-dashed border-purple-300/50 rounded-lg p-4 hover:border-purple-400 hover:bg-purple-50/50 transition-all group text-left"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                          <FolderUp className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="font-semibold text-sm text-foreground">Bulk Upload</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Upload multiple images at once, all processed as hero size with single photographer credit.
                       </p>
                     </button>
                   </div>
@@ -1352,6 +1371,13 @@ export function AdminImages() {
           />
         </div>
       )}
+
+      <BulkUploadDialog
+        open={isBulkUploadDialogOpen}
+        onOpenChange={setIsBulkUploadDialogOpen}
+        token={token}
+        onAccept={handleBulkUploadAccept}
+      />
 
       <UnsavedChangesModal blocker={blocker} onSave={handleSave} />
     </div>

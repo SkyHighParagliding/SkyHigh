@@ -826,6 +826,49 @@ router.post("/upload-hero-image", requireAuth, upload.single("image"), asyncHand
   });
 }));
 
+router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 20), asyncHandler(async (req, res) => {
+  console.log("[BULK UPLOAD] Route matched! Params:", req.params, "Query:", req.query);
+  if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+    return res.status(400).json({ error: "No image files provided" });
+  }
+  const photographerName = decodeURIComponent(req.params.name || "").trim();
+  console.log("[BULK UPLOAD] Photographer name:", photographerName);
+  if (!photographerName) {
+    return res.status(400).json({ error: "Photographer name is required" });
+  }
+
+  const results: { filename: string; url: string; size: string; error?: string }[] = [];
+
+  for (const file of req.files as Express.Multer.File[]) {
+    try {
+      const id = crypto.randomBytes(8).toString("hex");
+      const ext = path.extname(file.originalname) || ".jpg";
+      const baseName = path.basename(file.originalname, ext);
+      const filename = `hero-${baseName}-${id}-1920x1080.jpg`;
+
+      let buf = await resizeAndCompress(file.buffer, 1920, 1080, 550);
+      buf = await applyWatermark(buf, photographerName);
+      const url = await saveFile(buf, StorageKey.hero(filename), "image/jpeg");
+
+      results.push({
+        filename,
+        url,
+        size: `${(buf.length / 1024).toFixed(0)}KB`,
+      });
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      results.push({
+        filename: file.originalname,
+        url: "",
+        size: "0KB",
+        error: errorMsg,
+      });
+    }
+  }
+
+  res.json(results);
+}));
+
 router.post("/watermark-existing", requireAuth, asyncHandler(async (req, res) => {
   const { imagePath, photographerCredit, watermarkSize, watermarkPosition } = req.body;
   if (!imagePath || typeof imagePath !== "string") {
