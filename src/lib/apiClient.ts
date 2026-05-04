@@ -60,7 +60,9 @@ async function request<T>(url: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', headers = {}, body, signal } = opts;
 
   const fetchHeaders: Record<string, string> = { ...headers };
-  if (body !== undefined) {
+  const isFormData = body instanceof FormData;
+
+  if (body !== undefined && !isFormData) {
     fetchHeaders['Content-Type'] = 'application/json';
   }
 
@@ -75,7 +77,7 @@ async function request<T>(url: string, opts: RequestOptions = {}): Promise<T> {
   const res = await fetch(url, {
     method,
     headers: fetchHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? (isFormData ? body : JSON.stringify(body)) : undefined,
     signal,
     credentials: 'include',
   });
