@@ -11,15 +11,26 @@ let scraperTimeout: NodeJS.Timeout | null = null;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url: string, options: any = {}, retries = 3, backoff = 1000) {
+async function fetchWithRetry(url: string, options: any = {}, retries = 5, backoff = 1000) {
   for (let i = 0; i < retries; i++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout per attempt
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout per attempt
     try {
       const response = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const statusCode = response.status;
+        const errorMsg = `HTTP error! status: ${statusCode}`;
+        if (statusCode === 429) {
+          if (i === retries - 1) throw new Error(errorMsg);
+          const retryAfter = response.headers.get('retry-after');
+          let waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, i + 2) * 1000;
+          waitMs = Math.min(waitMs, 30000);
+          log.warn(`Rate limited (429). Retrying in ${waitMs}ms...`);
+          await delay(waitMs);
+          continue;
+        }
+        throw new Error(errorMsg);
       }
       return await response.json();
     } catch (err) {

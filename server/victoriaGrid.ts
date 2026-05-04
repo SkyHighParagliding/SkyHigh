@@ -155,7 +155,7 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
       console.log(`Victoria grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
 
       if (i < tiles.length - 1) {
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 500));
       }
     } catch (err) {
       console.error(`Victoria grid: Tile ${i + 1}/${tiles.length} failed:`, err);
@@ -619,3 +619,38 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
 
   return result;
 }
+
+// Initialize wind grids on module load if not cached
+(async () => {
+  try {
+    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+    if (!cached) {
+      console.log("Victoria grid: No cached data found on startup, initiating background fetch...");
+      fetchVictoriaGrid().catch(e => console.warn("Victoria grid startup fetch failed:", e.message));
+    } else {
+      const age = Date.now() - new Date((cached.updatedAt as string) || Date.now()).getTime();
+      if (age > GRID_CACHE_EXPIRY) {
+        console.log(`Victoria grid: Cached data is stale (${Math.round(age / 60000)}min old), initiating refresh...`);
+        fetchVictoriaGrid().catch(e => console.warn("Victoria grid startup refresh failed:", e.message));
+      }
+    }
+  } catch (e) {
+    console.warn("Victoria grid startup check error:", e);
+  }
+
+  try {
+    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    if (!cached) {
+      console.log("Wide grid: No cached data found on startup, initiating background fetch...");
+      fetchWideGrid().catch(e => console.warn("Wide grid startup fetch failed:", e.message));
+    } else {
+      const age = Date.now() - new Date((cached.updatedAt as string) || Date.now()).getTime();
+      if (age > WIDE_GRID_CACHE_EXPIRY) {
+        console.log(`Wide grid: Cached data is stale (${Math.round(age / 60000)}min old), initiating refresh...`);
+        fetchWideGrid().catch(e => console.warn("Wide grid startup refresh failed:", e.message));
+      }
+    }
+  } catch (e) {
+    console.warn("Wide grid startup check error:", e);
+  }
+})();
