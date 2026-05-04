@@ -174,6 +174,28 @@ function extractRole(position?: string): string {
   return role || "Committee";
 }
 
+function getSortOrder(position?: string): number {
+  const role = extractRole(position)?.toLowerCase() || "";
+  const roleMap: Record<string, number> = {
+    "president": 0,
+    "vice president": 1,
+    "treasurer": 2,
+    "secretary": 3,
+    "pg2 representative": 4,
+    "pg2 rep": 4,
+  };
+  return roleMap[role] ?? 999;
+}
+
+function sortCommitteeMembers(members: CommitteeMember[]): CommitteeMember[] {
+  return [...members].sort((a, b) => {
+    const orderA = getSortOrder(a.position);
+    const orderB = getSortOrder(b.position);
+    if (orderA !== orderB) return orderA - orderB;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
 function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember; displayName: string }) {
   const [revealed, setRevealed] = useState(false);
 
@@ -244,9 +266,10 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
   if (compact) {
     if (loading) return <div className="my-2 flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div></div>;
     if (members.length === 0) return null;
+    const sortedMembers = sortCommitteeMembers(members);
     return (
       <div className="flex flex-col items-center gap-1.5 mt-2">
-        {members.map(member => {
+        {sortedMembers.map(member => {
           const displayName = getDisplayName(member, members);
           return (
             <span
@@ -268,6 +291,8 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
   if (loading) return <div className="my-6 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky"></div></div>;
   if (members.length === 0) return null;
 
+  const sortedMembers = sortCommitteeMembers(members);
+
   return (
     <div id="committee-members" className="my-8">
       <div className="flex items-center gap-2 mb-4">
@@ -275,7 +300,7 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
         <h3 className="text-2xl font-bold text-navy">Committee Members</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {members.map(member => (
+        {sortedMembers.map(member => (
           <CommitteeMemberCard key={member.id} member={member} displayName={getDisplayName(member, members)} />
         ))}
       </div>
