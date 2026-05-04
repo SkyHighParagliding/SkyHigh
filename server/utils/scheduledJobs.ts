@@ -131,7 +131,28 @@ async function fetchWideGridDaily() {
   }
 }
 
+async function startupGridCheck() {
+  const STALE_MS = 18 * 60 * 60 * 1000;
+
+  const vicCache = db.prepare("SELECT updatedAt FROM wind_grid_data WHERE siteId = 'victoria_grid'").get() as { updatedAt: string } | undefined;
+  const vicAge = vicCache ? Date.now() - new Date(vicCache.updatedAt).getTime() : Infinity;
+  if (vicAge > STALE_MS) {
+    log.info(`Victoria grid cache stale/missing on startup (${vicCache ? Math.round(vicAge / 3600000) + 'h old' : 'no data'}) — fetching in 60s...`);
+    setTimeout(() => fetchVictoriaGridDaily(), 60_000);
+  }
+
+  const wideCache = db.prepare("SELECT updatedAt FROM wind_grid_data WHERE siteId = 'wide_grid'").get() as { updatedAt: string } | undefined;
+  const wideAge = wideCache ? Date.now() - new Date(wideCache.updatedAt).getTime() : Infinity;
+  if (wideAge > STALE_MS) {
+    log.info(`Wide grid cache stale/missing on startup (${wideCache ? Math.round(wideAge / 3600000) + 'h old' : 'no data'}) — fetching in 3min...`);
+    setTimeout(() => fetchWideGridDaily(), 3 * 60_000);
+  }
+}
+
 export async function startScheduledJobs() {
+  // On startup: catch up if grid data is stale (server started after scheduled window)
+  await startupGridCheck();
+
   // Daily wind grid pre-fetches: Victoria at 5:00am, Wide at 5:13am (Melbourne time)
   cron.schedule("0 5 * * *", fetchVictoriaGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Victoria grid daily fetch scheduled: 5:00am Melbourne time");
