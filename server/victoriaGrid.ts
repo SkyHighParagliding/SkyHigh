@@ -5,8 +5,8 @@ import { fromZonedTime } from 'date-fns-tz';
 const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast";
 const GRID_CACHE_KEY = "victoria_grid";
 const WIDE_GRID_CACHE_KEY = "wide_grid";
-const GRID_CACHE_EXPIRY = 60 * 60 * 1000;
-const WIDE_GRID_CACHE_EXPIRY = 3 * 60 * 60 * 1000;
+const GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
+const WIDE_GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
 
 const VIC_LAT_MIN = -39.2;
 const VIC_LAT_MAX = -34.0;
@@ -620,37 +620,3 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   return result;
 }
 
-// Initialize wind grids on module load if not cached
-(async () => {
-  try {
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
-    if (!cached) {
-      console.log("Victoria grid: No cached data found on startup, initiating background fetch...");
-      fetchVictoriaGrid().catch(e => console.warn("Victoria grid startup fetch failed:", e.message));
-    } else {
-      const age = Date.now() - new Date((cached.updatedAt as string) || Date.now()).getTime();
-      if (age > GRID_CACHE_EXPIRY) {
-        console.log(`Victoria grid: Cached data is stale (${Math.round(age / 60000)}min old), initiating refresh...`);
-        fetchVictoriaGrid().catch(e => console.warn("Victoria grid startup refresh failed:", e.message));
-      }
-    }
-  } catch (e) {
-    console.warn("Victoria grid startup check error:", e);
-  }
-
-  try {
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
-    if (!cached) {
-      console.log("Wide grid: No cached data found on startup, initiating background fetch...");
-      fetchWideGrid().catch(e => console.warn("Wide grid startup fetch failed:", e.message));
-    } else {
-      const age = Date.now() - new Date((cached.updatedAt as string) || Date.now()).getTime();
-      if (age > WIDE_GRID_CACHE_EXPIRY) {
-        console.log(`Wide grid: Cached data is stale (${Math.round(age / 60000)}min old), initiating refresh...`);
-        fetchWideGrid().catch(e => console.warn("Wide grid startup refresh failed:", e.message));
-      }
-    }
-  } catch (e) {
-    console.warn("Wide grid startup check error:", e);
-  }
-})();
