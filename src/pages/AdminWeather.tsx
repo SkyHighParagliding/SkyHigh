@@ -86,24 +86,30 @@ export function AdminWeather() {
   const { token } = useAuth();
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeMessage, setScrapeMessage] = useState("");
+  const [loadingType, setLoadingType] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Record<string, string>>({});
+
+  const handleTrigger = async (endpoint: string, type: string) => {
+    setLoadingType(type);
+    setMessages(prev => ({ ...prev, [type]: "" }));
+    try {
+      const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
+      if (data.success || data.message) {
+        setMessages(prev => ({ ...prev, [type]: data.message || "Triggered successfully!" }));
+        toast.success(data.message || `${type} triggered`);
+        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 3000);
+      } else {
+        setMessages(prev => ({ ...prev, [type]: "Update failed." }));
+      }
+    } catch (err) {
+      setMessages(prev => ({ ...prev, [type]: "Error connecting to server." }));
+    } finally {
+      setLoadingType(null);
+    }
+  };
 
   const handleScrapeNow = async () => {
-    setIsScraping(true);
-    setScrapeMessage("");
-    try {
-      const data = await api.post<{ success?: boolean }>("/api/weather/scrape-now", {}, token);
-      if (data.success) {
-        setScrapeMessage("Update successful!");
-        toast.success("Weather data updated");
-        setTimeout(() => setScrapeMessage(""), 3000);
-      } else {
-        setScrapeMessage("Update failed.");
-      }
-    } catch {
-      setScrapeMessage("Error connecting to server.");
-    } finally {
-      setIsScraping(false);
-    }
+    await handleTrigger("/api/weather/scrape-now", "liveWeather");
   };
 
   return (
@@ -125,10 +131,10 @@ export function AdminWeather() {
                 <div>
                   <CardTitle className="flex items-center text-navy">
                     <Wind className="w-5 h-5 mr-2 text-sky" />
-                    Weather Data
+                    Live Weather Data
                   </CardTitle>
                   <CardDescription>
-                    Weather data is fetched automatically every 15–30 minutes during daylight hours (7am–8pm Melbourne time).
+                    Live weather observations fetched automatically every 15–30 minutes during daylight hours (7am–8pm Melbourne time).
                     {settings.weatherScraperLastRun && (
                       <span className="block mt-1 text-emerald-600 font-medium">
                         Last Update: {new Date(settings.weatherScraperLastRun).toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' })} (Melbourne Time)
@@ -141,15 +147,84 @@ export function AdminWeather() {
                     variant="outline"
                     size="sm"
                     onClick={handleScrapeNow}
-                    disabled={isScraping}
+                    disabled={loadingType !== null}
                     className="flex items-center gap-2"
                   >
-                    <RefreshCw className={`w-4 h-4 ${isScraping ? 'animate-spin' : ''}`} />
-                    {isScraping ? "Fetching..." : "Fetch Now"}
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'liveWeather' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'liveWeather' ? "Fetching..." : "Fetch Now"}
                   </Button>
-                  {scrapeMessage && (
-                    <span className={`text-xs font-medium ${scrapeMessage.includes('failed') || scrapeMessage.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
-                      {scrapeMessage}
+                  {messages.liveWeather && (
+                    <span className={`text-xs font-medium ${messages.liveWeather.includes('failed') || messages.liveWeather.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {messages.liveWeather}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center text-navy">
+                    <Wind className="w-5 h-5 mr-2 text-sky" />
+                    Wind Grid Data
+                  </CardTitle>
+                  <CardDescription>
+                    Wind grid data downloaded daily at 4:30am (Extended), 5:00am (Victoria), and 5:30am (Wide). Cached for entire day.
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTrigger("/api/weather/extended-forecast/fetch-now", "extended")}
+                    disabled={loadingType !== null}
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'extended' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'extended' ? "Fetching..." : "Extended"}
+                  </Button>
+                  {messages.extended && (
+                    <span className={`text-xs font-medium text-center ${messages.extended.includes('failed') || messages.extended.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {messages.extended}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTrigger("/api/weather/victoria-grid/fetch-now", "victoria")}
+                    disabled={loadingType !== null}
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'victoria' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'victoria' ? "Fetching..." : "Victoria"}
+                  </Button>
+                  {messages.victoria && (
+                    <span className={`text-xs font-medium text-center ${messages.victoria.includes('failed') || messages.victoria.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {messages.victoria}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTrigger("/api/weather/wide-grid/fetch-now", "wide")}
+                    disabled={loadingType !== null}
+                    className="flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'wide' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'wide' ? "Fetching..." : "Wide"}
+                  </Button>
+                  {messages.wide && (
+                    <span className={`text-xs font-medium text-center ${messages.wide.includes('failed') || messages.wide.includes('Error') ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {messages.wide}
                     </span>
                   )}
                 </div>
