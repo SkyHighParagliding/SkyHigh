@@ -247,6 +247,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             hideWindInfo
             onWindInfoChange={setSitesWindInfo}
             sizeKey={canvasSizeKey}
+            initialZoomK={INITIAL_K}
           />
         </Suspense>
 

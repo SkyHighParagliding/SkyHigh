@@ -18,6 +18,7 @@ interface AIImageEnhancerModalProps {
   onImageNameChange?: (name: string) => void;
   preloadedImage?: { base64: string; mimeType: string; name: string } | null;
   initialPhotographerCredit?: string;
+  onPhotographerCreditChange?: (credit: string) => void;
   initialHeroImage?: string;
 }
 
@@ -39,7 +40,7 @@ const CROP_STEPS: CropStep[] = [
   { key: "portrait",  label: "Portrait (267×400)",        targetW: 267,  targetH: 400, prefix: "slider-portrait",  resultKey: "sliderPortrait",  buttonLabel: "Save Portrait",        hasZoom: true },
 ];
 
-export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroImages = [], imageName, onImageNameChange, preloadedImage, initialPhotographerCredit, initialHeroImage }: AIImageEnhancerModalProps) {
+export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroImages = [], imageName, onImageNameChange, preloadedImage, initialPhotographerCredit, onPhotographerCreditChange, initialHeroImage }: AIImageEnhancerModalProps) {
   const { token } = useAuth();
   const [step, setStep] = useState<"upload" | "generating" | "preview" | "crop-wizard">("upload");
   
@@ -713,7 +714,10 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                   <input
                     type="text"
                     value={photographerCredit}
-                    onChange={(e) => setPhotographerCredit(e.target.value)}
+                    onChange={(e) => {
+                      setPhotographerCredit(e.target.value);
+                      onPhotographerCreditChange?.(e.target.value);
+                    }}
                     placeholder="e.g. Jane Smith Photography"
                     maxLength={60}
                     className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
