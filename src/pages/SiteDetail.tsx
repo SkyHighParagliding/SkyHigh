@@ -311,8 +311,8 @@ export function SiteDetail() {
                     {isValidField(site.what3words) && (
                       <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="What3Words" value={site.what3words} href={`https://what3words.com/${site.what3words.replace('///', '')}`} />
                     )}
-                    {isValidField(site.navigateTo) && (
-                      <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="Navigate" value="Directions" href={site.navigateTo} />
+                    {(site.lat && site.lon) && (
+                      <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="Navigate" value="Directions" href={`https://www.google.com/maps?q=${site.lat},${site.lon}`} />
                     )}
                     {isValidField(site.siteguideUrl) && (
                       <InfoCard icon={<Info className="w-5 h-5 text-sky" />} label="Siteguide" value="View Info" href={site.siteguideUrl} />
