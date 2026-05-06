@@ -106,7 +106,8 @@ let inflightFetch: Promise<VictoriaGrid> | null = null;
 export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+      const today = new Date().toISOString().split('T')[0];
+      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
         if (age < GRID_CACHE_EXPIRY) {
@@ -195,7 +196,12 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
   if (completeness < 0.8) {
     console.warn(`Victoria grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
     if (cached) {
       try {
         return JSON.parse(cached.gridData) as VictoriaGrid;
@@ -268,7 +274,8 @@ let inflightWideFetch: Promise<VictoriaGrid> | null = null;
 export async function fetchWideGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+      const today = new Date().toISOString().split('T')[0];
+      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
         if (age < WIDE_GRID_CACHE_EXPIRY) {
@@ -357,7 +364,12 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
   if (completeness < 0.8) {
     console.warn(`Wide grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
-    const cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
     if (cached) {
       try {
         return JSON.parse(cached.gridData) as VictoriaGrid;
@@ -670,7 +682,12 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
 
 export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
   try {
-    const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
@@ -727,7 +744,12 @@ export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
 
 export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
   try {
-    const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(WIDE_GRID_CACHE_KEY) as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+    if (!cached) {
+      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
