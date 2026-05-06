@@ -54,14 +54,18 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const savedLon = settings.windMapDefaultLon ? parseFloat(String(settings.windMapDefaultLon)) : undefined;
   const savedZoom = settings.windMapDefaultZoom ? parseFloat(String(settings.windMapDefaultZoom)) : undefined;
 
-  const handleSaveView = useCallback(() => {
+  const handleSaveView = useCallback(async () => {
     if (!liveView) return;
-    updateSettings({
-      windMapDefaultLat: String(liveView.lat.toFixed(6)),
-      windMapDefaultLon: String(liveView.lon.toFixed(6)),
-      windMapDefaultZoom: String(liveView.zoom.toFixed(4)),
-    });
-    setIsSettingView(false);
+    try {
+      await updateSettings({
+        windMapDefaultLat: String(liveView.lat.toFixed(6)),
+        windMapDefaultLon: String(liveView.lon.toFixed(6)),
+        windMapDefaultZoom: String(liveView.zoom.toFixed(4)),
+      });
+      setIsSettingView(false);
+    } catch (e) {
+      console.error('Failed to save wind map view:', e);
+    }
   }, [liveView, updateSettings]);
 
   const exitFullscreen = useCallback(() => {
