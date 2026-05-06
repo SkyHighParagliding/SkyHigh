@@ -107,6 +107,9 @@ let memVictoriaGridAt = 0;
 let memWideGrid: VictoriaGrid | null = null;
 let memWideGridAt = 0;
 
+let cachedFullWindOverlay: any = null;
+let cachedFullWindOverlayKey = '';
+
 let inflightFetch: Promise<VictoriaGrid> | null = null;
 
 export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
@@ -664,6 +667,14 @@ export function extractFullWindGrid(grid: VictoriaGrid, wideGrid?: VictoriaGrid 
   const firstPoint = grid.points[0];
   if (!firstPoint.hourly?.time) return null;
 
+  const melbNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+  const melbDate = `${melbNow.getFullYear()}-${String(melbNow.getMonth() + 1).padStart(2, '0')}-${String(melbNow.getDate()).padStart(2, '0')}`;
+  const cacheKey = `${grid.fetchedAt}|${wideGrid?.fetchedAt ?? 0}|${melbDate}`;
+
+  if (cachedFullWindOverlay && cacheKey === cachedFullWindOverlayKey) {
+    return cachedFullWindOverlay;
+  }
+
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
   const result = gridToWindData(grid.points, DELTA, startIdx, selectedTimes);
 
@@ -676,6 +687,8 @@ export function extractFullWindGrid(grid: VictoriaGrid, wideGrid?: VictoriaGrid 
     }
   }
 
+  cachedFullWindOverlay = result;
+  cachedFullWindOverlayKey = cacheKey;
   return result;
 }
 
@@ -726,7 +739,7 @@ export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
     const grid = await fetchVictoriaGrid(true);
 
     if (!grid.points || grid.points.length === 0) {
-      if (cacheAgeMinutes && cacheAgeMinutes < 18 * 60) {
+      if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
         return {
           success: true,
           message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
@@ -788,7 +801,7 @@ export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
     const grid = await fetchWideGrid(true);
 
     if (!grid.points || grid.points.length === 0) {
-      if (cacheAgeMinutes && cacheAgeMinutes < 18 * 60) {
+      if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
         return {
           success: true,
           message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,

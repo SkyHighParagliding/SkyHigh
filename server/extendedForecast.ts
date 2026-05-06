@@ -730,7 +730,11 @@ export async function scheduleExtendedForecast(): void {
   }, Math.max(msUntilNext, 60000));
 
   const today = new Date().toISOString().split('T')[0];
-  const cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ? OR id LIKE 'extended_grid_%' LIMIT 1").get(`extended_grid_${today}`) as any;
+  let cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+  if (!cached) {
+    const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+    if (rows.length > 0) cached = rows[0];
+  }
   if (!cached) {
     console.log("Extended forecast: No cached data found, triggering initial fetch in 60s...");
     setTimeout(() => fetchExtendedForecast(), 60000);
@@ -745,7 +749,12 @@ export async function scheduleExtendedForecast(): void {
 
 export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus> {
   try {
-    const cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
+    const today = new Date().toISOString().split('T')[0];
+    let cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+    if (!cached) {
+      const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      if (rows.length > 0) cached = rows[0];
+    }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
@@ -759,7 +768,11 @@ export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus
 
     await fetchExtendedForecast();
 
-    const updated = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get('extended_grid') as any;
+    let updated = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+    if (!updated) {
+      const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      if (rows.length > 0) updated = rows[0];
+    }
     const newCacheAgeMs = updated ? Date.now() - new Date(updated.fetchedAt).getTime() : null;
 
     if (newCacheAgeMs && newCacheAgeMs < 60000) {
