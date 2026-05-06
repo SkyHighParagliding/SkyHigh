@@ -6,6 +6,11 @@
 
 ## Last Completed Work
 
+**CLAUDE.md + Wiki + Memory System Retrofit:** ✅ Complete
+- Full framework established (CLAUDE.md, 6-wiki-files, 5-memory-files)
+- All prior knowledge (wind map, security, bugs, decisions) documented
+- This framework will guide all future sessions
+
 **Wind Map Phase:** ✅ Complete
 - Continental grid caching (Victoria 0.35°, Wide 2.0°) — ECMWF data fetched daily at 5:00/5:13am Melbourne time
 - 7-day rolling cache in database with startup catch-up
