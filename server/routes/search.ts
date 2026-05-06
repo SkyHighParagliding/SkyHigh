@@ -768,7 +768,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const businessListings = await db.prepare("SELECT id, businessName, memberName, category FROM business_directory ORDER BY businessName").all() as any[];
+    const businessListings = await db.prepare("SELECT id, business_name AS businessName, member_name AS memberName, category FROM business_directory ORDER BY business_name").all() as any[];
     if (businessListings.length > 0) {
       context += "\n\n=== BUSINESS DIRECTORY ===\n";
       for (const b of businessListings) {
