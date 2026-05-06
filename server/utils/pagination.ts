@@ -1,3 +1,5 @@
+import { DEFAULT_LIMIT, MAX_LIMIT } from '../constants.js';
+
 // Pagination utility for list endpoints
 export interface PaginationParams {
   limit: number;
@@ -11,9 +13,6 @@ export interface PaginatedResponse<T> {
   offset: number;
   hasMore: boolean;
 }
-
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 500;
 
 export function getPaginationParams(query: Record<string, any>): PaginationParams {
   let limit = parseInt(query.limit as string, 10) || DEFAULT_LIMIT;

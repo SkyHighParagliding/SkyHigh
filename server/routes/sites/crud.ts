@@ -50,6 +50,7 @@ router.get("/", async (req, res) => {
       res.set('Cache-Control', 'public, max-age=30');
     }
 
+    res.set('X-Total-Count', String(countResult.count));
     res.json(createPaginatedResponse(mapped, countResult.count, limit, offset));
   } catch (e: any) {
     res.status(500).json({ error: e.message });

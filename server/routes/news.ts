@@ -12,6 +12,7 @@ router.get("/", asyncHandler(async (req, res) => {
   const data = await db.prepare("SELECT * FROM news ORDER BY date DESC LIMIT ? OFFSET ?").all(limit, offset) as any[];
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM news").get() as { count: number };
   const total = countResult.count;
+  res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(data, total, limit, offset));
 }));
 

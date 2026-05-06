@@ -33,12 +33,16 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?").all(limit, offset);
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts").get() as { count: number };
   const total = countResult.count;
+  res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
 
 router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   const q = req.query.q as string;
-  if (!q) return res.json(createPaginatedResponse([], 0, 50, 0));
+  if (!q) {
+    res.set('X-Total-Count', '0');
+    return res.json(createPaginatedResponse([], 0, 50, 0));
+  }
   const term = `%${q}%`;
   const { limit, offset } = getPaginationParams(req.query);
   const contacts = await db.prepare(
@@ -46,6 +50,7 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   ).all(term, term, term, limit, offset);
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ?").get(term, term, term) as { count: number };
   const total = countResult.count;
+  res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
 

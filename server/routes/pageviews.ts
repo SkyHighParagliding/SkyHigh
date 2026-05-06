@@ -20,6 +20,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const { limit, offset } = getPaginationParams(req.query);
   const rows = await db.prepare("SELECT * FROM page_views ORDER BY views DESC LIMIT ? OFFSET ?").all(limit, offset);
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM page_views").get() as { count: number };
+  res.set('X-Total-Count', String(countResult.count));
   res.json(createPaginatedResponse(rows, countResult.count, limit, offset));
 }));
 
