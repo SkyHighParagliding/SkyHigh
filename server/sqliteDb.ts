@@ -5,7 +5,7 @@ import createLogger from "./utils/logger.js";
 
 const log = createLogger("database");
 
-const dbPath = path.resolve(process.cwd(), "db.sqlite");
+const dbPath = path.resolve(process.cwd(), "database", "db.sqlite");
 const sqliteDb = new Database(dbPath);
 
 sqliteDb.pragma("journal_mode = WAL");

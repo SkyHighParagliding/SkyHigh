@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 
 const root = process.cwd();
 const uploadsDir = path.join(root, "uploads");
-const dbPath = path.join(root, "db.sqlite");
+const dbPath = path.join(root, "database", "db.sqlite");
 
 if (!fs.existsSync(dbPath)) {
   console.error("db.sqlite not found at", dbPath);
