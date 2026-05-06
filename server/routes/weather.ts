@@ -5,6 +5,9 @@ import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.j
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
+import { getCachedVictoriaGrid, getCachedWideGrid, extractWindParticles, fetchVictoriaGrid, fetchWideGrid, extractFullWindGrid } from "../victoriaGrid.js";
+import { getSiteExtendedForecast } from "../extendedForecast.js";
+import { fetchExtendedForecast } from "../extendedForecast.js";
 
 const router = Router();
 const log = createLogger("weather");
@@ -480,7 +483,6 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
 
-  const { getCachedVictoriaGrid, getCachedWideGrid, extractWindParticles, fetchVictoriaGrid, fetchWideGrid } = await import("../victoriaGrid.js");
   let grid = await getCachedVictoriaGrid();
   let wideGrid = await getCachedWideGrid();
 
@@ -505,8 +507,6 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 }));
 
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
-  const { fetchVictoriaGrid, fetchWideGrid, extractFullWindGrid } = await import("../victoriaGrid.js");
-
   // Fetch Victoria grid first, then Wide grid to avoid concurrent rate limiting
   let grid = null;
   let wideGrid = null;
@@ -535,7 +535,6 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
 }));
 
 router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
-  const { getSiteExtendedForecast } = await import("../extendedForecast.js");
   const forecast = await getSiteExtendedForecast(req.params.siteId);
   if (!forecast) {
     return res.status(404).json({ error: "No extended forecast available for this site" });
@@ -550,19 +549,16 @@ router.post("/scrape-now", asyncHandler(async (req, res) => {
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchExtendedForecast } = await import("../extendedForecast.js");
   fetchExtendedForecast().catch(() => {});
   res.json({ success: true, message: "Extended forecast fetch started" });
 }));
 
 router.post("/victoria-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
   fetchVictoriaGrid(true).catch(() => {});
   res.json({ success: true, message: "Victoria grid fetch started" });
 }));
 
 router.post("/wide-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  const { fetchWideGrid } = await import("../victoriaGrid.js");
   fetchWideGrid(true).catch(() => {});
   res.json({ success: true, message: "Wide grid fetch started" });
 }));
