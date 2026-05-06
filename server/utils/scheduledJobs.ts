@@ -132,19 +132,35 @@ async function fetchWideGridDaily() {
 }
 
 async function startupGridCheck() {
-  const STALE_MS = 18 * 60 * 60 * 1000;
+  const RECENT_FETCH_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-  const vicCache = db.prepare("SELECT updatedAt FROM wind_grid_data WHERE siteId = 'victoria_grid'").get() as { updatedAt: string } | undefined;
-  const vicAge = vicCache ? Date.now() - new Date(vicCache.updatedAt).getTime() : Infinity;
-  if (vicAge > STALE_MS) {
-    log.info(`Victoria grid cache stale/missing on startup (${vicCache ? Math.round(vicAge / 3600000) + 'h old' : 'no data'}) — fetching in 60s...`);
+  // Check Victoria grid: only fetch if NOT fetched within last 12 hours
+  const vicLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'victoriaGridLastRun'").get() as { value: string } | undefined;
+  if (vicLastRun?.value) {
+    const timeSinceLastRun = Date.now() - new Date(vicLastRun.value).getTime();
+    if (timeSinceLastRun < RECENT_FETCH_MS) {
+      log.info(`Victoria grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
+    } else {
+      log.info(`Victoria grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 60s...`);
+      setTimeout(() => fetchVictoriaGridDaily(), 60_000);
+    }
+  } else {
+    log.info("Victoria grid never fetched — fetching in 60s...");
     setTimeout(() => fetchVictoriaGridDaily(), 60_000);
   }
 
-  const wideCache = db.prepare("SELECT updatedAt FROM wind_grid_data WHERE siteId = 'wide_grid'").get() as { updatedAt: string } | undefined;
-  const wideAge = wideCache ? Date.now() - new Date(wideCache.updatedAt).getTime() : Infinity;
-  if (wideAge > STALE_MS) {
-    log.info(`Wide grid cache stale/missing on startup (${wideCache ? Math.round(wideAge / 3600000) + 'h old' : 'no data'}) — fetching in 3min...`);
+  // Check Wide grid: only fetch if NOT fetched within last 12 hours
+  const wideLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'wideGridLastRun'").get() as { value: string } | undefined;
+  if (wideLastRun?.value) {
+    const timeSinceLastRun = Date.now() - new Date(wideLastRun.value).getTime();
+    if (timeSinceLastRun < RECENT_FETCH_MS) {
+      log.info(`Wide grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
+    } else {
+      log.info(`Wide grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
+      setTimeout(() => fetchWideGridDaily(), 3 * 60_000);
+    }
+  } else {
+    log.info("Wide grid never fetched — fetching in 3min...");
     setTimeout(() => fetchWideGridDaily(), 3 * 60_000);
   }
 }
