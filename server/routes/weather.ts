@@ -362,6 +362,45 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
     }
   }
 
+  // Try to use cached Victoria or Wide grid if site falls within bounds
+  const VIC_LAT_MIN = -39.2, VIC_LAT_MAX = -34.0, VIC_LON_MIN = 141.0, VIC_LON_MAX = 150.0;
+  const WIDE_LAT_MIN = -50, WIDE_LAT_MAX = -5, WIDE_LON_MIN = 105, WIDE_LON_MAX = 165;
+
+  const inVictoria = site.lat >= VIC_LAT_MIN && site.lat <= VIC_LAT_MAX && site.lon >= VIC_LON_MIN && site.lon <= VIC_LON_MAX;
+  const inWide = site.lat >= WIDE_LAT_MIN && site.lat <= WIDE_LAT_MAX && site.lon >= WIDE_LON_MIN && site.lon <= WIDE_LON_MAX && !inVictoria;
+  const gridCacheKey = inVictoria ? "victoria_grid" : inWide ? "wide_grid" : null;
+
+  if (gridCacheKey) {
+    const gridCache = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(gridCacheKey) as any;
+    if (gridCache) {
+      try {
+        const cachedGrid = JSON.parse(gridCache.gridData);
+        const gridPoints = (cachedGrid.points || []).sort((a: any, b: any) => {
+          const distA = Math.hypot(a.lat - site.lat, a.lon - site.lon);
+          const distB = Math.hypot(b.lat - site.lat, b.lon - site.lon);
+          return distA - distB;
+        }).slice(0, gridSize * gridSize);
+
+        if (gridPoints.length >= 10) {
+          const result = {
+            siteId: site.id,
+            centerLat: site.lat,
+            centerLon: site.lon,
+            gridSize,
+            gridSpacing,
+            points: gridPoints,
+            generatedAt: new Date().toISOString()
+          };
+          await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
+            .run(site.id, JSON.stringify(result), gridSize, gridSpacing);
+          return res.json(result);
+        }
+      } catch (e) {
+        // Fall through to fresh fetch
+      }
+    }
+  }
+
   const halfGrid = Math.floor(gridSize / 2);
   const lats: number[] = [];
   const lons: number[] = [];
