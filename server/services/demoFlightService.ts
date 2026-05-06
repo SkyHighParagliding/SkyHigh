@@ -12,7 +12,7 @@ export class DemoFlightService implements FlightService {
   readonly flights = new Map<string, Flight>();
   readonly breadcrumbs = new Map<string, any[]>();
 
-  createFlight(pilotId: string | null, _sessionToken: string | null, siteId: string | null, siteName: string): Flight {
+  async createFlight(pilotId: string | null, _sessionToken: string | null, siteId: string | null, siteName: string): Promise<Flight> {
     const id = crypto.randomUUID();
     const sToken = pilotId ? null : crypto.randomUUID();
 
@@ -38,7 +38,7 @@ export class DemoFlightService implements FlightService {
     return flight;
   }
 
-  addBreadcrumbs(flightId: string, breadcrumbs: Breadcrumb[], _pilot: Pilot | null, _sessionToken?: string) {
+  async addBreadcrumbs(flightId: string, breadcrumbs: Breadcrumb[], _pilot: Pilot | null, _sessionToken?: string): Promise<{ inserted: number; total: number } | { error: string; status: number } | null> {
     const flight = this.flights.get(flightId);
     if (!flight) return null;
 
@@ -94,7 +94,7 @@ export class DemoFlightService implements FlightService {
     }
   }
 
-  endFlight(flightId: string, stats: FlightStats | undefined, _pilot: Pilot | null, _sessionToken?: string) {
+  async endFlight(flightId: string, stats: FlightStats | undefined, _pilot: Pilot | null, _sessionToken?: string): Promise<{ ok: boolean; error?: string; status?: number; pilotId?: string | null; pilotName?: string; flightId?: string }> {
     const flight = this.flights.get(flightId);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };
 
@@ -111,19 +111,19 @@ export class DemoFlightService implements FlightService {
     return { ok: true, pilotId: flight.pilotId, pilotName, flightId };
   }
 
-  getFlightWithBreadcrumbs(flightId: string, _pilot: Pilot | null, _sessionToken?: string) {
+  async getFlightWithBreadcrumbs(flightId: string, _pilot: Pilot | null, _sessionToken?: string): Promise<{ flight: any; breadcrumbs: any[] } | { error: string; status: number } | null> {
     const flight = this.flights.get(flightId);
     if (!flight) return null;
     const crumbs = this.breadcrumbs.get(flightId) || [];
     return { flight: { ...flight }, breadcrumbs: crumbs };
   }
 
-  listFlights(pilotId: string | null, _sessionToken?: string) {
+  async listFlights(pilotId: string | null, _sessionToken?: string): Promise<Flight[]> {
     if (!pilotId) return [];
     return Array.from(this.flights.values()).filter(f => f.pilotId === pilotId);
   }
 
-  deleteFlight(flightId: string, pilot: Pilot | null, _sessionToken?: string) {
+  async deleteFlight(flightId: string, pilot: Pilot | null, _sessionToken?: string): Promise<{ ok: boolean; error?: string; status?: number }> {
     const flight = this.flights.get(flightId);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };
     if (flight.pilotId !== pilot?.id) return { ok: false, error: "Not authorized for this flight", status: 403 };
@@ -134,7 +134,7 @@ export class DemoFlightService implements FlightService {
     return { ok: true };
   }
 
-  getFlight(flightId: string) {
+  async getFlight(flightId: string): Promise<Flight | null> {
     return this.flights.get(flightId) || null;
   }
 

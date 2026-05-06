@@ -21,7 +21,7 @@ export class DemoMessageService implements MessageService {
   readonly messages: DemoMapMessage[] = [];
   private msgIdCounter = 1;
 
-  sendMessage(sender: Pilot, recipientPilotId: string, recipientName: string, message: string): MapMessage | { error: string; status: number } {
+  async sendMessage(sender: Pilot, recipientPilotId: string, recipientName: string, message: string): Promise<MapMessage | { error: string; status: number }> {
     if (!recipientPilotId || !message) {
       return { error: "Missing recipientPilotId or message", status: 400 };
     }
@@ -58,7 +58,7 @@ export class DemoMessageService implements MessageService {
     };
   }
 
-  getInbox(pilotId: string) {
+  async getInbox(pilotId: string): Promise<{ messages: any[]; thumbsUps: any[] }> {
     this.purgeDemoMessages();
 
     const messages = this.messages
@@ -92,7 +92,7 @@ export class DemoMessageService implements MessageService {
     return { messages, thumbsUps };
   }
 
-  thumbsUp(msgId: string | number, pilotId: string) {
+  async thumbsUp(msgId: string | number, pilotId: string): Promise<{ ok: boolean; error?: string; status?: number }> {
     const id = typeof msgId === 'string' ? parseInt(msgId) : msgId;
     const msg = this.messages.find(m => m.id === id);
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
@@ -101,7 +101,7 @@ export class DemoMessageService implements MessageService {
     return { ok: true };
   }
 
-  thumbsDown(msgId: string | number, pilotId: string) {
+  async thumbsDown(msgId: string | number, pilotId: string): Promise<{ ok: boolean; error?: string; status?: number }> {
     const id = typeof msgId === 'string' ? parseInt(msgId) : msgId;
     const msg = this.messages.find(m => m.id === id);
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
@@ -110,7 +110,7 @@ export class DemoMessageService implements MessageService {
     return { ok: true };
   }
 
-  markDelivered(msgId: string | number, pilotId: string) {
+  async markDelivered(msgId: string | number, pilotId: string): Promise<{ ok: boolean; error?: string; status?: number }> {
     const id = typeof msgId === 'string' ? parseInt(msgId) : msgId;
     const msg = this.messages.find(m => m.id === id);
     if (!msg) return { ok: false, error: "Message not found", status: 404 };

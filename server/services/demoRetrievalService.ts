@@ -19,7 +19,7 @@ export class DemoRetrievalService implements RetrievalService {
   flightService: { flights: Map<string, any>; livePilots: Map<string, any> } | null = null;
   demoTokens: Record<string, Pilot> = {};
 
-  requestRetrieval(pilot: Pilot, lat: number | null, lon: number | null, _flightId?: string | null) {
+  async requestRetrieval(pilot: Pilot, lat: number | null, lon: number | null, _flightId?: string | null): Promise<{ ok: boolean; alreadyExists?: boolean; alreadyActive?: boolean }> {
     const hasActive = Array.from(this.retrievals.values()).some(
       r => r.pilotId === pilot.id && (r.status === 'awaiting' || r.status === 'claimed')
     );
@@ -52,13 +52,13 @@ export class DemoRetrievalService implements RetrievalService {
     return { ok: true };
   }
 
-  getUnretrieved() {
+  async getUnretrieved(): Promise<Retrieval[]> {
     return Array.from(this.retrievals.values()).filter(
       r => r.status === 'awaiting' || r.status === 'claimed'
     );
   }
 
-  claimRetrieval(pilotId: string, driver: Pilot) {
+  async claimRetrieval(pilotId: string, driver: Pilot): Promise<{ ok: boolean; error?: string; status?: number }> {
     const retrieval = Array.from(this.retrievals.values()).find(
       r => r.pilotId === pilotId && r.status === 'awaiting'
     );
@@ -100,7 +100,7 @@ export class DemoRetrievalService implements RetrievalService {
     return { ok: true };
   }
 
-  unclaimRetrieval(pilotId: string, caller: Pilot) {
+  async unclaimRetrieval(pilotId: string, caller: Pilot): Promise<{ ok: boolean; error?: string; status?: number }> {
     const retrieval = Array.from(this.retrievals.values()).find(
       r => r.pilotId === pilotId && r.status === 'claimed'
     );
@@ -137,7 +137,7 @@ export class DemoRetrievalService implements RetrievalService {
     return { ok: true };
   }
 
-  completeRetrieval(pilotId: string, caller: Pilot) {
+  async completeRetrieval(pilotId: string, caller: Pilot): Promise<{ ok: boolean; error?: string; status?: number }> {
     const retrieval = Array.from(this.retrievals.values()).find(
       r => r.pilotId === pilotId && (r.status === 'awaiting' || r.status === 'claimed')
     );
@@ -161,7 +161,7 @@ export class DemoRetrievalService implements RetrievalService {
     return { ok: true };
   }
 
-  async updateDriverPosition(driver: Pilot, lat: number, lon: number) {
+  async updateDriverPosition(driver: Pilot, lat: number, lon: number): Promise<{ ok: boolean; updated: number }> {
     this.driverPositions.set(driver.id, {
       driverId: driver.id,
       driverName: driver.firstName || driver.name || 'Driver',
@@ -198,7 +198,7 @@ export class DemoRetrievalService implements RetrievalService {
       .filter(d => Date.now() - d.updatedAt < LANDED_TTL_MS);
   }
 
-  updatePilotPosition(pilot: Pilot, lat: number, lon: number) {
+  async updatePilotPosition(pilot: Pilot, lat: number, lon: number): Promise<{ ok: boolean; updated: number }> {
     let updated = 0;
     for (const retrieval of this.retrievals.values()) {
       if (retrieval.pilotId === pilot.id && (retrieval.status === 'awaiting' || retrieval.status === 'claimed')) {
@@ -243,7 +243,7 @@ export class DemoRetrievalService implements RetrievalService {
     return { ok: true, updated };
   }
 
-  getRetrievalStatus(pilotId: string, callerId: string): RetrievalStatusResponse | { error: string; status: number } {
+  async getRetrievalStatus(pilotId: string, callerId: string): Promise<RetrievalStatusResponse | { error: string; status: number }> {
     if (callerId !== pilotId) {
       return { error: "Can only check your own retrieval status", status: 403 };
     }
@@ -317,7 +317,7 @@ export class DemoRetrievalService implements RetrievalService {
     };
   }
 
-  createRetrievalForPilot(pilotId: string, pilotName: string, pilotLat: number | null, pilotLon: number | null, flightId: string) {
+  async createRetrievalForPilot(pilotId: string, pilotName: string, pilotLat: number | null, pilotLon: number | null, flightId: string): Promise<void> {
     const hasActive = Array.from(this.retrievals.values()).some(
       r => r.pilotId === pilotId && (r.status === 'awaiting' || r.status === 'claimed')
     );

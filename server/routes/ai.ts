@@ -10,14 +10,13 @@ import crypto from "crypto";
 import asyncHandler from "../utils/asyncHandler.js";
 import { parseAiJsonResponse } from "../utils/aiJsonParser.js";
 import { requireAuth } from "../middleware/auth.js";
-import { generateTextWithFallback, getImageModels } from "../utils/aiModels.js";
+import { generateTextWithFallback, getTextModels, getImageModels, setTextModels, setImageModels, DEFAULT_TEXT_MODELS, DEFAULT_IMAGE_MODELS } from "../utils/aiModels.js";
 import { extractEssentialInfo, isAllowedScrapeUrl } from "../utils/essentialInfo.js";
 import { scrapeSiteguidePage, extractResponsibleClub } from "../utils/siteScraper.js";
 import { getAppScriptUrl, isDriveConnected, ensureFolderStructure, uploadFile } from "../googleDrive.js";
 import { validateURLSafety } from "../utils/urlValidator.js";
 import { applyWatermark, normalizePosition } from "../utils/watermark.js";
 import { saveFile, readFile, fileExists, keyFromUrl, isR2Configured, StorageKey } from "../storage.js";
-import { getTextModels, getImageModels, setTextModels, setImageModels, DEFAULT_TEXT_MODELS, DEFAULT_IMAGE_MODELS } from "../utils/aiModels.js";
 
 async function rotateAndCrop(buffer: Buffer, angleDeg: number): Promise<Buffer> {
   const meta = await sharp(buffer).metadata();
