@@ -28,7 +28,15 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
-SkyHigh is an Australian paragliding/hang gliding club management platform — not just a website, but a full operational tool covering flying sites with live weather, XC flight GPS tracking, pilot retrieval coordination (SSE live updates), admin CMS, document management via Google Drive, and TidyHQ membership integration. It is designed to be white-labelled for other clubs. The codebase recently went through a security hardening pass (7 critical issues resolved) and a significant wind map / ECMWF grid caching overhaul. The wind map now sources data from pre-cached continental grids (Victoria 0.35° grid and Wide 2.0° grid) rather than making live API calls per site, with D3/Canvas bilinear interpolation at render time.
+SkyHigh is an Australian paragliding/hang gliding club management platform — a comprehensive full-stack tool (not just a website) covering:
+- **Flying sites** with AI-powered guide scraping, live weather via Open-Meteo, pre-cached ECMWF wind grids
+- **XC flight tracking** with GPS submissions and live SSE retrieval coordination
+- **Member management** via TidyHQ integration (automated role sync, contacts, shop products)
+- **Admin CMS** with deep-linked modals, bulk operations, document management via Google Drive
+- **Smart image processing** with AI enhancement, watermarking, and auto-variant generation
+- **White-label ready** for other clubs with customizable branding and PWA support
+
+Recently hardened (7 critical security fixes) and optimized (wind map: 10x faster via caching, database: indexed for production). Uses dual-database abstraction (SQLite dev / PostgreSQL prod) for maximum compatibility.
 
 ---
 
@@ -54,6 +62,14 @@ The `wiki/` folder is the intra-project brain. The `memory/` folder is the inter
 - The wiki is tight, clear, unambiguous, and easy to navigate.
 - Use Obsidian-friendly conventions: `[[wiki-links]]` between files, `#tags` for filtering, YAML front matter
 - If you ever feel uncertain about project state, the wiki should have the answer. If it doesn't, that's a wiki bug — fix it
+- **Wiki Files:**
+  - `00-overview.md` — Project description, goals, scope
+  - `01-architecture.md` — Tech stack, structure, rationale
+  - `02-tasks.md` — Master task list
+  - `03-decisions-log.md` — Why decisions were made
+  - `04-glossary.md` — Project-specific terms
+  - `05-file-map.md` — Where files live
+  - `06-integrations.md` — External integrations (TidyHQ, AI, etc.)
 
 **Memory Rules:**
 - `memory/MEMORY.md` is the index you read at session start
