@@ -8,8 +8,8 @@ const OPEN_METEO_URL = OPEN_METEO_API_KEY
   : `https://api.open-meteo.com/v1/forecast`;
 const GRID_CACHE_KEY = "victoria_grid";
 const WIDE_GRID_CACHE_KEY = "wide_grid";
-const GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
-const WIDE_GRID_CACHE_EXPIRY = 18 * 60 * 60 * 1000;
+const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
+const WIDE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 
 export interface GridFetchStatus {
   success: boolean;
@@ -101,6 +101,12 @@ function buildTiles(): { lats: number[]; lons: number[] }[] {
   return tiles;
 }
 
+const MEM_CACHE_TTL_MS = 30 * 60 * 1000;
+let memVictoriaGrid: VictoriaGrid | null = null;
+let memVictoriaGridAt = 0;
+let memWideGrid: VictoriaGrid | null = null;
+let memWideGridAt = 0;
+
 let inflightFetch: Promise<VictoriaGrid> | null = null;
 
 export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
@@ -113,6 +119,8 @@ export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
         if (age < GRID_CACHE_EXPIRY) {
           const grid = JSON.parse(cached.gridData) as VictoriaGrid;
           console.log(`Victoria grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
+          memVictoriaGrid = grid;
+          memVictoriaGridAt = Date.now();
           return grid;
         }
       }
@@ -204,7 +212,10 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
     }
     if (cached) {
       try {
-        return JSON.parse(cached.gridData) as VictoriaGrid;
+        const fallbackGrid = JSON.parse(cached.gridData) as VictoriaGrid;
+        memVictoriaGrid = fallbackGrid;
+        memVictoriaGridAt = Date.now();
+        return fallbackGrid;
       } catch (e: any) {
         console.error("Victoria grid: Failed to parse cached data:", e.message);
       }
@@ -234,6 +245,8 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
     console.error("Victoria grid: Failed to cache:", e);
   }
 
+  memVictoriaGrid = grid;
+  memVictoriaGridAt = Date.now();
   return grid;
 }
 
@@ -281,6 +294,8 @@ export async function fetchWideGrid(force = false): Promise<VictoriaGrid> {
         if (age < WIDE_GRID_CACHE_EXPIRY) {
           const grid = JSON.parse(cached.gridData) as VictoriaGrid;
           console.log(`Wide grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
+          memWideGrid = grid;
+          memWideGridAt = Date.now();
           return grid;
         }
       }
@@ -372,7 +387,10 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
     }
     if (cached) {
       try {
-        return JSON.parse(cached.gridData) as VictoriaGrid;
+        const fallbackGrid = JSON.parse(cached.gridData) as VictoriaGrid;
+        memWideGrid = fallbackGrid;
+        memWideGridAt = Date.now();
+        return fallbackGrid;
       } catch (e: any) {
         console.error("Wide grid: Failed to parse cached data:", e.message);
       }
@@ -402,10 +420,15 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
     console.error("Wide grid: Failed to cache:", e);
   }
 
+  memWideGrid = grid;
+  memWideGridAt = Date.now();
   return grid;
 }
 
-export async function getCachedVictoriaGrid(): VictoriaGrid | null {
+export async function getCachedVictoriaGrid(): Promise<VictoriaGrid | null> {
+  if (memVictoriaGrid && Date.now() - memVictoriaGridAt < MEM_CACHE_TTL_MS) {
+    return memVictoriaGrid;
+  }
   try {
     const today = new Date().toISOString().split('T')[0];
     let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
@@ -416,7 +439,10 @@ export async function getCachedVictoriaGrid(): VictoriaGrid | null {
     }
 
     if (cached) {
-      return JSON.parse(cached.gridData) as VictoriaGrid;
+      const grid = JSON.parse(cached.gridData) as VictoriaGrid;
+      memVictoriaGrid = grid;
+      memVictoriaGridAt = Date.now();
+      return grid;
     }
   } catch (e) {
     console.error("Victoria grid: Cache read error", e);
@@ -424,7 +450,10 @@ export async function getCachedVictoriaGrid(): VictoriaGrid | null {
   return null;
 }
 
-export async function getCachedWideGrid(): VictoriaGrid | null {
+export async function getCachedWideGrid(): Promise<VictoriaGrid | null> {
+  if (memWideGrid && Date.now() - memWideGridAt < MEM_CACHE_TTL_MS) {
+    return memWideGrid;
+  }
   try {
     const today = new Date().toISOString().split('T')[0];
     let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
@@ -435,7 +464,10 @@ export async function getCachedWideGrid(): VictoriaGrid | null {
     }
 
     if (cached) {
-      return JSON.parse(cached.gridData) as VictoriaGrid;
+      const grid = JSON.parse(cached.gridData) as VictoriaGrid;
+      memWideGrid = grid;
+      memWideGridAt = Date.now();
+      return grid;
     }
   } catch (e) {
     console.error("Wide grid: Cache read error", e);
