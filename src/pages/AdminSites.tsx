@@ -186,7 +186,7 @@ export function AdminSites() {
   const [wtfShowAll, setWtfShowAll] = useState(false);
 
   useEffect(() => {
-    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites')
+    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites?limit=500')
       .then(response => setSites(response.data))
       .catch(() => {});
     api.get<Record<string, string>>('/api/settings')
