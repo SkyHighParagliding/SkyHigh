@@ -345,6 +345,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           wfOpacity: data.wfOpacity || "0.7",
           wfMaxParticleSpeed: data.wfMaxParticleSpeed || "4",
           wfParticleMaxAge: data.wfParticleMaxAge || "180",
+          windMapDefaultLat: data.windMapDefaultLat,
+          windMapDefaultLon: data.windMapDefaultLon,
+          windMapDefaultZoom: data.windMapDefaultZoom,
           ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
         });
         setLoading(false);
@@ -486,6 +489,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         wfOpacity: data.wfOpacity || "0.7",
         wfMaxParticleSpeed: data.wfMaxParticleSpeed || "4",
         wfParticleMaxAge: data.wfParticleMaxAge || "180",
+        windMapDefaultLat: data.windMapDefaultLat,
+        windMapDefaultLon: data.windMapDefaultLon,
+        windMapDefaultZoom: data.windMapDefaultZoom,
         ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
       });
     } catch (err) {
