@@ -12,6 +12,7 @@ import { cleanExpiredSessions } from "./server/middleware/auth.js";
 import { csrfTokenProvider, csrfTokenValidator, getCSRFTokenRoute } from "./server/middleware/csrf.js";
 import createLogger from "./server/utils/logger.js";
 import { startScheduledJobs } from "./server/utils/scheduledJobs.js";
+import { precomputeWindGridIfNeeded } from "./server/extendedForecast.js";
 
 import sitesRouter, { externalSitesRouter } from "./server/routes/sites/index.js";
 import weatherRouter from "./server/routes/weather.js";
@@ -330,6 +331,7 @@ async function startServer() {
     cleanExpiredSessions();
   }, 60 * 60 * 1000);
 
+  await precomputeWindGridIfNeeded();
   startScheduledJobs();
 }
 
