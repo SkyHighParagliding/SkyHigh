@@ -18,3 +18,4 @@ skyhigh.db
 scratch/
 *.code-workspace
 lint_output.txt
+memory/
