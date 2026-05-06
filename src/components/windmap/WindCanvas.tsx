@@ -214,7 +214,7 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
     };
-  }, [windGrid, siteLat, siteLon, onZoomChange, sizeKey]);
+  }, [windGrid, siteLat, siteLon, onZoomChange, sizeKey, savedCenterLat, savedCenterLon, savedZoom]);
 
   const handlePointer = (e: React.PointerEvent) => {
     if (!containerRef.current) return;
