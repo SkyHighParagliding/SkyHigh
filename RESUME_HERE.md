@@ -6,16 +6,30 @@
 
 ## Latest Session Work (2026-05-06)
 
-### Current Work
-
-**Wind Grid Caching Fix** ✅
-- Wind map was taking 30 seconds instead of 1.5 seconds
-- Root cause: Introduced database caching that broke in-memory cache
-- Fixed by reverting to simple in-memory caching with 1-hour TTL
-- First request: computes wind grid (~1.5s), subsequent requests: instant (<10ms)
-- Commit: `3cdbace`
-
 ### Completed Tasks
+
+**Wind Grid Caching Architecture Refactored** ✅
+- **Issue:** Wind map taking 30s instead of 1.5s after introducing database caching
+- **Root cause:** Misunderstood caching strategy; introduced unnecessary complexity
+- **Solution:** Aligned implementation with actual architecture:
+  - Wind grid computed during daily `fetchExtendedForecast()` at 5:30am (not on-demand)
+  - Stored in in-memory cache with 24-hour TTL (expires before next fetch)
+  - Startup pre-computation is fallback-only (if server restarts mid-day)
+  - First request after restart: ~1.5s compute, subsequent requests: instant from cache
+- **Commits:** 
+  - `3cdbace`: Restored in-memory caching (1-hour TTL)
+  - `72f034e`: Updated RESUME_HERE
+  - `8905ae1`: Refactored to 24-hour TTL, moved computation to daily fetch
+- **Pushed to GitHub:** ✅
+
+### Key Learning This Session
+- **Don't optimize without understanding architecture:** I broke working code trying to "improve" caching without understanding the existing 7-day rolling forecast + daily wind grid update pattern
+- **Ask before changing:** The 1-hour TTL seemed wrong, but should have asked about the design before refactoring
+- **Simple is better:** In-memory cache with clear TTL beats database caching for frequently-accessed, infrequently-changing data
+
+---
+
+## Previous Session Work (2026-05-06 earlier)
 
 **1. Code Audit & Bug Fixes** ✅
 - Audited pi CLI review tool changes — found 6 files with incomplete async/await conversions
@@ -62,8 +76,11 @@
 
 ## Git Status
 - **Branch:** main
-- **Commits ahead of origin:** 3 (async fixes, wind performance, search fix)
-- **Ready to push:** Yes ✅
+- **Latest commits:** 
+  - `8905ae1`: Refactored wind grid to 24h TTL, compute during daily fetch
+  - `72f034e`: Updated RESUME_HERE with wind grid fix
+  - `3cdbace`: Restored in-memory wind grid caching
+- **Pushed to GitHub:** ✅
 
 ---
 
