@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Play, Pause, FastForward, Loader2, Calendar, Layers, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, Pause, FastForward, Loader2, Calendar, Layers, Maximize2, Minimize2, Crosshair } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes';
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 
@@ -24,8 +25,10 @@ interface SitesWindMapProps {
 }
 
 export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
+  const { user } = useAuth();
   const clubName = settings.clubName || 'SkyHigh';
+  const isAdmin = !!user?.isAdmin;
   const containerRef = useRef<HTMLDivElement>(null);
   const [windGrid, setWindGrid] = useState<WindGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,9 +43,26 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [showOverlay, setShowOverlay] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
+  const [isSettingView, setIsSettingView] = useState(false);
+  const [liveView, setLiveView] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const didPushHistoryRef = useRef(false);
   const closingViaPopRef = useRef(false);
+
+  // Read saved map view settings
+  const savedLat = settings.windMapDefaultLat ? parseFloat(String(settings.windMapDefaultLat)) : undefined;
+  const savedLon = settings.windMapDefaultLon ? parseFloat(String(settings.windMapDefaultLon)) : undefined;
+  const savedZoom = settings.windMapDefaultZoom ? parseFloat(String(settings.windMapDefaultZoom)) : undefined;
+
+  const handleSaveView = useCallback(() => {
+    if (!liveView) return;
+    updateSettings({
+      windMapDefaultLat: String(liveView.lat.toFixed(6)),
+      windMapDefaultLon: String(liveView.lon.toFixed(6)),
+      windMapDefaultZoom: String(liveView.zoom.toFixed(4)),
+    });
+    setIsSettingView(false);
+  }, [liveView, updateSettings]);
 
   const exitFullscreen = useCallback(() => {
     if (didPushHistoryRef.current && !closingViaPopRef.current) {
@@ -253,6 +273,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             onWindInfoChange={setSitesWindInfo}
             sizeKey={canvasSizeKey}
             initialZoomK={INITIAL_K}
+            savedCenterLat={savedLat}
+            savedCenterLon={savedLon}
+            savedZoom={savedZoom}
+            onTransformChange={(lat, lon, zoom) => setLiveView({ lat, lon, zoom })}
           />
         </Suspense>
 
@@ -341,6 +365,20 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       >
         {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </button>
+
+      {isAdmin && (
+        <button
+          onClick={() => isSettingView ? handleSaveView() : setIsSettingView(true)}
+          title={isSettingView ? "Save this view as default" : "Set default map view"}
+          className={`absolute top-3 right-12 z-40 p-1.5 rounded-full transition-colors shadow-lg ${
+            isSettingView
+              ? 'bg-orange-500 text-white ring-2 ring-orange-300 animate-pulse'
+              : 'bg-black/60 text-white/80 hover:text-white hover:bg-black/80'
+          }`}
+        >
+          <Crosshair className="w-4 h-4" />
+        </button>
+      )}
 
       <button
         onClick={() => setShowOverlay(o => !o)}

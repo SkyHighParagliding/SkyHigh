@@ -24,9 +24,13 @@ interface WindCanvasProps {
   onWindInfoChange?: (info: { speed: number; direction: number } | null) => void;
   sizeKey?: number;
   initialZoomK?: number;
+  savedCenterLat?: number;
+  savedCenterLon?: number;
+  savedZoom?: number;
+  onTransformChange?: (lat: number, lon: number, zoomLevel: number) => void;
 }
 
-export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS, siteMarkers, onSiteClick, hideWindInfo, onWindInfoChange, sizeKey, initialZoomK }: WindCanvasProps) {
+export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS, siteMarkers, onSiteClick, hideWindInfo, onWindInfoChange, sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom, onTransformChange }: WindCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,8 +73,11 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
     let initialTransform: ZoomTransform;
     const markers = siteMarkersRef.current;
     if (markers && markers.length > 1) {
-      // Use provided initialZoomK if available, otherwise calculate from bounds
-      let useK = initialZoomK;
+      // Use saved settings if available, otherwise fall back to initialZoomK or computed fit
+      let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : initialZoomK;
+      let useCenterLon = savedCenterLon ?? (windGrid.lonMin + windGrid.lonMax) / 2;
+      let useCenterLat = savedCenterLat ?? (windGrid.latMin + windGrid.latMax) / 2;
+
       if (!useK) {
         // Use wind grid bounds for initial focus
         const minLat = windGrid.latMin;
@@ -88,7 +95,7 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
         const fitK = Math.min(width / geoW, height / geoH) * 0.95;
         useK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 20)));
       }
-      const centerPt = projection([(windGrid.lonMin + windGrid.lonMax) / 2, (windGrid.latMin + windGrid.latMax) / 2])!;
+      const centerPt = projection([useCenterLon, useCenterLat])!;
       initialTransform = zoomIdentity
         .translate(width / 2 - centerPt[0] * useK, height / 2 - centerPt[1] * useK)
         .scale(useK);
@@ -141,6 +148,14 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
         transformRef.current = t;
         setTransform(t);
         onZoomChange(t.k);
+
+        if (onTransformChange) {
+          const inverted = projection.invert([(width/2 - t.x) / t.k, (height/2 - t.y) / t.k]);
+          if (inverted) {
+            const [lon, lat] = inverted;
+            onTransformChange(lat, lon, Math.log2(t.k / 256));
+          }
+        }
       });
 
     const d3Container = select(containerRef.current);
