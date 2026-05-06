@@ -6,7 +6,6 @@ import createLogger from "./utils/logger.js";
 const log = createLogger("weather");
 
 const LIVE_WIND_VIC_URL = "https://live-wind.com.au/windobs/v3/query_newest_obs_smart_v2.php?state=vic";
-const OPEN_METEO_URL = "http://api.open-meteo.com/v1/forecast";
 let scraperTimeout: NodeJS.Timeout | null = null;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
