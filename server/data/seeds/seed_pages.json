@@ -1,19 +1,5 @@
 [
   {
-    "slug": "about",
-    "title": "About Us",
-    "content": "## About SkyHigh Paragliding Club\n\nSkyHigh is based in Melbourne and is one of Australia's largest and most active free flight clubs. We are dedicated to helping paraglider and hang glider pilots get the most out of this fantastic sport in a safe way.\n\n### Our Committee\nOur club is run by a dedicated group of volunteers. If you have any questions, feel free to reach out to any of our committee members.\n\n{{committee}}",
-    "lastUpdated": "2026-05-04 04:40:08",
-    "heroImage": null
-  },
-  {
-    "slug": "airspace",
-    "title": "Airspace Resources",
-    "content": "Essential airspace information for cross-country pilots flying in Victoria. Use the tools and downloads on this page to check airspace restrictions, plan routes, and stay safe.",
-    "lastUpdated": "2026-05-04 04:40:08",
-    "heroImage": null
-  },
-  {
     "slug": "new-pilots",
     "title": "New Pilots",
     "content": "## Welcome to SkyHigh!\n\nIf you are new to paragliding or hang gliding, you've come to the right place. SkyHigh is dedicated to helping new pilots get the most out of this fantastic sport in a safe way.\n\n### Getting Started\n1. **Get your license:** You must have a valid SAFA license to fly at our sites.\n2. **Join the club:** Membership gives you access to our sites, events, and community.\n3. **Find a mentor:** Connect with experienced pilots who can show you the ropes.\n\n### Telegram Chats\nHere are our Telegram chats to find out where we are and connect\n\n{{telegram}}\n\n### Training\nHere are some schools to consider:\n\n{{schools}}",
@@ -24,6 +10,20 @@
     "slug": "visiting-pilots",
     "title": "Visiting Pilots",
     "content": "## Welcome to Victoria!\n\nWe love having visiting pilots fly our sites. However, to ensure safety and maintain our site access, we require all visiting pilots to follow a few simple rules:\n\n1. **SAFA Membership:** You must be a current member of the Sports Aviation Federation of Australia (SAFA). International pilots can get a short-term visiting membership.\n2. **Site Briefings:** Always get a site briefing from a local pilot or Safety Officer before flying a new site.\n3. **Check-in:** Use our online check-in system before you fly.",
+    "lastUpdated": "2026-05-04 04:40:08",
+    "heroImage": null
+  },
+  {
+    "slug": "about",
+    "title": "About Us",
+    "content": "## About SkyHigh Paragliding Club\n\nSkyHigh is based in Melbourne and is one of Australia's largest and most active free flight clubs. We are dedicated to helping paraglider and hang glider pilots get the most out of this fantastic sport in a safe way.\n\n### Our Committee\nOur club is run by a dedicated group of volunteers. If you have any questions, feel free to reach out to any of our committee members.\n\n{{committee}}",
+    "lastUpdated": "2026-05-04 04:40:08",
+    "heroImage": null
+  },
+  {
+    "slug": "airspace",
+    "title": "Airspace Resources",
+    "content": "Essential airspace information for cross-country pilots flying in Victoria. Use the tools and downloads on this page to check airspace restrictions, plan routes, and stay safe.",
     "lastUpdated": "2026-05-04 04:40:08",
     "heroImage": null
   }
