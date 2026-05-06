@@ -232,6 +232,17 @@ export async function fetchExtendedForecast(): Promise<void> {
 
     await extractAllSiteExtendedForecasts(grid);
 
+    const windGrid = computeExtendedWindGrid(grid);
+    try {
+      await db.prepare(`
+        INSERT OR REPLACE INTO extended_wind_grids (id, windData, computedAt)
+        VALUES (?, ?, ?)
+      `).run(`wind_overlay_${today}`, JSON.stringify(windGrid), new Date().toISOString());
+      console.log(`Extended forecast: Pre-computed wind overlay for ${today}`);
+    } catch (err) {
+      console.warn(`Extended forecast: Wind overlay pre-computation failed, will compute on-demand:`, err);
+    }
+
   } catch (err) {
     console.error("Extended forecast: CRITICAL ERROR:", err);
   } finally {
@@ -503,13 +514,8 @@ function buildSiteExtendedForecast(
   };
 }
 
-export async function getExtendedWindGrid(): any | null {
-  const grid = await getCachedExtendedGrid();
-  if (!grid || !grid.points.length) return null;
-
+function computeExtendedWindGrid(grid: ExtendedGrid): any {
   const allTimes = grid.points[0].times;
-  if (!allTimes?.length) return null;
-
   const VIC_LON_MIN = 141.0;
   const VIC_LON_MAX = 150.0;
   const VIC_LAT_MIN = -39.2;
@@ -592,6 +598,27 @@ export async function getExtendedWindGrid(): any | null {
     times: allTimes,
     data,
   };
+}
+
+let cachedWindGrid: any = null;
+let cachedWindGridTime: number = 0;
+
+export async function getExtendedWindGrid(): Promise<any | null> {
+  const now = Date.now();
+  if (cachedWindGrid && (now - cachedWindGridTime) < 60 * 60 * 1000) {
+    return cachedWindGrid;
+  }
+
+  const grid = await getCachedExtendedGrid();
+  if (!grid || !grid.points.length) return null;
+
+  const allTimes = grid.points[0].times;
+  if (!allTimes?.length) return null;
+
+  const windGrid = computeExtendedWindGrid(grid);
+  cachedWindGrid = windGrid;
+  cachedWindGridTime = now;
+  return windGrid;
 }
 
 export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
@@ -762,5 +789,44 @@ export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus
       success: false,
       message: `Error fetching extended forecast: ${errorMsg}`
     };
+  }
+}
+
+export async function precomputeWindGridIfNeeded(): Promise<void> {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const cached = await db.prepare("SELECT id FROM extended_wind_grids WHERE id = ?").get(`wind_overlay_${today}`) as any;
+
+    if (cached) {
+      console.log(`Extended wind grid: Cache exists for ${today}`);
+      return;
+    }
+
+    const grid = await getCachedExtendedGrid();
+    if (!grid || !grid.points.length) {
+      console.log("Extended wind grid: No source grid available to pre-compute");
+      return;
+    }
+
+    const allTimes = grid.points[0].times;
+    if (!allTimes?.length) {
+      console.log("Extended wind grid: Source grid has no times");
+      return;
+    }
+
+    console.log("Extended wind grid: Pre-computing for startup...");
+    const windGrid = computeExtendedWindGrid(grid);
+
+    try {
+      await db.prepare(`
+        INSERT OR REPLACE INTO extended_wind_grids (id, windData, computedAt)
+        VALUES (?, ?, ?)
+      `).run(`wind_overlay_${today}`, JSON.stringify(windGrid), new Date().toISOString());
+      console.log("Extended wind grid: Pre-computation complete");
+    } catch (err) {
+      console.warn("Extended wind grid: Failed to cache pre-computed data:", err);
+    }
+  } catch (err) {
+    console.warn("Extended wind grid: Pre-computation skipped:", err);
   }
 }
