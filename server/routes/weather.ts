@@ -207,7 +207,7 @@ const extendedGridHandler = asyncHandler(async (_req: any, res: any) => {
   if (!grid) {
     return res.status(404).json({ error: "No extended grid data available" });
   }
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Cache-Control', 'public, max-age=1800');
   res.json(grid);
 });
 router.get("/extended-grid", extendedGridHandler);
@@ -218,7 +218,7 @@ router.get("/extended-grid/wind-overlay", asyncHandler(async (_req: any, res: an
   if (!result) {
     return res.status(404).json({ error: "No extended wind grid data available" });
   }
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Cache-Control', 'public, max-age=1800');
   res.json(result);
 }));
 
@@ -369,10 +369,15 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
 
   const inVictoria = site.lat >= VIC_LAT_MIN && site.lat <= VIC_LAT_MAX && site.lon >= VIC_LON_MIN && site.lon <= VIC_LON_MAX;
   const inWide = site.lat >= WIDE_LAT_MIN && site.lat <= WIDE_LAT_MAX && site.lon >= WIDE_LON_MIN && site.lon <= WIDE_LON_MAX && !inVictoria;
-  const gridCacheKey = inVictoria ? "victoria_grid" : inWide ? "wide_grid" : null;
+  const baseGridCacheKey = inVictoria ? "victoria_grid" : inWide ? "wide_grid" : null;
 
-  if (gridCacheKey) {
-    const gridCache = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(gridCacheKey) as any;
+  if (baseGridCacheKey) {
+    const today = new Date().toISOString().split('T')[0];
+    let gridCache = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${baseGridCacheKey}_${today}`) as any;
+    if (!gridCache) {
+      const rows = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1").all(`${baseGridCacheKey}_%`) as any[];
+      if (rows.length > 0) gridCache = rows[0];
+    }
     if (gridCache) {
       try {
         const cachedGrid = JSON.parse(gridCache.gridData);
@@ -415,7 +420,7 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
 
   const latParam = lats.join(",");
   const lonParam = lons.join(",");
-  const url = `http://api.open-meteo.com/v1/forecast?latitude=${latParam}&longitude=${lonParam}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=ecmwf_ifs025&wind_speed_unit=kn&timezone=Australia%2FMelbourne&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latParam}&longitude=${lonParam}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=ecmwf_ifs025&wind_speed_unit=kn&timezone=Australia%2FMelbourne&forecast_days=1`;
 
   const data = await fetchWithRetry(url);
   if (!data) {
@@ -505,27 +510,27 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 }));
 
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
-  // Fetch Victoria grid first, then Wide grid to avoid concurrent rate limiting
-  let grid = null;
-  let wideGrid = null;
+  let grid = await getCachedVictoriaGrid();
+  let wideGrid = await getCachedWideGrid();
 
-  try {
-    grid = await fetchVictoriaGrid();
-  } catch (e) {
-    log.error("Victoria grid fetch failed:", e);
-    return res.status(503).json({ error: "Open-Meteo API rate limit exceeded — wind data temporarily unavailable" });
+  if (!grid) {
+    try {
+      grid = await fetchVictoriaGrid();
+    } catch (e) {
+      log.error("Victoria grid fetch failed:", e);
+    }
+  }
+  if (!grid) {
+    return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
-  try {
+  if (!wideGrid) {
     wideGrid = await fetchWideGrid().catch(() => null);
-  } catch (e) {
-    log.warn("Wide grid fetch failed but continuing with Victoria grid only:", e);
   }
 
   const result = extractFullWindGrid(grid, wideGrid);
-
   if (!result) {
-    return res.status(503).json({ error: "Open-Meteo API rate limit exceeded — wind data temporarily unavailable" });
+    return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
   res.setHeader('Cache-Control', 'public, max-age=1800');

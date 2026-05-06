@@ -8,11 +8,11 @@ const OPEN_METEO_URL = OPEN_METEO_API_KEY
   ? `https://customer-api.open-meteo.com/v1/forecast`
   : `https://api.open-meteo.com/v1/forecast`;
 
-const WIDE_LAT_MIN = -39.2;
-const WIDE_LAT_MAX = -34.0;
-const WIDE_LON_MIN = 141.0;
-const WIDE_LON_MAX = 150.0;
-const WIDE_DELTA = 0.5;
+const EXT_LAT_MIN = -39.2;
+const EXT_LAT_MAX = -34.0;
+const EXT_LON_MIN = 141.0;
+const EXT_LON_MAX = 150.0;
+const EXT_DELTA = 0.5;
 
 interface ExtendedGridPoint {
   lat: number;
@@ -62,8 +62,8 @@ interface SiteExtendedForecast {
 
 function buildExtendedTiles(): { lats: number[]; lons: number[] }[] {
   const allPoints: { lat: number; lon: number }[] = [];
-  for (let lat = WIDE_LAT_MIN; lat <= WIDE_LAT_MAX; lat += WIDE_DELTA) {
-    for (let lon = WIDE_LON_MIN; lon <= WIDE_LON_MAX; lon += WIDE_DELTA) {
+  for (let lat = EXT_LAT_MIN; lat <= EXT_LAT_MAX; lat += EXT_DELTA) {
+    for (let lon = EXT_LON_MIN; lon <= EXT_LON_MAX; lon += EXT_DELTA) {
       allPoints.push({
         lat: parseFloat(lat.toFixed(4)),
         lon: parseFloat(lon.toFixed(4))
@@ -213,11 +213,11 @@ export async function fetchExtendedForecast(): Promise<void> {
     }
 
     const grid: ExtendedGrid = {
-      latMin: WIDE_LAT_MIN,
-      latMax: WIDE_LAT_MAX,
-      lonMin: WIDE_LON_MIN,
-      lonMax: WIDE_LON_MAX,
-      delta: WIDE_DELTA,
+      latMin: EXT_LAT_MIN,
+      latMax: EXT_LAT_MAX,
+      lonMin: EXT_LON_MIN,
+      lonMax: EXT_LON_MAX,
+      delta: EXT_DELTA,
       points: allPoints,
       fetchedAt: Date.now()
     };
