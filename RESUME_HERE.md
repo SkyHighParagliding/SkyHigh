@@ -2,9 +2,18 @@
 
 **Session Date:** 2026-05-06 (Ongoing)  
 **Branch:** main  
-**Working Tree Status:** Clean (seed files + code audits)
+**Working Tree Status:** Clean (wind grid caching fix applied)
 
 ## Latest Session Work (2026-05-06)
+
+### Current Work
+
+**Wind Grid Caching Fix** ✅
+- Wind map was taking 30 seconds instead of 1.5 seconds
+- Root cause: Introduced database caching that broke in-memory cache
+- Fixed by reverting to simple in-memory caching with 1-hour TTL
+- First request: computes wind grid (~1.5s), subsequent requests: instant (<10ms)
+- Commit: `3cdbace`
 
 ### Completed Tasks
 
