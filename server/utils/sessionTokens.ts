@@ -1,13 +1,9 @@
 import crypto from 'crypto';
 import db from '../db.js';
 import createLogger from './logger.js';
+import { SESSION_TOKEN_LENGTH, SESSION_TTL_MS, SESSION_CLEANUP_INTERVAL_MS } from '../constants.js';
 
 const log = createLogger('sessions');
-
-// Session token configuration
-const TOKEN_LENGTH = 32; // bytes
-const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 export interface SessionToken {
   id: string;
@@ -27,7 +23,7 @@ export class SessionManager {
    * Generate a new session token
    */
   generateToken(userId: string, ipAddress?: string, userAgent?: string): SessionToken {
-    const token = crypto.randomBytes(TOKEN_LENGTH).toString('hex');
+    const token = crypto.randomBytes(SESSION_TOKEN_LENGTH).toString('hex');
     const now = new Date();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
 
@@ -193,7 +189,7 @@ export class SessionManager {
 
     this.cleanupInterval = setInterval(async () => {
       await this.cleanupExpiredSessions();
-    }, CLEANUP_INTERVAL_MS);
+    }, SESSION_CLEANUP_INTERVAL_MS);
 
     log.info('Session cleanup scheduler started');
   }

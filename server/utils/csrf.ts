@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { CSRF_TOKEN_EXPIRY_MS, CSRF_CLEANUP_INTERVAL_MS } from "../constants.js";
 
 /**
  * CSRF Protection using token-based validation.
@@ -13,8 +14,6 @@ interface CSRFToken {
 // In-memory store: userId -> { token, expiresAt }
 // In production, consider using Redis or database
 const tokenStore = new Map<string, CSRFToken>();
-const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
-const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // Clean expired tokens every hour
 
 /**
  * Generate a new CSRF token for a user (identified by sessionId or userId)
@@ -23,7 +22,7 @@ export function generateCSRFToken(userId: string): string {
   const token = crypto.randomBytes(32).toString("hex");
   tokenStore.set(userId, {
     token,
-    expiresAt: Date.now() + TOKEN_EXPIRY_MS,
+    expiresAt: Date.now() + CSRF_TOKEN_EXPIRY_MS,
   });
   return token;
 }
@@ -66,4 +65,4 @@ function cleanupExpiredTokens() {
 }
 
 // Start cleanup interval
-setInterval(cleanupExpiredTokens, CLEANUP_INTERVAL_MS);
+setInterval(cleanupExpiredTokens, CSRF_CLEANUP_INTERVAL_MS);

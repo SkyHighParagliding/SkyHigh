@@ -16,6 +16,7 @@ router.get("/", asyncHandler(async (req, res) => {
     try { const s = JSON.parse(p.steps || '[]'); steps = Array.isArray(s) ? s : []; } catch { steps = []; }
     return { ...p, steps };
   });
+  res.set('X-Total-Count', String(countResult.count));
   res.json(createPaginatedResponse(parsed, countResult.count, limit, offset));
 }));
 
