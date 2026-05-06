@@ -2,108 +2,69 @@
 
 **Session Date:** 2026-05-07  
 **Branch:** main  
-**Working Tree Status:** Clean (Phase 3 hardening completed and committed)
+**Working Tree Status:** Clean — pushed to GitHub ✅
 
 ## Latest Session Work (2026-05-07)
 
+### Wind Data Pipeline — Full Audit & Fix ✅
+
+Two complete audit passes and fix cycles on the wind data pipeline. All known issues resolved.
+
+**Commits this session:**
+- `0cc4d72` — cache key mismatch fix (root cause of 30s load time after IP change)
+- `8ec93c2` — 7-issue wind pipeline fix (see below)
+- `d11763c` — admin status bugs + overlay result caching (see below)
+
+**What was fixed (commit 8ec93c2):**
+1. CRITICAL: `wind-overlay/full` now reads from cache first, live-fetches only if DB empty
+2. In-memory cache (30-min) added to Victoria + Wide raw grids
+3. `GRID_CACHE_EXPIRY` extended 18h → 26h (covers overnight gap before 5am fetch)
+4. Dead `/:siteId/wind-grid` endpoint cache key fixed to date-suffix format
+5. HTTP → HTTPS in that endpoint's fallback URL
+6. `WIDE_*` constant naming collision in `extendedForecast.ts` fixed (renamed to `EXT_*`)
+7. `Cache-Control` headers standardized to `max-age=1800` across all wind endpoints
+
+**What was fixed (commit d11763c):**
+1. `fetchVictoriaGridWithStatus` + `fetchWideGridWithStatus`: threshold 18h → 26h (admin showed wrong status)
+2. `fetchExtendedForecastWithStatus`: was looking up extinct bare key `'extended_grid'`; always returned null; admin always showed "unavailable". Fixed to date-suffix + ORDER BY DESC fallback
+3. `scheduleExtendedForecast` startup SQL: OR clause made it non-deterministic (returned oldest row, not most recent); triggered unnecessary startup fetches on every restart
+4. Removed dead `OPEN_METEO_URL = "http://..."` from `weather.ts`
+5. `extractFullWindGrid()` now caches processed overlay result (keyed by fetchedAt + Melbourne date), matching pattern used by `getExtendedWindGrid()`
+
+**Architecture now (all three grids):**
+- Memory cache → DB fallback (ORDER BY id DESC) → live fetch only if DB empty
+- 7-day retention, cleanup runs on successful fetch only
+- During 6-day outage: serves most recent DB entry, never triggers live fetch
+
+---
+
+## Previous Session Work (2026-05-07 earlier)
+
 ### Phase 3 Hardening — Audit & Fixes ✅
-**Discovery:** Wiki listed Phase 3 & 4 as TODO, but audit found 31 of 33 tasks already complete.
-- **Audited all gaps:** JSON.parse guards, pagination, logging, validation, constants, indexes, sessions
-- **Fixed 3 remaining issues:**
-  1. Created `server/constants.ts` with 40+ centralized config constants (pagination, session, CSRF, caching, rate limiting, API, database)
-  2. Updated pagination.ts, sessionTokens.ts, csrf.ts to import from constants.ts
-  3. Added X-Total-Count headers to 5 list endpoints (sites, contacts/search, procedures, news, pageviews)
-- **Verified with build:** npm run build ✅ (no TypeScript errors)
-- **Committed:** 1ee1e87
-
-**Task Status Summary (after audit):**
-- ✅ Phase 1: 7/7 complete (2026-04-30)
-- ✅ Phase 2: 11/11 complete (2026-05-05)
-- ✅ Phase 3: 7/7 complete (2026-05-07) — was showing as TODO
-- ⚠️ Phase 4: 3/4 complete (PostgreSQL, R2 configured; CSRF Redis deferred as unnecessary for single-instance)
-- ⬜ Phase 5: 0/4 (backlog, no timeline)
-
-**Total: 31/33 tasks complete (2 partial)**
+- Created `server/constants.ts` with 40+ centralized config constants
+- Updated pagination.ts, sessionTokens.ts, csrf.ts to import from constants.ts
+- Added X-Total-Count headers to 5 list endpoints
+- All Phases 1, 2, 3 complete; Phase 4 at 3/4 (CSRF Redis deferred, DEFAULT_ADMINS partial)
 
 ---
-
-## Previous Session Work (2026-05-06)
-
-### Completed Tasks
-
-**Wind Grid Caching Architecture Refactored** ✅
-- **Issue:** Wind map taking 30s instead of 1.5s after introducing database caching
-- **Root cause:** Misunderstood caching strategy; introduced unnecessary complexity
-- **Solution:** Aligned implementation with actual architecture:
-  - Wind grid computed during daily `fetchExtendedForecast()` at 5:30am (not on-demand)
-  - Stored in in-memory cache with 24-hour TTL (expires before next fetch)
-  - Startup pre-computation is fallback-only (if server restarts mid-day)
-  - First request after restart: ~1.5s compute, subsequent requests: instant from cache
-- **Commits:** 
-  - `3cdbace`: Restored in-memory caching (1-hour TTL)
-  - `72f034e`: Updated RESUME_HERE
-  - `8905ae1`: Refactored to 24-hour TTL, moved computation to daily fetch
-- **Pushed to GitHub:** ✅
-
-### Key Learning This Session
-- **Don't optimize without understanding architecture:** I broke working code trying to "improve" caching without understanding the existing 7-day rolling forecast + daily wind grid update pattern
-- **Ask before changing:** The 1-hour TTL seemed wrong, but should have asked about the design before refactoring
-- **Simple is better:** In-memory cache with clear TTL beats database caching for frequently-accessed, infrequently-changing data
-
----
-
-## Previous Session Work (2026-05-06 earlier)
-
-**1. Code Audit & Bug Fixes** ✅
-- Audited pi CLI review tool changes — found 6 files with incomplete async/await conversions
-- Fixed all interface mismatches in DemoFlightService, DemoMessageService, DemoRetrievalService
-- Added proper `Promise<T>` return types to all async methods
-- Removed dangerous `as any` type casts in service index
-
-**2. Admin Search Bug Fix** ✅
-- Fixed "no such column: businessName" error in search.ts:771
-- Changed query to use proper column aliases: `business_name AS businessName`
-- Verified all 290+ SELECT queries in codebase — no other similar issues found
-
-**3. Wind Map Performance Optimization** ✅
-- Eliminated per-request dynamic imports causing 1-2s+ load times
-- Moved victoriaGrid and extendedForecast imports to top-level
-- Wind data now loads in <200ms from cache
-- Removed 6 dynamic imports from route handlers
-
-**4. Database Audit** ✅
-- Verified ai.ts duplicate import of getImageModels — consolidated into single import
-- Comprehensive search for similar column naming errors — only 1 issue found and fixed
-- All seed files exported and up-to-date
-
-### Code Quality Improvements
-- ✅ No async/await interface errors
-- ✅ No column naming mismatches  
-- ✅ No duplicate imports
-- ✅ All 290 SELECT queries verified
-- ✅ Wind map performance optimized
-- ✅ Admin search fully functional
-
-## Previous Phase Work
-
-**CLAUDE.md + Wiki + Memory System:** ✅ Complete  
-**Wind Map (Grid Caching):** ✅ Complete  
-**Security Hardening Phase 1:** ✅ Complete  
-**Next Phase:** Short-term hardening (7 items in wiki/02-tasks.md)
 
 ## Current State
 - **Site Status:** Fully operational ✅
+- **Wind Pipeline:** Fully audited and fixed ✅
 - **All Known Bugs:** Fixed ✅
-- **Seed Files:** Exported and current ✅
-- **Code Quality:** Excellent ✅
+- **Build:** Clean ✅
+- **Pushed:** ✅
 
 ## Git Status
 - **Branch:** main
-- **Latest commits:** 
-  - `8905ae1`: Refactored wind grid to 24h TTL, compute during daily fetch
-  - `72f034e`: Updated RESUME_HERE with wind grid fix
-  - `3cdbace`: Restored in-memory wind grid caching
-- **Pushed to GitHub:** ✅
+- **Latest commits:**
+  - `d11763c`: Admin status bugs + overlay result caching
+  - `8ec93c2`: 7-issue wind pipeline fix
+  - `0cc4d72`: Cache key mismatch fix
+
+## Open Tasks
+- Phase 4 Task 029: DEFAULT_ADMINS setup script (no urgency)
+- Phase 5: Feature backlog (no timeline)
 
 ---
 
