@@ -93,7 +93,6 @@ project-folder/
 ├── tasks/                       # Task tracking for this session
 │   ├── todo.md                  # Current tasks to work on
 │   └── lessons.md               # Accumulated lessons (self-improvement)
-├── .agents/                     # Specialized agent configs (optional)
 ├── .claude/
 │   └── settings.json            # Hooks and permissions
 ├── code/                        # Actual project code
@@ -426,19 +425,13 @@ If the project requires parallel work, you can spawn specialized agents:
 
 ## Section 17: How-To References
 
-The files in `.agents/skills/` are **manual workflow checklists for the user** — not invokable Claude Code slash commands. They live as reference docs you can open and follow when you want a structured approach to a recurring task. Each one captures a workflow you can paste into a chat or follow step-by-step yourself.
+The files in `C:\Users\User\Documents\CodeFolder\.agents\skills\` are **manual workflow checklists for the user** — not invokable Claude Code slash commands. They live as reference docs you can open and follow when you want a structured approach to a recurring task. Each one captures a workflow you can paste into a chat or follow step-by-step yourself.
 
-- **`.agents/skills/fix-bug.md`** — Bug-fix workflow:
-  - Reading the issue, diagnosing root cause, branching, fix + test, verify, commit
-  - Open this file when you have a bug to work through
-
-- **`.agents/skills/review-pr.md`** — PR review checklist:
-  - Security review, logic review, test coverage, code quality
-  - Open this file when you want to review changes systematically
-
-- **`.agents/skills/sync-memory.md`** — End-of-session memory consolidation:
-  - Extract lessons, update memory/feedback.md, optionally promote general patterns to LLM wiki
-  - Open this file at session end if learnings worth capturing emerged
+**Shared Skills Library** (available across all projects):
+- UI/UX design, SEO audit, deep research, content creation, photo editing, and more
+- Located at: `CodeFolder\.agents\skills\`
+- Available to any Claude Code session on any project
+- Example: `CodeFolder\.agents\skills\ui-ux-pro-max\SKILL.md`
 
 These are how-tos. Typing `/fix-bug` etc. in Claude Code will not invoke them — open the file and follow it.
 
