@@ -15,7 +15,10 @@ db_backups/
 sites.db
 db.sqlite
 skyhigh.db
+database.sqlite
+server/data.sqlite
 scratch/
 *.code-workspace
 lint_output.txt
 memory/
+tasks/lessons.md
