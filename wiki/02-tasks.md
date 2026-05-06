@@ -198,11 +198,6 @@ Pilots can export their XC flight history as CSV or GPX.
 - **Acceptance Criteria:** Pilot page with download button. Exports all flights submitted by that pilot. CSV includes distance, date, landing zone. GPX includes track (if available).
 - **Status:** Backlog
 
-### TASK-032 ⬜ Airspace NOTAM Overlay
-Display active NOTAMs and restricted airspace on wind map.
-- **Acceptance Criteria:** Placeholder layer. Currently non-functional. Will integrate CASA airspace data + Notam API when available.
-- **Status:** Backlog (no API partner yet)
-
 ### TASK-033 ⬜ Multi-Club White-Label Test
 Deploy second instance of SkyHigh for different club.
 - **Acceptance Criteria:** Codebase supports multiple clubs with separate databases and branding. Second deployment (different club) works independently. Test white-label customization (name, logo, default wind map viewport).
@@ -218,14 +213,14 @@ Deploy second instance of SkyHigh for different club.
 | 2 | Wind Map & Weather | 011 | ✅ Complete | 2026-05-05 |
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
 | 4 | Production Deployment | 004 | ⚠️ 3/4 Complete | 2026-05-07 |
-| 5 | Feature Backlog | 004 | ⬜ TODO | — |
-| | **TOTAL** | **33** | **31 ✅ / 2 ⚠️ / 0 ⬜** | — |
+| 5 | Feature Backlog | 003 | ⬜ TODO | — |
+| | **TOTAL** | **32** | **31 ✅ / 2 ⚠️ / 0 ⬜** | — |
 
 ---
 
 **Task Summary:**
 - **Completed (31):** Phases 1, 2, 3 + Tasks 026, 027 from Phase 4
 - **Partial (2):** Task 028 (deferred, single-instance only), Task 029 (env var loaded, no setup script)
-- **Backlog (4):** Phase 5 features (no timeline)
+- **Backlog (3):** Tasks 030, 031, 033 — to be addressed at production launch
 
 Last updated: 2026-05-07
