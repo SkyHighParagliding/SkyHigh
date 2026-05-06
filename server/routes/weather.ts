@@ -6,7 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getCachedVictoriaGrid, getCachedWideGrid, extractWindParticles, fetchVictoriaGrid, fetchWideGrid, extractFullWindGrid } from "../victoriaGrid.js";
-import { getSiteExtendedForecast } from "../extendedForecast.js";
+import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
 const router = Router();
@@ -203,7 +203,6 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
 }));
 
 const extendedGridHandler = asyncHandler(async (_req: any, res: any) => {
-  const { getCachedExtendedGrid } = await import("../extendedForecast.js");
   const grid = await getCachedExtendedGrid();
   if (!grid) {
     return res.status(404).json({ error: "No extended grid data available" });
@@ -215,7 +214,6 @@ router.get("/extended-grid", extendedGridHandler);
 router.get("/extended-grid/data", extendedGridHandler);
 
 router.get("/extended-grid/wind-overlay", asyncHandler(async (_req: any, res: any) => {
-  const { getExtendedWindGrid } = await import("../extendedForecast.js");
   const result = await getExtendedWindGrid();
   if (!result) {
     return res.status(404).json({ error: "No extended wind grid data available" });
