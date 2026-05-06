@@ -15,7 +15,7 @@ export function useSites(isPublic = true) {
   return useQuery({
     queryKey: siteKeys.list(isPublic),
     queryFn: async () => {
-      const response = await api.get<{ data: Site[] }>(isPublic ? '/api/sites?public=true' : '/api/sites');
+      const response = await api.get<{ data: Site[] }>(isPublic ? '/api/sites?public=true&limit=500' : '/api/sites?limit=500');
       return response.data;
     },
   });
