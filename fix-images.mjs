@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, 'db.sqlite');
+const dbPath = path.join(__dirname, 'database', 'db.sqlite');
 
 const db = new Database(dbPath);
 

@@ -154,7 +154,7 @@ export async function createBackup(backupDir: string = './backups'): Promise<{
 
     // For SQLite, we can use .dump command or copy the file
     // This is a simplified approach - in production, use proper backup tools
-    const databasePath = process.env.DATABASE_URL || './db.sqlite';
+    const databasePath = process.env.DATABASE_URL || './database/db.sqlite';
 
     if (databasePath.startsWith('sqlite://')) {
       const actualPath = databasePath.replace('sqlite://', '');

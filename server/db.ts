@@ -8,7 +8,7 @@ const log = createLogger("database");
 
 // ─── Adapter selection ────────────────────────────────────────────────────────
 // Set DATABASE_URL in .env to use PostgreSQL.
-// Leave it unset to use the local SQLite file (db.sqlite).
+// Leave it unset to use the local SQLite file (database/db.sqlite).
 
 const usePostgres = !!process.env.DATABASE_URL;
 

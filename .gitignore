@@ -13,7 +13,7 @@ db_backups/
 *.sqlite-shm
 *.sqlite-wal
 sites.db
-db.sqlite
+database/db.sqlite
 skyhigh.db
 database.sqlite
 server/data.sqlite
