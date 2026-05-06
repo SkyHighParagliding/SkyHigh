@@ -22,12 +22,13 @@ router.get("/", async (req, res) => {
   try {
     const isPublic = req.query.public === "true";
 
-    if (isPublic && isCacheValid()) {
+    const { limit, offset } = getPaginationParams(req.query);
+    const hasCustomPagination = req.query.limit || req.query.offset;
+
+    if (isPublic && !hasCustomPagination && isCacheValid()) {
       res.set('Cache-Control', 'public, max-age=30');
       return res.json(getPublicSitesCache());
     }
-
-    const { limit, offset } = getPaginationParams(req.query);
     let sites = await db.prepare("SELECT * FROM sites ORDER BY name ASC LIMIT ? OFFSET ?").all(limit, offset) as any[];
 
     if (isPublic) {
@@ -44,7 +45,7 @@ router.get("/", async (req, res) => {
         rules: safeJsonParse(s.rules),
     }));
 
-    if (isPublic) {
+    if (isPublic && !hasCustomPagination) {
       setPublicSitesCache(mapped);
       res.set('Cache-Control', 'public, max-age=30');
     }
