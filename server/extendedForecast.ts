@@ -232,16 +232,10 @@ export async function fetchExtendedForecast(): Promise<void> {
 
     await extractAllSiteExtendedForecasts(grid);
 
+    console.log("Extended forecast: Computing wind grid for the day...");
     const windGrid = computeExtendedWindGrid(grid);
-    try {
-      await db.prepare(`
-        INSERT OR REPLACE INTO extended_wind_grids (id, windData, computedAt)
-        VALUES (?, ?, ?)
-      `).run(`wind_overlay_${today}`, JSON.stringify(windGrid), new Date().toISOString());
-      console.log(`Extended forecast: Pre-computed wind overlay for ${today}`);
-    } catch (err) {
-      console.warn(`Extended forecast: Wind overlay pre-computation failed, will compute on-demand:`, err);
-    }
+    cacheWindGrid(windGrid);
+    console.log("Extended forecast: Wind grid cached in memory (24h TTL)");
 
   } catch (err) {
     console.error("Extended forecast: CRITICAL ERROR:", err);
@@ -602,10 +596,11 @@ function computeExtendedWindGrid(grid: ExtendedGrid): any {
 
 let cachedWindGrid: any = null;
 let cachedWindGridTime: number = 0;
+const WIND_GRID_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export async function getExtendedWindGrid(): Promise<any | null> {
   const now = Date.now();
-  if (cachedWindGrid && (now - cachedWindGridTime) < 60 * 60 * 1000) {
+  if (cachedWindGrid && (now - cachedWindGridTime) < WIND_GRID_TTL_MS) {
     return cachedWindGrid;
   }
 
@@ -616,9 +611,13 @@ export async function getExtendedWindGrid(): Promise<any | null> {
   if (!allTimes?.length) return null;
 
   const windGrid = computeExtendedWindGrid(grid);
-  cachedWindGrid = windGrid;
-  cachedWindGridTime = now;
+  cacheWindGrid(windGrid);
   return windGrid;
+}
+
+function cacheWindGrid(windGrid: any): void {
+  cachedWindGrid = windGrid;
+  cachedWindGridTime = Date.now();
 }
 
 export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
@@ -794,11 +793,10 @@ export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus
 
 export async function precomputeWindGridIfNeeded(): Promise<void> {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const cached = await db.prepare("SELECT id FROM extended_wind_grids WHERE id = ?").get(`wind_overlay_${today}`) as any;
-
-    if (cached) {
-      console.log(`Extended wind grid: Cache exists for ${today}`);
+    // Only pre-compute on startup if cache is missing (e.g., server restarted between daily fetches)
+    // Normal flow: wind grid is computed during fetchExtendedForecast() at 5:30am
+    if (cachedWindGrid) {
+      console.log("Extended wind grid: Cache present at startup");
       return;
     }
 
@@ -814,18 +812,10 @@ export async function precomputeWindGridIfNeeded(): Promise<void> {
       return;
     }
 
-    console.log("Extended wind grid: Pre-computing for startup...");
+    console.log("Extended wind grid: Pre-computing at startup (fallback)...");
     const windGrid = computeExtendedWindGrid(grid);
-
-    try {
-      await db.prepare(`
-        INSERT OR REPLACE INTO extended_wind_grids (id, windData, computedAt)
-        VALUES (?, ?, ?)
-      `).run(`wind_overlay_${today}`, JSON.stringify(windGrid), new Date().toISOString());
-      console.log("Extended wind grid: Pre-computation complete");
-    } catch (err) {
-      console.warn("Extended wind grid: Failed to cache pre-computed data:", err);
-    }
+    cacheWindGrid(windGrid);
+    console.log("Extended wind grid: Pre-computation complete");
   } catch (err) {
     console.warn("Extended wind grid: Pre-computation skipped:", err);
   }
