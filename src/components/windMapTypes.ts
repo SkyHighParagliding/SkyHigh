@@ -57,3 +57,10 @@ export const SPEED_LEGEND_CSS = (() => {
   });
   return `linear-gradient(to right, ${stops.join(', ')})`;
 })();
+
+export const PLAY_SPEEDS = [5000, 2500, 1250] as const;
+export type PlaySpeed = typeof PLAY_SPEEDS[number];
+export const DEFAULT_PLAY_SPEED: PlaySpeed = 5000;
+export const nextSpeed = (current: PlaySpeed): PlaySpeed =>
+  PLAY_SPEEDS[(PLAY_SPEEDS.indexOf(current) + 1) % PLAY_SPEEDS.length];
+export const TRAY_HANDLE_HEIGHT_PX = 24;

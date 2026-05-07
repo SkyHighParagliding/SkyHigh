@@ -9,3 +9,11 @@ export function formatDisplayTime(timestamp: string | Date): string {
     return "Invalid time";
   }
 }
+
+export function formatWindMapTime(unixMs: number, is7Day: boolean): string {
+  return new Intl.DateTimeFormat('en-AU', {
+    timeZone: 'Australia/Melbourne',
+    hour: 'numeric', minute: 'numeric', hour12: true, weekday: 'short',
+    ...(is7Day ? { day: 'numeric', month: 'short' } : {}),
+  }).format(unixMs);
+}
