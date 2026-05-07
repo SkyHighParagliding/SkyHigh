@@ -144,8 +144,10 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     const gridBR = projection([extentGrid.lonMax, extentGrid.latMin])!;
     const extW = Math.abs(gridBR[0] - gridTL[0]);
     const extH = Math.abs(gridBR[1] - gridTL[1]);
-    const fitK = Math.min(width / extW, height / extH) * 0.85;
-    const minK = Math.min(256 * Math.pow(2, 6), Math.max(fitK, 256 * Math.pow(2, 3)));
+    const fitWidthK = width / extW;
+    const fitHeightK = height / extH;
+    const fitK = Math.max(fitWidthK, fitHeightK);
+    const minK = Math.max(fitK, 256 * Math.pow(2, 3));
     const maxK = 256 * Math.pow(2, 20);
 
     const zoom = d3Zoom<HTMLDivElement, unknown>()
