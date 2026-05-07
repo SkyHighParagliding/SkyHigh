@@ -1,10 +1,50 @@
 ---
 name: Task List — All Phases and Acceptance Criteria
-description: 33 tasks across 5 phases (security, wind map, hardening, production, backlog) with status and AC
+description: 35 tasks across 5 phases + code review remediation. Security, wind map, hardening, production, backlog, code quality.
 type: wiki
 ---
 
-# Task List — 33 Items Across 5 Phases
+# Task List — 35 Items Across 5 Phases + Code Review
+
+## Code Review Remediation (Sonnet — 2026-05-07)
+
+Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:\Users\User\.claude\plans\make-a-plan-to-sleepy-biscuit.md`
+
+### TASK-REVIEW-A ✅ Constants & Utilities (Foundation)
+- **Status:** ✅ DONE — commit `673fa74`
+- **What:** Added `PLAY_SPEEDS`, `PlaySpeed`, `nextSpeed()`, `TRAY_HANDLE_HEIGHT_PX` to `windMapTypes.ts`. Added `formatWindMapTime()` to `dateUtils.ts`.
+- **Acceptance Criteria:** Both utilities exported and consumed by wind map components.
+
+### TASK-REVIEW-B ✅ React.memo + useCallback Stabilisation
+- **Status:** ✅ DONE — commit `673fa74`
+- **What:** `WindCanvas` wrapped in `React.memo`. `cycleSpeed` wrapped in `useCallback` using `nextSpeed()`. `onTransformChange` inline arrow extracted to stable `handleTransformChange`. `formattedTime` uses shared utility.
+- **Acceptance Criteria:** Tray toggle does not trigger `WindCanvas` re-render (verify via React DevTools Profiler).
+
+### TASK-REVIEW-C ✅ Accessibility Batch (Critical fix)
+- **Status:** ✅ DONE — commit `673fa74`
+- **What:** `inert={!trayOpen}` on tray content. `aria-hidden` on all decorative icons. `aria-label` on play/speed buttons. `aria-label` + `aria-valuetext` on timeline slider.
+- **Acceptance Criteria:** Tab through closed tray — focus must not land on hidden controls. Screen reader announces slider as human time string, not Unix ms.
+
+### TASK-REVIEW-D ⬜ Tray + Mode Toggle Extraction
+- **Status:** ⬜ TODO
+- **Prerequisites:** A, B, C
+- **Estimated effort:** M (~27% daily / ~5.5% weekly at Sonnet)
+- **What:** Extract ~47-51 LOC tray JSX into `src/components/windmap/WindMapScrubberTray.tsx`. Extract 17-line modeToggle JSX into `src/components/windmap/WindMapModeToggle.tsx`. Eliminates all current duplication between the two wind map components.
+- **Acceptance Criteria:** Both wind map views render identically. `tsc --noEmit` clean for changed files. Tray and mode toggle function correctly.
+
+### TASK-REVIEW-E ⬜ Remove backdrop-blur from Tray Body
+- **Status:** ⬜ TODO
+- **Prerequisites:** D (targets the extracted component)
+- **Estimated effort:** XS (~5% daily / ~1% weekly at Sonnet)
+- **What:** Replace `backdrop-blur-md` on tray body with `bg-black/60`. Eliminates GPU compositor pressure during 300ms Canvas animation on Android.
+- **Acceptance Criteria:** Animation smooth on mobile emulation. Visual appearance preserved (dark tray over dark canvas).
+
+### TASK-REVIEW-F ⬜ useWindPlayback Hook (Optional)
+- **Status:** ⬜ TODO (deferrable — all Critical/High/Medium issues resolved by A–E)
+- **Prerequisites:** A, B, C, D
+- **Estimated effort:** M-L (~40% daily / ~8% weekly at Sonnet)
+- **What:** Extract playback state (`isPlaying`, `speed`, `currentTime`, interval effect) into `src/hooks/useWindPlayback.ts`. Further reduces duplication between the two wind map components.
+- **Acceptance Criteria:** Playback and scrubber function correctly. `tsc --noEmit` clean.
 
 ## Phase 1: Security Hardening (✅ All Complete)
 
