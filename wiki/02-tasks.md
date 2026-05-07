@@ -32,12 +32,17 @@ Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:
 - **What:** Extract ~47-51 LOC tray JSX into `src/components/windmap/WindMapScrubberTray.tsx`. Extract 17-line modeToggle JSX into `src/components/windmap/WindMapModeToggle.tsx`. Eliminates all current duplication between the two wind map components.
 - **Acceptance Criteria:** Both wind map views render identically. `tsc --noEmit` clean for changed files. Tray and mode toggle function correctly.
 
-### TASK-REVIEW-E ⬜ Remove backdrop-blur from Tray Body
-- **Status:** ⬜ TODO
+### TASK-REVIEW-E ✅ Remove backdrop-blur from Tray Body
+- **Status:** ✅ DONE — commit `036a8bc`
 - **Prerequisites:** D (targets the extracted component)
 - **Estimated effort:** XS (~5% daily / ~1% weekly at Sonnet)
 - **What:** Replace `backdrop-blur-md` on tray body with `bg-black/60`. Eliminates GPU compositor pressure during 300ms Canvas animation on Android.
 - **Acceptance Criteria:** Animation smooth on mobile emulation. Visual appearance preserved (dark tray over dark canvas).
+
+### TASK-REVIEW-G ✅ Admin grid fetch-now routes: await result, update status keys
+- **Status:** ✅ DONE — commits `b0edb5b`, `9621169`
+- **What:** Manual "Fetch Now" buttons were fire-and-forget — `xGridLastRun` settings keys were never updated after manual fetches, and errors were silently swallowed. Fixed: routes now await the fetch and write `LastRun`/`LastResult` on success/failure. Settings endpoint now derives grid last-run timestamps directly from `wind_grid_data.updatedAt` and `extended_wind_grids.computedAt` — the definitive source of truth regardless of trigger type.
+- **Acceptance Criteria:** Admin panel timestamps update after manual fetch. Errors surface as red toast.
 
 ### TASK-REVIEW-F ⬜ useWindPlayback Hook (Optional)
 - **Status:** ⬜ TODO (deferrable — all Critical/High/Medium issues resolved by A–E)
