@@ -29,6 +29,12 @@ interface Settings {
   homeBox2Desc?: string;
   homeBox3Desc?: string;
   weatherScraperLastRun?: string;
+  fineGridLastRun?: string;
+  fineGridLastResult?: string;
+  coarseGridLastRun?: string;
+  coarseGridLastResult?: string;
+  extendedForecastLastRun?: string;
+  extendedForecastLastResult?: string;
   homeCardsSelection?: string;
   homeCardsCycle?: boolean;
   homeCardsCyclePinned?: string;
@@ -248,6 +254,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           homeBox2Desc: cleanString(data.homeBox2Desc),
           homeBox3Desc: cleanString(data.homeBox3Desc),
           weatherScraperLastRun: data.weatherScraperLastRun,
+          fineGridLastRun: data.fineGridLastRun,
+          fineGridLastResult: data.fineGridLastResult,
+          coarseGridLastRun: data.coarseGridLastRun,
+          coarseGridLastResult: data.coarseGridLastResult,
+          extendedForecastLastRun: data.extendedForecastLastRun,
+          extendedForecastLastResult: data.extendedForecastLastResult,
           homeCardsSelection: cleanString(data.homeCardsSelection),
           homeCardsCycle: data.homeCardsCycle === "true",
           homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),
@@ -392,6 +404,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         homeBox2Desc: cleanString(data.homeBox2Desc),
         homeBox3Desc: cleanString(data.homeBox3Desc),
         weatherScraperLastRun: data.weatherScraperLastRun,
+        fineGridLastRun: data.fineGridLastRun,
+        fineGridLastResult: data.fineGridLastResult,
+        coarseGridLastRun: data.coarseGridLastRun,
+        coarseGridLastResult: data.coarseGridLastResult,
+        extendedForecastLastRun: data.extendedForecastLastRun,
+        extendedForecastLastResult: data.extendedForecastLastResult,
         homeCardsSelection: cleanString(data.homeCardsSelection),
         homeCardsCycle: data.homeCardsCycle === "true",
         homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),

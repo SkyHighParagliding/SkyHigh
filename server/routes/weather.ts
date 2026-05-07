@@ -298,6 +298,67 @@ router.post("/bulk", asyncHandler(async (req, res) => {
   res.json(results);
 }));
 
+router.get("/grid-bounds", requireAuth, asyncHandler(async (_req, res) => {
+  const bounds = await getGridBounds();
+  res.json(bounds);
+}));
+
+router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
+  const { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
+          coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax } = req.body;
+
+  const vals = { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
+                 coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax };
+
+  for (const [k, v] of Object.entries(vals)) {
+    if (!Number.isFinite(Number(v))) {
+      return res.status(400).json({ error: `${k} must be a number` });
+    }
+  }
+
+  const f = { latMin: Number(fineLatMin), latMax: Number(fineLatMax), lonMin: Number(fineLonMin), lonMax: Number(fineLonMax) };
+  const c = { latMin: Number(coarseLatMin), latMax: Number(coarseLatMax), lonMin: Number(coarseLonMin), lonMax: Number(coarseLonMax) };
+
+  if (f.latMin >= f.latMax) return res.status(400).json({ error: "Fine grid: south boundary must be less than north boundary" });
+  if (f.lonMin >= f.lonMax) return res.status(400).json({ error: "Fine grid: west boundary must be less than east boundary" });
+  if (c.latMin >= c.latMax) return res.status(400).json({ error: "Coarse grid: south boundary must be less than north boundary" });
+  if (c.lonMin >= c.lonMax) return res.status(400).json({ error: "Coarse grid: west boundary must be less than east boundary" });
+
+  if (f.latMin < c.latMin || f.latMax > c.latMax || f.lonMin < c.lonMin || f.lonMax > c.lonMax) {
+    return res.status(400).json({ error: "Fine grid must be fully contained within the coarse grid" });
+  }
+
+  const FINE_DELTA = 0.35;
+  const COARSE_DELTA = 2.0;
+  const FINE_MAX_POINTS = 2000;
+  const COARSE_MAX_POINTS = 3000;
+
+  const finePts = Math.ceil((f.latMax - f.latMin) / FINE_DELTA) * Math.ceil((f.lonMax - f.lonMin) / FINE_DELTA);
+  const coarsePts = Math.ceil((c.latMax - c.latMin) / COARSE_DELTA) * Math.ceil((c.lonMax - c.lonMin) / COARSE_DELTA);
+
+  if (finePts > FINE_MAX_POINTS) {
+    return res.status(400).json({ error: `Fine grid too large: ${finePts} points exceeds limit of ${FINE_MAX_POINTS}. Reduce the area.` });
+  }
+  if (coarsePts > COARSE_MAX_POINTS) {
+    return res.status(400).json({ error: `Coarse grid too large: ${coarsePts} points exceeds limit of ${COARSE_MAX_POINTS}. Reduce the area.` });
+  }
+
+  const entries = [
+    ['gridFineLatMin', f.latMin], ['gridFineLatMax', f.latMax],
+    ['gridFineLonMin', f.lonMin], ['gridFineLonMax', f.lonMax],
+    ['gridCoarseLatMin', c.latMin], ['gridCoarseLatMax', c.latMax],
+    ['gridCoarseLonMin', c.lonMin], ['gridCoarseLonMax', c.lonMax],
+  ] as [string, number][];
+
+  for (const [key, value] of entries) {
+    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, String(value));
+  }
+
+  clearFineGridCaches();
+
+  res.json({ success: true, finePts, coarsePts, bounds: { ...f, ...c } });
+}));
+
 router.get("/:siteId", asyncHandler(async (req, res) => {
   const site = await db.prepare("SELECT useLiveWeather, liveStationIdAlt FROM sites WHERE id = ?").get(req.params.siteId) as { useLiveWeather: string; liveStationIdAlt: string | null };
   
@@ -562,67 +623,6 @@ router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) 
 router.post("/coarse-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
   fetchCoarseGrid(true).catch(() => {});
   res.json({ success: true, message: "Coarse grid fetch started" });
-}));
-
-router.get("/grid-bounds", requireAuth, asyncHandler(async (_req, res) => {
-  const bounds = await getGridBounds();
-  res.json(bounds);
-}));
-
-router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
-  const { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
-          coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax } = req.body;
-
-  const vals = { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
-                 coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax };
-
-  for (const [k, v] of Object.entries(vals)) {
-    if (!Number.isFinite(Number(v))) {
-      return res.status(400).json({ error: `${k} must be a number` });
-    }
-  }
-
-  const f = { latMin: Number(fineLatMin), latMax: Number(fineLatMax), lonMin: Number(fineLonMin), lonMax: Number(fineLonMax) };
-  const c = { latMin: Number(coarseLatMin), latMax: Number(coarseLatMax), lonMin: Number(coarseLonMin), lonMax: Number(coarseLonMax) };
-
-  if (f.latMin >= f.latMax) return res.status(400).json({ error: "Fine grid: south boundary must be less than north boundary" });
-  if (f.lonMin >= f.lonMax) return res.status(400).json({ error: "Fine grid: west boundary must be less than east boundary" });
-  if (c.latMin >= c.latMax) return res.status(400).json({ error: "Coarse grid: south boundary must be less than north boundary" });
-  if (c.lonMin >= c.lonMax) return res.status(400).json({ error: "Coarse grid: west boundary must be less than east boundary" });
-
-  if (f.latMin < c.latMin || f.latMax > c.latMax || f.lonMin < c.lonMin || f.lonMax > c.lonMax) {
-    return res.status(400).json({ error: "Fine grid must be fully contained within the coarse grid" });
-  }
-
-  const FINE_DELTA = 0.35;
-  const COARSE_DELTA = 2.0;
-  const FINE_MAX_POINTS = 2000;
-  const COARSE_MAX_POINTS = 3000;
-
-  const finePts = Math.ceil((f.latMax - f.latMin) / FINE_DELTA) * Math.ceil((f.lonMax - f.lonMin) / FINE_DELTA);
-  const coarsePts = Math.ceil((c.latMax - c.latMin) / COARSE_DELTA) * Math.ceil((c.lonMax - c.lonMin) / COARSE_DELTA);
-
-  if (finePts > FINE_MAX_POINTS) {
-    return res.status(400).json({ error: `Fine grid too large: ${finePts} points exceeds limit of ${FINE_MAX_POINTS}. Reduce the area.` });
-  }
-  if (coarsePts > COARSE_MAX_POINTS) {
-    return res.status(400).json({ error: `Coarse grid too large: ${coarsePts} points exceeds limit of ${COARSE_MAX_POINTS}. Reduce the area.` });
-  }
-
-  const entries = [
-    ['gridFineLatMin', f.latMin], ['gridFineLatMax', f.latMax],
-    ['gridFineLonMin', f.lonMin], ['gridFineLonMax', f.lonMax],
-    ['gridCoarseLatMin', c.latMin], ['gridCoarseLatMax', c.latMax],
-    ['gridCoarseLonMin', c.lonMin], ['gridCoarseLonMax', c.lonMax],
-  ] as [string, number][];
-
-  for (const [key, value] of entries) {
-    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, String(value));
-  }
-
-  clearFineGridCaches();
-
-  res.json({ success: true, finePts, coarsePts, bounds: { ...f, ...c } });
 }));
 
 export default router;
