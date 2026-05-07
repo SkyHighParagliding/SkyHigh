@@ -2,9 +2,21 @@
 
 **Session Date:** 2026-05-07  
 **Branch:** main  
-**Working Tree Status:** Clean — committed ✅ (not yet pushed)
+**Working Tree Status:** Clean — committed and pushed ✅
 
 ## Latest Session Work (2026-05-07)
+
+### TASK-034 — Wind Map Scrubber Retractable Tray ✅
+
+Converted the static black scrubber bar on both wind map views into a slide-up tray with a centred pull-tab.
+- `SitesWindMap.tsx` and `WindMapProto.tsx` updated
+- Tab (24 × 100 px) and tray slide as one unit; default state is retracted
+- `translateY(calc(100% - 24px))` slides the unit down until only the tab peeks above the bottom edge
+- Chevron icon rotates on open/close
+
+---
+
+## Previous Session Work (2026-05-07 earlier)
 
 ### TASK-033 — Configurable Grid Bounds with Visual Map Selector ✅
 
