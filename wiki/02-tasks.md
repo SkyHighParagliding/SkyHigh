@@ -210,7 +210,8 @@ Deploy second instance of SkyHigh for different club.
 ### TASK-033 ✅ Configurable Grid Bounds with Visual Map Selector
 Rename grid identifiers from location-specific to purpose-descriptive, and make grid coverage areas configurable via admin UI.
 - **Acceptance Criteria:** All `victoria`/`wide` grid naming replaced with `fine`/`coarse`. Grid bounds stored in settings table, read at fetch time with fallback to hardcoded defaults. Admin panel has map-based selector with two draggable bounding boxes, live point count / fetch time indicators, containment enforcement (fine must be within coarse), and legend. POST endpoint validates bounds + point limits.
-- **Completed:** 2026-05-07. Commit d953a05.
+- **Completed:** 2026-05-07. Commits d953a05, 77a454a.
+- **Post-completion fixes (same session):** `GET /grid-bounds` route was shadowed by `GET /:siteId` wildcard (moved before it); `fineGridLastRun/Result` and `coarseGridLastRun/Result` settings keys were missing from `SettingsContext` type and setter (added to both initial load and `refreshSettings()`); added 5s polling after Fetch Now triggers so status indicators auto-update.
 
 ---
 
@@ -229,8 +230,8 @@ Rename grid identifiers from location-specific to purpose-descriptive, and make 
 ---
 
 **Task Summary:**
-- **Completed (31):** Phases 1, 2, 3 + Tasks 026, 027 from Phase 4
+- **Completed (32):** Phases 1, 2, 3, 6 + Tasks 026, 027 from Phase 4
 - **Partial (2):** Task 028 (deferred, single-instance only), Task 029 (env var loaded, no setup script)
-- **Backlog (3):** Tasks 030, 031, 033 — to be addressed at production launch
+- **Backlog (3):** Tasks 030, 031, 032 — to be addressed at production launch
 
 Last updated: 2026-05-07
