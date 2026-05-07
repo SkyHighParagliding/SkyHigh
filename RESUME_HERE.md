@@ -2,70 +2,68 @@
 
 **Session Date:** 2026-05-07  
 **Branch:** main  
-**Working Tree Status:** Clean — pushed to GitHub ✅
+**Working Tree Status:** Clean — committed ✅ (not yet pushed)
 
 ## Latest Session Work (2026-05-07)
 
-### Wind Data Pipeline — Full Audit & Fix ✅
+### TASK-033 — Configurable Grid Bounds with Visual Map Selector ✅
 
-Two complete audit passes and fix cycles on the wind data pipeline. All known issues resolved.
+**Commit:** `d953a05`
 
-**Commits this session:**
-- `0cc4d72` — cache key mismatch fix (root cause of 30s load time after IP change)
-- `8ec93c2` — 7-issue wind pipeline fix (see below)
-- `d11763c` — admin status bugs + overlay result caching (see below)
+**Two things in one task:**
 
-**What was fixed (commit 8ec93c2):**
-1. CRITICAL: `wind-overlay/full` now reads from cache first, live-fetches only if DB empty
-2. In-memory cache (30-min) added to Victoria + Wide raw grids
-3. `GRID_CACHE_EXPIRY` extended 18h → 26h (covers overnight gap before 5am fetch)
-4. Dead `/:siteId/wind-grid` endpoint cache key fixed to date-suffix format
-5. HTTP → HTTPS in that endpoint's fallback URL
-6. `WIDE_*` constant naming collision in `extendedForecast.ts` fixed (renamed to `EXT_*`)
-7. `Cache-Control` headers standardized to `max-age=1800` across all wind endpoints
+1. **Renamed all grid identifiers** from location-specific to purpose-descriptive across the entire codebase:
+   - `victoria` → `fine`, `wide` → `coarse`
+   - DB storage keys: `victoria_grid_*` → `fine_grid_*`, `wide_grid_*` → `coarse_grid_*`
+   - Settings keys: `victoriaGridLastRun` → `fineGridLastRun`, etc.
+   - Old rows in `wind_grid_data` table will age out within 7 days; server treats DB as empty on first restart and triggers catch-up fetch
 
-**What was fixed (commit d11763c):**
-1. `fetchVictoriaGridWithStatus` + `fetchWideGridWithStatus`: threshold 18h → 26h (admin showed wrong status)
-2. `fetchExtendedForecastWithStatus`: was looking up extinct bare key `'extended_grid'`; always returned null; admin always showed "unavailable". Fixed to date-suffix + ORDER BY DESC fallback
-3. `scheduleExtendedForecast` startup SQL: OR clause made it non-deterministic (returned oldest row, not most recent); triggered unnecessary startup fetches on every restart
-4. Removed dead `OPEN_METEO_URL = "http://..."` from `weather.ts`
-5. `extractFullWindGrid()` now caches processed overlay result (keyed by fetchedAt + Melbourne date), matching pattern used by `getExtendedWindGrid()`
+2. **Made grid bounds configurable via admin panel:**
+   - `getGridBounds()` in `server/victoriaGrid.ts` reads 8 settings keys (`gridFineLatMin` etc.) with fallback to hardcoded defaults — no behavior change until admin saves new bounds
+   - `getGridBounds()` exported and used by `extendedForecast.ts` too (removed duplicate local EXT_LAT/LON constants)
+   - `POST /api/weather/grid-bounds` — validates containment (fine ⊂ coarse) + point count limits (fine ≤ 2000, coarse ≤ 3000), flushes in-memory caches on save
+   - `GET /api/weather/grid-bounds` — returns current effective bounds
+   - `src/components/GridBoundsSelector.tsx` — modal with Leaflet map, two draggable rectangles with corner handles, live point count + status (Good/OK/Too large), legend, Set button
+   - "Configure Grid Areas" button added to Wind Grid Data card in `src/pages/AdminWeather.tsx`
 
-**Architecture now (all three grids):**
-- Memory cache → DB fallback (ORDER BY id DESC) → live fetch only if DB empty
-- 7-day retention, cleanup runs on successful fetch only
-- During 6-day outage: serves most recent DB entry, never triggers live fetch
+**Files changed:**
+- `server/victoriaGrid.ts` — full rename + `getGridBounds()`, `clearFineGridCaches()`, settings-driven bounds
+- `server/extendedForecast.ts` — uses `getGridBounds()`, removed EXT_LAT/LON constants
+- `server/utils/scheduledJobs.ts` — renamed keys + function names
+- `server/routes/weather.ts` — renamed endpoints + new grid-bounds endpoints
+- `server/weather.ts` — updated dynamic import to use `fetchFineGrid`
+- `src/pages/AdminWeather.tsx` — renamed labels + Configure button
+- `src/components/GridBoundsSelector.tsx` — new component
 
 ---
 
 ## Previous Session Work (2026-05-07 earlier)
 
-### Phase 3 Hardening — Audit & Fixes ✅
-- Created `server/constants.ts` with 40+ centralized config constants
-- Updated pagination.ts, sessionTokens.ts, csrf.ts to import from constants.ts
-- Added X-Total-Count headers to 5 list endpoints
-- All Phases 1, 2, 3 complete; Phase 4 at 3/4 (CSRF Redis deferred, DEFAULT_ADMINS partial)
+### Wind Data Pipeline — Full Audit & Fix ✅
+Two complete audit passes and fix cycles. All known issues resolved. See previous RESUME_HERE entries for detail.
 
 ---
 
 ## Current State
 - **Site Status:** Fully operational ✅
-- **Wind Pipeline:** Fully audited and fixed ✅
+- **Wind Pipeline:** Audited, fixed, and now configurable ✅
 - **All Known Bugs:** Fixed ✅
-- **Build:** Clean ✅
-- **Pushed:** ✅
-
-## Git Status
-- **Branch:** main
-- **Latest commits:**
-  - `d11763c`: Admin status bugs + overlay result caching
-  - `8ec93c2`: 7-issue wind pipeline fix
-  - `0cc4d72`: Cache key mismatch fix
+- **Build:** Clean (no new TS errors) ✅
+- **Pushed:** Not yet — push when ready
 
 ## Open Tasks
 - Phase 4 Task 029: DEFAULT_ADMINS setup script (no urgency)
 - Phase 5: Feature backlog (no timeline)
+  - TASK-030: Siteguide version change email notification
+  - TASK-031: Pilot XC flight history export
+  - TASK-032: Multi-club white-label test
 
----
+## Testing Notes for TASK-033
+1. Open admin weather panel → Wind Grid Data card → "Configure Grid Areas" button
+2. Map loads showing white (fine) and blue dashed (coarse) rectangles over Australia
+3. Drag corner handles to reposition/resize each box
+4. Status indicators (●Good/●OK/●Too large) update live with point count and fetch time
+5. Fine box cannot be dragged outside coarse box
+6. Set → saves 8 settings → use Fetch Now buttons to apply
 
 For full context and project architecture, see `CLAUDE.md` (Section 0) and `wiki/`.

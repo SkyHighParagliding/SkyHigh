@@ -205,6 +205,15 @@ Deploy second instance of SkyHigh for different club.
 
 ---
 
+## Phase 6: Grid Configurability (✅ Complete)
+
+### TASK-033 ✅ Configurable Grid Bounds with Visual Map Selector
+Rename grid identifiers from location-specific to purpose-descriptive, and make grid coverage areas configurable via admin UI.
+- **Acceptance Criteria:** All `victoria`/`wide` grid naming replaced with `fine`/`coarse`. Grid bounds stored in settings table, read at fetch time with fallback to hardcoded defaults. Admin panel has map-based selector with two draggable bounding boxes, live point count / fetch time indicators, containment enforcement (fine must be within coarse), and legend. POST endpoint validates bounds + point limits.
+- **Completed:** 2026-05-07. Commit d953a05.
+
+---
+
 ## Summary
 
 | Phase | Name | Tasks | Status | Completion Date |
@@ -212,6 +221,7 @@ Deploy second instance of SkyHigh for different club.
 | 1 | Security Hardening | 007 | ✅ Complete | 2026-04-30 |
 | 2 | Wind Map & Weather | 011 | ✅ Complete | 2026-05-05 |
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
+| 6 | Grid Configurability | 001 | ✅ Complete | 2026-05-07 |
 | 4 | Production Deployment | 004 | ⚠️ 3/4 Complete | 2026-05-07 |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
 | | **TOTAL** | **32** | **31 ✅ / 2 ⚠️ / 0 ⬜** | — |
