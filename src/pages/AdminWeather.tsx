@@ -2,7 +2,8 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Activity, Wind, RefreshCw, Eye, X, ArrowLeft } from "lucide-react";
+import { Activity, Wind, RefreshCw, Eye, X, ArrowLeft, Map } from "lucide-react";
+import { GridBoundsSelector } from "@/components/GridBoundsSelector";
 
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,6 +89,7 @@ export function AdminWeather() {
   const [scrapeMessage, setScrapeMessage] = useState("");
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [showGridSelector, setShowGridSelector] = useState(false);
 
   const handleTrigger = async (endpoint: string, type: string) => {
     setLoadingType(type);
@@ -180,7 +182,7 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Victoria), 5:13am (Wide), and 5:30am (Extended). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Fine), 5:13am (Coarse), and 5:30am (Extended). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
@@ -210,20 +212,20 @@ export function AdminWeather() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTrigger("/api/weather/victoria-grid/fetch-now", "victoria")}
+                    onClick={() => handleTrigger("/api/weather/fine-grid/fetch-now", "fine")}
                     disabled={loadingType !== null}
                     className="flex items-center gap-2 whitespace-nowrap"
                   >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'victoria' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'victoria' ? "Fetching..." : "Victoria"}
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'fine' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'fine' ? "Fetching..." : "Fine Grid"}
                   </Button>
-                  {messages.victoria && (
+                  {messages.fine && (
                     <span className={`text-xs font-medium text-center ${
-                      messages.victoria.toLowerCase().includes('failed') || messages.victoria.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.victoria.toLowerCase().includes('rate limited') || messages.victoria.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      messages.fine.toLowerCase().includes('failed') || messages.fine.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.fine.toLowerCase().includes('rate limited') || messages.fine.toLowerCase().includes('partial') ? 'text-amber-500' :
                       'text-emerald-500'
                     }`}>
-                      {messages.victoria}
+                      {messages.fine}
                     </span>
                   )}
                 </div>
@@ -231,28 +233,28 @@ export function AdminWeather() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTrigger("/api/weather/wide-grid/fetch-now", "wide")}
+                    onClick={() => handleTrigger("/api/weather/coarse-grid/fetch-now", "coarse")}
                     disabled={loadingType !== null}
                     className="flex items-center gap-2 whitespace-nowrap"
                   >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'wide' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'wide' ? "Fetching..." : "Wide"}
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'coarse' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'coarse' ? "Fetching..." : "Coarse Grid"}
                   </Button>
-                  {messages.wide && (
+                  {messages.coarse && (
                     <span className={`text-xs font-medium text-center ${
-                      messages.wide.toLowerCase().includes('failed') || messages.wide.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.wide.toLowerCase().includes('rate limited') || messages.wide.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      messages.coarse.toLowerCase().includes('failed') || messages.coarse.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.coarse.toLowerCase().includes('rate limited') || messages.coarse.toLowerCase().includes('partial') ? 'text-amber-500' :
                       'text-emerald-500'
                     }`}>
-                      {messages.wide}
+                      {messages.coarse}
                     </span>
                   )}
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Victoria grid", runKey: "victoriaGridLastRun", resultKey: "victoriaGridLastResult" },
-                  { label: "Wide grid", runKey: "wideGridLastRun", resultKey: "wideGridLastResult" },
+                  { label: "Fine grid", runKey: "fineGridLastRun", resultKey: "fineGridLastResult" },
+                  { label: "Coarse grid", runKey: "coarseGridLastRun", resultKey: "coarseGridLastResult" },
                   { label: "Extended (7-day)", runKey: "extendedForecastLastRun", resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
@@ -273,8 +275,27 @@ export function AdminWeather() {
                   );
                 })}
               </div>
+              <div className="mt-3 pt-3 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGridSelector(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Map className="w-4 h-4" />
+                  Configure Grid Areas
+                </Button>
+              </div>
             </CardHeader>
           </Card>
+
+          <GridBoundsSelector
+            isOpen={showGridSelector}
+            onClose={() => setShowGridSelector(false)}
+            onSaved={() => {
+              setMessages(prev => ({ ...prev, fine: "", coarse: "" }));
+            }}
+          />
 
           <WindMapPreviewCard />
         </div>

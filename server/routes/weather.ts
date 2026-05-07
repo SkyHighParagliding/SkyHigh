@@ -5,7 +5,7 @@ import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.j
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getCachedVictoriaGrid, getCachedWideGrid, extractWindParticles, fetchVictoriaGrid, fetchWideGrid, extractFullWindGrid } from "../victoriaGrid.js";
+import { getCachedFineGrid, getCachedCoarseGrid, extractWindParticles, fetchFineGrid, fetchCoarseGrid, extractFullWindGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
@@ -363,13 +363,11 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
     }
   }
 
-  // Try to use cached Victoria or Wide grid if site falls within bounds
-  const VIC_LAT_MIN = -39.2, VIC_LAT_MAX = -34.0, VIC_LON_MIN = 141.0, VIC_LON_MAX = 150.0;
-  const WIDE_LAT_MIN = -50, WIDE_LAT_MAX = -5, WIDE_LON_MIN = 105, WIDE_LON_MAX = 165;
-
-  const inVictoria = site.lat >= VIC_LAT_MIN && site.lat <= VIC_LAT_MAX && site.lon >= VIC_LON_MIN && site.lon <= VIC_LON_MAX;
-  const inWide = site.lat >= WIDE_LAT_MIN && site.lat <= WIDE_LAT_MAX && site.lon >= WIDE_LON_MIN && site.lon <= WIDE_LON_MAX && !inVictoria;
-  const baseGridCacheKey = inVictoria ? "victoria_grid" : inWide ? "wide_grid" : null;
+  // Try to use cached fine or coarse grid if site falls within bounds
+  const gridBounds = await getGridBounds();
+  const inFine = site.lat >= gridBounds.fineLatMin && site.lat <= gridBounds.fineLatMax && site.lon >= gridBounds.fineLonMin && site.lon <= gridBounds.fineLonMax;
+  const inCoarse = site.lat >= gridBounds.coarseLatMin && site.lat <= gridBounds.coarseLatMax && site.lon >= gridBounds.coarseLonMin && site.lon <= gridBounds.coarseLonMax && !inFine;
+  const baseGridCacheKey = inFine ? "fine_grid" : inCoarse ? "coarse_grid" : null;
 
   if (baseGridCacheKey) {
     const today = new Date().toISOString().split('T')[0];
@@ -486,18 +484,18 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
 
-  let grid = await getCachedVictoriaGrid();
-  let wideGrid = await getCachedWideGrid();
+  let grid = await getCachedFineGrid();
+  let wideGrid = await getCachedCoarseGrid();
 
   if (!grid) {
-    grid = await fetchVictoriaGrid().catch(e => { log.error("Victoria grid fetch failed:", e); return null; });
+    grid = await fetchFineGrid().catch(e => { log.error("Fine grid fetch failed:", e); return null; });
   }
   if (!grid) {
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
   if (!wideGrid) {
-    wideGrid = await fetchWideGrid().catch(e => { log.warn("Wide grid fetch failed:", e); return null; });
+    wideGrid = await fetchCoarseGrid().catch(e => { log.warn("Coarse grid fetch failed:", e); return null; });
   }
 
   const particles = extractWindParticles(grid, site.lat, site.lon, wideGrid);
@@ -510,14 +508,14 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 }));
 
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
-  let grid = await getCachedVictoriaGrid();
-  let wideGrid = await getCachedWideGrid();
+  let grid = await getCachedFineGrid();
+  let wideGrid = await getCachedCoarseGrid();
 
   if (!grid) {
     try {
-      grid = await fetchVictoriaGrid();
+      grid = await fetchFineGrid();
     } catch (e) {
-      log.error("Victoria grid fetch failed:", e);
+      log.error("Fine grid fetch failed:", e);
     }
   }
   if (!grid) {
@@ -525,7 +523,7 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
   }
 
   if (!wideGrid) {
-    wideGrid = await fetchWideGrid().catch(() => null);
+    wideGrid = await fetchCoarseGrid().catch(() => null);
   }
 
   const result = extractFullWindGrid(grid, wideGrid);
@@ -556,14 +554,75 @@ router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_re
   res.json({ success: true, message: "Extended forecast fetch started" });
 }));
 
-router.post("/victoria-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  fetchVictoriaGrid(true).catch(() => {});
-  res.json({ success: true, message: "Victoria grid fetch started" });
+router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  fetchFineGrid(true).catch(() => {});
+  res.json({ success: true, message: "Fine grid fetch started" });
 }));
 
-router.post("/wide-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  fetchWideGrid(true).catch(() => {});
-  res.json({ success: true, message: "Wide grid fetch started" });
+router.post("/coarse-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  fetchCoarseGrid(true).catch(() => {});
+  res.json({ success: true, message: "Coarse grid fetch started" });
+}));
+
+router.get("/grid-bounds", requireAuth, asyncHandler(async (_req, res) => {
+  const bounds = await getGridBounds();
+  res.json(bounds);
+}));
+
+router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
+  const { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
+          coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax } = req.body;
+
+  const vals = { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
+                 coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax };
+
+  for (const [k, v] of Object.entries(vals)) {
+    if (!Number.isFinite(Number(v))) {
+      return res.status(400).json({ error: `${k} must be a number` });
+    }
+  }
+
+  const f = { latMin: Number(fineLatMin), latMax: Number(fineLatMax), lonMin: Number(fineLonMin), lonMax: Number(fineLonMax) };
+  const c = { latMin: Number(coarseLatMin), latMax: Number(coarseLatMax), lonMin: Number(coarseLonMin), lonMax: Number(coarseLonMax) };
+
+  if (f.latMin >= f.latMax) return res.status(400).json({ error: "Fine grid: south boundary must be less than north boundary" });
+  if (f.lonMin >= f.lonMax) return res.status(400).json({ error: "Fine grid: west boundary must be less than east boundary" });
+  if (c.latMin >= c.latMax) return res.status(400).json({ error: "Coarse grid: south boundary must be less than north boundary" });
+  if (c.lonMin >= c.lonMax) return res.status(400).json({ error: "Coarse grid: west boundary must be less than east boundary" });
+
+  if (f.latMin < c.latMin || f.latMax > c.latMax || f.lonMin < c.lonMin || f.lonMax > c.lonMax) {
+    return res.status(400).json({ error: "Fine grid must be fully contained within the coarse grid" });
+  }
+
+  const FINE_DELTA = 0.35;
+  const COARSE_DELTA = 2.0;
+  const FINE_MAX_POINTS = 2000;
+  const COARSE_MAX_POINTS = 3000;
+
+  const finePts = Math.ceil((f.latMax - f.latMin) / FINE_DELTA) * Math.ceil((f.lonMax - f.lonMin) / FINE_DELTA);
+  const coarsePts = Math.ceil((c.latMax - c.latMin) / COARSE_DELTA) * Math.ceil((c.lonMax - c.lonMin) / COARSE_DELTA);
+
+  if (finePts > FINE_MAX_POINTS) {
+    return res.status(400).json({ error: `Fine grid too large: ${finePts} points exceeds limit of ${FINE_MAX_POINTS}. Reduce the area.` });
+  }
+  if (coarsePts > COARSE_MAX_POINTS) {
+    return res.status(400).json({ error: `Coarse grid too large: ${coarsePts} points exceeds limit of ${COARSE_MAX_POINTS}. Reduce the area.` });
+  }
+
+  const entries = [
+    ['gridFineLatMin', f.latMin], ['gridFineLatMax', f.latMax],
+    ['gridFineLonMin', f.lonMin], ['gridFineLonMax', f.lonMax],
+    ['gridCoarseLatMin', c.latMin], ['gridCoarseLatMax', c.latMax],
+    ['gridCoarseLonMin', c.lonMin], ['gridCoarseLonMax', c.lonMax],
+  ] as [string, number][];
+
+  for (const [key, value] of entries) {
+    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, String(value));
+  }
+
+  clearFineGridCaches();
+
+  res.json({ success: true, finePts, coarsePts, bounds: { ...f, ...c } });
 }));
 
 export default router;

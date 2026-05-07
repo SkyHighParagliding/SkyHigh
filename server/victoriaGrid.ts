@@ -6,10 +6,11 @@ const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
 const OPEN_METEO_URL = OPEN_METEO_API_KEY
   ? `https://customer-api.open-meteo.com/v1/forecast`
   : `https://api.open-meteo.com/v1/forecast`;
-const GRID_CACHE_KEY = "victoria_grid";
-const WIDE_GRID_CACHE_KEY = "wide_grid";
+
+const FINE_GRID_CACHE_KEY = "fine_grid";
+const COARSE_GRID_CACHE_KEY = "coarse_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
-const WIDE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
+const COARSE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 
 export interface GridFetchStatus {
   success: boolean;
@@ -20,17 +21,52 @@ export interface GridFetchStatus {
   cacheAgeMinutes?: number;
 }
 
-const VIC_LAT_MIN = -39.2;
-const VIC_LAT_MAX = -34.0;
-const VIC_LON_MIN = 141.0;
-const VIC_LON_MAX = 150.0;
-const DELTA = 0.35;
+// Default bounds — used as fallback when no grid bounds saved in settings
+const FINE_LAT_MIN = -39.2;
+const FINE_LAT_MAX = -34.0;
+const FINE_LON_MIN = 141.0;
+const FINE_LON_MAX = 150.0;
+export const FINE_DELTA = 0.35;
 
-const WIDE_LAT_MIN = -50;
-const WIDE_LAT_MAX = -5;
-const WIDE_LON_MIN = 105;
-const WIDE_LON_MAX = 165;
-const WIDE_DELTA = 2.0;
+const COARSE_LAT_MIN = -50;
+const COARSE_LAT_MAX = -5;
+const COARSE_LON_MIN = 105;
+const COARSE_LON_MAX = 165;
+export const COARSE_DELTA = 2.0;
+
+export interface GridBounds {
+  fineLatMin: number; fineLatMax: number; fineLonMin: number; fineLonMax: number;
+  coarseLatMin: number; coarseLatMax: number; coarseLonMin: number; coarseLonMax: number;
+}
+
+export async function getGridBounds(): Promise<GridBounds> {
+  const keys = ['gridFineLatMin','gridFineLatMax','gridFineLonMin','gridFineLonMax',
+                 'gridCoarseLatMin','gridCoarseLatMax','gridCoarseLonMin','gridCoarseLonMax'];
+  try {
+    const rows = await db.prepare(
+      `SELECT key, value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`
+    ).all(...keys) as { key: string; value: string }[];
+    const s: Record<string, number> = {};
+    for (const r of rows) s[r.key] = parseFloat(r.value);
+    return {
+      fineLatMin:   Number.isFinite(s.gridFineLatMin)   ? s.gridFineLatMin   : FINE_LAT_MIN,
+      fineLatMax:   Number.isFinite(s.gridFineLatMax)   ? s.gridFineLatMax   : FINE_LAT_MAX,
+      fineLonMin:   Number.isFinite(s.gridFineLonMin)   ? s.gridFineLonMin   : FINE_LON_MIN,
+      fineLonMax:   Number.isFinite(s.gridFineLonMax)   ? s.gridFineLonMax   : FINE_LON_MAX,
+      coarseLatMin: Number.isFinite(s.gridCoarseLatMin) ? s.gridCoarseLatMin : COARSE_LAT_MIN,
+      coarseLatMax: Number.isFinite(s.gridCoarseLatMax) ? s.gridCoarseLatMax : COARSE_LAT_MAX,
+      coarseLonMin: Number.isFinite(s.gridCoarseLonMin) ? s.gridCoarseLonMin : COARSE_LON_MIN,
+      coarseLonMax: Number.isFinite(s.gridCoarseLonMax) ? s.gridCoarseLonMax : COARSE_LON_MAX,
+    };
+  } catch {
+    return {
+      fineLatMin: FINE_LAT_MIN, fineLatMax: FINE_LAT_MAX,
+      fineLonMin: FINE_LON_MIN, fineLonMax: FINE_LON_MAX,
+      coarseLatMin: COARSE_LAT_MIN, coarseLatMax: COARSE_LAT_MAX,
+      coarseLonMin: COARSE_LON_MIN, coarseLonMax: COARSE_LON_MAX,
+    };
+  }
+}
 
 async function cleanupOldGridData(baseKey: string): Promise<void> {
   try {
@@ -69,14 +105,15 @@ interface VictoriaGrid {
   fetchedAt: number;
 }
 
-function buildTiles(): { lats: number[]; lons: number[] }[] {
+async function buildFineTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
+  const bounds = await getGridBounds();
   const allLats: number[] = [];
   const allLons: number[] = [];
 
-  for (let lat = VIC_LAT_MIN; lat <= VIC_LAT_MAX; lat += DELTA) {
+  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += FINE_DELTA) {
     allLats.push(parseFloat(lat.toFixed(4)));
   }
-  for (let lon = VIC_LON_MIN; lon <= VIC_LON_MAX; lon += DELTA) {
+  for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += FINE_DELTA) {
     allLons.push(parseFloat(lon.toFixed(4)));
   }
 
@@ -102,42 +139,42 @@ function buildTiles(): { lats: number[]; lons: number[] }[] {
 }
 
 const MEM_CACHE_TTL_MS = 30 * 60 * 1000;
-let memVictoriaGrid: VictoriaGrid | null = null;
-let memVictoriaGridAt = 0;
-let memWideGrid: VictoriaGrid | null = null;
-let memWideGridAt = 0;
+let memFineGrid: VictoriaGrid | null = null;
+let memFineGridAt = 0;
+let memCoarseGrid: VictoriaGrid | null = null;
+let memCoarseGridAt = 0;
 
 let cachedFullWindOverlay: any = null;
 let cachedFullWindOverlayKey = '';
 
 let inflightFetch: Promise<VictoriaGrid> | null = null;
 
-export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
+export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
         if (age < GRID_CACHE_EXPIRY) {
           const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-          console.log(`Victoria grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
-          memVictoriaGrid = grid;
-          memVictoriaGridAt = Date.now();
+          console.log(`Fine grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
+          memFineGrid = grid;
+          memFineGridAt = Date.now();
           return grid;
         }
       }
     } catch (e) {
-      console.error("Victoria grid: Cache read error, will re-fetch", e);
+      console.error("Fine grid: Cache read error, will re-fetch", e);
     }
   }
 
   if (inflightFetch) {
-    console.log("Victoria grid: Waiting for in-flight fetch...");
+    console.log("Fine grid: Waiting for in-flight fetch...");
     return inflightFetch;
   }
 
-  inflightFetch = doFetchVictoriaGrid();
+  inflightFetch = doFetchFineGrid();
   try {
     return await inflightFetch;
   } finally {
@@ -145,11 +182,12 @@ export async function fetchVictoriaGrid(force = false): Promise<VictoriaGrid> {
   }
 }
 
-async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
-  console.log("Victoria grid: Fetching fresh data from Open-Meteo...");
+async function doFetchFineGrid(): Promise<VictoriaGrid> {
+  console.log("Fine grid: Fetching fresh data from Open-Meteo...");
 
-  const tiles = buildTiles();
-  console.log(`Victoria grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${tiles.length} tiles`);
+  const bounds = await getGridBounds();
+  const tiles = await buildFineTiles();
+  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${tiles.length} tiles`);
 
   const allPoints: GridPoint[] = [];
 
@@ -189,48 +227,48 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
         });
       }
 
-      console.log(`Victoria grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
+      console.log(`Fine grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
 
       if (i < tiles.length - 1) {
         await new Promise(r => setTimeout(r, 500));
       }
     } catch (err) {
-      console.error(`Victoria grid: Tile ${i + 1}/${tiles.length} failed:`, err);
+      console.error(`Fine grid: Tile ${i + 1}/${tiles.length} failed:`, err);
     }
   }
 
-  const ni = Math.round((VIC_LON_MAX - VIC_LON_MIN) / DELTA) + 1;
-  const nj = Math.round((VIC_LAT_MAX - VIC_LAT_MIN) / DELTA) + 1;
+  const ni = Math.round((bounds.fineLonMax - bounds.fineLonMin) / FINE_DELTA) + 1;
+  const nj = Math.round((bounds.fineLatMax - bounds.fineLatMin) / FINE_DELTA) + 1;
   const expectedPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
   const completeness = allPoints.length / expectedPoints;
 
   if (completeness < 0.8) {
-    console.warn(`Victoria grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
+    console.warn(`Fine grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
     if (cached) {
       try {
         const fallbackGrid = JSON.parse(cached.gridData) as VictoriaGrid;
-        memVictoriaGrid = fallbackGrid;
-        memVictoriaGridAt = Date.now();
+        memFineGrid = fallbackGrid;
+        memFineGridAt = Date.now();
         return fallbackGrid;
       } catch (e: any) {
-        console.error("Victoria grid: Failed to parse cached data:", e.message);
+        console.error("Fine grid: Failed to parse cached data:", e.message);
       }
     }
   }
 
   const grid: VictoriaGrid = {
-    latMin: VIC_LAT_MIN,
-    latMax: VIC_LAT_MAX,
-    lonMin: VIC_LON_MIN,
-    lonMax: VIC_LON_MAX,
-    delta: DELTA,
+    latMin: bounds.fineLatMin,
+    latMax: bounds.fineLatMax,
+    lonMin: bounds.fineLonMin,
+    lonMax: bounds.fineLonMax,
+    delta: FINE_DELTA,
     ni, nj,
     points: allPoints,
     fetchedAt: Date.now()
@@ -239,28 +277,29 @@ async function doFetchVictoriaGrid(): Promise<VictoriaGrid> {
   try {
     const jsonStr = JSON.stringify(grid);
     const today = new Date().toISOString().split('T')[0];
-    const cacheKey = `${GRID_CACHE_KEY}_${today}`;
+    const cacheKey = `${FINE_GRID_CACHE_KEY}_${today}`;
     await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(cacheKey, jsonStr, ni, DELTA);
-    console.log(`Victoria grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
-    await cleanupOldGridData(GRID_CACHE_KEY);
+      .run(cacheKey, jsonStr, ni, FINE_DELTA);
+    console.log(`Fine grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
+    await cleanupOldGridData(FINE_GRID_CACHE_KEY);
   } catch (e) {
-    console.error("Victoria grid: Failed to cache:", e);
+    console.error("Fine grid: Failed to cache:", e);
   }
 
-  memVictoriaGrid = grid;
-  memVictoriaGridAt = Date.now();
+  memFineGrid = grid;
+  memFineGridAt = Date.now();
   return grid;
 }
 
-function buildWideTiles(): { lats: number[]; lons: number[] }[] {
+async function buildCoarseTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
+  const bounds = await getGridBounds();
   const allLats: number[] = [];
   const allLons: number[] = [];
 
-  for (let lat = WIDE_LAT_MIN; lat <= WIDE_LAT_MAX; lat += WIDE_DELTA) {
+  for (let lat = bounds.coarseLatMin; lat <= bounds.coarseLatMax; lat += COARSE_DELTA) {
     allLats.push(parseFloat(lat.toFixed(4)));
   }
-  for (let lon = WIDE_LON_MIN; lon <= WIDE_LON_MAX; lon += WIDE_DELTA) {
+  for (let lon = bounds.coarseLonMin; lon <= bounds.coarseLonMax; lon += COARSE_DELTA) {
     allLons.push(parseFloat(lon.toFixed(4)));
   }
 
@@ -285,47 +324,48 @@ function buildWideTiles(): { lats: number[]; lons: number[] }[] {
   return tiles;
 }
 
-let inflightWideFetch: Promise<VictoriaGrid> | null = null;
+let inflightCoarseFetch: Promise<VictoriaGrid> | null = null;
 
-export async function fetchWideGrid(force = false): Promise<VictoriaGrid> {
+export async function fetchCoarseGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
-        if (age < WIDE_GRID_CACHE_EXPIRY) {
+        if (age < COARSE_GRID_CACHE_EXPIRY) {
           const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-          console.log(`Wide grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
-          memWideGrid = grid;
-          memWideGridAt = Date.now();
+          console.log(`Coarse grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
+          memCoarseGrid = grid;
+          memCoarseGridAt = Date.now();
           return grid;
         }
       }
     } catch (e) {
-      console.error("Wide grid: Cache read error, will re-fetch", e);
+      console.error("Coarse grid: Cache read error, will re-fetch", e);
     }
   }
 
-  if (inflightWideFetch) {
-    console.log("Wide grid: Waiting for in-flight fetch...");
-    return inflightWideFetch;
+  if (inflightCoarseFetch) {
+    console.log("Coarse grid: Waiting for in-flight fetch...");
+    return inflightCoarseFetch;
   }
 
-  inflightWideFetch = doFetchWideGrid();
+  inflightCoarseFetch = doFetchCoarseGrid();
   try {
-    return await inflightWideFetch;
+    return await inflightCoarseFetch;
   } finally {
-    inflightWideFetch = null;
+    inflightCoarseFetch = null;
   }
 }
 
-async function doFetchWideGrid(): Promise<VictoriaGrid> {
-  console.log("Wide grid: Fetching fresh data from Open-Meteo...");
+async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
+  console.log("Coarse grid: Fetching fresh data from Open-Meteo...");
 
-  const tiles = buildWideTiles();
+  const bounds = await getGridBounds();
+  const tiles = await buildCoarseTiles();
   const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
-  console.log(`Wide grid: ${totalPoints} total points in ${tiles.length} tiles`);
+  console.log(`Coarse grid: ${totalPoints} total points in ${tiles.length} tiles`);
 
   const allPoints: GridPoint[] = [];
 
@@ -365,47 +405,47 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
         });
       }
 
-      console.log(`Wide grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
+      console.log(`Coarse grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
 
       if (i < tiles.length - 1) {
         await new Promise(r => setTimeout(r, 500));
       }
     } catch (err) {
-      console.error(`Wide grid: Tile ${i + 1}/${tiles.length} failed:`, err);
+      console.error(`Coarse grid: Tile ${i + 1}/${tiles.length} failed:`, err);
     }
   }
 
-  const ni = Math.round((WIDE_LON_MAX - WIDE_LON_MIN) / WIDE_DELTA) + 1;
-  const nj = Math.round((WIDE_LAT_MAX - WIDE_LAT_MIN) / WIDE_DELTA) + 1;
+  const ni = Math.round((bounds.coarseLonMax - bounds.coarseLonMin) / COARSE_DELTA) + 1;
+  const nj = Math.round((bounds.coarseLatMax - bounds.coarseLatMin) / COARSE_DELTA) + 1;
   const completeness = allPoints.length / totalPoints;
 
   if (completeness < 0.8) {
-    console.warn(`Wide grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
+    console.warn(`Coarse grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
     if (cached) {
       try {
         const fallbackGrid = JSON.parse(cached.gridData) as VictoriaGrid;
-        memWideGrid = fallbackGrid;
-        memWideGridAt = Date.now();
+        memCoarseGrid = fallbackGrid;
+        memCoarseGridAt = Date.now();
         return fallbackGrid;
       } catch (e: any) {
-        console.error("Wide grid: Failed to parse cached data:", e.message);
+        console.error("Coarse grid: Failed to parse cached data:", e.message);
       }
     }
   }
 
   const grid: VictoriaGrid = {
-    latMin: WIDE_LAT_MIN,
-    latMax: WIDE_LAT_MAX,
-    lonMin: WIDE_LON_MIN,
-    lonMax: WIDE_LON_MAX,
-    delta: WIDE_DELTA,
+    latMin: bounds.coarseLatMin,
+    latMax: bounds.coarseLatMax,
+    lonMin: bounds.coarseLonMin,
+    lonMax: bounds.coarseLonMax,
+    delta: COARSE_DELTA,
     ni, nj,
     points: allPoints,
     fetchedAt: Date.now()
@@ -414,68 +454,77 @@ async function doFetchWideGrid(): Promise<VictoriaGrid> {
   try {
     const jsonStr = JSON.stringify(grid);
     const today = new Date().toISOString().split('T')[0];
-    const cacheKey = `${WIDE_GRID_CACHE_KEY}_${today}`;
+    const cacheKey = `${COARSE_GRID_CACHE_KEY}_${today}`;
     await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(cacheKey, jsonStr, ni, WIDE_DELTA);
-    console.log(`Wide grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
-    await cleanupOldGridData(WIDE_GRID_CACHE_KEY);
+      .run(cacheKey, jsonStr, ni, COARSE_DELTA);
+    console.log(`Coarse grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
+    await cleanupOldGridData(COARSE_GRID_CACHE_KEY);
   } catch (e) {
-    console.error("Wide grid: Failed to cache:", e);
+    console.error("Coarse grid: Failed to cache:", e);
   }
 
-  memWideGrid = grid;
-  memWideGridAt = Date.now();
+  memCoarseGrid = grid;
+  memCoarseGridAt = Date.now();
   return grid;
 }
 
-export async function getCachedVictoriaGrid(): Promise<VictoriaGrid | null> {
-  if (memVictoriaGrid && Date.now() - memVictoriaGridAt < MEM_CACHE_TTL_MS) {
-    return memVictoriaGrid;
+export async function getCachedFineGrid(): Promise<VictoriaGrid | null> {
+  if (memFineGrid && Date.now() - memFineGridAt < MEM_CACHE_TTL_MS) {
+    return memFineGrid;
   }
   try {
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
 
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
 
     if (cached) {
       const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-      memVictoriaGrid = grid;
-      memVictoriaGridAt = Date.now();
+      memFineGrid = grid;
+      memFineGridAt = Date.now();
       return grid;
     }
   } catch (e) {
-    console.error("Victoria grid: Cache read error", e);
+    console.error("Fine grid: Cache read error", e);
   }
   return null;
 }
 
-export async function getCachedWideGrid(): Promise<VictoriaGrid | null> {
-  if (memWideGrid && Date.now() - memWideGridAt < MEM_CACHE_TTL_MS) {
-    return memWideGrid;
+export async function getCachedCoarseGrid(): Promise<VictoriaGrid | null> {
+  if (memCoarseGrid && Date.now() - memCoarseGridAt < MEM_CACHE_TTL_MS) {
+    return memCoarseGrid;
   }
   try {
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
 
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
 
     if (cached) {
       const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-      memWideGrid = grid;
-      memWideGridAt = Date.now();
+      memCoarseGrid = grid;
+      memCoarseGridAt = Date.now();
       return grid;
     }
   } catch (e) {
-    console.error("Wide grid: Cache read error", e);
+    console.error("Coarse grid: Cache read error", e);
   }
   return null;
+}
+
+export function clearFineGridCaches(): void {
+  memFineGrid = null;
+  memFineGridAt = 0;
+  memCoarseGrid = null;
+  memCoarseGridAt = 0;
+  cachedFullWindOverlay = null;
+  cachedFullWindOverlayKey = '';
 }
 
 function findNearestPoint(grid: VictoriaGrid, lat: number, lon: number): GridPoint | null {
@@ -661,7 +710,7 @@ export function getTimeWindow(allTimes: string[]) {
   return { startIdx, selectedTimes };
 }
 
-export function extractFullWindGrid(grid: VictoriaGrid, wideGrid?: VictoriaGrid | null): any | null {
+export function extractFullWindGrid(grid: VictoriaGrid, coarseGrid?: VictoriaGrid | null): any | null {
   if (!grid.points.length) return null;
 
   const firstPoint = grid.points[0];
@@ -669,21 +718,21 @@ export function extractFullWindGrid(grid: VictoriaGrid, wideGrid?: VictoriaGrid 
 
   const melbNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
   const melbDate = `${melbNow.getFullYear()}-${String(melbNow.getMonth() + 1).padStart(2, '0')}-${String(melbNow.getDate()).padStart(2, '0')}`;
-  const cacheKey = `${grid.fetchedAt}|${wideGrid?.fetchedAt ?? 0}|${melbDate}`;
+  const cacheKey = `${grid.fetchedAt}|${coarseGrid?.fetchedAt ?? 0}|${melbDate}`;
 
   if (cachedFullWindOverlay && cacheKey === cachedFullWindOverlayKey) {
     return cachedFullWindOverlay;
   }
 
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
-  const result = gridToWindData(grid.points, DELTA, startIdx, selectedTimes);
+  const result = gridToWindData(grid.points, grid.delta, startIdx, selectedTimes);
 
-  if (wideGrid && wideGrid.points.length > 0) {
-    const wideFirstPoint = wideGrid.points[0];
-    if (wideFirstPoint?.hourly?.time) {
-      const wideTimeWindow = getTimeWindow(wideFirstPoint.hourly.time);
-      const wideResult = gridToWindData(wideGrid.points, WIDE_DELTA, wideTimeWindow.startIdx, wideTimeWindow.selectedTimes);
-      (result as any).wideGrid = wideResult;
+  if (coarseGrid && coarseGrid.points.length > 0) {
+    const coarseFirstPoint = coarseGrid.points[0];
+    if (coarseFirstPoint?.hourly?.time) {
+      const coarseTimeWindow = getTimeWindow(coarseFirstPoint.hourly.time);
+      const coarseResult = gridToWindData(coarseGrid.points, coarseGrid.delta, coarseTimeWindow.startIdx, coarseTimeWindow.selectedTimes);
+      (result as any).wideGrid = coarseResult;
     }
   }
 
@@ -692,7 +741,7 @@ export function extractFullWindGrid(grid: VictoriaGrid, wideGrid?: VictoriaGrid 
   return result;
 }
 
-export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLon: number, wideGrid?: VictoriaGrid | null): any | null {
+export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLon: number, coarseGrid?: VictoriaGrid | null): any | null {
   const spread = 1.5;
   const lonMin = siteLon - spread;
   const lonMax = siteLon + spread;
@@ -700,8 +749,8 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   const latMax = siteLat + spread;
 
   const relevantPoints = grid.points.filter(p =>
-    p.lat >= latMin - DELTA && p.lat <= latMax + DELTA &&
-    p.lon >= lonMin - DELTA && p.lon <= lonMax + DELTA
+    p.lat >= latMin - grid.delta && p.lat <= latMax + grid.delta &&
+    p.lon >= lonMin - grid.delta && p.lon <= lonMax + grid.delta
   );
 
   if (relevantPoints.length === 0) return null;
@@ -711,32 +760,35 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
 
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
 
-  const result = gridToWindData(relevantPoints, DELTA, startIdx, selectedTimes);
+  const result = gridToWindData(relevantPoints, grid.delta, startIdx, selectedTimes);
 
-  if (wideGrid && wideGrid.points.length > 0) {
-    const wideFirstPoint = wideGrid.points[0];
-    if (wideFirstPoint?.hourly?.time) {
-      const wideTimeWindow = getTimeWindow(wideFirstPoint.hourly.time);
-      const wideResult = gridToWindData(wideGrid.points, WIDE_DELTA, wideTimeWindow.startIdx, wideTimeWindow.selectedTimes);
-      (result as any).wideGrid = wideResult;
+  if (coarseGrid && coarseGrid.points.length > 0) {
+    const coarseFirstPoint = coarseGrid.points[0];
+    if (coarseFirstPoint?.hourly?.time) {
+      const coarseTimeWindow = getTimeWindow(coarseFirstPoint.hourly.time);
+      const coarseResult = gridToWindData(coarseGrid.points, coarseGrid.delta, coarseTimeWindow.startIdx, coarseTimeWindow.selectedTimes);
+      (result as any).wideGrid = coarseResult;
     }
   }
 
   return result;
 }
 
-export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
+export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
   try {
+    const bounds = await getGridBounds();
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
-    const grid = await fetchVictoriaGrid(true);
+    const grid = await fetchFineGrid(true);
+
+    const expectedPoints = Math.round((bounds.fineLonMax - bounds.fineLonMin) / FINE_DELTA + 1) * Math.round((bounds.fineLatMax - bounds.fineLatMin) / FINE_DELTA + 1);
 
     if (!grid.points || grid.points.length === 0) {
       if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
@@ -745,7 +797,7 @@ export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
           message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
           cacheAgeMinutes,
           pointsFetched: 0,
-          pointsExpected: 390,
+          pointsExpected: expectedPoints,
           fetchPercentage: 0
         };
       }
@@ -753,12 +805,11 @@ export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
         success: false,
         message: 'Rate limited and no cached data available',
         pointsFetched: 0,
-        pointsExpected: 390,
+        pointsExpected: expectedPoints,
         fetchPercentage: 0
       };
     }
 
-    const expectedPoints = Math.round((VIC_LON_MAX - VIC_LON_MIN) / DELTA + 1) * Math.round((VIC_LAT_MAX - VIC_LAT_MIN) / DELTA + 1);
     const percentage = Math.round((grid.points.length / expectedPoints) * 100);
 
     if (percentage < 100) {
@@ -787,18 +838,21 @@ export async function fetchVictoriaGridWithStatus(): Promise<GridFetchStatus> {
   }
 }
 
-export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
+export async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
   try {
+    const bounds = await getGridBounds();
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${WIDE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${WIDE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
       if (rows.length > 0) cached = rows[0];
     }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
     const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
 
-    const grid = await fetchWideGrid(true);
+    const grid = await fetchCoarseGrid(true);
+
+    const expectedPoints = Math.round((bounds.coarseLonMax - bounds.coarseLonMin) / COARSE_DELTA + 1) * Math.round((bounds.coarseLatMax - bounds.coarseLatMin) / COARSE_DELTA + 1);
 
     if (!grid.points || grid.points.length === 0) {
       if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
@@ -807,7 +861,7 @@ export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
           message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
           cacheAgeMinutes,
           pointsFetched: 0,
-          pointsExpected: 713,
+          pointsExpected: expectedPoints,
           fetchPercentage: 0
         };
       }
@@ -815,12 +869,11 @@ export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
         success: false,
         message: 'Rate limited and no cached data available',
         pointsFetched: 0,
-        pointsExpected: 713,
+        pointsExpected: expectedPoints,
         fetchPercentage: 0
       };
     }
 
-    const expectedPoints = Math.round((WIDE_LON_MAX - WIDE_LON_MIN) / WIDE_DELTA + 1) * Math.round((WIDE_LAT_MAX - WIDE_LAT_MIN) / WIDE_DELTA + 1);
     const percentage = Math.round((grid.points.length / expectedPoints) * 100);
 
     if (percentage < 100) {
@@ -849,3 +902,6 @@ export async function fetchWideGridWithStatus(): Promise<GridFetchStatus> {
   }
 }
 
+// Legacy aliases — kept so weather.ts routes referencing old names still compile
+export { fetchFineGrid as fetchVictoriaGrid, fetchCoarseGrid as fetchWideGrid,
+         getCachedFineGrid as getCachedVictoriaGrid, getCachedCoarseGrid as getCachedWideGrid };

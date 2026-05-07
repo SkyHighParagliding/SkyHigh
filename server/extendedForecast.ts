@@ -1,17 +1,13 @@
 import db from "./db.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { getCachedVictoriaGrid, getTimeWindow, type GridFetchStatus } from "./victoriaGrid.js";
+import { getCachedFineGrid, getTimeWindow, getGridBounds, type GridFetchStatus } from "./victoriaGrid.js";
 
 const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
 const OPEN_METEO_URL = OPEN_METEO_API_KEY
   ? `https://customer-api.open-meteo.com/v1/forecast`
   : `https://api.open-meteo.com/v1/forecast`;
 
-const EXT_LAT_MIN = -39.2;
-const EXT_LAT_MAX = -34.0;
-const EXT_LON_MIN = 141.0;
-const EXT_LON_MAX = 150.0;
 const EXT_DELTA = 0.5;
 
 interface ExtendedGridPoint {
@@ -60,10 +56,11 @@ interface SiteExtendedForecast {
   updatedAt: string;
 }
 
-function buildExtendedTiles(): { lats: number[]; lons: number[] }[] {
+async function buildExtendedTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
+  const bounds = await getGridBounds();
   const allPoints: { lat: number; lon: number }[] = [];
-  for (let lat = EXT_LAT_MIN; lat <= EXT_LAT_MAX; lat += EXT_DELTA) {
-    for (let lon = EXT_LON_MIN; lon <= EXT_LON_MAX; lon += EXT_DELTA) {
+  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += EXT_DELTA) {
+    for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += EXT_DELTA) {
       allPoints.push({
         lat: parseFloat(lat.toFixed(4)),
         lon: parseFloat(lon.toFixed(4))
@@ -146,7 +143,8 @@ export async function fetchExtendedForecast(): Promise<void> {
   console.log("Extended forecast: Starting daily fetch for days 3-7...");
 
   try {
-    const tiles = buildExtendedTiles();
+    const fineBounds = await getGridBounds();
+    const tiles = await buildExtendedTiles();
     const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
     console.log(`Extended forecast: ${totalPoints} points in ${tiles.length} tiles`);
 
@@ -213,10 +211,10 @@ export async function fetchExtendedForecast(): Promise<void> {
     }
 
     const grid: ExtendedGrid = {
-      latMin: EXT_LAT_MIN,
-      latMax: EXT_LAT_MAX,
-      lonMin: EXT_LON_MIN,
-      lonMax: EXT_LON_MAX,
+      latMin: fineBounds.fineLatMin,
+      latMax: fineBounds.fineLatMax,
+      lonMin: fineBounds.fineLonMin,
+      lonMax: fineBounds.fineLonMax,
       delta: EXT_DELTA,
       points: allPoints,
       fetchedAt: Date.now()
@@ -233,7 +231,7 @@ export async function fetchExtendedForecast(): Promise<void> {
     await extractAllSiteExtendedForecasts(grid);
 
     console.log("Extended forecast: Computing wind grid for the day...");
-    const windGrid = computeExtendedWindGrid(grid);
+    const windGrid = await computeExtendedWindGrid(grid);
     cacheWindGrid(windGrid);
     console.log("Extended forecast: Wind grid cached in memory (24h TTL)");
 
@@ -265,7 +263,7 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
   const existingForecasts = await db.prepare("SELECT siteId, forecasts FROM weather_forecasts").all() as { siteId: string; forecasts: string }[];
   const forecastMap = new Map(existingForecasts.map(f => [f.siteId, f.forecasts]));
 
-  const vicGrid = await getCachedVictoriaGrid();
+  const vicGrid = await getCachedFineGrid();
 
   let updated = 0;
   for (const site of sites) {
@@ -508,12 +506,13 @@ function buildSiteExtendedForecast(
   };
 }
 
-function computeExtendedWindGrid(grid: ExtendedGrid): any {
+async function computeExtendedWindGrid(grid: ExtendedGrid): Promise<any> {
   const allTimes = grid.points[0].times;
-  const VIC_LON_MIN = 141.0;
-  const VIC_LON_MAX = 150.0;
-  const VIC_LAT_MIN = -39.2;
-  const VIC_LAT_MAX = -34.0;
+  const fineBounds = await getGridBounds();
+  const VIC_LON_MIN = fineBounds.fineLonMin;
+  const VIC_LON_MAX = fineBounds.fineLonMax;
+  const VIC_LAT_MIN = fineBounds.fineLatMin;
+  const VIC_LAT_MAX = fineBounds.fineLatMax;
   const VIC_DELTA = 0.35;
 
   const srcLons = [...new Set(grid.points.map((p: ExtendedGridPoint) => p.lon))].sort((a, b) => a - b);
@@ -610,7 +609,7 @@ export async function getExtendedWindGrid(): Promise<any | null> {
   const allTimes = grid.points[0].times;
   if (!allTimes?.length) return null;
 
-  const windGrid = computeExtendedWindGrid(grid);
+  const windGrid = await computeExtendedWindGrid(grid);
   cacheWindGrid(windGrid);
   return windGrid;
 }
@@ -826,7 +825,7 @@ export async function precomputeWindGridIfNeeded(): Promise<void> {
     }
 
     console.log("Extended wind grid: Pre-computing at startup (fallback)...");
-    const windGrid = computeExtendedWindGrid(grid);
+    const windGrid = await computeExtendedWindGrid(grid);
     cacheWindGrid(windGrid);
     console.log("Extended wind grid: Pre-computation complete");
   } catch (err) {
