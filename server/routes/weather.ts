@@ -616,13 +616,33 @@ router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_re
 }));
 
 router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  fetchFineGrid(true).catch(() => {});
-  res.json({ success: true, message: "Fine grid fetch started" });
+  const ts = new Date().toISOString();
+  try {
+    await fetchFineGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", "ok");
+    res.json({ success: true, message: "Fine grid fetch completed" });
+  } catch (e: any) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", e.message || "Unknown error");
+    log.error("Manual fine grid fetch failed:", e);
+    res.status(500).json({ success: false, message: e.message || "Fine grid fetch failed" });
+  }
 }));
 
 router.post("/coarse-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  fetchCoarseGrid(true).catch(() => {});
-  res.json({ success: true, message: "Coarse grid fetch started" });
+  const ts = new Date().toISOString();
+  try {
+    await fetchCoarseGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", "ok");
+    res.json({ success: true, message: "Coarse grid fetch completed" });
+  } catch (e: any) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", e.message || "Unknown error");
+    log.error("Manual coarse grid fetch failed:", e);
+    res.status(500).json({ success: false, message: e.message || "Coarse grid fetch failed" });
+  }
 }));
 
 export default router;
