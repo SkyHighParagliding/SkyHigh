@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -83,13 +83,27 @@ function WindMapPreviewCard() {
 }
 
 export function AdminWeather() {
-  const { settings } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const { token } = useAuth();
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeMessage, setScrapeMessage] = useState("");
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [showGridSelector, setShowGridSelector] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startStatusPolling = () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    let ticks = 0;
+    pollRef.current = setInterval(async () => {
+      await refreshSettings();
+      ticks++;
+      if (ticks >= 12) {
+        clearInterval(pollRef.current!);
+        pollRef.current = null;
+      }
+    }, 5000);
+  };
 
   const handleTrigger = async (endpoint: string, type: string) => {
     setLoadingType(type);
@@ -102,6 +116,7 @@ export function AdminWeather() {
       if (data.success) {
         toast.success(`${type}: ${message}`);
         setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 5000);
+        startStatusPolling();
       } else {
         toast.error(`${type}: ${message}`);
       }
