@@ -25,8 +25,8 @@ Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:
 - **What:** `inert={!trayOpen}` on tray content. `aria-hidden` on all decorative icons. `aria-label` on play/speed buttons. `aria-label` + `aria-valuetext` on timeline slider.
 - **Acceptance Criteria:** Tab through closed tray — focus must not land on hidden controls. Screen reader announces slider as human time string, not Unix ms.
 
-### TASK-REVIEW-D ⬜ Tray + Mode Toggle Extraction
-- **Status:** ⬜ TODO
+### TASK-REVIEW-D ✅ Tray + Mode Toggle Extraction
+- **Status:** ✅ DONE — commit `9b324fe`
 - **Prerequisites:** A, B, C
 - **Estimated effort:** M (~27% daily / ~5.5% weekly at Sonnet)
 - **What:** Extract ~47-51 LOC tray JSX into `src/components/windmap/WindMapScrubberTray.tsx`. Extract 17-line modeToggle JSX into `src/components/windmap/WindMapModeToggle.tsx`. Eliminates all current duplication between the two wind map components.

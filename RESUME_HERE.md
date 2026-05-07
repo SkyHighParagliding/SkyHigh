@@ -101,7 +101,7 @@ Plan file: `C:\Users\User\.claude\plans\make-a-plan-to-sleepy-biscuit.md`
 
 | Task | What | Priority | Est. Daily% | Est. Weekly% |
 |------|------|----------|-------------|--------------|
-| **D** | Extract `WindMapScrubberTray` component + `WindMapModeToggle` (eliminates 47+51 LOC duplication) | High | ~27% | ~5.5% |
+| **D** ✅ | Extract `WindMapScrubberTray` component + `WindMapModeToggle` (eliminates 47+51 LOC duplication) — commit `9b324fe` | High | ~27% | ~5.5% |
 | **E** | Remove `backdrop-blur-md` from tray body → `bg-black/60` (Android animation jank on Canvas) | Medium | ~5% | ~1% |
 | **F** *(optional)* | Extract `useWindPlayback` hook | Low | ~40% | ~8% |
 
