@@ -38,7 +38,7 @@ export function WindMapScrubberTray({
           <ChevronUp aria-hidden="true" className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
         </button>
       </div>
-      <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2" inert={!trayOpen}>
+      <div className="bg-black/85 border-t border-white/10 px-3 py-2" inert={!trayOpen}>
         <div className="flex items-center gap-3">
           <button
             onClick={onPlayToggle}
