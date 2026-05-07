@@ -101,67 +101,67 @@ async function runDriveSync() {
   }
 }
 
-async function fetchVictoriaGridDaily() {
+async function fetchFineGridDaily() {
   const ts = new Date().toISOString();
   try {
-    const { fetchVictoriaGrid } = await import("../victoriaGrid.js");
-    await fetchVictoriaGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastResult", "ok");
-    log.info("Victoria grid daily fetch completed");
+    const { fetchFineGrid } = await import("../victoriaGrid.js");
+    await fetchFineGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", "ok");
+    log.info("Fine grid daily fetch completed");
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("victoriaGridLastResult", e.message || "Unknown error");
-    log.error(`Victoria grid daily fetch failed: ${e.message}`);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", e.message || "Unknown error");
+    log.error(`Fine grid daily fetch failed: ${e.message}`);
   }
 }
 
-async function fetchWideGridDaily() {
+async function fetchCoarseGridDaily() {
   const ts = new Date().toISOString();
   try {
-    const { fetchWideGrid } = await import("../victoriaGrid.js");
-    await fetchWideGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastResult", "ok");
-    log.info("Wide grid daily fetch completed");
+    const { fetchCoarseGrid } = await import("../victoriaGrid.js");
+    await fetchCoarseGrid(true);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", "ok");
+    log.info("Coarse grid daily fetch completed");
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("wideGridLastResult", e.message || "Unknown error");
-    log.error(`Wide grid daily fetch failed: ${e.message}`);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", e.message || "Unknown error");
+    log.error(`Coarse grid daily fetch failed: ${e.message}`);
   }
 }
 
 async function startupGridCheck() {
   const RECENT_FETCH_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-  // Check Victoria grid: only fetch if NOT fetched within last 12 hours
-  const vicLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'victoriaGridLastRun'").get() as { value: string } | undefined;
+  // Check fine grid: only fetch if NOT fetched within last 12 hours
+  const vicLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'fineGridLastRun'").get() as { value: string } | undefined;
   if (vicLastRun?.value) {
     const timeSinceLastRun = Date.now() - new Date(vicLastRun.value).getTime();
     if (timeSinceLastRun < RECENT_FETCH_MS) {
-      log.info(`Victoria grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
+      log.info(`Fine grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
     } else {
-      log.info(`Victoria grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 60s...`);
-      setTimeout(() => fetchVictoriaGridDaily(), 60_000);
+      log.info(`Fine grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 60s...`);
+      setTimeout(() => fetchFineGridDaily(), 60_000);
     }
   } else {
-    log.info("Victoria grid never fetched — fetching in 60s...");
-    setTimeout(() => fetchVictoriaGridDaily(), 60_000);
+    log.info("Fine grid never fetched — fetching in 60s...");
+    setTimeout(() => fetchFineGridDaily(), 60_000);
   }
 
-  // Check Wide grid: only fetch if NOT fetched within last 12 hours
-  const wideLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'wideGridLastRun'").get() as { value: string } | undefined;
+  // Check coarse grid: only fetch if NOT fetched within last 12 hours
+  const wideLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'coarseGridLastRun'").get() as { value: string } | undefined;
   if (wideLastRun?.value) {
     const timeSinceLastRun = Date.now() - new Date(wideLastRun.value).getTime();
     if (timeSinceLastRun < RECENT_FETCH_MS) {
-      log.info(`Wide grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
+      log.info(`Coarse grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
     } else {
-      log.info(`Wide grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
-      setTimeout(() => fetchWideGridDaily(), 3 * 60_000);
+      log.info(`Coarse grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
+      setTimeout(() => fetchCoarseGridDaily(), 3 * 60_000);
     }
   } else {
-    log.info("Wide grid never fetched — fetching in 3min...");
-    setTimeout(() => fetchWideGridDaily(), 3 * 60_000);
+    log.info("Coarse grid never fetched — fetching in 3min...");
+    setTimeout(() => fetchCoarseGridDaily(), 3 * 60_000);
   }
 }
 
@@ -169,12 +169,12 @@ export async function startScheduledJobs() {
   // On startup: catch up if grid data is stale (server started after scheduled window)
   await startupGridCheck();
 
-  // Daily wind grid pre-fetches: Victoria at 5:00am, Wide at 5:13am (Melbourne time)
-  cron.schedule("0 5 * * *", fetchVictoriaGridDaily, { timezone: "Australia/Melbourne" });
-  log.info("Victoria grid daily fetch scheduled: 5:00am Melbourne time");
+  // Daily wind grid pre-fetches: Fine at 5:00am, Coarse at 5:13am (Melbourne time)
+  cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
 
-  cron.schedule("13 5 * * *", fetchWideGridDaily, { timezone: "Australia/Melbourne" });
-  log.info("Wide grid daily fetch scheduled: 5:13am Melbourne time");
+  cron.schedule("13 5 * * *", fetchCoarseGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Coarse grid daily fetch scheduled: 5:13am Melbourne time");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));

@@ -188,8 +188,8 @@ export async function fetchWeatherData(isManual = false) {
     }
 
     try {
-      const { fetchVictoriaGrid, extractSiteForecast } = await import("./victoriaGrid.js");
-      const grid = await fetchVictoriaGrid();
+      const { fetchFineGrid, extractSiteForecast } = await import("./victoriaGrid.js");
+      const grid = await fetchFineGrid();
 
       const sites = await db.prepare("SELECT id, lat, lon FROM sites").all() as { id: string, lat: number, lon: number }[];
       for (const site of sites) {
