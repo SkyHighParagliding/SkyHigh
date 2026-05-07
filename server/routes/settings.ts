@@ -14,6 +14,18 @@ router.get("/", asyncHandler(async (req, res) => {
   for (const s of settings) {
     result[s.key] = s.value;
   }
+
+  // Derive grid last-run timestamps from the actual data tables — settings keys can lag
+  // when manual fetches are triggered. wind_grid_data.updatedAt is the source of truth.
+  const fineRow = db.prepare("SELECT MAX(updatedAt) as ts FROM wind_grid_data WHERE siteId LIKE 'fine_grid_%'").get() as { ts: string | null };
+  if (fineRow?.ts) result.fineGridLastRun = new Date(fineRow.ts + 'Z').toISOString();
+
+  const coarseRow = db.prepare("SELECT MAX(updatedAt) as ts FROM wind_grid_data WHERE siteId LIKE 'coarse_grid_%'").get() as { ts: string | null };
+  if (coarseRow?.ts) result.coarseGridLastRun = new Date(coarseRow.ts + 'Z').toISOString();
+
+  const extRow = db.prepare("SELECT MAX(computedAt) as ts FROM extended_wind_grids").get() as { ts: string | null };
+  if (extRow?.ts) result.extendedForecastLastRun = extRow.ts;
+
   res.set('Cache-Control', 'public, max-age=10, stale-while-revalidate=30');
   res.json(result);
 }));
