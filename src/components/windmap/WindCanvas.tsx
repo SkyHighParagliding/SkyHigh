@@ -75,15 +75,17 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     if (markers && markers.length > 1) {
       // Use saved settings if available, otherwise fall back to initialZoomK or computed fit
       let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : initialZoomK;
-      let useCenterLon = savedCenterLon ?? (windGrid.lonMin + windGrid.lonMax) / 2;
-      let useCenterLat = savedCenterLat ?? (windGrid.latMin + windGrid.latMax) / 2;
+      const centerGrid = windGrid.wideGrid ?? windGrid;
+      let useCenterLon = savedCenterLon ?? (centerGrid.lonMin + centerGrid.lonMax) / 2;
+      let useCenterLat = savedCenterLat ?? (centerGrid.latMin + centerGrid.latMax) / 2;
 
       if (!useK) {
-        // Use wind grid bounds for initial focus
-        const minLat = windGrid.latMin;
-        const maxLat = windGrid.latMax;
-        const minLon = windGrid.lonMin;
-        const maxLon = windGrid.lonMax;
+        // Use coarse grid bounds for initial fit when available
+        const focusGrid = windGrid.wideGrid ?? windGrid;
+        const minLat = focusGrid.latMin;
+        const maxLat = focusGrid.latMax;
+        const minLon = focusGrid.lonMin;
+        const maxLon = focusGrid.lonMax;
         const padding = 0;
         const latRange = (maxLat - minLat) * (1 + padding * 2);
         const lonRange = (maxLon - minLon) * (1 + padding * 2);
@@ -135,9 +137,15 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     const overlay = createSpeedOverlay(width, height);
     const particles = createParticlePool(width, height);
 
-    const gridTL = projection([windGrid.lonMin, windGrid.latMax])!;
-    const gridBR = projection([windGrid.lonMax, windGrid.latMin])!;
-    const minK = 256 * Math.pow(2, 6);
+    // Use coarse grid (wideGrid) bounds for pan/zoom limits when available,
+    // so the user can zoom out to see the full coarse coverage area.
+    const extentGrid = windGrid.wideGrid ?? windGrid;
+    const gridTL = projection([extentGrid.lonMin, extentGrid.latMax])!;
+    const gridBR = projection([extentGrid.lonMax, extentGrid.latMin])!;
+    const extW = Math.abs(gridBR[0] - gridTL[0]);
+    const extH = Math.abs(gridBR[1] - gridTL[1]);
+    const fitK = Math.min(width / extW, height / extH) * 0.85;
+    const minK = Math.min(256 * Math.pow(2, 6), Math.max(fitK, 256 * Math.pow(2, 3)));
     const maxK = 256 * Math.pow(2, 20);
 
     const zoom = d3Zoom<HTMLDivElement, unknown>()
