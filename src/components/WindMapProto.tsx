@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, FastForward, Loader2, Calendar, ChevronUp } from 'lucide-react';
 import { fetchWindGridCached } from '@/lib/windGridCache';
-import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
+import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS, nextSpeed } from './windMapTypes';
+import type { PlaySpeed } from './windMapTypes';
+import { formatWindMapTime } from '@/lib/dateUtils';
 export type { ZoomSetpoint, ZoomSetpoints, SiteMarker } from './windMapTypes';
 export { DEFAULT_ZOOM_SETPOINTS, INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
 
@@ -34,14 +36,10 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const cycleSpeed = () => {
+  const cycleSpeed = useCallback(() => {
     setIsPlaying(true);
-    setPlaySpeed(prev => {
-      if (prev === 5000) return 2500;
-      if (prev === 2500) return 1250;
-      return 5000;
-    });
-  };
+    setPlaySpeed(prev => nextSpeed(prev as PlaySpeed));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -114,14 +112,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
 
   const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
 
-  const formattedTime = new Intl.DateTimeFormat('en-AU', {
-    timeZone: 'Australia/Melbourne',
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: true,
-    weekday: 'short',
-    ...(mapMode === '7day' ? { day: 'numeric', month: 'short' } : {})
-  }).format(currentTime);
+  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
 
   const forecastStart = windGrid ? new Date(windGrid.times[0]).getTime() : 0;
   const forecastEnd = windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0;
@@ -237,16 +228,17 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
               className="w-[100px] h-[24px] bg-black/70 backdrop-blur-md border-t border-x border-white/10 rounded-t-md flex items-center justify-center hover:bg-black/80 transition-colors"
               aria-label={trayOpen ? 'Collapse controls' : 'Expand controls'}
             >
-              <ChevronUp className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
+              <ChevronUp aria-hidden="true" className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
-          <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2">
+          <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2" inert={!trayOpen}>
             <div className="flex items-center gap-3">
               <button
                 onClick={togglePlay}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
                 className="w-7 h-7 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 transition-colors text-sky-400 shrink-0"
               >
-                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                {isPlaying ? <Pause aria-hidden="true" className="w-3.5 h-3.5 fill-current" /> : <Play aria-hidden="true" className="w-3.5 h-3.5 fill-current ml-0.5" />}
               </button>
 
               <input
@@ -256,15 +248,17 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
                 step={timeStep}
                 value={currentTime}
                 onChange={handleSliderChange}
+                aria-label="Timeline"
+                aria-valuetext={formattedTime}
                 className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
               />
 
               <button
                 onClick={cycleSpeed}
                 className="p-1 rounded hover:bg-white/5 transition-colors text-sky-500 shrink-0"
-                title={`Speed: ${5000 / playSpeed}x`}
+                aria-label={`Speed: ${5000 / playSpeed}x`}
               >
-                <FastForward className="w-3.5 h-3.5" />
+                <FastForward aria-hidden="true" className="w-3.5 h-3.5" />
               </button>
 
               <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>

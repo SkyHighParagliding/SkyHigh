@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { select } from 'd3-selection';
 import { geoMercator } from 'd3-geo';
 import { zoom as d3Zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom';
@@ -30,7 +30,7 @@ interface WindCanvasProps {
   onTransformChange?: (lat: number, lon: number, zoomLevel: number) => void;
 }
 
-export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS, siteMarkers, onSiteClick, hideWindInfo, onWindInfoChange, sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom, onTransformChange }: WindCanvasProps) {
+export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS, siteMarkers, onSiteClick, hideWindInfo, onWindInfoChange, sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom, onTransformChange }: WindCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -313,4 +313,4 @@ export function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, 
 
     </div>
   );
-}
+});

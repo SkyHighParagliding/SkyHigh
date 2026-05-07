@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Play, Pause, FastForward, Loader2, Calendar, Layers, Maximize2, Minimize2, Crosshair, ChevronUp } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes';
-import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
+import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, nextSpeed } from './windMapTypes';
+import type { SiteMarker, ZoomSetpoints, PlaySpeed } from './windMapTypes';
+import { formatWindMapTime } from '@/lib/dateUtils';
 
 const WindCanvas = lazy(() => import('./WindMapProto').then(m => ({ default: m.WindCanvas })));
 
@@ -167,10 +168,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       });
   }, [mapMode]);
 
-  const cycleSpeed = () => {
+  const cycleSpeed = useCallback(() => {
     setIsPlaying(true);
-    setPlaySpeed(prev => prev === 5000 ? 2500 : prev === 2500 ? 1250 : 5000);
-  };
+    setPlaySpeed(prev => nextSpeed(prev as PlaySpeed));
+  }, []);
 
   const sitesTimeStep = mapMode === '7day' ? 4 * 60 * 60 * 1000 : 15 * 60 * 1000;
 
@@ -196,6 +197,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   }, []);
   const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
 
+  const handleTransformChange = useCallback((lat: number, lon: number, zoom: number) => {
+    setLiveView({ lat, lon, zoom });
+  }, []);
+
   const handleSiteClick = useCallback((site: SiteMarker, x: number, y: number) => {
     setSelectedSite(prev => prev?.site.id === site.id ? null : { site, x, y });
   }, []);
@@ -205,11 +210,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setSelectedSite(null);
   }, []);
 
-  const formattedTime = new Intl.DateTimeFormat('en-AU', {
-    timeZone: 'Australia/Melbourne',
-    hour: 'numeric', minute: 'numeric', hour12: true, weekday: 'short',
-    ...(mapMode === '7day' ? { day: 'numeric', month: 'short' } : {})
-  }).format(currentTime);
+  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
 
   const forecastStart = windGrid ? new Date(windGrid.times[0]).getTime() : 0;
   const forecastEnd = windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0;
@@ -281,7 +282,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             savedCenterLat={savedLat}
             savedCenterLon={savedLon}
             savedZoom={savedZoom}
-            onTransformChange={(lat, lon, zoom) => setLiveView({ lat, lon, zoom })}
+            onTransformChange={handleTransformChange}
           />
         </Suspense>
 
@@ -338,16 +339,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               className="w-[100px] h-[24px] bg-black/70 backdrop-blur-md border-t border-x border-white/10 rounded-t-md flex items-center justify-center hover:bg-black/80 transition-colors"
               aria-label={trayOpen ? 'Collapse controls' : 'Expand controls'}
             >
-              <ChevronUp className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
+              <ChevronUp aria-hidden="true" className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
-          <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2">
+          <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2" inert={!trayOpen}>
             <div className="flex items-center gap-3">
               <button
                 onClick={togglePlay}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
                 className="w-7 h-7 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 transition-colors text-sky-400 shrink-0"
               >
-                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                {isPlaying ? <Pause aria-hidden="true" className="w-3.5 h-3.5 fill-current" /> : <Play aria-hidden="true" className="w-3.5 h-3.5 fill-current ml-0.5" />}
               </button>
               <input
                 type="range"
@@ -356,14 +358,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 step={sitesTimeStep}
                 value={currentTime}
                 onChange={handleSliderChange}
+                aria-label="Timeline"
+                aria-valuetext={formattedTime}
                 className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
               />
               <button
                 onClick={cycleSpeed}
                 className="p-1 rounded hover:bg-white/5 transition-colors text-sky-500 shrink-0"
-                title={`Speed: ${5000 / playSpeed}x`}
+                aria-label={`Speed: ${5000 / playSpeed}x`}
               >
-                <FastForward className="w-3.5 h-3.5" />
+                <FastForward aria-hidden="true" className="w-3.5 h-3.5" />
               </button>
               <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>
             </div>
