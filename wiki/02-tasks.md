@@ -215,6 +215,15 @@ Rename grid identifiers from location-specific to purpose-descriptive, and make 
 
 ---
 
+## Phase 7: UX Refinements
+
+### TASK-034 ✅ Wind Map Scrubber Retractable Tray
+Convert the static bottom scrubber bar on both wind map variants into a slide-up tray with a pull-tab.
+- **Acceptance Criteria:** Tab (24 × 100 px, centred at bottom edge) and tray move as one unit. Default state: retracted (tab only visible). Click tab to pull tray up; click again to retract. Chevron rotates to indicate direction. Both `SitesWindMap` and `WindMapProto` updated.
+- **Completed:** 2026-05-07. `src/components/SitesWindMap.tsx`, `src/components/WindMapProto.tsx`.
+
+---
+
 ## Summary
 
 | Phase | Name | Tasks | Status | Completion Date |
@@ -223,14 +232,15 @@ Rename grid identifiers from location-specific to purpose-descriptive, and make 
 | 2 | Wind Map & Weather | 011 | ✅ Complete | 2026-05-05 |
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
 | 6 | Grid Configurability | 001 | ✅ Complete | 2026-05-07 |
+| 7 | UX Refinements | 001 | ✅ Complete | 2026-05-07 |
 | 4 | Production Deployment | 004 | ⚠️ 3/4 Complete | 2026-05-07 |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
-| | **TOTAL** | **32** | **31 ✅ / 2 ⚠️ / 0 ⬜** | — |
+| | **TOTAL** | **33** | **32 ✅ / 2 ⚠️ / 0 ⬜** | — |
 
 ---
 
 **Task Summary:**
-- **Completed (32):** Phases 1, 2, 3, 6 + Tasks 026, 027 from Phase 4
+- **Completed (32):** Phases 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
 - **Partial (2):** Task 028 (deferred, single-instance only), Task 029 (env var loaded, no setup script)
 - **Backlog (3):** Tasks 030, 031, 032 — to be addressed at production launch
 

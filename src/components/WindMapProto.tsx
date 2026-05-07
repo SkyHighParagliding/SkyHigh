@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, FastForward, Loader2, Calendar } from 'lucide-react';
+import { Play, Pause, FastForward, Loader2, Calendar, ChevronUp } from 'lucide-react';
 import { fetchWindGridCached } from '@/lib/windGridCache';
 import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
 export type { ZoomSetpoint, ZoomSetpoints, SiteMarker } from './windMapTypes';
@@ -27,6 +27,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(5000);
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [singleWindInfo, setSingleWindInfo] = useState<{ speed: number; direction: number } | null>(null);
@@ -226,40 +227,54 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2 z-20">
-          <div className="flex items-center gap-3">
+        <div
+          className="absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-in-out"
+          style={{ transform: trayOpen ? 'translateY(0)' : 'translateY(calc(100% - 24px))' }}
+        >
+          <div className="flex justify-center">
             <button
-              onClick={togglePlay}
-              className="w-7 h-7 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 transition-colors text-sky-400 shrink-0"
+              onClick={() => setTrayOpen(o => !o)}
+              className="w-[100px] h-[24px] bg-black/70 backdrop-blur-md border-t border-x border-white/10 rounded-t-md flex items-center justify-center hover:bg-black/80 transition-colors"
+              aria-label={trayOpen ? 'Collapse controls' : 'Expand controls'}
             >
-              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+              <ChevronUp className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
             </button>
-
-            <input
-              type="range"
-              min={forecastStart}
-              max={forecastEnd}
-              step={timeStep}
-              value={currentTime}
-              onChange={handleSliderChange}
-              className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-            />
-
-            <button
-              onClick={cycleSpeed}
-              className="p-1 rounded hover:bg-white/5 transition-colors text-sky-500 shrink-0"
-              title={`Speed: ${5000 / playSpeed}x`}
-            >
-              <FastForward className="w-3.5 h-3.5" />
-            </button>
-
-            <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>
           </div>
+          <div className="bg-black/70 backdrop-blur-md border-t border-white/10 px-3 py-2">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={togglePlay}
+                className="w-7 h-7 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 transition-colors text-sky-400 shrink-0"
+              >
+                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+              </button>
 
-          <div className="flex items-center justify-between mt-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[8px] font-mono text-white/60">{5000 / playSpeed}x</span>
-              <span className="text-[8px] font-mono text-white/60">ECMWF{mapMode === '7day' ? ' 7-DAY' : ''}</span>
+              <input
+                type="range"
+                min={forecastStart}
+                max={forecastEnd}
+                step={timeStep}
+                value={currentTime}
+                onChange={handleSliderChange}
+                className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+              />
+
+              <button
+                onClick={cycleSpeed}
+                className="p-1 rounded hover:bg-white/5 transition-colors text-sky-500 shrink-0"
+                title={`Speed: ${5000 / playSpeed}x`}
+              >
+                <FastForward className="w-3.5 h-3.5" />
+              </button>
+
+              <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>
+            </div>
+
+            <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[8px] font-mono text-white/60">{5000 / playSpeed}x</span>
+                <span className="text-[8px] font-mono text-white/60">ECMWF{mapMode === '7day' ? ' 7-DAY' : ''}</span>
+              </div>
             </div>
           </div>
         </div>
