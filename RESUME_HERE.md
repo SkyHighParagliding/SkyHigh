@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Production Deployment Ready for Execution
+# Resume Here — SkyHigh Railway Migration & Deployment
 
-**Session Date:** 2026-05-13 (Evening)  
+**Last Updated:** 2026-05-13 (Late Evening)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -8,9 +8,21 @@
 
 ## Where We Left Off
 
-**STATUS:** All 3 blocking questions answered. Railway deployment plan ready for execution tomorrow.
+**STATUS:** Documentation updated — all Replit references marked/corrected. Ready to execute Railway deployment plan.
 
-**3 QUESTIONS ANSWERED:**
+**THIS SESSION COMPLETED:**
+- Identified all Replit references in CLAUDE.md (2 locations)
+- Verified folder structure diagram was a template, not current reality
+- Updated CLAUDE.md Section 0: `**Deployed:**` field now shows 🚧 Railway (PostgreSQL) — migration in progress
+- Updated CLAUDE.md Section 0: Key Decisions reference now points to Railway, not Replit
+- Rewrote Section 3 folder structure diagram to match actual project layout (src/, server/, public/, database/, etc.)
+- Updated DECISION-006: Changed from "Replit hosting" to "Railway hosting (migration in progress)"
+  - Added migration phases and rationale
+  - Documented why we're moving from Replit to Railway
+  - Status: 🚧 Migration in progress
+- Committed all changes: `[WIKI] Update deployment to Railway — mark Replit migration in progress`
+
+**3 QUESTIONS ALREADY ANSWERED (from previous session):**
 1. ✅ **TIDYHQ_CLUB_ID** = `skyhigh`
 2. ✅ **DEFAULT_ADMINS password** = `BIG.brass.balls`
 3. ✅ **Domain Registrar** = Google (via Google Workspace)
@@ -19,15 +31,7 @@
 
 ---
 
-## What Was Just Completed (This Session)
-
-- Reviewed deployment plan and 6-phase execution steps
-- Gathered all 3 required credentials/info for Railway setup
-- Confirmed Google Workspace manages `skyhighparagliding.org.au`
-
----
-
-## Next Steps to Execute (Tomorrow)
+## Next Steps to Execute (Next Session)
 
 ### Execute the 6-Phase Railway Deployment Plan
 
