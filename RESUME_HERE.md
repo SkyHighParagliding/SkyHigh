@@ -1,68 +1,96 @@
-# Resume Here — SkyHigh Current State
+# Resume Here — SkyHigh Production Deployment Planning
 
-**Session Date:** 2026-05-07  
+**Session Date:** 2026-05-13  
 **Branch:** main  
-**Working Tree Status:** Clean — committed and pushed ✅
-
-## Latest Session Work (2026-05-07)
-
-### Wind Map Zoom / Pan Bounds Fixes ✅
-
-**Commits:** `08d376b`, `83f0de2`
-
-**Problem:** At maximum zoom-out, the wind map was constrained to the fine grid bounds (Victoria only) rather than the coarse grid bounds. Even after fixing the bounds to use `wideGrid`, the `minK` calculation used `Math.min * 0.85` (with a `2^6` upper cap) which left grey space around the coloured overlay.
-
-**Fix (`08d376b`) — pan/zoom bounds use coarse grid:**
-- `translateExtent` now uses `windGrid.wideGrid ?? windGrid` bounds
-- `minK` based on coarse grid dimensions (fitK computed from extentGrid)
-- Initial center and fit-to-bounds calculations also use `wideGrid` when available
-
-**Fix (`83f0de2`) — viewport fully covered at minimum zoom:**
-- Changed to `Math.max(fitWidthK, fitHeightK)` — picks the larger ratio so the viewport is fully covered by the coloured overlay at maximum zoom-out
-- Removed the `0.85` padding multiplier and the `Math.min(2^6, ...)` upper cap
+**Working Tree Status:** Clean — all wiki updates committed ✅
 
 ---
 
-## Previous Session Work (2026-05-07)
+## Where We Left Off
 
-### Admin Grid Fetch-Now Bug Fix ✅
+**DECISION MADE:** Migrating from Replit to **Railway** (existing account) for production deployment.
 
-**Commits:** `b0edb5b`, `9621169`
+**WHY:** Railway is a one-stop shop: hosts Node.js backend + PostgreSQL + static frontend, with GitHub auto-deploy. No Firebase needed (Express serves the React frontend directly).
 
-- Both fetch-now routes now `await` the fetch and write `LastRun`/`LastResult` settings on success/failure
-- Settings GET endpoint now derives `fineGridLastRun`, `coarseGridLastRun`, `extendedForecastLastRun` from `wind_grid_data.updatedAt` and `extended_wind_grids.computedAt` (source of truth)
-
-### Sonnet Code Review — Wind Map Fixes (Tasks A–E) ✅
-
-All Critical, High, and Medium issues resolved. Pushed to main (commits `673fa74`–`036a8bc`).
-
-- **A:** `PLAY_SPEEDS`, `nextSpeed()`, `TRAY_HANDLE_HEIGHT_PX` in `windMapTypes.ts`; `formatWindMapTime()` in `dateUtils.ts`
-- **B:** `WindCanvas` wrapped in `React.memo`; `cycleSpeed`/`onTransformChange` stabilised with `useCallback`
-- **C:** `inert={!trayOpen}` on hidden tray content (critical keyboard trap fix); aria labels throughout
-- **D:** Extracted `WindMapScrubberTray` + `WindMapModeToggle` components
-- **E:** Removed `backdrop-blur-md` from tray body
+**STATUS:** Planning complete. Plan saved to `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`. Wiki updated. Ready for execution.
 
 ---
 
-## Current State
-- **Site Status:** Fully operational ✅
-- **Wind Pipeline:** Audited, fixed, configurable, admin status accurate ✅
-- **Wind Map Zoom:** Coarse grid bounds, full viewport coverage at max zoom-out ✅
-- **Build:** Clean (no new TS errors) ✅
-- **Pushed:** Yes — `83f0de2` on main ✅
+## What Was Just Completed (2026-05-13)
 
-## Open Tasks
+### Wiki Updates
+- ✅ `wiki/06-deployment.md`: Added Railway deployment section (full setup with env var mappings)
+- ✅ `wiki/07-deployment-guide.md`: Clarified Firebase is historical reference only (old Google Sites)
+- ✅ `wiki/01-architecture.md`: Changed production host from Replit to Railway
+- ✅ `memory/project.md`: Updated hosting decision
+- ✅ Removed all Replit references from architecture
+- ✅ Committed all changes: `46456bc`
 
-### Sonnet Code Review — Remaining
-| Task | What | Priority |
-|------|------|----------|
-| **F** *(optional)* | Extract `useWindPlayback` hook | Low — deferrable, no open bugs |
+### Deployment Plan Created
+- **Location:** `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
+- **Phases:** 6 phases (Railway setup → Resend domain verification → custom domain → DNS switch → go-live → cleanup)
+- **Credentials Status:** Most present in `.env`. Missing: `RESEND_FROM_DOMAIN`, `APP_URL`, `TIDYHQ_CLUB_ID`
 
-### Backlog
-- Phase 4 Task 029: DEFAULT_ADMINS setup script (no urgency)
-- Phase 5: Feature backlog (no timeline)
-  - TASK-030: Siteguide version change email notification
-  - TASK-031: Pilot XC flight history export
-  - TASK-032: Multi-club white-label test
+---
 
-For full context and project architecture, see `CLAUDE.md` (Section 0) and `wiki/`.
+## Next Steps to Execute (When You Return)
+
+### A) Answer 3 Quick Questions (Required Before Execution)
+1. **TIDYHQ_CLUB_ID** — What's your TidyHQ org slug? (visible in URL: `skyhigh.tidyhq.com`)
+2. **Production Admin Password** — Secure password to replace `"admin"` in `.env`
+3. **Domain Registrar** — Who registered `skyhighparagliding.org.au`? (GoDaddy, etc.)
+
+### B) Then Execute the 6-Phase Plan
+
+| Phase | What | Owner |
+|-------|------|-------|
+| **1** | Railway project setup + GitHub repo + PostgreSQL | User/Railway |
+| **2** | Copy env vars to Railway dashboard | User |
+| **3** | Test on temporary `.up.railway.app` URL | User |
+| **4** | Resend domain verification (adds DNS TXT records) | User |
+| **5** | Custom domain setup + DNS switch in Google Cloud DNS | User |
+| **6** | Go-live testing + post-cleanup (TidyHQ webhook, old domain removal) | User |
+
+---
+
+## Credentials Summary
+
+### ✅ Present in .env (Ready to Copy to Railway)
+- Gemini API key
+- TidyHQ (token, client ID, secret, webhook key)
+- Resend API key
+- Cloudflare R2 (all 5 values)
+- Weather Underground key
+- Session secret
+- GitHub token
+- Default admin accounts
+
+### ❌ Still Missing (Will Set During Deployment)
+- `RESEND_FROM_DOMAIN` → set to `skyhighparagliding.org.au` (after Resend verifies domain)
+- `APP_URL` → set to `https://www.skyhighparagliding.org.au` (after DNS is live)
+- `TIDYHQ_CLUB_ID` → find in TidyHQ URL
+- `DATABASE_URL` → Railway auto-injects from PostgreSQL service
+
+---
+
+## Key Files Modified
+- `wiki/06-deployment.md` — Railway deployment (add this to your password-protected storage after go-live)
+- `wiki/07-deployment-guide.md` — Firebase marked as historical
+- `wiki/01-architecture.md` — Production host: Railway
+- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
+
+---
+
+## When You Return
+
+Type: **`resume`**
+
+I will:
+1. Read this file and the plan file
+2. Ask the 3 missing questions (if you haven't answered them yet)
+3. Guide you through the 6-phase execution
+4. Help troubleshoot any issues during deployment
+
+---
+
+**Current Git Status:** All wiki changes committed to main ✅
