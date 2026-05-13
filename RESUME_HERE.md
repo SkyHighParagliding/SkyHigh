@@ -1,96 +1,73 @@
-# Resume Here — SkyHigh Production Deployment Planning
+# Resume Here — SkyHigh Production Deployment Ready for Execution
 
-**Session Date:** 2026-05-13  
+**Session Date:** 2026-05-13 (Evening)  
 **Branch:** main  
-**Working Tree Status:** Clean — all wiki updates committed ✅
+**Working Tree Status:** Clean ✅
 
 ---
 
 ## Where We Left Off
 
-**DECISION MADE:** Migrating from Replit to **Railway** (existing account) for production deployment.
+**STATUS:** All 3 blocking questions answered. Railway deployment plan ready for execution tomorrow.
 
-**WHY:** Railway is a one-stop shop: hosts Node.js backend + PostgreSQL + static frontend, with GitHub auto-deploy. No Firebase needed (Express serves the React frontend directly).
+**3 QUESTIONS ANSWERED:**
+1. ✅ **TIDYHQ_CLUB_ID** = `skyhigh`
+2. ✅ **DEFAULT_ADMINS password** = `BIG.brass.balls`
+3. ✅ **Domain Registrar** = Google (via Google Workspace)
 
-**STATUS:** Planning complete. Plan saved to `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`. Wiki updated. Ready for execution.
-
----
-
-## What Was Just Completed (2026-05-13)
-
-### Wiki Updates
-- ✅ `wiki/06-deployment.md`: Added Railway deployment section (full setup with env var mappings)
-- ✅ `wiki/07-deployment-guide.md`: Clarified Firebase is historical reference only (old Google Sites)
-- ✅ `wiki/01-architecture.md`: Changed production host from Replit to Railway
-- ✅ `memory/project.md`: Updated hosting decision
-- ✅ Removed all Replit references from architecture
-- ✅ Committed all changes: `46456bc`
-
-### Deployment Plan Created
-- **Location:** `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
-- **Phases:** 6 phases (Railway setup → Resend domain verification → custom domain → DNS switch → go-live → cleanup)
-- **Credentials Status:** Most present in `.env`. Missing: `RESEND_FROM_DOMAIN`, `APP_URL`, `TIDYHQ_CLUB_ID`
+**PLAN LOCATION:** `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
 
 ---
 
-## Next Steps to Execute (When You Return)
+## What Was Just Completed (This Session)
 
-### A) Answer 3 Quick Questions (Required Before Execution)
-1. **TIDYHQ_CLUB_ID** — What's your TidyHQ org slug? (visible in URL: `skyhigh.tidyhq.com`)
-2. **Production Admin Password** — Secure password to replace `"admin"` in `.env`
-3. **Domain Registrar** — Who registered `skyhighparagliding.org.au`? (GoDaddy, etc.)
+- Reviewed deployment plan and 6-phase execution steps
+- Gathered all 3 required credentials/info for Railway setup
+- Confirmed Google Workspace manages `skyhighparagliding.org.au`
 
-### B) Then Execute the 6-Phase Plan
+---
+
+## Next Steps to Execute (Tomorrow)
+
+### Execute the 6-Phase Railway Deployment Plan
 
 | Phase | What | Owner |
 |-------|------|-------|
 | **1** | Railway project setup + GitHub repo + PostgreSQL | User/Railway |
-| **2** | Copy env vars to Railway dashboard | User |
+| **2** | Copy env vars to Railway dashboard (use values from .env + 3 answers above) | User |
 | **3** | Test on temporary `.up.railway.app` URL | User |
-| **4** | Resend domain verification (adds DNS TXT records) | User |
+| **4** | Resend domain verification (adds DNS TXT records via Google Cloud DNS) | User |
 | **5** | Custom domain setup + DNS switch in Google Cloud DNS | User |
 | **6** | Go-live testing + post-cleanup (TidyHQ webhook, old domain removal) | User |
 
----
-
-## Credentials Summary
-
-### ✅ Present in .env (Ready to Copy to Railway)
-- Gemini API key
-- TidyHQ (token, client ID, secret, webhook key)
-- Resend API key
-- Cloudflare R2 (all 5 values)
-- Weather Underground key
-- Session secret
-- GitHub token
-- Default admin accounts
-
-### ❌ Still Missing (Will Set During Deployment)
-- `RESEND_FROM_DOMAIN` → set to `skyhighparagliding.org.au` (after Resend verifies domain)
-- `APP_URL` → set to `https://www.skyhighparagliding.org.au` (after DNS is live)
-- `TIDYHQ_CLUB_ID` → find in TidyHQ URL
-- `DATABASE_URL` → Railway auto-injects from PostgreSQL service
+**Credentials to use in Phase 2:**
+- All values from `.env` 
+- `TIDYHQ_CLUB_ID=skyhigh`
+- `DEFAULT_ADMINS` password: `BIG.brass.balls`
+- `NODE_ENV=production`
+- `ALLOW_PLAINTEXT_PASSWORDS=false`
+- `DEV_ALLOW_LOCALHOST_URLS=false`
+- `RESEND_FROM_DOMAIN=skyhighparagliding.org.au` (after Phase 4)
+- `APP_URL=https://www.skyhighparagliding.org.au` (after Phase 5)
 
 ---
 
-## Key Files Modified
-- `wiki/06-deployment.md` — Railway deployment (add this to your password-protected storage after go-live)
-- `wiki/07-deployment-guide.md` — Firebase marked as historical
-- `wiki/01-architecture.md` — Production host: Railway
-- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
+## Key Files for Reference
+- `wiki/06-deployment.md` — Railway deployment section
+- `wiki/01-architecture.md` — Updated production host
+- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — Full 6-phase execution plan
 
 ---
 
-## When You Return
+## When You Return Tomorrow
 
 Type: **`resume`**
 
-I will:
-1. Read this file and the plan file
-2. Ask the 3 missing questions (if you haven't answered them yet)
-3. Guide you through the 6-phase execution
-4. Help troubleshoot any issues during deployment
+I will immediately:
+1. Confirm all 3 answers are in place (they are ✅)
+2. Start Phase 1 of the deployment plan
+3. Guide you through each phase step-by-step
 
 ---
 
-**Current Git Status:** All wiki changes committed to main ✅
+**Current Git Status:** All changes committed to main ✅
