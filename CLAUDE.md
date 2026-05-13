@@ -14,7 +14,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Project Name:** SkyHigh  
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
-**Deployed:** Replit (production), localhost:5173/3001 (dev — Vite + Express concurrently)  
+**Deployed:** 🚧 Railway (PostgreSQL) — migration in progress; localhost:5173/3001 (dev — Vite + Express concurrently)  
 **Current Focus:** Short-term hardening pass (7 items in tasks/remediation_plan.md) following completion of wind map / ECMWF caching overhaul and security hardening Phase 1. The admin-only default wind map view feature was just completed.  
 **Start Date:** 2026-05-01
 
@@ -24,7 +24,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Cloudflare R2 for all media in production, local `/uploads/` in dev — see DECISION-002
 - Gemini (not OpenAI) for all AI: site guide scraping, image enhancement, AI moderation — see DECISION-005
 - Wind map renders via Canvas + D3 (not SVG or WebGL) — see DECISION-004
-- Hosted on Replit — see DECISION-006
+- Migrating from Replit to Railway with PostgreSQL — see DECISION-006
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
@@ -39,6 +39,21 @@ SkyHigh is an Australian paragliding/hang gliding club management platform — a
 Recently hardened (7 critical security fixes) and optimized (wind map: 10x faster via caching, database: indexed for production). Uses dual-database abstraction (SQLite dev / PostgreSQL prod) for maximum compatibility.
 
 ---
+
+### 1. Project Context Verification
+**Rule:** Every session start, you MUST read **Section 0** of `CLAUDE.md` and the **Environment Table** in `wiki/06-deployment.md`. These files contain live credentials, URLs, and repo locations that may change between sessions.
+**Apply when:** Initializing a session.
+**Why:** To prevent "amnesia" regarding external links, GitHub remotes, and live production endpoints.
+
+### 2. Mandatory Memory Updates on Task Completion
+**Rule:** Every single time a task is marked ✅ DONE in `wiki/02-tasks.md`, you MUST also update `CLAUDE.md` (Section 0) if the change affects stack, status, or URL, and update `memory/MEMORY.md`.
+**Apply when:** Marking a task complete.
+**Why:** Ensures the high-level brain is always accurate for the next sub-agent or session.
+
+### 3. Mandatory Pre-Exit Sync
+**Rule:** If the user uses any language suggesting they are stopping (e.g., "quit", "take a break", "exit", "goodnight", "done for now"), you MUST run the "At session end" protocol from Section 4 immediately. This includes updating `RESUME_HERE.md`, `memory/feedback.md`, and making a `[SESSION-SUMMARY]` git commit.
+**Apply when:** User signals intent to close the session.
+**Why:** Captures volatile state and mental context that hasn't been committed to the wiki yet.
 
 ## Section 1: Your Role
 
@@ -83,10 +98,46 @@ The `wiki/` folder is the intra-project brain. The `memory/` folder is the inter
 ## Section 3: Canonical Folder Structure
 
 ```
-project-folder/
+SkyHigh/
 ├── CLAUDE.md                    # This file. Master instructions.
 ├── RESUME_HERE.md               # Always-current "where am I?" file.
-├── .gitignore                   # Don't commit secrets, logs, node_modules, memory/
+├── package.json                 # Node dependencies (client + server)
+├── vite.config.ts               # Vite bundler config
+├── tsconfig.json                # TypeScript config
+├── .gitignore                   # Don't commit: .env, secrets, node_modules/, memory/, uploads/
+│
+├── src/                         # Frontend code (React 19 + TypeScript)
+│   ├── main.tsx                 # App entry point
+│   ├── App.tsx                  # Root component
+│   ├── components/              # Reusable React components (Shadcn/UI + custom)
+│   ├── pages/                   # Page components (routing via react-router)
+│   ├── hooks/                   # Custom React hooks
+│   ├── store/                   # react-query client + context
+│   ├── styles/                  # Tailwind CSS v4 + global styles
+│   └── types/                   # TypeScript type definitions (shared with server)
+│
+├── server/                      # Backend code (Express 4 + TypeScript)
+│   ├── index.ts                 # Express server entry point
+│   ├── db.ts                    # Unified database adapter (SQLite dev / PostgreSQL prod)
+│   ├── routes/                  # API endpoint handlers
+│   ├── middleware/              # Express middleware (auth, CORS, etc.)
+│   ├── services/                # Business logic (TidyHQ, Gemini AI, Open-Meteo, etc.)
+│   └── types/                   # TypeScript types (shared with client)
+│
+├── database/                    # Database setup & migrations
+│   ├── schema.sql               # SQLite/PostgreSQL schema
+│   └── migrations/              # Migration files (if using a tool)
+│
+├── public/                      # Static assets (served as-is)
+│   ├── index.html               # HTML shell
+│   ├── favicon.ico
+│   └── images/                  # Logo, branding
+│
+├── scripts/                     # Utility scripts
+│   ├── dev.ts                   # Run dev server (Vite + Express concurrently)
+│   ├── build.ts                 # Build for production
+│   └── seed.ts                  # (optional) Seed dev database
+│
 ├── wiki/                        # Project brain (intra-session)
 │   ├── README.md                # Wiki navigation guide
 │   ├── 00-overview.md           # Project description, goals, scope
@@ -94,26 +145,35 @@ project-folder/
 │   ├── 02-tasks.md              # Master task list (the plan)
 │   ├── 03-decisions-log.md      # Why we made each significant choice
 │   ├── 04-glossary.md           # Project-specific terms defined
-│   ├── 05-file-map.md           # What lives where in the project
+│   ├── 05-file-map.md           # Where files live (correlates with this structure)
+│   ├── 06-integrations.md       # External integrations (TidyHQ, Gemini, Open-Metoe, R2)
 │   ├── prompts/                 # Generated prompts for each task
 │   │   ├── TASK-001.md
 │   │   ├── TASK-002.md
 │   │   └── ...
-│   └── decisions/               # Detailed decision records (optional)
-├── memory/                      # Project memory (inter-session)
+│   └── decisions/               # Detailed decision records
+│
+├── memory/                      # Project memory (inter-session, not git-tracked)
 │   ├── MEMORY.md                # Index of all memories
 │   ├── user.md                  # User profile and working style
 │   ├── project.md               # Project-specific context
 │   ├── feedback.md              # Lessons from corrections
 │   └── reference.md             # Links to external resources
+│
 ├── tasks/                       # Task tracking for this session
 │   ├── todo.md                  # Current tasks to work on
+│   ├── remediation_plan.md      # Hardening tasks / security fixes
 │   └── lessons.md               # Accumulated lessons (self-improvement)
-├── .claude/
+│
+├── .claude/                     # Claude Code settings
 │   └── settings.json            # Hooks and permissions
-├── code/                        # Actual project code
-├── assets/                      # Images, logos, design files
-└── scratch/                     # Experiments, throwaway work (gitignored)
+│
+├── .config/                     # Project config (env, secrets — not git-tracked)
+├── .git/                        # Git repository metadata
+├── uploads/                     # Dev file uploads (Cloudflare R2 in prod)
+├── dist/                        # Build output (generated, not committed)
+├── data/                        # Data files (e.g., seed data, fixtures)
+└── z_RESUME_SESSION/            # Session state dumps (temp, not committed)
 ```
 
 ---
