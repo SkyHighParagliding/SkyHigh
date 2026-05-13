@@ -8,14 +8,24 @@ type: wiki
 
 ## Overview
 
-This file documents operational procedures for deploying SkyHigh, migrating between platforms, and managing live infrastructure. It complements `06-deployment.md` (environment URLs, credentials, live config).
+This file documents operational procedures for deploying SkyHigh and managing live infrastructure. For credential and account details, see `06-deployment.md`.
+
+---
+
+## ⚠️ Important Note on This Page
+
+**NEW SKYHIGH APP (2026-05-13 onward):** The React/Express backend is deployed to **Railway**, not Firebase. Firebase is not used for the production SkyHigh application.
+
+**GOOGLE SITES ARCHIVE:** The Firebase migration guide below is kept for **historical reference only** — it documents how to migrate the old *static Google Sites* to Firebase. The old Google Sites is preserved at its private URL (`sites.google.com/view/skyhighparagliding`) as a backup and no longer requires Firebase.
+
+For the **new SkyHigh deployment procedure**, see **`wiki/06-deployment.md`** → **"Railway Deployment"** section.
 
 ---
 
 ## Firebase Migration — Moving from Google Sites to Firebase
 
-**Status:** Procedure documented (not yet executed)  
-**Context:** If SkyHigh transitions from Google Sites to Firebase hosting, use this guide to migrate while keeping the old site as a backup.
+**Status:** Historical reference (not used for new SkyHigh app)  
+**Context:** This documents the old procedure for migrating a *static HTML site* from Google Sites to Firebase. It is kept here for archival purposes.
 
 ### Step 1: Deploy Your Site to Firebase (Temporary URL First)
 
@@ -117,4 +127,4 @@ Once the new site is live:
 
 ---
 
-Last updated: 2026-05-13
+Last updated: 2026-05-13 (Railway deployment docs added, Firebase marked as historical reference only)

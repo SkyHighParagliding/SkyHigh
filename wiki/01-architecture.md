@@ -36,7 +36,7 @@ type: wiki
 - **Google Drive API** — document storage and search indexing
 
 ### Deployment
-- **Replit** — production hosting (Node.js + PostgreSQL + persistent disk)
+- **Railway** — production hosting (Node.js + managed PostgreSQL + GitHub auto-deploy)
 - **npm** — package management
 - **git** — version control (GitHub)
 - **Concurrently** — dev server (runs API + Vite client simultaneously)
@@ -171,23 +171,24 @@ server/
 
 | Aspect | Development | Production |
 |--------|---|---|
-| **Database** | SQLite (`dev.db`) | PostgreSQL (managed RDS or on Replit) |
+| **Database** | SQLite (`dev.db`) | PostgreSQL (managed by Railway) |
 | **Storage** | Local `/uploads/` folder | Cloudflare R2 (S3-compatible) |
-| **Server Port** | 3001 (localhost) | 3001 (Replit via REPL_ID + auth) |
+| **Server Port** | 3001 (localhost) | Auto-assigned by Railway |
 | **Frontend Port** | 5173 (Vite dev server) | Served from Express at `/` |
 | **Media URLs** | `http://localhost:3001/uploads/...` | `https://<r2-bucket>.r2.cloudflarestorage.com/...` |
 | **Auth** | DEV_BYPASS_AUTH env var (optional) | Session token + CSRF token required |
 | **ECMWF Grid** | Fetched from API, cached in SQLite | Fetched from API, cached in PostgreSQL |
 | **Gemini API Key** | Optional (demo mode if missing) | Required (production operations) |
-| **Logging** | Console output | JSON to stdout (Replit captures to logs) |
-| **CORS** | Permissive (localhost) | Restricted to Replit domain |
+| **Logging** | Console output | JSON via Railway logs dashboard |
+| **CORS** | Permissive (localhost) | Restricted to production domain |
+| **Domain** | localhost:5173 / localhost:3001 | www.skyhighparagliding.org.au |
 
 ---
 
 ## Key Architectural Patterns
 
 ### Unified Database Adapter (DECISION-001)
-Single codebase supports both SQLite and PostgreSQL through abstraction. `server/db.ts` detects `DATABASE_URL` env var; if missing, uses SQLite. Allows development without PostgreSQL setup and production scalability without code changes.
+Single codebase supports both SQLite and PostgreSQL through abstraction. `server/db.ts` detects `DATABASE_URL` env var; if missing, uses SQLite (development). In production (Railway), PostgreSQL connection string is auto-injected by Railway. Zero code changes needed for dev-to-prod migration.
 
 ### Grid Caching (DECISION-003)
 ECMWF continental wind grids (Victoria 0.35°, Wide 2.0°) are fetched once per day and cached in database as 7-day rolling storage. Wind map requests interpolate from cached data instead of calling API in real-time. Balances freshness (daily updates) vs. cost (1 API call/day instead of 1000+).
@@ -214,4 +215,4 @@ Wind vectors rendered to `<canvas>` with D3 handling zoom/pan math. Faster than 
 
 ---
 
-Last updated: 2026-05-06
+Last updated: 2026-05-13 (Railway deployment, Replit decommissioned)
