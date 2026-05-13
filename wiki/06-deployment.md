@@ -10,6 +10,68 @@ type: wiki
 
 ---
 
+## Railway Deployment — Production SkyHigh (2026-05-13 onward)
+
+**Platform:** Railway (already used by the club for another project)  
+**Services:** Node.js/Express web service + managed PostgreSQL  
+**Domain:** www.skyhighparagliding.org.au  
+**Frontend:** React 19 (served from Express via `/public/` bundle)  
+**Status:** Primary deployment platform
+
+### Railway Project Details
+- **URL:** https://railway.app/ (existing account)
+- **Project name:** `skyhigh`
+- **Repo:** Connected to GitHub SkyHigh repo, branch `main`
+- **Services:** 
+  - Web service (Node.js): Runs Express backend + serves React frontend
+  - PostgreSQL: Managed database, auto-injected as `DATABASE_URL`
+
+### Environment Variables (Set in Railway Dashboard)
+
+Copy all values from project `.env` file to Railway web service Variables tab:
+
+| Variable | Value | Source |
+|---|---|---|
+| `GEMINI_API_KEY` | See .env | Google AI Studio |
+| `TIDYHQ_ACCESS_TOKEN` | See .env | TidyHQ |
+| `TIDYHQ_CLIENT_ID` | See .env | TidyHQ |
+| `TIDYHQ_CLIENT_SECRET` | See .env | TidyHQ |
+| `TIDYHQ_WEBHOOK_SIGNING_KEY` | See .env | TidyHQ |
+| `TIDYHQ_CLUB_ID` | [TBD] | TidyHQ org URL |
+| `RESEND_API_KEY` | See .env | Resend |
+| `RESEND_FROM_DOMAIN` | `skyhighparagliding.org.au` | After Resend verification |
+| `R2_ACCOUNT_ID` | See .env | Cloudflare R2 |
+| `R2_ACCESS_KEY_ID` | See .env | Cloudflare R2 |
+| `R2_SECRET_ACCESS_KEY` | See .env | Cloudflare R2 |
+| `R2_BUCKET_NAME` | `skyhigh` | Cloudflare R2 |
+| `R2_PUBLIC_URL` | See .env | Cloudflare R2 |
+| `SESSION_SECRET` | See .env | (generated, do not change) |
+| `WU_API_KEY` | See .env | Weather Underground |
+| `NODE_ENV` | `production` | — |
+| `APP_URL` | `https://www.skyhighparagliding.org.au` | After DNS live |
+| `ALLOW_PLAINTEXT_PASSWORDS` | `false` | — |
+| `DEV_ALLOW_LOCALHOST_URLS` | `false` | — |
+| `DEFAULT_ADMINS` | `[{"name":"Admin","email":"admin@skyhigh.org.au","password":"<SECURE>"}]` | Update password |
+
+### Deployment Workflow
+1. Push to `main` branch
+2. Railway auto-deploys (builds `npm run build`, starts `node dist/server.js`)
+3. Logs visible in Railway dashboard
+
+### Custom Domain Setup
+1. Railway → web service → Settings → Domains → Add `www.skyhighparagliding.org.au`
+2. Railway provides CNAME target
+3. In Google Cloud Console → Skyhigh DNS Service → Cloud DNS → add CNAME record
+4. Wait 1–24 hours for propagation
+5. Railway auto-provisions SSL
+
+### Monitoring
+- Railway dashboard shows service health, recent deployments, logs
+- Real-time logs streaming via Railway CLI or dashboard
+- Database admin available via Railway PostgreSQL service UI
+
+---
+
 ## Google Account Admin (All Platforms)
 
 **Used for:** Workspace management, admin console access, group management  
@@ -97,25 +159,13 @@ type: wiki
 
 ---
 
-## New Site Infrastructure (Firebase)
+## New Site Infrastructure — Railway (Not Firebase)
 
-**Status:** Active (post-migration)
+**Status:** Active (production since 2026-05-13)
 
-### Firebase Project Details
-- **Project ID:** [TBD — to be populated after Firebase project creation]
-- **Console URL:** https://console.firebase.google.com/
-- **Hosting Domain:** www.skyhighparagliding.org.au
-- **Temporary URL (for testing):** https://[project-id].web.app
+Firebase is **NOT used** for the new SkyHigh application. The React frontend is served directly from the Express backend running on Railway. See **Railway Deployment** section (above) for the current setup.
 
-### DNS Configuration
-- **Provider:** Google Cloud DNS (managed via Cloud Console, above)
-- **DNS Records:** Two A records provided by Firebase during custom domain setup
-- **Provisioning:** Firebase auto-provisions SSL certificate once DNS is live (~1 hour)
-
-### Deployment
-- **Method:** Firebase CLI
-- **Command:** `firebase deploy`
-- **Access:** Via Firebase Console (link above)
+Firebase documentation has been removed as it is no longer relevant to the new SkyHigh deployment.
 
 ---
 
@@ -177,4 +227,4 @@ type: wiki
 
 ---
 
-Last updated: 2026-05-13
+Last updated: 2026-05-13 (Railway deployment plan added, Firebase removed for new app)
