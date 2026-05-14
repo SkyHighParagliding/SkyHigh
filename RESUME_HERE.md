@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Migration & Deployment
+# Resume Here — SkyHigh Railway Deployment (Phase 0: Account Setup)
 
-**Last Updated:** 2026-05-13 (Late Evening)  
+**Last Updated:** 2026-05-14 (Afternoon)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -8,70 +8,71 @@
 
 ## Where We Left Off
 
-**STATUS:** Documentation updated — all Replit references marked/corrected. Ready to execute Railway deployment plan.
+**STATUS:** Plan revised — all production accounts moved to club ownership. Phase 0 (Account Setup) created and documented. Ready to execute account creation tasks.
 
 **THIS SESSION COMPLETED:**
-- Identified all Replit references in CLAUDE.md (2 locations)
-- Verified folder structure diagram was a template, not current reality
-- Updated CLAUDE.md Section 0: `**Deployed:**` field now shows 🚧 Railway (PostgreSQL) — migration in progress
-- Updated CLAUDE.md Section 0: Key Decisions reference now points to Railway, not Replit
-- Rewrote Section 3 folder structure diagram to match actual project layout (src/, server/, public/, database/, etc.)
-- Updated DECISION-006: Changed from "Replit hosting" to "Railway hosting (migration in progress)"
-  - Added migration phases and rationale
-  - Documented why we're moving from Replit to Railway
-  - Status: 🚧 Migration in progress
-- Committed all changes: `[WIKI] Update deployment to Railway — mark Replit migration in progress`
+- User raised important concern: project should have club ownership, not dev personal accounts
+- Identified all accounts needing institutional setup
+- Created **Phase 0: Account Setup** (4 new tasks) — BLOCKING Phase 4 deployment
+- Created **wiki/07-credential-recovery.md** — master credential list, recovery procedures, rotation schedules
+- Updated **wiki/06-deployment.md** — removed outdated info, added account status table, Gemini API instructions
+- Updated **wiki/02-tasks.md** — Phase 0 added before Phase 4, task dependencies updated
+- All accounts will be under: **web@skyhighparagliding.org.au** (club email)
+- Credentials stored in: club password manager + encrypted backup in Google Drive
 
-**3 QUESTIONS ALREADY ANSWERED (from previous session):**
+**3 ANSWERS ALREADY CONFIRMED:**
 1. ✅ **TIDYHQ_CLUB_ID** = `skyhigh`
 2. ✅ **DEFAULT_ADMINS password** = `BIG.brass.balls`
 3. ✅ **Domain Registrar** = Google (via Google Workspace)
 
-**PLAN LOCATION:** `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md`
+**ORIGINAL PLAN LOCATION:** `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` (6-phase Railway deployment)
 
 ---
 
-## Next Steps to Execute (Next Session)
+## Next Steps to Execute (Phase 0 → Phase 4)
 
-### Execute the 6-Phase Railway Deployment Plan
+### Phase 0: Account Setup (4 tasks — blocks Phase 4)
 
-| Phase | What | Owner |
-|-------|------|-------|
-| **1** | Railway project setup + GitHub repo + PostgreSQL | User/Railway |
-| **2** | Copy env vars to Railway dashboard (use values from .env + 3 answers above) | User |
-| **3** | Test on temporary `.up.railway.app` URL | User |
-| **4** | Resend domain verification (adds DNS TXT records via Google Cloud DNS) | User |
-| **5** | Custom domain setup + DNS switch in Google Cloud DNS | User |
-| **6** | Go-live testing + post-cleanup (TidyHQ webhook, old domain removal) | User |
+| Task | What | Effort | Status |
+|------|------|--------|--------|
+| **ACCT-001** | Create GitHub organization + transfer SkyHigh repo | 15 min | ⬜ TODO |
+| **ACCT-002** | Create Railway project linked to club GitHub org | 15 min | ⬜ TODO |
+| **ACCT-003** | Create Cloudflare R2 account + bucket + API tokens | 30 min | ⬜ TODO |
+| **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ⬜ TODO |
 
-**Credentials to use in Phase 2:**
-- All values from `.env` 
-- `TIDYHQ_CLUB_ID=skyhigh`
-- `DEFAULT_ADMINS` password: `BIG.brass.balls`
-- `NODE_ENV=production`
-- `ALLOW_PLAINTEXT_PASSWORDS=false`
-- `DEV_ALLOW_LOCALHOST_URLS=false`
-- `RESEND_FROM_DOMAIN=skyhighparagliding.org.au` (after Phase 4)
-- `APP_URL=https://www.skyhighparagliding.org.au` (after Phase 5)
+**What happens after Phase 0:**
+1. All credentials stored in club password manager (web@skyhighparagliding.org.au)
+2. Backup copy encrypted in Google Drive (SkyHigh Committee folder)
+3. Proceed to Phase 4 (Production Deployment Prep)
+4. Then execute original 6-phase Railway deployment plan
+
+**Important:** Each account must be registered under **web@skyhighparagliding.org.au** (club email).
+See wiki/07-credential-recovery.md for detailed access procedures and recovery checklist.
 
 ---
 
 ## Key Files for Reference
-- `wiki/06-deployment.md` — Railway deployment section
-- `wiki/01-architecture.md` — Updated production host
-- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — Full 6-phase execution plan
+- `wiki/02-tasks.md` — Master task list (Phase 0 added)
+- `wiki/06-deployment.md` — Deployment & accounts (updated with club accounts)
+- `wiki/07-credential-recovery.md` — Credential recovery procedures + rotation schedule (NEW)
+- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — 6-phase Railway deployment (unchanged)
 
 ---
 
-## When You Return Tomorrow
+## When You Return
 
-Type: **`resume`**
+**I will:**
+1. Review Phase 0 task status
+2. Help you execute each account creation task step-by-step
+3. Guide you through obtaining the Gemini API key from Google Workspace
+4. Confirm all credentials are stored in password manager + Google Drive backup
+5. Clear Phase 0 to proceed with Phase 4 (Railway deployment)
 
-I will immediately:
-1. Confirm all 3 answers are in place (they are ✅)
-2. Start Phase 1 of the deployment plan
-3. Guide you through each phase step-by-step
+**You decide:**
+- Do you want to execute all 4 Phase 0 tasks together in one session?
+- Or tackle them one per session?
 
 ---
 
 **Current Git Status:** All changes committed to main ✅
+**Last Commit:** `[PLAN] Phase 0 Account Setup — institutional ownership of all infrastructure`
