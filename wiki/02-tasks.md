@@ -4,7 +4,60 @@ description: 35 tasks across 5 phases + code review remediation. Security, wind 
 type: wiki
 ---
 
-# Task List — 35 Items Across 5 Phases + Code Review
+# Task List — 39 Items Across 6 Phases + Code Review
+
+---
+
+## Phase 0: Account Setup (🔄 IN PROGRESS — May 14, 2026)
+
+**Purpose:** Establish institutional ownership of all critical infrastructure accounts under club identity before deployment.  
+**Owner:** web@skyhighparagliding.org.au (club Google Workspace)  
+**Credential Storage:** Club password manager (web@ account) + encrypted file in Google Drive (backup)  
+**Status:** All 4 tasks must complete before Phase 4 deployment begins.
+
+### TASK-ACCT-001 ⬜ Create GitHub Organization for Club
+- **Prerequisites:** None
+- **Estimated effort:** XS (~15 minutes)
+- **Description:** Create a new GitHub organization under the club name, invite web@skyhighparagliding.org.au as admin. Transfer the SkyHigh repo from personal account to the org.
+- **Acceptance criteria:**
+  - Organization created with name `skyhigh-club` or `skyhighparagliding`
+  - Org admin: web@skyhighparagliding.org.au
+  - SkyHigh repo transferred to org
+  - Branch protection on `main` (require PR review)
+  - Access instructions documented in wiki/07-credential-recovery.md
+  
+### TASK-ACCT-002 ⬜ Create Railway Account for Club
+- **Prerequisites:** None
+- **Estimated effort:** XS (~15 minutes)
+- **Description:** Create a new Railway account using web@skyhighparagliding.org.au. Link it to the club's GitHub organization. Create the `skyhigh` project.
+- **Acceptance criteria:**
+  - Railway account created with club email
+  - OAuth connected to club GitHub org
+  - `skyhigh` project created in Railway
+  - Access instructions documented in wiki/07-credential-recovery.md
+
+### TASK-ACCT-003 ⬜ Create Cloudflare R2 Account for Club
+- **Prerequisites:** None
+- **Estimated effort:** S (~30 minutes)
+- **Description:** Create a new Cloudflare account using web@skyhighparagliding.org.au. Create an R2 bucket for `skyhigh`. Generate API tokens with limited scope (R2 access only).
+- **Acceptance criteria:**
+  - Cloudflare account created with club email
+  - R2 bucket `skyhigh` created
+  - API token generated (with R2 read/write scope only)
+  - Token value stored in password manager
+  - Access instructions + token location documented in wiki/07-credential-recovery.md
+
+### TASK-ACCT-004 ⬜ Obtain Gemini API Key from Club Google Workspace
+- **Prerequisites:** None
+- **Estimated effort:** S (~20 minutes)
+- **Description:** Access Google AI Studio via club's Google Workspace Business Standard account (web@skyhighparagliding.org.au). Generate a Gemini API key. Store in password manager.
+- **Acceptance criteria:**
+  - API key obtained from Google AI Studio (using club Google Workspace auth)
+  - Key copied to `.env` file
+  - Key stored in password manager
+  - Instructions documented in wiki/07-credential-recovery.md
+
+---
 
 ## Code Review Remediation (Sonnet — 2026-05-07)
 
@@ -273,20 +326,25 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 | Phase | Name | Tasks | Status | Completion Date |
 |---|---|---|---|---|
+| 0 | Account Setup | 004 | 🔄 IN PROGRESS | — |
 | 1 | Security Hardening | 007 | ✅ Complete | 2026-04-30 |
 | 2 | Wind Map & Weather | 011 | ✅ Complete | 2026-05-05 |
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
 | 6 | Grid Configurability | 001 | ✅ Complete | 2026-05-07 |
 | 7 | UX Refinements | 001 | ✅ Complete | 2026-05-07 |
-| 4 | Production Deployment | 004 | ⚠️ 3/4 Complete | 2026-05-07 |
+| 4 | Production Deployment | 004 | ⬜ TODO (blocked by Phase 0) | — |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
-| | **TOTAL** | **33** | **32 ✅ / 2 ⚠️ / 0 ⬜** | — |
+| | **TOTAL** | **37** | **32 ✅ / 4 🔄 / 1 ⚠️** | — |
 
 ---
 
 **Task Summary:**
 - **Completed (32):** Phases 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
-- **Partial (2):** Task 028 (deferred, single-instance only), Task 029 (env var loaded, no setup script)
+- **In Progress (4):** Phase 0 — Account Setup (blocking Phase 4 deployment)
+- **Partial (1):** Task 029 (env var loaded, no setup script)
+- **Deferred (1):** Task 028 (single-instance only)
 - **Backlog (3):** Tasks 030, 031, 032 — to be addressed at production launch
 
-Last updated: 2026-05-07
+**IMPORTANT:** Phase 0 (Account Setup) must be completed before Phase 4 (Production Deployment Prep) begins. Phase 4 task list has been moved to "⬜ TODO (blocked by Phase 0)".
+
+Last updated: 2026-05-14
