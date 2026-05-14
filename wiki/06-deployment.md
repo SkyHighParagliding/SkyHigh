@@ -6,7 +6,13 @@ type: wiki
 
 # Deployment & Operations — Accounts, Credentials, Infrastructure
 
-**⚠️ SECURE:** This file contains credentials and account details. Keep in password-protected storage after site deployment completion. Do not commit to git.
+**⚠️ ACCOUNT OWNERSHIP NOTE (as of 2026-05-14):**
+All production accounts (GitHub, Railway, Cloudflare R2) are now registered under the club's **web@skyhighparagliding.org.au** email address. This ensures institutional ownership and smooth handoff if development staff change. See [[07-credential-recovery]] for the master credential list and recovery procedures.
+
+**Credential Storage:**
+- **Primary:** Club password manager (accessible via web@skyhighparagliding.org.au)
+- **Backup:** Encrypted file in Google Drive (SkyHigh Committee folder)
+- **Do not commit credentials to git** — .env is gitignored
 
 ---
 
@@ -72,159 +78,174 @@ Copy all values from project `.env` file to Railway web service Variables tab:
 
 ---
 
-## Google Account Admin (All Platforms)
+---
 
-**Used for:** Workspace management, admin console access, group management  
-**Account:** web@skyhighparagliding.org.au  
-**Password:** MtBroughton
+## Account Setup Status (Phase 0 — In Progress)
 
-### Google Workspace Console
-- **URL:** https://admin.google.com/u/2/?pli=1&rapt
-- **Purpose:** Manage club's web domain and website users
+All production accounts are transitioning to club ownership. See [[02-tasks]] Phase 0 for setup details.
+
+| Account | Status | Email | Notes |
+|---------|--------|-------|-------|
+| GitHub Organization | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-001 |
+| Railway Project | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-002 |
+| Cloudflare R2 | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-003 |
+| Gemini API Key | ⬜ TODO | web@skyhighparagliding.org.au (Workspace) | Task ACCT-004 |
+| Resend | ✅ EXISTING | [Club account] | No new setup needed |
+| TidyHQ | ✅ EXISTING | [Club account] | No new setup needed |
+| Google Workspace | ✅ EXISTING | web@skyhighparagliding.org.au | All Google services |
+| Google Cloud DNS | ✅ EXISTING | web@skyhighparagliding.org.au | Domain management |
+
+---
+
+## Google Workspace — Club Account (All Google Services)
+
+**Account Email:** web@skyhighparagliding.org.au  
+**Account Type:** Business Standard (annual subscription, billed to club)  
+**Used for:** Workspace management, DNS, Cloud services, Gemini API, Drive, Gmail
+
+#### Google Workspace Admin Console
+- **URL:** https://admin.google.com/
+- **Purpose:** Manage club's web domain, users, groups, and security
 - **Billing:** 1× Google Workspace User (admin) + domain = **$8.40/mth**
-- **Billed to:** John Weatherley's Credit Card (claims back from club periodically)
-- **Access:** Username/password above
+- **Billed to:** Club account
+- **Access:** web@skyhighparagliding.org.au (password in club password manager)
 
 ### Google Cloud Console
-- **URL:** https://console.cloud.google.com/welcome?pli=1&project=glass-indexer-201105&authuser=2
-- **Username:** web@skyhighparagliding.org.au
-- **Password:** MtBroughton
-- **Purpose:** DNS service, SAFA connector integration
-- **Billing:** **$0.87/mth** (separate from Workspace)
-- **Billed to:** Andrew Hall's Credit Card
+- **URL:** https://console.cloud.google.com/
+- **Account:** web@skyhighparagliding.org.au (via Workspace)
+- **Purpose:** DNS service, Cloud Functions (SAFA connector), Gemini API setup
+- **Billing:** Integrated with Workspace account
+- **Access:** Password stored in club password manager
+
+### Obtaining Gemini API Key (Task ACCT-004)
+
+**Requirement:** Google Workspace Business Standard account (✅ already established)
+
+**Step-by-step procedure:**
+1. Go to **https://aistudio.google.com/**
+2. Sign in with **web@skyhighparagliding.org.au** (use club password manager for password)
+3. Click **"Get API Key"** in the left sidebar
+4. Click **"Create API Key"**
+5. Select project: **SkyHigh** (or create if doesn't exist)
+6. Copy the API key that appears
+7. **Paste into `.env` file:** `GEMINI_API_KEY=<key-here>`
+8. **Store in password manager** under tag `gemini-api-key`
+9. **Document in wiki/07-credential-recovery.md** with creation date
+
+**Important:** This key is free-tier and should be restricted to SkyHigh app only. If exposed, regenerate immediately.
+
+---
 
 #### Google Cloud Projects
 
 **Skyhigh DNS Service Project**
 - Service: Cloud DNS
 - Purpose: Manage domain DNS records for www.skyhighparagliding.org.au
+- Accessed via: https://console.cloud.google.com/
 
-**SAFA Connector Project**
+**SAFA Connector Project** (existing)
 - Service: Cloud Functions + Cloud Scheduler
 - Purpose: Fetch SAFA aerotow winch data
 - Schedule: Every 24 hours via Cloud Scheduler
 
 ---
 
-## Google Workspace — Committee Management
-
-**Console:** https://admin.google.com/u/2/?pli=1&rapt
-
-### Update Committee Members
-1. Log in with web@skyhighparagliding.org.au / MtBroughton
-2. Navigate to **Groups** → **committee**
-3. Add/remove members as needed
-4. Controls access to:
-   - Google Drive (shared documents)
-   - Google Sites (if applicable)
-   - Other Google Workspace resources
-
----
-
 ## Google Drive — Shared Documents
 
 **Account:** web@skyhighparagliding.org.au  
-**URL:** https://drive.google.com/drive/website/SkyHigh%20Admin%20Website/SkyHigh%20Committee/
+**Folder:** Google Drive → SkyHigh Committee folder
 
-### Folder Structure
-- **SkyHigh Committee** (main folder, access controlled via Workspace group)
-  - Standard Operating Procedures (SOPs)
-  - Committee Minutes
-  - Correspondence
-  - Finance records
-  - Other committee documents
+### Contains
+- Standard Operating Procedures (SOPs)
+- Committee Minutes & Decisions
+- Encrypted Credential Backup File
+- Finance records
+- Other committee documents
 
 ### Access Control
-- Membership in the "committee" Google Group (managed in Workspace console, above) controls folder access
-- Any file changes are automatically tracked via Google Drive revision history
-
----
-
-## Old Site Infrastructure (Google Sites)
-
-**Status:** Backup/Archive (post-migration)  
-**Console URL:** https://sites.google.com/u/2/new?pli=1&authuser=2
-
-### Before Migration
-- Hosted the club's website
-- Custom domain: www.skyhighparagliding.org.au
-- Editable via Google Sites editor
-
-### After Migration to Firebase
-- **Remains accessible via:** https://sites.google.com/view/skyhighparagliding
-- **No longer serves www.skyhighparagliding.org.au** (DNS points to Firebase)
-- **Why keep:** Serves as historical backup; site data preserved in Google account
-- **Access:** Via private Google Sites URL only
-- **Deletion:** Do NOT delete unless explicitly decided by committee; data is preserved as long as the account exists
-
----
-
-## New Site Infrastructure — Railway (Not Firebase)
-
-**Status:** Active (production since 2026-05-13)
-
-Firebase is **NOT used** for the new SkyHigh application. The React frontend is served directly from the Express backend running on Railway. See **Railway Deployment** section (above) for the current setup.
-
-Firebase documentation has been removed as it is no longer relevant to the new SkyHigh deployment.
+- Managed via Google Workspace "committee" group
+- Members added/removed via Workspace admin console
+- Revision history automatically tracked
 
 ---
 
 ## Domain Management
 
 **Domain:** www.skyhighparagliding.org.au  
-**Registrar:** [TBD — to be confirmed]  
-**DNS Provider:** Google Cloud DNS (via Google Cloud Console)
+**Registrar:** Google (via Google Workspace)  
+**DNS Provider:** Google Cloud DNS (managed via Google Cloud Console)
 
-### Current Setup (Pre-Migration)
-- Custom domain points to Google Sites
-- Managed via Google Workspace
+### Current Setup (Active since Phase 5 go-live)
+- Custom domain points to Railway deployment
+- DNS CNAME record: `www` → Railway CNAME target
+- SSL certificate auto-provisioned by Railway
+- Managed in Google Cloud Console project "Skyhigh DNS Service"
 
-### Post-Migration Setup
-- Custom domain points to Firebase (via A records)
-- DNS managed in Google Cloud Console
-- Google Sites remains accessible via private URL
-
-### DNS Update Procedure
-1. Log in to Google Cloud Console (see credentials above)
+### DNS Update Procedure (during Phase 5)
+1. Log in to Google Cloud Console (https://console.cloud.google.com/)
 2. Select "Skyhigh DNS Service" project
 3. Navigate to **Network Services** → **Cloud DNS**
-4. Update A records to Firebase's provided IP addresses
+4. Update CNAME record for `www` to Railway's provided CNAME target
 5. Wait 1–24 hours for global propagation
-6. Verify migration complete
+6. Verify at https://whatsmydns.net/ (search for www.skyhighparagliding.org.au)
+7. Railway auto-provisions SSL once DNS resolves
 
 ---
 
 ## Billing Summary
 
-| Service | Cost | Billed To | Notes |
-|---------|------|-----------|-------|
-| Google Workspace (1 user + domain) | $8.40/mth | John Weatherley (claims back) | Admin access, group management |
-| Google Cloud (DNS, SAFA) | $0.87/mth | Andrew Hall | DNS service, Cloud Functions |
-| Firebase Hosting | [TBD] | [TBD] | Post-migration (to be confirmed) |
+| Service | Cost | Billed To | Status |
+|---------|------|-----------|--------|
+| Google Workspace (Business Standard) | $8.40/mth | Club account | Covers Workspace, Drive, Cloud |
+| Google Cloud (DNS, SAFA, Gemini API) | ~$1–2/mth | Club account | DNS + optional Cloud Functions |
+| Railway (hosting + PostgreSQL) | $5–50/mth | [TBD] | Scales with traffic; includes managed DB |
+| Cloudflare R2 (image storage) | $0.015/GB + $0.015/GB reads | Club account | [TBD post-setup] |
+| Resend (email) | Free/paid tier | Club account | ✅ Already subscribed |
+| TidyHQ | [Existing club subscription] | Club | ✅ Already active |
 
 ---
 
-## Account Security Notes
+## Account Security & Credential Management
 
-- All passwords are shared via secure, password-protected document distribution
-- **Do not commit credentials to git** — this file is gitignored in production
-- Rotate credentials periodically (especially if staff turnover)
+**Credential Storage:** See [[07-credential-recovery]] for the complete master list and recovery procedures.
+
+**Key Rules:**
+- All passwords stored in club password manager (web@ Google Workspace) — never in code or plaintext
+- Encrypted backup copy in Google Drive (SkyHigh Committee folder)
+- **Never commit credentials to git** — `.env` is always in `.gitignore`
+- Rotate API keys and passwords every 6–12 months (see rotation schedule in [[07-credential-recovery]])
 - Keep Google Workspace two-factor authentication enabled for web@ account
-- Audit Google Workspace group membership quarterly
+- Audit group memberships and active sessions quarterly
+- For emergency access procedures, see [[07-credential-recovery]]
 
 ---
 
-## Post-Migration Checklist
+## Phase 0 — Account Setup Checklist
 
-- [ ] Verify Firebase project created and deployed
-- [ ] DNS records updated in Google Cloud Console
-- [ ] www.skyhighparagliding.org.au resolves to Firebase (not Google Sites)
-- [ ] SSL certificate provisioned and active (HTTPS working)
-- [ ] Old Google Sites site still accessible via sites.google.com/view/skyhighparagliding
-- [ ] Remove custom domain binding from Google Sites (to prevent conflicts)
-- [ ] Test all key pages on new Firebase site
-- [ ] Update any internal documentation pointing to old site
+- [ ] **TASK-ACCT-001:** GitHub organization created + SkyHigh repo transferred
+- [ ] **TASK-ACCT-002:** Railway project created + linked to club GitHub org
+- [ ] **TASK-ACCT-003:** Cloudflare R2 account created + bucket + API tokens generated
+- [ ] **TASK-ACCT-004:** Gemini API key obtained from Google Workspace + stored in `.env`
+- [ ] All credentials documented in password manager
+- [ ] Backup copy created in Google Drive (SkyHigh Committee folder)
+- [ ] Credential recovery procedures tested (e.g., can reset GitHub password)
+- [ ] [[07-credential-recovery]] file updated with all account details
+
+## Phase 4–6 — Deployment Checklist
+
+- [ ] **Phase 4:** PostgreSQL configured, R2 bucket active, CSRF ready
+- [ ] **Phase 5:** Railway `.up.railway.app` URL tested + domain verification started
+- [ ] **Phase 6:** Custom domain DNS switched to Railway + SSL active
+- [ ] [ ] www.skyhighparagliding.org.au resolves to Railway (verified at whatsmydns.net)
+- [ ] [ ] Admin login works on production domain
+- [ ] [ ] Wind map loads and animates
+- [ ] [ ] Database migrations completed (check Railway logs)
+- [ ] [ ] Password reset email works (via Resend)
+- [ ] [ ] TidyHQ webhook updated to new domain + tested
+- [ ] [ ] Image uploads via R2 work
+- [ ] [ ] Update wiki/06-deployment.md with Railway service URLs
+- [ ] [ ] Document domain registrar identity (Google) in wiki
 
 ---
 
-Last updated: 2026-05-13 (Railway deployment plan added, Firebase removed for new app)
+Last updated: 2026-05-14 (Phase 0 Account Setup added, all accounts moved to club ownership)
