@@ -1,6 +1,6 @@
 # Resume Here — SkyHigh Railway Deployment (Phase 0: Account Setup)
 
-**Last Updated:** 2026-05-14 (Afternoon)  
+**Last Updated:** 2026-05-15 (Evening)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -8,19 +8,22 @@
 
 ## Where We Left Off
 
-**STATUS:** Plan revised — all production accounts moved to club ownership. Phase 0 (Account Setup) created and documented. Ready to execute account creation tasks.
+**STATUS:** Phase 0 (Account Setup) — 1 of 4 tasks complete. Ready to continue with Railway project creation.
 
 **THIS SESSION COMPLETED:**
-- User raised important concern: project should have club ownership, not dev personal accounts
-- Identified all accounts needing institutional setup
-- Created **Phase 0: Account Setup** (4 new tasks) — BLOCKING Phase 4 deployment
-- Created **wiki/07-credential-recovery.md** — master credential list, recovery procedures, rotation schedules
-- Updated **wiki/06-deployment.md** — removed outdated info, added account status table, Gemini API instructions
-- Updated **wiki/02-tasks.md** — Phase 0 added before Phase 4, task dependencies updated
-- All accounts will be under: **web@skyhighparagliding.org.au** (club email)
-- Credentials stored in: club password manager + encrypted backup in Google Drive
+- ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
+  - Created GitHub user account: `SkyHighParagliding` (email: web@skyhighparagliding.org.au)
+  - Made SkyHigh repo public (GitHub Free plan requirement)
+  - Transferred repo from `jonpamment-prog/SkyHigh` → `SkyHighParagliding/SkyHigh`
+  - Transfer approval came via email notification (not in-app)
+  - Updated local git remote: `git remote set-url origin https://github.com/SkyHighParagliding/SkyHigh.git`
 
-**3 ANSWERS ALREADY CONFIRMED:**
+**LESSONS LEARNED:**
+- GitHub Free plan only allows public repos in organizations
+- Transfer approval notifications come via email, not in-app notifications
+- Should run straightforward automation myself rather than delegating to user (feedback received)
+
+**3 ANSWERS ALREADY CONFIRMED (prior session):**
 1. ✅ **TIDYHQ_CLUB_ID** = `skyhigh`
 2. ✅ **DEFAULT_ADMINS password** = `BIG.brass.balls`
 3. ✅ **Domain Registrar** = Google (via Google Workspace)
@@ -31,13 +34,13 @@
 
 ## Next Steps to Execute (Phase 0 → Phase 4)
 
-### Phase 0: Account Setup (4 tasks — blocks Phase 4)
+### Phase 0: Account Setup (4 tasks — 3 remaining)
 
 | Task | What | Effort | Status |
 |------|------|--------|--------|
-| **ACCT-001** | Create GitHub organization + transfer SkyHigh repo | 15 min | ⬜ TODO |
-| **ACCT-002** | Create Railway project linked to club GitHub org | 15 min | ⬜ TODO |
-| **ACCT-003** | Create Cloudflare R2 account + bucket + API tokens | 30 min | ⬜ TODO |
+| **ACCT-001** | Create GitHub account + transfer SkyHigh repo | 30 min | ✅ DONE |
+| **ACCT-002** | Create Railway project linked to club GitHub | 15 min | ⬜ TODO |
+| **ACCT-003** | Create Cloudflare R2 account + bucket + tokens | 30 min | ⬜ TODO |
 | **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ⬜ TODO |
 
 **What happens after Phase 0:**
