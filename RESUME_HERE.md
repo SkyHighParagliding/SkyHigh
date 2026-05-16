@@ -8,15 +8,24 @@
 
 ## Where We Left Off
 
-**STATUS:** Phase 0 (Account Setup) — 1 of 4 tasks complete. Ready to continue with Railway project creation.
+**STATUS:** Phase 0 (Account Setup) — 2 of 4 tasks complete. Ready to continue with Cloudflare R2 setup.
 
-**THIS SESSION COMPLETED:**
+**PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
   - Created GitHub user account: `SkyHighParagliding` (email: web@skyhighparagliding.org.au)
   - Made SkyHigh repo public (GitHub Free plan requirement)
   - Transferred repo from `jonpamment-prog/SkyHigh` → `SkyHighParagliding/SkyHigh`
   - Transfer approval came via email notification (not in-app)
   - Updated local git remote: `git remote set-url origin https://github.com/SkyHighParagliding/SkyHigh.git`
+
+**THIS SESSION COMPLETED:**
+- ✅ **ACCT-002: COMPLETE** — Railway project + GitHub + PostgreSQL
+  - Created Railway project (SkyHighParagliding org, using trial account)
+  - Linked GitHub repo (SkyHighParagliding/SkyHigh) with auto-deploy enabled
+  - Created PostgreSQL database service (online, Railway-hosted)
+  - App deployed successfully and running in production environment
+  - DATABASE_URL automatically injected by Railway
+  - Ready for environment variables (R2, Gemini, TidyHQ) in next tasks
 
 **LESSONS LEARNED:**
 - GitHub Free plan only allows public repos in organizations
@@ -34,12 +43,12 @@
 
 ## Next Steps to Execute (Phase 0 → Phase 4)
 
-### Phase 0: Account Setup (4 tasks — 3 remaining)
+### Phase 0: Account Setup (4 tasks — 2 remaining)
 
 | Task | What | Effort | Status |
 |------|------|--------|--------|
 | **ACCT-001** | Create GitHub account + transfer SkyHigh repo | 30 min | ✅ DONE |
-| **ACCT-002** | Create Railway project linked to club GitHub | 15 min | ⬜ TODO |
+| **ACCT-002** | Create Railway project linked to club GitHub | 15 min | ✅ DONE |
 | **ACCT-003** | Create Cloudflare R2 account + bucket + tokens | 30 min | ⬜ TODO |
 | **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ⬜ TODO |
 
@@ -77,5 +86,5 @@ See wiki/07-credential-recovery.md for detailed access procedures and recovery c
 
 ---
 
-**Current Git Status:** All changes committed to main ✅
-**Last Commit:** `[PLAN] Phase 0 Account Setup — institutional ownership of all infrastructure`
+**Current Git Status:** Ready to commit ✅
+**Last Commit:** (will be `[ACCT-002] Railway project + PostgreSQL setup`)
