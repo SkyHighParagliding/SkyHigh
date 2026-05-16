@@ -8,7 +8,7 @@
 
 ## Where We Left Off
 
-**STATUS:** Phase 0 (Account Setup) — 2 of 4 tasks complete. Ready to continue with Cloudflare R2 setup.
+**STATUS:** Phase 0 (Account Setup) — 3 of 4 tasks complete. Ready to continue with final Gemini API key setup.
 
 **PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
@@ -27,6 +27,18 @@
   - DATABASE_URL automatically injected by Railway
   - Ready for environment variables (R2, Gemini, TidyHQ) in next tasks
 
+- ✅ **ACCT-003: COMPLETE** — Cloudflare R2 bucket + credentials
+  - Created Cloudflare account (web@skyhighparagliding.org.au)
+  - Created R2 bucket: "skyhigh-media"
+  - Enabled Public Development URL for public image access
+  - Generated Account API Token (Object Read & Write permissions)
+  - Collected all R2 credentials for Railway environment variables:
+    - Account ID: df6d4fa90052941cf3355b5ad719f776
+    - Access Key ID: 9f4abd6b56d002af5b59c4738693743
+    - Secret Access Key: 45962e8cd096be971e486c0535e4ffa4561269c7b0d1bae6d6c9d3d5927f8870
+    - S3 Endpoint: https://df6d4fa90052941cf3355b5ad719f776.r2.cloudflarestorage.com
+    - Public URL: https://pub-[random]-cr2.dev (rate-limited, dev use)
+
 **LESSONS LEARNED:**
 - GitHub Free plan only allows public repos in organizations
 - Transfer approval notifications come via email, not in-app notifications
@@ -43,13 +55,13 @@
 
 ## Next Steps to Execute (Phase 0 → Phase 4)
 
-### Phase 0: Account Setup (4 tasks — 2 remaining)
+### Phase 0: Account Setup (4 tasks — 1 remaining)
 
 | Task | What | Effort | Status |
 |------|------|--------|--------|
 | **ACCT-001** | Create GitHub account + transfer SkyHigh repo | 30 min | ✅ DONE |
 | **ACCT-002** | Create Railway project linked to club GitHub | 15 min | ✅ DONE |
-| **ACCT-003** | Create Cloudflare R2 account + bucket + tokens | 30 min | ⬜ TODO |
+| **ACCT-003** | Create Cloudflare R2 account + bucket + tokens | 30 min | ✅ DONE |
 | **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ⬜ TODO |
 
 **What happens after Phase 0:**
