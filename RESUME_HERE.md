@@ -98,5 +98,29 @@ See wiki/07-credential-recovery.md for detailed access procedures and recovery c
 
 ---
 
-**Current Git Status:** Ready to commit ✅
-**Last Commit:** (will be `[ACCT-002] Railway project + PostgreSQL setup`)
+**Current Git Status:** All changes committed ✅
+**Last Commit:** `[ACCT-003] Cloudflare R2 setup complete`
+
+---
+
+## Quick Recap for Next Session
+
+**What we accomplished today:**
+1. Created Railway project linked to SkyHighParagliding GitHub org
+2. Connected SkyHigh repo with auto-deploy to main branch
+3. Set up PostgreSQL database (online, production-ready)
+4. Created Cloudflare R2 bucket (skyhigh-media)
+5. Generated API credentials for R2 (stored securely)
+
+**What's left (ACCT-004):**
+- Obtain Gemini API key from Google Workspace
+- This is the final Phase 0 task
+- Should take ~20 minutes
+- Once done, store all credentials in password manager (web@skyhighparagliding.org.au)
+- Then proceed to Phase 4 (production deployment prep)
+
+**Important credentials to save:**
+- Railway: Database URL (auto-injected by Railway) ✅
+- Cloudflare R2: All creds listed above ✅
+- Gemini: (pending ACCT-004)
+- TidyHQ: (pending later integration)
