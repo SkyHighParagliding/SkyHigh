@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 2 In Progress)
+# Resume Here — SkyHigh Railway Deployment (Phase 2 Complete → Phase 3 Testing)
 
-**Last Updated:** 2026-05-17 (Afternoon)  
+**Last Updated:** 2026-05-17 (Later in day)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -8,10 +8,11 @@
 
 ## Where We Left Off
 
-**STATUS:** Phase 2 (Configure Environment Variables) — ✅ MOSTLY COMPLETE
+**STATUS:** Phase 2 (Configure Environment Variables) — ✅ COMPLETE
 - ✅ All 21 environment variables injected into Railway
 - ✅ PostgreSQL database schema fully migrated (11 migrations applied)
-- ⏸️  **BLOCKER:** Column case-sensitivity issue preventing app startup (see below)
+- ✅ Column case-sensitivity issue RESOLVED via Option B (improved SQL converter in pgDb.ts)
+- ✅ App deployed and running: https://skyhigh-production.up.railway.app
 
 **PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
@@ -96,14 +97,27 @@
 ---
 
 **Current Git Status:** All changes committed ✅
-**Last Commit:** `[PHASE-2] Environment variables configured + PostgreSQL schema migrated`
+**Last Commits:**
+- `666d6b3` — Critical fix: Add missing SQL keywords to keyword filter (INTO, etc)
+- `45ab03c` — Fix: Improved identifier quoting to avoid SQL keywords
 
 ---
 
-## Estimated Effort to Unblock
+## Next Steps (Phase 3: Testing)
 
-- **Option A (rename columns):** ~30 minutes + redeploy
-- **Option B (fix SQL converter):** ~1-2 hours + test thoroughly
-- **Option C (quote all queries):** ~3-4 hours across codebase
+**PHASE 3 — Verify on temporary Railway URL**
+1. ⏳ **IN PROGRESS:** Test core functionality on https://skyhigh-production.up.railway.app
+   - [ ] Login with admin credentials: `admin@skyhigh.org.au` / `BIG.brass.balls`
+   - [ ] Verify homepage loads without errors
+   - [ ] Check flying sites list (verify site data loads)
+   - [ ] Check wind map renders (verify camelCase identifiers now quoted)
+   - [ ] Monitor Railway logs for background task errors
+   - [ ] Verify background services (weather scraper, wind grid fetcher) are working
 
-**Recommendation:** Start with Option A for speed, then assess if Option B is worth refactoring.
+2. **PHASE 4:** Verify Resend domain and configure transactional email
+3. **PHASE 5:** Switch DNS to custom domain (skyhighparagliding.org.au)
+
+**Known Issues Being Monitored:**
+- Background task errors in weather scraper (liveStationId access) — should be fixed by SQL converter
+- Wind grid data queries (siteId access) — should be fixed by SQL converter
+- Overall: Column case-sensitivity should be resolved, but needs verification in live logs
