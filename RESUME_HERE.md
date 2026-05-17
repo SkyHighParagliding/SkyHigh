@@ -177,10 +177,10 @@
   - Result: Retrieval polling queries now work without "function datetime does not exist" errors
   - Deployed: Commit 0586e3b pushed to main
 
-✅ **Gemini API Rate Limits** — RESOLVED
-  - Issue: Free tier rate limits blocking admin search (0/5 RPM for all models)
-  - Fix: Billing configured in Google AI Studio with active payment method
-  - Status: Waiting for rate limits to update (may require app restart or re-request)
+✅ **Gemini API Invalid Key** — FIXED
+  - Issue: API key had typo "Alza" instead of "AIza" prefix
+  - Fix: Corrected to `AIzaSyDQE1mT490PZiysyMuTGtX6WtCxGgnLFGA` in Railway variables
+  - Verified: Admin search now working correctly
 
 **REMAINING PHASES:**
 1. **PHASE 4:** Resend domain verification (configure transactional email)
@@ -194,11 +194,14 @@
    - Monitor logs for edge-case errors
    - Test admin functionality (login, data management)
 
-**NEXT IMMEDIATE TASK:**
-- [ ] Verify Gemini API admin search works (requires testing search box in admin dashboard)
-  - If search still fails with rate limit errors, may need to redeploy or wait for billing to propagate
-- [ ] Verify satellite tracker polling is error-free (check logs for "datetime" errors)
-  - Should be zero errors after datetime() conversion fix
+**ALL PHASE 3 VERIFICATIONS COMPLETE:**
+- ✅ Admin login works without redirect loop
+- ✅ R2 logo/icon uploads working correctly
+- ✅ Gemini API admin search confirmed working
+- ✅ datetime() SQL conversion deployed (satellite tracker queries should be error-free)
+
+**READY FOR PHASE 4:**
+Next phase: Resend domain verification (transactional email)
 
 **Latest Commits:**
 - `10811d3` — Add missing SQL keywords ASC and DESC to identifier filter
