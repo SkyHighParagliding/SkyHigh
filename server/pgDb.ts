@@ -120,6 +120,7 @@ function convertSQL(raw: string): string {
   }
 
   // Convert datetime expressions
+  sql = sql.replace(/datetime\('now',\s*'start of day'\)/gi, "CURRENT_DATE::timestamptz");
   sql = sql.replace(/datetime\('now'\)/gi, "CURRENT_TIMESTAMP");
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+hours?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 hours'");
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");

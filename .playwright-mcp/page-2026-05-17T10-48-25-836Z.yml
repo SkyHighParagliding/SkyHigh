@@ -1,0 +1,298 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e55]:
+      - generic [ref=e57]:
+        - link "SkyHigh" [ref=e59] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e60]
+        - navigation [ref=e61]:
+          - link "Sites" [ref=e62] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e64]:
+            - text: Pilots
+            - img [ref=e65]
+          - link "News" [ref=e67] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e68] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e70]:
+            - text: Community
+            - img [ref=e71]
+          - link "About Us" [ref=e73] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e74] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e75] [cursor=pointer]:
+            - /url: /safety
+          - link "Admin" [ref=e76] [cursor=pointer]:
+            - /url: /admin
+    - main [ref=e27]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - heading "Admin Dashboard" [level=1] [ref=e81]
+            - paragraph [ref=e82]: Welcome back, Test Admin. Manage all content across the SkyHigh website.
+          - button "Sign Out" [ref=e83]:
+            - img [ref=e84]
+            - text: Sign Out
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - img [ref=e93]
+                - textbox "Search features, pages, sites, procedures, documents..." [active] [ref=e96]
+              - button "Start voice input" [ref=e97]:
+                - img [ref=e98]
+            - button "Search" [disabled] [ref=e101]:
+              - img [ref=e102]
+              - text: Search
+          - button "Edit Prompt" [ref=e106]
+        - generic [ref=e107]:
+          - heading "Reference & Governance" [level=2] [ref=e108]
+          - generic [ref=e109]:
+            - link "Admin Manual Detailed guide on how to use the management tools and site features." [ref=e110] [cursor=pointer]:
+              - /url: /admin/manual
+              - generic [ref=e112]:
+                - heading "Admin Manual" [level=3] [ref=e113]:
+                  - img [ref=e114]
+                  - text: Admin Manual
+                - paragraph [ref=e116]: Detailed guide on how to use the management tools and site features.
+            - link "Procedures Manual Club operating procedures — safety, site ops, governance, membership, and events." [ref=e117] [cursor=pointer]:
+              - /url: /admin/procedures
+              - generic [ref=e119]:
+                - heading "Procedures Manual" [level=3] [ref=e120]:
+                  - img [ref=e121]
+                  - text: Procedures Manual
+                - paragraph [ref=e124]: Club operating procedures — safety, site ops, governance, membership, and events.
+        - generic [ref=e125]:
+          - heading "Management" [level=2] [ref=e126]
+          - generic [ref=e127]:
+            - link "Documents Browse and manage the club filing system." [ref=e128] [cursor=pointer]:
+              - /url: /admin/documents
+              - generic [ref=e130]:
+                - heading "Documents" [level=3] [ref=e131]:
+                  - img [ref=e132]
+                  - text: Documents
+                - paragraph [ref=e134]: Browse and manage the club filing system.
+            - link "Projects Site works, stakeholders, and land management." [ref=e135] [cursor=pointer]:
+              - /url: /admin/projects
+              - generic [ref=e137]:
+                - heading "Projects" [level=3] [ref=e138]:
+                  - img [ref=e139]
+                  - text: Projects
+                - paragraph [ref=e142]: Site works, stakeholders, and land management.
+            - link "Admin Contacts Committee, SSO, SO, Supplier & Stakeholder contacts." [ref=e143] [cursor=pointer]:
+              - /url: /admin/contacts
+              - generic [ref=e145]:
+                - heading "Admin Contacts" [level=3] [ref=e146]:
+                  - img [ref=e147]
+                  - text: Admin Contacts
+                - paragraph [ref=e151]: Committee, SSO, SO, Supplier & Stakeholder contacts.
+            - link "Public Contacts Manage pilot accounts for flight tracker and public features." [ref=e152] [cursor=pointer]:
+              - /url: /admin/public-contacts
+              - generic [ref=e154]:
+                - heading "Public Contacts" [level=3] [ref=e155]:
+                  - img [ref=e156]
+                  - text: Public Contacts
+                - paragraph [ref=e159]: Manage pilot accounts for flight tracker and public features.
+        - generic [ref=e160]:
+          - heading "Content Management" [level=2] [ref=e161]
+          - generic [ref=e162]:
+            - link "Flying Sites Manage site guides, rules, and hazards." [ref=e163] [cursor=pointer]:
+              - /url: /admin/sites
+              - generic [ref=e165]:
+                - heading "Flying Sites" [level=3] [ref=e166]:
+                  - img [ref=e167]
+                  - text: Flying Sites
+                - paragraph [ref=e170]: Manage site guides, rules, and hazards.
+            - link "Home Page Manage hero text, CTA buttons, cards, and background images." [ref=e171] [cursor=pointer]:
+              - /url: /admin/home
+              - generic [ref=e173]:
+                - heading "Home Page" [level=3] [ref=e174]:
+                  - img [ref=e175]
+                  - text: Home Page
+                - paragraph [ref=e178]: Manage hero text, CTA buttons, cards, and background images.
+            - link "Images Upload and manage hero and banner image library." [ref=e179] [cursor=pointer]:
+              - /url: /admin/images
+              - generic [ref=e181]:
+                - heading "Images" [level=3] [ref=e182]:
+                  - img [ref=e183]
+                  - text: Images
+                - paragraph [ref=e187]: Upload and manage hero and banner image library.
+            - link "News, Events & Pages Manage news articles and dynamic content pages." [ref=e188] [cursor=pointer]:
+              - /url: /admin/pages
+              - generic [ref=e190]:
+                - heading "News, Events & Pages" [level=3] [ref=e191]:
+                  - img [ref=e192]
+                  - text: News, Events & Pages
+                - paragraph [ref=e195]: Manage news articles and dynamic content pages.
+            - link "Safety & Rules Edit safety page sections, emergency procedures, and club rules." [ref=e196] [cursor=pointer]:
+              - /url: /admin/safety
+              - generic [ref=e198]:
+                - heading "Safety & Rules" [level=3] [ref=e199]:
+                  - img [ref=e200]
+                  - text: Safety & Rules
+                - paragraph [ref=e202]: Edit safety page sections, emergency procedures, and club rules.
+            - link "Weather Management Manage weather data scraping and wind map particle settings." [ref=e203] [cursor=pointer]:
+              - /url: /admin/weather
+              - generic [ref=e205]:
+                - heading "Weather Management" [level=3] [ref=e206]:
+                  - img [ref=e207]
+                  - text: Weather Management
+                - paragraph [ref=e211]: Manage weather data scraping and wind map particle settings.
+            - link "AI Models Configure AI text and image model fallback chains." [ref=e212] [cursor=pointer]:
+              - /url: /admin/ai-models
+              - generic [ref=e214]:
+                - heading "AI Models" [level=3] [ref=e215]:
+                  - img [ref=e216]
+                  - text: AI Models
+                - paragraph [ref=e219]: Configure AI text and image model fallback chains.
+            - link "Page Views Track page view analytics and visitor traffic." [ref=e220] [cursor=pointer]:
+              - /url: /admin/pageviews
+              - generic [ref=e222]:
+                - heading "Page Views" [level=3] [ref=e223]:
+                  - img [ref=e224]
+                  - text: Page Views
+                - paragraph [ref=e226]: Track page view analytics and visitor traffic.
+            - link "Sponsors Manage sponsor listings, logos, and descriptions." [ref=e227] [cursor=pointer]:
+              - /url: /admin/sponsors
+              - generic [ref=e229]:
+                - heading "Sponsors" [level=3] [ref=e230]:
+                  - img [ref=e231]
+                  - text: Sponsors
+                - paragraph [ref=e236]: Manage sponsor listings, logos, and descriptions.
+            - link "Business Directory Manage member business listings and categories." [ref=e237] [cursor=pointer]:
+              - /url: /admin/business-directory
+              - generic [ref=e239]:
+                - heading "Business Directory" [level=3] [ref=e240]:
+                  - img [ref=e241]
+                  - text: Business Directory
+                - paragraph [ref=e245]: Manage member business listings and categories.
+        - generic [ref=e246]:
+          - heading "XC (Cross-Country)" [level=2] [ref=e247]
+          - generic [ref=e248]:
+            - link "XC Settings Manage Maps, Airspace, and Competitions visibility and content." [ref=e249] [cursor=pointer]:
+              - /url: /admin/xc
+              - generic [ref=e251]:
+                - heading "XC Settings" [level=3] [ref=e252]:
+                  - img [ref=e253]
+                  - text: XC Settings
+                - paragraph [ref=e256]: Manage Maps, Airspace, and Competitions visibility and content.
+            - link "Flight Tracker GPS breadcrumb tracking, offline maps, and pilot accounts." [ref=e257] [cursor=pointer]:
+              - /url: /admin/flight-tracker
+              - generic [ref=e259]:
+                - heading "Flight Tracker" [level=3] [ref=e260]:
+                  - img [ref=e261]
+                  - text: Flight Tracker
+                - paragraph [ref=e263]: GPS breadcrumb tracking, offline maps, and pilot accounts.
+        - generic [ref=e264]:
+          - heading "Integrations" [level=2] [ref=e265]
+          - generic [ref=e266]:
+            - link "API Settings Manage Google Drive, weather APIs, AI models, and other external service connections." [ref=e267] [cursor=pointer]:
+              - /url: /admin/connections
+              - generic [ref=e269]:
+                - heading "API Settings" [level=3] [ref=e270]:
+                  - img [ref=e271]
+                  - text: API Settings
+                - paragraph [ref=e273]: Manage Google Drive, weather APIs, AI models, and other external service connections.
+            - link "TidyHQ Group Sync Configure group-to-role mappings for automatic webhook sync and view the sync log." [ref=e274] [cursor=pointer]:
+              - /url: /admin/connections#tidyhq-group-sync
+              - generic [ref=e276]:
+                - heading "TidyHQ Group Sync" [level=3] [ref=e277]:
+                  - img [ref=e278]
+                  - text: TidyHQ Group Sync
+                - paragraph [ref=e283]: Configure group-to-role mappings for automatic webhook sync and view the sync log.
+            - link "Scheduled Tasks Configure timing for all automated jobs — weather, forecasts, Drive sync, and notifications." [ref=e284] [cursor=pointer]:
+              - /url: /admin/scheduled-tasks
+              - generic [ref=e286]:
+                - heading "Scheduled Tasks" [level=3] [ref=e287]:
+                  - img [ref=e288]
+                  - text: Scheduled Tasks
+                - paragraph [ref=e291]: Configure timing for all automated jobs — weather, forecasts, Drive sync, and notifications.
+        - generic [ref=e292]:
+          - heading "Site Options" [level=2] [ref=e293]
+          - generic [ref=e294]:
+            - link "Site Options Feature visibility, check-in settings, homepage components." [ref=e295] [cursor=pointer]:
+              - /url: /admin/site-options
+              - generic [ref=e297]:
+                - heading "Site Options" [level=3] [ref=e298]:
+                  - img [ref=e299]
+                  - text: Site Options
+                - paragraph [ref=e302]: Feature visibility, check-in settings, homepage components.
+            - link "Branding & Templates Manage logos, colors, and the overall look of your club website." [ref=e303] [cursor=pointer]:
+              - /url: /admin/branding
+              - generic [ref=e305]:
+                - heading "Branding & Templates" [level=3] [ref=e306]:
+                  - img [ref=e307]
+                  - text: Branding & Templates
+                - paragraph [ref=e313]: Manage logos, colors, and the overall look of your club website.
+        - generic [ref=e314]:
+          - heading "Specifications" [level=2] [ref=e315]
+          - generic [ref=e316]:
+            - link "Platform Overview All features, categories, and capabilities." [ref=e317] [cursor=pointer]:
+              - /url: /features
+              - generic [ref=e319]:
+                - heading "Platform Overview" [level=3] [ref=e320]:
+                  - img [ref=e321]
+                  - text: Platform Overview
+                - paragraph [ref=e326]: All features, categories, and capabilities.
+            - link "Technical Specification Complete technical reference — packages, APIs, schema, setup guide." [ref=e327] [cursor=pointer]:
+              - /url: /tech-spec
+              - generic [ref=e329]:
+                - heading "Technical Specification" [level=3] [ref=e330]:
+                  - img [ref=e331]
+                  - text: Technical Specification
+                - paragraph [ref=e333]: Complete technical reference — packages, APIs, schema, setup guide.
+            - link "Build Blueprint Ordered prompts to recreate the entire platform from scratch — white-label ready." [ref=e334] [cursor=pointer]:
+              - /url: /build-blueprint
+              - generic [ref=e336]:
+                - heading "Build Blueprint" [level=3] [ref=e337]:
+                  - img [ref=e338]
+                  - text: Build Blueprint
+                - paragraph [ref=e340]: Ordered prompts to recreate the entire platform from scratch — white-label ready.
+            - link "Product Requirements Vision, user roles, functional requirements, integrations, and non-functional standards." [ref=e341] [cursor=pointer]:
+              - /url: /product-spec
+              - generic [ref=e343]:
+                - heading "Product Requirements" [level=3] [ref=e344]:
+                  - img [ref=e345]
+                  - text: Product Requirements
+                - paragraph [ref=e349]: Vision, user roles, functional requirements, integrations, and non-functional standards.
+    - contentinfo [ref=e350]:
+      - generic [ref=e351]:
+        - generic [ref=e352]:
+          - img "SkyHigh" [ref=e354]
+          - paragraph [ref=e355]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+          - generic [ref=e356]:
+            - link "Facebook" [ref=e357] [cursor=pointer]:
+              - /url: https://www.facebook.com/groups/36791238561
+              - img [ref=e358]
+            - link "Instagram" [ref=e360] [cursor=pointer]:
+              - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+              - img [ref=e361]
+        - generic [ref=e363]:
+          - heading "Quick Links" [level=4] [ref=e364]
+          - list [ref=e365]:
+            - listitem [ref=e366]:
+              - link "Flying Sites" [ref=e367] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e368]:
+              - link "Safety & Rules" [ref=e369] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e370]:
+              - link "Join the Club" [ref=e371] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e372]:
+              - link "Admin" [ref=e373] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e374]:
+          - heading "Emergency" [level=4] [ref=e375]
+          - list [ref=e376]:
+            - listitem [ref=e377]: Dial 000 for Emergencies
+            - listitem [ref=e378]:
+              - link "Contact Safety Officers" [ref=e379] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - generic [ref=e380]:
+        - paragraph [ref=e381]: © 2026 SkyHigh. All rights reserved.
+        - link "Platform Overview" [ref=e382] [cursor=pointer]:
+          - /url: /features
+  - region "Notifications alt+T"
