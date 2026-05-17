@@ -47,6 +47,7 @@ import publicContactsRouter from "./server/routes/publicContacts.js";
 import demoRouter from "./server/routes/demo/index.js";
 import mapMessagesRouter from "./server/routes/mapMessages.js";
 import safetyRouter from "./server/routes/safety.js";
+import populateBannersRouter from "./server/routes/admin/populate-banners.js";
 import { injectServices } from "./server/services/index.js";
 import { getHealthStatus } from "./server/utils/health.js";
 import { errorHandlerMiddleware } from "./server/utils/errorHandler.js";
@@ -238,6 +239,7 @@ async function startServer() {
   app.post("/api/submissions", submissionLimiter);
   app.use("/api/submissions", submissionsRouter);
   app.use("/api/safety-sections", safetyRouter);
+  app.use("/api/admin", populateBannersRouter);
 
   app.get("/manifest.json", (req, res) => {
     const getVal = db.prepare("SELECT value FROM settings WHERE key = ?");
