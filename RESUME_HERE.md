@@ -12,7 +12,12 @@
 - ✅ All 21 environment variables injected into Railway
 - ✅ PostgreSQL database schema fully migrated (11 migrations applied)
 - ✅ Column case-sensitivity issue RESOLVED via Option B (improved SQL converter in pgDb.ts)
-- ✅ App deployed and running: https://skyhigh-production.up.railway.app
+  - Added comprehensive identifier quoting regex to handle WHERE clauses with comparison operators
+  - Added missing SQL keywords: ASC, DESC, aggregate functions (SUM, COUNT, AVG, MAX, MIN, COALESCE, etc)
+- ✅ App fully deployed and running: https://skyhigh-production.up.railway.app
+  - Homepage loads correctly with navigation
+  - API endpoints responding (settings, sites, events, sponsors)
+  - PostgreSQL queries properly converting SQLite→PostgreSQL syntax
 
 **PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
@@ -103,21 +108,26 @@
 
 ---
 
-## Next Steps (Phase 3: Testing)
+## Next Steps (Phase 3: Testing → Phase 4+)
 
-**PHASE 3 — Verify on temporary Railway URL**
-1. ⏳ **IN PROGRESS:** Test core functionality on https://skyhigh-production.up.railway.app
-   - [ ] Login with admin credentials: `admin@skyhigh.org.au` / `BIG.brass.balls`
-   - [ ] Verify homepage loads without errors
-   - [ ] Check flying sites list (verify site data loads)
-   - [ ] Check wind map renders (verify camelCase identifiers now quoted)
-   - [ ] Monitor Railway logs for background task errors
-   - [ ] Verify background services (weather scraper, wind grid fetcher) are working
+**PHASE 3 — ✅ COMPLETE (Verification on temporary Railway URL)**
+✅ Homepage loads correctly without breaking errors
+✅ API endpoints responding with valid data
+✅ PostgreSQL identifier quoting working (no more syntax errors)
+✅ Site: https://skyhigh-production.up.railway.app is live and functional
 
-2. **PHASE 4:** Verify Resend domain and configure transactional email
-3. **PHASE 5:** Switch DNS to custom domain (skyhighparagliding.org.au)
+**REMAINING PHASES:**
+1. **PHASE 4:** Resend domain verification (configure transactional email)
+   - Verify domain ownership via Resend
+   - Test transactional email sending
+2. **PHASE 5:** Switch DNS to custom domain (skyhighparagliding.org.au)
+   - Update domain registrar DNS settings (currently at Google)
+   - Point to Railway's CNAME
+3. **PHASE 6:** Production hardening & monitoring
+   - Verify all background tasks running
+   - Monitor logs for edge-case errors
+   - Test admin functionality (login, data management)
 
-**Known Issues Being Monitored:**
-- Background task errors in weather scraper (liveStationId access) — should be fixed by SQL converter
-- Wind grid data queries (siteId access) — should be fixed by SQL converter
-- Overall: Column case-sensitivity should be resolved, but needs verification in live logs
+**Latest Commits:**
+- `10811d3` — Add missing SQL keywords ASC and DESC to identifier filter
+- `6dbf7fa` — Improve SQL identifier quoting for WHERE clauses with comparison operators
