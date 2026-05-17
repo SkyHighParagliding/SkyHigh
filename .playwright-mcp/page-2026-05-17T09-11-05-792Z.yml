@@ -1,0 +1,83 @@
+- generic [ref=e2]:
+  - generic [ref=e57]:
+    - img [ref=e59]
+    - generic [ref=e62]:
+      - paragraph [ref=e63]: Allow location access?
+      - paragraph [ref=e64]: Used for nearby sites, emergency info, and check-ins. Without it, some features won't work.
+      - generic [ref=e65]:
+        - button "Allow" [ref=e66]
+        - button "No thanks" [ref=e67]
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - link "SkyHigh" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e9]
+        - navigation [ref=e10]:
+          - link "Sites" [ref=e11] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e13]:
+            - text: Pilots
+            - img [ref=e14]
+          - link "News" [ref=e16] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e17] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e19]:
+            - text: Community
+            - img [ref=e20]
+          - link "About Us" [ref=e22] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e23] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e24] [cursor=pointer]:
+            - /url: /safety
+    - main [ref=e27]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - img [ref=e72]
+          - heading "Admin Login" [level=3] [ref=e75]
+          - paragraph [ref=e76]: Sign in to access the admin dashboard
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic [ref=e80]: Email
+            - textbox "your@email.com" [active] [ref=e81]
+          - generic [ref=e82]:
+            - generic [ref=e83]: Password
+            - textbox "Enter your password" [ref=e84]
+            - button "Forgot password?" [ref=e86]
+          - button "Sign In" [ref=e87]:
+            - img [ref=e88]
+            - text: Sign In
+          - generic [ref=e91]:
+            - button "First time? Set your password" [ref=e92]
+            - button "Sign up as Provider" [ref=e93]
+    - contentinfo [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - img "SkyHigh" [ref=e34]
+          - paragraph [ref=e35]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+        - generic [ref=e36]:
+          - heading "Quick Links" [level=4] [ref=e37]
+          - list [ref=e38]:
+            - listitem [ref=e39]:
+              - link "Flying Sites" [ref=e40] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e41]:
+              - link "Safety & Rules" [ref=e42] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e43]:
+              - link "Join the Club" [ref=e44] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e45]:
+              - link "Admin" [ref=e46] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e47]:
+          - heading "Emergency" [level=4] [ref=e48]
+          - list [ref=e49]:
+            - listitem [ref=e50]: Dial 000 for Emergencies
+            - listitem [ref=e51]:
+              - link "Contact Safety Officers" [ref=e52] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - paragraph [ref=e54]: © 2026 SkyHigh. All rights reserved.
+  - region "Notifications alt+T"
