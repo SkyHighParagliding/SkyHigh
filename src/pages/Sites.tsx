@@ -139,14 +139,20 @@ export function Sites() {
           {filteredSites.map((site) => (
             <Link key={site.id} to={`/sites/${site.id}`} className="group block">
               <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 border-transparent hover:border-sky/30">
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={site.image || undefined} 
-                    alt={site.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                  />
+                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300">
+                  {site.image && site.image.trim() ? (
+                    <img
+                      src={site.image}
+                      alt={site.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm font-medium">
+                      No image available
+                    </div>
+                  )}
                   <div className="absolute top-4 right-4 flex gap-2">
                     {site.temporarilyClosed === 1 ? (
                       <Badge className="bg-amber-500 text-white shadow-sm">Temporarily Closed</Badge>
