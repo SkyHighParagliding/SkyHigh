@@ -61,12 +61,12 @@ function quoteIdentifiersIfNeeded(sql: string): string {
 
   const keywords = /^(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|USING|WITH|OVER|PARTITION|RECURSIVE|SUM|COUNT|AVG|MAX|MIN|COALESCE|SUBSTRING|POSITION|TRIM|UPPER|LOWER|LENGTH|ASC|DESC)$/i;
 
-  // Match identifiers in broader contexts: after operators (=, !=, <, >, etc.), commas, parens, spaces
+  // Match identifiers in broader contexts: after operators (=, !=, <, >, etc.), commas, parens, spaces, periods
   // Use lookahead to match what comes after without consuming it (so we can keep it)
   let result = sql;
 
-  // First pass: identifiers after operators and punctuation
-  result = result.replace(/([=!<>]+|,|\(|\s)([a-zA-Z_][a-zA-Z0-9_]*)(?=[=!<>.,)\s]|$)/g, (match, before, identifier) => {
+  // First pass: identifiers after operators, punctuation, and periods (for qualified names like table.column)
+  result = result.replace(/([=!<>]+|,|\(|\.|\\s)([a-zA-Z_][a-zA-Z0-9_]*)(?=[=!<>.,)\s]|$)/g, (match, before, identifier) => {
     // Skip if already quoted
     if (identifier.startsWith('"')) return match;
 
