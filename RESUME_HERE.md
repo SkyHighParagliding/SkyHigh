@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 2 ✅ Complete — Ready for Phase 3+)
+# Resume Here — SkyHigh Railway Deployment (Phase 3 ✅ Complete — Admin Login Working)
 
-**Last Updated:** 2026-05-17 (Later in day)  
+**Last Updated:** 2026-05-17 (Later in evening)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -126,6 +126,10 @@
 ✅ API endpoints responding with valid data
 ✅ PostgreSQL identifier quoting working (no more syntax errors)
 ✅ Site: https://skyhigh-production.up.railway.app is live and functional
+✅ **Admin Login Now Working** — Fixed redirect loop by quoting qualified column names (table.column)
+  - Login with test@skyhigh.org.au / Test123456 works persistently
+  - Admin Dashboard displays and remains displayed (no more redirect loop)
+  - Session validation queries now properly quote column references
 
 **REMAINING PHASES:**
 1. **PHASE 4:** Resend domain verification (configure transactional email)
