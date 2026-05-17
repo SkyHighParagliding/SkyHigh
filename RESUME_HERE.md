@@ -8,6 +8,23 @@
 
 ## Where We Left Off
 
+**STATUS:** Site Banner Population — R2 Domain Issue Resolved ✅
+
+**CRITICAL ISSUE DISCOVERED & FIXED:**
+- **Problem:** Image library URLs returned 404 errors when accessed
+  - User discovered: `https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev/...` returned "Object not found"
+  - Root cause: Seed file contained outdated R2 custom domain (pub-d31362da23d54f83bb50efb9194c6b87)
+  - The correct domain was updated in Railway in prior session (pub-971a295c84fe4582b888c39e86cdbd8c)
+  - But seed_settings.json and database still contained old broken domain
+  
+- **Fix Applied:**
+  1. ✅ Updated seed_settings.json to use correct R2 domain
+  2. ✅ Created migration 015_fix_image_library_r2_domain.sql
+  3. ✅ Committed changes to repo
+  4. Pending: Deploy to production (git push to Railway)
+  
+- **Next Step:** Once deployed, run populate-site-banners.ts script again to populate all 74 sites with working image URLs
+
 **STATUS:** Phase 2 (Configure Environment Variables) — ✅ COMPLETE
 - ✅ All 21 environment variables injected into Railway
 - ✅ PostgreSQL database schema fully migrated (11 migrations applied)
