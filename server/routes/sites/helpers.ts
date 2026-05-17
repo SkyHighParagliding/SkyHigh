@@ -145,8 +145,8 @@ export async function calculateHeights(rawHeight: string | null, lat: number | n
 }
 
 const fallbackSiteImages = {
-  coastal: ['/uploads/site-709b3754dba7e1c8-1920x600.jpg'],
-  inland: ['/uploads/site-709b3754dba7e1c8-1920x600.jpg']
+  coastal: [''],
+  inland: ['']
 };
 
 export async function getDefaultSiteImage(siteType: string): string {
