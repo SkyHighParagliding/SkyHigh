@@ -50,12 +50,22 @@ function isHashed(password: string): boolean {
 }
 
 async function ensureDefaultAdmin(name: string, email: string, plainPassword: string) {
-  const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
-  if (!existing) {
-    const hashed = await bcrypt.hash(plainPassword, SALT_ROUNDS);
-    const id = `con-${Math.random().toString(36).substr(2, 9)}`;
-    await db.prepare("INSERT OR IGNORE INTO contacts (id, name, email, password, isAdmin) VALUES (?, ?, ?, ?, 1)").run(id, name, email, hashed);
-    log.info(`Default admin contact created: ${email}`);
+  try {
+    const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+    if (!existing) {
+      const hashed = await bcrypt.hash(plainPassword, SALT_ROUNDS);
+      const id = `con-${Math.random().toString(36).substr(2, 9)}`;
+      const result = await db.prepare("INSERT OR IGNORE INTO contacts (id, name, email, password, isAdmin) VALUES (?, ?, ?, ?, 1)").run(id, name, email, hashed);
+      if (result.changes > 0) {
+        log.info(`Default admin contact created: ${email}`);
+      } else {
+        log.warn(`Default admin insert returned 0 changes for ${email} (account may already exist or constraint violation)`);
+      }
+    } else {
+      log.info(`Default admin contact already exists: ${email}`);
+    }
+  } catch (err) {
+    log.error(`Failed to ensure default admin ${email}:`, err instanceof Error ? err.message : String(err));
   }
 }
 
