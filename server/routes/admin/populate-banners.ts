@@ -7,9 +7,7 @@ import createLogger from "../../utils/logger.js";
 const log = createLogger("admin:populate-banners");
 const router = Router();
 
-router.post("/populate-banners", asyncHandler(async (req, res) => {
-  // Temporary: Allow any request for testing
-  // TODO: Restore authentication once working
+router.post("/populate-banners", requireAuth, asyncHandler(async (req, res) => {
   try {
     log.info("Starting site banner population");
 
