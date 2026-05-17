@@ -538,4 +538,43 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
+// TEMPORARY: Create admin account endpoint (one-time setup)
+router.post("/setup/create-admin", asyncHandler(async (req, res) => {
+  const { name, email, password, setupToken } = req.body;
+
+  // Simple token-based auth for this endpoint
+  if (setupToken !== "setup-admin-skyhigh-2026") {
+    return res.status(401).json({ error: "Invalid setup token" });
+  }
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password required" });
+  }
+
+  try {
+    // Check if admin already exists
+    const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+    if (existing) {
+      return res.status(400).json({ error: "Admin account already exists for this email" });
+    }
+
+    // Create admin account
+    const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    const id = `con-${Math.random().toString(36).substr(2, 9)}`;
+    const result = await db.prepare(
+      "INSERT OR IGNORE INTO contacts (id, name, email, password, isAdmin) VALUES (?, ?, ?, ?, 1)"
+    ).run(id, name, email, hashed);
+
+    if (result.changes > 0) {
+      log.info(`Admin account created via setup endpoint: ${email}`);
+      res.json({ success: true, message: `Admin account created for ${email}` });
+    } else {
+      res.status(400).json({ error: "Failed to create admin account (constraint violation or duplicate)" });
+    }
+  } catch (err) {
+    log.error("Setup admin creation failed:", err instanceof Error ? err.message : String(err));
+    res.status(500).json({ error: "Failed to create admin account" });
+  }
+}));
+
 export default router;
