@@ -1,0 +1,56 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - link "SkyHigh" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e9]
+        - navigation [ref=e10]:
+          - link "Sites" [ref=e11] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e13]:
+            - text: Pilots
+            - img [ref=e14]
+          - link "News" [ref=e16] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e17] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e19]:
+            - text: Community
+            - img [ref=e20]
+          - link "About Us" [ref=e22] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e23] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e24] [cursor=pointer]:
+            - /url: /safety
+    - main [ref=e25]
+    - contentinfo [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - img "SkyHigh" [ref=e32]
+          - paragraph [ref=e33]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+        - generic [ref=e34]:
+          - heading "Quick Links" [level=4] [ref=e35]
+          - list [ref=e36]:
+            - listitem [ref=e37]:
+              - link "Flying Sites" [ref=e38] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e39]:
+              - link "Safety & Rules" [ref=e40] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e41]:
+              - link "Join the Club" [ref=e42] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e43]:
+              - link "Admin" [ref=e44] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e45]:
+          - heading "Emergency" [level=4] [ref=e46]
+          - list [ref=e47]:
+            - listitem [ref=e48]: Dial 000 for Emergencies
+            - listitem [ref=e49]:
+              - link "Contact Safety Officers" [ref=e50] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - paragraph [ref=e52]: © 2026 SkyHigh. All rights reserved.
+  - region "Notifications alt+T"
