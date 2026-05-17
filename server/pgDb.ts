@@ -91,7 +91,17 @@ function convertSQL(raw: string): string {
   if (/INSERT\s+OR\s+IGNORE\s+INTO/i.test(sql)) {
     sql = sql.replace(/INSERT\s+OR\s+IGNORE\s+INTO/gi, "INSERT INTO");
     if (!/ON CONFLICT/i.test(sql)) {
-      sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
+      // Detect table and add appropriate conflict column
+      if (sql.toLowerCase().includes("into contacts")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO NOTHING";
+      } else if (sql.toLowerCase().includes("into settings")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (key) DO NOTHING";
+      } else if (sql.toLowerCase().includes("into sites")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO NOTHING";
+      } else {
+        // Default fallback
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
+      }
     }
   }
 
