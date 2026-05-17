@@ -1,0 +1,1603 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - banner [ref=e6]:
+      - generic [ref=e8]:
+        - link "SkyHigh" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e11]
+        - navigation [ref=e12]:
+          - link "Sites" [ref=e13] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e15]:
+            - text: Pilots
+            - img [ref=e16]
+          - link "News" [ref=e18] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e19] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e21]:
+            - text: Community
+            - img [ref=e22]
+          - link "About Us" [ref=e24] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e25] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e26] [cursor=pointer]:
+            - /url: /safety
+          - link "Admin" [ref=e27] [cursor=pointer]:
+            - /url: /admin
+    - main [ref=e28]:
+      - generic [ref=e30]:
+        - link "Back to Home" [ref=e31] [cursor=pointer]:
+          - /url: /
+          - img [ref=e32]
+          - text: Back to Home
+        - generic [ref=e34]:
+          - heading "Flying Sites" [level=1] [ref=e35]
+          - paragraph [ref=e36]: Explore our local flying sites. Always check current weather conditions, read the site rules, and ensure you have the appropriate rating before flying.
+          - generic [ref=e38]:
+            - generic [ref=e41]:
+              - button "Expand controls" [ref=e43]:
+                - img [ref=e44]
+              - generic [ref=e46]:
+                - generic [ref=e47]:
+                  - button "Play" [ref=e48]:
+                    - img [ref=e49]
+                  - slider "Timeline" [ref=e51] [cursor=pointer]: "1779056100000"
+                  - 'button "Speed: 1x" [ref=e52]':
+                    - img [ref=e53]
+                  - generic [ref=e56]: Mon 8:12 am
+                - generic [ref=e58]:
+                  - generic [ref=e59]: 1x
+                  - generic [ref=e60]: ECMWF
+            - button "Fullscreen" [ref=e61]:
+              - img [ref=e62]
+            - button "Set default map view" [ref=e67]:
+              - img [ref=e68]
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - button "TODAY" [ref=e72]
+                - button "7 DAYS" [ref=e73]:
+                  - img [ref=e74]
+                  - text: 7 DAYS
+              - generic [ref=e76]:
+                - generic [ref=e78]: SkyHigh
+                - generic [ref=e80]: Other
+                - generic [ref=e82]: Closed
+              - generic [ref=e83]:
+                - generic [ref=e84]: Forecast Data
+                - generic [ref=e87]:
+                  - generic [ref=e88]: "0"
+                  - generic [ref=e89]: "5"
+                  - generic [ref=e90]: "10"
+                  - generic [ref=e91]: "15"
+                  - generic [ref=e92]: 20+ kts
+              - generic:
+                - generic:
+                  - generic: Tap map to pin wind reading
+                  - generic: "|"
+                  - generic: Z3
+          - generic [ref=e93]:
+            - img
+            - textbox "Search sites by name..." [ref=e94]
+        - generic [ref=e95]:
+          - generic [ref=e96] [cursor=pointer]: All Sites
+          - generic [ref=e97] [cursor=pointer]: Coastal
+          - generic [ref=e98] [cursor=pointer]: Inland
+          - generic [ref=e99] [cursor=pointer]: PG2 Friendly
+          - generic [ref=e100] [cursor=pointer]: North
+          - generic [ref=e101] [cursor=pointer]: South
+          - generic [ref=e102] [cursor=pointer]: East
+          - generic [ref=e103] [cursor=pointer]: West
+        - generic [ref=e104]:
+          - 'link "No image available Open Barwon Heads (13th Beach) Coastal S-SW This is a sensitive site. Do not walk through the dunes and do not kite up the dunes. As always, give marked Hooded Plover nest sites plenty of room. Consider flying Ocean Grove or elsewhere instead to reduce traffic at this site. Beach nesting birds: Hooded Plovers nest in this area. Visit this page to learn more. NOTICE - 13th Beach, Barwon Heads - Limited Access Until further notice hang gliding operations at 13th beach are restricted to the 40W location. Addtionally, set up and launching are limited to one aircraft at any time. Top landing at 13th beach is banned except at the launch site at 40W. Negotiations are currently in progress with Barwon Coast, the responsible authority, to develop a substainable facility. PG: PG2 Supervised HG: HG Supervised Details" [ref=e105] [cursor=pointer]':
+            - /url: /sites/barwon-heads-13th-beach
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108]: No image available
+                - generic [ref=e110]: Open
+              - generic [ref=e111]:
+                - heading "Barwon Heads (13th Beach)" [level=2] [ref=e113]
+                - generic [ref=e114]:
+                  - generic [ref=e115]:
+                    - img [ref=e116]
+                    - text: Coastal
+                  - generic [ref=e119]:
+                    - img [ref=e120]
+                    - text: S-SW
+                - paragraph [ref=e124]: "This is a sensitive site. Do not walk through the dunes and do not kite up the dunes. As always, give marked Hooded Plover nest sites plenty of room. Consider flying Ocean Grove or elsewhere instead to reduce traffic at this site. Beach nesting birds: Hooded Plovers nest in this area. Visit this page to learn more. NOTICE - 13th Beach, Barwon Heads - Limited Access Until further notice hang gliding operations at 13th beach are restricted to the 40W location. Addtionally, set up and launching are limited to one aircraft at any time. Top landing at 13th beach is banned except at the launch site at 40W. Negotiations are currently in progress with Barwon Coast, the responsible authority, to develop a substainable facility."
+                - generic [ref=e125]:
+                  - generic [ref=e126]:
+                    - generic [ref=e127]:
+                      - generic [ref=e128]: "PG:"
+                      - generic [ref=e129]: PG2 Supervised
+                    - generic [ref=e130]:
+                      - generic [ref=e131]: "HG:"
+                      - generic [ref=e132]: HG Supervised
+                  - generic [ref=e133]:
+                    - text: Details
+                    - img [ref=e134]
+          - 'link "No image available Open Bells Beach - Southside Coastal S-E One of the most popular West Coast sites for paragliders. Beautiful, varied coastline with a sizable flyable stretch in the right conditions. Flights to Jan Juc to the NE, and Anglesea and beyond to the SW are possible in the right conditions. See also the Winkipop launch entry for information on the coast run. PG: PG2 Supervised HG: HG Supervised Details" [ref=e136] [cursor=pointer]':
+            - /url: /sites/bells-beach
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139]: No image available
+                - generic [ref=e141]: Open
+              - generic [ref=e142]:
+                - heading "Bells Beach - Southside" [level=2] [ref=e144]
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - img [ref=e147]
+                    - text: Coastal
+                  - generic [ref=e150]:
+                    - img [ref=e151]
+                    - text: S-E
+                - paragraph [ref=e155]: One of the most popular West Coast sites for paragliders. Beautiful, varied coastline with a sizable flyable stretch in the right conditions. Flights to Jan Juc to the NE, and Anglesea and beyond to the SW are possible in the right conditions. See also the Winkipop launch entry for information on the coast run.
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - generic [ref=e158]:
+                      - generic [ref=e159]: "PG:"
+                      - generic [ref=e160]: PG2 Supervised
+                    - generic [ref=e161]:
+                      - generic [ref=e162]: "HG:"
+                      - generic [ref=e163]: HG Supervised
+                  - generic [ref=e164]:
+                    - text: Details
+                    - img [ref=e165]
+          - 'link "No image available Open Bells Beach - Winkipop Coastal SE-E The place to go in a firm Easterly for advanced HG, this is the starting point of the Coast Run. Beautiful, varied coastline with a sizable flyable stretch in the right conditions. PG: Not suitable HG: HG Advanced | HG Intermediate requires HG Advanced Details" [ref=e167] [cursor=pointer]':
+            - /url: /sites/bells-beach-winkipop
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - generic [ref=e170]: No image available
+                - generic [ref=e172]: Open
+              - generic [ref=e173]:
+                - heading "Bells Beach - Winkipop" [level=2] [ref=e175]
+                - generic [ref=e176]:
+                  - generic [ref=e177]:
+                    - img [ref=e178]
+                    - text: Coastal
+                  - generic [ref=e181]:
+                    - img [ref=e182]
+                    - text: SE-E
+                - paragraph [ref=e186]: The place to go in a firm Easterly for advanced HG, this is the starting point of the Coast Run. Beautiful, varied coastline with a sizable flyable stretch in the right conditions.
+                - generic [ref=e187]:
+                  - generic [ref=e188]:
+                    - generic [ref=e189]:
+                      - generic [ref=e190]: "PG:"
+                      - generic [ref=e191]: Not suitable
+                    - generic [ref=e192]:
+                      - generic [ref=e193]: "HG:"
+                      - generic [ref=e194]: HG Advanced | HG Intermediate requires HG Advanced
+                  - generic [ref=e195]:
+                    - text: Details
+                    - img [ref=e196]
+          - 'link "No image available Open Ben More Inland SW Large inland ridge. Your first flights here must be under supervision of a Western Vic club member to learn site protocols, prohibited landings and other land access restrictions. We have lost too many sites caused by unknowing visiting pilots and do not want to lose any more. Visitors are welcome, but please contact us first. The club has annual running costs for this site''s T/O & LZ and would appreciate regular visitors become a member of the club. PG: PG2 Supervised HG: HG Supervised Details" [ref=e198] [cursor=pointer]':
+            - /url: /sites/ben-more
+            - generic [ref=e199]:
+              - generic [ref=e200]:
+                - generic [ref=e201]: No image available
+                - generic [ref=e203]: Open
+              - generic [ref=e204]:
+                - heading "Ben More" [level=2] [ref=e206]
+                - generic [ref=e207]:
+                  - generic [ref=e208]:
+                    - img [ref=e209]
+                    - text: Inland
+                  - generic [ref=e212]:
+                    - img [ref=e213]
+                    - text: SW
+                - paragraph [ref=e217]: Large inland ridge. Your first flights here must be under supervision of a Western Vic club member to learn site protocols, prohibited landings and other land access restrictions. We have lost too many sites caused by unknowing visiting pilots and do not want to lose any more. Visitors are welcome, but please contact us first. The club has annual running costs for this site's T/O & LZ and would appreciate regular visitors become a member of the club.
+                - generic [ref=e218]:
+                  - generic [ref=e219]:
+                    - generic [ref=e220]:
+                      - generic [ref=e221]: "PG:"
+                      - generic [ref=e222]: PG2 Supervised
+                    - generic [ref=e223]:
+                      - generic [ref=e224]: "HG:"
+                      - generic [ref=e225]: HG Supervised
+                  - generic [ref=e226]:
+                    - text: Details
+                    - img [ref=e227]
+          - 'link "No image available Open Ben Nevis Inland W-NW Large sheer mountain with clear takeoff and landing paddock below launch. IMPORTANT: Do not land in \"No landing zone\" South and East of Feud road. See area marked red on map below. PG: PG4 HG: HG Intermediate Details" [ref=e229] [cursor=pointer]':
+            - /url: /sites/ben-nevis
+            - generic [ref=e230]:
+              - generic [ref=e231]:
+                - generic [ref=e232]: No image available
+                - generic [ref=e234]: Open
+              - generic [ref=e235]:
+                - heading "Ben Nevis" [level=2] [ref=e237]
+                - generic [ref=e238]:
+                  - generic [ref=e239]:
+                    - img [ref=e240]
+                    - text: Inland
+                  - generic [ref=e243]:
+                    - img [ref=e244]
+                    - text: W-NW
+                - paragraph [ref=e248]: "Large sheer mountain with clear takeoff and landing paddock below launch. IMPORTANT: Do not land in \"No landing zone\" South and East of Feud road. See area marked red on map below."
+                - generic [ref=e249]:
+                  - generic [ref=e250]:
+                    - generic [ref=e251]:
+                      - generic [ref=e252]: "PG:"
+                      - generic [ref=e253]: PG4
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: "HG:"
+                      - generic [ref=e256]: HG Intermediate
+                  - generic [ref=e257]:
+                    - text: Details
+                    - img [ref=e258]
+          - link "No image available Open Birchip Tow Paddock Inland Large flat dusty paddocks, unless it has rained (in which case they are muddy!). Site of the famous Flatter Than The Flatlands competition held Easter each year. Flights up to 285km have been achieved here. A 'regular' flight in the tens of km can be expected. Details" [ref=e260] [cursor=pointer]:
+            - /url: /sites/birchip-tow-paddock
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - generic [ref=e263]: No image available
+                - generic [ref=e265]: Open
+              - generic [ref=e266]:
+                - heading "Birchip Tow Paddock" [level=2] [ref=e268]
+                - generic [ref=e269]:
+                  - generic [ref=e270]:
+                    - img [ref=e271]
+                    - text: Inland
+                  - img [ref=e275]
+                - paragraph [ref=e279]: Large flat dusty paddocks, unless it has rained (in which case they are muddy!). Site of the famous Flatter Than The Flatlands competition held Easter each year. Flights up to 285km have been achieved here. A 'regular' flight in the tens of km can be expected.
+                - generic [ref=e281]:
+                  - text: Details
+                  - img [ref=e282]
+          - 'link "No image available Open Cairns Bay Coastal S - SSW - SW Relatively high soaring site near Melbourne with easy top landing. PG: PG4 HG: HG Intermediate Details" [ref=e284] [cursor=pointer]':
+            - /url: /sites/cairns-bay
+            - generic [ref=e285]:
+              - generic [ref=e286]:
+                - generic [ref=e287]: No image available
+                - generic [ref=e289]: Open
+              - generic [ref=e290]:
+                - heading "Cairns Bay" [level=2] [ref=e292]
+                - generic [ref=e293]:
+                  - generic [ref=e294]:
+                    - img [ref=e295]
+                    - text: Coastal
+                  - generic [ref=e298]:
+                    - img [ref=e299]
+                    - text: S - SSW - SW
+                - paragraph [ref=e303]: Relatively high soaring site near Melbourne with easy top landing.
+                - generic [ref=e304]:
+                  - generic [ref=e305]:
+                    - generic [ref=e306]:
+                      - generic [ref=e307]: "PG:"
+                      - generic [ref=e308]: PG4
+                    - generic [ref=e309]:
+                      - generic [ref=e310]: "HG:"
+                      - generic [ref=e311]: HG Intermediate
+                  - generic [ref=e312]:
+                    - text: Details
+                    - img [ref=e313]
+          - 'link "No image available Open Cape Liptrap Coastal W,SW A beautiful coastal soaring site consisting of five large bowls and approximately 11km of low sand dunes. The five bowls cover a distance of about 3km. Launch is ideal for paragliding and adequate for hang gliders although not really steep enough. In a firm wind, launch is no problem. Excellent flying, reminiscent of Flaxmans and Bells with superb views over Wilson''s Promonotory. PG: PG4 HG: HG Intermediate Details" [ref=e315] [cursor=pointer]':
+            - /url: /sites/cape-liptrap
+            - generic [ref=e316]:
+              - generic [ref=e317]:
+                - generic [ref=e318]: No image available
+                - generic [ref=e320]: Open
+              - generic [ref=e321]:
+                - heading "Cape Liptrap" [level=2] [ref=e323]
+                - generic [ref=e324]:
+                  - generic [ref=e325]:
+                    - img [ref=e326]
+                    - text: Coastal
+                  - generic [ref=e329]:
+                    - img [ref=e330]
+                    - text: W,SW
+                - paragraph [ref=e334]: A beautiful coastal soaring site consisting of five large bowls and approximately 11km of low sand dunes. The five bowls cover a distance of about 3km. Launch is ideal for paragliding and adequate for hang gliders although not really steep enough. In a firm wind, launch is no problem. Excellent flying, reminiscent of Flaxmans and Bells with superb views over Wilson's Promonotory.
+                - generic [ref=e335]:
+                  - generic [ref=e336]:
+                    - generic [ref=e337]:
+                      - generic [ref=e338]: "PG:"
+                      - generic [ref=e339]: PG4
+                    - generic [ref=e340]:
+                      - generic [ref=e341]: "HG:"
+                      - generic [ref=e342]: HG Intermediate
+                  - generic [ref=e343]:
+                    - text: Details
+                    - img [ref=e344]
+          - 'link "No image available Open Colliers Gap Inland N-NE North facing inland hill. Suitable when wind is between Nevis and Lonarch launching conditions. PG: Not suitable HG: HG Advanced Details" [ref=e346] [cursor=pointer]':
+            - /url: /sites/colliers-gap
+            - generic [ref=e347]:
+              - generic [ref=e348]:
+                - generic [ref=e349]: No image available
+                - generic [ref=e351]: Open
+              - generic [ref=e352]:
+                - heading "Colliers Gap" [level=2] [ref=e354]
+                - generic [ref=e355]:
+                  - generic [ref=e356]:
+                    - img [ref=e357]
+                    - text: Inland
+                  - generic [ref=e360]:
+                    - img [ref=e361]
+                    - text: N-NE
+                - paragraph [ref=e365]: North facing inland hill. Suitable when wind is between Nevis and Lonarch launching conditions.
+                - generic [ref=e366]:
+                  - generic [ref=e367]:
+                    - generic [ref=e368]:
+                      - generic [ref=e369]: "PG:"
+                      - generic [ref=e370]: Not suitable
+                    - generic [ref=e371]:
+                      - generic [ref=e372]: "HG:"
+                      - generic [ref=e373]: HG Advanced
+                  - generic [ref=e374]:
+                    - text: Details
+                    - img [ref=e375]
+          - link [ref=e377] [cursor=pointer]:
+            - /url: /sites/craigie-rd-mt-martha
+            - generic [ref=e378]:
+              - generic [ref=e379]:
+                - generic [ref=e380]: No image available
+                - generic [ref=e382]: Open
+              - generic [ref=e383]:
+                - heading "Craigie Rd, Mt Martha" [level=2] [ref=e385]
+                - generic [ref=e386]:
+                  - generic [ref=e387]:
+                    - img [ref=e388]
+                    - text: Coastal
+                  - generic [ref=e391]:
+                    - img [ref=e392]
+                    - text: WSW-WNW
+                - paragraph [ref=e396]: Site endorsement is required for paragliders pilots and authorisation by a PG5 (endorsed), or FI/CFI/SSO. The name and SAFA numbers of the applicant and authorised endorser will be required. Please complete the observations onsite with the authorised endorser. The main beat for paragliders is the coastline to the right of launch along the cliffs of Birdrock beach and beyond. After Dava beach the pilot needs to carefully evaluate flying conditions and landing options. In favourable conditions it’s also possible to soar the cliffs to the left of launch, but if conditions change it may not be possible to reach a safe landing. Pilots have been caught out this way more than once. Keep an eye on the wind lines. In general, the winds on the bay tend more southerly with time. You should be able to see a southerly swing coming and make it to the appropriate landing area before it gets to you.
+                - generic [ref=e397]:
+                  - generic [ref=e398]:
+                    - generic [ref=e399]:
+                      - generic [ref=e400]: "PG:"
+                      - generic [ref=e401]: PG5 End | PG4 End | PG4 req PG5 End/FI/CFI/SSO
+                    - generic [ref=e402]:
+                      - generic [ref=e403]: "HG:"
+                      - generic [ref=e404]: HG Adv
+                  - generic [ref=e405]:
+                    - text: Details
+                    - img [ref=e406]
+          - 'link "No image available Open Dunvegan Road, Phillip Island Coastal SSW Dunvegan road, Phillip Island is a 50 ft high cliff site offering pleasant soaring in SSW winds with height attainable of up to 300ft ASL in good winds. Set up is either in the car park at the end of Dunvegan Rd (if room) or on the grass just in front. PG: PG4 | PG3 Supervised requires PG5 HG: HG Intermediate Details" [ref=e408] [cursor=pointer]':
+            - /url: /sites/dunvegan-road-phillip-island
+            - generic [ref=e409]:
+              - generic [ref=e410]:
+                - generic [ref=e411]: No image available
+                - generic [ref=e413]: Open
+              - generic [ref=e414]:
+                - heading "Dunvegan Road, Phillip Island" [level=2] [ref=e416]
+                - generic [ref=e417]:
+                  - generic [ref=e418]:
+                    - img [ref=e419]
+                    - text: Coastal
+                  - generic [ref=e422]:
+                    - img [ref=e423]
+                    - text: SSW
+                - paragraph [ref=e427]: Dunvegan road, Phillip Island is a 50 ft high cliff site offering pleasant soaring in SSW winds with height attainable of up to 300ft ASL in good winds. Set up is either in the car park at the end of Dunvegan Rd (if room) or on the grass just in front.
+                - generic [ref=e428]:
+                  - generic [ref=e429]:
+                    - generic [ref=e430]:
+                      - generic [ref=e431]: "PG:"
+                      - generic [ref=e432]: PG4 | PG3 Supervised requires PG5
+                    - generic [ref=e433]:
+                      - generic [ref=e434]: "HG:"
+                      - generic [ref=e435]: HG Intermediate
+                  - generic [ref=e436]:
+                    - text: Details
+                    - img [ref=e437]
+          - 'link "No image available Open Eagle Rise Inland S,SE,SSW Large inland ridge. Hang gliding only. Eagle Rise launch has been re-opened with limited access, thanks to the generosity of the new land-owners. This is largely a reinstatement of previous access, with different access road requirements. PG: PG2 Supervised (Bright schools only) HG: HG Intermediate | HG Advanced Details" [ref=e439] [cursor=pointer]':
+            - /url: /sites/eagle-rise
+            - generic [ref=e440]:
+              - generic [ref=e441]:
+                - generic [ref=e442]: No image available
+                - generic [ref=e444]: Open
+              - generic [ref=e445]:
+                - heading "Eagle Rise" [level=2] [ref=e447]
+                - generic [ref=e448]:
+                  - generic [ref=e449]:
+                    - img [ref=e450]
+                    - text: Inland
+                  - generic [ref=e453]:
+                    - img [ref=e454]
+                    - text: S,SE,SSW
+                - paragraph [ref=e458]: Large inland ridge. Hang gliding only. Eagle Rise launch has been re-opened with limited access, thanks to the generosity of the new land-owners. This is largely a reinstatement of previous access, with different access road requirements.
+                - generic [ref=e459]:
+                  - generic [ref=e460]:
+                    - generic [ref=e461]:
+                      - generic [ref=e462]: "PG:"
+                      - generic [ref=e463]: PG2 Supervised (Bright schools only)
+                    - generic [ref=e464]:
+                      - generic [ref=e465]: "HG:"
+                      - generic [ref=e466]: HG Intermediate | HG Advanced
+                  - generic [ref=e467]:
+                    - text: Details
+                    - img [ref=e468]
+          - 'link "No image available Open Fisher Street, Phillip Island Coastal NNW-NW Takes a NNW-NW so good if too NW for Rhyll and too west for Grossard. Height 12 M, so possible if Rhyll or Grossard is too strong. Weather station PG: PG4 HG: Not suitable Details" [ref=e470] [cursor=pointer]':
+            - /url: /sites/fisher-street-phillip-island
+            - generic [ref=e471]:
+              - generic [ref=e472]:
+                - generic [ref=e473]: No image available
+                - generic [ref=e475]: Open
+              - generic [ref=e476]:
+                - heading "Fisher Street, Phillip Island" [level=2] [ref=e478]
+                - generic [ref=e479]:
+                  - generic [ref=e480]:
+                    - img [ref=e481]
+                    - text: Coastal
+                  - generic [ref=e484]:
+                    - img [ref=e485]
+                    - text: NNW-NW
+                - paragraph [ref=e489]: Takes a NNW-NW so good if too NW for Rhyll and too west for Grossard. Height 12 M, so possible if Rhyll or Grossard is too strong. Weather station
+                - generic [ref=e490]:
+                  - generic [ref=e491]:
+                    - generic [ref=e492]:
+                      - generic [ref=e493]: "PG:"
+                      - generic [ref=e494]: PG4
+                    - generic [ref=e495]:
+                      - generic [ref=e496]: "HG:"
+                      - generic [ref=e497]: Not suitable
+                  - generic [ref=e498]:
+                    - text: Details
+                    - img [ref=e499]
+          - 'link "No image available Open Flaxmans Hill Coastal SW Scenic Coastal cliffs. PG: PG4 | PG2 Supervised requires PG4 HG: HG Intermediate | HG Supervised requires HG Intermediate Details" [ref=e501] [cursor=pointer]':
+            - /url: /sites/flaxmans-hill
+            - generic [ref=e502]:
+              - generic [ref=e503]:
+                - generic [ref=e504]: No image available
+                - generic [ref=e506]: Open
+              - generic [ref=e507]:
+                - heading "Flaxmans Hill" [level=2] [ref=e509]
+                - generic [ref=e510]:
+                  - generic [ref=e511]:
+                    - img [ref=e512]
+                    - text: Coastal
+                  - generic [ref=e515]:
+                    - img [ref=e516]
+                    - text: SW
+                - paragraph [ref=e520]: Scenic Coastal cliffs.
+                - generic [ref=e521]:
+                  - generic [ref=e522]:
+                    - generic [ref=e523]:
+                      - generic [ref=e524]: "PG:"
+                      - generic [ref=e525]: PG4 | PG2 Supervised requires PG4
+                    - generic [ref=e526]:
+                      - generic [ref=e527]: "HG:"
+                      - generic [ref=e528]: HG Intermediate | HG Supervised requires HG Intermediate
+                  - generic [ref=e529]:
+                    - text: Details
+                    - img [ref=e530]
+          - link [ref=e532] [cursor=pointer]:
+            - /url: /sites/flinders-golf-club
+            - generic [ref=e533]:
+              - generic [ref=e534]:
+                - generic [ref=e535]: No image available
+                - generic [ref=e537]: Open
+              - generic [ref=e538]:
+                - heading "Flinders Golf Club" [level=2] [ref=e540]
+                - generic [ref=e541]:
+                  - generic [ref=e542]:
+                    - img [ref=e543]
+                    - text: Coastal
+                  - generic [ref=e546]:
+                    - img [ref=e547]
+                    - text: SSW-SSE
+                - paragraph [ref=e551]: A ground ramp and a good set up area. The Flinders area has proven to be a very popular, versatile paragliding and hang gliding venue. The golf course take off area and recovery steps make it that much safer and easier. In consistent southerly lift, pilots can enjoy a trip up the coast to the point before the Blow hole, about 1.6km away to the west and to the Gunnery boundary on the low slopes to the left of the bowl. In excellent Southerly conditions, it is possible to cross the Blowhole and fly to Cairns Bay and return. You are advised to take a vario. In summer quite bouyant bubbles of air can lift from exposed rock areas on the beach and this can result in additional heights of several hundred feet. In exceptional post-frontal conditions, higher performance gliders can work cloud suck from parcels of moist air passing over the coastline with gains of 1000 to 2000ft possible by circling back under the clouds and over the town.
+                - generic [ref=e552]:
+                  - generic [ref=e553]:
+                    - generic [ref=e554]:
+                      - generic [ref=e555]: "PG:"
+                      - generic [ref=e556]: PG2 Supervised requires PG4/SO
+                    - generic [ref=e557]:
+                      - generic [ref=e558]: "HG:"
+                      - generic [ref=e559]: HG Supervised
+                  - generic [ref=e560]:
+                    - text: Details
+                    - img [ref=e561]
+          - link [ref=e563] [cursor=pointer]:
+            - /url: /sites/flinders-monument
+            - generic [ref=e564]:
+              - generic [ref=e565]:
+                - generic [ref=e566]: No image available
+                - generic [ref=e568]: Open
+              - generic [ref=e569]:
+                - heading "Flinders Monument" [level=2] [ref=e571]
+                - generic [ref=e572]:
+                  - generic [ref=e573]:
+                    - img [ref=e574]
+                    - text: Coastal
+                  - generic [ref=e577]:
+                    - img [ref=e578]
+                    - text: E,ESE,SE
+                - paragraph [ref=e582]: This site has been recently reopened and use is now subject to a license granted by the Mornington Peninsula Shire, with continuation subject to our compliance with the conditions of use below. Please help us hold onto this site by assuring all operations are conducted safely and in accordance with the license conditions which are summarized below. In addition, please be aware that we operate in close proximity to the first and second world war memorials managed by the Flinders RSL, and due respect should be paid at all times to these important monuments. The Monument site offers excellent lift in any soarable E-ESE wind. The best flying is generally in October/November when there are usually lots of easterlies or in March. Good winds also occur perhaps once or twice a week up until April. In light winds the site is generally flyable from just south of takeoff to where the cliff peters out about 500m to the left, but in any reasonable wind, you can cross to Boyds Point to the north. In excellent winds, it is possible to fly all the way to Shoreham/Point Leo and if the wind is East and about 15 knots, high performance gliders can usually make the return trip from Shoreham. It can sometimes be very difficult to get up in light conditions. In fact, in very light conditions it can seem soarable, but there appears to be some form of block which destroys lift below cliff level at the sheer cliff end to the north. The boats anchored by the pier in front of the site offer a good indicator of wind direction.
+                - generic [ref=e583]:
+                  - generic [ref=e584]:
+                    - generic [ref=e585]:
+                      - generic [ref=e586]: "PG:"
+                      - generic [ref=e587]: PG5 | PG4 Supervised requires SO/SSO
+                    - generic [ref=e588]:
+                      - generic [ref=e589]: "HG:"
+                      - generic [ref=e590]: HG Advanced
+                  - generic [ref=e591]:
+                    - text: Details
+                    - img [ref=e592]
+          - 'link "No image available Open Gordon Inland S,SE,ESE Mt Black (Gordon) is a rounded, grassy volcanic hill with an easy open take off and landing. Farm track provides access to the crater and to the SE launch. If traction is poor, walk the last 150ft on the south side. HG top landings are no longer safe due to trees. PG top landings are possible on the SE and S sides, however patches of blackberry, bracken fern & hawthorn can be problematic. PG: PG2 Supervised HG: HG Supervised Details" [ref=e594] [cursor=pointer]':
+            - /url: /sites/gordon
+            - generic [ref=e595]:
+              - generic [ref=e596]:
+                - generic [ref=e597]: No image available
+                - generic [ref=e599]: Open
+              - generic [ref=e600]:
+                - heading "Gordon" [level=2] [ref=e602]
+                - generic [ref=e603]:
+                  - generic [ref=e604]:
+                    - img [ref=e605]
+                    - text: Inland
+                  - generic [ref=e608]:
+                    - img [ref=e609]
+                    - text: S,SE,ESE
+                - paragraph [ref=e613]: Mt Black (Gordon) is a rounded, grassy volcanic hill with an easy open take off and landing. Farm track provides access to the crater and to the SE launch. If traction is poor, walk the last 150ft on the south side. HG top landings are no longer safe due to trees. PG top landings are possible on the SE and S sides, however patches of blackberry, bracken fern & hawthorn can be problematic.
+                - generic [ref=e614]:
+                  - generic [ref=e615]:
+                    - generic [ref=e616]:
+                      - generic [ref=e617]: "PG:"
+                      - generic [ref=e618]: PG2 Supervised
+                    - generic [ref=e619]:
+                      - generic [ref=e620]: "HG:"
+                      - generic [ref=e621]: HG Supervised
+                  - generic [ref=e622]:
+                    - text: Details
+                    - img [ref=e623]
+          - 'link "No image available Open Grannies Grave Coastal S Scrubby coastal dunes. From here it is possible to fly the dunes back toward town. PG: PG4 | PG2 Sup req PG4 HG: HG Int | HG Sup req HG Int Details" [ref=e625] [cursor=pointer]':
+            - /url: /sites/grannies-grave
+            - generic [ref=e626]:
+              - generic [ref=e627]:
+                - generic [ref=e628]: No image available
+                - generic [ref=e630]: Open
+              - generic [ref=e631]:
+                - heading "Grannies Grave" [level=2] [ref=e633]
+                - generic [ref=e634]:
+                  - generic [ref=e635]:
+                    - img [ref=e636]
+                    - text: Coastal
+                  - generic [ref=e639]:
+                    - img [ref=e640]
+                    - text: S
+                - paragraph [ref=e644]: Scrubby coastal dunes. From here it is possible to fly the dunes back toward town.
+                - generic [ref=e645]:
+                  - generic [ref=e646]:
+                    - generic [ref=e647]:
+                      - generic [ref=e648]: "PG:"
+                      - generic [ref=e649]: PG4 | PG2 Sup req PG4
+                    - generic [ref=e650]:
+                      - generic [ref=e651]: "HG:"
+                      - generic [ref=e652]: HG Int | HG Sup req HG Int
+                  - generic [ref=e653]:
+                    - text: Details
+                    - img [ref=e654]
+          - link [ref=e656] [cursor=pointer]:
+            - /url: /sites/great-missenden
+            - generic [ref=e657]:
+              - generic [ref=e658]:
+                - generic [ref=e659]: No image available
+                - generic [ref=e661]: Open
+              - generic [ref=e662]:
+                - heading "Great Missenden" [level=2] [ref=e664]
+                - generic [ref=e665]:
+                  - generic [ref=e666]:
+                    - img [ref=e667]
+                    - text: Inland
+                  - generic [ref=e670]:
+                    - img [ref=e671]
+                    - text: N-NE
+                - paragraph [ref=e675]: "Paraglider and Hang Glider. NNE facing takeoff tree slot launch, wide enough for a single glider, new astroturf has been installed in May 2024 which gives a wider and cleaner launch area. The following is strictly a guide, pilots must appreciate that turbulence increases exponentially as the wind strength increases. 18 knots is said to be the limit for hangies, less for PGs at about 10 knots. There will be a band of rotor to go through at about 130ft above, this should subside at about 80ft to 70ft, but be careful & ready. From the air you must assess the current conditions and choose the sweet spot. If uncertain, take the less convenient but conservative (SAFE) option and choose one of the bottom landing areas. The club recommends that you have these skills / experience before flying this site: Suitable Mountain xc experience. The judgment & skills to read the conditions and fly if safe to do so Confident with forward launching in nil or cross wind First flight - Supervised (onsite) by an experienced pilot with current local experience."
+                - generic [ref=e677]:
+                  - text: Details
+                  - img [ref=e678]
+          - 'link "Great Missenden (Previously known as Landscape) Open Great Missenden (Previously known as Landscape) Inland N-NE Paraglider and Hang Glider. NNE facing takeoff tree slot launch, wide enough for a single glider, new astroturf has been installed in May 2024 which gives a wider and cleaner launch area. PG: PG4 | PG3 Supervised requires PG5 HG: HG Advanced Details" [ref=e680] [cursor=pointer]':
+            - /url: /sites/great-missenden-previously-known-as-landscape
+            - generic [ref=e681]:
+              - generic [ref=e682]:
+                - img "Great Missenden (Previously known as Landscape)" [ref=e683]
+                - generic [ref=e685]: Open
+              - generic [ref=e686]:
+                - heading "Great Missenden (Previously known as Landscape)" [level=2] [ref=e688]
+                - generic [ref=e689]:
+                  - generic [ref=e690]:
+                    - img [ref=e691]
+                    - text: Inland
+                  - generic [ref=e694]:
+                    - img [ref=e695]
+                    - text: N-NE
+                - paragraph [ref=e699]: Paraglider and Hang Glider. NNE facing takeoff tree slot launch, wide enough for a single glider, new astroturf has been installed in May 2024 which gives a wider and cleaner launch area.
+                - generic [ref=e700]:
+                  - generic [ref=e701]:
+                    - generic [ref=e702]:
+                      - generic [ref=e703]: "PG:"
+                      - generic [ref=e704]: PG4 | PG3 Supervised requires PG5
+                    - generic [ref=e705]:
+                      - generic [ref=e706]: "HG:"
+                      - generic [ref=e707]: HG Advanced
+                  - generic [ref=e708]:
+                    - text: Details
+                    - img [ref=e709]
+          - 'link "No image available Open Grossard Point, Phillip Island Coastal NW at 10-15kn Only a short beat, but great for top landing practice. Weather station PG: PG4 HG: HG Intermediate Details" [ref=e711] [cursor=pointer]':
+            - /url: /sites/grossard-point-phillip-island
+            - generic [ref=e712]:
+              - generic [ref=e713]:
+                - generic [ref=e714]: No image available
+                - generic [ref=e716]: Open
+              - generic [ref=e717]:
+                - heading "Grossard Point, Phillip Island" [level=2] [ref=e719]
+                - generic [ref=e720]:
+                  - generic [ref=e721]:
+                    - img [ref=e722]
+                    - text: Coastal
+                  - generic [ref=e725]:
+                    - img [ref=e726]
+                    - text: NW at 10-15kn
+                - paragraph [ref=e730]: Only a short beat, but great for top landing practice. Weather station
+                - generic [ref=e731]:
+                  - generic [ref=e732]:
+                    - generic [ref=e733]:
+                      - generic [ref=e734]: "PG:"
+                      - generic [ref=e735]: PG4
+                    - generic [ref=e736]:
+                      - generic [ref=e737]: "HG:"
+                      - generic [ref=e738]: HG Intermediate
+                  - generic [ref=e739]:
+                    - text: Details
+                    - img [ref=e740]
+          - 'link "No image available Open Gundowring (Savhill) Inland NNW,SSW This site has huge potential with reliable valley winds and thermals. If you fly the hill let people know by posting on the Victorian forums such as NEVHGC (Whatsapp) or MHGC forums. PG: PG4 | PG2 Sup req PG4/SO | PG3 req PG4/SO HG: HG Sup | HG Sup req HG Int Details" [ref=e742] [cursor=pointer]':
+            - /url: /sites/gundowring-savhill
+            - generic [ref=e743]:
+              - generic [ref=e744]:
+                - generic [ref=e745]: No image available
+                - generic [ref=e747]: Open
+              - generic [ref=e748]:
+                - heading "Gundowring (Savhill)" [level=2] [ref=e750]
+                - generic [ref=e751]:
+                  - generic [ref=e752]:
+                    - img [ref=e753]
+                    - text: Inland
+                  - generic [ref=e756]:
+                    - img [ref=e757]
+                    - text: NNW,SSW
+                - paragraph [ref=e761]: This site has huge potential with reliable valley winds and thermals. If you fly the hill let people know by posting on the Victorian forums such as NEVHGC (Whatsapp) or MHGC forums.
+                - generic [ref=e762]:
+                  - generic [ref=e763]:
+                    - generic [ref=e764]:
+                      - generic [ref=e765]: "PG:"
+                      - generic [ref=e766]: PG4 | PG2 Sup req PG4/SO | PG3 req PG4/SO
+                    - generic [ref=e767]:
+                      - generic [ref=e768]: "HG:"
+                      - generic [ref=e769]: HG Sup | HG Sup req HG Int
+                  - generic [ref=e770]:
+                    - text: Details
+                    - img [ref=e771]
+          - 'link "No image available Open Kilcunda Coastal S-SW The Graveyard site consists of dunes on the stretch of coast between the town of Kilcunda and Cape Patterson, and is suitable for STUDENT rated pilots upwards. It may be soared, and offers a glide for learners when the tide is out. PG: PG2 Supervised HG: HG Supervised Details" [ref=e773] [cursor=pointer]':
+            - /url: /sites/kilcunda
+            - generic [ref=e774]:
+              - generic [ref=e775]:
+                - generic [ref=e776]: No image available
+                - generic [ref=e778]: Open
+              - generic [ref=e779]:
+                - heading "Kilcunda" [level=2] [ref=e781]
+                - generic [ref=e782]:
+                  - generic [ref=e783]:
+                    - img [ref=e784]
+                    - text: Coastal
+                  - generic [ref=e787]:
+                    - img [ref=e788]
+                    - text: S-SW
+                - paragraph [ref=e792]: The Graveyard site consists of dunes on the stretch of coast between the town of Kilcunda and Cape Patterson, and is suitable for STUDENT rated pilots upwards. It may be soared, and offers a glide for learners when the tide is out.
+                - generic [ref=e793]:
+                  - generic [ref=e794]:
+                    - generic [ref=e795]:
+                      - generic [ref=e796]: "PG:"
+                      - generic [ref=e797]: PG2 Supervised
+                    - generic [ref=e798]:
+                      - generic [ref=e799]: "HG:"
+                      - generic [ref=e800]: HG Supervised
+                  - generic [ref=e801]:
+                    - text: Details
+                    - img [ref=e802]
+          - link "No image available Open Levy's Point Beach Coastal SW Coastal dunes. Details" [ref=e804] [cursor=pointer]:
+            - /url: /sites/levy-s-point-beach
+            - generic [ref=e805]:
+              - generic [ref=e806]:
+                - generic [ref=e807]: No image available
+                - generic [ref=e809]: Open
+              - generic [ref=e810]:
+                - heading "Levy's Point Beach" [level=2] [ref=e812]
+                - generic [ref=e813]:
+                  - generic [ref=e814]:
+                    - img [ref=e815]
+                    - text: Coastal
+                  - generic [ref=e818]:
+                    - img [ref=e819]
+                    - text: SW
+                - paragraph [ref=e823]: Coastal dunes.
+                - generic [ref=e825]:
+                  - text: Details
+                  - img [ref=e826]
+          - link [ref=e828] [cursor=pointer]:
+            - /url: /sites/locksley-field
+            - generic [ref=e829]:
+              - generic [ref=e830]:
+                - generic [ref=e831]: No image available
+                - generic [ref=e833]: Open
+              - generic [ref=e834]:
+                - heading "Locksley Field" [level=2] [ref=e836]
+                - generic [ref=e837]:
+                  - generic [ref=e838]:
+                    - img [ref=e839]
+                    - text: Inland
+                  - generic [ref=e842]:
+                    - img [ref=e843]
+                    - text: Any light to moderate wind
+                - paragraph [ref=e847]: Locksley Field (YLCS) is located 33km north of Seymour on the Hume highway. Freedom Airsports maintain two dragonfly tugs available for towing endorsed HG pilots on most weekends. Contact Peter Holloway and get put on the notification list. Aerotow endorsements can be arranged if you need one. The strip is almost 2km long & 100m wide, ground towing is also sometimes conducted, contact MHGC/FA if you wish to ground tow. The usual plan of action for each day of operations is for training and aerotow endorsements to occur in the early mornings & late afternoons with general tows from midday(ish) onwards. Long distance XC flights, and triangles are often completed. A good road system with many townships in the area , enabling easy pickups for those not able or wishing to return to the field. The area is mostly flat farmland to the W,N & S with hill country to the E. The Melbourne Hang Gliding Club often has fly-ins and club competitions throughout the year here. There are camping, cooking facilities and shower blocks on site, additionally the township of Avenel has pubs and roadhouse eateries.
+                - generic [ref=e848]:
+                  - generic [ref=e849]:
+                    - generic [ref=e850]:
+                      - generic [ref=e851]: "PG:"
+                      - generic [ref=e852]: Not suitable
+                    - generic [ref=e853]:
+                      - generic [ref=e854]: "HG:"
+                      - generic [ref=e855]: HG Intermediate Endorsed
+                  - generic [ref=e856]:
+                    - text: Details
+                    - img [ref=e857]
+          - 'link "No image available Open Logans Beach Coastal SSW-SW Scrubby coastal dunes. The preferred wind is a SSW, but up to a SW is fine too. Further to the east a WSW is doable, but it gets fairly difficult closer to the platform. Often it skews too westerly and makes flying impossible. PG: PG2 Supervised HG: HG Supervised requires HG Intermediate Details" [ref=e859] [cursor=pointer]':
+            - /url: /sites/logans-beach
+            - generic [ref=e860]:
+              - generic [ref=e861]:
+                - generic [ref=e862]: No image available
+                - generic [ref=e864]: Open
+              - generic [ref=e865]:
+                - heading "Logans Beach" [level=2] [ref=e867]
+                - generic [ref=e868]:
+                  - generic [ref=e869]:
+                    - img [ref=e870]
+                    - text: Coastal
+                  - generic [ref=e873]:
+                    - img [ref=e874]
+                    - text: SSW-SW
+                - paragraph [ref=e878]: Scrubby coastal dunes. The preferred wind is a SSW, but up to a SW is fine too. Further to the east a WSW is doable, but it gets fairly difficult closer to the platform. Often it skews too westerly and makes flying impossible.
+                - generic [ref=e879]:
+                  - generic [ref=e880]:
+                    - generic [ref=e881]:
+                      - generic [ref=e882]: "PG:"
+                      - generic [ref=e883]: PG2 Supervised
+                    - generic [ref=e884]:
+                      - generic [ref=e885]: "HG:"
+                      - generic [ref=e886]: HG Supervised requires HG Intermediate
+                  - generic [ref=e887]:
+                    - text: Details
+                    - img [ref=e888]
+          - 'link "No image available Open Manny''s Inland S-SSW Large inland ridge. Eagle Attacks – most wedgetail eagles in the area are friendly, however there is a grumpy eagle resident immediately in front of Manny’s launch who may attack paragliders. Please see Sitepage>Hazards for details. Controlled airspace exists over launch C LL 4500. You must check current Albury VTC or Melbourne VNC for any changes. PG: PG2 Supervised req PG4/SO HG: HG Supervised req HG Int Details" [ref=e890] [cursor=pointer]':
+            - /url: /sites/manny-s
+            - generic [ref=e891]:
+              - generic [ref=e892]:
+                - generic [ref=e893]: No image available
+                - generic [ref=e895]: Open
+              - generic [ref=e896]:
+                - heading "Manny's" [level=2] [ref=e898]
+                - generic [ref=e899]:
+                  - generic [ref=e900]:
+                    - img [ref=e901]
+                    - text: Inland
+                  - generic [ref=e904]:
+                    - img [ref=e905]
+                    - text: S-SSW
+                - paragraph [ref=e909]: Large inland ridge. Eagle Attacks – most wedgetail eagles in the area are friendly, however there is a grumpy eagle resident immediately in front of Manny’s launch who may attack paragliders. Please see Sitepage>Hazards for details. Controlled airspace exists over launch C LL 4500. You must check current Albury VTC or Melbourne VNC for any changes.
+                - generic [ref=e910]:
+                  - generic [ref=e911]:
+                    - generic [ref=e912]:
+                      - generic [ref=e913]: "PG:"
+                      - generic [ref=e914]: PG2 Supervised req PG4/SO
+                    - generic [ref=e915]:
+                      - generic [ref=e916]: "HG:"
+                      - generic [ref=e917]: HG Supervised req HG Int
+                  - generic [ref=e918]:
+                    - text: Details
+                    - img [ref=e919]
+          - 'link "No image available Open Marriners Lookout Coastal SE Large grassy coastal hill range. Good views, good thermals and the option of cross country flights along the coast to the east. PG: PG2 Supervised HG: HG Supervised Details" [ref=e921] [cursor=pointer]':
+            - /url: /sites/marriners-lookout
+            - generic [ref=e922]:
+              - generic [ref=e923]:
+                - generic [ref=e924]: No image available
+                - generic [ref=e926]: Open
+              - generic [ref=e927]:
+                - heading "Marriners Lookout" [level=2] [ref=e929]
+                - generic [ref=e930]:
+                  - generic [ref=e931]:
+                    - img [ref=e932]
+                    - text: Coastal
+                  - generic [ref=e935]:
+                    - img [ref=e936]
+                    - text: SE
+                - paragraph [ref=e940]: Large grassy coastal hill range. Good views, good thermals and the option of cross country flights along the coast to the east.
+                - generic [ref=e941]:
+                  - generic [ref=e942]:
+                    - generic [ref=e943]:
+                      - generic [ref=e944]: "PG:"
+                      - generic [ref=e945]: PG2 Supervised
+                    - generic [ref=e946]:
+                      - generic [ref=e947]: "HG:"
+                      - generic [ref=e948]: HG Supervised
+                  - generic [ref=e949]:
+                    - text: Details
+                    - img [ref=e950]
+          - 'link "No image available Open Mt Buffalo - The Gorge HG Ramp Inland NE Mt Buffalo is a large granite mountain. The Gorge ramp launch is a constructed wooden ramp suitable for hang gliders. It is very sheer and unsuitable for paragliders. The site offers very good XC potential, having hosted the 1988 World championships. It can be flown in any light wind direction, with a light up-gorge wind often present in summer when the sun is out. PG: Not suitable HG: HG Adv | HG Int req HG Adv Details" [ref=e952] [cursor=pointer]':
+            - /url: /sites/mt-buffalo-the-gorge-hg-ramp
+            - generic [ref=e953]:
+              - generic [ref=e954]:
+                - generic [ref=e955]: No image available
+                - generic [ref=e957]: Open
+              - generic [ref=e958]:
+                - heading "Mt Buffalo - The Gorge HG Ramp" [level=2] [ref=e960]
+                - generic [ref=e961]:
+                  - generic [ref=e962]:
+                    - img [ref=e963]
+                    - text: Inland
+                  - generic [ref=e966]:
+                    - img [ref=e967]
+                    - text: NE
+                - paragraph [ref=e971]: Mt Buffalo is a large granite mountain. The Gorge ramp launch is a constructed wooden ramp suitable for hang gliders. It is very sheer and unsuitable for paragliders. The site offers very good XC potential, having hosted the 1988 World championships. It can be flown in any light wind direction, with a light up-gorge wind often present in summer when the sun is out.
+                - generic [ref=e972]:
+                  - generic [ref=e973]:
+                    - generic [ref=e974]:
+                      - generic [ref=e975]: "PG:"
+                      - generic [ref=e976]: Not suitable
+                    - generic [ref=e977]:
+                      - generic [ref=e978]: "HG:"
+                      - generic [ref=e979]: HG Adv | HG Int req HG Adv
+                  - generic [ref=e980]:
+                    - text: Details
+                    - img [ref=e981]
+          - link [ref=e983] [cursor=pointer]:
+            - /url: /sites/mt-buffalo-reed-s-lookout-paraglider-launch
+            - generic [ref=e984]:
+              - generic [ref=e985]:
+                - generic [ref=e986]: No image available
+                - generic [ref=e988]: Open
+              - generic [ref=e989]:
+                - heading "Mt Buffalo – Reed’s Lookout" [level=2] [ref=e991]
+                - generic [ref=e992]:
+                  - generic [ref=e993]:
+                    - img [ref=e994]
+                    - text: Inland
+                  - generic [ref=e997]:
+                    - img [ref=e998]
+                    - text: Valley breeze
+                - paragraph [ref=e1002]: "Mt Buffalo is a large granite mountain. Reed’s lookout PG launch comprises a series of large (3-4m) boulders with a surface slope of around 35-40deg off level and deep fissures between the boulders. The surface is of ‘sharp’ granite which is helpfully non-slip but can grab lines and cause wing damage if movement against the rock face is excessive. Several options for launch are available: the conditions will indicate the optimum. The drop-off in front of the boulders is sheer where it is not closed by low trees thus there is no room for error. The site is rated PG5. PG4 may only launch under FI/SSO supervision. Visitors are strongly advised to seek local knowledge before attempting to fly here. Eagle Attacks – most wedgetail eagles in the area are friendly, however there is a grumpy eagle resident on the Buffalo Foothills who may attack paragliders. Please see Site Page>Hazards for details. Cross country options are wide. Once you have climbed out there are options to reach in all directions. Before going XC, please check the siteguide for allowed and forbidden landing paddocks in the area and endeavour always to land in a Blue Zone."
+                - generic [ref=e1003]:
+                  - generic [ref=e1004]:
+                    - generic [ref=e1005]:
+                      - generic [ref=e1006]: "PG:"
+                      - generic [ref=e1007]: PG5 | PG4 req FI/SSO
+                    - generic [ref=e1008]:
+                      - generic [ref=e1009]: "HG:"
+                      - generic [ref=e1010]: Not suitable
+                  - generic [ref=e1011]:
+                    - text: Details
+                    - img [ref=e1012]
+          - 'link "No image available Open Mt Buninyong Inland E-ESE A prominent volcanic cone with a popular lookout at the summit. The site produces good ridge and thermal lift in a moderate easterly, but be ready to get low between thermals. Wire assistance is desirable under most conditions but is essential in any sort of crosswind. PG: PG5 HG: HG Advanced Details" [ref=e1014] [cursor=pointer]':
+            - /url: /sites/mt-buninyong
+            - generic [ref=e1015]:
+              - generic [ref=e1016]:
+                - generic [ref=e1017]: No image available
+                - generic [ref=e1019]: Open
+              - generic [ref=e1020]:
+                - heading "Mt Buninyong" [level=2] [ref=e1022]
+                - generic [ref=e1023]:
+                  - generic [ref=e1024]:
+                    - img [ref=e1025]
+                    - text: Inland
+                  - generic [ref=e1028]:
+                    - img [ref=e1029]
+                    - text: E-ESE
+                - paragraph [ref=e1033]: A prominent volcanic cone with a popular lookout at the summit. The site produces good ridge and thermal lift in a moderate easterly, but be ready to get low between thermals. Wire assistance is desirable under most conditions but is essential in any sort of crosswind.
+                - generic [ref=e1034]:
+                  - generic [ref=e1035]:
+                    - generic [ref=e1036]:
+                      - generic [ref=e1037]: "PG:"
+                      - generic [ref=e1038]: PG5
+                    - generic [ref=e1039]:
+                      - generic [ref=e1040]: "HG:"
+                      - generic [ref=e1041]: HG Advanced
+                  - generic [ref=e1042]:
+                    - text: Details
+                    - img [ref=e1043]
+          - 'link "No image available Open Mt Dandenong Inland WNW The site is sufficiently inland to produce good thermals in a variety of conditions from light and variable to moderate wind. In summer it is frequently flyable, however it comes under the influence of the sea breeze. In winter the take-off is often just above cloud base. It is a convenient site because of its closeness to Melbourne and its turn around time. This site guide is for HG only; PG pilots must obtain a site induction from a PG5 pilot (or above) who has flown the site previously, and an onsite induction must also be provided. PG: PG5 Endorsed req PG5/SO induction HG: HG Advanced Details" [ref=e1045] [cursor=pointer]':
+            - /url: /sites/mt-dandenong
+            - generic [ref=e1046]:
+              - generic [ref=e1047]:
+                - generic [ref=e1048]: No image available
+                - generic [ref=e1050]: Open
+              - generic [ref=e1051]:
+                - heading "Mt Dandenong" [level=2] [ref=e1053]
+                - generic [ref=e1054]:
+                  - generic [ref=e1055]:
+                    - img [ref=e1056]
+                    - text: Inland
+                  - generic [ref=e1059]:
+                    - img [ref=e1060]
+                    - text: WNW
+                - paragraph [ref=e1064]: The site is sufficiently inland to produce good thermals in a variety of conditions from light and variable to moderate wind. In summer it is frequently flyable, however it comes under the influence of the sea breeze. In winter the take-off is often just above cloud base. It is a convenient site because of its closeness to Melbourne and its turn around time. This site guide is for HG only; PG pilots must obtain a site induction from a PG5 pilot (or above) who has flown the site previously, and an onsite induction must also be provided.
+                - generic [ref=e1065]:
+                  - generic [ref=e1066]:
+                    - generic [ref=e1067]:
+                      - generic [ref=e1068]: "PG:"
+                      - generic [ref=e1069]: PG5 Endorsed req PG5/SO induction
+                    - generic [ref=e1070]:
+                      - generic [ref=e1071]: "HG:"
+                      - generic [ref=e1072]: HG Advanced
+                  - generic [ref=e1073]:
+                    - text: Details
+                    - img [ref=e1074]
+          - 'link "No image available Open Mt Donna Buang Inland S,N Ramp take off through a relatively long and narrow slot in tall trees. Faces south overlooking the Warburton Valley. This site can be flown in a number of wind directions giving a diverse range of flying conditions, from smooth ridge soaring in Southerlies to lively thermals in light winds and Northerlies. PG: Not suitable HG: HG Advanced | HG Int req HG Adv Sup Details" [ref=e1076] [cursor=pointer]':
+            - /url: /sites/mt-donna-buang
+            - generic [ref=e1077]:
+              - generic [ref=e1078]:
+                - generic [ref=e1079]: No image available
+                - generic [ref=e1081]: Open
+              - generic [ref=e1082]:
+                - heading "Mt Donna Buang" [level=2] [ref=e1084]
+                - generic [ref=e1085]:
+                  - generic [ref=e1086]:
+                    - img [ref=e1087]
+                    - text: Inland
+                  - generic [ref=e1090]:
+                    - img [ref=e1091]
+                    - text: S,N
+                - paragraph [ref=e1095]: Ramp take off through a relatively long and narrow slot in tall trees. Faces south overlooking the Warburton Valley. This site can be flown in a number of wind directions giving a diverse range of flying conditions, from smooth ridge soaring in Southerlies to lively thermals in light winds and Northerlies.
+                - generic [ref=e1096]:
+                  - generic [ref=e1097]:
+                    - generic [ref=e1098]:
+                      - generic [ref=e1099]: "PG:"
+                      - generic [ref=e1100]: Not suitable
+                    - generic [ref=e1101]:
+                      - generic [ref=e1102]: "HG:"
+                      - generic [ref=e1103]: HG Advanced | HG Int req HG Adv Sup
+                  - generic [ref=e1104]:
+                    - text: Details
+                    - img [ref=e1105]
+          - link [ref=e1107] [cursor=pointer]:
+            - /url: /sites/mt-elliot
+            - generic [ref=e1108]:
+              - generic [ref=e1109]:
+                - generic [ref=e1110]: No image available
+                - generic [ref=e1112]: Open
+              - generic [ref=e1113]:
+                - heading "Mt Elliot - Corryong" [level=2] [ref=e1115]
+                - generic [ref=e1116]:
+                  - generic [ref=e1117]:
+                    - img [ref=e1118]
+                    - text: Inland
+                  - generic [ref=e1121]:
+                    - img [ref=e1122]
+                    - text: NW,NE
+                - paragraph [ref=e1126]: Ground ramps through tree slots. Toilet facilities at main launch. Please park vehicles back from launch near toilet facilities to help minimise dust. WhatsApp groups for; Corryong / Mt Elliot PG HG Chat. Corryong XC Tracking & Retrieve. This launch site is located in the CTAF area (Common Traffic Advisory Frequency, 126.7) of Corryong Airstrip. When launching you are required to carry a VHF Radio and actively monitor the CTAF. You are also required to transmit, especially when you consider it reasonably necessary to avoid the risk of collision with another aircraft. During fire season Corryong airstrip is used frequently by fire fighting aircraft 24/7. Recreation flying is to avoid conflict with emergency service aircraft at all times. Hancock Victoria Plantations use Ch-25 & CH-26 around Mt Elliot & Bright. Avoid using these channels especially on Tone Squelch. Regularly the location of the Corryong Cup and Victorian open. This mountain flying is the best around, especially in the later season. 9000' agl is not uncommon. The valley system makes the flying spectacular and the retrieves easy and quick. Extensive cross country possibilities are possible to the N, W, and S.
+                - generic [ref=e1127]:
+                  - generic [ref=e1128]:
+                    - generic [ref=e1129]:
+                      - generic [ref=e1130]: "PG:"
+                      - generic [ref=e1131]: PG4 | PG2 Supervised requires PG4/SO | PG3 Sup req PG4/SO
+                    - generic [ref=e1132]:
+                      - generic [ref=e1133]: "HG:"
+                      - generic [ref=e1134]: HG Intermediate | HG Sup req HG Int
+                  - generic [ref=e1135]:
+                    - text: Details
+                    - img [ref=e1136]
+          - 'link "No image available Open Mt Emu Inland SW Mt Emu is a large mountain ridge overlooking Tawonga in the Kiewa Valley. It is the highest mountain launch in Victoria. A weather station has been installed on launch. PG: PG4 | PG2 Supervised requires FI/SSO | PG3 requires PG5 HG: HG Intermediate | HG Supervised requires HG Intermediate Details" [ref=e1138] [cursor=pointer]':
+            - /url: /sites/mt-emu
+            - generic [ref=e1139]:
+              - generic [ref=e1140]:
+                - generic [ref=e1141]: No image available
+                - generic [ref=e1143]: Open
+              - generic [ref=e1144]:
+                - heading "Mt Emu" [level=2] [ref=e1146]
+                - generic [ref=e1147]:
+                  - generic [ref=e1148]:
+                    - img [ref=e1149]
+                    - text: Inland
+                  - generic [ref=e1152]:
+                    - img [ref=e1153]
+                    - text: SW
+                - paragraph [ref=e1157]: Mt Emu is a large mountain ridge overlooking Tawonga in the Kiewa Valley. It is the highest mountain launch in Victoria. A weather station has been installed on launch.
+                - generic [ref=e1158]:
+                  - generic [ref=e1159]:
+                    - generic [ref=e1160]:
+                      - generic [ref=e1161]: "PG:"
+                      - generic [ref=e1162]: PG4 | PG2 Supervised requires FI/SSO | PG3 requires PG5
+                    - generic [ref=e1163]:
+                      - generic [ref=e1164]: "HG:"
+                      - generic [ref=e1165]: HG Intermediate | HG Supervised requires HG Intermediate
+                  - generic [ref=e1166]:
+                    - text: Details
+                    - img [ref=e1167]
+          - 'link "No image available Open Mt Hollowback Inland S,N Mt Hollowback is a grassy, volcanic hill sticking out of the plains north of Ballarat. It has two microwave towers on the western ''peak'' with a sealed road to the open take off areas. Popular with aero modellers and novice pilots. Good soaring available in more than 12 knots, airflow seems to be unaffected by hills in front even when blowing 20 knots. SW and SSE winds can produce areas of wave lift during evening glass-off. PG: PG2 Supervised HG: HG Supervised Details" [ref=e1169] [cursor=pointer]':
+            - /url: /sites/mt-hollowback
+            - generic [ref=e1170]:
+              - generic [ref=e1171]:
+                - generic [ref=e1172]: No image available
+                - generic [ref=e1174]: Open
+              - generic [ref=e1175]:
+                - heading "Mt Hollowback" [level=2] [ref=e1177]
+                - generic [ref=e1178]:
+                  - generic [ref=e1179]:
+                    - img [ref=e1180]
+                    - text: Inland
+                  - generic [ref=e1183]:
+                    - img [ref=e1184]
+                    - text: S,N
+                - paragraph [ref=e1188]: Mt Hollowback is a grassy, volcanic hill sticking out of the plains north of Ballarat. It has two microwave towers on the western 'peak' with a sealed road to the open take off areas. Popular with aero modellers and novice pilots. Good soaring available in more than 12 knots, airflow seems to be unaffected by hills in front even when blowing 20 knots. SW and SSE winds can produce areas of wave lift during evening glass-off.
+                - generic [ref=e1189]:
+                  - generic [ref=e1190]:
+                    - generic [ref=e1191]:
+                      - generic [ref=e1192]: "PG:"
+                      - generic [ref=e1193]: PG2 Supervised
+                    - generic [ref=e1194]:
+                      - generic [ref=e1195]: "HG:"
+                      - generic [ref=e1196]: HG Supervised
+                  - generic [ref=e1197]:
+                    - text: Details
+                    - img [ref=e1198]
+          - 'link "No image available Open Mt Lonarch Inland E,NE Large treed mountain ridge. Your first flights here must be under supervision of a Western Vic club member to learn site protocols, prohibited landings and other land access restrictions. We have lost too many sites caused by unknowing visiting pilots and do not want to lose any more. Visitors are welcome, but please contact us first. The club has annual running costs for this site''s T/O & LZ and would appreciate regular visitors become a member of the club. Usually rough thermals especially if the wind is off to the north. PG: PG4 HG: HG Intermediate Details" [ref=e1200] [cursor=pointer]':
+            - /url: /sites/mt-lonarch
+            - generic [ref=e1201]:
+              - generic [ref=e1202]:
+                - generic [ref=e1203]: No image available
+                - generic [ref=e1205]: Open
+              - generic [ref=e1206]:
+                - heading "Mt Lonarch" [level=2] [ref=e1208]
+                - generic [ref=e1209]:
+                  - generic [ref=e1210]:
+                    - img [ref=e1211]
+                    - text: Inland
+                  - generic [ref=e1214]:
+                    - img [ref=e1215]
+                    - text: E,NE
+                - paragraph [ref=e1219]: Large treed mountain ridge. Your first flights here must be under supervision of a Western Vic club member to learn site protocols, prohibited landings and other land access restrictions. We have lost too many sites caused by unknowing visiting pilots and do not want to lose any more. Visitors are welcome, but please contact us first. The club has annual running costs for this site's T/O & LZ and would appreciate regular visitors become a member of the club. Usually rough thermals especially if the wind is off to the north.
+                - generic [ref=e1220]:
+                  - generic [ref=e1221]:
+                    - generic [ref=e1222]:
+                      - generic [ref=e1223]: "PG:"
+                      - generic [ref=e1224]: PG4
+                    - generic [ref=e1225]:
+                      - generic [ref=e1226]: "HG:"
+                      - generic [ref=e1227]: HG Intermediate
+                  - generic [ref=e1228]:
+                    - text: Details
+                    - img [ref=e1229]
+          - 'link "No image available Open Mt Meuron Coastal S,SSE Until the stretch between Teddy''s Lookout and the town of Kennett River was flown, Mt Meuron was regarded as Victoria''s number one coastal site - if it was on! From takeoff at 450'' the site rises to 600'' asl over its 1km length. PG: PG4 HG: HG Intermediate Details" [ref=e1231] [cursor=pointer]':
+            - /url: /sites/mt-meuron
+            - generic [ref=e1232]:
+              - generic [ref=e1233]:
+                - generic [ref=e1234]: No image available
+                - generic [ref=e1236]: Open
+              - generic [ref=e1237]:
+                - heading "Mt Meuron" [level=2] [ref=e1239]
+                - generic [ref=e1240]:
+                  - generic [ref=e1241]:
+                    - img [ref=e1242]
+                    - text: Coastal
+                  - generic [ref=e1245]:
+                    - img [ref=e1246]
+                    - text: S,SSE
+                - paragraph [ref=e1250]: Until the stretch between Teddy's Lookout and the town of Kennett River was flown, Mt Meuron was regarded as Victoria's number one coastal site - if it was on! From takeoff at 450' the site rises to 600' asl over its 1km length.
+                - generic [ref=e1251]:
+                  - generic [ref=e1252]:
+                    - generic [ref=e1253]:
+                      - generic [ref=e1254]: "PG:"
+                      - generic [ref=e1255]: PG4
+                    - generic [ref=e1256]:
+                      - generic [ref=e1257]: "HG:"
+                      - generic [ref=e1258]: HG Intermediate
+                  - generic [ref=e1259]:
+                    - text: Details
+                    - img [ref=e1260]
+          - 'link "No image available Open Mt Sugarloaf Inland N Treed Mountain ridge to the south of Ben Nevis launch an alternative to Nevis in stronger Northerlies. As this launch is used when a northerly wind is to strong to launch at Nevis, you find that the flying beat is quite short and can be turbulent if there is any hint of east in the wind direction. PG: PG4 HG: HG Intermediate Details" [ref=e1262] [cursor=pointer]':
+            - /url: /sites/mt-sugarloaf
+            - generic [ref=e1263]:
+              - generic [ref=e1264]:
+                - generic [ref=e1265]: No image available
+                - generic [ref=e1267]: Open
+              - generic [ref=e1268]:
+                - heading "Mt Sugarloaf" [level=2] [ref=e1270]
+                - generic [ref=e1271]:
+                  - generic [ref=e1272]:
+                    - img [ref=e1273]
+                    - text: Inland
+                  - generic [ref=e1276]:
+                    - img [ref=e1277]
+                    - text: "N"
+                - paragraph [ref=e1281]: Treed Mountain ridge to the south of Ben Nevis launch an alternative to Nevis in stronger Northerlies. As this launch is used when a northerly wind is to strong to launch at Nevis, you find that the flying beat is quite short and can be turbulent if there is any hint of east in the wind direction.
+                - generic [ref=e1282]:
+                  - generic [ref=e1283]:
+                    - generic [ref=e1284]:
+                      - generic [ref=e1285]: "PG:"
+                      - generic [ref=e1286]: PG4
+                    - generic [ref=e1287]:
+                      - generic [ref=e1288]: "HG:"
+                      - generic [ref=e1289]: HG Intermediate
+                  - generic [ref=e1290]:
+                    - text: Details
+                    - img [ref=e1291]
+          - 'link "No image available Open Mt Tarrengower Inland WSW,NW WSW to WNW. SW and NW wind directions are possible if light; however exercise caution with a NW direction as rotor is generated by the rocky hill 1 km off to the NW and note that landings are in the lee of this hill with this wind direction. North is definitely dangerous. WSW is the preferred wind direction for XC. The site is far enough from the coast for a good air moisture to temp gradient ratio with a higher cloud base and offers excellent XC potential. The take-off is on the slope below the top of the hill, which means the pilot may not accurately access the real wind conditions on launch. It is suggested pilots go the top of the hill and check the actual wind conditions on the tower before proceeding to the launch area. PG: PG4 HG: HG Intermediate Details" [ref=e1293] [cursor=pointer]':
+            - /url: /sites/mt-tarrengower
+            - generic [ref=e1294]:
+              - generic [ref=e1295]:
+                - generic [ref=e1296]: No image available
+                - generic [ref=e1298]: Open
+              - generic [ref=e1299]:
+                - heading "Mt Tarrengower" [level=2] [ref=e1301]
+                - generic [ref=e1302]:
+                  - generic [ref=e1303]:
+                    - img [ref=e1304]
+                    - text: Inland
+                  - generic [ref=e1307]:
+                    - img [ref=e1308]
+                    - text: WSW,NW
+                - paragraph [ref=e1312]: WSW to WNW. SW and NW wind directions are possible if light; however exercise caution with a NW direction as rotor is generated by the rocky hill 1 km off to the NW and note that landings are in the lee of this hill with this wind direction. North is definitely dangerous. WSW is the preferred wind direction for XC. The site is far enough from the coast for a good air moisture to temp gradient ratio with a higher cloud base and offers excellent XC potential. The take-off is on the slope below the top of the hill, which means the pilot may not accurately access the real wind conditions on launch. It is suggested pilots go the top of the hill and check the actual wind conditions on the tower before proceeding to the launch area.
+                - generic [ref=e1313]:
+                  - generic [ref=e1314]:
+                    - generic [ref=e1315]:
+                      - generic [ref=e1316]: "PG:"
+                      - generic [ref=e1317]: PG4
+                    - generic [ref=e1318]:
+                      - generic [ref=e1319]: "HG:"
+                      - generic [ref=e1320]: HG Intermediate
+                  - generic [ref=e1321]:
+                    - text: Details
+                    - img [ref=e1322]
+          - 'link "No image available Open Mt Terrible Inland NE PG: PG5 HG: HG Advanced Details" [ref=e1324] [cursor=pointer]':
+            - /url: /sites/mt-terrible
+            - generic [ref=e1325]:
+              - generic [ref=e1326]:
+                - generic [ref=e1327]: No image available
+                - generic [ref=e1329]: Open
+              - generic [ref=e1330]:
+                - heading "Mt Terrible" [level=2] [ref=e1332]
+                - generic [ref=e1333]:
+                  - generic [ref=e1334]:
+                    - img [ref=e1335]
+                    - text: Inland
+                  - generic [ref=e1338]:
+                    - img [ref=e1339]
+                    - text: NE
+                - paragraph
+                - generic [ref=e1343]:
+                  - generic [ref=e1344]:
+                    - generic [ref=e1345]:
+                      - generic [ref=e1346]: "PG:"
+                      - generic [ref=e1347]: PG5
+                    - generic [ref=e1348]:
+                      - generic [ref=e1349]: "HG:"
+                      - generic [ref=e1350]: HG Advanced
+                  - generic [ref=e1351]:
+                    - text: Details
+                    - img [ref=e1352]
+          - 'link "No image available Open Murmungee Inland SSW Ground ramp through a tree slot. Paragliders should not fly up the valley to the left unless you are sure you have enough height to make it to the safety of the landing paddock. PG: PG5 | PG4 requires FI/SSO | PG3 requires FI/SSO | PG2 Supervised requires FI/SSO HG: Not suitable Details" [ref=e1354] [cursor=pointer]':
+            - /url: /sites/murmungee
+            - generic [ref=e1355]:
+              - generic [ref=e1356]:
+                - generic [ref=e1357]: No image available
+                - generic [ref=e1359]: Open
+              - generic [ref=e1360]:
+                - heading "Murmungee" [level=2] [ref=e1362]
+                - generic [ref=e1363]:
+                  - generic [ref=e1364]:
+                    - img [ref=e1365]
+                    - text: Inland
+                  - generic [ref=e1368]:
+                    - img [ref=e1369]
+                    - text: SSW
+                - paragraph [ref=e1373]: Ground ramp through a tree slot. Paragliders should not fly up the valley to the left unless you are sure you have enough height to make it to the safety of the landing paddock.
+                - generic [ref=e1374]:
+                  - generic [ref=e1375]:
+                    - generic [ref=e1376]:
+                      - generic [ref=e1377]: "PG:"
+                      - generic [ref=e1378]: PG5 | PG4 requires FI/SSO | PG3 requires FI/SSO | PG2 Supervised requires FI/SSO
+                    - generic [ref=e1379]:
+                      - generic [ref=e1380]: "HG:"
+                      - generic [ref=e1381]: Not suitable
+                  - generic [ref=e1382]:
+                    - text: Details
+                    - img [ref=e1383]
+          - link [ref=e1385] [cursor=pointer]:
+            - /url: /sites/mystic
+            - generic [ref=e1386]:
+              - generic [ref=e1387]:
+                - generic [ref=e1388]: No image available
+                - generic [ref=e1390]: Open
+              - generic [ref=e1391]:
+                - heading "Mystic" [level=2] [ref=e1393]
+                - generic [ref=e1394]:
+                  - generic [ref=e1395]:
+                    - img [ref=e1396]
+                    - text: Inland
+                  - generic [ref=e1399]:
+                    - img [ref=e1400]
+                    - text: "N"
+                - paragraph [ref=e1404]: Mystic Hill is an excellent site which often works because it faces the valley wind and generates some strong thermals. It is located 2km south of Bright just off the road to Wandiligong. Mystic is one of the most popular Victorian inland sites, which has hosted numerous state and national competitions as well as the the Paragliding World Cup in 1998 and most recently, 2018. Current weather observations can be accessed via the Mystic weather station. Financial Membership with the NEVHGC is required before flying Mystic, and can only be purchased from the club website at www.nevhgc.net using a PayPal account or credit card. Links to social media groups can be found on the club website, otherwise most pilots meet at the LZ on Morses Creek Road to car-pool up the hill. From December 2019 restrictions have been introduced to reduce traffic on the access road to Mystic launch. NEVHGC members are still given free access for the purpose of flying and vehicle retrieve but will not be admitted if there are bikes in the vehicles. Access to launch is only via the principal Mystic Lane entry. All other access tracks have been closed off. Eagle Attacks – most wedgetail eagles in the area are friendly, however there is a grumpy eagle resident on the Buffalo Foothills who may attack paragliders. Please see Site Page>Hazards for details. For accomodation there are many options available in Bright, ranging from backpackers hostels, to caravan parks and luxury cottages. Camp Crusty (with cabins and camping) is the closest option to the landing zone of Mystic.
+                - generic [ref=e1405]:
+                  - generic [ref=e1406]:
+                    - generic [ref=e1407]:
+                      - generic [ref=e1408]: "PG:"
+                      - generic [ref=e1409]: PG4 | PG2 Supervised requires PG4/SO | PG3 Sup req PG4/SO
+                    - generic [ref=e1410]:
+                      - generic [ref=e1411]: "HG:"
+                      - generic [ref=e1412]: HG Intermediate | HG Sup req HG Int
+                  - generic [ref=e1413]:
+                    - text: Details
+                    - img [ref=e1414]
+          - 'link "No image available Open Ocean Grove Coastal S-SSW Coastal sand dunes from Collendina to Point Lonsdale. Height of dunes: 15 metres max. At some gaps, the front dune height drops to 2 metres. The Point Lonsdale Run is approximately 10km one way and you will rarely get over 100 feet. There is one very long gap, about 1km east of Collendina, and three or four smaller gaps on the way. There is an excellent view of \"The Rip\" at the Point Lonsdale end. PG: PG4 | PG3 Supervised requires PG4 HG: HG Intermediate Details" [ref=e1416] [cursor=pointer]':
+            - /url: /sites/ocean-grove
+            - generic [ref=e1417]:
+              - generic [ref=e1418]:
+                - generic [ref=e1419]: No image available
+                - generic [ref=e1421]: Open
+              - generic [ref=e1422]:
+                - heading "Ocean Grove" [level=2] [ref=e1424]
+                - generic [ref=e1425]:
+                  - generic [ref=e1426]:
+                    - img [ref=e1427]
+                    - text: Coastal
+                  - generic [ref=e1430]:
+                    - img [ref=e1431]
+                    - text: S-SSW
+                - paragraph [ref=e1435]: "Coastal sand dunes from Collendina to Point Lonsdale. Height of dunes: 15 metres max. At some gaps, the front dune height drops to 2 metres. The Point Lonsdale Run is approximately 10km one way and you will rarely get over 100 feet. There is one very long gap, about 1km east of Collendina, and three or four smaller gaps on the way. There is an excellent view of \"The Rip\" at the Point Lonsdale end."
+                - generic [ref=e1436]:
+                  - generic [ref=e1437]:
+                    - generic [ref=e1438]:
+                      - generic [ref=e1439]: "PG:"
+                      - generic [ref=e1440]: PG4 | PG3 Supervised requires PG4
+                    - generic [ref=e1441]:
+                      - generic [ref=e1442]: "HG:"
+                      - generic [ref=e1443]: HG Intermediate
+                  - generic [ref=e1444]:
+                    - text: Details
+                    - img [ref=e1445]
+          - link "No image available Open Phillip Island Coastal Apart from established sites at Grossard Point, Fisher St and Rhyll, and the three new sites in the Phillip Island Nature Park for which we have obtained a permit to fly (Dunvegan Rd, Forest Caves and Anzacs Beach) there are no other permitted areas that may be flown. The permit to fly these sites should be downloaded from the VHPA downloads page (and then read) and must be shown to rangers or council authorities on request. Download the permit at https://vhpa.org.au/Files/Phillip%20Island%20Site%20Permit.pdf Details" [ref=e1447] [cursor=pointer]:
+            - /url: /sites/phillip-island
+            - generic [ref=e1448]:
+              - generic [ref=e1449]:
+                - generic [ref=e1450]: No image available
+                - generic [ref=e1452]: Open
+              - generic [ref=e1453]:
+                - heading "Phillip Island" [level=2] [ref=e1455]
+                - generic [ref=e1456]:
+                  - generic [ref=e1457]:
+                    - img [ref=e1458]
+                    - text: Coastal
+                  - img [ref=e1462]
+                - paragraph [ref=e1466]: Apart from established sites at Grossard Point, Fisher St and Rhyll, and the three new sites in the Phillip Island Nature Park for which we have obtained a permit to fly (Dunvegan Rd, Forest Caves and Anzacs Beach) there are no other permitted areas that may be flown. The permit to fly these sites should be downloaded from the VHPA downloads page (and then read) and must be shown to rangers or council authorities on request. Download the permit at https://vhpa.org.au/Files/Phillip%20Island%20Site%20Permit.pdf
+                - generic [ref=e1468]:
+                  - text: Details
+                  - img [ref=e1469]
+          - 'link "No image available Open Portland Coastal NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW A range of coastal dunes and cliffs which suit a variety of wind conditions and skill levels. PG: PG2 Supervised requires PG4/SO | PG4 | PG5 HG: HG Supervised requires HG Int | HG Intermediate | HG Advanced Details" [ref=e1471] [cursor=pointer]':
+            - /url: /sites/portland
+            - generic [ref=e1472]:
+              - generic [ref=e1473]:
+                - generic [ref=e1474]: No image available
+                - generic [ref=e1476]: Open
+              - generic [ref=e1477]:
+                - heading "Portland" [level=2] [ref=e1479]
+                - generic [ref=e1480]:
+                  - generic [ref=e1481]:
+                    - img [ref=e1482]
+                    - text: Coastal
+                  - generic [ref=e1485]:
+                    - img [ref=e1486]
+                    - text: NNE,NE,ENE,E,ESE,SE,SSE,S,SSW,SW,WSW,W,WNW,NW,NNW
+                - paragraph [ref=e1490]: A range of coastal dunes and cliffs which suit a variety of wind conditions and skill levels.
+                - generic [ref=e1491]:
+                  - generic [ref=e1492]:
+                    - generic [ref=e1493]:
+                      - generic [ref=e1494]: "PG:"
+                      - generic [ref=e1495]: PG2 Supervised requires PG4/SO | PG4 | PG5
+                    - generic [ref=e1496]:
+                      - generic [ref=e1497]: "HG:"
+                      - generic [ref=e1498]: HG Supervised requires HG Int | HG Intermediate | HG Advanced
+                  - generic [ref=e1499]:
+                    - text: Details
+                    - img [ref=e1500]
+          - link [ref=e1502] [cursor=pointer]:
+            - /url: /sites/portsea
+            - generic [ref=e1503]:
+              - generic [ref=e1504]:
+                - generic [ref=e1505]: No image available
+                - generic [ref=e1507]: Open
+              - generic [ref=e1508]:
+                - heading "Portsea" [level=2] [ref=e1510]
+                - generic [ref=e1511]:
+                  - generic [ref=e1512]:
+                    - img [ref=e1513]
+                    - text: Coastal
+                  - generic [ref=e1516]:
+                    - img [ref=e1517]
+                    - text: S-SW
+                - paragraph [ref=e1521]: "The site is within the Mornington Peninsula National Park so pilots should respect and enjoy the environment. Most importantly that means take-off cleanly from the ramp, land on the beach and return via the main access track. NO scrambling up and down the cliffs or dunes! Stay out of the sand dunes completely to protect their structure and to protect the birds and animals that live there. This means that flying operations of launching and landing are to be confined to the launch area, the beach and the interconnecting ramp. All of the beach may be used for landing and part, but not all, of the beach can be used for ground handling practice as well. However, launching from the beach at Portsea is not permitted. The beach area where ground handling is NOT permitted runs between the beach access ramp and a point 200 m west of the access ramp - see map. Beach nesting birds: Hooded Plovers nest in this area. Visit this page to learn more."
+                - generic [ref=e1522]:
+                  - generic [ref=e1523]:
+                    - generic [ref=e1524]:
+                      - generic [ref=e1525]: "PG:"
+                      - generic [ref=e1526]: PG2 Supervised
+                    - generic [ref=e1527]:
+                      - generic [ref=e1528]: "HG:"
+                      - generic [ref=e1529]: HG Supervised
+                  - generic [ref=e1530]:
+                    - text: Details
+                    - img [ref=e1531]
+          - 'link "No image available Open Red Bluff Coastal SSW-WSW It’s the closest flying site to Melbourne CBD, along the Beach Rd at Sandringham. Launch is a large flat grassy area. Park just behind launch. Site endorsement is required for paragliders pilots and authorisation by a PG5 (endorsed), or FI/CFI/SSO. The name and SAFA numbers of the applicant and authorised endorser will be required. Please complete the observations onsite with the authorised endorser. See here. PG: PG5 Endorsed | PG4 End req PG5 End Details" [ref=e1533] [cursor=pointer]':
+            - /url: /sites/red-bluff
+            - generic [ref=e1534]:
+              - generic [ref=e1535]:
+                - generic [ref=e1536]: No image available
+                - generic [ref=e1538]: Open
+              - generic [ref=e1539]:
+                - heading "Red Bluff" [level=2] [ref=e1541]
+                - generic [ref=e1542]:
+                  - generic [ref=e1543]:
+                    - img [ref=e1544]
+                    - text: Coastal
+                  - generic [ref=e1547]:
+                    - img [ref=e1548]
+                    - text: SSW-WSW
+                - paragraph [ref=e1552]: It’s the closest flying site to Melbourne CBD, along the Beach Rd at Sandringham. Launch is a large flat grassy area. Park just behind launch. Site endorsement is required for paragliders pilots and authorisation by a PG5 (endorsed), or FI/CFI/SSO. The name and SAFA numbers of the applicant and authorised endorser will be required. Please complete the observations onsite with the authorised endorser. See here.
+                - generic [ref=e1553]:
+                  - generic [ref=e1555]:
+                    - generic [ref=e1556]: "PG:"
+                    - generic [ref=e1557]: PG5 Endorsed | PG4 End req PG5 End
+                  - generic [ref=e1558]:
+                    - text: Details
+                    - img [ref=e1559]
+          - 'link "No image available Open Rhyll, Phillip Island Coastal NNW The BOM Rhyll AWS ( Automatic Weather Station ) is at NE point. PG: PG5 HG: HG Advanced Details" [ref=e1561] [cursor=pointer]':
+            - /url: /sites/rhyll-phillip-island
+            - generic [ref=e1562]:
+              - generic [ref=e1563]:
+                - generic [ref=e1564]: No image available
+                - generic [ref=e1566]: Open
+              - generic [ref=e1567]:
+                - heading "Rhyll, Phillip Island" [level=2] [ref=e1569]
+                - generic [ref=e1570]:
+                  - generic [ref=e1571]:
+                    - img [ref=e1572]
+                    - text: Coastal
+                  - generic [ref=e1575]:
+                    - img [ref=e1576]
+                    - text: NNW
+                - paragraph [ref=e1580]: The BOM Rhyll AWS ( Automatic Weather Station ) is at NE point.
+                - generic [ref=e1581]:
+                  - generic [ref=e1582]:
+                    - generic [ref=e1583]:
+                      - generic [ref=e1584]: "PG:"
+                      - generic [ref=e1585]: PG5
+                    - generic [ref=e1586]:
+                      - generic [ref=e1587]: "HG:"
+                      - generic [ref=e1588]: HG Advanced
+                  - generic [ref=e1589]:
+                    - text: Details
+                    - img [ref=e1590]
+          - 'link "No image available Open Shoreham Coastal E-ESE There is a beat of up to 1km. An easy 100'' to 150'' above Launch and up to 500'' above Launch achievable. This site can be only usually flown with a good ESE wind as takeoff is quite low and the cliff is not that steep. However once up and flying it can be quite good. PG: PG4 HG: HG Intermediate Details" [ref=e1592] [cursor=pointer]':
+            - /url: /sites/shoreham
+            - generic [ref=e1593]:
+              - generic [ref=e1594]:
+                - generic [ref=e1595]: No image available
+                - generic [ref=e1597]: Open
+              - generic [ref=e1598]:
+                - heading "Shoreham" [level=2] [ref=e1600]
+                - generic [ref=e1601]:
+                  - generic [ref=e1602]:
+                    - img [ref=e1603]
+                    - text: Coastal
+                  - generic [ref=e1606]:
+                    - img [ref=e1607]
+                    - text: E-ESE
+                - paragraph [ref=e1611]: There is a beat of up to 1km. An easy 100' to 150' above Launch and up to 500' above Launch achievable. This site can be only usually flown with a good ESE wind as takeoff is quite low and the cliff is not that steep. However once up and flying it can be quite good.
+                - generic [ref=e1612]:
+                  - generic [ref=e1613]:
+                    - generic [ref=e1614]:
+                      - generic [ref=e1615]: "PG:"
+                      - generic [ref=e1616]: PG4
+                    - generic [ref=e1617]:
+                      - generic [ref=e1618]: "HG:"
+                      - generic [ref=e1619]: HG Intermediate
+                  - generic [ref=e1620]:
+                    - text: Details
+                    - img [ref=e1621]
+          - link [ref=e1623] [cursor=pointer]:
+            - /url: /sites/spion-kop-fairhaven-aireys-moggs
+            - generic [ref=e1624]:
+              - generic [ref=e1625]:
+                - generic [ref=e1626]: No image available
+                - generic [ref=e1628]: Open
+              - generic [ref=e1629]:
+                - heading "Spion Kop" [level=2] [ref=e1631]
+                - generic [ref=e1632]:
+                  - generic [ref=e1633]:
+                    - img [ref=e1634]
+                    - text: Coastal
+                  - generic [ref=e1637]:
+                    - img [ref=e1638]
+                    - text: SSW-SSE
+                - paragraph [ref=e1642]: "Spion Kop is Victoria's most popular coastal site and very beginner-friendly. Given the right conditions it is possible to cross a large gap and fly to the larger hills to the west - more difficult for paragliders but nearly always possible for high-performance HGs. You can also fly the low 20' primary dunes at the base towards the Aireys Inlet lighthouse. As of Dec 2019, there are new rules that apply for flying anywhere along the Spion Kop, Eastern View, Fairhaven and Moggs Creek area. A notice board issued by GORCC will be displayed at the Spion Kop launch. This will give information on the location of the Hooded Plovers and general advice and requests. This will be updated daily or as necessary by GORCC and must be strictly adhered to. If you intend to fly you must first check the new notice board at Spion Kop. If you intend to beach launch from Mad Max, you must first check the notice board at Spion Kop. Under no circumstances are you to enter the dunes or launch backing up the dunes. Hefty fines apply. If it's too light to beach launch then launch from Spion Kop. Gain at least 100ft and cross over plover areas and fly away. There is 6 kilometres of coast to play on so there is no excuse to fly anywhere near them. Familiarize yourself with our Hooded Plover rules. Beach nesting birds: Hooded Plovers nest in this area. Visit this page to learn more. Pilots are required to be Spion endorsed to fly this site (including when launching at Mad Max). You can complete the Spion site specific induction with any authorised officer of the Dynasoarers. Just give them a call."
+                - generic [ref=e1643]:
+                  - generic [ref=e1644]:
+                    - generic [ref=e1645]:
+                      - generic [ref=e1646]: "PG:"
+                      - generic [ref=e1647]: PG2 Sup req Spion End
+                    - generic [ref=e1648]:
+                      - generic [ref=e1649]: "HG:"
+                      - generic [ref=e1650]: HG Sup req Spion End
+                  - generic [ref=e1651]:
+                    - text: Details
+                    - img [ref=e1652]
+          - 'link "No image available Open Tawonga Gap Inland NE A tree slot launch on a large inland ridge. Located on the western side of the Kiewa Valley. PG: PG4 | PG2 Supervised requires FI/SSO | PG3 req FI/SSO supervision HG: HG Advanced | HG Supervised req HG Adv supervision | HG Intermediate req HG Adv supervision Details" [ref=e1654] [cursor=pointer]':
+            - /url: /sites/tawonga-gap
+            - generic [ref=e1655]:
+              - generic [ref=e1656]:
+                - generic [ref=e1657]: No image available
+                - generic [ref=e1659]: Open
+              - generic [ref=e1660]:
+                - heading "Tawonga Gap" [level=2] [ref=e1662]
+                - generic [ref=e1663]:
+                  - generic [ref=e1664]:
+                    - img [ref=e1665]
+                    - text: Inland
+                  - generic [ref=e1668]:
+                    - img [ref=e1669]
+                    - text: NE
+                - paragraph [ref=e1673]: A tree slot launch on a large inland ridge. Located on the western side of the Kiewa Valley.
+                - generic [ref=e1674]:
+                  - generic [ref=e1675]:
+                    - generic [ref=e1676]:
+                      - generic [ref=e1677]: "PG:"
+                      - generic [ref=e1678]: PG4 | PG2 Supervised requires FI/SSO | PG3 req FI/SSO supervision
+                    - generic [ref=e1679]:
+                      - generic [ref=e1680]: "HG:"
+                      - generic [ref=e1681]: HG Advanced | HG Supervised req HG Adv supervision | HG Intermediate req HG Adv supervision
+                  - generic [ref=e1682]:
+                    - text: Details
+                    - img [ref=e1683]
+          - 'link "No image available Open Teddys Lookout Coastal SSE-ESE This small tree slot launch requires advanced launch skills but offers some spectacular flying in the right conditions. Not recommended for HG due to a very tight launch and limited, potentially crowded, landing options. You''re invited to bring a folding saw and clear any sweet pittosporum, boneseed or other invasive weed you can confidently identify. Please also clean up any rubbish and broken glass. PG: PG5 | PG4 Sup req PG5 HG: HG Advanced Details" [ref=e1685] [cursor=pointer]':
+            - /url: /sites/teddys-lookout
+            - generic [ref=e1686]:
+              - generic [ref=e1687]:
+                - generic [ref=e1688]: No image available
+                - generic [ref=e1690]: Open
+              - generic [ref=e1691]:
+                - heading "Teddys Lookout" [level=2] [ref=e1693]
+                - generic [ref=e1694]:
+                  - generic [ref=e1695]:
+                    - img [ref=e1696]
+                    - text: Coastal
+                  - generic [ref=e1699]:
+                    - img [ref=e1700]
+                    - text: SSE-ESE
+                - paragraph [ref=e1704]: This small tree slot launch requires advanced launch skills but offers some spectacular flying in the right conditions. Not recommended for HG due to a very tight launch and limited, potentially crowded, landing options. You're invited to bring a folding saw and clear any sweet pittosporum, boneseed or other invasive weed you can confidently identify. Please also clean up any rubbish and broken glass.
+                - generic [ref=e1705]:
+                  - generic [ref=e1706]:
+                    - generic [ref=e1707]:
+                      - generic [ref=e1708]: "PG:"
+                      - generic [ref=e1709]: PG5 | PG4 Sup req PG5
+                    - generic [ref=e1710]:
+                      - generic [ref=e1711]: "HG:"
+                      - generic [ref=e1712]: HG Advanced
+                  - generic [ref=e1713]:
+                    - text: Details
+                    - img [ref=e1714]
+          - 'link "No image available Open The Paps Inland N,W,E,SW,S,SE Large double hill. Launches are suitable for hang gliders or paragliders. 4WD access only (as at Nov 2013). Flights from this site logged in Leonardo and the Paragliding Forum PG: PG4 HG: HG Intermediate Details" [ref=e1716] [cursor=pointer]':
+            - /url: /sites/the-paps
+            - generic [ref=e1717]:
+              - generic [ref=e1718]:
+                - generic [ref=e1719]: No image available
+                - generic [ref=e1721]: Open
+              - generic [ref=e1722]:
+                - heading "The Paps" [level=2] [ref=e1724]
+                - generic [ref=e1725]:
+                  - generic [ref=e1726]:
+                    - img [ref=e1727]
+                    - text: Inland
+                  - generic [ref=e1730]:
+                    - img [ref=e1731]
+                    - text: N,W,E,SW,S,SE
+                - paragraph [ref=e1735]: Large double hill. Launches are suitable for hang gliders or paragliders. 4WD access only (as at Nov 2013). Flights from this site logged in Leonardo and the Paragliding Forum
+                - generic [ref=e1736]:
+                  - generic [ref=e1737]:
+                    - generic [ref=e1738]:
+                      - generic [ref=e1739]: "PG:"
+                      - generic [ref=e1740]: PG4
+                    - generic [ref=e1741]:
+                      - generic [ref=e1742]: "HG:"
+                      - generic [ref=e1743]: HG Intermediate
+                  - generic [ref=e1744]:
+                    - text: Details
+                    - img [ref=e1745]
+          - link [ref=e1747] [cursor=pointer]:
+            - /url: /sites/werribee-gorge
+            - generic [ref=e1748]:
+              - generic [ref=e1749]:
+                - generic [ref=e1750]: No image available
+                - generic [ref=e1752]: Open
+              - generic [ref=e1753]:
+                - heading "Werribee Gorge" [level=2] [ref=e1755]
+                - generic [ref=e1756]:
+                  - generic [ref=e1757]:
+                    - img [ref=e1758]
+                    - text: Inland
+                  - generic [ref=e1761]:
+                    - img [ref=e1762]
+                    - text: N,NE
+                - paragraph [ref=e1766]: Werribee Gorge is renowned for two things - never being on, and being very rough. Most people do not go to the Gorge unless it is really lousy elsewhere, so it is usually lousy at the Gorge too. The ridge is used extensively by sailplanes from the Bacchus Marsh Gliding Club whenever a brisk Northerly is blowing. Thermals cook up from the sheltered valley. The site overlooks the flood plains of the Werribee river, but is unfortunately downwind of several rather rough looking hills on the other side, hence the rough air, which has to go down before it gets a chance to go up. Werribee Gorge is best flown early in the morning, on days when the forecast is Northerly, increasing to 10 - 15kts. You should launch no later than 11.00am, because at lunchtime the Green breeze sets in. The Green Breeze is a pseudo sea breeze from the SW generated by extensive treed areas. The wind will switch to SW in the space of 10 minutes, to a strength of up to 15kts. Best flights are acheived in a firm NE with lots of Cu. In a N, NNE getting away will see you travelling down the Bachus Marsh - Geelong Rd. You can follow the eastern edge of the Brisbane ranges all the way to Geelong.
+                - generic [ref=e1767]:
+                  - generic [ref=e1768]:
+                    - generic [ref=e1769]:
+                      - generic [ref=e1770]: "PG:"
+                      - generic [ref=e1771]: PG5
+                    - generic [ref=e1772]:
+                      - generic [ref=e1773]: "HG:"
+                      - generic [ref=e1774]: HG Advanced
+                  - generic [ref=e1775]:
+                    - text: Details
+                    - img [ref=e1776]
+          - 'link "No image available Open Yarragon Inland N A low rolling grassy hill, south of the township of Yarragon. PG: PG2 Supervised HG: HG Supervised Details" [ref=e1778] [cursor=pointer]':
+            - /url: /sites/yarragon
+            - generic [ref=e1779]:
+              - generic [ref=e1780]:
+                - generic [ref=e1781]: No image available
+                - generic [ref=e1783]: Open
+              - generic [ref=e1784]:
+                - heading "Yarragon" [level=2] [ref=e1786]
+                - generic [ref=e1787]:
+                  - generic [ref=e1788]:
+                    - img [ref=e1789]
+                    - text: Inland
+                  - generic [ref=e1792]:
+                    - img [ref=e1793]
+                    - text: "N"
+                - paragraph [ref=e1797]: A low rolling grassy hill, south of the township of Yarragon.
+                - generic [ref=e1798]:
+                  - generic [ref=e1799]:
+                    - generic [ref=e1800]:
+                      - generic [ref=e1801]: "PG:"
+                      - generic [ref=e1802]: PG2 Supervised
+                    - generic [ref=e1803]:
+                      - generic [ref=e1804]: "HG:"
+                      - generic [ref=e1805]: HG Supervised
+                  - generic [ref=e1806]:
+                    - text: Details
+                    - img [ref=e1807]
+    - contentinfo [ref=e1809]:
+      - generic [ref=e1810]:
+        - generic [ref=e1811]:
+          - img "SkyHigh" [ref=e1813]
+          - paragraph [ref=e1814]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+          - generic [ref=e1815]:
+            - link "Facebook" [ref=e1816] [cursor=pointer]:
+              - /url: https://www.facebook.com/groups/36791238561
+              - img [ref=e1817]
+            - link "Instagram" [ref=e1819] [cursor=pointer]:
+              - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+              - img [ref=e1820]
+        - generic [ref=e1822]:
+          - heading "Quick Links" [level=4] [ref=e1823]
+          - list [ref=e1824]:
+            - listitem [ref=e1825]:
+              - link "Flying Sites" [ref=e1826] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e1827]:
+              - link "Safety & Rules" [ref=e1828] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e1829]:
+              - link "Join the Club" [ref=e1830] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e1831]:
+              - link "Admin" [ref=e1832] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e1833]:
+          - heading "Emergency" [level=4] [ref=e1834]
+          - list [ref=e1835]:
+            - listitem [ref=e1836]: Dial 000 for Emergencies
+            - listitem [ref=e1837]:
+              - link "Contact Safety Officers" [ref=e1838] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - generic [ref=e1839]:
+        - paragraph [ref=e1840]: © 2026 SkyHigh. All rights reserved.
+        - link "Platform Overview" [ref=e1841] [cursor=pointer]:
+          - /url: /features
+  - region "Notifications alt+T"
