@@ -113,13 +113,19 @@ export function SiteDetail() {
       )}
 
       {/* Hero Header */}
-      <div data-hero className="relative h-[40vh] min-h-[300px] w-full">
-        <img 
-          src={site.image || undefined} 
-          alt={site.name} 
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
+      <div data-hero className="relative h-[40vh] min-h-[300px] w-full bg-gradient-to-br from-slate-300 to-slate-400">
+        {site.image && site.image.trim() ? (
+          <img
+            src={site.image}
+            alt={site.name}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-slate-500 text-lg font-medium">
+            No image available for {site.name}
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
 
         {site.temporarilyClosed === 1 && (
