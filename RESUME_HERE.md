@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 3 ✅ Complete — All Critical Fixes Applied)
+# Resume Here — SkyHigh Railway Deployment (Phase 3 ✅ Complete — Ready for Phase 4)
 
-**Last Updated:** 2026-05-17 (Evening — datetime() conversion fixed, Gemini billing configured)  
+**Last Updated:** 2026-05-17 (Night — Site form type casting fixed, bulk import verified, deployment checklist created)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -200,9 +200,24 @@
 - ✅ Gemini API admin search confirmed working
 - ✅ datetime() SQL conversion deployed (satellite tracker queries should be error-free)
 
-**READY FOR PHASE 4:**
-Next phase: Resend domain verification (transactional email)
+**TONIGHT'S ADDITIONAL FIXES (Later Session):**
+✅ **Site Form Type Casting** — FIXED
+  - Issue: PostgreSQL CASE expressions couldn't infer parameter types in `CASE WHEN @param != ''`
+  - Fix: Added ::text casts to all 21 CASE statements in sites/crud.ts UPDATE query
+  - Also fixed: bulkImport.ts unassignedText CASE expression
+  - Result: Site updates save without "could not determine data type" errors
+  - Deployed: Commits 2aed7ae, 519a313
+
+✅ **Bulk Import Execution**
+  - Full site import tested and verified operational
+  - All form fields working (pgRating, hgRating, windDir, windSpeed, launch area, landing zones, hazards, rules, etc.)
+  - Ready for production use
+
+**READY FOR PHASE 4 (Tomorrow):**
+Next tasks: Resend email setup → Custom domain DNS → Password reset → Admin user setup
 
 **Latest Commits:**
-- `10811d3` — Add missing SQL keywords ASC and DESC to identifier filter
-- `6dbf7fa` — Improve SQL identifier quoting for WHERE clauses with comparison operators
+- `519a313` — [FIX] Add type cast to bulkImport CASE expression
+- `2aed7ae` — [FIX] Add type casts to PostgreSQL CASE expressions in site update query
+- `1ca573c` — [SESSION-SUMMARY] Phase 3 complete — datetime() conversion fixed, Gemini billing configured
+- `0586e3b` — [FIX] Convert datetime('now', 'start of day') to PostgreSQL CURRENT_DATE::timestamptz
