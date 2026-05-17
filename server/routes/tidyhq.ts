@@ -330,8 +330,10 @@ router.get("/callback", asyncHandler(async (req, res) => {
     return res.status(500).send("TIDYHQ_CLIENT_ID and TIDYHQ_CLIENT_SECRET must be set");
   }
 
-  const deployedDomain = process.env.REPLIT_DOMAINS?.split(",").find(d => d.includes(".replit.app")) || process.env.REPLIT_DOMAINS?.split(",")[0] || "";
-  const redirectUri = `https://${deployedDomain}/api/tidyhq/callback`;
+  const baseUrl = process.env.APP_URL
+    || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : null)
+    || "http://localhost:5173";
+  const redirectUri = `${baseUrl}/api/tidyhq/callback`;
 
   try {
     const tokenRes = await fetch("https://accounts.tidyhq.com/oauth/token", {
