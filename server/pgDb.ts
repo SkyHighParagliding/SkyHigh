@@ -55,6 +55,28 @@ function toPostgresParams(sql: string, params: any[]): { sql: string; values: an
   return { sql: converted, values: params };
 }
 
+function quoteIdentifiersIfNeeded(sql: string): string {
+  // Quote identifiers that contain uppercase letters to preserve camelCase in PostgreSQL.
+  // PostgreSQL downcases unquoted identifiers, so we must quote camelCase names.
+  // This regex matches unquoted identifiers (word characters) that have uppercase.
+
+  // Pattern: match unquoted identifiers (alphanumeric + underscore) that contain uppercase
+  // Avoid matching already-quoted identifiers and SQL keywords/functions
+  return sql.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b(?=(?:[^"]*"[^"]*")*[^"]*$)/g, (match) => {
+    // Skip if already quoted or is a reserved keyword
+    if (match.match(/^(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|EXTRACT|CAST)$/i)) {
+      return match;
+    }
+
+    // Quote if contains uppercase (likely camelCase)
+    if (/[A-Z]/.test(match)) {
+      return `"${match}"`;
+    }
+
+    return match;
+  });
+}
+
 function convertSQL(raw: string): string {
   let sql = raw;
 
@@ -71,9 +93,9 @@ function convertSQL(raw: string): string {
     sql = sql.replace(/INSERT\s+OR\s+REPLACE\s+INTO/gi, "INSERT INTO");
     if (!/ON CONFLICT/i.test(sql)) {
       if (sql.toLowerCase().includes("into settings")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value";
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (key) DO UPDATE SET \"value\" = EXCLUDED.\"value\"";
       } else if (sql.toLowerCase().includes("into sites")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name";
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"name\" = EXCLUDED.\"name\"";
       } else {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
       }
@@ -85,7 +107,9 @@ function convertSQL(raw: string): string {
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+hours?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 hours'");
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");
 
-  // Convert SQLite ? to Postgres $1, $2... handled in toPostgresParams, but let's keep it consistent
+  // Quote camelCase identifiers to preserve case in PostgreSQL
+  sql = quoteIdentifiersIfNeeded(sql);
+
   return sql;
 }
 
