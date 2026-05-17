@@ -136,7 +136,7 @@ router.put("/:id", requireAuth, async (req, res) => {
           windDir = CASE WHEN @windDir IS NOT NULL AND @windDir::text != '' THEN @windDir ELSE windDir END,
           windSpeed = CASE WHEN @windSpeed IS NOT NULL AND @windSpeed::text != '' THEN @windSpeed ELSE windSpeed END,
           status = @status, hazardLevel = @hazardLevel, lat = @lat, lon = @lon, description = @description, launch = @launch,
-          landing = @landing, hazards = @hazards, rules = @rules, image = @image,
+          landing = @landing, hazards = @hazards, rules = @rules, image = CASE WHEN @image IS NOT NULL THEN @image ELSE image END,
           useLiveWeather = @useLiveWeather, liveStationId = @liveStationId, liveStationIdAlt = @liveStationIdAlt,
           siteguideUrl = CASE WHEN @siteguideUrl IS NOT NULL AND @siteguideUrl::text != '' THEN @siteguideUrl ELSE siteguideUrl END,
           siteContact = CASE WHEN @siteContact IS NOT NULL AND @siteContact::text != '' THEN @siteContact ELSE siteContact END,
