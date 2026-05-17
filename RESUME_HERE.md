@@ -1,4 +1,4 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 2 Complete → Phase 3 Testing)
+# Resume Here — SkyHigh Railway Deployment (Phase 2 ✅ Complete — Ready for Phase 3+)
 
 **Last Updated:** 2026-05-17 (Later in day)  
 **Branch:** main  
@@ -95,16 +95,27 @@
 - `run-migrations.js` — PostgreSQL schema migration runner (in repo root)
 - Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — 6-phase Railway deployment
 
-## Temporary Railway URL
+## Live Deployment — Railway Production
 - **App URL:** https://skyhigh-production.up.railway.app
-- **Test credentials:** admin@skyhigh.org.au / BIG.brass.balls (once column issue is fixed)
+- **Admin Login (Verified Working):**
+  - Email: `test@skyhigh.org.au`
+  - Password: `Test123456`
+  - Access: https://skyhigh-production.up.railway.app/admin
+- **App Status:** ✅ Fully Operational
+  - Homepage renders correctly
+  - Sites page loads with wind map
+  - API endpoints responding
+  - Authentication system working
 
 ---
 
 **Current Git Status:** All changes committed ✅
-**Last Commits:**
-- `666d6b3` — Critical fix: Add missing SQL keywords to keyword filter (INTO, etc)
-- `45ab03c` — Fix: Improved identifier quoting to avoid SQL keywords
+**Latest Commits:**
+- `358316b` — Remove temporary setup endpoint - fully operational
+- `1e018d9` — Add temporary setup endpoint for manual admin account creation
+- `4ab3ae1` — Add error handling and logging to default admin creation
+- `4cbd51c` — Fix INSERT OR IGNORE conversion for PostgreSQL - add conflict columns
+- `6dbf7fa` — Improve SQL identifier quoting for WHERE clauses with comparison operators
 
 ---
 
