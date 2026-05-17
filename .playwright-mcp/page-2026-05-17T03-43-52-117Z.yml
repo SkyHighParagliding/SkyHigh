@@ -1,0 +1,49 @@
+- generic [ref=e2]:
+  - main [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img "Paragliding background" [ref=e8]
+          - img "Paragliding background" [ref=e9]
+        - generic [ref=e11]:
+          - heading "Welcome to SkyHigh !" [level=1] [ref=e12]
+          - paragraph [ref=e13]: SkyHigh is one of Australia's largest and most active free flight paragliding clubs.
+          - generic [ref=e14]:
+            - link "New Pilots" [ref=e15] [cursor=pointer]:
+              - /url: /page/new-pilots
+              - button "New Pilots" [ref=e16]
+            - link "Explore Sites" [ref=e17] [cursor=pointer]:
+              - /url: /sites
+              - button "Explore Sites" [ref=e18]
+          - button "Smart Search" [ref=e20]:
+            - img [ref=e21]
+            - generic [ref=e23]: Smart Search
+        - generic [ref=e25]:
+          - link "Your Committee" [ref=e26] [cursor=pointer]:
+            - /url: /page/about#committee-members
+            - generic [ref=e27]:
+              - img [ref=e30]
+              - heading "Your Committee" [level=3] [ref=e34]
+          - link "Flying Sites Detailed information on all our coastal and inland flying sites, including weather requirements and hazards." [ref=e39] [cursor=pointer]:
+            - /url: /sites
+            - generic [ref=e40]:
+              - img [ref=e43]
+              - heading "Flying Sites" [level=3] [ref=e46]
+              - generic [ref=e47]: Detailed information on all our coastal and inland flying sites, including weather requirements and hazards.
+          - link "Safety & Rules Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely." [ref=e48] [cursor=pointer]:
+            - /url: /safety
+            - generic [ref=e49]:
+              - img [ref=e52]
+              - heading "Safety & Rules" [level=3] [ref=e54]
+              - generic [ref=e55]: Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely.
+      - generic [ref=e59]:
+        - heading "Current Conditions" [level=2] [ref=e60]
+        - paragraph [ref=e61]:
+          - text: Live weather at popular flying sites.
+          - text: Always check conditions yourself before flying.
+        - generic [ref=e62]:
+          - generic [ref=e65]: Good
+          - generic [ref=e68]: Light
+          - generic [ref=e71]: Cross
+          - generic [ref=e74]: Blown Out
+  - region "Notifications alt+T"
