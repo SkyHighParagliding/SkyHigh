@@ -8,7 +8,7 @@
 
 ## Where We Left Off
 
-**STATUS:** Phase 0 (Account Setup) — 3 of 4 tasks complete. Ready to continue with final Gemini API key setup.
+**STATUS:** Phase 0 (Account Setup) — ✅ COMPLETE (4 of 4 tasks). All credentials secured and backed up. Ready for Phase 4 (Production Deployment Prep).
 
 **PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
@@ -18,7 +18,7 @@
   - Transfer approval came via email notification (not in-app)
   - Updated local git remote: `git remote set-url origin https://github.com/SkyHighParagliding/SkyHigh.git`
 
-**THIS SESSION COMPLETED:**
+**PRIOR SESSIONS COMPLETED:**
 - ✅ **ACCT-002: COMPLETE** — Railway project + GitHub + PostgreSQL
   - Created Railway project (SkyHighParagliding org, using trial account)
   - Linked GitHub repo (SkyHighParagliding/SkyHigh) with auto-deploy enabled
@@ -38,6 +38,15 @@
     - Secret Access Key: 45962e8cd096be971e486c0535e4ffa4561269c7b0d1bae6d6c9d3d5927f8870
     - S3 Endpoint: https://df6d4fa90052941cf3355b5ad719f776.r2.cloudflarestorage.com
     - Public URL: https://pub-[random]-cr2.dev (rate-limited, dev use)
+
+**THIS SESSION COMPLETED:**
+- ✅ **ACCT-004: COMPLETE** — Gemini API key from Google Workspace
+  - Accessed Google AI Studio (aistudio.google.com) with club email
+  - Created API key: `SkyHigh-production`
+  - Key: `AlzaSyDQE1mT490PZiysyMuTGtX6WtCxGgnLFGA`
+  - Project: `78451113777`
+  - All Phase 0 credentials (GitHub, Railway, R2, Gemini) backed up to Google Drive (SkyHigh Committee folder)
+  - Status: Ready for Railway environment variable injection
 
 **LESSONS LEARNED:**
 - GitHub Free plan only allows public repos in organizations
@@ -62,7 +71,7 @@
 | **ACCT-001** | Create GitHub account + transfer SkyHigh repo | 30 min | ✅ DONE |
 | **ACCT-002** | Create Railway project linked to club GitHub | 15 min | ✅ DONE |
 | **ACCT-003** | Create Cloudflare R2 account + bucket + tokens | 30 min | ✅ DONE |
-| **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ⬜ TODO |
+| **ACCT-004** | Obtain Gemini API key from Google Workspace | 20 min | ✅ DONE |
 
 **What happens after Phase 0:**
 1. All credentials stored in club password manager (web@skyhighparagliding.org.au)
