@@ -60,7 +60,11 @@ export function AdminBranding() {
 
   async function handleLogoUpload(variant: "light" | "dark", e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.warn(`[AdminBranding] Logo upload cancelled - no file selected for ${variant}`);
+      return;
+    }
+    console.log(`[AdminBranding] Logo upload started for ${variant}:`, file.name, file.size);
     const setUploading = variant === "light" ? setUploadingLight : setUploadingDark;
     setUploading(true);
     setUploadError("");
@@ -246,7 +250,10 @@ export function AdminBranding() {
                       className="hidden"
                     />
                     <Button
-                      onClick={() => fileLightRef.current?.click()}
+                      onClick={() => {
+                        console.log('[AdminBranding] Light logo button clicked, ref exists:', !!fileLightRef.current);
+                        fileLightRef.current?.click();
+                      }}
                       variant="outline"
                       size="sm"
                       disabled={uploadingLight}
@@ -291,7 +298,10 @@ export function AdminBranding() {
                       className="hidden"
                     />
                     <Button
-                      onClick={() => fileDarkRef.current?.click()}
+                      onClick={() => {
+                        console.log('[AdminBranding] Dark logo button clicked, ref exists:', !!fileDarkRef.current);
+                        fileDarkRef.current?.click();
+                      }}
                       variant="outline"
                       size="sm"
                       disabled={uploadingDark}
@@ -346,7 +356,10 @@ export function AdminBranding() {
                       className="hidden"
                     />
                     <Button
-                      onClick={() => filePwaRef.current?.click()}
+                      onClick={() => {
+                        console.log('[AdminBranding] PWA icon button clicked, ref exists:', !!filePwaRef.current);
+                        filePwaRef.current?.click();
+                      }}
                       variant="outline"
                       size="sm"
                       disabled={uploadingPwa}
