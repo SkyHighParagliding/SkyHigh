@@ -56,21 +56,24 @@ function toPostgresParams(sql: string, params: any[]): { sql: string; values: an
 }
 
 function quoteIdentifiersIfNeeded(sql: string): string {
-  // Quote identifiers that contain uppercase letters to preserve camelCase in PostgreSQL.
-  // PostgreSQL downcases unquoted identifiers, so we must quote camelCase names.
-  // This regex matches unquoted identifiers (word characters) that have uppercase.
+  // Quote camelCase column names to preserve case in PostgreSQL.
+  // Only quote in specific column contexts (after SELECT, WHERE, SET, etc.)
+  // to avoid quoting SQL keywords.
 
-  // Pattern: match unquoted identifiers (alphanumeric + underscore) that contain uppercase
-  // Avoid matching already-quoted identifiers and SQL keywords/functions
-  return sql.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b(?=(?:[^"]*"[^"]*")*[^"]*$)/g, (match) => {
-    // Skip if already quoted or is a reserved keyword
-    if (match.match(/^(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|EXTRACT|CAST)$/i)) {
-      return match;
-    }
+  const keywords = /^(SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|IF|CAST|USING)$/i;
 
-    // Quote if contains uppercase (likely camelCase)
-    if (/[A-Z]/.test(match)) {
-      return `"${match}"`;
+  // Quote camelCase identifiers only in column contexts
+  // Pattern: space/comma/paren + identifier + space/comma/operator/paren
+  return sql.replace(/([,\s(])([a-zA-Z_][a-zA-Z0-9_]*)([,\s)=]|$)/g, (match, before, identifier, after) => {
+    // Skip if already quoted
+    if (identifier.startsWith('"')) return match;
+
+    // Skip SQL keywords
+    if (keywords.test(identifier)) return match;
+
+    // Quote if contains uppercase (camelCase)
+    if (/[A-Z]/.test(identifier)) {
+      return `${before}"${identifier}"${after}`;
     }
 
     return match;
