@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 0: Account Setup)
+# Resume Here — SkyHigh Railway Deployment (Phase 2 In Progress)
 
-**Last Updated:** 2026-05-15 (Evening)  
+**Last Updated:** 2026-05-17 (Afternoon)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -8,7 +8,10 @@
 
 ## Where We Left Off
 
-**STATUS:** Phase 0 (Account Setup) — ✅ COMPLETE (4 of 4 tasks). All credentials secured and backed up. Ready for Phase 4 (Production Deployment Prep).
+**STATUS:** Phase 2 (Configure Environment Variables) — ✅ MOSTLY COMPLETE
+- ✅ All 21 environment variables injected into Railway
+- ✅ PostgreSQL database schema fully migrated (11 migrations applied)
+- ⏸️  **BLOCKER:** Column case-sensitivity issue preventing app startup (see below)
 
 **PRIOR SESSION COMPLETED:**
 - ✅ **ACCT-001: COMPLETE** — GitHub account + repo transfer
@@ -79,57 +82,28 @@
 3. Proceed to Phase 4 (Production Deployment Prep)
 4. Then execute original 6-phase Railway deployment plan
 
-**Important:** Each account must be registered under **web@skyhighparagliding.org.au** (club email).
-See wiki/07-credential-recovery.md for detailed access procedures and recovery checklist.
-
----
-
 ## Key Files for Reference
-- `wiki/02-tasks.md` — Master task list (Phase 0 added)
-- `wiki/06-deployment.md` — Deployment & accounts (updated with club accounts)
-- `wiki/07-credential-recovery.md` — Credential recovery procedures + rotation schedule (NEW)
-- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — 6-phase Railway deployment (unchanged)
+- `wiki/02-tasks.md` — Master task list
+- `wiki/06-deployment.md` — Deployment & accounts
+- `wiki/07-credential-recovery.md` — Credential recovery procedures
+- `run-migrations.js` — PostgreSQL schema migration runner (in repo root)
+- Plan file: `C:\Users\User\.claude\plans\groovy-watching-hanrahan.md` — 6-phase Railway deployment
 
----
-
-## When You Return
-
-**I will:**
-1. Review Phase 0 task status
-2. Help you execute each account creation task step-by-step
-3. Guide you through obtaining the Gemini API key from Google Workspace
-4. Confirm all credentials are stored in password manager + Google Drive backup
-5. Clear Phase 0 to proceed with Phase 4 (Railway deployment)
-
-**You decide:**
-- Do you want to execute all 4 Phase 0 tasks together in one session?
-- Or tackle them one per session?
+## Temporary Railway URL
+- **App URL:** https://skyhigh-production.up.railway.app
+- **Test credentials:** admin@skyhigh.org.au / BIG.brass.balls (once column issue is fixed)
 
 ---
 
 **Current Git Status:** All changes committed ✅
-**Last Commit:** `[ACCT-003] Cloudflare R2 setup complete`
+**Last Commit:** `[PHASE-2] Environment variables configured + PostgreSQL schema migrated`
 
 ---
 
-## Quick Recap for Next Session
+## Estimated Effort to Unblock
 
-**What we accomplished today:**
-1. Created Railway project linked to SkyHighParagliding GitHub org
-2. Connected SkyHigh repo with auto-deploy to main branch
-3. Set up PostgreSQL database (online, production-ready)
-4. Created Cloudflare R2 bucket (skyhigh-media)
-5. Generated API credentials for R2 (stored securely)
+- **Option A (rename columns):** ~30 minutes + redeploy
+- **Option B (fix SQL converter):** ~1-2 hours + test thoroughly
+- **Option C (quote all queries):** ~3-4 hours across codebase
 
-**What's left (ACCT-004):**
-- Obtain Gemini API key from Google Workspace
-- This is the final Phase 0 task
-- Should take ~20 minutes
-- Once done, store all credentials in password manager (web@skyhighparagliding.org.au)
-- Then proceed to Phase 4 (production deployment prep)
-
-**Important credentials to save:**
-- Railway: Database URL (auto-injected by Railway) ✅
-- Cloudflare R2: All creds listed above ✅
-- Gemini: (pending ACCT-004)
-- TidyHQ: (pending later integration)
+**Recommendation:** Start with Option A for speed, then assess if Option B is worth refactoring.
