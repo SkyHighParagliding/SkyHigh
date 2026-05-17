@@ -18,6 +18,8 @@ if (usePostgres) {
   log.info("DATABASE_URL detected — loading PostgreSQL adapter");
   const { default: pgDb } = await import("./pgDb.js");
   db = pgDb;
+  // Run PostgreSQL migrations on startup
+  await runPostgresMigrations();
 } else {
   log.info("No DATABASE_URL — loading SQLite adapter");
   const { default: sqliteDb } = await import("./sqliteDb.js");
@@ -62,6 +64,82 @@ function convertSchemaToSqlite(sql: string): string {
   // SQLite doesn't support IF NOT EXISTS on ALTER TABLE ADD COLUMN, so wrap in error handling
   result = result.replace(/ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+IF NOT EXISTS/gi, "ALTER TABLE $1 ADD COLUMN");
   return result;
+}
+
+// ─── PostgreSQL migration runner (runs on startup in production) ─────────────
+
+async function runPostgresMigrations() {
+  try {
+    const { Pool } = await import("pg");
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL?.includes("localhost") ? false : { rejectUnauthorized: false },
+    });
+
+    const client = await pool.connect();
+    try {
+      log.info("Running PostgreSQL migrations...");
+
+      // Create schema_migrations table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          version INTEGER PRIMARY KEY,
+          description TEXT NOT NULL,
+          applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Get applied versions
+      const result = await client.query("SELECT version FROM schema_migrations");
+      const applied = new Set(result.rows.map((r: any) => r.version));
+
+      const migrationsDir = getMigrationsDir();
+      if (!fs.existsSync(migrationsDir)) {
+        log.warn(`Migrations directory not found: ${migrationsDir}`);
+        return;
+      }
+
+      const files = fs
+        .readdirSync(migrationsDir)
+        .filter((f) => f.endsWith(".sql"))
+        .sort();
+
+      for (const file of files) {
+        const version = parseMigrationVersion(file);
+        if (version === null) continue;
+        if (applied.has(version)) continue;
+
+        const description = file
+          .replace(/^\d{3}_/, "")
+          .replace(/\.sql$/, "")
+          .replace(/_/g, " ");
+
+        const filePath = path.join(migrationsDir, file);
+        const sql = fs.readFileSync(filePath, "utf-8");
+
+        try {
+          log.info(`Running PostgreSQL migration v${version}: ${description}`);
+          await client.query(sql);
+          await client.query(
+            "INSERT INTO schema_migrations (version, description) VALUES ($1, $2)",
+            [version, description]
+          );
+          log.info(`PostgreSQL migration v${version} completed`);
+        } catch (err: any) {
+          log.error(`PostgreSQL migration v${version} failed: ${err.message}`);
+          throw err;
+        }
+      }
+
+      log.info("All PostgreSQL migrations completed successfully");
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  } catch (err: any) {
+    log.error("Failed to run PostgreSQL migrations:", err.message);
+    throw err;
+  }
 }
 
 async function runSQLiteMigrations(database: any) {
