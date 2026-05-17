@@ -284,7 +284,11 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
       }
     }
 
-    fetch("http://localhost:3001/api/weather/scrape-now", { method: "POST" }).catch(() => {});
+    // Trigger weather scrape after import (use APP_URL in production, localhost in dev)
+    const scrapeUrl = process.env.APP_URL
+      ? `${process.env.APP_URL}/api/weather/scrape-now`
+      : "http://localhost:3001/api/weather/scrape-now";
+    fetch(scrapeUrl, { method: "POST" }).catch(() => {});
 
     finalizeBulkImport();
   } catch (err: any) {
