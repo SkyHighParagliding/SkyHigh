@@ -57,14 +57,16 @@ function toPostgresParams(sql: string, params: any[]): { sql: string; values: an
 
 function quoteIdentifiersIfNeeded(sql: string): string {
   // Quote camelCase column names to preserve case in PostgreSQL.
-  // Only quote in specific column contexts (after SELECT, WHERE, SET, etc.)
-  // to avoid quoting SQL keywords.
+  // This handles identifiers in SELECT, WHERE, SET, JOIN ON, etc.
 
-  const keywords = /^(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|CAST|USING|WITH|OVER|PARTITION|WITH|RECURSIVE)$/i;
+  const keywords = /^(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|USING|WITH|OVER|PARTITION|RECURSIVE|SUM|COUNT|AVG|MAX|MIN|COALESCE|SUBSTRING|POSITION|TRIM|UPPER|LOWER|LENGTH)$/i;
 
-  // Quote camelCase identifiers only in column contexts
-  // Pattern: space/comma/paren + identifier + space/comma/operator/paren
-  return sql.replace(/([,\s(])([a-zA-Z_][a-zA-Z0-9_]*)([,\s)=]|$)/g, (match, before, identifier, after) => {
+  // Match identifiers in broader contexts: after operators (=, !=, <, >, etc.), commas, parens, spaces
+  // Use lookahead to match what comes after without consuming it (so we can keep it)
+  let result = sql;
+
+  // First pass: identifiers after operators and punctuation
+  result = result.replace(/([=!<>]+|,|\(|\s)([a-zA-Z_][a-zA-Z0-9_]*)(?=[=!<>.,)\s]|$)/g, (match, before, identifier) => {
     // Skip if already quoted
     if (identifier.startsWith('"')) return match;
 
@@ -73,11 +75,13 @@ function quoteIdentifiersIfNeeded(sql: string): string {
 
     // Quote if contains uppercase (camelCase)
     if (/[A-Z]/.test(identifier)) {
-      return `${before}"${identifier}"${after}`;
+      return `${before}"${identifier}"`;
     }
 
     return match;
   });
+
+  return result;
 }
 
 function convertSQL(raw: string): string {
