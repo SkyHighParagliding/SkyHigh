@@ -1,6 +1,6 @@
-# Resume Here — SkyHigh Railway Deployment (Phase 3 ✅ Complete — Admin Login Working)
+# Resume Here — SkyHigh Railway Deployment (Phase 3 ⏳ Debugging — Redirect Loop Issue)
 
-**Last Updated:** 2026-05-17 (Later in evening)  
+**Last Updated:** 2026-05-17 (Afternoon/evening — Fix deployed)  
 **Branch:** main  
 **Working Tree Status:** Clean ✅
 
@@ -119,9 +119,36 @@
 
 ---
 
+## Critical Issue Fixed (Redirect Loop)
+
+**REDIRECT LOOP ROOT CAUSE IDENTIFIED & FIXED:**
+- **Problem:** After login, users were immediately redirected back to login (redirect loop)
+- **Root cause:** Database column naming mismatch in `extended_wind_grids` table
+  - Migration 011 created columns as unquoted: `computedAt` (PostgreSQL stores as `computedat`)
+  - Queries tried to reference quoted `"computedAt"` which didn't exist in DB
+  - Settings endpoint query failed: `SELECT MAX(computedAt) as ts FROM extended_wind_grids`
+  - Error: `column "computedAt" does not exist`
+  - This error crashed the server immediately after login, invalidating the session
+  
+- **Fix Applied:**
+  1. ✅ Updated migration 011 to create columns as properly quoted: `"computedAt"`, `"windData"`
+  2. ✅ Created migration 012 to rename existing lowercase columns in production DB
+  3. ✅ Added PostgreSQL migration runner to app startup (auto-runs on Railway deploy)
+  
+- **What happens next:**
+  1. Railway auto-deploys the new code
+  2. App starts and runs migration 012 automatically
+  3. Database columns are renamed from `computedat`→`"computedAt"`, `winddata`→`"windData"`
+  4. Settings query will succeed
+  5. Redirect loop is fixed
+  
+**Latest commits:**
+- `50a782b` — Auto-run PostgreSQL migrations on app startup
+- `7fcfe69` — Fix extended_wind_grids column naming (migration 011 & 012)
+
 ## Next Steps (Phase 3: Testing → Phase 4+)
 
-**PHASE 3 — ✅ COMPLETE (Verification on temporary Railway URL)**
+**PHASE 3 — ⏳ IN PROGRESS (Testing after redirect loop fix)**
 ✅ Homepage loads correctly without breaking errors
 ✅ API endpoints responding with valid data
 ✅ PostgreSQL identifier quoting working (no more syntax errors)
