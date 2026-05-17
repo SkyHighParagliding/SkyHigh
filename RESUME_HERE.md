@@ -140,7 +140,20 @@
      - /api/settings endpoint returns valid data
      - No database errors
   
+**R2 Upload Issue Fixed:**
+- Problem: R2_PUBLIC_URL was missing from Railway environment variables
+  - Initial attempt used private endpoint: `https://df6d4fa90052941cf3355b5ad719f776.r2.cloudflarestorage.com`
+  - Files uploaded but weren't publicly accessible (ERR_BLOCKED_BY_ORB errors)
+- Solution: Updated R2_PUBLIC_URL to public development endpoint
+  - Changed to: `https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev`
+  - Redeployed app via git push
+- Result: ✅ Logo uploads now work successfully
+  - Light logo ✓
+  - Dark logo ✓
+  - Home screen icon ✓
+
 **Latest commits:**
+- `1429a73` — Redeploy: Trigger app restart with updated R2_PUBLIC_URL
 - `0c7b55f` — Document redirect loop fix in RESUME_HERE.md
 - `50a782b` — Auto-run PostgreSQL migrations on app startup
 - `7fcfe69` — Fix extended_wind_grids column naming (migration 011 & 012)
