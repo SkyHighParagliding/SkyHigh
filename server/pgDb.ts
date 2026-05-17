@@ -66,7 +66,7 @@ function quoteIdentifiersIfNeeded(sql: string): string {
   let result = sql;
 
   // First pass: identifiers after operators, punctuation, and periods (for qualified names like table.column)
-  result = result.replace(/([=!<>]+|,|\(|\.|\\s)([a-zA-Z_][a-zA-Z0-9_]*)(?=[=!<>.,)\s]|$)/g, (match, before, identifier) => {
+  result = result.replace(/([=!<>]+|,|\(|\.|\s)([a-zA-Z_][a-zA-Z0-9_]*)(?=[=!<>.,)\s]|$)/g, (match, before, identifier) => {
     // Skip if already quoted
     if (identifier.startsWith('"')) return match;
 
