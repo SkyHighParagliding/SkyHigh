@@ -594,14 +594,20 @@ export function Home() {
                 </Link>
               </div>
               <div className="lg:w-1/2 relative">
-                <div className="aspect-video rounded-3xl overflow-hidden" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
-                  <img 
-                    src={featuredSite.image || undefined} 
-                    alt={featuredSite.name} 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                  />
+                <div className="aspect-video rounded-3xl overflow-hidden bg-gradient-to-br from-slate-300 to-slate-400" style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
+                  {featuredSite.image && featuredSite.image.trim() ? (
+                    <img
+                      src={featuredSite.image}
+                      alt={featuredSite.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 font-medium">
+                      No image
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -636,14 +642,20 @@ export function Home() {
                 </Link>
               </div>
               <div className="lg:w-1/2 relative">
-                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10">
-                  <img 
-                    src={featuredSite.image || undefined} 
-                    alt={featuredSite.name} 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                  />
+                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-gradient-to-br from-slate-300 to-slate-400">
+                  {featuredSite.image && featuredSite.image.trim() ? (
+                    <img
+                      src={featuredSite.image}
+                      alt={featuredSite.name}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 font-medium">
+                      No image
+                    </div>
+                  )}
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-sky p-6 rounded-2xl shadow-xl hidden md:block">
                   <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Site Type</p>
