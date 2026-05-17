@@ -8,22 +8,40 @@
 
 ## Where We Left Off
 
-**STATUS:** Site Banner Population — R2 Domain Issue Resolved ✅
+**STATUS:** Site Banner Population — FULLY RESOLVED ✅
 
-**CRITICAL ISSUE DISCOVERED & FIXED:**
-- **Problem:** Image library URLs returned 404 errors when accessed
-  - User discovered: `https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev/...` returned "Object not found"
-  - Root cause: Seed file contained outdated R2 custom domain (pub-d31362da23d54f83bb50efb9194c6b87)
-  - The correct domain was updated in Railway in prior session (pub-971a295c84fe4582b888c39e86cdbd8c)
-  - But seed_settings.json and database still contained old broken domain
-  
-- **Fix Applied:**
-  1. ✅ Updated seed_settings.json to use correct R2 domain
-  2. ✅ Created migration 015_fix_image_library_r2_domain.sql
-  3. ✅ Committed changes to repo
-  4. Pending: Deploy to production (git push to Railway)
-  
-- **Next Step:** Once deployed, run populate-site-banners.ts script again to populate all 74 sites with working image URLs
+**ACTUAL ROOT CAUSE (corrected from earlier hypothesis):**
+
+There are **TWO separate Cloudflare R2 buckets**, owned by different accounts:
+1. **OLD bucket** (`pub-d31362da23d54f83bb50efb9194c6b87.r2.dev`)
+   - Inherited from previous Replit deployment
+   - **STILL WORKS** — contains all original library images (hero, banners, sliders)
+2. **NEW bucket** (`pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev`)
+   - Created for Railway in ACCT-003
+   - Currently set as `R2_PUBLIC_URL` in Railway env vars
+   - Only contains files uploaded via the new app (logos uploaded recently)
+
+**The Mistake:** I initially assumed the OLD domain in the imageLibrary was outdated.
+WRONG — verified via direct WebFetch testing that OLD bucket returns 200 with image
+content, and NEW bucket returns 404 for those same paths.
+
+**Fix Applied (migrations 017, 019):**
+1. ✅ Migration 017: Reverted imageLibrary URLs back to OLD (working) bucket
+2. ✅ Migration 018: Properly filtered non-empty banner URLs (fixed SQL bug in 014)
+3. ✅ Migration 019: Per-row randomization using ROW_NUMBER() — assigns unique
+   random banner to each of 74 sites (11 unique images, distributed 6-8x each)
+4. ✅ All 74 production sites now have working banner URLs from OLD bucket
+
+**Verified:**
+- All 74 sites have non-empty image field
+- 11 unique banner images distributed across sites by type (coastal/inland)
+- Individual banner URL tested: returns 290KB JPEG ✓
+
+**Outstanding Concern (NOT BLOCKING):**
+- NEW uploads (logos, AI-generated images, user uploads) go to NEW bucket
+- Existing library still references OLD bucket
+- Long-term: Should migrate OLD bucket → NEW bucket for single source of truth
+- Risk: OLD bucket is on a previous Cloudflare account that could be terminated
 
 **STATUS:** Phase 2 (Configure Environment Variables) — ✅ COMPLETE
 - ✅ All 21 environment variables injected into Railway
