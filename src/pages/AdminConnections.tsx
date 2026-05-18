@@ -515,7 +515,7 @@ export function AdminConnections() {
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
                           <h4 className="font-semibold text-navy text-sm">Connection Requirements</h4>
                           <p className="text-xs text-muted-foreground">
-                            Two environment secrets must be configured in the Replit Secrets panel for TidyHQ to work.
+                            Two environment variables must be configured in Railway for TidyHQ to work.
                           </p>
                           <div className="space-y-2">
                             <div className="flex items-center gap-3 text-sm">
@@ -561,14 +561,14 @@ export function AdminConnections() {
                           </p>
                           <div className="flex items-center gap-2">
                             <code className="text-xs bg-muted px-2 py-1 rounded font-mono truncate flex-1">
-                              https://sky-high-website.replit.app/api/tidyhq/webhook
+                              https://skyhigh-production.up.railway.app/api/tidyhq/webhook
                             </code>
                             <Button
                               size="sm"
                               variant="outline"
                               className="gap-1.5 shrink-0"
                               onClick={() => {
-                                navigator.clipboard.writeText("https://sky-high-website.replit.app/api/tidyhq/webhook");
+                                navigator.clipboard.writeText("https://skyhigh-production.up.railway.app/api/tidyhq/webhook");
                               }}
                             >
                               <Copy className="w-3.5 h-3.5" /> Copy
@@ -583,10 +583,10 @@ export function AdminConnections() {
                           <ol className="mt-2 space-y-1.5 list-decimal list-inside text-foreground-label">
                             <li>Log into your <a href="https://www.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-sky hover:underline">TidyHQ admin portal</a></li>
                             <li>Go to <strong>Settings → Developers → API Access Tokens</strong> and create a new token</li>
-                            <li>Copy the token and add it as <strong>TIDYHQ_ACCESS_TOKEN</strong> in Replit Secrets</li>
+                            <li>Copy the token and add it as <strong>TIDYHQ_ACCESS_TOKEN</strong> in Railway environment variables</li>
                             <li>Go to <strong>Settings → Developers → Webhooks</strong> and create a new webhook</li>
                             <li>Set the webhook URL to the URL shown above and subscribe to <strong>contact.group.added</strong> and <strong>contact.group.removed</strong> events</li>
-                            <li>Copy the webhook signing key and add it as <strong>TIDYHQ_WEBHOOK_SIGNING_KEY</strong> in Replit Secrets</li>
+                            <li>Copy the webhook signing key and add it as <strong>TIDYHQ_WEBHOOK_SIGNING_KEY</strong> in Railway environment variables</li>
                             <li>Click <strong>Test Connection</strong> above to verify the API token works</li>
                             <li>Use the <strong>TidyHQ Group Sync</strong> card below to set up group → role mappings</li>
                           </ol>

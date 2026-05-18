@@ -275,10 +275,7 @@ async function sendPasswordResetEmail(contact: { id: string; name: string; surna
     "INSERT INTO password_reset_tokens (id, contactId, token, expiresAt, accountType) VALUES (?, ?, ?, ?, ?)"
   ).run(id, contact.id, token, expiresAt, accountType);
 
-  const baseUrl = process.env.APP_URL
-    || (process.env.REPLIT_DEPLOYMENT_URL ? `https://${process.env.REPLIT_DEPLOYMENT_URL}` : null)
-    || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null)
-    || "http://localhost:5173";
+  const baseUrl = process.env.APP_URL || "http://localhost:5173";
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
   const displayName = [contact.name, contact.surname].filter(Boolean).join(" ");
 

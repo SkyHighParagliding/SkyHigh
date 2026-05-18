@@ -9,7 +9,6 @@ export default defineConfig(({mode}) => {
   
   // Environment Flags
   const isDev = mode === 'development';
-  const isReplit = !!process.env.REPLIT_DOMAINS;
   const isGoogle = !!process.env.K_SERVICE || !!process.env.GOOGLE_CLOUD_PROJECT;
 
   return {
@@ -55,28 +54,17 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // Hot Module Replacement configuration
-      hmr: isReplit ? {
-        protocol: 'wss',
-        clientPort: 443,
-        host: process.env.REPLIT_DOMAINS?.split(',')[0],
-        overlay: false,
-        timeout: 30000,
-      } : isDev,
+      hmr: isDev,
 
       host: true,
       allowedHosts: true,
-      
-      // Security headers
+
       headers: {
         'X-Frame-Options': 'SAMEORIGIN',
-        'Content-Security-Policy': isReplit 
-          ? "frame-ancestors 'self' https://*.replit.dev https://*.replit.app"
-          : "frame-ancestors 'self'",
+        'Content-Security-Policy': "frame-ancestors 'self'",
       },
 
-      // Port selection based on environment
-      port: isReplit ? 5000 : (isGoogle ? 8080 : 5173),
+      port: isGoogle ? 8080 : 5173,
       strictPort: true,
 
       watch: {

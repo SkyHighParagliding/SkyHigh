@@ -24,7 +24,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Cloudflare R2 for all media in production, local `/uploads/` in dev — see DECISION-002
 - Gemini (not OpenAI) for all AI: site guide scraping, image enhancement, AI moderation — see DECISION-005
 - Wind map renders via Canvas + D3 (not SVG or WebGL) — see DECISION-004
-- Migrating from Replit to Railway with PostgreSQL — see DECISION-006
+- Deployed on Railway with PostgreSQL — see DECISION-006
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**

@@ -55,7 +55,7 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 - DECISION-003: ECMWF grid caching (continental pre-cache, daily fetch, 7-day rolling DB storage)
 - DECISION-004: Canvas + D3 wind map rendering
 - DECISION-005: Gemini for all AI features
-- DECISION-006: Replit hosting
+- DECISION-006: Railway hosting
 - DECISION-007: Cache pagination bypass (skip cache if custom limit/offset)
 
 ### [04-glossary.md](04-glossary.md)
@@ -93,7 +93,7 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 **External integrations and webhooks:**
 - **TidyHQ Setup:** Access tokens, webhooks, contact/group/shop product sync
 - **Webhook configuration:** Event-driven role sync when TidyHQ group membership changes
-- **Secrets management:** How to store tokens securely in Replit
+- **Secrets management:** How to store tokens securely in Railway
 
 ---
 

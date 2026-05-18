@@ -18,7 +18,7 @@ type: wiki
 HTTP server entry point. Creates Express app, configures middleware (auth, CSRF, error handler), mounts routers, and starts listening on port 3001. **Read this first if debugging routes or middleware order.**
 
 ### `esbuild.server.mjs`
-Production bundler config. Bundles `server.ts` and all dependencies into `dist/server.js` for Replit deployment. Modified for platform-specific builds if needed.
+Production bundler config. Bundles `server.ts` and all dependencies into `dist/server.js` for Railway deployment. Modified for platform-specific builds if needed.
 
 ### `vite.config.ts`
 Frontend build config. Configures Vite (dev server at 5173, build output, Tailwind integration). Frontend dev server auto-restarts on file changes.

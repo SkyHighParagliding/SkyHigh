@@ -52,7 +52,7 @@ type: wiki
 | 003 | Weather grid caching | Continental pre-fetch, daily cycle, 7-day rolling DB storage | Balanced cost vs. freshness; avoids real-time API calls on every wind map load |
 | 004 | Wind map rendering | Canvas + D3 zoom math (no SVG or WebGL) | Fast for thousands of vectors, minimal dependencies, smooth interaction |
 | 005 | AI features | Google Gemini (multi-modal, chain-able) | Generous free tier, can handle images + text, fallback model support |
-| 006 | Hosting | Replit | Low ops overhead, committee can manage, GitHub auto-deploy on push |
+| 006 | Hosting | Railway | Low ops overhead, committee can manage, GitHub auto-deploy on push |
 | 007 | Cache invalidation | Bypass cache if `?limit` or `?offset` parameters present | Prevent stale paginated results on custom pagination requests |
 
 ---
@@ -194,7 +194,7 @@ Single codebase supports both SQLite and PostgreSQL through abstraction. `server
 ECMWF continental wind grids (Victoria 0.35°, Wide 2.0°) are fetched once per day and cached in database as 7-day rolling storage. Wind map requests interpolate from cached data instead of calling API in real-time. Balances freshness (daily updates) vs. cost (1 API call/day instead of 1000+).
 
 ### Server-Sent Events (SSE) for Retrieval
-Real-time chat during pilot retrieval operations uses HTTP long-polling via SSE. No WebSocket dependency; works through Replit's proxy. Clients maintain connection; server pushes location updates, status changes, and messages.
+Real-time chat during pilot retrieval operations uses HTTP long-polling via SSE. No WebSocket dependency; works through Railway's proxy. Clients maintain connection; server pushes location updates, status changes, and messages.
 
 ### Service Layer with Demo Mode
 `server/services/real/` and `server/services/demo/` allow swapping implementations without code changes. When `DEV_BYPASS_AUTH` is set, Gemini, TidyHQ, and storage services return stubbed data for testing without API calls.
@@ -211,8 +211,8 @@ Wind vectors rendered to `<canvas>` with D3 handling zoom/pan math. Faster than 
 3. **No migrations:** SQLite schema created automatically by `db.ts` on startup if not exists
 4. **Demo Mode:** Set `DEV_BYPASS_AUTH=true` to stub Gemini, TidyHQ, and storage; no API keys needed
 5. **Production Build:** `npm run build` bundles server with esbuild and frontend with Vite
-6. **Deploy:** Push to GitHub; Replit auto-deploys and restarts server
+6. **Deploy:** Push to GitHub; Railway auto-deploys and restarts server
 
 ---
 
-Last updated: 2026-05-13 (Railway deployment, Replit decommissioned)
+Last updated: 2026-05-18 (Railway deployment)
