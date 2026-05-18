@@ -830,13 +830,11 @@ router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 999),
   if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
     return res.status(400).json({ error: "No image files provided" });
   }
-  const photographerName = decodeURIComponent(req.params.name || "").trim();
-  console.log("[BULK UPLOAD] Photographer name:", photographerName);
-  if (!photographerName) {
-    return res.status(400).json({ error: "Photographer name is required" });
-  }
+  const rawName = decodeURIComponent(req.params.name || "").trim();
+  const photographerName = rawName === "_" ? "" : rawName;
+  console.log("[BULK UPLOAD] Photographer name:", photographerName || "(none)");
 
-  const limitRow = db.prepare("SELECT value FROM settings WHERE key = 'bulkUploadLimit'").get() as { value: string } | undefined;
+  const limitRow = await db.prepare("SELECT value FROM settings WHERE key = 'bulkUploadLimit'").get() as { value: string } | undefined;
   const uploadLimit = Math.min(999, Math.max(1, parseInt(limitRow?.value || "20") || 20));
   if (req.files.length > uploadLimit) {
     return res.status(400).json({ error: `Too many files — maximum is ${uploadLimit} per upload` });

@@ -45,7 +45,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
   };
 
   const handleUpload = async () => {
-    if (!selectedFiles.length || !photographerName.trim()) return;
+    if (!selectedFiles.length) return;
 
     setUploading(true);
     const formData = new FormData();
@@ -58,7 +58,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
     setResults(initialResults);
 
     try {
-      const encodedName = encodeURIComponent(photographerName);
+      const encodedName = encodeURIComponent(photographerName.trim() || "_");
       const response = await api.post<BulkUploadResult[]>(`/api/ai/bulk-upload-hero/${encodedName}`, formData, token);
 
       const updatedResults = selectedFiles.map((file, idx) => {
@@ -163,7 +163,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
 
               {/* Photographer Name */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium">Photographer Name *</label>
+                <label className="block text-sm font-medium">Photographer Name <span className="text-muted-foreground font-normal">(optional)</span></label>
                 <input
                   type="text"
                   value={photographerName}
@@ -176,7 +176,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
               {/* Upload Button */}
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFiles.length || !photographerName.trim() || uploading}
+                disabled={!selectedFiles.length || uploading}
                 className="w-full"
               >
                 {uploading ? (
@@ -204,23 +204,19 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
               </h4>
               <div className="max-h-48 overflow-y-auto space-y-1 border border-border rounded-lg p-2 bg-muted/30">
                 {results.map((result, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm p-1 rounded">
-                    {result.status === 'pending' && (
-                      <Loader2 className="w-4 h-4 text-muted-foreground animate-spin flex-shrink-0" />
-                    )}
-                    {result.status === 'uploading' && (
-                      <Loader2 className="w-4 h-4 text-sky animate-spin flex-shrink-0" />
-                    )}
-                    {result.status === 'done' && (
-                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    )}
-                    {result.status === 'error' && (
-                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    )}
-                    <span className="truncate text-foreground flex-1">{result.name}</span>
-                    {result.status === 'error' && (
-                      <span className="text-xs text-red-500 whitespace-nowrap">{result.error}</span>
-                    )}
+                  <div key={idx} className="flex items-start gap-2 text-sm p-1 rounded">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {result.status === 'pending' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
+                      {result.status === 'uploading' && <Loader2 className="w-4 h-4 text-sky animate-spin" />}
+                      {result.status === 'done' && <Check className="w-4 h-4 text-emerald-600" />}
+                      {result.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="truncate text-foreground block">{result.name}</span>
+                      {result.status === 'error' && (
+                        <span className="text-xs text-red-500 break-words">{result.error}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
