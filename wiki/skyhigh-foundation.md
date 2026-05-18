@@ -55,7 +55,7 @@
 
 ## Database: PostgreSQL 16
 
-**Setup**: PostgreSQL is provisioned automatically by Replit. DATABASE_URL environment variable is injected at runtime.
+**Setup**: PostgreSQL is provisioned by Railway. DATABASE_URL environment variable is injected automatically.
 
 **Connection**: pg driver (node-postgres) v8.20.0 with connection pooling
 - Max 20 connections
@@ -214,7 +214,6 @@ C:\users\user\Claude_LLM_Wiki\[project-folder]\
 ├── package.json                  # Dependencies + scripts
 ├── vite.config.ts                # Vite configuration (proxy rules, plugins)
 ├── tsconfig.json                 # TypeScript config (strict mode)
-├── .replit                       # Replit configuration
 └── .env.local                    # Environment secrets (NEVER commit)
 ```
 
@@ -542,14 +541,14 @@ npm run seed       # Load seed data
 npm test           # Run tests
 ```
 
-### Production Deployment (Replit)
+### Production Deployment (Railway)
 
 ```bash
 npm run build      # Vite + esbuild
 NODE_ENV=production node dist/server.mjs
 ```
 
-**Environment**: Set all secrets in Replit environment, never in code.
+**Environment**: Set all secrets in Railway environment variables, never in code.
 
 ---
 

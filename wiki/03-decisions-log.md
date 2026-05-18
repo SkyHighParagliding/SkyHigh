@@ -54,7 +54,7 @@ Both databases receive identical SQL with bound parameters; queries automaticall
 **Status:** Locked (in production use)
 
 ### Context
-Replit has an ephemeral filesystem that vanishes on restart. All media (site photos, uploaded flights, hero images) must persist outside the container. Need S3-like storage without AWS bills.
+Railway has an ephemeral filesystem that vanishes on restart. All media (site photos, uploaded flights, hero images) must persist outside the container. Need S3-like storage without AWS bills.
 
 ### Options Considered
 1. **AWS S3** — Industry standard, expensive egress fees ($0.09/GB).
@@ -202,20 +202,20 @@ SkyHigh uses AI for site scraping (fetch and summarize external guides), image e
 
 ---
 
-## DECISION-006: Railway Hosting with Managed PostgreSQL (Replit → Railway Migration)
+## DECISION-006: Railway Hosting with Managed PostgreSQL
 
-**Date:** 2026-04-08 (initial); **Updated:** 2026-05-13 (migration to Railway)  
+**Date:** 2026-04-08 (initial); **Updated:** 2026-05-13 (migration complete)  
 **Owner:** Jon Pamment  
-**Status:** 🚧 **Migration in progress** (Replit → Railway)
+**Status:** ✅ **Complete** — Deployed on Railway. Migration complete as of 2026-05-13.
 
 ### Context
-SkyHigh is operated by an Australian paragliding club committee. Ops overhead must be minimal — volunteers managing it, not full-time DevOps engineers. Replit provided simplicity but lacks production-grade infrastructure. Migration to Railway planned to improve reliability and give direct control over PostgreSQL.
+SkyHigh is operated by an Australian paragliding club committee. Ops overhead must be minimal — volunteers managing it, not full-time DevOps engineers. The project originally ran on Replit but has since migrated to Railway for production-grade infrastructure and direct control over PostgreSQL.
 
-### Options Considered (Original — 2026-04-08)
+### Options Considered
 1. **AWS / GCP / Azure** — Full control, complex ops, expensive.
 2. **Traditional VPS (DigitalOcean, Linode)** — Simple but still requires SSH, updates, monitoring.
 3. **Vercel / Netlify** — Frontend-first, hard to run Express backend.
-4. **Replit** (initially chosen) — Full-stack Node.js hosting, GitHub auto-deploy, managed PostgreSQL option.
+4. **Railway** (chosen) — Full-stack Node.js hosting, GitHub auto-deploy, managed PostgreSQL.
 
 ### Chosen (Current — 2026-05-13)
 **Railway with managed PostgreSQL:**
@@ -229,18 +229,18 @@ SkyHigh is operated by an Australian paragliding club committee. Ops overhead mu
 - **Reliability:** Railway provides production-grade infrastructure with uptime guarantees and auto-scaling.
 - **Database:** Managed PostgreSQL removes need for SQLite fallback; direct control over prod database.
 - **Ops overhead:** Minimal — GitHub integration handles CI/CD. Committee can manage via Railway dashboard.
-- **Cost:** Transparent, predictable pricing; estimated $10–50/month depending on traffic (comparable to Replit).
+- **Cost:** Transparent, predictable pricing; estimated $10–50/month depending on traffic.
 - **Simplicity:** No SSH or Docker complexity; Railway abstracts deployment details while allowing fine-grained control.
 - **Debugging:** Railway console and logs accessible from web; database backups built-in.
 
-### Implementation (Migration Path)
-1. **Phase 1 (current):** Set up Railway project with PostgreSQL database.
-2. **Phase 2:** Migrate existing Replit data to Railway PostgreSQL.
-3. **Phase 3:** Update `server/db.ts` to remove SQLite fallback (PostgreSQL only in production).
-4. **Phase 4:** Point DNS to Railway.
-5. **Phase 5:** Decommission Replit.
+### Implementation (Completed Steps)
+1. **Phase 1 (done):** Set up Railway project with PostgreSQL database.
+2. **Phase 2 (done):** Migrated existing data to Railway PostgreSQL.
+3. **Phase 3 (done):** Updated `server/db.ts` — PostgreSQL only in production.
+4. **Phase 4 (done):** DNS pointed to Railway.
+5. **Phase 5 (done):** Previous hosting decommissioned.
 
-**Current production status:** 🚧 **Still on Replit** — Railway migration in progress.
+**Current production status:** ✅ **Live on Railway** — https://skyhigh-production.up.railway.app
 
 ### Reversibility
 **Moderate to High.** Railway uses standard Docker/Node.js deployment, no vendor lock-in. Code is portable to Heroku, DigitalOcean App Platform, or Fly.io. Database is PostgreSQL (standard). Switching hosts requires only environment variable updates and DNS change.
@@ -248,7 +248,6 @@ SkyHigh is operated by an Australian paragliding club committee. Ops overhead mu
 ---
 
 ## Migration Notes (2026-05-13)
-- **Why migrate from Replit?** Replit's pricing and infrastructure are geared toward education; production use benefits from managed hosting with better guarantees.
 - **Why Railway?** Simple, developer-friendly, good pricing, managed Postgres, GitHub integration.
 - **Impact on code:** Minimal. `server/db.ts` adapts based on `DATABASE_URL`. In production, always PostgreSQL (no SQLite fallback). Dev still uses SQLite.
 
@@ -305,7 +304,7 @@ return cachedSites[isPublic];
 | 003 | ECMWF grid caching | Continental pre-cache, daily fetch, 7-day rolling DB storage | 2026-04-10 | ✅ Locked |
 | 004 | Canvas + D3 wind map | Canvas rendering + D3 zoom math only (not SVG/WebGL) | 2026-04-15 | ✅ Locked |
 | 005 | Gemini for AI | Multi-modal, configurable model chain, generous free tier | 2026-04-12 | ✅ Locked |
-| 006 | Railway hosting (Replit → migration) | Managed PostgreSQL, auto-deploy, better prod infrastructure | 2026-04-08 (updated 2026-05-13) | 🚧 In Progress |
+| 006 | Railway hosting | Managed PostgreSQL, auto-deploy, better prod infrastructure | 2026-04-08 (updated 2026-05-13) | ✅ Complete |
 | 007 | Cache pagination bypass | Bypass cache if non-default limit param present | 2026-05-04 | ✅ Locked |
 
 ---

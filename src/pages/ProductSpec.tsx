@@ -56,7 +56,7 @@ const categories: SpecCategory[] = [
           "Real-time features: live weather polling, GPS flight tracking, pilot messaging, and retrieval board.",
           "Offline capability: map tiles can be downloaded for use in areas without mobile reception.",
           "White-label ready from foundation: all club identity (name, logo, tagline, colour, template) is controlled from admin settings with no code changes.",
-          "Self-contained: runs on a single Replit deployment with PostgreSQL, Cloudflare R2, and all integrations configured via environment secrets.",
+          "Self-contained: runs on Railway (PostgreSQL + app server) with Cloudflare R2 for media and all integrations configured via environment variables.",
         ],
       },
     ],
@@ -445,7 +445,7 @@ const categories: SpecCategory[] = [
           "URL allowlisting: only http/https protocol on user-submitted links.",
           "IP ban list: admin-managed banned IPs blocked at request level.",
           "Markdown content: rehype-sanitize prevents XSS in rendered CMS content.",
-          "Environment secrets: all API keys stored as Replit secrets, never committed to code.",
+          "Environment secrets: all API keys stored as Railway environment variables, never committed to code.",
         ],
       },
       {

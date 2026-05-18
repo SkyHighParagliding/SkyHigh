@@ -254,7 +254,7 @@ Extend token TTL logic and add cleanup.
 Infrastructure and configuration hardening. Status: 2026-05-07.
 
 ### TASK-026 ✅ PostgreSQL Provisioning
-Set up PostgreSQL instance on Replit or RDS.
+Set up PostgreSQL instance on Railway.
 - **Acceptance Criteria:** PostgreSQL accessible via `DATABASE_URL` env var. Connection pooling configured with pool size, idle/connection timeouts, statement timeout.
 - **Completed:** 2026-04-30. `server/pgDb.ts` fully configured with:
   - Connection pool max=20, idle timeout=60s, connection timeout=10s, statement timeout=30s
@@ -273,7 +273,7 @@ Set up R2 bucket and credentials.
 ### TASK-028 ⬜ CSRF Redis Store for Multi-Instance
 Move CSRF tokens from in-memory to Redis for multi-instance support.
 - **Acceptance Criteria:** CSRF tokens stored in Redis (24-hour TTL). Works across multiple server instances. Fallback to in-memory if Redis unavailable (dev mode).
-- **Status:** Deferred — single-instance Replit deployment does not require Redis. CSRF currently in-memory (`server/utils/csrf.ts`). Can implement if multi-instance scaling needed.
+- **Status:** Deferred — single-instance Railway deployment does not require Redis. CSRF currently in-memory (`server/utils/csrf.ts`). Can implement if multi-instance scaling needed.
 
 ### TASK-029 ⚠️ Harden DEFAULT_ADMINS for Production
 Ensure no hardcoded admins in production.

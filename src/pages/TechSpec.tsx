@@ -57,7 +57,7 @@ const categories: SpecCategory[] = [
         title: "Database",
         details: [
           "PostgreSQL 16 via pg (node-postgres) v8.20.0",
-          "Connection: DATABASE_URL environment variable (Replit managed PostgreSQL instance)",
+          "Connection: DATABASE_URL environment variable (Railway managed PostgreSQL instance)",
           "Connection pool: max 20 connections, 30s idle timeout, 5s connection timeout",
           "Versioned migration system: 8 sequential SQL migration files in server/pg_migrations/",
           "schema_migrations table tracks applied migrations; each file runs exactly once on startup",
@@ -79,7 +79,7 @@ const categories: SpecCategory[] = [
           "Express API server: port 3001 (internal, API only)",
           "Vite proxies /api/*, /health, /ping, /uploads → Express on port 3001",
           "Both started via concurrently in npm run dev",
-          "HMR: WebSocket over WSS (port 443) in Replit environment",
+          "HMR: Vite standard WebSocket HMR in development",
         ],
       },
       {
@@ -538,7 +538,7 @@ const categories: SpecCategory[] = [
           "package.json — Scripts: dev, dev:api, dev:client, build, start",
           "vite.config.ts — Vite 6 config: React plugin, Tailwind plugin, proxy rules, path aliases (@/ → src/)",
           "tsconfig.json — ES2022 target, bundler resolution, JSX react-jsx, path mapping",
-          ".replit — Nix modules: nodejs-20, web, postgresql-16; channel: stable-25_05",
+          "railway.toml — Railway deployment config: start command, healthcheck path",
         ],
       },
       {
@@ -590,7 +590,7 @@ const categories: SpecCategory[] = [
         icon: <Database className="w-5 h-5" />,
         title: "Step 2: Database Initialisation",
         details: [
-          "PostgreSQL is provisioned automatically by Replit — DATABASE_URL is injected as an environment variable",
+          "PostgreSQL is provisioned by Railway — DATABASE_URL is injected automatically as an environment variable",
           "On startup, server/pgDb.ts connects to the pool, checks connectivity, then runs any pending SQL migrations from server/pg_migrations/ in order",
           "8 SQL migration files (001–008) are applied sequentially; schema_migrations tracks which have run",
           "Seed data loads automatically from JSON files in project root (scraped_sites.json, seed_*.json) if the sites table is empty",

@@ -330,9 +330,7 @@ router.get("/callback", asyncHandler(async (req, res) => {
     return res.status(500).send("TIDYHQ_CLIENT_ID and TIDYHQ_CLIENT_SECRET must be set");
   }
 
-  const baseUrl = process.env.APP_URL
-    || (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}` : null)
-    || "http://localhost:5173";
+  const baseUrl = process.env.APP_URL || "http://localhost:5173";
   const redirectUri = `${baseUrl}/api/tidyhq/callback`;
 
   try {
@@ -367,7 +365,7 @@ router.get("/callback", asyncHandler(async (req, res) => {
         <head><title>TidyHQ Connected</title></head>
         <body style="font-family: system-ui; max-width: 600px; margin: 60px auto; text-align: center;">
           <h2 style="color: #059669;">TidyHQ Connected Successfully!</h2>
-          <p>Your access token has been obtained. Copy the token below and update the <strong>TIDYHQ_ACCESS_TOKEN</strong> secret in Replit:</p>
+          <p>Your access token has been obtained. Copy the token below and update the <strong>TIDYHQ_ACCESS_TOKEN</strong> environment variable in Railway:</p>
           <textarea style="width: 100%; height: 80px; font-family: monospace; font-size: 12px; padding: 8px;" readonly onclick="this.select()">${accessToken}</textarea>
           <p style="color: #666; font-size: 14px; margin-top: 16px;">After updating the secret, restart the application and test the connection again.</p>
         </body>

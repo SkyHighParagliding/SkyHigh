@@ -14,7 +14,7 @@
 
 There are **TWO separate Cloudflare R2 buckets**, owned by different accounts:
 1. **OLD bucket** (`pub-d31362da23d54f83bb50efb9194c6b87.r2.dev`)
-   - Inherited from previous Replit deployment
+   - Inherited from previous deployment
    - **STILL WORKS** — contains all original library images (hero, banners, sliders)
 2. **NEW bucket** (`pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev`)
    - Created for Railway in ACCT-003

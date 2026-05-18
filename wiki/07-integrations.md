@@ -30,15 +30,15 @@ How to connect TidyHQ to the SkyHigh website for contact import, shop products, 
 1. In TidyHQ, go to **Administration → Developer → Webhooks**
 2. Click **Add Webhook**
 3. Configure:
-   - **URL**: `https://your-app-domain.replit.app/api/tidyhq/webhook`
+   - **URL**: `https://skyhigh-production.up.railway.app/api/tidyhq/webhook`
    - **Events**: `contact.group.added` and `contact.group.removed`
 4. Copy the **Signing Key** that TidyHQ generates
 
 ---
 
-## Step 3: Save Secrets in Replit
+## Step 3: Save Secrets in Railway
 
-1. Open your Replit project → **Secrets** tab (lock icon)
+1. Open your Railway project → **Variables** tab
 2. Add both secrets:
 
 | Key | Value |
