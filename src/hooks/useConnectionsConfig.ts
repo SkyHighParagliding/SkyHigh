@@ -6,7 +6,7 @@ import { useAdminForm } from "@/hooks/useAdminForm";
 
 export function useConnectionsConfig() {
   const { token } = useAuth();
-  const { settings } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const location = useLocation();
   const clubName = settings.clubName || "SkyHigh";
 
@@ -187,6 +187,7 @@ export function useConnectionsConfig() {
         setBulkUploadLimitDraft(clamped);
         setBulkLimitSaved(true);
         setTimeout(() => setBulkLimitSaved(false), 3000);
+        refreshSettings();
       }
     } catch {}
     setSavingBulkLimit(false);
