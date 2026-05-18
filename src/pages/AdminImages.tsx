@@ -1377,6 +1377,7 @@ export function AdminImages() {
         onOpenChange={setIsBulkUploadDialogOpen}
         token={token}
         onAccept={handleBulkUploadAccept}
+        maxImages={Math.min(999, Math.max(1, parseInt(String(settings.bulkUploadLimit || "20")) || 20))}
       />
 
       <UnsavedChangesModal blocker={blocker} onSave={handleSave} />
