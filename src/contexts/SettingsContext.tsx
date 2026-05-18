@@ -360,6 +360,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           windMapDefaultLat: data.windMapDefaultLat,
           windMapDefaultLon: data.windMapDefaultLon,
           windMapDefaultZoom: data.windMapDefaultZoom,
+          bulkUploadLimit: data.bulkUploadLimit || "20",
           ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
         });
         setLoading(false);
@@ -510,6 +511,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         windMapDefaultLat: data.windMapDefaultLat,
         windMapDefaultLon: data.windMapDefaultLon,
         windMapDefaultZoom: data.windMapDefaultZoom,
+        bulkUploadLimit: data.bulkUploadLimit || "20",
         ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
       });
     } catch (err) {
