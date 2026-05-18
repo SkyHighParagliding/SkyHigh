@@ -30,6 +30,7 @@ import {
   Download,
   MessageCircle,
   Plus,
+  Image as ImageIcon,
 } from "lucide-react";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useConnectionsConfig } from "@/hooks/useConnectionsConfig";
@@ -74,6 +75,8 @@ export function AdminConnections() {
     selectedGroupId, setSelectedGroupId,
     selectedRole, setSelectedRole,
     addMappingError, savingMapping,
+    bulkUploadLimit, bulkUploadLimitDraft, setBulkUploadLimitDraft,
+    savingBulkLimit, bulkLimitSaved, saveBulkUploadLimit,
     saDisclaimer, setSaDisclaimer,
     saCommitteeLink, setSaCommitteeLink,
     saCtaMessage, setSaCtaMessage,
@@ -875,6 +878,81 @@ export function AdminConnections() {
                     ))}
                   </div>
                 )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        <Card id="conn-image-upload" className="overflow-hidden border-t-4 border-t-orange-400 mt-4">
+          <button
+            onClick={() => toggleExpanded("image-upload")}
+            className="w-full text-left"
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="text-navy shrink-0 mt-0.5"><ImageIcon className="w-6 h-6" /></div>
+                  <div className="min-w-0">
+                    <CardTitle className="text-navy text-lg">Image Upload Settings</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Configure limits for the bulk hero image uploader. Current limit: <strong>{bulkUploadLimit}</strong> image{bulkUploadLimit !== 1 ? "s" : ""} per batch.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Active
+                  </span>
+                  {expandedCards.has("image-upload") ? (
+                    <ChevronUp className="w-5 h-5 text-foreground-faint" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-foreground-faint" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+          </button>
+
+          {expandedCards.has("image-upload") && (
+            <CardContent className="border-t border-border-subtle pt-4 space-y-5">
+              <div className="border border-border-subtle rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-navy text-sm">Bulk Upload Limit</h4>
+                <p className="text-xs text-muted-foreground">
+                  Maximum number of images an admin can upload in a single bulk hero image upload. The server enforces this limit — requests exceeding it are rejected. Range: 1–999.
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1}
+                    max={999}
+                    value={bulkUploadLimitDraft}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      setBulkUploadLimitDraft(isNaN(v) ? 1 : Math.min(999, Math.max(1, v)));
+                    }}
+                    className="w-24 px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-sky text-sm"
+                  />
+                  <span className="text-sm text-muted-foreground">images per batch</span>
+                  <Button
+                    size="sm"
+                    onClick={saveBulkUploadLimit}
+                    disabled={savingBulkLimit || bulkUploadLimitDraft === bulkUploadLimit}
+                    className="bg-navy hover:bg-navy/90 text-white gap-1.5"
+                  >
+                    {savingBulkLimit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Save
+                  </Button>
+                  {bulkLimitSaved && (
+                    <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Saved
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-foreground-faint">
+                  Note: each image is resized to 1920×1080 and watermarked on the server before being stored in Cloudflare R2.
+                  Very large batches may take longer to process. The default is 20.
+                </p>
               </div>
             </CardContent>
           )}

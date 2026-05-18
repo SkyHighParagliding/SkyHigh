@@ -825,7 +825,7 @@ router.post("/upload-hero-image", requireAuth, upload.single("image"), asyncHand
   });
 }));
 
-router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 20), asyncHandler(async (req, res) => {
+router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 999), asyncHandler(async (req, res) => {
   console.log("[BULK UPLOAD] Route matched! Params:", req.params, "Query:", req.query);
   if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
     return res.status(400).json({ error: "No image files provided" });
@@ -834,6 +834,12 @@ router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 20), 
   console.log("[BULK UPLOAD] Photographer name:", photographerName);
   if (!photographerName) {
     return res.status(400).json({ error: "Photographer name is required" });
+  }
+
+  const limitRow = db.prepare("SELECT value FROM settings WHERE key = 'bulkUploadLimit'").get() as { value: string } | undefined;
+  const uploadLimit = Math.min(999, Math.max(1, parseInt(limitRow?.value || "20") || 20));
+  if (req.files.length > uploadLimit) {
+    return res.status(400).json({ error: `Too many files — maximum is ${uploadLimit} per upload` });
   }
 
   const results: { filename: string; url: string; size: string; error?: string }[] = [];

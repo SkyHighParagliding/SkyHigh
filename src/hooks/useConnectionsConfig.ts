@@ -68,6 +68,11 @@ export function useConnectionsConfig() {
   const [addMappingError, setAddMappingError] = useState("");
   const [savingMapping, setSavingMapping] = useState(false);
 
+  const [bulkUploadLimit, setBulkUploadLimit] = useState(20);
+  const [bulkUploadLimitDraft, setBulkUploadLimitDraft] = useState(20);
+  const [savingBulkLimit, setSavingBulkLimit] = useState(false);
+  const [bulkLimitSaved, setBulkLimitSaved] = useState(false);
+
   const [saDisclaimer, setSaDisclaimer] = useState("General information only. Consult SAFA/CASA docs and Site Rules.");
   const [saCommitteeLink, setSaCommitteeLink] = useState("");
   const [saCtaMessage, setSaCtaMessage] = useState("");
@@ -85,6 +90,10 @@ export function useConnectionsConfig() {
         if (data.drive_appscript_url) setDriveScriptUrl(data.drive_appscript_url);
         if (data.asset_sheet_url) setSheetUrl(data.asset_sheet_url);
         if (data.asset_appscript_url) setAssetScriptUrl(data.asset_appscript_url);
+        const parsedLimit = parseInt(data.bulkUploadLimit || "20");
+        const validLimit = isNaN(parsedLimit) ? 20 : Math.min(999, Math.max(1, parsedLimit));
+        setBulkUploadLimit(validLimit);
+        setBulkUploadLimitDraft(validLimit);
         setSaDisclaimer(data.publicSearchDisclaimer ?? "General information only. Consult SAFA/CASA docs and Site Rules.");
         setSaCommitteeLink(data.publicSearchCommitteeLink || "");
         setSaCtaMessage(data.publicSearchCtaMessage || "");
@@ -162,6 +171,25 @@ export function useConnectionsConfig() {
       });
       if (!res.ok) throw new Error("Failed to save");
     });
+  };
+
+  const saveBulkUploadLimit = async () => {
+    const clamped = Math.min(999, Math.max(1, bulkUploadLimitDraft || 20));
+    setSavingBulkLimit(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bulkUploadLimit: String(clamped) }),
+      });
+      if (res.ok) {
+        setBulkUploadLimit(clamped);
+        setBulkUploadLimitDraft(clamped);
+        setBulkLimitSaved(true);
+        setTimeout(() => setBulkLimitSaved(false), 3000);
+      }
+    } catch {}
+    setSavingBulkLimit(false);
   };
 
   const saveDriveScriptUrl = async () => {
@@ -587,6 +615,8 @@ export function useConnectionsConfig() {
     selectedGroupId, setSelectedGroupId,
     selectedRole, setSelectedRole,
     addMappingError, savingMapping,
+    bulkUploadLimit, bulkUploadLimitDraft, setBulkUploadLimitDraft,
+    savingBulkLimit, bulkLimitSaved, saveBulkUploadLimit,
     saDisclaimer, setSaDisclaimer,
     saCommitteeLink, setSaCommitteeLink,
     saCtaMessage, setSaCtaMessage,

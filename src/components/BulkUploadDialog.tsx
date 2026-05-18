@@ -9,6 +9,7 @@ interface BulkUploadResult {
   filename: string;
   url: string;
   size: string;
+  error?: string;
 }
 
 interface UploadResult {
@@ -23,9 +24,10 @@ export interface BulkUploadDialogProps {
   onOpenChange: (open: boolean) => void;
   token: string | null;
   onAccept: (results: BulkUploadResult[]) => void;
+  maxImages?: number;
 }
 
-export function BulkUploadDialog({ open, onOpenChange, token, onAccept }: BulkUploadDialogProps) {
+export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImages = 20 }: BulkUploadDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [photographerName, setPhotographerName] = useState("");
@@ -33,7 +35,11 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept }: BulkUp
   const [results, setResults] = useState<UploadResult[]>([]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.currentTarget.files || []);
+    let files = Array.from(e.currentTarget.files || []);
+    if (files.length > maxImages) {
+      toast.warning(`Only the first ${maxImages} image${maxImages !== 1 ? "s" : ""} will be uploaded (limit is ${maxImages})`);
+      files = files.slice(0, maxImages);
+    }
     setSelectedFiles(files);
     setResults([]);
   };
@@ -120,7 +126,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept }: BulkUp
         <DialogHeader>
           <DialogTitle>Bulk Upload Hero Images</DialogTitle>
           <DialogDescription>
-            Select multiple images to process into the Hero library. All images will be cropped to 1920×1080 centered on the vertical centerline.
+            Select up to <strong>{maxImages}</strong> images to process into the Hero library. All images will be cropped to 1920×1080 centered on the vertical centerline.
           </DialogDescription>
         </DialogHeader>
 
