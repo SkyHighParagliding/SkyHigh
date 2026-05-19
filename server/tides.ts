@@ -177,6 +177,30 @@ async function fetchBomTideData(station: TideStation): Promise<TidePrediction[] 
   return null;
 }
 
+function parseBomDate(dateStr: string, timeStr: string, utcOffset: string): Date | null {
+  // ISO format: YYYY-MM-DD
+  const iso = new Date(`${dateStr}T${timeStr}:00${utcOffset}`);
+  if (!isNaN(iso.getTime())) return iso;
+
+  // BOM uses DD/MM/YYYY (e.g. "19/05/2026")
+  const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, dd, mm, yyyy] = slashMatch;
+    const d = new Date(`${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${timeStr}:00${utcOffset}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // BOM hyphen variant: DD-MM-YYYY
+  const dashMatch = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dashMatch) {
+    const [, dd, mm, yyyy] = dashMatch;
+    const d = new Date(`${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${timeStr}:00${utcOffset}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return null;
+}
+
 function parseBomCsv(csv: string, referenceDate: Date, timezone: string): TidePrediction[] {
   const predictions: TidePrediction[] = [];
   const lines = csv.split("\n");
@@ -205,20 +229,12 @@ function parseBomCsv(csv: string, referenceDate: Date, timezone: string): TidePr
 
     const type: "high" | "low" = typeStr.includes("HIGH") || typeStr === "H" ? "high" : "low";
 
-    const dateTimeParsed = new Date(`${dateStr}T${timeStr}:00${utcOffset}`);
-    if (isNaN(dateTimeParsed.getTime())) {
-      const altParsed = new Date(`${dateStr} ${timeStr}`);
-      if (isNaN(altParsed.getTime())) continue;
-      const ts = altParsed.getTime();
-      if (ts >= windowStart && ts <= windowEnd) {
-        predictions.push({ time: altParsed.toISOString(), height, type });
-      }
-      continue;
-    }
+    const parsed = parseBomDate(dateStr, timeStr, utcOffset);
+    if (!parsed) continue;
 
-    const ts = dateTimeParsed.getTime();
+    const ts = parsed.getTime();
     if (ts >= windowStart && ts <= windowEnd) {
-      predictions.push({ time: dateTimeParsed.toISOString(), height, type });
+      predictions.push({ time: parsed.toISOString(), height, type });
     }
   }
 
@@ -261,11 +277,17 @@ function findHighLowTidesAstronomical(station: TideStation, startDate: Date, hou
   const intervalMinutes = 6;
   const totalSteps = (hours * 60) / intervalMinutes;
   const threshold = 0.001;
+  // Filters to eliminate spurious turning points caused by the S2 solar component
+  // creating brief direction reversals ("shoulders") within an otherwise smooth tide cycle.
+  const minHeightDiff = station.tidalRange * 0.15;
+  const minGapMs = 3 * 60 * 60 * 1000; // 3 hours minimum between turning points
 
   let prevHeight = predictTideHeight(station, startDate);
   let prevDirection: "rising" | "falling" | null = null;
   let extremeHeight = prevHeight;
   let extremeTime = startDate;
+  let lastPushedHeight: number | null = null;
+  let lastPushedTimeMs = 0;
 
   for (let i = 1; i <= totalSteps; i++) {
     const time = new Date(startDate.getTime() + i * intervalMinutes * 60000);
@@ -281,11 +303,20 @@ function findHighLowTidesAstronomical(station: TideStation, startDate: Date, hou
 
     if (prevDirection && direction !== prevDirection) {
       const type = prevDirection === "rising" ? "high" : "low";
-      predictions.push({
-        time: extremeTime.toISOString(),
-        height: Math.round(extremeHeight * 100) / 100,
-        type,
-      });
+      const candidateTimeMs = extremeTime.getTime();
+      const heightOk = lastPushedHeight === null || Math.abs(extremeHeight - lastPushedHeight) >= minHeightDiff;
+      const timeOk = candidateTimeMs - lastPushedTimeMs >= minGapMs;
+
+      if (heightOk && timeOk) {
+        predictions.push({
+          time: extremeTime.toISOString(),
+          height: Math.round(extremeHeight * 100) / 100,
+          type,
+        });
+        lastPushedHeight = extremeHeight;
+        lastPushedTimeMs = candidateTimeMs;
+      }
+
       extremeHeight = height;
       extremeTime = time;
     } else {
