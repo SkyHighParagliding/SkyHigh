@@ -22,3 +22,8 @@ scratch/
 lint_output.txt
 memory/
 tasks/lessons.md
+
+# Sensitive governance docs — keep local only
+credential-recovery.html
+SkyHigh-Credential-Recovery.pdf
+credential-recovery-preview.png
