@@ -49,14 +49,32 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: `Invalid URL: ${urlValidation.error}` });
   }
 
-  let channelId: string | null = null;
+  let feedUrl: string | null = null;
 
-  if (channelUrl.includes("channel/UC")) {
-    const match = channelUrl.match(/channel\/(UC[a-zA-Z0-9_-]+)/);
-    if (match) channelId = match[1];
+  // Case 1: Direct channel ID URL — most reliable
+  const channelIdMatch = channelUrl.match(/channel\/(UC[a-zA-Z0-9_-]+)/);
+  if (channelIdMatch) {
+    feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdMatch[1]}`;
   }
 
-  if (!channelId) {
+  // Case 2: Legacy /user/ URL — use user= RSS directly, no HTML scraping needed
+  if (!feedUrl) {
+    const userMatch = channelUrl.match(/youtube\.com\/user\/([^/?&#]+)/);
+    if (userMatch) {
+      feedUrl = `https://www.youtube.com/feeds/videos.xml?user=${encodeURIComponent(userMatch[1])}`;
+    }
+  }
+
+  // Case 3: @handle URL — YouTube serves bot-detection HTML server-side, channel ID
+  // cannot be reliably extracted without the YouTube Data API. Guide the user instead.
+  if (!feedUrl && channelUrl.match(/youtube\.com\/@/)) {
+    return res.status(400).json({
+      error: "YouTube @handle URLs cannot be resolved automatically. Please use your Channel ID URL instead.\n\nTo find your Channel ID: open YouTube Studio → Settings → Channel → Advanced settings — it starts with \"UC\".\n\nThen enter: https://www.youtube.com/channel/YOUR_CHANNEL_ID",
+    });
+  }
+
+  // Case 4: Other URL formats — attempt HTML scrape as last resort
+  if (!feedUrl) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
@@ -73,7 +91,6 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
         return res.status(400).json({ error: `Failed to fetch channel page: ${pageRes.status}` });
       }
       const html = await pageRes.text();
-      // Try multiple patterns — YouTube page structure varies by URL type
       const cidPatterns = [
         /channel_id=(UC[a-zA-Z0-9_-]+)/,
         /"channelId":"(UC[a-zA-Z0-9_-]+)"/,
@@ -83,7 +100,7 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
       ];
       for (const pattern of cidPatterns) {
         const m = html.match(pattern);
-        if (m) { channelId = m[1]; break; }
+        if (m) { feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${m[1]}`; break; }
       }
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -93,11 +110,10 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
     }
   }
 
-  if (!channelId) {
-    return res.status(400).json({ error: "Could not determine channel ID from the provided URL" });
+  if (!feedUrl) {
+    return res.status(400).json({ error: "Could not determine the RSS feed URL from the provided channel URL. Try using your Channel ID URL: https://www.youtube.com/channel/UCxxxxxxxx" });
   }
 
-  const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
   const feedRes = await fetch(feedUrl, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; SkyHighBot/1.0)" },
   });

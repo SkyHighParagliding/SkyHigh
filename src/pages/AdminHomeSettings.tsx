@@ -1077,7 +1077,7 @@ export function AdminHomeSettings() {
                       </Button>
                     </div>
                     {ytScrapeResult && (
-                      <p className={`text-sm ${ytScrapeResult.startsWith("Error") ? "text-red-500" : "text-green-600"}`}>{ytScrapeResult}</p>
+                      <p className={`text-sm whitespace-pre-line ${ytScrapeResult.startsWith("Error") ? "text-red-500" : "text-green-600"}`}>{ytScrapeResult}</p>
                     )}
                   </div>
 
