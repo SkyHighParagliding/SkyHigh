@@ -563,8 +563,18 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
   const hour = parseInt(parts.hour || '0');
   const dateStr = `${parts.year}-${parts.month}-${parts.day}T${String(hour).padStart(2, '0')}:00`;
 
-  const hourIdx = nearest.hourly.time.indexOf(dateStr);
-  if (hourIdx === -1) return null;
+  let hourIdx = nearest.hourly.time.indexOf(dateStr);
+  if (hourIdx === -1) {
+    // Grid is stale — find the most recent available past time as fallback
+    let fallbackIdx = -1;
+    for (let i = nearest.hourly.time.length - 1; i >= 0; i--) {
+      if (nearest.hourly.time[i] <= dateStr) { fallbackIdx = i; break; }
+    }
+    if (fallbackIdx === -1) fallbackIdx = 0;
+    const gridEnd = nearest.hourly.time[nearest.hourly.time.length - 1];
+    console.warn(`extractSiteForecast: ${dateStr} not in grid (grid ends ${gridEnd}), using ${nearest.hourly.time[fallbackIdx]} — fine grid is stale`);
+    hourIdx = fallbackIdx;
+  }
 
   const temp = nearest.hourly.temperature_2m[hourIdx];
   const windSpeed = Math.round(nearest.hourly.wind_speed_10m[hourIdx]);

@@ -190,8 +190,11 @@ export async function fetchWeatherData(isManual = false) {
     try {
       const { fetchFineGrid, extractSiteForecast } = await import("./victoriaGrid.js");
       const grid = await fetchFineGrid();
+      const gridAgeMin = Math.round((Date.now() - grid.fetchedAt) / 60000);
+      if (gridAgeMin > 60) log.warn(`Weather scraper: Fine grid is ${gridAgeMin}min old — forecasts may be stale`);
 
       const sites = await db.prepare("SELECT id, lat, lon FROM sites").all() as { id: string, lat: number, lon: number }[];
+      let forecastsUpdated = 0;
       for (const site of sites) {
         if (!site.lat || !site.lon) continue;
 
@@ -201,12 +204,13 @@ export async function fetchWeatherData(isManual = false) {
             await db.prepare("INSERT OR REPLACE INTO weather_forecasts (siteId, timestamp, temperature, windSpeed, windGust, windDirection, icon, summary, forecasts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
               forecast.siteId, forecast.timestamp, forecast.temperature, forecast.windSpeed, forecast.windGust, forecast.windDirection, forecast.icon, forecast.summary, forecast.forecasts
             );
-            console.log(`Weather scraper: Updated ECMWF forecast for ${site.id} (Hour: ${hour})`);
+            forecastsUpdated++;
           }
         } catch (err) {
           log.error(`Weather scraper: Failed to extract forecast for ${site.id}:`, err);
         }
       }
+      console.log(`Weather scraper: Updated ECMWF forecasts for ${forecastsUpdated}/${sites.length} sites (grid age: ${gridAgeMin}min)`);
     } catch (err) {
       log.error("Weather scraper: Failed to process forecasts:", err);
     }
