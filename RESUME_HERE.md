@@ -1,4 +1,4 @@
-# RESUME_HERE — Last updated: 2026-05-19 (session 4)
+# RESUME_HERE — Last updated: 2026-05-19 (session 5)
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅
@@ -16,6 +16,19 @@ Go-live completed 2026-05-19. Site is stable. All session 4 changes deployed.
 - ✅ **YouTube scrape — YouTube Data API v3** (commit 46b1c19) — RSS was blocked by Railway's cloud IP range. Switched to YouTube Data API v3: channels.list resolves @handle/@user/channel URLs, playlistItems.list fetches uploads playlist. Requires `YOUTUBE_API_KEY` env var in Railway.
 - ✅ **YouTube thumbnail grey placeholder fix** (commit 1615644) — maxresdefault returns 200 OK with a 120×90 grey image (not a 404). Added onLoad check: if naturalWidth ≤ 120 advance to next quality (sddefault → hqdefault → mqdefault).
 - ✅ **recordSiteView overcounting fix** (commit 064a568) — Bug: recordSiteView was in useEffect([site]) which fires on every React Query refetch (every 30s staleTime). Moved to useEffect([id]) so it fires exactly once per navigation. This was causing inflated counts for sites where users dwelt longer, skewing home page order.
+
+---
+
+## In Planning — Awaiting Answers
+
+**Committee member photo feature** — full planning session completed 2026-05-19. Four decisions needed before task plan can be written:
+- Q1: Self-service mechanism (Member Portal vs Magic Link vs SO-only vs other)
+- Q2: Output dimensions/ratio (3:4 portrait 300×400 recommended)
+- Q3: Placeholder when no photo (initials avatar recommended)
+- Q4: Photo approval workflow for self-uploads (immediate vs admin approval)
+
+Full questions + considerations saved in `tasks/committee-photo-planning-questions.md`.
+Flowcharts for all three paths (Member Portal self-service, Magic Link self-service, Admin-administered) in session 5 conversation history.
 
 ---
 
