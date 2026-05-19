@@ -86,11 +86,14 @@ const categories: SpecCategory[] = [
         icon: <Globe className="w-5 h-5" />,
         title: "Production / Deployment",
         details: [
-          "Vite builds client assets to dist/public/",
-          "esbuild bundles server to dist/server.mjs",
+          "Platform: Railway (railway.com) — SkyHighParagliding organisation, skyhigh project. Login: web@skyhighparagliding.org.au",
+          "Production URL: https://www.skyhighparagliding.org.au — CNAME points to Railway's generated domain (33bp9c73.up.railway.app)",
+          "DNS: Google Cloud DNS — Skyhigh DNS Service project at console.cloud.google.com",
+          "Logs: Railway dashboard → skyhigh project → web service → Deployments → View Logs (real-time)",
+          "Vite builds client assets to dist/public/; esbuild bundles server to dist/server.mjs",
           "Express serves API routes + static files from dist/public/ on port 5000",
-          "Deployment: autoscale with NODE_ENV=production node dist/server.mjs",
-          "publicDir: dist/public for CDN static file serving",
+          "Deployment: NODE_ENV=production node dist/server.mjs (Railway auto-deploys on push to main branch)",
+          "Auto-deploy: Every push to the main branch on GitHub triggers a Railway build and redeploy",
         ],
       },
       {
@@ -124,26 +127,55 @@ const categories: SpecCategory[] = [
     items: [
       {
         icon: <Key className="w-5 h-5" />,
-        title: "Required API Keys",
+        title: "Core / Required",
         details: [
-          "GEMINI_API_KEY — Google Gemini AI (primary, used for all AI features)",
-          "WU_API_KEY — Weather Underground (live weather station data)",
+          "DATABASE_URL — PostgreSQL connection string (Railway injects this automatically from the linked PostgreSQL service)",
+          "SESSION_SECRET — Long random string for signing admin session tokens (generate with: openssl rand -hex 32)",
+          "GEMINI_API_KEY — Google Gemini AI (primary, used for all AI features — site scraping, image processing, content safety, search)",
+          "WU_API_KEY — Weather Underground API key (live weather station data for sites using WU stations)",
+          "APP_URL — Public root URL e.g. https://www.skyhighparagliding.org.au (used in password reset links and emails)",
+          "NODE_ENV — Set to 'production' on Railway (controls build, error handling, DB safety)",
+        ],
+      },
+      {
+        icon: <HardDrive className="w-5 h-5" />,
+        title: "Cloudflare R2 (Image Storage)",
+        details: [
+          "R2_ACCOUNT_ID — Cloudflare account ID (from dash.cloudflare.com → R2 → Account ID)",
+          "R2_ACCESS_KEY_ID — R2 API token access key ID",
+          "R2_SECRET_ACCESS_KEY — R2 API token secret key",
+          "R2_BUCKET_NAME — skyhigh-media",
+          "R2_PUBLIC_URL — https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev (public read URL for the bucket)",
+        ],
+      },
+      {
+        icon: <Network className="w-5 h-5" />,
+        title: "Email — Resend",
+        details: [
+          "RESEND_API_KEY — Resend API key (from resend.com → API Keys). Used for password reset and notification emails.",
+          "RESEND_FROM_DOMAIN — skyhighparagliding.org.au (must be verified in Resend with DKIM/SPF/DMARC records in Google Cloud DNS)",
+        ],
+      },
+      {
+        icon: <Plug className="w-5 h-5" />,
+        title: "TidyHQ Integration",
+        details: [
+          "TIDYHQ_ACCESS_TOKEN — OAuth access token for TidyHQ API (events, contact import)",
+          "TIDYHQ_CLIENT_ID — TidyHQ OAuth app client ID",
+          "TIDYHQ_CLIENT_SECRET — TidyHQ OAuth app client secret",
+          "TIDYHQ_WEBHOOK_SIGNING_KEY — Secret used to verify webhook payloads from TidyHQ",
+          "TIDYHQ_CLUB_ID — skyhigh (the club's TidyHQ slug)",
         ],
       },
       {
         icon: <Lock className="w-5 h-5" />,
-        title: "Optional API Keys",
+        title: "Optional / Advanced",
         details: [
-          "USER_GEMINI_API_KEY — User-provided Gemini key (overrides primary)",
-          "TIDYHQ_ACCESS_TOKEN — TidyHQ integration (events proxy, contact import)",
-        ],
-      },
-      {
-        icon: <Settings className="w-5 h-5" />,
-        title: "System Environment",
-        details: [
-          "NODE_ENV — 'production' or 'development' (controls build, error handling, DB safety)",
-          "LOG_LEVEL — Logging verbosity (debug, info, warn, error)",
+          "USER_GEMINI_API_KEY — User-provided Gemini key (overrides GEMINI_API_KEY if set)",
+          "OPEN_METEO_API_KEY — Paid Open-Meteo API key (uses customer-api.open-meteo.com; free tier used if absent)",
+          "ZOLEO_API_KEY — ZOLEO satellite tracker developer API key (required for ZOLEO retrieval tracking)",
+          "ALLOW_PLAINTEXT_PASSWORDS — Set to 'false' in production; 'true' in dev to skip bcrypt hashing on first login",
+          "LOG_LEVEL — Logging verbosity: debug, info, warn, error (default: info)",
         ],
       },
     ],
@@ -632,6 +664,50 @@ const categories: SpecCategory[] = [
       },
     ],
   },
+  {
+    id: "accounts",
+    title: "Hosting Accounts & Service URLs",
+    items: [
+      {
+        icon: <Globe className="w-5 h-5" />,
+        title: "Hosting & Source Control",
+        details: [
+          "Railway (hosting + PostgreSQL + logs) — railway.com · Login: web@skyhighparagliding.org.au · Project: skyhigh (SkyHighParagliding org)",
+          "GitHub (source code + CI/CD) — github.com/SkyHighParagliding · Repo: SkyHigh · Auto-deploys to Railway on push to main",
+          "Production URL: https://www.skyhighparagliding.org.au · Backup Railway URL: https://skyhigh-production.up.railway.app",
+        ],
+      },
+      {
+        icon: <HardDrive className="w-5 h-5" />,
+        title: "Storage & Media",
+        details: [
+          "Cloudflare R2 (image storage) — dash.cloudflare.com · Login: web@skyhighparagliding.org.au · Bucket: skyhigh-media",
+          "R2 Public URL: https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev (rate-limited; add custom domain media.skyhighparagliding.org.au for production scale)",
+          "Google Drive (document storage, Apps Script bridge) — drive.google.com · Account: web@skyhighparagliding.org.au",
+        ],
+      },
+      {
+        icon: <Network className="w-5 h-5" />,
+        title: "DNS, Email & Domain",
+        details: [
+          "Google Cloud DNS — console.cloud.google.com · Project: Skyhigh DNS Service · Manages: skyhighparagliding.org.au",
+          "DNS record: www CNAME → 33bp9c73.up.railway.app (Railway custom domain)",
+          "Resend (transactional email) — resend.com · Login: web@skyhighparagliding.org.au · Domain: skyhighparagliding.org.au (verified — DKIM/SPF/DMARC active)",
+          "Google Workspace (email + admin) — workspace.google.com · Domain: skyhighparagliding.org.au · Primary inbox: web@skyhighparagliding.org.au",
+        ],
+      },
+      {
+        icon: <Plug className="w-5 h-5" />,
+        title: "Integrations",
+        details: [
+          "TidyHQ (membership management) — skyhigh.tidyhq.com · Login: web@skyhighparagliding.org.au · Webhook registered for role/contact sync",
+          "Google AI Studio (Gemini API key) — aistudio.google.com · Account: web@skyhighparagliding.org.au · Key scope: all AI features",
+          "Weather Underground — wunderground.com · WU_API_KEY used for Personal Weather Station live data",
+          "Open-Meteo — open-meteo.com · No auth required on free tier · Used for ECMWF wind forecasts (days 1–7)",
+        ],
+      },
+    ],
+  },
 ];
 
 const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
@@ -670,7 +746,7 @@ export function TechSpec() {
           <p className="text-muted-foreground max-w-xl mx-auto print:text-sm">
             Complete technical reference for manual recreation, maintenance, and disaster recovery of the platform.
           </p>
-          <p className="text-xs text-foreground-faint mt-2">{categories.length} sections · {totalItems} specification items · Last updated March 2026</p>
+          <p className="text-xs text-foreground-faint mt-2">{categories.length} sections · {totalItems} specification items · Last updated May 2026</p>
         </div>
 
         <div className="mb-8 print:mb-4">

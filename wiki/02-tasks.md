@@ -8,54 +8,28 @@ type: wiki
 
 ---
 
-## Phase 0: Account Setup (🔄 IN PROGRESS — May 14, 2026)
+## Phase 0: Account Setup (✅ COMPLETE — May 2026)
 
 **Purpose:** Establish institutional ownership of all critical infrastructure accounts under club identity before deployment.  
 **Owner:** web@skyhighparagliding.org.au (club Google Workspace)  
 **Credential Storage:** Club password manager (web@ account) + encrypted file in Google Drive (backup)  
-**Status:** All 4 tasks must complete before Phase 4 deployment begins.
+**Status:** All 4 tasks complete. Phase 4 deployment unblocked.
 
-### TASK-ACCT-001 ⬜ Create GitHub Organization for Club
-- **Prerequisites:** None
-- **Estimated effort:** XS (~15 minutes)
-- **Description:** Create a new GitHub organization under the club name, invite web@skyhighparagliding.org.au as admin. Transfer the SkyHigh repo from personal account to the org.
-- **Acceptance criteria:**
-  - Organization created with name `skyhigh-club` or `skyhighparagliding`
-  - Org admin: web@skyhighparagliding.org.au
-  - SkyHigh repo transferred to org
-  - Branch protection on `main` (require PR review)
-  - Access instructions documented in wiki/07-credential-recovery.md
-  
-### TASK-ACCT-002 ⬜ Create Railway Account for Club
-- **Prerequisites:** None
-- **Estimated effort:** XS (~15 minutes)
-- **Description:** Create a new Railway account using web@skyhighparagliding.org.au. Link it to the club's GitHub organization. Create the `skyhigh` project.
-- **Acceptance criteria:**
-  - Railway account created with club email
-  - OAuth connected to club GitHub org
-  - `skyhigh` project created in Railway
-  - Access instructions documented in wiki/07-credential-recovery.md
+### TASK-ACCT-001 ✅ Create GitHub Organization for Club
+- **Completed:** 2026-05-15
+- **What was done:** Created GitHub org `SkyHighParagliding` (email: web@skyhighparagliding.org.au). Made SkyHigh repo public (Free plan requirement). Transferred repo from `jonpamment-prog/SkyHigh` → `SkyHighParagliding/SkyHigh`. Updated local remote: `git remote set-url origin https://github.com/SkyHighParagliding/SkyHigh.git`
 
-### TASK-ACCT-003 ⬜ Create Cloudflare R2 Account for Club
-- **Prerequisites:** None
-- **Estimated effort:** S (~30 minutes)
-- **Description:** Create a new Cloudflare account using web@skyhighparagliding.org.au. Create an R2 bucket for `skyhigh`. Generate API tokens with limited scope (R2 access only).
-- **Acceptance criteria:**
-  - Cloudflare account created with club email
-  - R2 bucket `skyhigh` created
-  - API token generated (with R2 read/write scope only)
-  - Token value stored in password manager
-  - Access instructions + token location documented in wiki/07-credential-recovery.md
+### TASK-ACCT-002 ✅ Create Railway Project for Club
+- **Completed:** 2026-05-15
+- **What was done:** Created Railway project under SkyHighParagliding org (trial account). Linked to GitHub repo with auto-deploy on `main`. Created PostgreSQL database service (online, Railway-hosted). DATABASE_URL auto-injected by Railway. App deployed and running at https://skyhigh-production.up.railway.app
 
-### TASK-ACCT-004 ⬜ Obtain Gemini API Key from Club Google Workspace
-- **Prerequisites:** None
-- **Estimated effort:** S (~20 minutes)
-- **Description:** Access Google AI Studio via club's Google Workspace Business Standard account (web@skyhighparagliding.org.au). Generate a Gemini API key. Store in password manager.
-- **Acceptance criteria:**
-  - API key obtained from Google AI Studio (using club Google Workspace auth)
-  - Key copied to `.env` file
-  - Key stored in password manager
-  - Instructions documented in wiki/07-credential-recovery.md
+### TASK-ACCT-003 ✅ Create Cloudflare R2 Account for Club
+- **Completed:** 2026-05-15
+- **What was done:** Created Cloudflare account (web@skyhighparagliding.org.au). Created R2 bucket `skyhigh-media`. Enabled Public Development URL. Generated API token (Object Read & Write). All credentials stored in `.env` and club password manager.
+
+### TASK-ACCT-004 ✅ Obtain Gemini API Key from Club Google Workspace
+- **Completed:** 2026-05-16
+- **What was done:** Obtained Gemini API key via Google AI Studio (web@skyhighparagliding.org.au). Key installed in `.env` as `GEMINI_API_KEY`. Stored in club password manager.
 
 ---
 
@@ -301,6 +275,11 @@ Deploy second instance of SkyHigh for different club.
 - **Acceptance Criteria:** Codebase supports multiple clubs with separate databases and branding. Second deployment (different club) works independently. Test white-label customization (name, logo, default wind map viewport).
 - **Status:** Backlog (depends on Phase 4 production deployment)
 
+### TASK-035 ⬜ Add cross-env to package.json dependencies
+`cross-env` is invoked via `npx` in the start script, causing Railway to download it fresh on every cold start.
+- **Acceptance Criteria:** `cross-env` added as a devDependency in `package.json`. `npx cross-env` in the start script replaced with `cross-env` directly. Railway cold start no longer shows `npm warn exec The following package was not found and will be installed`.
+- **Status:** Backlog
+
 ---
 
 ## Phase 6: Grid Configurability (✅ Complete)
@@ -326,25 +305,23 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 | Phase | Name | Tasks | Status | Completion Date |
 |---|---|---|---|---|
-| 0 | Account Setup | 004 | 🔄 IN PROGRESS | — |
+| 0 | Account Setup | 004 | ✅ Complete | 2026-05-16 |
 | 1 | Security Hardening | 007 | ✅ Complete | 2026-04-30 |
 | 2 | Wind Map & Weather | 011 | ✅ Complete | 2026-05-05 |
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
 | 6 | Grid Configurability | 001 | ✅ Complete | 2026-05-07 |
 | 7 | UX Refinements | 001 | ✅ Complete | 2026-05-07 |
-| 4 | Production Deployment | 004 | ⬜ TODO (blocked by Phase 0) | — |
+| 4 | Production Deployment | 004 | 🔄 IN PROGRESS | — |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
 | | **TOTAL** | **37** | **32 ✅ / 4 🔄 / 1 ⚠️** | — |
 
 ---
 
 **Task Summary:**
-- **Completed (32):** Phases 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
-- **In Progress (4):** Phase 0 — Account Setup (blocking Phase 4 deployment)
+- **Completed (36):** Phases 0, 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
+- **In Progress:** Phase 4 — Production Deployment (DNS switchover + env vars remaining)
 - **Partial (1):** Task 029 (env var loaded, no setup script)
-- **Deferred (1):** Task 028 (single-instance only)
+- **Deferred (1):** Task 028 (single-instance only, Redis not needed)
 - **Backlog (3):** Tasks 030, 031, 032 — to be addressed at production launch
 
-**IMPORTANT:** Phase 0 (Account Setup) must be completed before Phase 4 (Production Deployment Prep) begins. Phase 4 task list has been moved to "⬜ TODO (blocked by Phase 0)".
-
-Last updated: 2026-05-14
+Last updated: 2026-05-18
