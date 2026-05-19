@@ -10,6 +10,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { saveFile, deleteFile, readFile, StorageKey } from "../storage.js";
 import createLogger from "../utils/logger.js";
+import { generateTextWithFallback } from "../utils/aiModels.js";
 
 const log = createLogger("submissions");
 const router = Router();
@@ -99,15 +100,14 @@ async function checkContentSafety(imageBuffer: Buffer, mimeType: string): Promis
     const ai = new GoogleGenAI({ apiKey });
     const base64 = imageBuffer.toString("base64");
 
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+    const { text } = await generateTextWithFallback(ai, {
       contents: [
         {
           role: "user",
           parts: [
             { inlineData: { mimeType, data: base64 } },
             {
-              text: `You are a content moderation assistant. Analyse this image and determine if it is safe for a public community website for a paragliding/hang gliding club. 
+              text: `You are a content moderation assistant. Analyse this image and determine if it is safe for a public community website for a paragliding/hang gliding club.
 
 Flag the image as UNSAFE if it contains:
 - Nudity or sexually explicit content
@@ -123,8 +123,6 @@ Respond with ONLY valid JSON:
         },
       ],
     });
-
-    const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
