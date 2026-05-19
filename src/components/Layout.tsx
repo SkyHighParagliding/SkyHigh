@@ -185,7 +185,6 @@ function ClassicFooter() {
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-700 text-sm text-center text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} {clubName}. All rights reserved.</p>
-        {user && <Link to="/features" className="text-foreground-secondary hover:text-sky transition-colors text-xs mt-1 inline-block">Platform Overview</Link>}
       </div>
     </footer>
   );
