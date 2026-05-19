@@ -1,4 +1,20 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+
+const YT_QUALITY_FALLBACKS = ["maxresdefault", "sddefault", "hqdefault", "mqdefault"] as const;
+
+function YouTubeThumbnail({ videoId, className }: { videoId: string; className?: string }) {
+  const [qi, setQi] = useState(0);
+  const src = `https://img.youtube.com/vi/${videoId}/${YT_QUALITY_FALLBACKS[qi]}.jpg`;
+  return (
+    <img
+      src={src}
+      alt=""
+      className={className}
+      loading="lazy"
+      onError={() => setQi(q => Math.min(q + 1, YT_QUALITY_FALLBACKS.length - 1))}
+    />
+  );
+}
 import { useSettings } from "@/contexts/SettingsContext";
 
 const ALLOWED_YT_HOSTS = new Set([
@@ -177,11 +193,9 @@ export function VideoWall() {
                         borderRadius: 4,
                       }}
                     >
-                      <img
-                        src={item.src}
-                        alt=""
+                      <YouTubeThumbnail
+                        videoId={item.videoId}
                         className="w-full h-full object-cover"
-                        loading="lazy"
                       />
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
                         <svg className="w-16 h-16 text-white drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
