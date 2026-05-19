@@ -421,7 +421,8 @@ async function fetchAndCachePredictions(station: TideStation): Promise<CachedPre
       cachedAt: Date.now(),
     };
     predictionsCache.set(station.id, cached);
-    log.info(`Cached astronomical predictions for ${station.name}: ${predictions.length} entries`);
+    const predSummary = predictions.map(p => `${p.type[0].toUpperCase()}${p.height}@${new Date(p.time).toISOString().slice(11, 16)}`).join(" ");
+    log.info(`Cached astronomical predictions for ${station.name}: ${predictions.length} entries: ${predSummary || "(none)"}`);
     return cached;
   }
 }
