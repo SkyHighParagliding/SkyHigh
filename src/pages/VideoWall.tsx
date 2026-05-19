@@ -5,13 +5,19 @@ const YT_QUALITY_FALLBACKS = ["maxresdefault", "sddefault", "hqdefault", "mqdefa
 function YouTubeThumbnail({ videoId, className }: { videoId: string; className?: string }) {
   const [qi, setQi] = useState(0);
   const src = `https://img.youtube.com/vi/${videoId}/${YT_QUALITY_FALLBACKS[qi]}.jpg`;
+
+  const advance = () => setQi(q => Math.min(q + 1, YT_QUALITY_FALLBACKS.length - 1));
+
   return (
     <img
       src={src}
       alt=""
       className={className}
       loading="lazy"
-      onError={() => setQi(q => Math.min(q + 1, YT_QUALITY_FALLBACKS.length - 1))}
+      // YouTube returns a 120×90 grey placeholder with 200 OK when maxresdefault/sddefault
+      // are unavailable — onError never fires, so we check naturalWidth on load instead.
+      onLoad={(e) => { if (e.currentTarget.naturalWidth <= 120 && qi < YT_QUALITY_FALLBACKS.length - 1) advance(); }}
+      onError={advance}
     />
   );
 }
