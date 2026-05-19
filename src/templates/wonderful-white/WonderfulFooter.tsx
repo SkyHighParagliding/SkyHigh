@@ -66,7 +66,6 @@ export function WonderfulFooter() {
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t text-sm text-center" style={{ borderColor: "var(--tmpl-footer-border)" }}>
         <p>&copy; {new Date().getFullYear()} {clubName}. All rights reserved.</p>
-        {user && <Link to="/features" className="hover:opacity-70 transition-opacity text-xs mt-1 inline-block" style={{ color: "var(--tmpl-footer-text)" }}>Platform Overview</Link>}
       </div>
     </footer>
   );
