@@ -80,16 +80,16 @@ Copy all values from project `.env` file to Railway web service Variables tab:
 
 ---
 
-## Account Setup Status (Phase 0 — In Progress)
+## Account Setup Status (Phase 0 — ✅ COMPLETE)
 
-All production accounts are transitioning to club ownership. See [[02-tasks]] Phase 0 for setup details.
+All production accounts are under club ownership. See [[02-tasks]] Phase 0 for full details.
 
 | Account | Status | Email | Notes |
 |---------|--------|-------|-------|
-| GitHub Organization | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-001 |
-| Railway Project | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-002 |
-| Cloudflare R2 | ⬜ TODO | web@skyhighparagliding.org.au | Task ACCT-003 |
-| Gemini API Key | ⬜ TODO | web@skyhighparagliding.org.au (Workspace) | Task ACCT-004 |
+| GitHub Organization | ✅ DONE | web@skyhighparagliding.org.au | SkyHighParagliding org, repo transferred |
+| Railway Project | ✅ DONE | web@skyhighparagliding.org.au | Live at skyhigh-production.up.railway.app |
+| Cloudflare R2 | ✅ DONE | web@skyhighparagliding.org.au | Bucket: skyhigh-media |
+| Gemini API Key | ✅ DONE | web@skyhighparagliding.org.au (Workspace) | Key in .env + password manager |
 | Resend | ✅ EXISTING | [Club account] | No new setup needed |
 | TidyHQ | ✅ EXISTING | [Club account] | No new setup needed |
 | Google Workspace | ✅ EXISTING | web@skyhighparagliding.org.au | All Google services |
@@ -220,16 +220,12 @@ All production accounts are transitioning to club ownership. See [[02-tasks]] Ph
 
 ---
 
-## Phase 0 — Account Setup Checklist
+## Phase 0 — Account Setup Checklist (✅ COMPLETE)
 
-- [ ] **TASK-ACCT-001:** GitHub organization created + SkyHigh repo transferred
-- [ ] **TASK-ACCT-002:** Railway project created + linked to club GitHub org
-- [ ] **TASK-ACCT-003:** Cloudflare R2 account created + bucket + API tokens generated
-- [ ] **TASK-ACCT-004:** Gemini API key obtained from Google Workspace + stored in `.env`
-- [ ] All credentials documented in password manager
-- [ ] Backup copy created in Google Drive (SkyHigh Committee folder)
-- [ ] Credential recovery procedures tested (e.g., can reset GitHub password)
-- [ ] [[07-credential-recovery]] file updated with all account details
+- [x] **TASK-ACCT-001:** GitHub organization created + SkyHigh repo transferred
+- [x] **TASK-ACCT-002:** Railway project created + linked to club GitHub org
+- [x] **TASK-ACCT-003:** Cloudflare R2 account created + bucket + API tokens generated
+- [x] **TASK-ACCT-004:** Gemini API key obtained from Google Workspace + stored in `.env`
 
 ## Phase 4–6 — Deployment Checklist
 

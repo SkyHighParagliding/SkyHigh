@@ -307,9 +307,11 @@ export function AdminManual() {
         "Weather fetches automatically every 15–30 min during daylight hours (7am–8pm Melbourne time). Click 'Fetch Now' for an immediate update.",
         "Forecasts: Days 1–2 use hourly ECMWF data; days 3–7 use 4-hour intervals fetched daily at ~5:30am.",
         "7-Day Outlook: A compact strip on weather cards showing daily conditions and flyability dots.",
-        "Tides: Coastal sites show an interactive tide chart in the 7-Day Outlook panel, auto-detected from coordinates.",
+        "Tides: Coastal sites show an interactive tide chart in the 7-Day Outlook panel, auto-detected from coordinates. Click any point on the chart to see predicted height at that time. The chart covers ±2 hours around now and the next 12 hours by default.",
         "Wind Map: Animated wind map on the Sites page. TODAY/7 DAYS toggle switches between hourly and extended views. Click the map to see wind speed/direction at any point.",
-        "Click 'Preview Wind Map' for a full-screen preview. Live station selection is per-site in the site editor."
+        "Click 'Preview Wind Map' for a full-screen preview. Live station selection is per-site in the site editor.",
+        "Troubleshooting — Tide Chart Flat Line: If the tide chart shows a flat horizontal line, the ECMWF weather grid data is stale (the scheduled 5 AM grid fetch may have failed). Click 'Fetch Now' to force an immediate weather update. The chart recovers automatically on the next scraper cycle (15–30 min). The system now detects stale forecast windows and shows a tide-centred view rather than a blank chart.",
+        "Troubleshooting — Stale Weather Data: After each weather scraper cycle, the Railway log shows 'Updated ECMWF forecasts for X/Y sites (grid age: Zmin)'. If X is 0 or grid age is very high (>120 min), the ECMWF data fetch is failing. Use 'Fetch Now' to trigger a fresh cycle. See Troubleshooting section below for how to access Railway logs."
       ]
     },
     {
@@ -512,6 +514,24 @@ export function AdminManual() {
       ]
     },
     {
+      title: "Troubleshooting",
+      icon: <AlertCircle className="w-6 h-6 text-orange" />,
+      link: "/admin",
+      category: "Troubleshooting",
+      description: "Common issues and how to diagnose them. Railway deployment logs are the primary diagnostic tool for server-side problems.",
+      steps: [
+        "Check Railway Logs: Go to railway.com → log in with the club's web@skyhighparagliding.org.au account → select the skyhigh project → click the web service → Deployments tab → click the active deployment → 'View Logs'. Logs update in real time and show all weather scraper activity, errors, and API calls.",
+        "Tide Chart Flat Line: The ECMWF weather grid data is stale. In Railway logs, look for 'extractSiteForecast: [datetime] not in grid — fine grid is stale'. Fix: go to Weather Management and click 'Fetch Now'. The chart recovers automatically after the next scraper cycle (15–30 min).",
+        "Weather Data Stopped Updating: In Railway logs, check for 'Updated ECMWF forecasts for 0/X sites'. This means the ECMWF grid fetch is failing (usually rate limiting or a network timeout). Click 'Fetch Now' in Weather Management. If the problem persists, check Open-Meteo API status — the free tier has no auth and is sometimes temporarily unavailable.",
+        "Images Not Loading: Check the Cloudflare R2 bucket at dash.cloudflare.com (log in with web@skyhighparagliding.org.au). The bucket is skyhigh-media. Verify CORS settings are still active (should allow GET from any origin). If the public URL returns 403, R2 public access may need to be re-enabled.",
+        "Emails Not Sending: Go to resend.com → log in → check the dashboard for bounced or failed delivery events. Verify the domain skyhighparagliding.org.au is still Verified (green). If DKIM/SPF/DMARC records have been removed from Google Cloud DNS, domain verification will lapse and emails will fail.",
+        "TidyHQ Sync Not Updating Website: Go to Connections & APIs → TidyHQ. Check the sync log for recent webhook events. If blank, check that the webhook URL is still registered in TidyHQ Admin → API → Webhooks. The webhook fires on membership changes, group changes, and contact updates.",
+        "Admin Login Not Working: If an admin can't log in and can't receive a password reset email (email failing), another admin can update the password directly via Admin Contacts → open the contact → enter a new password → Save.",
+        "Site not appearing after Save: Check the browser console for errors. The most common cause is a PostgreSQL type validation error from a partially edited field. Open the site again, check all fields are valid, and save.",
+        "Deployment Failed on Railway: Go to railway.com → skyhigh project → Deployments tab. Click the failed deployment to see build logs. Common causes: npm install failure (check for package version conflicts), TypeScript compile error (the build command runs tsc), or a missing environment variable (Railway Variables tab).",
+      ]
+    },
+    {
       title: "Markdown Formatting Guide",
       icon: <FileText className="w-6 h-6 text-indigo-500" />,
       link: "/admin/pages",
@@ -570,7 +590,7 @@ export function AdminManual() {
           </Link>
           <div className="flex items-center gap-2 text-navy font-bold">
             <Book className="w-5 h-5" />
-            <span>Admin Manual v14.0</span>
+            <span>Admin Manual v15.0</span>
           </div>
         </div>
 
@@ -654,16 +674,22 @@ export function AdminManual() {
                 <div className="flex gap-3">
                   <Settings className="w-5 h-5 text-sky flex-shrink-0" />
                   <p className="text-sm text-gray-300">
-                    <strong className="text-white">Production Readiness:</strong> The system supports both local SQLite and production-grade PostgreSQL. All core configuration is managed via the <code>.env.template</code> file.
+                    <strong className="text-white">Live Site:</strong> <a href="https://www.skyhighparagliding.org.au" target="_blank" rel="noopener noreferrer" className="text-sky underline">www.skyhighparagliding.org.au</a> — hosted on Railway, PostgreSQL database, images on Cloudflare R2. All credentials under the club's <code>web@skyhighparagliding.org.au</code> account.
                   </p>
                 </div>
               </div>
               <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-                <h4 className="font-bold mb-2">Need Technical Help?</h4>
-                <p className="text-sm text-foreground-faint mb-4">
-                  If you encounter errors or need new features, contact the system administrator or the club's IT subcommittee.
-                </p>
-                <p className="text-xs text-sky font-mono">Contact your system administrator</p>
+                <h4 className="font-bold mb-3">Service Account Links</h4>
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs text-gray-300"><strong className="text-white">Railway (hosting + logs):</strong> <a href="https://railway.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">railway.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">GitHub (source code):</strong> <a href="https://github.com/SkyHighParagliding" target="_blank" rel="noopener noreferrer" className="text-sky underline">github.com/SkyHighParagliding</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Cloudflare R2 (images):</strong> <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">dash.cloudflare.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Google Cloud DNS:</strong> <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">console.cloud.google.com</a> — Skyhigh DNS Service project</p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Resend (email):</strong> <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">resend.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">TidyHQ:</strong> <a href="https://skyhigh.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">skyhigh.tidyhq.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Google Workspace / Drive:</strong> <a href="https://workspace.google.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">workspace.google.com</a></p>
+                </div>
+                <p className="text-xs text-gray-400">All login credentials and recovery procedures are in the Credential Recovery document on Google Drive (01_Governance folder).</p>
               </div>
             </CardContent>
           </Card>
