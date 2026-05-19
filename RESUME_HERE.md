@@ -1,4 +1,4 @@
-# RESUME_HERE — Last updated: 2026-05-19 (session 3)
+# RESUME_HERE — Last updated: 2026-05-19 (session 4)
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅
@@ -7,22 +7,24 @@
 
 **The app is live at https://www.skyhighparagliding.org.au**
 
-Go-live completed 2026-05-19. Site is stable. All recent changes deployed and confirmed working.
+Go-live completed 2026-05-19. Site is stable. All session 4 changes deployed.
 
 ---
 
 ## What's Done (this session)
 
-- ✅ **Documentation fully updated** (commit 425a194) — AdminManual v15.0, TechSpec May 2026, Procedures Manual seed + SQL with hosting platform details and officer handover steps for Railway/GitHub/R2/DNS/Resend
-- ✅ **Credential Recovery PDF created** — `SkyHigh-Credential-Recovery.pdf` covers all 8 services (Railway, GitHub, Cloudflare R2, Google Cloud DNS, Resend, TidyHQ, Google Workspace, Secure PW Document) with login URLs, purposes, and recovery procedures. HTML source at `credential-recovery.html` (gitignored). User saved PDF to Google Drive → 01_Governance.
-- ✅ **Platform Overview link removed from public footer** (commit 3c1e23a) — removed from `Layout.tsx` and `WonderfulFooter.tsx`. Feature still accessible via Admin dashboard.
+- ✅ **YouTube scrape — YouTube Data API v3** (commit 46b1c19) — RSS was blocked by Railway's cloud IP range. Switched to YouTube Data API v3: channels.list resolves @handle/@user/channel URLs, playlistItems.list fetches uploads playlist. Requires `YOUTUBE_API_KEY` env var in Railway.
+- ✅ **YouTube thumbnail grey placeholder fix** (commit 1615644) — maxresdefault returns 200 OK with a 120×90 grey image (not a 404). Added onLoad check: if naturalWidth ≤ 120 advance to next quality (sddefault → hqdefault → mqdefault).
+- ✅ **recordSiteView overcounting fix** (commit 064a568) — Bug: recordSiteView was in useEffect([site]) which fires on every React Query refetch (every 30s staleTime). Moved to useEffect([id]) so it fires exactly once per navigation. This was causing inflated counts for sites where users dwelt longer, skewing home page order.
 
 ---
 
 ## ACTION REQUIRED (next session)
 
-- ⚠️ **Update live Procedures Manual in production DB** — Go to Admin → Procedures Manual and manually update the `Website Management` and `Officer Toolkit & Handover` sections. The seed/migration files only affect fresh installs; the live DB still has the old content.
+- ⚠️ **Add `YOUTUBE_API_KEY` to Railway** — If not already done: Google Cloud Console → APIs & Services → YouTube Data API v3 → Credentials → API key. Add as Railway env var. Free quota: 10,000 units/day, ~2 units per scrape.
+- ⚠️ **Update live Procedures Manual in production DB** — Go to Admin → Procedures Manual and manually update the `Website Management` and `Officer Toolkit & Handover` sections. The seed/migration files only affect fresh installs.
 - ⚠️ **Fill in Webmaster contact details** in the Credential Recovery PDF and re-save to Google Drive (name, personal email, phone were left as placeholders).
+- ⚠️ **Home page ordering reset** — Existing localStorage counts for Barwon Heads are inflated from the bug. User may want to clear `skyhigh_recent_sites` from browser DevTools → Application → Local Storage on skyhighparagliding.org.au to reset to clean geolocation-based seed.
 
 ---
 
@@ -34,7 +36,7 @@ Go-live completed 2026-05-19. Site is stable. All recent changes deployed and co
 - **TASK-028** — CSRF Redis store deferred (single-instance Railway, not needed yet)
 - **TASK-029** — DEFAULT_ADMINS hardening (partial — env var set, no setup script)
 - **R2 custom domain** — Public dev URL (`pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev`) is rate-limited. For production scale, add a custom domain (e.g. `media.skyhighparagliding.org.au`) to the R2 bucket.
-- **Fine grid staleness root cause** — Unknown why the fine grid stopped refreshing on May 17–19. New logging will surface it in Railway logs if it recurs. Watch for `Weather scraper: Fine grid is Xmin old` warnings.
+- **Fine grid staleness root cause** — Unknown why the fine grid stopped refreshing on May 17–19. New logging will surface it in Railway logs if it recurs.
 
 ---
 
@@ -51,7 +53,7 @@ Go-live completed 2026-05-19. Site is stable. All recent changes deployed and co
 | R2 public URL | https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev |
 | DNS provider | Google Cloud DNS (Skyhigh DNS Service project) |
 | TIDYHQ_CLUB_ID | skyhigh |
-| Latest deploy | Remove Platform Overview from public footer — commit 3c1e23a |
+| Latest deploy | recordSiteView overcounting fix — commit 064a568 |
 
 ---
 
