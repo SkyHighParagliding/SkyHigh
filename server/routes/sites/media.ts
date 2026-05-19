@@ -61,7 +61,11 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       const pageRes = await fetch(channelUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; SkyHighBot/1.0)" },
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -69,8 +73,18 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
         return res.status(400).json({ error: `Failed to fetch channel page: ${pageRes.status}` });
       }
       const html = await pageRes.text();
-      const cidMatch = html.match(/channel_id=([^"&\s]+)/);
-      if (cidMatch) channelId = cidMatch[1];
+      // Try multiple patterns — YouTube page structure varies by URL type
+      const cidPatterns = [
+        /channel_id=(UC[a-zA-Z0-9_-]+)/,
+        /"channelId":"(UC[a-zA-Z0-9_-]+)"/,
+        /"externalChannelId":"(UC[a-zA-Z0-9_-]+)"/,
+        /"browseId":"(UC[a-zA-Z0-9_-]+)"/,
+        /\/channel\/(UC[a-zA-Z0-9_-]+)/,
+      ];
+      for (const pattern of cidPatterns) {
+        const m = html.match(pattern);
+        if (m) { channelId = m[1]; break; }
+      }
     } catch (err: any) {
       if (err.name === "AbortError") {
         return res.status(408).json({ error: "Request timeout fetching channel page" });
