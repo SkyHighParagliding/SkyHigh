@@ -38,14 +38,12 @@ export function SiteFieldView() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (id) recordSiteView(id);
   }, [id]);
 
   useEffect(() => {
-    if (site) {
-      recordSiteView(site.id);
-      if (site.lat && site.lon && site.useLiveWeather === 'true') {
-        prefetchWindGrids([site.id]);
-      }
+    if (site?.lat && site?.lon && site?.useLiveWeather === 'true') {
+      prefetchWindGrids([site.id]);
     }
   }, [site]);
 
