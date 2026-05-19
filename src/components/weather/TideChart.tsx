@@ -18,8 +18,13 @@ export const TideChart = memo(function TideChart({ tideData, forecastStartMs, fo
   const plotH = svgHeight - padTop - padBottom;
 
   const now = Date.now();
-  const windowStartMs = forecastStartMs ?? (now - 2 * 60 * 60 * 1000);
-  const windowEndMs = forecastEndMs ?? (now + 12 * 60 * 60 * 1000);
+  // If the forecast window is stale (ends more than 1h in the past), ignore it and
+  // use a tide-centred window so the chart always shows current and upcoming tides.
+  const rawStart = forecastStartMs ?? (now - 2 * 60 * 60 * 1000);
+  const rawEnd = forecastEndMs ?? (now + 12 * 60 * 60 * 1000);
+  const windowStale = rawEnd < now - 60 * 60 * 1000;
+  const windowStartMs = windowStale ? now - 2 * 60 * 60 * 1000 : rawStart;
+  const windowEndMs = windowStale ? now + 12 * 60 * 60 * 1000 : rawEnd;
   const spanMs = windowEndMs - windowStartMs;
 
   const allHeights = preds.map(p => p.height);
