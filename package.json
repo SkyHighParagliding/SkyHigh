@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently --names api,vite --prefix-colors blue,green \"npm:dev:api\" \"npm:dev:client\"",
-    "dev:api": "op run -- tsx server.ts",
-    "dev:client": "op run -- vite",
+    "dev:api": "tsx server.ts",
+    "dev:client": "vite",
     "start": "cross-env NODE_ENV=production op run -- tsx server.ts",
     "build": "vite build && node esbuild.server.mjs",
     "preview": "vite preview",
