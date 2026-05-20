@@ -5,7 +5,7 @@
 -- 3. Uses correct working R2 bucket URLs
 
 WITH library_data AS (
-  SELECT value::jsonb AS lib
+  SELECT CAST(value AS jsonb) AS lib
   FROM settings
   WHERE key = 'imageLibrary'
 ),
