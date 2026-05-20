@@ -28,7 +28,10 @@ inland_images AS (
 )
 UPDATE sites
 SET image = CASE
-  WHEN lower(coalesce(type, '')) ~ 'inland|mountain|ridge|tow' THEN
+  WHEN lower(coalesce(type, '')) LIKE '%inland%' 
+    OR lower(coalesce(type, '')) LIKE '%mountain%' 
+    OR lower(coalesce(type, '')) LIKE '%ridge%' 
+    OR lower(coalesce(type, '')) LIKE '%tow%' THEN
     (SELECT banner FROM inland_images ORDER BY random() LIMIT 1)
   ELSE
     (SELECT banner FROM coastal_images ORDER BY random() LIMIT 1)
