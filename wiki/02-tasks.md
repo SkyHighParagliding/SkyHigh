@@ -275,10 +275,10 @@ Deploy second instance of SkyHigh for different club.
 - **Acceptance Criteria:** Codebase supports multiple clubs with separate databases and branding. Second deployment (different club) works independently. Test white-label customization (name, logo, default wind map viewport).
 - **Status:** Backlog (depends on Phase 4 production deployment)
 
-### TASK-035 ⬜ Add cross-env to package.json dependencies
+### TASK-035 ✅ Add cross-env to package.json dependencies
 `cross-env` is invoked via `npx` in the start script, causing Railway to download it fresh on every cold start.
-- **Acceptance Criteria:** `cross-env` added as a devDependency in `package.json`. `npx cross-env` in the start script replaced with `cross-env` directly. Railway cold start no longer shows `npm warn exec The following package was not found and will be installed`.
-- **Status:** Backlog
+- **Completed:** 2026-05-20. Added `cross-env: ^7.0.3` to devDependencies. Changed both `npx cross-env` → `cross-env` in start and analyze scripts. Verified resolution via `node -e "require('cross-env')"`.
+- **Status:** ✅ DONE
 
 ---
 
