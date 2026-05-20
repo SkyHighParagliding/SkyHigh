@@ -1,148 +1,25 @@
-# RESUME_HERE — Last updated: 2026-05-20 (session 7)
+# RESUME_HERE — Last updated: 2026-05-20 (session 8)
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — Fly.io migration PLANNED ⏳
+## Status: **LIVE** ✅ on Railway
 
-## ⚠️ PRIORITY OVERRIDE: Railway → Fly.io Migration
+## Where I left off
+- Railway infrastructure is operating correctly.
+- Fly.io migration plan has been officially deferred to future/low priority (see `wiki/future/08-flyio-migration-plan.md`).
+- Performed a health check on the SQLite dev environment by forcing a re-init (verified all migrations pass).
+- Committed TASK-035 changes (cross-env).
 
-**A full migration plan has been written: `wiki/08-flyio-migration-plan.md`**
+## Last completed task
+- TASK-035: Add cross-env to package.json — completed 2026-05-20
 
-This plan takes priority over ALL existing tasks. Do NOT start any other task until:
-- The plan is reviewed and approved (or rejected) by the user
-- If approved: execute the plan before resuming any backlog tasks
-- If rejected: remove this priority override and resume normal task order
+## Currently in progress
+- Phase 4: Production Deployment (DNS switchover + env vars remaining)
 
-**Why:** Moving to Fly.io may be free (Hobby plan) vs Railway's ~$15+/mo. Migration is ~2 hours active work. If approved, doing it now avoids paying another Railway month.
+## Next task to start
+- TASK-031: Pilot XC Flight History Export (OR TASK-029)
 
-## Current State
+## Open questions / blockers
+- None.
 
-**The app is live at https://www.skyhighparagliding.org.au**
-
-Go-live completed 2026-05-19. **Railway infrastructure is currently down** — do NOT push to GitHub until Railway is back, as auto-deploy will fail. TASK-035 changes are uncommitted locally.
-
-**⚠️ If migration to Fly is approved, skip the Railway push entirely — deploy directly to Fly.**
-
----
-
-## 🎯 INCOMPLETE TASKS (6) — Start Here When You Resume
-
-> **If you just said "I'm back" or "resume" — pick a task from this list.**
-> Detailed analysis saved 2026-05-20 covering each task's current state, what's done vs. missing, effort estimate, and risk.
-
-### 1. TASK-031 — Pilot XC Flight History Export (⬜ S effort, Backlog)
-- **What:** Pilots download their submitted flights as CSV or GPX from FlightHistory page
-- **Data already exists:** `GET /api/flights` + `GET /api/flights/:id` with breadcrumbs array
-- **Needs:** New endpoint `GET /api/flights/export?format=csv|gpx`, download button on `src/pages/FlightHistory.tsx`
-- **High user value, low effort.** Good quick win.
-
-### 2. TASK-029 — Harden DEFAULT_ADMINS for Production (⚠️ Partial, S effort)
-- **Done:** `DEFAULT_ADMINS` loads from env var JSON, passwords hashed with bcrypt on startup (`server/routes/auth.ts` line ~79)
-- **Missing:** No guided one-time setup script for production admin creation; no documentation in `.env.template` about expected format
-- **Needs:** `scripts/create-admin.ts` that prompts for email + password, hashes, inserts to DB
-
-### 3. TASK-028 — CSRF Redis Store for Multi-Instance (⬜ Deferred, M effort)
-- **Current:** CSRF tokens stored in-memory Map in `server/utils/csrf.ts`, not shared across instances
-- **Risk:** If Railway scales to 2+ instances, CSRF tokens generated on instance A won't validate on instance B → spurious 403 errors
-- **Fix:** Move to Redis (SET/GET/DEL with 24h TTL), keep Map as dev fallback
-- **Deferred because:** Single-instance deployment; no immediate scaling need
-
-### 4. TASK-030 — Siteguide Version Change Email Notification (⬜ Backlog, M effort)
-- **What:** Daily cron job checks siteguide.org.au for version changes on linked guides, emails site contacts on update
-- **Infrastructure exists:** Email utility, scheduled jobs, site contacts in DB, `SITEGUIDE_VERSION_CHECK_TTL_MS` constant
-- **Complexity:** Depends on how consistently siteguide.org.au surfaces version changes (headers, content hash, or scraping)
-
-### 5. TASK-032 — Multi-Club White-Label Test (⬜ Backlog, L effort)
-- **What:** Deploy second independent instance of SkyHigh for a different club
-- **Infrastructure exists:** Branding engine, club name/logo/colors configurable, custom pages, wind map viewport
-- **Risk:** There may be hardcoded "SkyHigh" references that should pull from settings — test would surface these
-
-### 6. TASK-REVIEW-F — useWindPlayback Hook Extraction (⬜ Deferrable, M effort)
-- **What:** Extract shared playback state (isPlaying, playSpeed, currentTime, interval effect) from `WindMapProto.tsx` and `SitesWindMap.tsx` into `src/hooks/useWindPlayback.ts`
-- **Non-critical:** Duplication works correctly, ~30–40 lines repeated. Code review tasks A–E already addressed perf concerns
-- **Pick up when:** Touching wind map code next time — refactor as you go
-
----
-
-## What's Done (this session)
-
-- ✅ **TASK-035 — cross-env to package.json** (2026-05-20) — Added `cross-env: ^7.0.3` to devDependencies, changed `npx cross-env` → `cross-env` in start + analyze scripts. No more npm warn on Railway cold starts.
-- ✅ **Incomplete tasks audit** — Full analysis of all 7 open tasks saved to RESUME_HERE.md, memory/project.md, and tasks/todo.md (2026-05-20)
-
----
-
-## ⚠️ Uncommitted Changes (do NOT push — Railway is down)
-
-- **package.json** — TASK-035: `cross-env` added to devDependencies, `npx cross-env` → `cross-env` in scripts
-- **package-lock.json** — regenerated by `npm install`
-- **wiki/02-tasks.md** — TASK-035 marked ✅ DONE
-- **memory/project.md** — status updated, incomplete tasks dropped from 7→6
-- **tasks/todo.md** — TASK-035 moved to done section
-- **memory/MEMORY.md** — quick reminders updated
-
-When Railway recovers: commit with `[TASK-035] Add cross-env to package.json dependencies` and push.
-
----
-
-## Previous Session (session 5)
-
-- ✅ **YouTube scrape — YouTube Data API v3** (commit 46b1c19) — RSS was blocked by Railway's cloud IP range. Switched to YouTube Data API v3.
-- ✅ **YouTube thumbnail grey placeholder fix** (commit 1615644)
-- ✅ **recordSiteView overcounting fix** (commit 064a568)
-
----
-
-## In Planning — Awaiting Answers
-
-**Committee member photo feature** — full planning session completed 2026-05-19. Four decisions needed before task plan can be written:
-- Q1: Self-service mechanism (Member Portal vs Magic Link vs SO-only vs other)
-- Q2: Output dimensions/ratio (3:4 portrait 300×400 recommended)
-- Q3: Placeholder when no photo (initials avatar recommended)
-- Q4: Photo approval workflow for self-uploads (immediate vs admin approval)
-
-Full questions + considerations saved in `tasks/committee-photo-planning-questions.md`.
-Flowcharts for all three paths (Member Portal self-service, Magic Link self-service, Admin-administered) in session 5 conversation history.
-
----
-
-## ACTION REQUIRED (next session)
-
-- ⚠️ **Add `YOUTUBE_API_KEY` to Railway** — If not already done: Google Cloud Console → APIs & Services → YouTube Data API v3 → Credentials → API key. Add as Railway env var. Free quota: 10,000 units/day, ~2 units per scrape.
-- ⚠️ **Update live Procedures Manual in production DB** — Go to Admin → Procedures Manual and manually update the `Website Management` and `Officer Toolkit & Handover` sections. The seed/migration files only affect fresh installs.
-- ⚠️ **Fill in Webmaster contact details** in the Credential Recovery PDF and re-save to Google Drive (name, personal email, phone were left as placeholders).
-- ⚠️ **Home page ordering reset** — Existing localStorage counts for Barwon Heads are inflated from the bug. User may want to clear `skyhigh_recent_sites` from browser DevTools → Application → Local Storage on skyhighparagliding.org.au to reset to clean geolocation-based seed.
-
----
-
-## Known Issues / Operational Notes
-
-- **mt-broughton-thistle-hill weather station** — External FreeFlightWx station returning bad JSON every cycle. Not our bug; station is down.
-- **npm audit** — 11 vulnerabilities (8 moderate, 2 high, 1 critical) flagged at build time. Run `npm audit` locally to triage.
-- **R2 custom domain** — Public dev URL rate-limited. For production scale, add custom domain (e.g. `media.skyhighparagliding.org.au`) to R2 bucket.
-- **Fine grid staleness root cause** — Unknown why fine grid stopped refreshing May 17–19. New logging in `victoriaGrid.ts` will surface it if it recurs.
-
----
-
-## Key Info
-
-| Item | Value |
-|---|---|
-| Production URL | https://www.skyhighparagliding.org.au |
-| Railway URL (backup) | https://skyhigh-production.up.railway.app |
-| Admin login | jonpamment@gmail.com |
-| GitHub repo | https://github.com/SkyHighParagliding/SkyHigh |
-| Railway project | skyhigh (SkyHighParagliding org) |
-| R2 bucket | skyhigh-media |
-| R2 public URL | https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev |
-| DNS provider | Google Cloud DNS (Skyhigh DNS Service project) |
-| TIDYHQ_CLUB_ID | skyhigh |
-| Latest deploy | recordSiteView overcounting fix — commit 064a568 |
-
----
-
-## Key Files
-
-- `memory/project.md` — Full status, env var table
-- `wiki/02-tasks.md` — Master task list across all phases
-- `wiki/06-deployment.md` — Infrastructure, accounts, DNS, Railway setup details
-- `credential-recovery.html` — Source for credential recovery PDF (gitignored, local only)
-- `.env` — All local credentials (mirrored to Railway Variables)
+## Quick context refresher
+The application is live on Railway. SQLite dev DB is confirmed functional via audit. You are set to resume development work.
