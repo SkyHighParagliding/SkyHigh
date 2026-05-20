@@ -4,7 +4,7 @@ description: 35 tasks across 5 phases + code review remediation. Security, wind 
 type: wiki
 ---
 
-# Task List — 39 Items Across 6 Phases + Code Review
+# Task List — 39 Items Across 7 Phases + Code Review
 
 ---
 
@@ -288,16 +288,25 @@ Deploy second instance of SkyHigh for different club.
 Rename grid identifiers from location-specific to purpose-descriptive, and make grid coverage areas configurable via admin UI.
 - **Acceptance Criteria:** All `victoria`/`wide` grid naming replaced with `fine`/`coarse`. Grid bounds stored in settings table, read at fetch time with fallback to hardcoded defaults. Admin panel has map-based selector with two draggable bounding boxes, live point count / fetch time indicators, containment enforcement (fine must be within coarse), and legend. POST endpoint validates bounds + point limits.
 - **Completed:** 2026-05-07. Commits d953a05, 77a454a.
-- **Post-completion fixes (same session):** `GET /grid-bounds` route was shadowed by `GET /:siteId` wildcard (moved before it); `fineGridLastRun/Result` and `coarseGridLastRun/Result` settings keys were missing from `SettingsContext` type and setter (added to both initial load and `refreshSettings()`); added 5s polling after Fetch Now triggers so status indicators auto-update.
 
 ---
 
-## Phase 7: UX Refinements
+## Phase 7: UX Refinements (✅ Complete)
 
 ### TASK-034 ✅ Wind Map Scrubber Retractable Tray
 Convert the static bottom scrubber bar on both wind map variants into a slide-up tray with a pull-tab.
 - **Acceptance Criteria:** Tab (24 × 100 px, centred at bottom edge) and tray move as one unit. Default state: retracted (tab only visible). Click tab to pull tray up; click again to retract. Chevron rotates to indicate direction. Both `SitesWindMap` and `WindMapProto` updated.
 - **Completed:** 2026-05-07. `src/components/SitesWindMap.tsx`, `src/components/WindMapProto.tsx`.
+
+---
+
+## Phase 8: Future / Low Priority
+
+### TASK-MIG-001 ⬜ Railway → Fly.io Migration
+- **Status:** ⬜ DEFERRED — Pending future need
+- **Description:** Migrate SkyHigh hosting from Railway to Fly.io for potential cost savings.
+- **Reference:** `wiki/future/08-flyio-migration-plan.md`
+- **Estimated effort:** ~2 hours active work, ~2 days calendar time
 
 ---
 
@@ -313,15 +322,16 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 7 | UX Refinements | 001 | ✅ Complete | 2026-05-07 |
 | 4 | Production Deployment | 004 | 🔄 IN PROGRESS | — |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
-| | **TOTAL** | **37** | **32 ✅ / 4 🔄 / 1 ⚠️** | — |
+| 8 | Future / Low Priority | 001 | ⬜ DEFERRED | — |
+| | **TOTAL** | **38** | **33 ✅ / 4 🔄 / 1 ⚠️ / 1 ⬜** | — |
 
 ---
 
 **Task Summary:**
-- **Completed (36):** Phases 0, 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
+- **Completed (37):** Phases 0, 1, 2, 3, 6, 7 + Tasks 026, 027 from Phase 4
 - **In Progress:** Phase 4 — Production Deployment (DNS switchover + env vars remaining)
 - **Partial (1):** Task 029 (env var loaded, no setup script)
-- **Deferred (1):** Task 028 (single-instance only, Redis not needed)
+- **Deferred (2):** Task 028 (single-instance only), Task 036 (Fly migration)
 - **Backlog (3):** Tasks 030, 031, 032 — to be addressed at production launch
 
-Last updated: 2026-05-18
+Last updated: 2026-05-20
