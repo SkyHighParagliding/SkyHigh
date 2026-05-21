@@ -1,34 +1,36 @@
-# RESUME_HERE — Last updated: 2026-05-21 (session 10)
+# RESUME_HERE — Last updated: 2026-05-21 (session 10, end)
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅ on Railway
 
 ## Where I left off
-Completed all sub-tasks of the closure calendar feature (TASK-036):
 
-Session 10 fixes and additions:
-1. **SQLite compat**: Fixed 22 instances of PostgreSQL `::text` cast syntax in `crud.ts`, `checkins.ts`, `bulkImport.ts` — these were silently broken in dev (`NODE_ENV=development`) mode
-2. **Login fix**: Dev SQLite DB had stale bcrypt hashes; reset admin passwords directly via node script
-3. **Wind map color**: Site dots now turn red when a scheduled closure includes today (not only `status='closed'`)
-4. **Date pills**: `SiteDetail` now shows up to N individual red date pills for each upcoming closure date (today excluded), where N is configurable per-site (1–10, default 7) via `closurePillsMax` column (migration 021)
-5. **Banner exclusion**: Permanently closed sites (`status='closed'`) are excluded from the home page banner
-6. **Admin UI**: `closurePillsMax` number input (1–10) added in the Closure Dates section; disabled when permanently closed
+Session 10 completed the site scheduled closure calendar feature (TASK-036) in full, including several post-merge fixes triggered by testing on production:
 
-All committed: `6cb94b1 [TASK-036] Fix SQLite compat issues, wind map closure color, add date pills feature`
+**All changes pushed and live:**
+- `[TASK-036]` SQLite compat fixes (::text), wind map closure dot color, date pills feature (migration 021)
+- `[FIX]` closurePillsMax stale closure in useSiteForm useCallback
+- `[FIX]` AdminSites list badge uses getClosureStatus
+- `[SESSION-SUMMARY]` RESUME_HERE commit
+- `[FIX]` PostgreSQL column case bug — migration 021 now quoted; migration 022 renames existing lowercase column
+- `[FIX]` WeatherCardApple + WeatherCardClassic Open/Closed badge uses getClosureStatus
+
+**Known issue at session end:** Production was still showing errors due to migration 022 not yet having run (Railway may still be deploying). User confirmed all fixed at end of session.
 
 ## Last completed task
-- TASK-036: Site Scheduled Closure Calendar — completed 2026-05-21 (all sub-tasks done)
+- TASK-036: Site Scheduled Closure Calendar — fully complete including production fixes (2026-05-21)
 
 ## Currently in progress
 - None
 
 ## Next task to start
-- TASK-029: Harden DEFAULT_ADMINS for Production (document env var format, create one-time setup script)
-- OR TASK-031: Pilot XC Flight History Export
+- TASK-029: Harden DEFAULT_ADMINS for Production (env var docs + one-time setup script) — small task
+- OR TASK-031: Pilot XC Flight History Export (CSV/GPX) — high user value
 
 ## Open questions / blockers
-- Browser UI not verified via harness (CDP permission not granted). Feature works at API level; user should verify visually at http://localhost:5173/sites/three-sisters-flowerdale and http://localhost:5173/admin/sites/three-sisters-flowerdale/edit
-- Production deployment (Railway) still needs migration 021 to run — it will auto-apply on next deploy
+- None known
 
 ## Quick context refresher
-Dev environment is now correctly on `NODE_ENV=development` (port 3001, matches Vite proxy). The closure calendar feature is fully complete: admin calendar picker, per-site date pill count, automated home-page banners (excluded for permanently closed sites), wind map red dots for scheduled closure days, and individual date pills on the site detail page.
+The closure calendar feature is fully shipped. Admins set closure dates via a calendar picker (replacing the old Status dropdown). Home page shows a 7-day-ahead banner per site. Site detail shows individual date pills. WeatherCards, AdminSites list, wind map dots, and 7-day outlook all reflect scheduled closures. Permanently closed sites skip banners and date pills.
+
+Dev environment: `NODE_ENV=development` in `.env` → server on port 3001, Vite proxy works. Do NOT change back to production before coding sessions.
