@@ -10,6 +10,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { AISiteGeneratorModal } from "@/components/AISiteGeneratorModal";
 import { WindCompass } from "@/components/WindCompass";
+import { ClosureDatePicker } from "@/components/ui/ClosureDatePicker";
 import { useSiteForm } from "@/hooks/useSiteForm";
 
 // Fix for default marker icon in react-leaflet
@@ -81,6 +82,7 @@ export function AdminSiteEdit() {
     handlePrintFieldQR, handlePrintXCMapsQR, handlePrintQR,
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,
+    closureDates, setClosureDates,
   } = form;
 
   return (
@@ -390,17 +392,28 @@ export function AdminSiteEdit() {
                       </select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground-label">Status</label>
-                    <select 
-                      name="status" 
-                      value={formData.status} 
-                      onChange={handleChange}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
-                    >
-                      <option value="open">Open</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground-label">Closure Dates</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="permanentlyClosed"
+                        checked={formData.status === 'closed'}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, status: e.target.checked ? 'closed' : 'open' }));
+                          markDirty();
+                        }}
+                        className="w-4 h-4 rounded border-border cursor-pointer accent-red-500"
+                      />
+                      <label htmlFor="permanentlyClosed" className="text-sm font-medium text-foreground-label cursor-pointer select-none">
+                        Permanently Closed
+                      </label>
+                    </div>
+                    <ClosureDatePicker
+                      selectedDates={closureDates}
+                      onChange={(dates) => { setClosureDates(dates); markDirty(); }}
+                      disabled={formData.status === 'closed'}
+                    />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
                     <div className="flex items-center gap-2 sm:pb-1">

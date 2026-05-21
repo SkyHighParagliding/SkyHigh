@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { prefetchWindGrids } from "@/lib/windGridCache";
 import { useSites } from "@/hooks/api";
+import { getClosureStatus, formatClosureDateRange } from "@/utils/closureStatus";
 
 const SitesWindMapLazy = lazy(() => import('@/components/SitesWindMap').then(m => ({ default: m.SitesWindMapProto })));
 
@@ -153,14 +154,28 @@ export function Sites() {
                       No image available
                     </div>
                   )}
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    {site.temporarilyClosed === 1 ? (
-                      <Badge className="bg-amber-500 text-white shadow-sm">Temporarily Closed</Badge>
-                    ) : site.status === 'closed' ? (
-                      <Badge variant="destructive" className="shadow-sm">Closed</Badge>
-                    ) : (
-                      <Badge variant="default" className="bg-emerald-500 shadow-sm">Open</Badge>
-                    )}
+                  <div className="absolute top-4 right-4 flex gap-2 flex-wrap justify-end">
+                    {(() => {
+                      const { isClosedToday, upcomingDates } = getClosureStatus(site);
+                      if (isClosedToday) {
+                        return <Badge variant="destructive" className="shadow-sm">Closed</Badge>;
+                      }
+                      if (upcomingDates.length > 0) {
+                        return (
+                          <>
+                            <Badge variant="default" className="bg-emerald-500 shadow-sm">Open</Badge>
+                            <Badge variant="destructive" className="shadow-sm">Closed {formatClosureDateRange(upcomingDates)}</Badge>
+                          </>
+                        );
+                      }
+                      if (site.temporarilyClosed === 1) {
+                        return <Badge className="bg-amber-500 text-white shadow-sm">Temporarily Closed</Badge>;
+                      }
+                      if (site.status === 'closed') {
+                        return <Badge variant="destructive" className="shadow-sm">Closed</Badge>;
+                      }
+                      return <Badge variant="default" className="bg-emerald-500 shadow-sm">Open</Badge>;
+                    })()}
                   </div>
                 </div>
                 <CardContent className="p-6">

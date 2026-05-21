@@ -29,6 +29,8 @@ export { useFlights, useFlight, useDeleteFlightMutation, flightKeys } from './us
 export type { Flight, FlightDetail, Breadcrumb } from './useFlights';
 export { usePublicContacts, useSaveContactMutation, useDeleteContactMutation, useSendResetMutation, contactKeys } from './usePublicContacts';
 export type { PublicContact } from './usePublicContacts';
+export { useClosureBanners } from './useClosureBanners';
+export type { ClosureBanner } from './useClosureBanners';
 export {
   usePageViews, useScheduledTasks, useRunTaskMutation,
   useAIModels, useSaveAIModelMutation, useDeleteAIModelMutation,

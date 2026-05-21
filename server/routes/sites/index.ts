@@ -1,6 +1,7 @@
 import { Router } from "express";
 import "./helpers.js";
 import crudRouter from "./crud.js";
+import closuresRouter from "./closures.js";
 import scrapingRouter, { externalSitesRouter } from "./scraping.js";
 import bulkImportRouter, { triggerBulkImport } from "./bulkImport.js";
 import archiveRouter from "./archive.js";
@@ -17,6 +18,7 @@ router.use(archiveRouter);
 router.use(mediaRouter);
 router.use(xcRouter);
 router.use(miscRouter);
+router.use(closuresRouter);
 router.use(crudRouter);
 
 export { externalSitesRouter, invalidateSitesCache, triggerBulkImport };

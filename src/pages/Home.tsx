@@ -9,7 +9,7 @@ import { PublicSearchBox } from "@/components/PublicSearchBox";
 import { PhotoSlider } from "@/components/PhotoSlider";
 import { YouTubeCarousel } from "@/components/YouTubeCarousel";
 import { MarkdownWithWidgets } from "@/components/ContentWidgets";
-import { useUpcomingEvents, useSponsors, useSite, useHomeSites } from "@/hooks/api";
+import { useUpcomingEvents, useSponsors, useSite, useHomeSites, useClosureBanners } from "@/hooks/api";
 
 export function Home() {
   const { settings } = useSettings();
@@ -26,6 +26,7 @@ export function Home() {
   const { sites, weatherData, distances } = useHomeSites();
   const { data: events = [] } = useUpcomingEvents();
   const { data: sponsorsList = [] } = useSponsors();
+  const { data: closureBanners = [] } = useClosureBanners();
 
   useEffect(() => {
 
@@ -366,6 +367,20 @@ export function Home() {
           </div>
         </div>
       )}
+
+      {/* Site Closure Banners */}
+      {closureBanners.map(b => {
+        const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+        const label = b.firstDate === b.lastDate ? fmt(b.firstDate) : `${fmt(b.firstDate)} – ${fmt(b.lastDate)}`;
+        return (
+          <div key={b.siteId} className="bg-blue-600 text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md relative z-40">
+            <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+              <ShieldAlert className="w-5 h-5" />
+              <span>{b.siteName} — Closed {label}</span>
+            </div>
+          </div>
+        );
+      })}
 
       {/* Hero Section */}
       <section data-hero className={`relative flex flex-col ${isGlass ? 'min-h-[100vh] -mt-[56px] sm:-mt-[76px]' : 'h-[80vh]'}`}>

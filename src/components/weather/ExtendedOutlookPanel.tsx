@@ -131,6 +131,9 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
         const IconComp = iconMap[day.bestWeatherIcon] || CloudSun;
         const isToday = idx === 0;
 
+        const closureDates: string[] = site?.upcomingClosureDates ?? [];
+        const isClosureDay = closureDates.includes(day.date);
+
         if (isApple) {
           return (
             <div key={day.date} className={cn(
@@ -151,6 +154,9 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
                 {day.bestDirection}
               </span>
               <DayOutlookStatus speed={day.bestSpeed} direction={day.bestDirection} site={site} />
+              {isClosureDay && (
+                <span className="text-[9px] font-bold text-red-500 uppercase tracking-wide">Closed</span>
+              )}
             </div>
           );
         }
@@ -174,6 +180,9 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
               {day.bestDirection}
             </span>
             <DayOutlookStatus speed={day.bestSpeed} direction={day.bestDirection} site={site} />
+            {isClosureDay && (
+              <span className="text-[7px] font-bold text-red-500 uppercase tracking-wide">Closed</span>
+            )}
           </div>
         );
       })}

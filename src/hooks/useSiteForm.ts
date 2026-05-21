@@ -30,6 +30,9 @@ export function useSiteForm() {
   const { isDirty, markDirty, markClean, blocker, justSaved, save: adminSave } = useAdminForm({ successMessage: "Site saved successfully!" });
   const formDataRef = useRef<Record<string, unknown> | null>(null);
   const [essentialImages, setEssentialImages] = useState<string[]>([]);
+  const [closureDates, setClosureDates] = useState<string[]>([]);
+  const closureDatesRef = useRef<string[]>([]);
+  closureDatesRef.current = closureDates;
   const [showUnassignedText, setShowUnassignedText] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -91,6 +94,9 @@ export function useSiteForm() {
           });
           setEssentialImages((data.essentialInfoImages as string[]) || []);
         });
+      api.get<string[]>(`/api/sites/${id}/closure-dates`)
+        .then(dates => setClosureDates(dates))
+        .catch(() => {});
     }
   }, [id, isNew]);
 
@@ -282,10 +288,12 @@ export function useSiteForm() {
   const saveSite = useCallback(async () => {
     await adminSave(async () => {
       const currentFormData = formDataRef.current;
+      const currentClosureDates = closureDatesRef.current;
       const isCoastal = currentFormData.type === "Coastal";
+      const siteId = isNew ? (currentFormData.name as string).toLowerCase().replace(/[^a-z0-9]+/g, '-') : id;
       const payload = {
         ...currentFormData,
-        id: isNew ? currentFormData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : id,
+        id: siteId,
         hazards: currentFormData.hazards.split('\n').filter((h: string) => h.trim()),
         rules: currentFormData.rules.split('\n').filter((r: string) => r.trim()),
         lat: currentFormData.lat ? parseFloat(currentFormData.lat as string) : null,
@@ -295,6 +303,7 @@ export function useSiteForm() {
       };
       if (isNew) await api.post('/api/sites', payload, token);
       else await api.put(`/api/sites/${id}`, payload, token);
+      await api.put(`/api/sites/${siteId}/closure-dates`, { dates: currentClosureDates }, token);
       api.post("/api/weather/scrape-now", {}, token).catch(err => console.error("Failed to trigger weather update", err));
     });
   }, [formData, isNew, id, adminSave, token]);
@@ -408,5 +417,6 @@ export function useSiteForm() {
     handlePrintFieldQR, handlePrintXCMapsQR, handlePrintQR,
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,
+    closureDates, setClosureDates,
   };
 }

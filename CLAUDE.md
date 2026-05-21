@@ -14,8 +14,8 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Project Name:** SkyHigh  
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
-**Deployed:** 🚧 Railway (PostgreSQL) — migration in progress; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** Short-term hardening pass (7 items in tasks/remediation_plan.md) following completion of wind map / ECMWF caching overhaul and security hardening Phase 1. The admin-only default wind map view feature was just completed.  
+**Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
+**Current Focus:** Site scheduled closure calendar feature completed (2026-05-21). New table `site_closure_dates`, admin calendar picker UI replacing Status dropdown, automated home-page banners, badge logic on Sites/SiteDetail, 7-day outlook closure flags. Next: production deployment tasks (TASK-029) or Feature Backlog (TASK-031).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
@@ -25,6 +25,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Gemini (not OpenAI) for all AI: site guide scraping, image enhancement, AI moderation — see DECISION-005
 - Wind map renders via Canvas + D3 (not SVG or WebGL) — see DECISION-004
 - Deployed on Railway with PostgreSQL — see DECISION-006
+- Scheduled closure calendar: `site_closure_dates` table, unified admin calendar UI (replaces Status dropdown), auto-generated home-page banners 7 days before closure — see DECISION-008
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
