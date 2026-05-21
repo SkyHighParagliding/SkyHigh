@@ -6,6 +6,7 @@ import { WindCompass } from './WindCompass';
 import { HourlyForecastStrip } from './HourlyForecastStrip';
 import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
+import { getClosureStatus } from '@/utils/closureStatus';
 
 export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   const dirTextColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#ff6b35' : windStatus.directionStatus.label === 'Blown Out' || windStatus.directionStatus.label === 'Not Flyable' ? '#ef4444' : '#1d1d1f';
@@ -23,7 +24,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="font-semibold truncate text-2xl" style={{ color: '#1d1d1f' }}>{site.name}</h3>
         </div>
-        {site.status === 'closed' ? (
+        {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
           <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-2 h-5 shrink-0">Closed</Badge>
         ) : (
           <span className="shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#22c55e' }}>Open</span>
