@@ -34,6 +34,8 @@ export function useSiteForm() {
   const closureDatesRef = useRef<string[]>([]);
   closureDatesRef.current = closureDates;
   const [closurePillsMax, setClosurePillsMax] = useState<number>(7);
+  const closurePillsMaxRef = useRef<number>(7);
+  closurePillsMaxRef.current = closurePillsMax;
   const [showUnassignedText, setShowUnassignedText] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -302,7 +304,7 @@ export function useSiteForm() {
         lon: currentFormData.lon ? parseFloat(currentFormData.lon as string) : null,
         isTidal: isCoastal ? "true" : "false",
         tideStationId: isCoastal ? currentFormData.tideStationId : "",
-        closurePillsMax: closurePillsMax,
+        closurePillsMax: closurePillsMaxRef.current,
       };
       if (isNew) await api.post('/api/sites', payload, token);
       else await api.put(`/api/sites/${id}`, payload, token);
