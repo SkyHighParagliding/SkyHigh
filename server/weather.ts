@@ -1,6 +1,7 @@
 import { fromZonedTime } from 'date-fns-tz';
 import db from "./db.js";
 import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
+import { parseBomStationId, fetchBomObservation } from "./bomWeather.js";
 import createLogger from "./utils/logger.js";
 
 const log = createLogger("weather");
@@ -141,6 +142,21 @@ export async function fetchWeatherData(isManual = false) {
             dbKey, windSpeed, windGust, direction, stationName, null, null, timestamp
           );
           console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${stationName}`);
+        }
+      } else if (stationId.startsWith('bom-')) {
+        const parsed = parseBomStationId(stationId);
+        if (!parsed) {
+          log.error(`Weather scraper: Invalid BOM station ID format: ${stationId}`);
+          return;
+        }
+        console.log(`Weather scraper: Fetching BOM data for site ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (Station: ${stationId})${isManualTrigger ? ' (Manual Trigger)' : ''}...`);
+        const bomObs = await fetchBomObservation(parsed.productCode, parsed.stationNum);
+        if (bomObs) {
+          await db.prepare("DELETE FROM weather_observations WHERE siteId = ?").run(dbKey);
+          await db.prepare("INSERT INTO weather_observations (siteId, windSpeed, windGust, direction, stationName, stationLat, stationLon, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+            dbKey, bomObs.windSpeed, bomObs.windGust, bomObs.direction, bomObs.stationName, bomObs.stationLat, bomObs.stationLon, bomObs.timestamp
+          );
+          console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${bomObs.windSpeed}kt (Gust ${bomObs.windGust}kt) ${bomObs.direction} from ${bomObs.stationName} (BOM)`);
         }
       } else {
         console.log(`Weather scraper: Fetching WU data for site ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (Station: ${stationId})${isManualTrigger ? ' (Manual Trigger)' : ''}...`);
