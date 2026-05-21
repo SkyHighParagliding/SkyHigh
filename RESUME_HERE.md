@@ -1,21 +1,23 @@
-# RESUME_HERE — Last updated: 2026-05-21 (session 11, end)
+# RESUME_HERE — Last updated: 2026-05-21 (session 12, end)
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅ on Railway
 
 ## Where I left off
 
-Session 11 fixed two production bugs from TASK-036 (site closure calendar) and one visual issue:
+Session 12 added BOM (Bureau of Meteorology) as a 4th live weather source alongside Live-Wind, Weather Underground, and FreeFlightWx. Researched and planned the integration, then built and deployed it.
 
-**All changes pushed and live:**
-- `[FIX]` closurePillsMax stale closure in useSiteForm useCallback (ref pattern)
-- `[FIX]` AdminSites list badge uses getClosureStatus (was showing green Open for scheduled-closure sites)
-- `[FIX]` PostgreSQL column case bug — migration 021 now quoted `"closurePillsMax"`; migration 022 renames existing lowercase column
-- `[FIX]` WeatherCardApple + WeatherCardClassic Open/Closed badge uses getClosureStatus
-- `[FIX]` Hero image positioning — banners moved inside `<section data-hero>` so background image covers from y=0; WonderfulHeader now correctly uses dark/transparent mode on load (white text, good contrast over hero image)
+**All changes pushed and live (commit f08030c):**
+- `server/bomWeather.ts` — New BOM fetch service with 97 Victorian stations (IDV60801 product), `fetchBomObservation()`, `parseBomStationId()`, `getBomStations()`. Converts Melbourne-local BOM timestamps to UTC. Falls back to static coords when JSON header lat/lon is empty.
+- `server/weather.ts` — Added `bom-` prefix branch in `fetchStationData()`. Existing WU/Live-Wind/FreeFlightWx logic untouched.
+- `server/routes/weather.ts` — BOM stations included in `/stations/nearby` search and `currentStationId` fallback handler.
+- `src/pages/AdminSiteEdit.tsx` — Placeholder and hint text updated to document BOM station ID format.
+
+**Station ID format:** `bom-{productCode}-{stationNum}` e.g. `bom-IDV60801-94846` (Aireys Inlet)  
+**No DB migration required** — IDs stored in `sites.liveStationId` like all other sources.
 
 ## Last completed task
-- TASK-036: Site Scheduled Closure Calendar — fully complete including all production fixes (2026-05-21)
+- BOM weather source integration — complete and deployed (2026-05-21)
 
 ## Currently in progress
 - None
@@ -28,6 +30,4 @@ Session 11 fixed two production bugs from TASK-036 (site closure calendar) and o
 - None known
 
 ## Quick context refresher
-The closure calendar feature is fully shipped and all production bugs are fixed. Hero image now fills from y=0 so the WonderfulHeader has proper dark/transparent mode contrast. Admins set closure dates via a calendar picker. Home page shows 7-day-ahead banners inside the hero section (over the background image, below the fixed header). WeatherCards, AdminSites list, wind map dots, and 7-day outlook all reflect scheduled closures.
-
-Dev environment: `NODE_ENV=development` in `.env` → server on port 3001, Vite proxy works.
+BOM is now a selectable weather source in the Admin → Sites → Edit weather station dropdown. Admins pick from nearby BOM stations (97 Victorian stations seeded) or type `bom-IDV60801-{stationNum}` directly. BOM data is fetched on the existing 15–30 min weather scraper cycle. The feature is live on Railway — the placeholder hint text and dropdown now include BOM alongside the three other sources.
