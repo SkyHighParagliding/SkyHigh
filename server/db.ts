@@ -63,6 +63,8 @@ function convertSchemaToSqlite(sql: string): string {
   result = result.replace(/NOW\(\)::TEXT/gi, "CURRENT_TIMESTAMP");
   // SQLite doesn't support IF NOT EXISTS on ALTER TABLE ADD COLUMN, so wrap in error handling
   result = result.replace(/ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+IF NOT EXISTS/gi, "ALTER TABLE $1 ADD COLUMN");
+  // Strip PostgreSQL-only DO $$ ... $$ anonymous blocks — SQLite has no equivalent
+  result = result.replace(/DO\s*\$\$[\s\S]*?\$\$\s*;?/gi, "");
   return result;
 }
 
