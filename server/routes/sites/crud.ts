@@ -39,10 +39,24 @@ router.get("/", async (req, res) => {
     }
 
     const countResult = await db.prepare("SELECT COUNT(*) as count FROM sites").get() as { count: number };
+
+    const today = new Date().toISOString().split('T')[0];
+    const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
+    const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
+    const allClosureRows = await db.prepare(
+      "SELECT site_id, closure_date FROM site_closure_dates WHERE closure_date >= ? AND closure_date <= ? ORDER BY closure_date ASC"
+    ).all(today, sixtyDaysStr) as { site_id: string; closure_date: string }[];
+    const closuresBySite: Record<string, string[]> = {};
+    for (const row of allClosureRows) {
+      if (!closuresBySite[row.site_id]) closuresBySite[row.site_id] = [];
+      closuresBySite[row.site_id].push(row.closure_date);
+    }
+
     const mapped = sites.map((s: any) => ({
         ...s,
         hazards: safeJsonParse(s.hazards),
         rules: safeJsonParse(s.rules),
+        upcomingClosureDates: closuresBySite[s.id] || [],
     }));
 
     if (isPublic && !hasCustomPagination) {
@@ -61,11 +75,18 @@ router.get("/:id", async (req, res) => {
   try {
     const site = await db.prepare("SELECT * FROM sites WHERE id = ?").get(req.params.id) as any;
     if (site) {
+      const today = new Date().toISOString().split('T')[0];
+      const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
+      const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
+      const closureRows = await db.prepare(
+        "SELECT closure_date FROM site_closure_dates WHERE site_id = ? AND closure_date >= ? AND closure_date <= ? ORDER BY closure_date ASC"
+      ).all(req.params.id, today, sixtyDaysStr) as { closure_date: string }[];
       res.json({
           ...site,
           hazards: safeJsonParse(site.hazards),
           rules: safeJsonParse(site.rules),
           essentialInfoImages: safeJsonParse(site.essentialInfoImages),
+          upcomingClosureDates: closureRows.map(r => r.closure_date),
       });
     } else {
       res.status(404).json({ error: "Site not found" });

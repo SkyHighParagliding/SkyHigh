@@ -300,6 +300,42 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 ---
 
+## Phase 9: Closure Calendar (✅ Complete)
+
+### TASK-036 ✅ Site Scheduled Closure Calendar
+
+- **Status:** ✅ DONE — 2026-05-21
+- **Prerequisites:** Phase 1–3 (security hardening complete)
+- **Estimated effort:** L
+- **Description:** Multi-date calendar picker in admin site edit page. Admins select specific future closure dates; the system auto-generates a home-page banner 7 days before the first closure date, shows red badges on site cards and detail pages, and flags closure days in the 7-day weather outlook.
+- **Acceptance Criteria:**
+  - DB migration `020_site_closure_dates.sql` runs on both SQLite and PostgreSQL
+  - `GET /api/sites/closure-banners` returns active banner windows; `PUT /api/sites/:id/closure-dates` is admin-only
+  - Status dropdown replaced by calendar + "Permanently Closed" checkbox in AdminSiteEdit
+  - Selected dates turn red in calendar; banner window preview shown live
+  - Home page shows blue banner for each active closure window
+  - Site cards and detail show green Open + red upcoming-closure pill; red Closed pill on day of closure
+  - 7-day outlook flags closure days with small red "Closed" label
+  - Emergency `temporarilyClosed` system unchanged alongside new scheduled closure system
+- **Files changed:**
+  - `server/pg_migrations/020_site_closure_dates.sql` (NEW)
+  - `server/routes/sites/closures.ts` (NEW)
+  - `server/routes/sites/index.ts` (register closures router before crud)
+  - `server/routes/sites/crud.ts` (join closure dates into GET responses)
+  - `src/types/api.ts` (add `upcomingClosureDates` to Site)
+  - `src/utils/closureStatus.ts` (NEW — shared closure helper)
+  - `src/components/ui/ClosureDatePicker.tsx` (NEW — custom multi-date picker)
+  - `src/hooks/useSiteForm.ts` (add closureDates state, load, save)
+  - `src/hooks/api/useClosureBanners.ts` (NEW — react-query hook)
+  - `src/hooks/api/index.ts` (export useClosureBanners)
+  - `src/pages/AdminSiteEdit.tsx` (replace Status dropdown)
+  - `src/pages/Sites.tsx` (updated badge priority logic)
+  - `src/pages/SiteDetail.tsx` (updated badge + upcoming closure strip)
+  - `src/components/weather/ExtendedOutlookPanel.tsx` (red "Closed" label on closure days)
+  - `src/pages/Home.tsx` (blue closure banner rows)
+
+---
+
 ## Phase 8: Future / Low Priority
 
 ### TASK-MIG-001 ⬜ Railway → Fly.io Migration
@@ -320,10 +356,11 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 3 | Short-Term Hardening | 007 | ✅ Complete | 2026-05-07 |
 | 6 | Grid Configurability | 001 | ✅ Complete | 2026-05-07 |
 | 7 | UX Refinements | 001 | ✅ Complete | 2026-05-07 |
+| 9 | Closure Calendar | 001 | ✅ Complete | 2026-05-21 |
 | 4 | Production Deployment | 004 | 🔄 IN PROGRESS | — |
 | 5 | Feature Backlog | 003 | ⬜ TODO | — |
 | 8 | Future / Low Priority | 001 | ⬜ DEFERRED | — |
-| | **TOTAL** | **38** | **33 ✅ / 4 🔄 / 1 ⚠️ / 1 ⬜** | — |
+| | **TOTAL** | **39** | **34 ✅ / 4 🔄 / 1 ⚠️ / 1 ⬜** | — |
 
 ---
 

@@ -295,6 +295,44 @@ return cachedSites[isPublic];
 
 ---
 
+## DECISION-008: Unified Calendar UI for Scheduled and Permanent Closures
+
+**Date:** 2026-05-21  
+**Owner:** Jon Pamment  
+**Status:** Locked (implemented)
+
+### Context
+Sites can be closed in two ways: (1) permanently (`sites.status = 'closed'`), previously driven by a Status dropdown, and (2) emergency same-day via Safety Officers (`sites.temporarilyClosed`). Neither supported scheduling future closure dates with automated banners. Adding scheduled closures required a UI decision: separate widget, extend Status dropdown, or consolidate.
+
+### Options Considered
+1. **Extend Status dropdown** — Add "Closed on dates" option that reveals a calendar. Problems: dropdown semantics don't fit multi-date selection; awkward UX; permanent/scheduled overlap.
+2. **Separate calendar widget alongside Status dropdown** — Keep dropdown for permanent, add calendar for scheduled. Problems: two parallel controls for the same concept (site closure) creates confusion.
+3. **Replace Status dropdown with calendar + checkbox** (chosen) — Single "Closure Dates" section: a "Permanently Closed" checkbox (writes `status = 'closed'`), plus a multi-date calendar for scheduled dates. When "Permanently Closed" is checked, calendar is greyed out.
+
+### Chosen
+**Replace Status dropdown** with a unified "Closure Dates" calendar section:
+- `Permanently Closed` checkbox → writes `sites.status = 'closed'` (existing field, unchanged semantics)
+- Multi-date calendar → writes to new `site_closure_dates` table (admin-only, future dates selectable)
+- Emergency `temporarilyClosed` system (Safety Officers) stays completely unchanged — separate feature
+
+### Rationale
+- **Single mental model:** "This site is closed" is one concept, not three. One section owns it.
+- **No notes required:** Banner text is auto-generated from site name + dates. No free-text field needed.
+- **Admin-only scope:** Scheduled closures require planning; restricting to admins (not Safety Officers) prevents accidental scheduling.
+- **Minimum-change implementation:** Reuses existing `status = 'closed'` field for permanent closure; only adds the `site_closure_dates` table for scheduled closure.
+
+### Implementation
+- New table `site_closure_dates` (migration 020): one row per (site_id, closure_date)
+- Routes in `server/routes/sites/closures.ts` handle GET/PUT closure dates and GET banner windows
+- Home-page banner: 7 days before first closure date → last closure date, blue, auto-generated text
+- Custom `ClosureDatePicker` component (date-fns, no new dependencies); selected dates styled red
+- Badge priority: `isClosedToday` > `upcomingDates` > `temporarilyClosed` > `status=closed` > open
+
+### Reversibility
+**High.** The `site_closure_dates` table can be dropped; the Status dropdown can be restored. No existing fields were removed or renamed; `status` and `temporarilyClosed` columns are untouched.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |

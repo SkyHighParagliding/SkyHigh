@@ -13,6 +13,7 @@ import { getWeatherIcon, getWindStatus, haversineDistance } from "@/lib/utils";
 import { formatDisplayTime } from "@/lib/dateUtils";
 import { WeatherCard } from "@/components/WeatherCard";
 import { prefetchWindGrids } from "@/lib/windGridCache";
+import { getClosureStatus, formatClosureDateRange } from "@/utils/closureStatus";
 import { recordSiteView } from "@/lib/recentSites";
 import { useSite, useWeather } from "@/hooks/api";
 
@@ -173,13 +174,27 @@ export function SiteDetail() {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <Badge variant="secondary" className="bg-sky text-white border-none">{site.type}</Badge>
-                  {site.temporarilyClosed === 1 ? (
-                    <Badge className="bg-amber-500 text-white border-none">Temporarily Closed</Badge>
-                  ) : site.status === 'open' ? (
-                    <Badge variant="default" className="bg-emerald-500 border-none">Open</Badge>
-                  ) : (
-                    <Badge variant="destructive" className="border-none">Closed</Badge>
-                  )}
+                  {(() => {
+                    const { isClosedToday, upcomingDates } = getClosureStatus(site);
+                    if (isClosedToday) {
+                      return <Badge variant="destructive" className="border-none">Closed</Badge>;
+                    }
+                    if (upcomingDates.length > 0) {
+                      return (
+                        <>
+                          <Badge variant="default" className="bg-emerald-500 border-none">Open</Badge>
+                          <Badge variant="destructive" className="border-none">Closed {formatClosureDateRange(upcomingDates)}</Badge>
+                        </>
+                      );
+                    }
+                    if (site.temporarilyClosed === 1) {
+                      return <Badge className="bg-amber-500 text-white border-none">Temporarily Closed</Badge>;
+                    }
+                    if (site.status === 'open') {
+                      return <Badge variant="default" className="bg-emerald-500 border-none">Open</Badge>;
+                    }
+                    return <Badge variant="destructive" className="border-none">Closed</Badge>;
+                  })()}
                   {user && !isSOView && (
                     <Link to={`/admin/sites/${site.id}/edit`}>
                       <Badge className="bg-orange hover:bg-orange-dark text-white border-none cursor-pointer">

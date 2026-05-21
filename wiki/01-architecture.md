@@ -54,6 +54,7 @@ type: wiki
 | 005 | AI features | Google Gemini (multi-modal, chain-able) | Generous free tier, can handle images + text, fallback model support |
 | 006 | Hosting | Railway | Low ops overhead, committee can manage, GitHub auto-deploy on push |
 | 007 | Cache invalidation | Bypass cache if `?limit` or `?offset` parameters present | Prevent stale paginated results on custom pagination requests |
+| 008 | Scheduled closures | Per-site calendar dates in `site_closure_dates` table; auto-banner 7 days before first closure | Replaces manual banner entry for site closures; admin-only, no Safety Officer involvement |
 
 ---
 
@@ -164,6 +165,33 @@ server/
 │   └── ...
 └── constants.ts           # Magic numbers, config defaults
 ```
+
+---
+
+## Data Model (Key Tables)
+
+| Table | Purpose |
+|---|---|
+| `sites` | Flying site records (name, status, lat/lon, guide, images) |
+| `wind_grid_data` | Cached ECMWF grid (JSON blob, fetch timestamp, 7-day rolling) |
+| `extended_wind_grids` | Pre-computed hourly wind at site locations for 7-day outlook |
+| `contacts` | TidyHQ-synced member roster (name, email, roles) |
+| `sessions` | Auth session tokens (opaque string, 24-hour TTL, IP tracking) |
+| `settings` | Key-value config (grid bounds, last run times, admin defaults) |
+| `news` | Site news items and alerts |
+| `site_closure_dates` | Scheduled closure calendar: one row per (site_id, closure_date) |
+
+### `site_closure_dates`
+Created by migration `020_site_closure_dates.sql`. Drives scheduled closures and home-page banners.
+
+```sql
+-- site_id references sites(id), closure_date stored as ISO "YYYY-MM-DD" string
+UNIQUE (site_id, closure_date)   -- no duplicates per site+date
+INDEX idx_site_closure_dates_site_id
+INDEX idx_site_closure_dates_date
+```
+
+Banner window: 7 days before first closure date → last closure date (inclusive). Banner auto-generated from site name + date range; no manual entry required. Admin-only write access; public read.
 
 ---
 

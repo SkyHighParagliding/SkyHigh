@@ -97,3 +97,35 @@ How to connect TidyHQ to the SkyHigh website for contact import, shop products, 
 - When a contact is removed from a Position Title group, their position field is cleared.
 - When a contact is removed from a Committee group, their committee flag and display settings are cleared.
 - Shop product links point to `skyhigh.tidyhq.com`. Update `server/routes/shop.ts` if the subdomain changes.
+
+---
+
+## Scheduled Closure Banners
+
+Site scheduled closures **do not require a manual banner entry**. The system auto-generates home-page banners based on closure dates set by an admin in the site edit page.
+
+### How it works
+
+1. Admin opens the site edit page → "Closure Dates" section → clicks future dates in the calendar (selected days turn red)
+2. On save, those dates are written to `site_closure_dates` table
+3. Starting 7 days before the first closure date (and until the last closure date), `GET /api/sites/closure-banners` returns that site in its response
+4. Home.tsx fetches this endpoint (60s cache via react-query) and renders a **blue banner** for each active closure window
+
+### What the banner shows
+
+```
+⚠ Three Sisters — Closed Fri 29 May
+⚠ Mt Baw Baw — Closed Fri 29 – Sun 31 May
+```
+
+The date range format:
+- Single date: "Fri 29 May"
+- Consecutive range: "Fri 29 – Sun 31 May" (uses first and last date, regardless of gaps)
+
+### Permanent closure
+
+Checking "Permanently Closed" in the site edit page sets `sites.status = 'closed'` (existing field). This disables the calendar and shows a red "Closed" badge on site cards. No banner is generated for permanently closed sites — the badge itself is the signal.
+
+### Emergency closure (temporarilyClosed)
+
+The `temporarilyClosed` flag (managed by Safety Officers via a separate admin control) is completely independent of scheduled closures. Its amber "Temporarily Closed" badge renders in the same badge stack, below scheduled-closure badges but above the base open/closed state.

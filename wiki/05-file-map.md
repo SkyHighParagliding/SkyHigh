@@ -74,7 +74,13 @@ Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`.
 `GET /api/sites` — list all sites, optionally filtered by `?public=true`. **Implements public sites cache with pagination bypass (DECISION-007).** If request has `?limit` or `?offset`, bypasses cache and fetches fresh.
 
 #### `crud.ts`
-`POST /api/sites` (create), `PUT /api/sites/:id` (update), `DELETE /api/sites/:id` (delete). Admin-only. CSRF protected.
+`POST /api/sites` (create), `GET /api/sites/:id` (single site), `PUT /api/sites/:id` (update), `DELETE /api/sites/:id` (delete). Admin-only mutations, CSRF protected. Both GET endpoints include `upcomingClosureDates: string[]` (next 60 days).
+
+#### `closures.ts`
+Scheduled closure routes — registered **before** `crudRouter` in `index.ts` to prevent `/:id` matching `/closure-banners`:
+- `GET /api/sites/closure-banners` — public; returns sites whose 7-day banner window is active
+- `GET /api/sites/:id/closure-dates` — public; returns all future closure dates for one site
+- `PUT /api/sites/:id/closure-dates` — admin-only; full-replace closure dates for a site
 
 ### `server/routes/flights/`
 
@@ -242,6 +248,28 @@ Fetch wrapper with error handling. All API calls go through here. Adds session t
 ### `src/utils/validation.ts`
 Client-side form validation (email format, required fields, etc.). Used in forms to provide instant feedback before submission.
 
+### `src/utils/closureStatus.ts`
+Shared closure logic used by Sites.tsx, SiteDetail.tsx, and ExtendedOutlookPanel.tsx:
+- `getClosureStatus(site, today?)` — returns `{ isClosedToday, upcomingDates }` (upcomingDates = closure dates within next 7 days, not including today)
+- `formatClosureDateRange(dates)` — formats date array as human string: single day "Fri 29 May", consecutive "Fri 29 – Sun 31 May", non-consecutive "Fri 29 May, Sun 31 May"
+- `getBannerWindowStart(closureDates)` — returns the start of the 7-day banner window (first closure date − 7 days)
+
+---
+
+## UI Components (`src/components/ui/`)
+
+### `src/components/ui/ClosureDatePicker.tsx`
+Custom multi-date calendar picker for the admin site edit page. Built on date-fns (no additional dependencies):
+- Month navigation with prev/next buttons
+- Mon-first grid layout (using `(getDay(day) + 6) % 7` offset)
+- Click to toggle individual dates on/off; selected dates highlighted in red
+- Past dates greyed out and non-interactive; today highlighted with ring
+- Shows "Closed: [formatted dates]" and "Banner window: [start] → [end]" summary below calendar
+- "Clear all dates" button
+- `disabled` prop greys entire component (used when "Permanently Closed" checkbox is checked)
+
+Props: `selectedDates: string[]`, `onChange: (dates: string[]) => void`, `disabled?: boolean`
+
 ---
 
 ## Key File Dependencies
@@ -259,6 +287,11 @@ Client-side form validation (email format, required fields, etc.). Used in forms
 **Debugging admin mutation failing?** → Check:
 1. `csrf.ts` (is CSRF token valid?)
 2. `auth.ts` (is session token valid?)
+
+**Debugging closure banners not appearing?** → Check:
+1. `server/routes/sites/closures.ts` `GET /closure-banners` — is today within [firstDate-7, lastDate]?
+2. `server/routes/sites/index.ts` — is `closuresRouter` registered before `crudRouter`? (prevents `/closure-banners` being matched by `/:id`)
+3. `src/hooks/api/useClosureBanners.ts` — is the hook imported and called in `Home.tsx`?
 3. `crud.ts` (does validation pass?)
 4. `errorHandler.ts` (what's the actual error?)
 
