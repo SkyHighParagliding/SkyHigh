@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { getClosureStatus } from "@/utils/closureStatus";
 
 interface VersionCheckStatus {
   currentVersion: string | null;
@@ -761,11 +762,13 @@ export function AdminSites() {
                       </Link>
                       <p className="text-sm text-foreground-secondary mt-0.5">{site.type}</p>
                     </div>
-                    {site.status === 'open' ? (
-                      <Badge variant="default" className="bg-emerald-500 shrink-0">Open</Badge>
-                    ) : (
-                      <Badge variant="destructive" className="shrink-0">Closed</Badge>
-                    )}
+                    {(() => {
+                      const { isClosedToday } = getClosureStatus(site);
+                      const isClosed = site.status !== 'open' || isClosedToday;
+                      return isClosed
+                        ? <Badge variant="destructive" className="shrink-0">Closed</Badge>
+                        : <Badge variant="default" className="bg-emerald-500 shrink-0">Open</Badge>;
+                    })()}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => navigateToEdit(site.id)}>
@@ -799,11 +802,13 @@ export function AdminSites() {
                       <td className="p-4 font-medium"><Link to={`/sites/${site.id}`} className="text-navy hover:text-sky transition-colors hover:underline">{site.name}</Link></td>
                       <td className="p-4 text-foreground-secondary">{site.type}</td>
                       <td className="p-4">
-                        {site.status === 'open' ? (
-                          <Badge variant="default" className="bg-emerald-500">Open</Badge>
-                        ) : (
-                          <Badge variant="destructive">Closed</Badge>
-                        )}
+                        {(() => {
+                          const { isClosedToday } = getClosureStatus(site);
+                          const isClosed = site.status !== 'open' || isClosedToday;
+                          return isClosed
+                            ? <Badge variant="destructive">Closed</Badge>
+                            : <Badge variant="default" className="bg-emerald-500">Open</Badge>;
+                        })()}
                       </td>
                       <td className="p-4 text-right space-x-2">
                         <Button variant="outline" size="sm" onClick={() => navigateToEdit(site.id)}>
