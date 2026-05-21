@@ -172,18 +172,39 @@ export function SiteDetail() {
             )}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Badge variant="secondary" className="bg-sky text-white border-none">{site.type}</Badge>
                   {(() => {
                     const { isClosedToday, upcomingDates } = getClosureStatus(site);
-                    if (isClosedToday) {
+                    const isPermanentlyClosed = site.status === 'closed';
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const futureDates = isPermanentlyClosed ? [] :
+                      (site.upcomingClosureDates ?? [])
+                        .filter(d => d > todayStr)
+                        .slice(0, site.closurePillsMax ?? 7);
+                    const formatPill = (d: string) =>
+                      new Date(d + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+
+                    if (isPermanentlyClosed) {
                       return <Badge variant="destructive" className="border-none">Closed</Badge>;
+                    }
+                    if (isClosedToday) {
+                      return (
+                        <>
+                          <Badge variant="destructive" className="border-none">Closed</Badge>
+                          {futureDates.map(d => (
+                            <Badge key={d} variant="destructive" className="border-none">{formatPill(d)}</Badge>
+                          ))}
+                        </>
+                      );
                     }
                     if (upcomingDates.length > 0) {
                       return (
                         <>
                           <Badge variant="default" className="bg-emerald-500 border-none">Open</Badge>
-                          <Badge variant="destructive" className="border-none">Closed {formatClosureDateRange(upcomingDates)}</Badge>
+                          {futureDates.map(d => (
+                            <Badge key={d} variant="destructive" className="border-none">{formatPill(d)}</Badge>
+                          ))}
                         </>
                       );
                     }

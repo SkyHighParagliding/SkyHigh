@@ -46,6 +46,7 @@ export interface Site {
   essentialInfoText?: string;
   temporarilyClosed?: number;
   upcomingClosureDates?: string[];
+  closurePillsMax?: number;
 }
 
 export interface WeatherData {

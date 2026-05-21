@@ -33,6 +33,7 @@ export function useSiteForm() {
   const [closureDates, setClosureDates] = useState<string[]>([]);
   const closureDatesRef = useRef<string[]>([]);
   closureDatesRef.current = closureDates;
+  const [closurePillsMax, setClosurePillsMax] = useState<number>(7);
   const [showUnassignedText, setShowUnassignedText] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -93,6 +94,7 @@ export function useSiteForm() {
             isXCSite: (data.isXCSite as string) || "false",
           });
           setEssentialImages((data.essentialInfoImages as string[]) || []);
+          setClosurePillsMax(typeof data.closurePillsMax === 'number' ? data.closurePillsMax : 7);
         });
       api.get<string[]>(`/api/sites/${id}/closure-dates`)
         .then(dates => setClosureDates(dates))
@@ -300,6 +302,7 @@ export function useSiteForm() {
         lon: currentFormData.lon ? parseFloat(currentFormData.lon as string) : null,
         isTidal: isCoastal ? "true" : "false",
         tideStationId: isCoastal ? currentFormData.tideStationId : "",
+        closurePillsMax: closurePillsMax,
       };
       if (isNew) await api.post('/api/sites', payload, token);
       else await api.put(`/api/sites/${id}`, payload, token);
@@ -418,5 +421,6 @@ export function useSiteForm() {
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,
     closureDates, setClosureDates,
+    closurePillsMax, setClosurePillsMax,
   };
 }

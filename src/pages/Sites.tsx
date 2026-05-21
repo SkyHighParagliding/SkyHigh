@@ -79,6 +79,7 @@ export function Sites() {
                     isSkyHighSite: s.isSkyHighSite,
                     type: s.type,
                     windDir: s.windDir,
+                    upcomingClosureDates: s.upcomingClosureDates,
                   }))}
                   isAuthenticated={isAuthenticated}
                 />
