@@ -2,6 +2,7 @@ import { Router } from "express";
 import db from "../db.js";
 import { fetchWeatherData, fetchWithRetry, degreesToDirection, LIVE_WIND_VIC_URL } from "../weather.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
+import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -172,6 +173,22 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
             source: 'freeflightwx'
           });
         }
+      } else if (currentStationId.startsWith('bom-')) {
+        const parsed = parseBomStationId(currentStationId);
+        if (parsed) {
+          const bom = getBomStations().find(s => s.stationNum === parsed.stationNum);
+          if (bom) {
+            const distance = getDistance(targetLat, targetLon, bom.lat, bom.lon);
+            stations.push({
+              id: currentStationId,
+              name: `${bom.name} (BOM)`,
+              distanceKm: distance,
+              lat: bom.lat,
+              lon: bom.lon,
+              source: 'bom'
+            });
+          }
+        }
       }
     } catch (e) {
       log.error("Error looking up current station:", e);
@@ -194,6 +211,22 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
           source: 'freeflightwx'
         });
       }
+    }
+  }
+
+  for (const bom of getBomStations()) {
+    const stationId = getBomStationId(bom);
+    if (stations.find(s => s.id === stationId)) continue;
+    const distance = getDistance(targetLat, targetLon, bom.lat, bom.lon);
+    if (distance <= radiusKm) {
+      stations.push({
+        id: stationId,
+        name: `${bom.name} (BOM)`,
+        distanceKm: distance,
+        lat: bom.lat,
+        lon: bom.lon,
+        source: 'bom'
+      });
     }
   }
 

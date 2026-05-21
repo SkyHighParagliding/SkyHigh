@@ -838,7 +838,7 @@ export function AdminSiteEdit() {
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            placeholder="e.g. IFLINDER3 or freeflightwx-mystic"
+                            placeholder="e.g. IFLINDER3, freeflightwx-mystic or bom-IDV60801-94846"
                             className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
@@ -866,7 +866,7 @@ export function AdminSiteEdit() {
                             Set
                           </button>
                         </div>
-                        <p className="text-[10px] text-foreground-faint">Select from dropdown, or type a station ID: Weather Underground (e.g. IFLINDER3), Live-Wind (e.g. livewind-94864), or FreeFlightWx (e.g. freeflightwx-mystic — use the station name from the freeflightwx.com URL).</p>
+                        <p className="text-[10px] text-foreground-faint">Select from dropdown, or type a station ID: Weather Underground (e.g. IFLINDER3), Live-Wind (e.g. livewind-94864), FreeFlightWx (e.g. freeflightwx-mystic), or BOM (e.g. bom-IDV60801-94846 — find station numbers at bom.gov.au/vic/observations/vicall.shtml).</p>
                         {nearbyStations.length === 0 && !loadingStations && formData.lat && formData.lon && (
                           <p className="text-[10px] text-red-500">No nearby stations found for these coordinates.</p>
                         )}
@@ -901,7 +901,7 @@ export function AdminSiteEdit() {
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            placeholder="e.g. IFLINDER3 or livewind-94868"
+                            placeholder="e.g. IFLINDER3, livewind-94868 or bom-IDV60801-94846"
                             className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
