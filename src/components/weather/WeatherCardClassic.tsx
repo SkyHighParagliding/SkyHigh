@@ -6,6 +6,7 @@ import { WindCompass } from './WindCompass';
 import { HourlyForecastStrip } from './HourlyForecastStrip';
 import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
+import { getClosureStatus } from '@/utils/closureStatus';
 
 export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   return (
@@ -13,7 +14,7 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
       <div className="flex items-center justify-between w-full mb-5 px-1 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="font-bold text-navy truncate text-xl sm:text-2xl">{site.name}</h3>
-          {site.status === 'closed' ? (
+          {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
             <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Closed</Badge>
           ) : (
             <Badge variant="default" className="bg-emerald-500 shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Open</Badge>
