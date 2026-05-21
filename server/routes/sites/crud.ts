@@ -100,8 +100,8 @@ router.post("/", requireAuth, async (req, res) => {
   const { id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite } = req.body;
   try {
       const insert = await db.prepare(`
-        INSERT INTO sites (id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite)
-        VALUES (@id, @name, @type, @pgRating, @hgRating, @windDir, @windSpeed, @status, @hazardLevel, @lat, @lon, @description, @launch, @landing, @hazards, @rules, @image, @useLiveWeather, @liveStationId, @liveStationIdAlt, @siteguideUrl, @siteContact, @siteContactPhone, @navigateTo, @launchHeight, @launchHeightHigh, @launchHeight2, @landingHeight2, @hoodedPloversLink, @hoodedPloversActive, @emergencyMarker, @what3words, @weatherStationLink, @isSkyHighSite, @crossLeft, @crossRight, @overrideHideClosed, @essentialInfoImages, @essentialInfoText, @unassignedText, @siteguideVersion, @siteguideScrapedAt, @isTidal, @tideStationId, @skipBulkImport, @isXCSite)
+        INSERT INTO sites (id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax)
+        VALUES (@id, @name, @type, @pgRating, @hgRating, @windDir, @windSpeed, @status, @hazardLevel, @lat, @lon, @description, @launch, @landing, @hazards, @rules, @image, @useLiveWeather, @liveStationId, @liveStationIdAlt, @siteguideUrl, @siteContact, @siteContactPhone, @navigateTo, @launchHeight, @launchHeightHigh, @launchHeight2, @landingHeight2, @hoodedPloversLink, @hoodedPloversActive, @emergencyMarker, @what3words, @weatherStationLink, @isSkyHighSite, @crossLeft, @crossRight, @overrideHideClosed, @essentialInfoImages, @essentialInfoText, @unassignedText, @siteguideVersion, @siteguideScrapedAt, @isTidal, @tideStationId, @skipBulkImport, @isXCSite, @closurePillsMax)
       `);
       await insert.run({
           id, name, type, pgRating: normalisePgRating(pgRating) || null, hgRating: hgRating || null, windDir: normaliseWindDir(windDir) || null, windSpeed: normaliseWindSpeed(windSpeed) || null, status, hazardLevel, lat, lon, description, launch, landing,
@@ -136,7 +136,8 @@ router.post("/", requireAuth, async (req, res) => {
           isTidal: isTidal || 'false',
           tideStationId: tideStationId || null,
           skipBulkImport: skipBulkImport || 'false',
-          isXCSite: isXCSite || 'false'
+          isXCSite: isXCSite || 'false',
+          closurePillsMax: 7,
       });
       invalidateSearchCaches();
       invalidateSitesCache();
@@ -147,39 +148,40 @@ router.post("/", requireAuth, async (req, res) => {
 });
 
 router.put("/:id", requireAuth, async (req, res) => {
-  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite } = req.body;
+  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax } = req.body;
   try {
       const update = await db.prepare(`
         UPDATE sites SET
           name = @name, type = @type,
-          pgRating = CASE WHEN @pgRating::text != '' THEN @pgRating ELSE pgRating END,
-          hgRating = CASE WHEN @hgRating::text != '' THEN @hgRating ELSE hgRating END,
-          windDir = CASE WHEN @windDir::text != '' THEN @windDir ELSE windDir END,
-          windSpeed = CASE WHEN @windSpeed::text != '' THEN @windSpeed ELSE windSpeed END,
+          pgRating = CASE WHEN CAST(@pgRating AS TEXT) != '' THEN @pgRating ELSE pgRating END,
+          hgRating = CASE WHEN CAST(@hgRating AS TEXT) != '' THEN @hgRating ELSE hgRating END,
+          windDir = CASE WHEN CAST(@windDir AS TEXT) != '' THEN @windDir ELSE windDir END,
+          windSpeed = CASE WHEN CAST(@windSpeed AS TEXT) != '' THEN @windSpeed ELSE windSpeed END,
           status = @status, hazardLevel = @hazardLevel, lat = @lat, lon = @lon, description = @description, launch = @launch,
-          landing = @landing, hazards = @hazards, rules = @rules, image = CASE WHEN @image::text != '' THEN @image ELSE image END,
+          landing = @landing, hazards = @hazards, rules = @rules, image = CASE WHEN CAST(@image AS TEXT) != '' THEN @image ELSE image END,
           useLiveWeather = @useLiveWeather, liveStationId = @liveStationId, liveStationIdAlt = @liveStationIdAlt,
-          siteguideUrl = CASE WHEN @siteguideUrl::text != '' THEN @siteguideUrl ELSE siteguideUrl END,
-          siteContact = CASE WHEN @siteContact::text != '' THEN @siteContact ELSE siteContact END,
-          siteContactPhone = CASE WHEN @siteContactPhone::text != '' THEN @siteContactPhone ELSE siteContactPhone END,
-          navigateTo = CASE WHEN @navigateTo::text != '' THEN @navigateTo ELSE navigateTo END,
-          launchHeight = CASE WHEN @launchHeight::text != '' THEN @launchHeight ELSE launchHeight END,
-          launchHeightHigh = CASE WHEN @launchHeightHigh::text != '' THEN @launchHeightHigh ELSE launchHeightHigh END,
-          launchHeight2 = CASE WHEN @launchHeight2::text != '' THEN @launchHeight2 ELSE launchHeight2 END,
-          landingHeight2 = CASE WHEN @landingHeight2::text != '' THEN @landingHeight2 ELSE landingHeight2 END,
-          hoodedPloversLink = CASE WHEN @hoodedPloversLink::text != '' THEN @hoodedPloversLink ELSE hoodedPloversLink END,
+          siteguideUrl = CASE WHEN CAST(@siteguideUrl AS TEXT) != '' THEN @siteguideUrl ELSE siteguideUrl END,
+          siteContact = CASE WHEN CAST(@siteContact AS TEXT) != '' THEN @siteContact ELSE siteContact END,
+          siteContactPhone = CASE WHEN CAST(@siteContactPhone AS TEXT) != '' THEN @siteContactPhone ELSE siteContactPhone END,
+          navigateTo = CASE WHEN CAST(@navigateTo AS TEXT) != '' THEN @navigateTo ELSE navigateTo END,
+          launchHeight = CASE WHEN CAST(@launchHeight AS TEXT) != '' THEN @launchHeight ELSE launchHeight END,
+          launchHeightHigh = CASE WHEN CAST(@launchHeightHigh AS TEXT) != '' THEN @launchHeightHigh ELSE launchHeightHigh END,
+          launchHeight2 = CASE WHEN CAST(@launchHeight2 AS TEXT) != '' THEN @launchHeight2 ELSE launchHeight2 END,
+          landingHeight2 = CASE WHEN CAST(@landingHeight2 AS TEXT) != '' THEN @landingHeight2 ELSE landingHeight2 END,
+          hoodedPloversLink = CASE WHEN CAST(@hoodedPloversLink AS TEXT) != '' THEN @hoodedPloversLink ELSE hoodedPloversLink END,
           hoodedPloversActive = @hoodedPloversActive,
-          emergencyMarker = CASE WHEN @emergencyMarker::text != '' THEN @emergencyMarker ELSE emergencyMarker END,
-          what3words = CASE WHEN @what3words::text != '' THEN @what3words ELSE what3words END,
-          weatherStationLink = CASE WHEN @weatherStationLink::text != '' THEN @weatherStationLink ELSE weatherStationLink END,
+          emergencyMarker = CASE WHEN CAST(@emergencyMarker AS TEXT) != '' THEN @emergencyMarker ELSE emergencyMarker END,
+          what3words = CASE WHEN CAST(@what3words AS TEXT) != '' THEN @what3words ELSE what3words END,
+          weatherStationLink = CASE WHEN CAST(@weatherStationLink AS TEXT) != '' THEN @weatherStationLink ELSE weatherStationLink END,
           isSkyHighSite = @isSkyHighSite, crossLeft = @crossLeft, crossRight = @crossRight, overrideHideClosed = @overrideHideClosed,
-          unassignedText = CASE WHEN @unassignedText::text != '' THEN @unassignedText ELSE unassignedText END,
-          essentialInfoImages = CASE WHEN @essentialInfoImages::text != '' AND @essentialInfoImages::text != '[]' THEN @essentialInfoImages ELSE essentialInfoImages END,
-          essentialInfoText = CASE WHEN @essentialInfoText::text != '' THEN @essentialInfoText ELSE essentialInfoText END,
-          siteguideVersion = CASE WHEN @siteguideVersion::text != '' THEN @siteguideVersion ELSE siteguideVersion END,
-          siteguideScrapedAt = CASE WHEN @siteguideScrapedAt::text != '' THEN @siteguideScrapedAt ELSE siteguideScrapedAt END,
+          unassignedText = CASE WHEN CAST(@unassignedText AS TEXT) != '' THEN @unassignedText ELSE unassignedText END,
+          essentialInfoImages = CASE WHEN CAST(@essentialInfoImages AS TEXT) != '' AND CAST(@essentialInfoImages AS TEXT) != '[]' THEN @essentialInfoImages ELSE essentialInfoImages END,
+          essentialInfoText = CASE WHEN CAST(@essentialInfoText AS TEXT) != '' THEN @essentialInfoText ELSE essentialInfoText END,
+          siteguideVersion = CASE WHEN CAST(@siteguideVersion AS TEXT) != '' THEN @siteguideVersion ELSE siteguideVersion END,
+          siteguideScrapedAt = CASE WHEN CAST(@siteguideScrapedAt AS TEXT) != '' THEN @siteguideScrapedAt ELSE siteguideScrapedAt END,
           isTidal = @isTidal, tideStationId = @tideStationId,
-          skipBulkImport = @skipBulkImport, isXCSite = @isXCSite
+          skipBulkImport = @skipBulkImport, isXCSite = @isXCSite,
+          closurePillsMax = @closurePillsMax
         WHERE id = @id
       `);
       await update.run({
@@ -218,7 +220,8 @@ router.put("/:id", requireAuth, async (req, res) => {
           isTidal: isTidal || 'false',
           tideStationId: tideStationId || null,
           skipBulkImport: skipBulkImport || 'false',
-          isXCSite: isXCSite || 'false'
+          isXCSite: isXCSite || 'false',
+          closurePillsMax: (closurePillsMax != null && !isNaN(Number(closurePillsMax))) ? Math.min(10, Math.max(1, Number(closurePillsMax))) : 7,
       });
       invalidateSearchCaches();
       invalidateSitesCache();

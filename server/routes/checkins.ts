@@ -24,7 +24,7 @@ router.get("/stats", asyncHandler(async (req, res) => {
     ORDER BY count DESC
   `).all();
   const total = await db.prepare("SELECT COUNT(*) as count FROM checkins").get() as { count: number };
-  const today = await db.prepare("SELECT COUNT(*) as count FROM checkins WHERE timestamp::date = CURRENT_DATE").get() as { count: number };
+  const today = await db.prepare("SELECT COUNT(*) as count FROM checkins WHERE DATE(timestamp) = DATE('now')").get() as { count: number };
   res.json({ total: total.count, today: today.count, bySite: stats });
 }));
 

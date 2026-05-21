@@ -23,7 +23,9 @@ export function drawSiteMarkers(
     const r = 6;
     ctx.beginPath();
     ctx.arc(sp[0], sp[1], r, 0, 2 * Math.PI);
-    ctx.fillStyle = site.status === 'closed' ? '#ef4444' : site.isSkyHighSite === 'true' ? '#22c55e' : '#0ea5e9';
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isClosedToday = site.status === 'closed' || (site.upcomingClosureDates?.includes(todayStr) ?? false);
+    ctx.fillStyle = isClosedToday ? '#ef4444' : site.isSkyHighSite === 'true' ? '#22c55e' : '#0ea5e9';
     ctx.fill();
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;

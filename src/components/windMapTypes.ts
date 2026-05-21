@@ -35,6 +35,7 @@ export interface SiteMarker {
   isSkyHighSite?: string;
   type?: string;
   windDir?: string;
+  upcomingClosureDates?: string[];
 }
 
 const SPEED_COLOR_STOPS: { kts: number; color: [number,number,number] }[] = [

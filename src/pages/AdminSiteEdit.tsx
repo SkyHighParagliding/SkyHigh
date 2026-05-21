@@ -83,6 +83,7 @@ export function AdminSiteEdit() {
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,
     closureDates, setClosureDates,
+    closurePillsMax, setClosurePillsMax,
   } = form;
 
   return (
@@ -414,6 +415,23 @@ export function AdminSiteEdit() {
                       onChange={(dates) => { setClosureDates(dates); markDirty(); }}
                       disabled={formData.status === 'closed'}
                     />
+                    <div className="flex items-center gap-3 pt-1">
+                      <label className="text-sm text-foreground-secondary whitespace-nowrap">Max date pills on site page</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={closurePillsMax}
+                        onChange={(e) => {
+                          const v = Math.min(10, Math.max(1, parseInt(e.target.value) || 7));
+                          setClosurePillsMax(v);
+                          markDirty();
+                        }}
+                        disabled={formData.status === 'closed'}
+                        className="w-16 px-2 py-1 text-sm border border-border rounded bg-background text-foreground disabled:opacity-40"
+                      />
+                      <span className="text-xs text-foreground-secondary">(1–10)</span>
+                    </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
                     <div className="flex items-center gap-2 sm:pb-1">
