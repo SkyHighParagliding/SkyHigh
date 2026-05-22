@@ -237,7 +237,7 @@ async function buildPublicContext(): Promise<CachedContext> {
           if (Array.isArray(hourly) && hourly.length > 0) {
             const upcoming = hourly.slice(0, 4).map((h: any) => {
               const hStatus = computeFlyability(h.windSpeed, h.windGust, h.windDirection, site);
-              const tag = hStatus ? `[${hStatus.direction}/${hStatus.speed}${hStatus.gustWarning ? "⚠" : ""}]` : "";
+              const tag = hStatus ? `[${hStatus.direction}/${hStatus.speed}${hStatus.gustWarning ? ` ⚠ ${hStatus.gustWarning}` : ""}]` : "";
               return `${h.time || ""}:${h.windSpeed || 0}G${h.windGust || 0}${h.windDirection || ""}${tag}`;
             }).join(" | ");
             ctx += `HRLY: ${upcoming}\n`;
@@ -260,8 +260,13 @@ async function buildPublicContext(): Promise<CachedContext> {
         if (!ext || !ext.days || ext.days.length === 0) continue;
         ctx += `${site.name}: `;
         const dayStrs = ext.days.map((d: any) => {
-          const midSlot = d.slots?.[Math.floor((d.slots?.length || 1) / 2)] || {};
-          return `${d.dayName} ${midSlot.windSpeed || d.bestSpeed || '?'}kt ${midSlot.windDirection || d.bestDirection || '?'} ${d.bestWeatherSummary || ''}`;
+          const spd = d.bestSpeed ?? 0;
+          const dir = d.bestDirection || '?';
+          const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
+          const gust = bestSlot.windGust ?? null;
+          const fly = computeFlyability(spd, gust, dir, site);
+          const flyTag = fly ? ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ""}]` : "";
+          return `${d.dayName} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
         });
         ctx += dayStrs.join(" | ") + "\n";
       }
@@ -349,14 +354,19 @@ CRITICAL — RATING-FIRST RULE:
 
 WEATHER & FLYABILITY — IMPORTANT:
 - You have LIVE weather observations and ECMWF forecasts for most sites.
-- Each site has FLYABILITY STATUS labels: Direction can be "Good", "Cross", or "Not Flyable". Speed can be "Good", "Light", or "Blown Out".
-- GUST WARNINGS: If the data includes a gust warning (⚠), this means gusts exceed the site's upper wind limit. Always mention gust warnings to the pilot — even if the average speed shows "Good", strong gusts can make conditions dangerous. Example: "Speed is Good at 12kts but gusts of 23kts exceed the 12kts upper limit — exercise caution."
-- When a pilot asks about weather or "which sites are good today", focus on the FLYABILITY status first — that is what pilots care about most. "Good/Good" means both direction and speed are ideal for flying.
-- Prioritize sites where BOTH direction AND speed are "Good" AND have no gust warnings. Mention "Cross" sites or gusty sites as secondary options with appropriate warnings. Skip "Not Flyable" or "Blown Out" sites unless specifically asked.
+- Each site has pre-computed FLYABILITY STATUS labels in the data. Direction can be "Good", "Cross", or "Not Flyable". Speed can be "Good", "Light", or "Blown Out". ALWAYS use these pre-computed labels — DO NOT compute your own flyability from raw wind numbers.
+- GUST WARNINGS: When the data includes a gust warning (⚠ Gusts of Xkts exceed the Ykts upper limit), always quote it exactly as shown. Do not paraphrase or recalculate — use the numbers in the data verbatim. Strong gusts can make conditions dangerous even when average speed looks fine.
+- When a pilot asks about weather or "which sites are flyable", focus on the FLYABILITY labels first — "Good/Good" means both direction and speed are ideal.
+- FLYABILITY FILTER — CRITICAL: Only recommend sites where the flyability label is "Good" or "Cross" for the relevant time. DO NOT list or recommend sites with "Not Flyable" direction or "Blown Out" speed under any circumstances, even as secondary options. If a pilot asks where to fly and no sites have Good or Cross conditions, say so honestly: "There are no sites with flyable conditions for that day based on current forecasts."
+- Prioritise "Good/Good" (no gust warning) sites first. List "Cross" or gusty sites second with a clear caution note. Never pad the list with non-flyable sites.
 - When listing sites with weather, lead with the flyability status, then the key numbers (wind speed, gusts, direction). Temperature and sky conditions are secondary.
-- IMPORTANT: The "Ideal Wind Speed Range" shown for each site is calibrated for standard paragliding wings. Larger or higher-performance wings may handle stronger winds, but the flyability status is based on these standard PG ranges. Always present the site's wind range when discussing conditions so pilots can judge for themselves.
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
-- You also have access to 7-DAY EXTENDED FORECASTS when available. Use this data to answer multi-day planning questions like "what days this week can I fly?", "will the wind be good on Friday?", or "best day to fly this week". Summarize the outlook for each day mentioning wind speed, direction, and weather.
+- You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Use these labels — do not derive your own. Use this data to answer multi-day planning questions like "what days this week can I fly?" or "best day to fly this week".
+
+RATING FILTER — CRITICAL SAFETY RULE:
+- When a pilot provides their rating and asks which sites they can fly, you MUST filter the site list BEFORE listing anything. Exclude any site whose minimum rating requirement is higher than the pilot's rating. If the site has a "Supervised" tier (e.g. "PG2 Supervised under PG4"), include it only if the pilot meets that tier and note the supervision requirement clearly.
+- NEVER list a site that the pilot is not permitted to fly, even as a "check this out" or "worth noting" suggestion. A site that says "PG3 minimum" is completely off the list for a PG2 pilot.
+- Apply this filter to BOTH the rating query AND the weather/flyability query when a pilot has given their rating.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
