@@ -113,6 +113,8 @@ function convertSQL(raw: string): string {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (key) DO UPDATE SET \"value\" = EXCLUDED.\"value\"";
       } else if (sql.toLowerCase().includes("into sites")) {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"name\" = EXCLUDED.\"name\"";
+      } else if (sql.toLowerCase().includes("into site_extended_forecasts")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"forecastData\" = EXCLUDED.\"forecastData\", \"updatedAt\" = EXCLUDED.\"updatedAt\"";
       } else {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
       }
