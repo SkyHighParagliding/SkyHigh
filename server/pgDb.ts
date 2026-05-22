@@ -5,6 +5,7 @@ import createLogger from "./utils/logger.js";
 const log = createLogger("database");
 
 const poolMax = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 20;
+const stmtTimeoutMs = parseInt(process.env.DB_STATEMENT_TIMEOUT ?? '', 10);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -12,7 +13,7 @@ const pool = new Pool({
   max: poolMax,
   idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT_MS ? parseInt(process.env.DB_IDLE_TIMEOUT_MS, 10) : 60000,
   connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT_MS ? parseInt(process.env.DB_CONNECTION_TIMEOUT_MS, 10) : 10000,
-  statement_timeout: process.env.DB_STATEMENT_TIMEOUT ? parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) : 30000,
+  statement_timeout: Number.isFinite(stmtTimeoutMs) ? stmtTimeoutMs : 30000,
 });
 
 pool.on("error", (err) => {

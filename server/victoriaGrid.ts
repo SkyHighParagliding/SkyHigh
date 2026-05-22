@@ -616,6 +616,7 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
       const idx = hourIdx + i;
       if (idx < nearest.hourly.time.length) {
         const hTime = nearest.hourly.time[idx];
+        if (!hTime.startsWith(melbDateStr)) break;
         const hUtcDate = fromZonedTime(hTime, 'Australia/Melbourne');
         const hCode = nearest.hourly.weather_code[idx];
         forecastHours.push({
