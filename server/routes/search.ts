@@ -540,12 +540,19 @@ RULES:
 function getDefaultEligibilityRules(): string {
   return `SITE ELIGIBILITY RULES — apply these before recommending any site:
 
-HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be completely absent from your response. Do not list it, do not mention it, do not note it with a caveat, do not reference it in any form. If a site cannot be recommended, it simply does not appear. A response that lists a site and then says "you cannot fly here" is wrong — omit the site entirely.
+HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be completely absent from your response. Do not list it, do not mention it, do not note it with a caveat, do not reference it in any form. If a site cannot be recommended, it simply does not appear. A response that lists a site and then says "you cannot fly here" or "be cautious" is wrong — omit the site entirely.
 
 - HG ONLY: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", it does not exist in your response for a PG pilot.
 - PG ONLY: If a site shows "PG ONLY — NOT OPEN TO HG PILOTS", it does not exist in your response for an HG pilot.
 - SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
-- GUST THRESHOLD: If a site's live, forecast, or hourly wind data shows gusts exceeding the site's maximum recommended wind speed by more than 2 knots, do not recommend that site for those conditions. A site with a 16kt upper limit and 19kt gusts should be omitted — do not list it with a gust warning.
+- ADVISORY TAGS: The server pre-labels each site's LIVE and FCST lines with advisory tags. These are hard exclusion signals — not suggestions:
+    [LIGHT WINDS — do not recommend] → omit this site entirely
+    [BLOWN OUT — do not recommend] → omit this site entirely
+    [GUST THRESHOLD EXCEEDED — do not recommend] → omit this site entirely
+  Any site with one of these tags on its current LIVE or FCST line does not appear in your response, regardless of any other data.
+- GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), do not recommend that site for a PG2 or PG3 pilot. For PG4+ you may mention it with the gust note, but only if no advisory tag is also present.
+
+PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at EVERY site without exception. There is no site a PG2 can fly unsupervised. When responding to a PG2 pilot, state this clearly at the start of your response before listing any sites. Every site you include must carry a supervision requirement.
 
 PG SUPERVISION MATRIX — universal policy. A site's pgRating is the minimum to fly unsupervised. Pilots below that minimum may still fly with appropriate supervision:
 
@@ -1373,10 +1380,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("GUST THRESHOLD")) {
-    // Old version without gust threshold and hard exclusion language — safe to upgrade
+  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("ADVISORY TAGS")) {
+    // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added gust threshold and hard exclusion rules");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added PG2 supervision rule, advisory tag exclusions");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
