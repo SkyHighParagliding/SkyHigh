@@ -94,6 +94,7 @@ interface CachedContext {
   data: string;
   timestamp: number;
   sites: any[];
+  closureMap: Map<string, string[]>;
 }
 
 let publicContextCache: CachedContext | null = null;
@@ -261,14 +262,30 @@ async function buildPublicContext(): Promise<CachedContext> {
       const obsAge = obs.timestamp ? Math.round((Date.now() - new Date(obs.timestamp).getTime()) / 60000) : null;
       ctx += `LIVE: ${obs.windSpeed}kts G${obs.windGust ?? "N/A"} ${obs.direction || "?"} (${obsAge !== null && obsAge < 120 ? `${obsAge}m ago` : "recent"})`;
       const liveStatus = computeFlyability(obs.windSpeed, obs.windGust, obs.direction, site);
-      if (liveStatus) ctx += ` [Dir:${liveStatus.direction} Spd:${liveStatus.speed}${liveStatus.gustWarning ? ` ⚠ ${liveStatus.gustWarning}` : ""}]`;
+      if (liveStatus) {
+        const siteRange = parseWindSpeedRange(site.windSpeed);
+        let advisory = "";
+        if (liveStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
+        else if (liveStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
+        else if (obs.windGust != null && siteRange && Math.round(obs.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
+        else advisory = " [No gust concern]";
+        ctx += ` [Dir:${liveStatus.direction} Spd:${liveStatus.speed}${liveStatus.gustWarning ? ` ⚠ ${liveStatus.gustWarning}` : ""}]${advisory}`;
+      }
       ctx += "\n";
     }
     const forecast = forecastMap.get(site.id);
     if (forecast && forecast.windSpeed != null) {
       ctx += `FCST: ${forecast.windSpeed}kts G${forecast.windGust ?? "N/A"} ${forecast.windDirection || "?"} ${forecast.temperature != null ? forecast.temperature + "°C" : ""}`;
       const fcStatus = computeFlyability(forecast.windSpeed, forecast.windGust, forecast.windDirection, site);
-      if (fcStatus) ctx += ` [Dir:${fcStatus.direction} Spd:${fcStatus.speed}${fcStatus.gustWarning ? ` ⚠ ${fcStatus.gustWarning}` : ""}]`;
+      if (fcStatus) {
+        const siteRange = parseWindSpeedRange(site.windSpeed);
+        let advisory = "";
+        if (fcStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
+        else if (fcStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
+        else if (forecast.windGust != null && siteRange && Math.round(forecast.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
+        else advisory = " [No gust concern]";
+        ctx += ` [Dir:${fcStatus.direction} Spd:${fcStatus.speed}${fcStatus.gustWarning ? ` ⚠ ${fcStatus.gustWarning}` : ""}]${advisory}`;
+      }
       ctx += "\n";
       if (forecast.forecasts) {
         try {
@@ -276,7 +293,14 @@ async function buildPublicContext(): Promise<CachedContext> {
           if (Array.isArray(hourly) && hourly.length > 0) {
             const upcoming = hourly.slice(0, 4).map((h: any) => {
               const hStatus = computeFlyability(h.windSpeed, h.windGust, h.windDirection, site);
-              const tag = hStatus ? `[${hStatus.direction}/${hStatus.speed}${hStatus.gustWarning ? ` ⚠ ${hStatus.gustWarning}` : ""}]` : "";
+              if (!hStatus) return `${h.time || ""}:${h.windSpeed || 0}G${h.windGust || 0}${h.windDirection || ""}`;
+              const siteRange = parseWindSpeedRange(site.windSpeed);
+              let advisory = "";
+              if (hStatus.speed === 'Light') advisory = "[LIGHT]";
+              else if (hStatus.speed === 'Blown Out') advisory = "[BLOWN OUT]";
+              else if (h.windGust != null && siteRange && Math.round(h.windGust) > siteRange.max + 2) advisory = "[GUSTS EXCEED LIMIT]";
+              else advisory = "[OK]";
+              const tag = `[${hStatus.direction}/${hStatus.speed}${hStatus.gustWarning ? ` ⚠ ${hStatus.gustWarning}` : ""}]${advisory}`;
               return `${h.time || ""}:${h.windSpeed || 0}G${h.windGust || 0}${h.windDirection || ""}${tag}`;
             }).join(" | ");
             ctx += `HRLY: ${upcoming}\n`;
@@ -326,7 +350,7 @@ async function buildPublicContext(): Promise<CachedContext> {
     }
   } catch {}
 
-  publicContextCache = { data: ctx, timestamp: Date.now(), sites };
+  publicContextCache = { data: ctx, timestamp: Date.now(), sites, closureMap };
   return publicContextCache;
 }
 
@@ -367,6 +391,60 @@ function filterContextByPilotType(context: string, query: string, sites: any[]):
 }
 
 // ─── Query-aware context filtering ───
+// Extract dates from the query (day names, today, tomorrow, weekend) as YYYY-MM-DD strings in Melbourne time.
+// Returns an empty array if no dates are detected — callers should fall back to a default window.
+function extractQueryDates(query: string): string[] {
+  const q = query.toLowerCase();
+  const toMelbDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+  const dates = new Set<string>();
+
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.now() + i * 86400000);
+    const dayName = d.toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Melbourne' }).toLowerCase();
+    const dateStr = toMelbDate(d);
+    if (i === 0 && /\btoday\b|\btonight\b|\bnow\b/.test(q)) dates.add(dateStr);
+    if (i === 1 && /\btomorrow\b/.test(q)) dates.add(dateStr);
+    if (q.includes(dayName)) dates.add(dateStr);
+    if (/\bweekend\b/.test(q) && (dayName === 'saturday' || dayName === 'sunday') && i < 8) dates.add(dateStr);
+  }
+  return Array.from(dates);
+}
+
+// Query-time filter: remove site sections for sites that have scheduled closures overlapping the queried dates.
+// Falls back to a 7-day window when the query doesn't mention specific dates.
+function filterContextByClosureDates(context: string, closureMap: Map<string, string[]>, sites: any[], query: string): string {
+  let queriedDates = extractQueryDates(query);
+
+  if (queriedDates.length === 0) {
+    // Generic query — use the next 7 days as the default window
+    const toMelbDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    for (let i = 0; i < 7; i++) {
+      queriedDates.push(toMelbDate(new Date(Date.now() + i * 86400000)));
+    }
+  }
+
+  const queriedSet = new Set(queriedDates);
+  const excludedNames = new Set<string>();
+
+  for (const site of sites) {
+    const siteClosure = closureMap.get(site.id) || [];
+    if (siteClosure.some((date: string) => queriedSet.has(date))) {
+      excludedNames.add(site.name);
+    }
+  }
+
+  if (excludedNames.size === 0) return context;
+
+  const sections = context.split(/\n(?=## )/);
+  return sections.filter(section => {
+    if (!section.startsWith('## ')) return true;
+    for (const name of excludedNames) {
+      if (section.startsWith(`## ${name} `) || section.startsWith(`## ${name}\n`)) return false;
+    }
+    return true;
+  }).join('\n');
+}
+
 function filterContextBySites(fullContext: string, sites: any[], query: string): string {
   const qLower = query.toLowerCase();
 
@@ -1111,7 +1189,7 @@ router.post("/public", asyncHandler(async (req, res) => {
     return res.status(500).json({ error: "Smart assistant is not configured" });
   }
 
-  const { data: sitesContext, sites } = await buildPublicContext();
+  const { data: sitesContext, sites, closureMap } = await buildPublicContext();
 
   const allOfficers = await db.prepare("SELECT name, 'Safety Committee' as type, phone, email FROM contacts WHERE isSafetyCommittee = 1 AND displaySafety = 1 ORDER BY name ASC").all() as OfficerRow[];
   const officers = await filterByCurrentMembers(allOfficers);
@@ -1119,10 +1197,15 @@ router.post("/public", asyncHandler(async (req, res) => {
   const committeeRedirectRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchCommitteeLink'").get() as SettingRow | undefined;
   const committeeLink = committeeRedirectRow?.value || "/page/committee";
 
-  const filteredSitesContext = filterContextByPilotType(
-    filterContextBySites(sitesContext, sites, query),
-    query,
-    sites
+  const filteredSitesContext = filterContextByClosureDates(
+    filterContextByPilotType(
+      filterContextBySites(sitesContext, sites, query),
+      query,
+      sites
+    ),
+    closureMap,
+    sites,
+    query
   );
 
   let officersContext = "\n\n=== COMMITTEE & SAFETY OFFICERS ===\n";
