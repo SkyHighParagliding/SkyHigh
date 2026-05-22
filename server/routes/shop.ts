@@ -42,7 +42,7 @@ function mapProduct(p: any): MappedProduct {
   };
 }
 
-async function getHiddenProductIds(): string[] {
+async function getHiddenProductIds(): Promise<string[]> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'hiddenShopProducts'").get() as { value: string } | undefined;
   if (!row) return [];
   try {
@@ -87,7 +87,7 @@ async function fetchTidyHQProducts(): Promise<MappedProduct[]> {
 
 fetchTidyHQProducts().catch(e => log.warn("Initial shop products fetch failed", e?.message));
 
-async function isAdminRequest(req: any): boolean {
+async function isAdminRequest(req: any): Promise<boolean> {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) return false;
   const session = await db.prepare(`

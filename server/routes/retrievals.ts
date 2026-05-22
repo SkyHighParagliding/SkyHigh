@@ -50,7 +50,7 @@ router.post(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
     const { lat, lon, flightId } = req.body;
-    const result = svc.requestRetrieval(req.pilot, lat ?? null, lon ?? null, flightId);
+    const result = await svc.requestRetrieval(req.pilot, lat ?? null, lon ?? null, flightId);
     res.json(result);
   })
 );
@@ -60,7 +60,7 @@ router.get(
   requireAuth,
   asyncHandler(async (_req: any, res) => {
     const svc = (_req.services as Services).retrievals;
-    const rows = svc.getUnretrieved();
+    const rows = await svc.getUnretrieved();
     res.json(rows);
   })
 );
@@ -70,7 +70,7 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
-    const result = svc.claimRetrieval(req.params.pilotId, req.pilot);
+    const result = await svc.claimRetrieval(req.params.pilotId, req.pilot);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -83,7 +83,7 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
-    const result = svc.unclaimRetrieval(req.params.pilotId, req.pilot);
+    const result = await svc.unclaimRetrieval(req.params.pilotId, req.pilot);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -96,7 +96,7 @@ router.post(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
-    const result = svc.completeRetrieval(req.params.pilotId, req.pilot);
+    const result = await svc.completeRetrieval(req.params.pilotId, req.pilot);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -144,7 +144,7 @@ router.post(
       return res.status(400).json({ error: "Valid lat (-90..90) and lon (-180..180) required" });
     }
 
-    const result = svc.updatePilotPosition(req.pilot, lat, lon);
+    const result = await svc.updatePilotPosition(req.pilot, lat, lon);
     res.json(result);
   })
 );
@@ -154,7 +154,7 @@ router.get(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
-    const result = svc.getRetrievalStatus(req.params.pilotId, req.pilot.id);
+    const result = await svc.getRetrievalStatus(req.params.pilotId, req.pilot.id);
     if ('error' in result) {
       const err = result as { error: string; status: number };
       return res.status(err.status).json({ error: err.error });
@@ -198,7 +198,7 @@ router.get(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).retrievals;
-    res.json(svc.getLaunchSite());
+    res.json(await svc.getLaunchSite());
   })
 );
 

@@ -17,7 +17,7 @@ const DRIVER_POS_TTL_MS = 8 * 60 * 60 * 1000;
 const liveDriverPositions = new Map<string, DriverPosition>();
 let liveDutyPilotPosition: DutyPilotPosition | null = null;
 
-async function getSettingNum(key: string, fallback: number): number {
+async function getSettingNum(key: string, fallback: number): Promise<number> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
   if (!row?.value) return fallback;
   const n = Number(row.value);

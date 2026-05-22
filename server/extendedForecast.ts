@@ -687,13 +687,13 @@ async function cleanupOldExtendedForecasts(): Promise<void> {
 
 let extendedScheduleTimeout: NodeJS.Timeout | null = null;
 
-async function getSettingInt(key: string, fallback: number): number {
+async function getSettingInt(key: string, fallback: number): Promise<number> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
   const val = parseInt(row?.value || String(fallback), 10);
   return Number.isFinite(val) ? val : fallback;
 }
 
-export async function scheduleExtendedForecast(): void {
+export async function scheduleExtendedForecast(): Promise<void> {
   const now = new Date();
   const targetHour = await getSettingInt("schedExtendedForecastHour", 5);
   const targetMinute = await getSettingInt("schedExtendedForecastMinute", 30);

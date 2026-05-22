@@ -31,7 +31,7 @@ export async function getLastVersionCheck(): Promise<VersionCheckResult | null> 
   return row ?? null;
 }
 
-export async function getLastDetectedVersion(): string | null {
+export async function getLastDetectedVersion(): Promise<string | null> {
   const row = await db.prepare(
     "SELECT detectedVersion FROM siteguide_version_checks WHERE detectedVersion IS NOT NULL ORDER BY id DESC LIMIT 1"
   ).get() as { detectedVersion: string } | undefined;
@@ -45,21 +45,21 @@ export async function getLastChangedCheck(): Promise<VersionCheckResult | null> 
   return row ?? null;
 }
 
-export async function getLastBulkImportTime(): string | null {
+export async function getLastBulkImportTime(): Promise<string | null> {
   const row = await db.prepare(
     "SELECT MAX(siteguideScrapedAt) as lastImport FROM sites WHERE siteguideScrapedAt IS NOT NULL AND siteguideScrapedAt != ''"
   ).get() as { lastImport: string | null } | undefined;
   return row?.lastImport ?? null;
 }
 
-export async function getVersionBeforeLastChange(): string | null {
+export async function getVersionBeforeLastChange(): Promise<string | null> {
   const row = await db.prepare(
     "SELECT previousVersion FROM siteguide_version_checks WHERE changed = 1 ORDER BY id DESC LIMIT 1"
   ).get() as { previousVersion: string } | undefined;
   return row?.previousVersion ?? null;
 }
 
-export async function getChangedSinceLastImport(): boolean {
+export async function getChangedSinceLastImport(): Promise<boolean> {
   const lastImportTime = await getLastBulkImportTime();
   if (!lastImportTime) return false;
 

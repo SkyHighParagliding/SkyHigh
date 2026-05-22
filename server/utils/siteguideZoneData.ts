@@ -467,7 +467,7 @@ export function invalidateCache() {
   airspaceCache = null;
 }
 
-export async function getZoneDataVersion(): string | null {
+export async function getZoneDataVersion(): Promise<string | null> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'zoneDataVersion'").get() as { value: string } | undefined;
   return row?.value ?? null;
 }

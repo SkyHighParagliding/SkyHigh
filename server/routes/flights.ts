@@ -30,7 +30,7 @@ router.post(
     const pilotId = req.pilot?.id || null;
     const sToken = pilotId ? null : sessionToken || null;
 
-    const flight = svc.createFlight(pilotId, sToken, siteId, siteName);
+    const flight = await svc.createFlight(pilotId, sToken, siteId, siteName);
     res.json({ id: flight.id, pilotId: flight.pilotId, sessionToken: flight.sessionToken, status: flight.status });
   })
 );
@@ -47,7 +47,7 @@ router.post(
     }
 
     const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
-    const result = svc.addBreadcrumbs(req.params.id, breadcrumbs, req.pilot || null, sessionToken);
+    const result = await svc.addBreadcrumbs(req.params.id, breadcrumbs, req.pilot || null, sessionToken);
     if (!result) {
       return res.status(404).json({ error: "Flight not found" });
     }
@@ -106,7 +106,7 @@ router.put(
     const { stats } = req.body;
     const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
 
-    const result = svc.endFlight(req.params.id, stats, req.pilot || null, sessionToken);
+    const result = await svc.endFlight(req.params.id, stats, req.pilot || null, sessionToken);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -132,7 +132,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).flights;
     const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
-    const result = svc.getFlightWithBreadcrumbs(req.params.id, req.pilot || null, sessionToken);
+    const result = await svc.getFlightWithBreadcrumbs(req.params.id, req.pilot || null, sessionToken);
     if (!result) {
       return res.status(404).json({ error: "Flight not found" });
     }
@@ -150,7 +150,7 @@ router.get(
     const svc = (req.services as Services).flights;
     const pilotId = req.pilot?.id || null;
     const sessionToken = req.query.sessionToken;
-    const flights = svc.listFlights(pilotId, sessionToken);
+    const flights = await svc.listFlights(pilotId, sessionToken);
     res.json(flights);
   })
 );
@@ -161,7 +161,7 @@ router.delete(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).flights;
     const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
-    const result = svc.deleteFlight(req.params.id, req.pilot || null, sessionToken);
+    const result = await svc.deleteFlight(req.params.id, req.pilot || null, sessionToken);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
