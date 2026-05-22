@@ -115,6 +115,16 @@ function convertSQL(raw: string): string {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"name\" = EXCLUDED.\"name\"";
       } else if (sql.toLowerCase().includes("into site_extended_forecasts")) {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"forecastData\" = EXCLUDED.\"forecastData\", \"updatedAt\" = EXCLUDED.\"updatedAt\"";
+      } else if (sql.toLowerCase().includes("into weather_forecasts")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"timestamp\" = EXCLUDED.\"timestamp\", \"temperature\" = EXCLUDED.\"temperature\", \"windSpeed\" = EXCLUDED.\"windSpeed\", \"windGust\" = EXCLUDED.\"windGust\", \"windDirection\" = EXCLUDED.\"windDirection\", \"icon\" = EXCLUDED.\"icon\", \"summary\" = EXCLUDED.\"summary\", \"forecasts\" = EXCLUDED.\"forecasts\"";
+      } else if (sql.toLowerCase().includes("into wind_grid_data")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"gridData\" = EXCLUDED.\"gridData\", \"gridSize\" = EXCLUDED.\"gridSize\", \"gridSpacing\" = EXCLUDED.\"gridSpacing\", \"updatedAt\" = EXCLUDED.\"updatedAt\"";
+      } else if (sql.toLowerCase().includes("into extended_forecasts")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"gridData\" = EXCLUDED.\"gridData\", \"fetchedAt\" = EXCLUDED.\"fetchedAt\"";
+      } else if (sql.toLowerCase().includes("into document_index")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"driveFileId\") DO UPDATE SET \"name\" = EXCLUDED.\"name\", \"category\" = EXCLUDED.\"category\", \"mimeType\" = EXCLUDED.\"mimeType\", \"driveUrl\" = EXCLUDED.\"driveUrl\", \"textContent\" = EXCLUDED.\"textContent\", \"charCount\" = EXCLUDED.\"charCount\", \"readable\" = EXCLUDED.\"readable\", \"indexedAt\" = EXCLUDED.\"indexedAt\", \"lastModified\" = EXCLUDED.\"lastModified\"";
+      } else if (sql.toLowerCase().includes("into emergency_hospitals_cache")) {
+        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"hospitals\" = EXCLUDED.\"hospitals\", \"cachedAt\" = EXCLUDED.\"cachedAt\"";
       } else {
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
       }
