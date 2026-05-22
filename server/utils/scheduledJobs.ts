@@ -132,7 +132,7 @@ async function fetchCoarseGridDaily() {
 }
 
 async function startupGridCheck() {
-  const RECENT_FETCH_MS = 12 * 60 * 60 * 1000; // 12 hours
+  const RECENT_FETCH_MS = 22 * 60 * 60 * 1000; // 22 hours — safe window before next 5am run; prevents evening deploys from refetching
 
   // Check fine grid: only fetch if NOT fetched within last 12 hours
   const vicLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'fineGridLastRun'").get() as { value: string } | undefined;

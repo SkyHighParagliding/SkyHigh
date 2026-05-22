@@ -206,8 +206,7 @@ export async function fetchExtendedForecast(): Promise<void> {
     }
 
     if (allPoints.length < totalPoints * 0.5) {
-      console.warn(`Extended forecast: Only ${allPoints.length}/${totalPoints} points, aborting`);
-      return;
+      throw new Error(`Only ${allPoints.length}/${totalPoints} grid points returned — API may be rate-limited or grid config changed. site_extended_forecasts NOT updated.`);
     }
 
     const grid: ExtendedGrid = {
