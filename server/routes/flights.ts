@@ -113,7 +113,7 @@ router.put(
 
     if (result.pilotId) {
       const pilotPos = svc.getPilotPosition(result.pilotId);
-      rSvc.createRetrievalForPilot(
+      await rSvc.createRetrievalForPilot(
         result.pilotId,
         result.pilotName || "Pilot",
         pilotPos?.lat || null,

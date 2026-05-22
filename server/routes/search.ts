@@ -461,12 +461,18 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
   const extBlock = extIdx !== -1 ? context.slice(extIdx) : '';
 
   const sections = sitesContext.split(/\n(?=## )/);
+  // Track site names stripped for conditions queries so we can remove them from the
+  // 7-day extBlock too — ECMWF and Open-Meteo are independent sources and can disagree
+  // on today's conditions, so a site excluded from short-term can't appear as flyable-today
+  // in the 7-day block.
+  const strippedNames = new Set<string>();
 
   const processed = sections.map(section => {
     if (!section.startsWith('## ')) return section;
 
     const lines = section.split('\n');
     const hrlyLine = lines.find(line => /^HRLY:\s/i.test(line.trim()));
+    const siteName = section.match(/^## ([^\[]+)/)?.[1]?.trim() ?? '';
 
     // Strip bad LIVE/FCST lines; leave everything else (including HRLY) intact for now.
     const filteredLines = lines.filter(line => {
@@ -493,16 +499,28 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
       }
       // HRLY exists but all slots unflyable — strip for conditions queries,
       // keep site metadata (ratings, hazards, rules) for info queries.
-      if (isConditionsQuery) return null;
+      if (isConditionsQuery) { if (siteName) strippedNames.add(siteName); return null; }
       return withoutHrly.join('\n');
     }
 
     // No weather data at all — strip for conditions queries, keep for info queries.
-    if (isConditionsQuery) return null;
+    if (isConditionsQuery) { if (siteName) strippedNames.add(siteName); return null; }
     return filteredLines.join('\n');
   });
 
-  return processed.filter(Boolean).join('\n') + extBlock;
+  // For conditions queries, remove stripped sites from the 7-day block so a site
+  // excluded from short-term context cannot reappear as flyable-today via ECMWF data.
+  let filteredExt = extBlock;
+  if (isConditionsQuery && strippedNames.size > 0) {
+    filteredExt = extBlock.split('\n').filter(line => {
+      for (const name of strippedNames) {
+        if (line.startsWith(`${name}: `)) return false;
+      }
+      return true;
+    }).join('\n');
+  }
+
+  return processed.filter(Boolean).join('\n') + filteredExt;
 }
 
 // Query-time filter: remove site sections for sites that have scheduled closures overlapping the queried dates.
