@@ -644,8 +644,17 @@ router.post("/scrape-now", asyncHandler(async (req, res) => {
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  fetchExtendedForecast().catch(() => {});
-  res.json({ success: true, message: "Extended forecast fetch started" });
+  const ts = new Date().toISOString();
+  try {
+    await fetchExtendedForecast();
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", "ok");
+    res.json({ success: true, message: "Extended forecast fetch completed successfully" });
+  } catch (e: any) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", e.message || "Unknown error");
+    res.status(500).json({ success: false, message: e.message || "Extended forecast fetch failed" });
+  }
 }));
 
 router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
