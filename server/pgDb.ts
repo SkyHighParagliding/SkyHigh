@@ -4,17 +4,15 @@ import createLogger from "./utils/logger.js";
 
 const log = createLogger("database");
 
+const poolMax = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 20;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes("localhost") ? false : { rejectUnauthorized: false },
-  // Connection pool sizing
-  max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 20,
-  // Keep idle connections alive longer to reduce reconnection overhead
+  max: poolMax,
   idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT_MS ? parseInt(process.env.DB_IDLE_TIMEOUT_MS, 10) : 60000,
-  // Allow more time for connections to establish (network + PostgreSQL startup)
   connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT_MS ? parseInt(process.env.DB_CONNECTION_TIMEOUT_MS, 10) : 10000,
-  // Set statement timeout to prevent runaway queries from blocking the pool
-  statement_timeout: process.env.DB_STATEMENT_TIMEOUT || "30000",
+  statement_timeout: process.env.DB_STATEMENT_TIMEOUT ? parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) : 30000,
 });
 
 pool.on("error", (err) => {
@@ -23,8 +21,8 @@ pool.on("error", (err) => {
 
 // Monitor pool exhaustion
 pool.on("connect", () => {
-  if (pool.totalCount >= pool.max * 0.8) {
-    log.warn(`Database connection pool at ${Math.round((pool.totalCount / pool.max) * 100)}% capacity (${pool.totalCount}/${pool.max})`);
+  if (pool.totalCount >= poolMax * 0.8) {
+    log.warn(`Database connection pool at ${Math.round((pool.totalCount / poolMax) * 100)}% capacity (${pool.totalCount}/${poolMax})`);
   }
 });
 

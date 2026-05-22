@@ -149,7 +149,7 @@ const fallbackSiteImages = {
   inland: ['']
 };
 
-export async function getDefaultSiteImage(siteType: string): string {
+export async function getDefaultSiteImage(siteType: string): Promise<string> {
   const typeStr = (siteType || '').toLowerCase();
   const isInland = typeStr.includes('inland') || typeStr.includes('mountain') || typeStr.includes('ridge') || typeStr.includes('tow');
   const category = isInland ? 'inland' : 'coastal';
@@ -175,7 +175,7 @@ export async function getDefaultSiteImage(siteType: string): string {
 
 export const MAX_ARCHIVES = 10;
 
-export async function archiveSitesBeforeImport(siteguideVersion: string): boolean {
+export async function archiveSitesBeforeImport(siteguideVersion: string): Promise<boolean> {
   const existing = await db.prepare("SELECT id FROM site_archives WHERE siteguideVersion = ?").get(siteguideVersion);
   if (existing) return false;
 

@@ -20,7 +20,7 @@ router.post(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).messages;
     const { recipientPilotId, recipientName, message } = req.body;
-    const result = svc.sendMessage(req.pilot, recipientPilotId, recipientName, message);
+    const result = await svc.sendMessage(req.pilot, recipientPilotId, recipientName, message);
     if ('error' in result) {
       const err = result as { error: string; status: number };
       return res.status(err.status).json({ error: err.error });
@@ -35,7 +35,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).messages;
     const pilotId = String(req.pilot.id);
-    res.json(svc.getInbox(pilotId));
+    res.json(await svc.getInbox(pilotId));
   })
 );
 
@@ -44,7 +44,7 @@ router.patch(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).messages;
-    const result = svc.thumbsUp(req.params.id, String(req.pilot.id));
+    const result = await svc.thumbsUp(req.params.id, String(req.pilot.id));
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -57,7 +57,7 @@ router.patch(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).messages;
-    const result = svc.thumbsDown(req.params.id, String(req.pilot.id));
+    const result = await svc.thumbsDown(req.params.id, String(req.pilot.id));
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }
@@ -70,7 +70,7 @@ router.patch(
   requireAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).messages;
-    const result = svc.markDelivered(req.params.id, String(req.pilot.id));
+    const result = await svc.markDelivered(req.params.id, String(req.pilot.id));
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });
     }

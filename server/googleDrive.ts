@@ -23,7 +23,7 @@ const CATEGORY_FOLDERS = [
 
 export { CATEGORY_FOLDERS };
 
-export async function getAppScriptUrl(): string {
+export async function getAppScriptUrl(): Promise<string> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'drive_appscript_url'").get() as { value: string } | undefined;
   const url = row?.value || "";
   if (!url) return "";

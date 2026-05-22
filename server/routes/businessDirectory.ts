@@ -9,12 +9,12 @@ function generateId() {
   return `biz-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-async function isDirectoryEnabled(): boolean {
+async function isDirectoryEnabled(): Promise<boolean> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'businessDirectoryEnabled'").get() as { value: string } | undefined;
   return row?.value === "true";
 }
 
-async function isAuthenticated(req: any): boolean {
+async function isAuthenticated(req: any): Promise<boolean> {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
   const token = authHeader.split(" ")[1];

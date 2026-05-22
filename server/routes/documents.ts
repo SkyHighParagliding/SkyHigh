@@ -592,7 +592,7 @@ router.delete("/index/clear", requireAuth, asyncHandler(async (_req, res) => {
   res.json({ success: true, message: "Document index cleared" });
 }));
 
-export async function getIndexedDocumentsContext(): string {
+export async function getIndexedDocumentsContext(): Promise<string> {
   try {
     const docs = await db.prepare(
       "SELECT name, category, textContent, charCount, driveUrl FROM document_index WHERE readable = 1 AND charCount > 0 ORDER BY category, name"
@@ -631,7 +631,7 @@ export async function getIndexedDocumentsContext(): string {
   }
 }
 
-export async function getPublicDocumentsContext(): string {
+export async function getPublicDocumentsContext(): Promise<string> {
   try {
     const docs = await db.prepare(
       "SELECT name, category, textContent, charCount, driveUrl FROM document_index WHERE readable = 1 AND charCount > 0 AND category = '09_Public Reference' ORDER BY name"

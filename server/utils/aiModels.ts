@@ -13,7 +13,7 @@ const DEFAULT_IMAGE_MODELS = [
   "gemini-3-pro-image-preview",
 ];
 
-export async function getTextModels(): string[] {
+export async function getTextModels(): Promise<string[]> {
   try {
     const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiTextModels'").get() as { value: string } | undefined;
     if (row?.value) {
@@ -24,7 +24,7 @@ export async function getTextModels(): string[] {
   return DEFAULT_TEXT_MODELS;
 }
 
-export async function getImageModels(): string[] {
+export async function getImageModels(): Promise<string[]> {
   try {
     const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiImageModels'").get() as { value: string } | undefined;
     if (row?.value) {
@@ -35,11 +35,11 @@ export async function getImageModels(): string[] {
   return DEFAULT_IMAGE_MODELS;
 }
 
-export async function setTextModels(models: string[]): void {
+export async function setTextModels(models: string[]): Promise<void> {
   await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('aiTextModels', ?)").run(JSON.stringify(models));
 }
 
-export async function setImageModels(models: string[]): void {
+export async function setImageModels(models: string[]): Promise<void> {
   await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('aiImageModels', ?)").run(JSON.stringify(models));
 }
 

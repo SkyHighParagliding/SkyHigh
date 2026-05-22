@@ -7,7 +7,7 @@ const log = createLogger("flights");
 
 const livePilots = new Map<string, LivePilotPosition>();
 
-async function getSettingNum(key: string, fallback: number): number {
+async function getSettingNum(key: string, fallback: number): Promise<number> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
   if (!row?.value) return fallback;
   const n = Number(row.value);
@@ -36,7 +36,7 @@ function verifyFlightOwnership(flight: any, pilot: Pilot | null, sessionToken?: 
 }
 
 export class RealFlightService implements FlightService {
-  async createFlight(pilotId: string | null, sessionToken: string | null, siteId: string | null, siteName: string): Flight  {
+  async createFlight(pilotId: string | null, sessionToken: string | null, siteId: string | null, siteName: string): Promise<Flight> {
     const id = crypto.randomUUID();
     const sToken = pilotId ? null : sessionToken || crypto.randomUUID();
 
