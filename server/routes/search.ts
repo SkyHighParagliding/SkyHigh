@@ -265,7 +265,8 @@ async function buildPublicContext(): Promise<CachedContext> {
       if (liveStatus) {
         const siteRange = parseWindSpeedRange(site.windSpeed);
         let advisory = "";
-        if (liveStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
+        if (liveStatus.direction === 'Not Flyable') advisory = " [WRONG DIRECTION — do not recommend]";
+        else if (liveStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
         else if (liveStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
         else if (obs.windGust != null && siteRange && Math.round(obs.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
         else advisory = " [No gust concern]";
@@ -280,7 +281,8 @@ async function buildPublicContext(): Promise<CachedContext> {
       if (fcStatus) {
         const siteRange = parseWindSpeedRange(site.windSpeed);
         let advisory = "";
-        if (fcStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
+        if (fcStatus.direction === 'Not Flyable') advisory = " [WRONG DIRECTION — do not recommend]";
+        else if (fcStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
         else if (fcStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
         else if (forecast.windGust != null && siteRange && Math.round(forecast.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
         else advisory = " [No gust concern]";
@@ -296,7 +298,8 @@ async function buildPublicContext(): Promise<CachedContext> {
               if (!hStatus) return `${h.time || ""}:${h.windSpeed || 0}G${h.windGust || 0}${h.windDirection || ""}`;
               const siteRange = parseWindSpeedRange(site.windSpeed);
               let advisory = "";
-              if (hStatus.speed === 'Light') advisory = "[LIGHT]";
+              if (hStatus.direction === 'Not Flyable') advisory = "[WRONG DIR]";
+              else if (hStatus.speed === 'Light') advisory = "[LIGHT]";
               else if (hStatus.speed === 'Blown Out') advisory = "[BLOWN OUT]";
               else if (h.windGust != null && siteRange && Math.round(h.windGust) > siteRange.max + 2) advisory = "[GUSTS EXCEED LIMIT]";
               else advisory = "[OK]";
@@ -334,8 +337,10 @@ async function buildPublicContext(): Promise<CachedContext> {
             const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
             const gust = bestSlot.windGust ?? null;
             const fly = computeFlyability(spd, gust, dir, site);
+            // Cannot assess flyability without site wind config — skip this day
+            if (!fly) return null;
             // Server-side: skip days with non-flyable or too-light conditions
-            if (fly && (fly.direction === 'Not Flyable' || fly.speed === 'Blown Out' || fly.speed === 'Light')) return null;
+            if (fly.direction === 'Not Flyable' || fly.speed === 'Blown Out' || fly.speed === 'Light') return null;
             // Server-side: skip days where gusts exceed site upper limit by more than 2kts
             const siteRange = parseWindSpeedRange(site.windSpeed);
             if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) return null;
@@ -410,20 +415,94 @@ function extractQueryDates(query: string): string[] {
   return Array.from(dates);
 }
 
-// Strip LIVE/FCST lines that carry hard-exclusion advisory tags.
-// The extended forecast section already filters bad days server-side; this does the same for short-term data.
-// Runs at query time so the shared cache is unmodified.
-function filterContextByAdvisoryExclusions(context: string): string {
+// Convert "14:00" → "2pm", "09:00" → "9am", etc.
+function formatHrlyTime(time: string): string {
+  const hour = parseInt(time.split(':')[0], 10);
+  if (isNaN(hour)) return time;
+  if (hour === 0) return '12am';
+  if (hour === 12) return '12pm';
+  return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
+}
+
+// Scan a HRLY context line for the first slot where direction is Good/Cross and advisory is [OK].
+// Returns a human-readable description or null if no suitable slot exists.
+function findGoodHrlySlot(hrlyLine: string): { time: string; dir: string } | null {
+  const content = hrlyLine.replace(/^HRLY:\s*/i, '').trim();
+  for (const slot of content.split(/\s*\|\s*/)) {
+    if (!slot.includes('[OK]')) continue;
+    const dirMatch = slot.match(/\[(Good|Cross)\/Good/);
+    if (!dirMatch) continue;
+    const timeMatch = slot.match(/^(\d{1,2}:\d{2})/);
+    if (!timeMatch) continue;
+    return { time: formatHrlyTime(timeMatch[1]), dir: dirMatch[1] };
+  }
+  return null;
+}
+
+// Strip LIVE/FCST lines with hard-exclusion advisory tags, then enforce site-level rules:
+// • If valid LIVE or FCST remains → keep section (HRLY stays for hourly granularity).
+// • If all LIVE/FCST stripped but HRLY has a good slot → replace HRLY with a plain improving note.
+// • If no flyable data at all → strip the entire site section.
+// • Sites with no weather lines at all → strip only for conditions queries.
+// Runs at query time so the shared cache is never modified.
+function filterContextByAdvisoryExclusions(context: string, query: string = ''): string {
   const EXCLUSION_TAGS = [
+    '[WRONG DIRECTION — do not recommend]',
     '[LIGHT WINDS — do not recommend]',
     '[BLOWN OUT — do not recommend]',
     '[GUST THRESHOLD EXCEEDED — do not recommend]',
   ];
-  return context.split('\n').filter(line => {
-    const trimmed = line.trim();
-    if (!/^(LIVE:|FCST:|HRLY:)/.test(trimmed)) return true;
-    return !EXCLUSION_TAGS.some(tag => line.includes(tag));
-  }).join('\n');
+  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|today|tonight|now|current|good.*site|blown|gust|sites.*available|where.*fly/i.test(query);
+
+  // The 7-DAY block is appended without a '## ' prefix so it fuses to the last site
+  // section when splitting on /\n(?=## )/. Carve it out first; reattach unchanged after.
+  const extIdx = context.indexOf('\n=== 7-DAY');
+  const sitesContext = extIdx !== -1 ? context.slice(0, extIdx) : context;
+  const extBlock = extIdx !== -1 ? context.slice(extIdx) : '';
+
+  const sections = sitesContext.split(/\n(?=## )/);
+
+  const processed = sections.map(section => {
+    if (!section.startsWith('## ')) return section;
+
+    const lines = section.split('\n');
+    const hrlyLine = lines.find(line => /^HRLY:\s/i.test(line.trim()));
+
+    // Strip bad LIVE/FCST lines; leave everything else (including HRLY) intact for now.
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+      if (!/^(LIVE:|FCST:)/.test(trimmed)) return true;
+      return !EXCLUSION_TAGS.some(tag => line.includes(tag));
+    });
+
+    const hasValidWeather = filteredLines.some(line => /^(LIVE:|FCST:)/.test(line.trim()));
+
+    if (hasValidWeather) {
+      // Current/forecast data is good — keep section as-is (HRLY provides hourly granularity).
+      return filteredLines.join('\n');
+    }
+
+    // No valid LIVE/FCST. Remove raw HRLY and decide what to put in its place.
+    const withoutHrly = filteredLines.filter(line => !/^HRLY:\s/i.test(line.trim()));
+
+    if (hrlyLine) {
+      const goodSlot = findGoodHrlySlot(hrlyLine);
+      if (goodSlot) {
+        withoutHrly.push(`FCST: Conditions expected to improve — Dir:${goodSlot.dir} Spd:Good at approx ${goodSlot.time}`);
+        return withoutHrly.join('\n');
+      }
+      // HRLY exists but all slots unflyable — strip for conditions queries,
+      // keep site metadata (ratings, hazards, rules) for info queries.
+      if (isConditionsQuery) return null;
+      return withoutHrly.join('\n');
+    }
+
+    // No weather data at all — strip for conditions queries, keep for info queries.
+    if (isConditionsQuery) return null;
+    return filteredLines.join('\n');
+  });
+
+  return processed.filter(Boolean).join('\n') + extBlock;
 }
 
 // Query-time filter: remove site sections for sites that have scheduled closures overlapping the queried dates.
@@ -561,11 +640,7 @@ HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be complete
 - HG ONLY: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", it does not exist in your response for a PG pilot.
 - PG ONLY: If a site shows "PG ONLY — NOT OPEN TO HG PILOTS", it does not exist in your response for an HG pilot.
 - SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
-- ADVISORY TAGS: The server pre-labels each site's LIVE and FCST lines with advisory tags. These are hard exclusion signals — not suggestions:
-    [LIGHT WINDS — do not recommend] → omit this site entirely
-    [BLOWN OUT — do not recommend] → omit this site entirely
-    [GUST THRESHOLD EXCEEDED — do not recommend] → omit this site entirely
-  Any site with one of these tags on its current LIVE or FCST line does not appear in your response, regardless of any other data.
+- WEATHER PRE-FILTERING: The server has already removed sites where current LIVE and FCST conditions are unflyable (wrong direction, light winds, blown out, or gust threshold exceeded). Do not second-guess this — if a site is not in the data, conditions are not suitable. If a site has a FCST line containing "Conditions expected to improve", current conditions are poor but a later time today may be suitable — surface the improving time to the pilot as a late-day option and let them decide. Sites with no weather data at all are excluded from conditions queries.
 - GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), do not recommend that site for a PG2 or PG3 pilot. For PG4+ you may mention it with the gust note, but only if no advisory tag is also present.
 
 PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at EVERY site without exception. There is no site a PG2 can fly unsupervised. When responding to a PG2 pilot, state this clearly at the start of your response before listing any sites. Every site you include must carry a supervision requirement.
@@ -1230,7 +1305,8 @@ router.post("/public", asyncHandler(async (req, res) => {
       closureMap,
       sites,
       query
-    )
+    ),
+    query
   );
 
   let officersContext = "\n\n=== COMMITTEE & SAFETY OFFICERS ===\n";
@@ -1398,10 +1474,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("ADVISORY TAGS")) {
-    // Missing one or more required rule sections — upgrade to current default
+  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING")) {
+    // Missing one or more required rule sections (or has old ADVISORY TAGS clause) — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added PG2 supervision rule, advisory tag exclusions");
+    console.log("[search] Upgraded publicSearchEligibilityRules: replaced advisory tag clause with server pre-filtering note");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
