@@ -364,11 +364,18 @@ async function buildPublicContext(): Promise<CachedContext> {
 function filterContextByPilotType(context: string, query: string, sites: any[]): string {
   const isPgQuery = /\bpg\d?\b|\bparaglid/i.test(query);
   const isHgQuery = /\bhg\d?\b|\bhang.?glid/i.test(query);
-  if (!isPgQuery && !isHgQuery) return context;
+  // For conditions/forecast queries with no explicit pilot type, default to PG behaviour
+  // and strip HG-only sites. HG pilots asking about conditions almost always say "HG";
+  // a generic "what's flyable this weekend?" is almost always from a PG pilot, and
+  // conversational follow-ups lose the PG context from the previous turn.
+  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|weekend|this\s+week|saturday|sunday|monday|tuesday|wednesday|thursday|friday|today|tonight/i.test(query);
+  const effectivelyPg = isPgQuery || (!isHgQuery && isConditionsQuery);
+
+  if (!effectivelyPg && !isHgQuery) return context;
 
   const excludedNames = new Set<string>();
   for (const site of sites) {
-    if (isPgQuery && site.pgRating?.toLowerCase() === 'not suitable') excludedNames.add(site.name);
+    if (effectivelyPg && site.pgRating?.toLowerCase() === 'not suitable') excludedNames.add(site.name);
     if (isHgQuery && site.hgRating?.toLowerCase() === 'not suitable') excludedNames.add(site.name);
   }
   if (excludedNames.size === 0) return context;
@@ -670,8 +677,9 @@ function getDefaultEligibilityRules(): string {
 
 HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be completely absent from your response. Do not list it, do not mention it, do not note it with a caveat, do not reference it in any form. If a site cannot be recommended, it simply does not appear. A response that lists a site and then says "you cannot fly here" or "be cautious" is wrong — omit the site entirely.
 
-- HG ONLY: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", it does not exist in your response for a PG pilot.
-- PG ONLY: If a site shows "PG ONLY — NOT OPEN TO HG PILOTS", it does not exist in your response for an HG pilot.
+- HG ONLY [ABSOLUTE]: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", that site is completely invisible in your response for any PG pilot — including when the pilot identified themselves as PG earlier in the conversation. A PG pilot cannot fly an HG-only site under any supervision level. The label is an absolute disqualifier. Do not list it, do not say "this site is HG only", do not use it as an example of what is unavailable. It does not exist.
+- PG ONLY [ABSOLUTE]: Same rule in reverse — "PG ONLY — NOT OPEN TO HG PILOTS" sites do not exist in responses to HG pilots.
+- CONVERSATION CONTEXT: If the pilot has stated their rating at any point in the conversation (e.g. "I'm a PG2"), apply that pilot's eligibility rules for the entire conversation — not just the turn where they said it. A follow-up query like "what about this weekend?" from a PG2 pilot is still a PG2 query.
 - SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
 - WEATHER PRE-FILTERING: The server has already removed sites where current LIVE and FCST conditions are unflyable (wrong direction, light winds, blown out, or gust threshold exceeded). Do not second-guess this — if a site is not in the data, conditions are not suitable. If a site has a FCST line containing "Conditions expected to improve", current conditions are poor but a later time today may be suitable — surface the improving time to the pilot as a late-day option and let them decide. Sites with no weather data at all are excluded from conditions queries.
 - GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), do not recommend that site for a PG2 or PG3 pilot. For PG4+ you may mention it with the gust note, but only if no advisory tag is also present.
@@ -1507,10 +1515,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING")) {
-    // Missing one or more required rule sections (or has old ADVISORY TAGS clause) — upgrade to current default
+  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
+    // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: replaced advisory tag clause with server pre-filtering note");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added HG ONLY ABSOLUTE + CONVERSATION CONTEXT rules");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
