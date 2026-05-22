@@ -548,14 +548,29 @@ function filterContextByClosureDates(context: string, closureMap: Map<string, st
 
   if (excludedNames.size === 0) return context;
 
-  const sections = context.split(/\n(?=## )/);
-  return sections.filter(section => {
+  // Carve out the 7-day block so it doesn't fuse to the last site section during split.
+  const extIdx = context.indexOf('\n=== 7-DAY');
+  const sitesContext = extIdx !== -1 ? context.slice(0, extIdx) : context;
+  const extBlock = extIdx !== -1 ? context.slice(extIdx) : '';
+
+  const sections = sitesContext.split(/\n(?=## )/);
+  const filteredSites = sections.filter(section => {
     if (!section.startsWith('## ')) return true;
     for (const name of excludedNames) {
       if (section.startsWith(`## ${name} `) || section.startsWith(`## ${name}\n`)) return false;
     }
     return true;
   }).join('\n');
+
+  // Also strip closed sites from the 7-day block.
+  const filteredExt = extBlock.split('\n').filter(line => {
+    for (const name of excludedNames) {
+      if (line.startsWith(`${name}: `)) return false;
+    }
+    return true;
+  }).join('\n');
+
+  return filteredSites + filteredExt;
 }
 
 function filterContextBySites(fullContext: string, sites: any[], query: string): string {
