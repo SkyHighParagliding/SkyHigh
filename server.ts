@@ -28,7 +28,7 @@ import { isDevBypassActive } from "./server/middleware/auth.js";
 import { validationMiddleware } from "./server/middleware/validation.js";
 import pageviewsRouter from "./server/routes/pageviews.js";
 import proceduresRouter from "./server/routes/procedures.js";
-import searchRouter from "./server/routes/search.js";
+import searchRouter, { seedPublicPrompt } from "./server/routes/search.js";
 import contactsRouter from "./server/routes/contacts.js";
 import documentsRouter from "./server/routes/documents.js";
 import projectsRouter from "./server/routes/projects.js";
@@ -335,6 +335,7 @@ async function startServer() {
 
   await precomputeWindGridIfNeeded();
   startScheduledJobs();
+  seedPublicPrompt().catch(e => log.error("seedPublicPrompt failed", e?.message));
 }
 
 startServer().catch(err => {
