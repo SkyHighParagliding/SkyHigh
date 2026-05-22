@@ -200,6 +200,19 @@ async function buildPublicContext(): Promise<CachedContext> {
   const obsMap = new Map(weatherObs.map((w: any) => [w.siteId, w]));
   const forecastMap = new Map(weatherForecasts.map((w: any) => [w.siteId, w]));
 
+  // Upcoming closure dates (next 14 days) — keyed by site_id
+  const today = new Date().toISOString().slice(0, 10);
+  const in14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+  const closureRows = await db.prepare(
+    "SELECT site_id, closure_date FROM site_closure_dates WHERE closure_date >= ? AND closure_date <= ? ORDER BY site_id, closure_date"
+  ).all(today, in14) as { site_id: string; closure_date: string }[];
+  const closureMap = new Map<string, string[]>();
+  for (const r of closureRows) {
+    const existing = closureMap.get(r.site_id) || [];
+    existing.push(r.closure_date);
+    closureMap.set(r.site_id, existing);
+  }
+
   let ctx = "=== FLYING SITES ===\n";
   for (const site of sites) {
     const isSH = site.isSkyHighSite === true || site.isSkyHighSite === "true";
@@ -207,6 +220,10 @@ async function buildPublicContext(): Promise<CachedContext> {
     ctx += `Type: ${site.type || "Unknown"}, Status: ${site.status || "unknown"}\n`;
     ctx += `Club site: ${isSH ? "Yes" : "No"}\n`;
     ctx += `PG Rating: ${site.pgRating || "NOT SPECIFIED IN DATABASE"}, HG Rating: ${site.hgRating || "NOT SPECIFIED IN DATABASE"}\n`;
+    const siteClosure = closureMap.get(site.id);
+    if (siteClosure && siteClosure.length > 0) {
+      ctx += `SCHEDULED CLOSURES (do not recommend on these dates): ${siteClosure.join(", ")}\n`;
+    }
     if (site.windDir) ctx += `Wind Dir: ${site.windDir}`;
     if (site.windSpeed) ctx += `, Speed Range: ${site.windSpeed}`;
     if (site.windDir || site.windSpeed) ctx += "\n";
@@ -363,11 +380,16 @@ WEATHER & FLYABILITY — IMPORTANT:
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
 - You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Use these labels — do not derive your own. Use this data to answer multi-day planning questions like "what days this week can I fly?" or "best day to fly this week".
 
-RATING FILTER — CRITICAL SAFETY RULE:
-- When a pilot provides their rating and asks which sites they can fly, you MUST filter the site list BEFORE listing anything. Exclude any site whose minimum rating requirement is higher than the pilot's rating. If the site has a "Supervised" tier (e.g. "PG2 Supervised under PG4"), include it only if the pilot meets that tier and note the supervision requirement clearly.
-- NEVER list a site that the pilot is not permitted to fly — not as a main result, not as a footnote, not as a "worth noting", not with a warning attached. A site above the pilot's rating must not appear in the response at all.
-- If the only flyable sites have ratings above the pilot's level, do NOT list them with warnings. Instead say: "There are no flyable sites suitable for a [RATING] pilot this weekend based on current forecasts." Do not mention the ineligible sites by name.
-- Apply this filter to BOTH rating queries AND weather/flyability queries whenever the pilot has given their rating.
+SITE ELIGIBILITY — HARD EXCLUSION RULES (apply before any other logic):
+These checks run first. Any site failing a check is completely excluded — not mentioned, not warned about, not listed with caveats.
+
+1. STATUS: If a site's Status is "closed" or "permanently closed", exclude it. Do not recommend it regardless of weather conditions.
+2. PG RATING "Not suitable": If a site's PG Rating is "Not suitable" or "N/A", it cannot be flown by any PG-rated pilot. Exclude it from all PG queries.
+3. HG RATING "Not suitable": If a site's HG Rating is "Not suitable" or "N/A", exclude it from all HG queries.
+4. SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line in its data, and the date the pilot is asking about appears in that list, exclude the site for that date. It may still be recommended on other dates where it is not listed.
+5. RATING MISMATCH: If a site's minimum rating requirement is higher than the pilot's stated rating, exclude it entirely. If the site has a "Supervised" tier (e.g. "PG2 Supervised under PG4"), include it only if the pilot meets that tier, and clearly note the supervision requirement.
+
+If after applying all exclusions no sites remain, say so honestly: "There are no open, flyable sites suitable for a [RATING] pilot on [day] based on current forecasts." Never pad the response with excluded sites.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
