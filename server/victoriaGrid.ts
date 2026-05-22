@@ -601,6 +601,7 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
         const hCode = nearest.hourly.weather_code[idx];
         forecastHours.push({
           timestamp: hUtcDate.toISOString(),
+          time: hTime.split('T')[1]?.slice(0, 5) ?? '',
           temperature: nearest.hourly.temperature_2m[idx],
           windSpeed: Math.round(nearest.hourly.wind_speed_10m[idx]),
           windGust: Math.round(nearest.hourly.wind_gusts_10m[idx]),
@@ -619,6 +620,7 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
         const hCode = nearest.hourly.weather_code[idx];
         forecastHours.push({
           timestamp: hUtcDate.toISOString(),
+          time: hTime.split('T')[1]?.slice(0, 5) ?? '',
           temperature: nearest.hourly.temperature_2m[idx],
           windSpeed: Math.round(nearest.hourly.wind_speed_10m[idx]),
           windGust: Math.round(nearest.hourly.wind_gusts_10m[idx]),
