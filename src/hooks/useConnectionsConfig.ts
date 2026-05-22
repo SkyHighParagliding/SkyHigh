@@ -80,6 +80,9 @@ export function useConnectionsConfig() {
   const [saPrompt, setSaPrompt] = useState("");
   const [saDefaultPrompt, setSaDefaultPrompt] = useState("");
   const [saShowPrompt, setSaShowPrompt] = useState(false);
+  const [saEligibilityRules, setSaEligibilityRules] = useState("");
+  const [saDefaultEligibilityRules, setSaDefaultEligibilityRules] = useState("");
+  const [saShowEligibilityRules, setSaShowEligibilityRules] = useState(false);
   const [saSaveMsg, setSaSaveMsg] = useState<{ type: string; text: string } | null>(null);
   const { markDirty, blocker, justSaved: saJustSaved, save: adminSave } = useAdminForm({ successMessage: "Settings saved" });
 
@@ -99,6 +102,7 @@ export function useConnectionsConfig() {
         setSaCtaMessage(data.publicSearchCtaMessage || "");
         setSaCtaFrequency(data.publicSearchCtaFrequency || "2");
         setSaPrompt(data.publicSearchPrompt || "");
+        setSaEligibilityRules(data.publicSearchEligibilityRules || "");
       })
       .catch(() => {});
 
@@ -110,6 +114,11 @@ export function useConnectionsConfig() {
     fetch("/api/search/public/default-prompt")
       .then(r => r.json())
       .then(d => setSaDefaultPrompt(d.prompt || ""))
+      .catch(() => {});
+
+    fetch("/api/search/public/default-eligibility-rules")
+      .then(r => r.json())
+      .then(d => setSaDefaultEligibilityRules(d.rules || ""))
       .catch(() => {});
 
     fetch("/api/tidyhq/status", { headers: { Authorization: `Bearer ${token}` } })
@@ -165,6 +174,7 @@ export function useConnectionsConfig() {
           publicSearchDisclaimer: saDisclaimer,
           publicSearchCommitteeLink: saCommitteeLink,
           publicSearchPrompt: saPrompt,
+          publicSearchEligibilityRules: saEligibilityRules,
           publicSearchCtaMessage: saCtaMessage,
           publicSearchCtaFrequency: saCtaFrequency,
         }),
@@ -624,6 +634,8 @@ export function useConnectionsConfig() {
     saCtaFrequency, setSaCtaFrequency,
     saPrompt, setSaPrompt,
     saDefaultPrompt, saShowPrompt, setSaShowPrompt,
+    saEligibilityRules, setSaEligibilityRules,
+    saDefaultEligibilityRules, saShowEligibilityRules, setSaShowEligibilityRules,
     saSaveMsg, markDirty, blocker, saJustSaved,
     driveStatus, driveStatusLabel,
     saveSmartAssistant, saveDriveScriptUrl, testDriveConnection,
