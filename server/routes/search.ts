@@ -1139,4 +1139,16 @@ Do NOT wrap your response in JSON or code blocks.`;
   res.end();
 }));
 
+export async function seedPublicPrompt(): Promise<void> {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as { value: string } | undefined;
+  if (row?.value) return; // already set — admin owns it, don't overwrite
+  const prompt = await getDefaultPublicPrompt();
+  if (row === undefined) {
+    await db.prepare("INSERT INTO settings (key, value) VALUES ('publicSearchPrompt', ?)").run(prompt);
+  } else {
+    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
+  }
+  console.log("[search] Seeded publicSearchPrompt into settings (first-run)");
+}
+
 export default router;
