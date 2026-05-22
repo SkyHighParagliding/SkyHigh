@@ -83,6 +83,8 @@ export function AdminConnections() {
     saCtaFrequency, setSaCtaFrequency,
     saPrompt, setSaPrompt,
     saDefaultPrompt, saShowPrompt, setSaShowPrompt,
+    saEligibilityRules, setSaEligibilityRules,
+    saDefaultEligibilityRules, saShowEligibilityRules, setSaShowEligibilityRules,
     saSaveMsg, markDirty, blocker, saJustSaved,
     driveStatus, driveStatusLabel,
     saveSmartAssistant, saveDriveScriptUrl, testDriveConnection,
@@ -1044,29 +1046,65 @@ export function AdminConnections() {
                 </div>
               </div>
 
-              <div>
+              <div className="border border-border rounded-lg overflow-hidden">
                 <button
                   onClick={() => setSaShowPrompt(!saShowPrompt)}
-                  className="text-xs text-sky hover:underline"
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground-label hover:bg-muted/50 transition-colors"
                 >
-                  {saShowPrompt ? "Hide Prompt" : "Edit Prompt"}
+                  <span>Behavior Prompt</span>
+                  <span className="text-xs text-muted-foreground">{saShowPrompt ? "Hide" : "Edit"}</span>
                 </button>
                 {saShowPrompt && (
-                  <div className="space-y-2 mt-2">
+                  <div className="border-t border-border p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">Controls the assistant's personality, capabilities, weather interpretation, and rating-first safety rules.</p>
                     <textarea
                       className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm font-mono leading-relaxed"
-                      rows={8}
+                      rows={10}
                       value={saPrompt || saDefaultPrompt}
                       onChange={(e) => { setSaPrompt(e.target.value); markDirty(); }}
                       placeholder="Smart assistant behavior prompt..."
                     />
                     <div className="flex items-center justify-between">
                       <button
-                        onClick={() => { setSaPrompt(""); markDirty(); }}
+                        onClick={() => { setSaPrompt(saDefaultPrompt); markDirty(); }}
                         className="text-xs text-orange hover:text-orange/80 font-medium transition-colors"
                       >
                         Reset to Default
                       </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border border-border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setSaShowEligibilityRules(!saShowEligibilityRules)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground-label hover:bg-muted/50 transition-colors"
+                >
+                  <div className="text-left">
+                    <span>Site Eligibility Rules</span>
+                    <p className="text-xs text-muted-foreground font-normal mt-0.5">Controls which sites the assistant is allowed to recommend</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground shrink-0 ml-4">{saShowEligibilityRules ? "Hide" : "Edit"}</span>
+                </button>
+                {saShowEligibilityRules && (
+                  <div className="border-t border-border p-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">These rules run before any recommendation is made. Add new lines here to handle edge cases as they are discovered. Each rule should be a plain-English instruction (e.g. "- RULE NAME: If X, then Y").</p>
+                    <textarea
+                      className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm font-mono leading-relaxed"
+                      rows={10}
+                      value={saEligibilityRules || saDefaultEligibilityRules}
+                      onChange={(e) => { setSaEligibilityRules(e.target.value); markDirty(); }}
+                      placeholder="Site eligibility rules..."
+                    />
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => { setSaEligibilityRules(saDefaultEligibilityRules); markDirty(); }}
+                        className="text-xs text-orange hover:text-orange/80 font-medium transition-colors"
+                      >
+                        Reset to Default
+                      </button>
+                      <p className="text-xs text-muted-foreground">Note: closed sites and non-flyable days are filtered by the server before reaching the AI — these rules handle remaining cases.</p>
                     </div>
                   </div>
                 )}

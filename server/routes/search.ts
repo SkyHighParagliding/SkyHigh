@@ -213,16 +213,38 @@ async function buildPublicContext(): Promise<CachedContext> {
     closureMap.set(r.site_id, existing);
   }
 
+  // Build a dayName → YYYY-MM-DD map for the next 14 days (Melbourne time)
+  // Used to match extended forecast day entries against closure dates
+  const dayNameToDate = new Map<string, string>();
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.now() + i * 86400000);
+    const dayName = d.toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Melbourne' });
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    if (!dayNameToDate.has(dayName)) dayNameToDate.set(dayName, dateStr);
+  }
+
   let ctx = "=== FLYING SITES ===\n";
   for (const site of sites) {
+    // Server-side hard exclusion: skip permanently closed sites entirely
+    if (site.status === 'closed' || site.status === 'permanently closed') continue;
+
     const isSH = site.isSkyHighSite === true || site.isSkyHighSite === "true";
     ctx += `\n## ${site.name} [page: /sites/${site.id}]${isSH ? " (Club Site)" : ""}\n`;
     ctx += `Type: ${site.type || "Unknown"}, Status: ${site.status || "unknown"}\n`;
     ctx += `Club site: ${isSH ? "Yes" : "No"}\n`;
-    ctx += `PG Rating: ${site.pgRating || "NOT SPECIFIED IN DATABASE"}, HG Rating: ${site.hgRating || "NOT SPECIFIED IN DATABASE"}\n`;
+
+    // Make HG-only and PG-only labels explicit so the AI cannot miss them
+    const pgLabel = site.pgRating?.toLowerCase() === 'not suitable'
+      ? 'HG ONLY — NOT OPEN TO PG PILOTS'
+      : (site.pgRating || "NOT SPECIFIED IN DATABASE");
+    const hgLabel = site.hgRating?.toLowerCase() === 'not suitable'
+      ? 'PG ONLY — NOT OPEN TO HG PILOTS'
+      : (site.hgRating || "NOT SPECIFIED IN DATABASE");
+    ctx += `PG Rating: ${pgLabel}, HG Rating: ${hgLabel}\n`;
+
     const siteClosure = closureMap.get(site.id);
     if (siteClosure && siteClosure.length > 0) {
-      ctx += `SCHEDULED CLOSURES (do not recommend on these dates): ${siteClosure.join(", ")}\n`;
+      ctx += `SCHEDULED CLOSURES (skip this site on these dates): ${siteClosure.join(", ")}\n`;
     }
     if (site.windDir) ctx += `Wind Dir: ${site.windDir}`;
     if (site.windSpeed) ctx += `, Speed Range: ${site.windSpeed}`;
@@ -273,25 +295,75 @@ async function buildPublicContext(): Promise<CachedContext> {
         try { extMap.set(row.siteId, JSON.parse(row.forecastData)); } catch {}
       }
       for (const site of sites) {
+        // Skip closed sites (already filtered above, but guard here too)
+        if (site.status === 'closed' || site.status === 'permanently closed') continue;
         const ext = extMap.get(site.id);
         if (!ext || !ext.days || ext.days.length === 0) continue;
-        ctx += `${site.name}: `;
-        const dayStrs = ext.days.map((d: any) => {
-          const spd = d.bestSpeed ?? 0;
-          const dir = d.bestDirection || '?';
-          const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
-          const gust = bestSlot.windGust ?? null;
-          const fly = computeFlyability(spd, gust, dir, site);
-          const flyTag = fly ? ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ""}]` : "";
-          return `${d.dayName} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
-        });
-        ctx += dayStrs.join(" | ") + "\n";
+        const siteClosure = closureMap.get(site.id) || [];
+        const dayStrs = ext.days
+          .map((d: any) => {
+            const spd = d.bestSpeed ?? 0;
+            const dir = d.bestDirection || '?';
+            // Server-side: skip days where this site has a scheduled closure
+            const dayDate = dayNameToDate.get(d.dayName);
+            if (dayDate && siteClosure.includes(dayDate)) return null;
+            const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
+            const gust = bestSlot.windGust ?? null;
+            const fly = computeFlyability(spd, gust, dir, site);
+            // Server-side: skip days with non-flyable or too-light conditions
+            if (fly && (fly.direction === 'Not Flyable' || fly.speed === 'Blown Out' || fly.speed === 'Light')) return null;
+            // Server-side: skip days where gusts exceed site upper limit by more than 2kts
+            const siteRange = parseWindSpeedRange(site.windSpeed);
+            if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) return null;
+            const flyTag = fly ? ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ""}]` : "";
+            return `${d.dayName} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
+          })
+          .filter(Boolean);
+        if (dayStrs.length > 0) {
+          ctx += `${site.name}: ${dayStrs.join(" | ")}\n`;
+        }
       }
     }
   } catch {}
 
   publicContextCache = { data: ctx, timestamp: Date.now(), sites };
   return publicContextCache;
+}
+
+// ─── Pilot-type filter: strip HG-only sites for PG queries and vice versa ───
+// This runs at query time so the shared cache is never modified.
+function filterContextByPilotType(context: string, query: string, sites: any[]): string {
+  const isPgQuery = /\bpg\d?\b|\bparaglid/i.test(query);
+  const isHgQuery = /\bhg\d?\b|\bhang.?glid/i.test(query);
+  if (!isPgQuery && !isHgQuery) return context;
+
+  const excludedNames = new Set<string>();
+  for (const site of sites) {
+    if (isPgQuery && site.pgRating?.toLowerCase() === 'not suitable') excludedNames.add(site.name);
+    if (isHgQuery && site.hgRating?.toLowerCase() === 'not suitable') excludedNames.add(site.name);
+  }
+  if (excludedNames.size === 0) return context;
+
+  // Strip excluded site sections from FLYING SITES block
+  const sections = context.split(/\n(?=## )/);
+  const filteredSections = sections.filter(section => {
+    if (!section.startsWith('## ')) return true;
+    for (const name of excludedNames) {
+      if (section.startsWith(`## ${name} `) || section.startsWith(`## ${name}\n`)) return false;
+    }
+    return true;
+  });
+
+  // Strip excluded site lines from 7-DAY EXTENDED FORECASTS block
+  const rejoined = filteredSections.join('\n');
+  const filteredLines = rejoined.split('\n').filter(line => {
+    for (const name of excludedNames) {
+      if (line.startsWith(`${name}: `)) return false;
+    }
+    return true;
+  });
+
+  return filteredLines.join('\n');
 }
 
 // ─── Query-aware context filtering ───
@@ -374,22 +446,11 @@ WEATHER & FLYABILITY — IMPORTANT:
 - Each site has pre-computed FLYABILITY STATUS labels in the data. Direction can be "Good", "Cross", or "Not Flyable". Speed can be "Good", "Light", or "Blown Out". ALWAYS use these pre-computed labels — DO NOT compute your own flyability from raw wind numbers.
 - GUST WARNINGS: When the data includes a gust warning (⚠ Gusts of Xkts exceed the Ykts upper limit), always quote it exactly as shown. Do not paraphrase or recalculate — use the numbers in the data verbatim. Strong gusts can make conditions dangerous even when average speed looks fine.
 - When a pilot asks about weather or "which sites are flyable", focus on the FLYABILITY labels first — "Good/Good" means both direction and speed are ideal.
-- FLYABILITY FILTER — CRITICAL: Only recommend sites where the flyability label is "Good" or "Cross" for the relevant time. DO NOT list or recommend sites with "Not Flyable" direction or "Blown Out" speed under any circumstances, even as secondary options. If a pilot asks where to fly and no sites have Good or Cross conditions, say so honestly: "There are no sites with flyable conditions for that day based on current forecasts."
-- Prioritise "Good/Good" (no gust warning) sites first. List "Cross" or gusty sites second with a clear caution note. Never pad the list with non-flyable sites.
+- FLYABILITY FILTER: Only recommend sites where the flyability label is "Good" or "Cross" for the relevant time. DO NOT list or recommend sites with "Not Flyable" direction or "Blown Out" speed. If no sites have Good or Cross conditions, say so: "There are no sites with flyable conditions for that day based on current forecasts."
+- Prioritise "Good/Good" (no gust warning) sites first. List "Cross" or gusty sites second with a clear caution note.
 - When listing sites with weather, lead with the flyability status, then the key numbers (wind speed, gusts, direction). Temperature and sky conditions are secondary.
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
-- You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Use these labels — do not derive your own. Use this data to answer multi-day planning questions like "what days this week can I fly?" or "best day to fly this week".
-
-SITE ELIGIBILITY — HARD EXCLUSION RULES (apply before any other logic):
-These checks run first. Any site failing a check is completely excluded — not mentioned, not warned about, not listed with caveats.
-
-1. STATUS: If a site's Status is "closed" or "permanently closed", exclude it. Do not recommend it regardless of weather conditions.
-2. PG RATING "Not suitable": If a site's PG Rating is "Not suitable" or "N/A", it cannot be flown by any PG-rated pilot. Exclude it from all PG queries.
-3. HG RATING "Not suitable": If a site's HG Rating is "Not suitable" or "N/A", exclude it from all HG queries.
-4. SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line in its data, and the date the pilot is asking about appears in that list, exclude the site for that date. It may still be recommended on other dates where it is not listed.
-5. RATING MISMATCH: If a site's minimum rating requirement is higher than the pilot's stated rating, exclude it entirely. If the site has a "Supervised" tier (e.g. "PG2 Supervised under PG4"), include it only if the pilot meets that tier, and clearly note the supervision requirement.
-
-If after applying all exclusions no sites remain, say so honestly: "There are no open, flyable sites suitable for a [RATING] pilot on [day] based on current forecasts." Never pad the response with excluded sites.
+- You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Only days with flyable conditions appear in this data — if a day is missing for a site, the conditions are not flyable that day.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
@@ -398,8 +459,43 @@ RULES:
 4. If you don't know the answer, say so honestly and suggest who to contact`;
 }
 
+function getDefaultEligibilityRules(): string {
+  return `SITE ELIGIBILITY RULES — apply these before recommending any site:
+
+HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be completely absent from your response. Do not list it, do not mention it, do not note it with a caveat, do not reference it in any form. If a site cannot be recommended, it simply does not appear. A response that lists a site and then says "you cannot fly here" is wrong — omit the site entirely.
+
+- HG ONLY: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", it does not exist in your response for a PG pilot.
+- PG ONLY: If a site shows "PG ONLY — NOT OPEN TO HG PILOTS", it does not exist in your response for an HG pilot.
+- SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
+- GUST THRESHOLD: If a site's live, forecast, or hourly wind data shows gusts exceeding the site's maximum recommended wind speed by more than 2 knots, do not recommend that site for those conditions. A site with a 16kt upper limit and 19kt gusts should be omitted — do not list it with a gust warning.
+
+PG SUPERVISION MATRIX — universal policy. A site's pgRating is the minimum to fly unsupervised. Pilots below that minimum may still fly with appropriate supervision:
+
+  Pilot Cert | Site Rating 2 | Site Rating 3 | Site Rating 4   | Site Rating 5
+  PG2        | PG4           | PG5           | CFI, FI or SSO  | CFI, FI or SSO
+  PG3        | (qualified)   | (qualified)   | PG5             | CFI, FI or SSO
+  PG4        | (qualified)   | (qualified)   | (qualified)     | PG5
+  PG5        | (qualified)   | (qualified)   | (qualified)     | (qualified)
+
+"(qualified)" means the pilot meets or exceeds the site rating — no supervision needed.
+CFI = Chief Flying Instructor, FI = Flying Instructor, SSO = Senior Safety Officer, SO = Safety Officer.
+When supervision is required, tell the pilot clearly what level of supervisor they need and include the site in the list.
+
+SITE-SPECIFIC RATING OVERRIDES: Some sites have pgRating fields with multiple tiers separated by "|" (e.g., "PG5 | PG4 req SO/SSO"). These ALWAYS take precedence over the general matrix. The first entry is the unsupervised minimum; each subsequent entry is a supervised tier with its specific supervisor requirement. Any pilot below ALL listed tiers cannot fly that site — omit it entirely from your response.
+Example: "PG5 | PG4 req SO/SSO" means:
+- PG5: flies without supervision — include
+- PG4: flies only with SO or SSO — include with supervision note
+- PG3 and below: omit completely, do not mention
+
+If after all exclusions no sites remain, say so: "There are no suitable open sites for a [RATING] pilot on [day]." Never pad the list with excluded sites.`;
+}
+
 router.get("/public/default-prompt", async (_req, res) => {
   res.json({ prompt: await getDefaultPublicPrompt() });
+});
+
+router.get("/public/default-eligibility-rules", (_req, res) => {
+  res.json({ rules: getDefaultEligibilityRules() });
 });
 
 interface SiteRow {
@@ -1023,7 +1119,11 @@ router.post("/public", asyncHandler(async (req, res) => {
   const committeeRedirectRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchCommitteeLink'").get() as SettingRow | undefined;
   const committeeLink = committeeRedirectRow?.value || "/page/committee";
 
-  const filteredSitesContext = filterContextBySites(sitesContext, sites, query);
+  const filteredSitesContext = filterContextByPilotType(
+    filterContextBySites(sitesContext, sites, query),
+    query,
+    sites
+  );
 
   let officersContext = "\n\n=== COMMITTEE & SAFETY OFFICERS ===\n";
   for (const o of officers) {
@@ -1041,6 +1141,8 @@ router.post("/public", asyncHandler(async (req, res) => {
 
   const customPromptRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as SettingRow | undefined;
   const behaviorPrompt = customPromptRow?.value || await getDefaultPublicPrompt();
+  const eligibilityRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'").get() as SettingRow | undefined;
+  const eligibilityRules = eligibilityRow?.value || getDefaultEligibilityRules();
 
   const ANTI_HALLUCINATION_BLOCK = `
 ANTI-HALLUCINATION — CRITICAL (NON-NEGOTIABLE):
@@ -1052,6 +1154,8 @@ ANTI-HALLUCINATION — CRITICAL (NON-NEGOTIABLE):
 - This is a SAFETY-CRITICAL rule: giving a pilot wrong rating information could send them to a site that is dangerous for their level.`;
 
   const systemPrompt = `${behaviorPrompt}
+
+${eligibilityRules}
 
 ${ANTI_HALLUCINATION_BLOCK}
 
@@ -1162,15 +1266,36 @@ Do NOT wrap your response in JSON or code blocks.`;
 }));
 
 export async function seedPublicPrompt(): Promise<void> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as { value: string } | undefined;
-  if (row?.value) return; // already set — admin owns it, don't overwrite
+  // ── Behavior prompt ──
+  const promptRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as { value: string } | undefined;
   const prompt = await getDefaultPublicPrompt();
-  if (row === undefined) {
+  if (promptRow === undefined) {
     await db.prepare("INSERT INTO settings (key, value) VALUES ('publicSearchPrompt', ?)").run(prompt);
-  } else {
+    console.log("[search] Seeded publicSearchPrompt into settings (first-run)");
+  } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
+    console.log("[search] Populated empty publicSearchPrompt in settings");
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules")) {
+    // Old embedded eligibility rules detected — upgrade to behavior-only version
+    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
+    console.log("[search] Upgraded publicSearchPrompt: stripped embedded eligibility rules (now separate setting)");
   }
-  console.log("[search] Seeded publicSearchPrompt into settings (first-run)");
+
+  // ── Eligibility rules (separate setting) ──
+  const eligibilityRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'").get() as { value: string } | undefined;
+  const rules = getDefaultEligibilityRules();
+  if (eligibilityRow === undefined) {
+    await db.prepare("INSERT INTO settings (key, value) VALUES ('publicSearchEligibilityRules', ?)").run(rules);
+    console.log("[search] Seeded publicSearchEligibilityRules into settings (first-run)");
+  } else if (!eligibilityRow.value) {
+    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
+    console.log("[search] Populated empty publicSearchEligibilityRules in settings");
+  } else if (!eligibilityRow.value.includes("GUST THRESHOLD")) {
+    // Old version without gust threshold and hard exclusion language — safe to upgrade
+    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
+    console.log("[search] Upgraded publicSearchEligibilityRules: added gust threshold and hard exclusion rules");
+  }
+  // Otherwise: admin has customized the rules — leave them alone
 }
 
 export default router;
