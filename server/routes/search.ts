@@ -410,6 +410,22 @@ function extractQueryDates(query: string): string[] {
   return Array.from(dates);
 }
 
+// Strip LIVE/FCST lines that carry hard-exclusion advisory tags.
+// The extended forecast section already filters bad days server-side; this does the same for short-term data.
+// Runs at query time so the shared cache is unmodified.
+function filterContextByAdvisoryExclusions(context: string): string {
+  const EXCLUSION_TAGS = [
+    '[LIGHT WINDS — do not recommend]',
+    '[BLOWN OUT — do not recommend]',
+    '[GUST THRESHOLD EXCEEDED — do not recommend]',
+  ];
+  return context.split('\n').filter(line => {
+    const trimmed = line.trim();
+    if (!/^(LIVE:|FCST:|HRLY:)/.test(trimmed)) return true;
+    return !EXCLUSION_TAGS.some(tag => line.includes(tag));
+  }).join('\n');
+}
+
 // Query-time filter: remove site sections for sites that have scheduled closures overlapping the queried dates.
 // Falls back to a 7-day window when the query doesn't mention specific dates.
 function filterContextByClosureDates(context: string, closureMap: Map<string, string[]>, sites: any[], query: string): string {
@@ -1204,15 +1220,17 @@ router.post("/public", asyncHandler(async (req, res) => {
   const committeeRedirectRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchCommitteeLink'").get() as SettingRow | undefined;
   const committeeLink = committeeRedirectRow?.value || "/page/committee";
 
-  const filteredSitesContext = filterContextByClosureDates(
-    filterContextByPilotType(
-      filterContextBySites(sitesContext, sites, query),
-      query,
-      sites
-    ),
-    closureMap,
-    sites,
-    query
+  const filteredSitesContext = filterContextByAdvisoryExclusions(
+    filterContextByClosureDates(
+      filterContextByPilotType(
+        filterContextBySites(sitesContext, sites, query),
+        query,
+        sites
+      ),
+      closureMap,
+      sites,
+      query
+    )
   );
 
   let officersContext = "\n\n=== COMMITTEE & SAFETY OFFICERS ===\n";
