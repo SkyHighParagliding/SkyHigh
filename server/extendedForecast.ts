@@ -265,8 +265,14 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
   const vicGrid = await getCachedFineGrid();
 
   let updated = 0;
+  const skippedNoCoords: string[] = [];
+  const skippedNullForecast: string[] = [];
+
   for (const site of sites) {
-    if (!site.lat || !site.lon) continue;
+    if (!site.lat || !site.lon) {
+      skippedNoCoords.push(site.id);
+      continue;
+    }
 
     try {
       const forecast = buildSiteExtendedForecast(site.id, site.lat, site.lon, extendedGrid, forecastMap.get(site.id), vicGrid, site);
@@ -274,6 +280,8 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
         await db.prepare("INSERT OR REPLACE INTO site_extended_forecasts (siteId, forecastData, updatedAt) VALUES (?, ?, CURRENT_TIMESTAMP)")
           .run(site.id, JSON.stringify(forecast));
         updated++;
+      } else {
+        skippedNullForecast.push(site.id);
       }
     } catch (err) {
       console.error(`Extended forecast: Failed for site ${site.id}:`, err);
@@ -281,6 +289,8 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
   }
 
   console.log(`Extended forecast: Updated ${updated}/${sites.length} site forecasts`);
+  if (skippedNoCoords.length > 0) console.warn(`Extended forecast: Skipped (no lat/lon): ${skippedNoCoords.join(', ')}`);
+  if (skippedNullForecast.length > 0) console.warn(`Extended forecast: Skipped (null forecast — no grid match): ${skippedNullForecast.join(', ')}`);
 }
 
 function pickBestSlotIdx(slots: { windSpeed: number; windDirection: string }[], siteInfo?: { windSpeed: string | null; windDir: string | null }): number {
