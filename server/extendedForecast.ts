@@ -112,7 +112,7 @@ function filterToExtendedSlots(times: string[], data: {
     const dateStr = t.substring(0, 10);
     const hour = parseInt(t.substring(11, 13));
 
-    if (dateStr <= tomorrow) continue;
+    if (dateStr < tomorrow) continue;
 
     if (targetHours.includes(hour)) {
       filteredIndices.push(i);
@@ -395,6 +395,8 @@ function buildSiteExtendedForecast(
     }
   }
 
+  const coveredDates = new Set<string>();
+
   for (let dayOffset = 0; dayOffset <= 1; dayOffset++) {
     const dateStr = getMelbourneDate(dayOffset);
     const dayName = getMelbourneDayName(dateStr);
@@ -452,6 +454,7 @@ function buildSiteExtendedForecast(
         bestWeatherIcon: slots[bestIdx]?.weatherIcon || 'CloudSun',
         bestWeatherSummary: slots[bestIdx]?.weatherSummary || '',
       });
+      coveredDates.add(dateStr);
     } else if (vicSlots.length > 0) {
       const bestIdx = pickBestSlotIdx(vicSlots, siteInfo);
       days.push({
@@ -464,13 +467,15 @@ function buildSiteExtendedForecast(
         bestWeatherIcon: vicSlots[bestIdx].weatherIcon,
         bestWeatherSummary: vicSlots[bestIdx].weatherSummary,
       });
+      coveredDates.add(dateStr);
     }
   }
 
   const dateGroups = new Map<string, number[]>();
   for (let i = 0; i < nearest.times.length; i++) {
     const dateStr = nearest.times[i].substring(0, 10);
-    if (dateStr <= tomorrow) continue;
+    if (dateStr < tomorrow) continue; // skip today (phase 1 handles it)
+    if (coveredDates.has(dateStr)) continue; // skip if phase 1 already provided this day
     if (!dateGroups.has(dateStr)) dateGroups.set(dateStr, []);
     dateGroups.get(dateStr)!.push(i);
   }
