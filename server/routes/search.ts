@@ -1605,10 +1605,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)")) {
-    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag / closure-direct-query rules — upgrade
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG")) {
+    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag rules — upgrade
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
-    console.log("[search] Upgraded publicSearchPrompt: added SCHEDULED CLOSURES direct-query rule");
+    console.log("[search] Upgraded publicSearchPrompt: added NOT FLYABLE weather-tag clarification");
   }
 
   // ── Eligibility rules (separate setting) ──
@@ -1620,10 +1620,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added ECHO RATING, ANSWER STRUCTURE, and FORBIDDEN OPENING rules");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added SCHEDULED CLOSURES direct-query rule");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
