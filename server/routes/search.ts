@@ -7,8 +7,40 @@ import { generateTextWithFallback, getTextModels } from "../utils/aiModels.js";
 import { getIndexedDocumentsContext, getPublicDocumentsContext } from "./documents.js";
 import { filterByCurrentMembers } from "../utils/tidyhqMemberFilter.js";
 import { registerSearchCacheInvalidator } from "../utils/searchCacheInvalidation.js";
+import { sendEmail } from "../utils/email.js";
 
 const router = Router();
+
+async function logPublicSearch(query: string, response: string): Promise<void> {
+  try {
+    const enabledRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLoggingEnabled'").get() as { value: string } | undefined;
+    if (enabledRow?.value !== "true") return;
+
+    await db.prepare("INSERT INTO search_logs (search_type, query, response) VALUES (?, ?, ?)").run("public", query, response);
+
+    // Check size threshold and send a one-time warning email if exceeded
+    const warnSentRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLogWarningSent'").get() as { value: string } | undefined;
+    if (warnSentRow?.value === "true") return;
+
+    const warnMbRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLogSizeWarningMb'").get() as { value: string } | undefined;
+    const warnMb = parseFloat(warnMbRow?.value || "10");
+    const sizeRow = await db.prepare("SELECT SUM(LENGTH(query) + LENGTH(response)) as bytes FROM search_logs").get() as { bytes: number | null };
+    const currentMb = Number(sizeRow?.bytes || 0) / (1024 * 1024);
+
+    if (currentMb >= warnMb) {
+      const countRow = await db.prepare("SELECT COUNT(*) as total FROM search_logs").get() as { total: number | string };
+      const total = parseInt(String(countRow.total));
+      await sendEmail({
+        to: process.env.ADMIN_NOTIFICATION_EMAIL || "web@skyhighparagliding.org.au",
+        subject: "SkyHigh Smart Search log needs review",
+        html: `<p>The Smart Search query log has reached <strong>${Math.round(currentMb * 10) / 10} MB</strong> (${total} entries), exceeding the configured threshold of ${warnMb} MB.</p><p>Please review and clear the log in <strong>Admin → API Settings → Smart Assistant → Search Query Logging</strong>.</p>`,
+      });
+      await db.prepare("INSERT INTO settings (key, value) VALUES ('searchLogWarningSent', 'true') ON CONFLICT (key) DO UPDATE SET value = 'true'").run();
+    }
+  } catch {
+    // Never let logging errors surface to callers
+  }
+}
 
 async function getClubName(): Promise<string> {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'clubName'").get() as { value: string } | undefined;
@@ -1452,6 +1484,7 @@ Do NOT wrap your response in JSON or code blocks.`;
   req.on("close", () => { clientDisconnected = true; });
 
   let streamed = false;
+  let loggedResponse = "";
 
   for (const model of models) {
     if (clientDisconnected) break;
@@ -1493,6 +1526,7 @@ Do NOT wrap your response in JSON or code blocks.`;
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       streamed = true;
+      loggedResponse = cleanedText;
       console.log(`>>> Public assistant ${model} streamed ${fullText.length} chars`);
       break;
     } catch (e: any) {
@@ -1506,6 +1540,10 @@ Do NOT wrap your response in JSON or code blocks.`;
   }
 
   res.end();
+
+  if (streamed && loggedResponse) {
+    logPublicSearch(query, loggedResponse).catch(() => {});
+  }
 }));
 
 export async function seedPublicPrompt(): Promise<void> {
