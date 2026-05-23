@@ -728,6 +728,8 @@ HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be complete
 
 PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at EVERY site without exception. There is no site a PG2 can fly unsupervised. When responding to a PG2 pilot, state this clearly at the start of your response before listing any sites. Every site you include must carry a supervision requirement.
 
+PG3 AND ABOVE — DO NOT GENERALISE: NEVER say "as a PG3 (or PG4) pilot, you require supervision at every site." That statement is ONLY true for PG2. PG3 pilots are fully qualified to fly PG2 and PG3 rated sites without any supervision whatsoever. Only mention supervision when the pilot's specific rating falls below a specific site's minimum.
+
 STEP 1 — SITE-SPECIFIC RATING CHECK (MANDATORY — DO THIS BEFORE STEP 2):
 Before applying the general matrix, inspect each site's pgRating field for the "|" character (e.g., "PG5 | PG4 Supervised requires SO/SSO"). If "|" is present, this is a site-specific tier list. STOP — the general matrix in STEP 2 does NOT apply to this site at all. Use only the site-specific tiers:
 - The first tier (e.g., "PG5") is the minimum rating to fly unsupervised.
@@ -1571,7 +1573,7 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Upgraded publicSearchEligibilityRules: restructured STEP 1/STEP 2 site-specific check ordering");
