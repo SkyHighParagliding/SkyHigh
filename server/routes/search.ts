@@ -472,6 +472,32 @@ function extractQueryDates(query: string): string[] {
     if (q.includes(dayName)) dates.add(dateStr);
     if (/\bweekend\b/.test(q) && (dayName === 'saturday' || dayName === 'sunday') && i < 8) dates.add(dateStr);
   }
+
+  // Also parse explicit "Month Day" patterns: "June 5th", "May 30", "5 June", "3rd July" etc.
+  // Covers dates beyond the 14-day day-name window (e.g. "can I fly on June 5th?")
+  const MONTH_MAP: Record<string, number> = {
+    jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
+    apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
+    aug: 7, august: 7, sep: 8, september: 8, oct: 9, october: 9,
+    nov: 10, november: 10, dec: 11, december: 11,
+  };
+  const MONTH_PAT = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+  const mdMatch = q.match(new RegExp(`\\b(${MONTH_PAT})\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b`));
+  const dmMatch = q.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${MONTH_PAT})\\b`));
+  const mRaw = mdMatch ? mdMatch[1] : (dmMatch ? dmMatch[2] : null);
+  const dRaw = mdMatch ? mdMatch[2] : (dmMatch ? dmMatch[1] : null);
+  if (mRaw && dRaw) {
+    const monthNum = MONTH_MAP[mRaw.toLowerCase().substring(0, 3)];
+    const day = parseInt(dRaw);
+    if (monthNum !== undefined && day >= 1 && day <= 31) {
+      const nowMelb = new Date(toMelbDate(new Date()) + 'T00:00:00');
+      const year = nowMelb.getFullYear();
+      let candidate = new Date(year, monthNum, day);
+      if (candidate < nowMelb) candidate = new Date(year + 1, monthNum, day);
+      dates.add(toMelbDate(candidate));
+    }
+  }
+
   return Array.from(dates);
 }
 
@@ -1643,10 +1669,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION") || !eligibilityRow.value.includes("NO supervision required")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added MULTI-LAUNCH EXCEPTION for sites with (North)/(South) tiers");
+    console.log("[search] Upgraded publicSearchEligibilityRules: self-contained multi-launch North launch rules");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
