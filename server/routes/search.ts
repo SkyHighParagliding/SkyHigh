@@ -466,6 +466,10 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
     '[GUST THRESHOLD EXCEEDED — do not recommend]',
   ];
   const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|today|tonight|now|current|good.*site|blown|gust|sites.*available|where.*fly/i.test(query);
+  // Rating/eligibility queries ("Im a PG3, can I fly X?") must not strip sites based on
+  // current conditions — the pilot needs the site's rules and ratings regardless of today's wind.
+  const isRatingQuery = /\bpg\d\b|\bhg\d\b/i.test(query);
+  const shouldStripUnflyable = isConditionsQuery && !isRatingQuery;
 
   // The 7-DAY block is appended without a '## ' prefix so it fuses to the last site
   // section when splitting on /\n(?=## )/. Carve it out first; reattach unchanged after.
@@ -512,12 +516,12 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
       }
       // HRLY exists but all slots unflyable — strip for conditions queries,
       // keep site metadata (ratings, hazards, rules) for info queries.
-      if (isConditionsQuery) { if (siteName) strippedNames.add(siteName); return null; }
+      if (shouldStripUnflyable) { if (siteName) strippedNames.add(siteName); return null; }
       return withoutHrly.join('\n');
     }
 
     // No weather data at all — strip for conditions queries, keep for info queries.
-    if (isConditionsQuery) { if (siteName) strippedNames.add(siteName); return null; }
+    if (shouldStripUnflyable) { if (siteName) strippedNames.add(siteName); return null; }
     return filteredLines.join('\n');
   });
 
