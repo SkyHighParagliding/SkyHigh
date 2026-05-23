@@ -1,0 +1,546 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - banner [ref=e6]:
+        - generic [ref=e8]:
+          - link "SkyHigh" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img "SkyHigh" [ref=e11]
+          - navigation [ref=e12]:
+            - link "Sites" [ref=e13] [cursor=pointer]:
+              - /url: /sites
+            - button "Pilots" [ref=e15]:
+              - text: Pilots
+              - img [ref=e16]
+            - link "News" [ref=e18] [cursor=pointer]:
+              - /url: /news
+            - link "Events" [ref=e19] [cursor=pointer]:
+              - /url: /events
+            - button "Community" [ref=e21]:
+              - text: Community
+              - img [ref=e22]
+            - link "About Us" [ref=e24] [cursor=pointer]:
+              - /url: /page/about
+            - link "Shop" [ref=e25] [cursor=pointer]:
+              - /url: /shop
+            - link "Safety/Rules" [ref=e26] [cursor=pointer]:
+              - /url: /safety
+      - main [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - img "Paragliding background" [ref=e514]
+              - img "Paragliding background" [ref=e515]
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e38]: Mt Broughton closed until further notice due to bushfire damage.
+            - generic [ref=e40]:
+              - img [ref=e41]
+              - generic [ref=e43]: Three Sisters (Flowerdale) — Closed Sat, 23 May – Sun, 31 May
+            - generic [ref=e44]:
+              - heading "Welcome to SkyHigh !" [level=1] [ref=e45]
+              - paragraph [ref=e46]: SkyHigh is one of Australia's largest and most active free flight paragliding clubs.
+              - generic [ref=e47]:
+                - link "New Pilots" [ref=e48] [cursor=pointer]:
+                  - /url: /page/new-pilots
+                  - button "New Pilots" [ref=e49]
+                - link "Explore Sites" [ref=e50] [cursor=pointer]:
+                  - /url: /sites
+                  - button "Explore Sites" [ref=e51]
+              - button "Smart Search" [ref=e53]:
+                - img [ref=e54]
+                - generic [ref=e56]: Smart Search
+            - generic [ref=e58]:
+              - link "Your Committee Garrath · President Jon · Vice President Marie · Treasurer Fatemeh · Secretary Seda · PG2 Representative Amy · Committee Brett · Committee Mojtaba · Committee Pierre · Committee" [ref=e59] [cursor=pointer]:
+                - /url: /page/about#committee-members
+                - generic [ref=e60]:
+                  - img [ref=e63]
+                  - heading "Your Committee" [level=3] [ref=e67]
+                  - generic [ref=e70]:
+                    - generic [ref=e71]:
+                      - text: Garrath
+                      - generic [ref=e72]: · President
+                    - generic [ref=e73]:
+                      - text: Jon
+                      - generic [ref=e74]: · Vice President
+                    - generic [ref=e75]:
+                      - text: Marie
+                      - generic [ref=e76]: · Treasurer
+                    - generic [ref=e77]:
+                      - text: Fatemeh
+                      - generic [ref=e78]: · Secretary
+                    - generic [ref=e79]:
+                      - text: Seda
+                      - generic [ref=e80]: · PG2 Representative
+                    - generic [ref=e81]:
+                      - text: Amy
+                      - generic [ref=e82]: · Committee
+                    - generic [ref=e83]:
+                      - text: Brett
+                      - generic [ref=e84]: · Committee
+                    - generic [ref=e85]:
+                      - text: Mojtaba
+                      - generic [ref=e86]: · Committee
+                    - generic [ref=e87]:
+                      - text: Pierre
+                      - generic [ref=e88]: · Committee
+              - generic [ref=e90]:
+                - img [ref=e93]
+                - heading "Paragliding Schools" [level=3] [ref=e96]
+                - generic [ref=e98]:
+                  - link "Melbourne Paragliding" [ref=e498] [cursor=pointer]:
+                    - /url: https://www.melbourneparagliding.com
+                  - link "Bright Flight" [ref=e499] [cursor=pointer]:
+                    - /url: https://www.brightflight.com.au
+                  - link "Updraft Paragliding" [ref=e500] [cursor=pointer]:
+                    - /url: https://updraftparagliding.com.au
+                  - link "Active Flight" [ref=e501] [cursor=pointer]:
+                    - /url: http://www.activeflight.com.au
+              - link "Flying Sites Detailed information on all our coastal and inland flying sites, including weather requirements and hazards." [ref=e103] [cursor=pointer]:
+                - /url: /sites
+                - generic [ref=e104]:
+                  - img [ref=e107]
+                  - heading "Flying Sites" [level=3] [ref=e110]
+                  - generic [ref=e111]: Detailed information on all our coastal and inland flying sites, including weather requirements and hazards.
+          - generic [ref=e254]:
+            - generic [ref=e255]:
+              - heading "Current Conditions" [level=2] [ref=e256]
+              - paragraph [ref=e257]:
+                - text: Live weather at popular flying sites.
+                - text: Always check conditions yourself before flying.
+              - generic [ref=e258]:
+                - generic [ref=e261]: Good
+                - generic [ref=e264]: Light
+                - generic [ref=e267]: Cross
+                - generic [ref=e270]: Blown Out
+            - link "Bells Beach - Southside Open Live - Jan Juc · 3.3km · 1:24 PM Wind 0 kt G1 Direction NNW DIR NOT FLYABLE SPD LIGHT ECMWF Forecast Map 1 PM NNE 5 2 PM NNE 5 3 PM NE 5 4 PM NE 5 5 PM NNE 5 6 PM NNE 6 7 PM NNE 6 7-Day Outlook Tides Today 5kt NNW D S Sun 6kt N D S Mon 5kt NNE D S Tue 10kt SE D S Wed 9kt S D S Thu 5kt WNW D S Fri 6kt WNW D S Tides — Torquay 7-Day ▲ Rising" [ref=e272] [cursor=pointer]:
+              - /url: /sites/bells-beach
+              - generic [ref=e273]:
+                - generic [ref=e274]:
+                  - heading "Bells Beach - Southside" [level=3] [ref=e276]
+                  - generic [ref=e277]: Open
+                - generic [ref=e278]:
+                  - img [ref=e279]
+                  - generic [ref=e281]: Live - Jan Juc
+                  - generic [ref=e282]: · 3.3km
+                  - generic [ref=e283]: · 1:24 PM
+                - generic [ref=e284]:
+                  - img [ref=e287]:
+                    - generic [ref=e304]: "N"
+                    - generic [ref=e305]: E
+                    - generic [ref=e306]: S
+                    - generic [ref=e307]: W
+                  - generic [ref=e316]:
+                    - generic [ref=e317]:
+                      - paragraph [ref=e318]: Wind
+                      - generic [ref=e319]:
+                        - generic [ref=e320]: "0"
+                        - generic [ref=e321]: kt
+                        - generic [ref=e322]: G1
+                    - generic [ref=e323]:
+                      - paragraph [ref=e324]: Direction
+                      - text: NNW
+                    - generic [ref=e325]:
+                      - generic [ref=e326]: DIR NOT FLYABLE
+                      - generic [ref=e327]: SPD LIGHT
+                - generic [ref=e328]:
+                  - generic [ref=e329]:
+                    - paragraph [ref=e331]: ECMWF Forecast
+                    - button "Map" [ref=e332]:
+                      - img [ref=e333]
+                      - generic [ref=e335]: Map
+                  - generic [ref=e336]:
+                    - generic [ref=e337]:
+                      - generic [ref=e338]: 1 PM
+                      - generic [ref=e339]: NNE
+                      - generic [ref=e340]: "5"
+                    - generic [ref=e341]:
+                      - generic [ref=e342]: 2 PM
+                      - generic [ref=e343]: NNE
+                      - generic [ref=e344]: "5"
+                    - generic [ref=e345]:
+                      - generic [ref=e346]: 3 PM
+                      - generic [ref=e347]: NE
+                      - generic [ref=e348]: "5"
+                    - generic [ref=e349]:
+                      - generic [ref=e350]: 4 PM
+                      - generic [ref=e351]: NE
+                      - generic [ref=e352]: "5"
+                    - generic [ref=e353]:
+                      - generic [ref=e354]: 5 PM
+                      - generic [ref=e355]: NNE
+                      - generic [ref=e356]: "5"
+                    - generic [ref=e357]:
+                      - generic [ref=e358]: 6 PM
+                      - generic [ref=e359]: NNE
+                      - generic [ref=e360]: "6"
+                    - generic [ref=e361]:
+                      - generic [ref=e362]: 7 PM
+                      - generic [ref=e363]: NNE
+                      - generic [ref=e364]: "6"
+                - generic [ref=e365]:
+                  - generic [ref=e367]:
+                    - generic [ref=e368]:
+                      - generic [ref=e369]: 7-Day Outlook
+                      - button "Tides" [ref=e370]:
+                        - img [ref=e371]
+                        - generic [ref=e375]: Tides
+                    - generic [ref=e376]:
+                      - generic [ref=e377]:
+                        - generic [ref=e378]: Today
+                        - img [ref=e379]
+                        - generic [ref=e381]: 5kt
+                        - generic [ref=e382]: NNW
+                        - generic [ref=e383]:
+                          - 'generic "Direction: Not Flyable" [ref=e384]': D
+                          - 'generic "Speed: Good" [ref=e385]': S
+                      - generic [ref=e386]:
+                        - generic [ref=e387]: Sun
+                        - img [ref=e388]
+                        - generic [ref=e390]: 6kt
+                        - generic [ref=e391]: "N"
+                        - generic [ref=e392]:
+                          - 'generic "Direction: Not Flyable" [ref=e393]': D
+                          - 'generic "Speed: Good" [ref=e394]': S
+                      - generic [ref=e395]:
+                        - generic [ref=e396]: Mon
+                        - img [ref=e397]
+                        - generic [ref=e399]: 5kt
+                        - generic [ref=e400]: NNE
+                        - generic [ref=e401]:
+                          - 'generic "Direction: Not Flyable" [ref=e402]': D
+                          - 'generic "Speed: Good" [ref=e403]': S
+                      - generic [ref=e404]:
+                        - generic [ref=e405]: Tue
+                        - img [ref=e406]
+                        - generic [ref=e408]: 10kt
+                        - generic [ref=e409]: SE
+                        - generic [ref=e410]:
+                          - 'generic "Direction: Good" [ref=e411]': D
+                          - 'generic "Speed: Good" [ref=e412]': S
+                      - generic [ref=e413]:
+                        - generic [ref=e414]: Wed
+                        - img [ref=e415]
+                        - generic [ref=e417]: 9kt
+                        - generic [ref=e418]: S
+                        - generic [ref=e419]:
+                          - 'generic "Direction: Good" [ref=e420]': D
+                          - 'generic "Speed: Good" [ref=e421]': S
+                      - generic [ref=e422]:
+                        - generic [ref=e423]: Thu
+                        - img [ref=e424]
+                        - generic [ref=e426]: 5kt
+                        - generic [ref=e427]: WNW
+                        - generic [ref=e428]:
+                          - 'generic "Direction: Not Flyable" [ref=e429]': D
+                          - 'generic "Speed: Good" [ref=e430]': S
+                      - generic [ref=e431]:
+                        - generic [ref=e432]: Fri
+                        - img [ref=e433]
+                        - generic [ref=e435]: 6kt
+                        - generic [ref=e436]: WNW
+                        - generic [ref=e437]:
+                          - 'generic "Direction: Not Flyable" [ref=e438]': D
+                          - 'generic "Speed: Good" [ref=e439]': S
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Tides — Torquay
+                        - button "7-Day":
+                          - generic: 7-Day
+                      - generic:
+                        - img:
+                          - generic:
+                            - generic: 1 PM
+                          - generic:
+                            - generic: 3 PM
+                          - generic:
+                            - generic: 5 PM
+                          - generic:
+                            - generic: 7 PM
+                          - generic: H 0.87m 5:59 pm
+                          - generic:
+                            - generic: 0.46m ↑
+                            - generic: 1:38
+                        - generic:
+                          - generic: ▲ Rising
+      - contentinfo [ref=e440]:
+        - generic [ref=e441]:
+          - generic [ref=e442]:
+            - img "SkyHigh" [ref=e444]
+            - paragraph [ref=e445]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+            - generic [ref=e446]:
+              - link "Facebook" [ref=e447] [cursor=pointer]:
+                - /url: https://www.facebook.com/groups/36791238561
+                - img [ref=e448]
+              - link "Instagram" [ref=e450] [cursor=pointer]:
+                - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+                - img [ref=e451]
+          - generic [ref=e453]:
+            - heading "Quick Links" [level=4] [ref=e454]
+            - list [ref=e455]:
+              - listitem [ref=e456]:
+                - link "Flying Sites" [ref=e457] [cursor=pointer]:
+                  - /url: /sites
+              - listitem [ref=e458]:
+                - link "Safety & Rules" [ref=e459] [cursor=pointer]:
+                  - /url: /safety
+              - listitem [ref=e460]:
+                - link "Join the Club" [ref=e461] [cursor=pointer]:
+                  - /url: /join
+              - listitem [ref=e462]:
+                - link "Admin" [ref=e463] [cursor=pointer]:
+                  - /url: /admin
+          - generic [ref=e464]:
+            - heading "Emergency" [level=4] [ref=e465]
+            - list [ref=e466]:
+              - listitem [ref=e467]: Dial 000 for Emergencies
+              - listitem [ref=e468]:
+                - link "Contact Safety Officers" [ref=e469] [cursor=pointer]:
+                  - /url: /safety#safety-officer-directory
+        - paragraph [ref=e471]: © 2026 SkyHigh. All rights reserved.
+    - region "Notifications alt+T"
+  - generic [ref=e474]:
+    - generic [ref=e475]:
+      - generic [ref=e476]:
+        - img [ref=e477]
+        - generic [ref=e480]: SkyHigh Smart Assistant
+      - button "Close" [ref=e481]:
+        - img [ref=e482]
+    - generic [ref=e485]:
+      - generic [ref=e502]:
+        - generic [ref=e503]: I'm a PG3 pilot, what sites can I fly?
+        - img [ref=e504]
+      - generic [ref=e516]:
+        - img [ref=e517]
+        - generic [ref=e520]:
+          - generic [ref=e521]: As a PG3 pilot, you are qualified to fly PG2 and PG3 rated sites without supervision. For sites rated PG4 or PG5, you will require supervision as outlined below.
+          - generic [ref=e522]: "Here are the sites you can fly:"
+          - generic [ref=e523]:
+            - text: "*"
+            - link "Barwon Heads (13th Beach)" [ref=e524] [cursor=pointer]:
+              - /url: /sites/barwon-heads-13th-beach
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e525]:
+            - text: "*"
+            - link "Bells Beach - Southside" [ref=e526] [cursor=pointer]:
+              - /url: /sites/bells-beach
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e527]:
+            - text: "*"
+            - link "Ben More" [ref=e528] [cursor=pointer]:
+              - /url: /sites/ben-more
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e529]:
+            - text: "*"
+            - link "Ben Nevis" [ref=e530] [cursor=pointer]:
+              - /url: /sites/ben-nevis
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor. Remember, the launch is a large granite outcrop, and there's an important \"No landing zone\" south and east of Feud Road to avoid."
+          - generic [ref=e531]:
+            - text: "*"
+            - link "Cairns Bay" [ref=e532] [cursor=pointer]:
+              - /url: /sites/cairns-bay
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor. Be aware of the very small and rocky beach landing."
+          - generic [ref=e533]:
+            - text: "*"
+            - link "Cape Liptrap" [ref=e534] [cursor=pointer]:
+              - /url: /sites/cape-liptrap
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e535]:
+            - text: "*"
+            - link "Dunvegan Road, Phillip Island" [ref=e536] [cursor=pointer]:
+              - /url: /sites/dunvegan-road-phillip-island
+            - text: "(PG4 | PG3 Supervised requires PG5): You can fly here, but it requires a PG5 pilot to supervise you."
+          - generic [ref=e537]:
+            - text: "*"
+            - link "Fisher Street, Phillip Island" [ref=e538] [cursor=pointer]:
+              - /url: /sites/fisher-street-phillip-island
+            - text: "(PG4): This site is PG ONLY. You can fly here with a PG5 pilot as a supervisor."
+          - generic [ref=e539]:
+            - text: "*"
+            - link "Flaxmans Hill" [ref=e540] [cursor=pointer]:
+              - /url: /sites/flaxmans-hill
+            - text: "(PG4 | PG2 Supervised requires PG4): You can fly here with a PG4 pilot as a supervisor. Be cautious of limited beach landings to the east."
+          - generic [ref=e541]:
+            - text: "*"
+            - link "Flinders Golf Club" [ref=e542] [cursor=pointer]:
+              - /url: /sites/flinders-golf-club
+            - text: "(PG2 Supervised requires PG4/SO): You can fly this site with a PG4 pilot or Safety Officer (SO) as a supervisor. Remember to use the road only, not the footpath, for access."
+          - generic [ref=e543]:
+            - text: "*"
+            - link "Gordon" [ref=e544] [cursor=pointer]:
+              - /url: /sites/gordon
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e545]:
+            - text: "*"
+            - link "Grannies Grave" [ref=e546] [cursor=pointer]:
+              - /url: /sites/grannies-grave
+            - text: "(PG4 | PG2 Sup req PG4): You can fly here with a PG4 pilot as a supervisor."
+          - generic [ref=e547]:
+            - text: "*"
+            - link "Great Missenden (Ex Landscape)" [ref=e548] [cursor=pointer]:
+              - /url: /sites/great-missenden-previously-known-as-landscape
+            - text: "(PG4 | PG3 Supervised requires PG5): You can fly here, but it requires a PG5 pilot to supervise you."
+          - generic [ref=e549]:
+            - text: "*"
+            - link "Grossard Point, Phillip Island" [ref=e550] [cursor=pointer]:
+              - /url: /sites/grossard-point-phillip-island
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e551]:
+            - text: "*"
+            - link "Gundowring (Savhill)" [ref=e552] [cursor=pointer]:
+              - /url: /sites/gundowring-savhill
+            - text: "(PG4 | PG2 Sup req PG4/SO | PG3 req PG4/SO): You can fly here, but it requires a PG4 pilot or Safety Officer (SO) to supervise you."
+          - generic [ref=e553]:
+            - text: "*"
+            - link "Kilcunda" [ref=e554] [cursor=pointer]:
+              - /url: /sites/kilcunda
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e555]:
+            - text: "*"
+            - link "Logans Beach" [ref=e556] [cursor=pointer]:
+              - /url: /sites/logans-beach
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e557]:
+            - text: "*"
+            - link "Manny's" [ref=e558] [cursor=pointer]:
+              - /url: /sites/manny-s
+            - text: "(PG2 Supervised req PG4/SO): You can fly this site with a PG4 pilot or Safety Officer (SO) as a supervisor. Be aware of a grumpy eagle resident who may attack paragliders."
+          - generic [ref=e559]:
+            - text: "*"
+            - link "Marriners Lookout" [ref=e560] [cursor=pointer]:
+              - /url: /sites/marriners-lookout
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e561]:
+            - text: "*"
+            - link "Mt Buffalo – Reed’s Lookout" [ref=e562] [cursor=pointer]:
+              - /url: /sites/mt-buffalo-reed-s-lookout-paraglider-launch
+            - text: "(PG5 | PG4 req FI/SSO): This site is PG ONLY. You can fly here with a Flight Instructor (FI) or Senior Safety Officer (SSO) as a supervisor. The launch involves large boulders with deep fissures, so advanced launch skills are needed."
+          - generic [ref=e563]:
+            - text: "*"
+            - link "Mt Buninyong" [ref=e564] [cursor=pointer]:
+              - /url: /sites/mt-buninyong
+            - text: "(PG5): You can fly this site with a Flight Instructor (FI), Chief Flying Instructor (CFI), or Senior Safety Officer (SSO) as a supervisor."
+          - generic [ref=e565]:
+            - text: "*"
+            - link "Mt Dandenong" [ref=e566] [cursor=pointer]:
+              - /url: /sites/mt-dandenong
+            - text: "(PG5 Endorsed req PG5/SO induction): You can fly here, but it requires a PG5 Endorsed pilot, Flight Instructor (FI), Chief Flying Instructor (CFI), or Senior Safety Officer (SSO) as a supervisor and a site induction."
+          - generic [ref=e567]:
+            - text: "*"
+            - link "Mt Elliot - Corryong" [ref=e568] [cursor=pointer]:
+              - /url: /sites/mt-elliot
+            - text: "(PG4 | PG2 Supervised requires PG4/SO | PG3 Sup req PG4/SO): You can fly here, but it requires a PG4 pilot or Safety Officer (SO) to supervise you."
+          - generic [ref=e569]:
+            - text: "*"
+            - link "Mt Emu" [ref=e570] [cursor=pointer]:
+              - /url: /sites/mt-emu
+            - text: "(PG4 | PG2 Supervised requires FI/SSO | PG3 requires PG5): You can fly here, but it requires a PG5 pilot to supervise you."
+          - generic [ref=e571]:
+            - text: "*"
+            - link "Mt Hollowback" [ref=e572] [cursor=pointer]:
+              - /url: /sites/mt-hollowback
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e573]:
+            - text: "*"
+            - link "Mt Lonarch" [ref=e574] [cursor=pointer]:
+              - /url: /sites/mt-lonarch
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e575]:
+            - text: "*"
+            - link "Mt Meuron" [ref=e576] [cursor=pointer]:
+              - /url: /sites/mt-meuron
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e577]:
+            - text: "*"
+            - link "Mt Sugarloaf" [ref=e578] [cursor=pointer]:
+              - /url: /sites/mt-sugarloaf
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e579]:
+            - text: "*"
+            - link "Mt Tarrengower" [ref=e580] [cursor=pointer]:
+              - /url: /sites/mt-tarrengower
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e581]:
+            - text: "*"
+            - link "Mt Terrible" [ref=e582] [cursor=pointer]:
+              - /url: /sites/mt-terrible
+            - text: "(PG5): You can fly this site with a Flight Instructor (FI), Chief Flying Instructor (CFI), or Senior Safety Officer (SSO) as a supervisor."
+          - generic [ref=e583]:
+            - text: "*"
+            - link "Murmungee" [ref=e584] [cursor=pointer]:
+              - /url: /sites/murmungee
+            - text: "(PG5 | PG4 requires FI/SSO | PG3 requires FI/SSO | PG2 Supervised requires FI/SSO): This site is PG ONLY. You can fly here, but it requires a Flight Instructor (FI) or Senior Safety Officer (SSO) to supervise you."
+          - generic [ref=e585]:
+            - text: "*"
+            - link "Mystic" [ref=e586] [cursor=pointer]:
+              - /url: /sites/mystic
+            - text: "(PG4 | PG2 Supervised requires PG4/SO | PG3 Sup req PG4/SO): You can fly here, but it requires a PG4 pilot or Safety Officer (SO) to supervise you."
+          - generic [ref=e587]:
+            - text: "*"
+            - link "Ocean Grove" [ref=e588] [cursor=pointer]:
+              - /url: /sites/ocean-grove
+            - text: "(PG4 | PG3 Supervised requires PG4): You can fly here, but it requires a PG4 pilot to supervise you."
+          - generic [ref=e589]:
+            - text: "*"
+            - link "Portland" [ref=e590] [cursor=pointer]:
+              - /url: /sites/portland
+            - text: "(PG2 Supervised requires PG4/SO | PG4 | PG5): You can fly here without supervision."
+          - generic [ref=e591]:
+            - text: "*"
+            - link "Portsea" [ref=e592] [cursor=pointer]:
+              - /url: /sites/portsea
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e593]:
+            - text: "*"
+            - link "Shoreham" [ref=e594] [cursor=pointer]:
+              - /url: /sites/shoreham
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e595]:
+            - text: "*"
+            - link "Spion Kop" [ref=e596] [cursor=pointer]:
+              - /url: /sites/spion-kop-fairhaven-aireys-moggs
+            - text: "(PG2 Sup req Spion End): You are qualified to fly here without supervision, but note that students are prohibited."
+          - generic [ref=e597]:
+            - text: "*"
+            - link "Tawonga Gap" [ref=e598] [cursor=pointer]:
+              - /url: /sites/tawonga-gap
+            - text: "(PG4 | PG2 Supervised requires FI/SSO | PG3 req FI/SSO supervision): You can fly here, but it requires a Flight Instructor (FI) or Senior Safety Officer (SSO) to supervise you."
+          - generic [ref=e599]:
+            - text: "*"
+            - link "Teddys Lookout" [ref=e600] [cursor=pointer]:
+              - /url: /sites/teddys-lookout
+            - text: "(PG5 | PG4 Sup req PG5): You can fly here, but it requires a PG5 pilot to supervise you. This site has a small tree slot launch requiring advanced skills."
+          - generic [ref=e601]:
+            - text: "*"
+            - link "The Paps" [ref=e602] [cursor=pointer]:
+              - /url: /sites/the-paps
+            - text: "(PG4): You can fly this site with a PG5 pilot as a supervisor."
+          - generic [ref=e603]:
+            - text: "*"
+            - link "Werribee Gorge" [ref=e604] [cursor=pointer]:
+              - /url: /sites/werribee-gorge
+            - text: "(PG5): You can fly this site with a Flight Instructor (FI), Chief Flying Instructor (CFI), or Senior Safety Officer (SSO) as a supervisor."
+          - generic [ref=e605]:
+            - text: "*"
+            - link "Yarragon" [ref=e606] [cursor=pointer]:
+              - /url: /sites/yarragon
+            - text: "(PG2 Supervised): You are qualified to fly here without supervision."
+          - generic [ref=e607]:
+            - text: Always remember to check the specific site rules and conditions on the site pages for full details before flying, and always check the live weather. Your pilot-in-command responsibilities include ensuring the safety of your operations, as per the
+            - emphasis [ref=e608]: SAFA Part 149 Operations Manual
+            - text: .
+          - strong [ref=e610]: General information only. Consult SAFA/CASA docs and Site Rules.
+      - generic [ref=e611]:
+        - img [ref=e612]
+        - generic [ref=e616]:
+          - text: Enjoying our Smart Search? Please consider
+          - link "joining SkyHigh" [ref=e617] [cursor=pointer]:
+            - /url: /new-pilots
+          - text: — we'd love to have you!
+    - generic [ref=e487]:
+      - textbox "e.g. Can I fly Monument with a PG2?" [ref=e488]
+      - button "Start voice input" [ref=e489]:
+        - img [ref=e490]
+      - button [disabled] [ref=e493]:
+        - img [ref=e494]

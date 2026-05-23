@@ -1,0 +1,329 @@
+- generic [ref=e2]:
+  - generic [ref=e180]:
+    - img [ref=e182]
+    - generic [ref=e185]:
+      - paragraph [ref=e186]: Allow location access?
+      - paragraph [ref=e187]: Used for nearby sites, emergency info, and check-ins. Without it, some features won't work.
+      - generic [ref=e188]:
+        - button "Allow" [ref=e189]
+        - button "No thanks" [ref=e190]
+  - generic [ref=e3]:
+    - banner [ref=e191]:
+      - generic [ref=e193]:
+        - link "SkyHigh" [ref=e195] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e196]
+        - navigation [ref=e197]:
+          - link "Sites" [ref=e198] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e200]:
+            - text: Pilots
+            - img [ref=e201]
+          - link "News" [ref=e203] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e204] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e206]:
+            - text: Community
+            - img [ref=e207]
+          - link "About Us" [ref=e209] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e210] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e211] [cursor=pointer]:
+            - /url: /safety
+    - main [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "Barwon Heads (13th Beach)" [ref=e7]
+          - generic [ref=e10]:
+            - link "Back to Sites" [ref=e11] [cursor=pointer]:
+              - /url: /sites
+              - img [ref=e12]
+              - text: Back to Sites
+            - generic [ref=e15]:
+              - generic [ref=e16]:
+                - generic [ref=e17]: Coastal
+                - generic [ref=e18]: Open
+              - heading "Barwon Heads (13th Beach)" [level=1] [ref=e19]
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]:
+              - heading "Site Overview" [level=2] [ref=e24]:
+                - img [ref=e25]
+                - text: Site Overview
+              - paragraph [ref=e28]: "This is a sensitive site. Do not walk through the dunes and do not kite up the dunes. As always, give marked Hooded Plover nest sites plenty of room. Consider flying Ocean Grove or elsewhere instead to reduce traffic at this site. Beach nesting birds: Hooded Plovers nest in this area. Visit this page to learn more. NOTICE - 13th Beach, Barwon Heads - Limited Access Until further notice hang gliding operations at 13th beach are restricted to the 40W location. Addtionally, set up and launching are limited to one aircraft at any time. Top landing at 13th beach is banned except at the launch site at 40W. Negotiations are currently in progress with Barwon Coast, the responsible authority, to develop a substainable facility."
+            - generic [ref=e29]:
+              - generic [ref=e30]:
+                - heading "Local Weather" [level=2] [ref=e32]:
+                  - img [ref=e33]
+                  - text: Local Weather
+                - generic [ref=e38]:
+                  - generic [ref=e39]:
+                    - generic [ref=e42]: Good
+                    - generic [ref=e45]: Light
+                    - generic [ref=e48]: Cross
+                    - generic [ref=e51]: Blown Out / Not Flyable
+                    - generic [ref=e54]: Ideal Wind Dir
+                  - generic [ref=e212]:
+                    - generic [ref=e213]:
+                      - heading "Barwon Heads (13th Beach)" [level=3] [ref=e215]
+                      - generic [ref=e216]: Open
+                    - generic [ref=e217]:
+                      - img [ref=e218]
+                      - generic [ref=e220]: Forecast - Barwon Heads (13th Beach)
+                      - generic [ref=e221]: · 1:00 PM
+                    - generic [ref=e222]:
+                      - img [ref=e225]:
+                        - generic [ref=e242]: "N"
+                        - generic [ref=e243]: E
+                        - generic [ref=e244]: S
+                        - generic [ref=e245]: W
+                      - generic [ref=e252]:
+                        - generic [ref=e253]:
+                          - paragraph [ref=e254]: Wind
+                          - generic [ref=e255]:
+                            - generic [ref=e256]: "3"
+                            - generic [ref=e257]: kt
+                            - generic [ref=e258]: G7
+                        - generic [ref=e259]:
+                          - paragraph [ref=e260]: Direction
+                          - text: WSW
+                        - generic [ref=e261]:
+                          - generic [ref=e262]: DIR NOT FLYABLE
+                          - generic [ref=e263]: SPD LIGHT
+                    - generic [ref=e264]:
+                      - generic [ref=e265]:
+                        - paragraph [ref=e267]: ECMWF Forecast
+                        - button "Map" [ref=e268]:
+                          - img [ref=e269]
+                          - generic [ref=e271]: Map
+                      - generic [ref=e272]:
+                        - generic [ref=e273]:
+                          - generic [ref=e274]: 2 PM
+                          - generic [ref=e275]: SSW
+                          - generic [ref=e276]: "3"
+                        - generic [ref=e277]:
+                          - generic [ref=e278]: 3 PM
+                          - generic [ref=e279]: S
+                          - generic [ref=e280]: "4"
+                        - generic [ref=e281]:
+                          - generic [ref=e282]: 4 PM
+                          - generic [ref=e283]: SSE
+                          - generic [ref=e284]: "5"
+                        - generic [ref=e285]:
+                          - generic [ref=e286]: 5 PM
+                          - generic [ref=e287]: SSE
+                          - generic [ref=e288]: "5"
+                        - generic [ref=e289]:
+                          - generic [ref=e290]: 6 PM
+                          - generic [ref=e291]: S
+                          - generic [ref=e292]: "4"
+                        - generic [ref=e293]:
+                          - generic [ref=e294]: 7 PM
+                          - generic [ref=e295]: S
+                          - generic [ref=e296]: "3"
+                        - generic [ref=e297]:
+                          - generic [ref=e298]: 8 PM
+                          - generic [ref=e299]: S
+                          - generic [ref=e300]: "3"
+                    - generic [ref=e301]:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: 7-Day Outlook
+                            - button "Tides" [active]:
+                              - img
+                              - generic: Tides
+                          - generic:
+                            - generic:
+                              - generic: Today
+                              - img
+                              - generic: 14kt
+                              - generic: SSW
+                              - generic:
+                                - 'generic "Direction: Good"': D
+                                - 'generic "Speed: Good"': S
+                            - generic:
+                              - generic: Wed
+                              - img
+                              - generic: 13kt
+                              - generic: SSW
+                              - generic:
+                                - 'generic "Direction: Good"': D
+                                - 'generic "Speed: Good"': S
+                            - generic:
+                              - generic: Thu
+                              - img
+                              - generic: 4kt
+                              - generic: SSW
+                              - generic:
+                                - 'generic "Direction: Good"': D
+                                - 'generic "Speed: Light"': S
+                            - generic:
+                              - generic: Fri
+                              - img
+                              - generic: 3kt
+                              - generic: NE
+                              - generic:
+                                - 'generic "Direction: Not Flyable"': D
+                                - 'generic "Speed: Light"': S
+                            - generic:
+                              - generic: Sat
+                              - img
+                              - generic: 5kt
+                              - generic: NNW
+                              - generic:
+                                - 'generic "Direction: Not Flyable"': D
+                                - 'generic "Speed: Light"': S
+                            - generic:
+                              - generic: Sun
+                              - img
+                              - generic: 11kt
+                              - generic: W
+                              - generic:
+                                - 'generic "Direction: Not Flyable"': D
+                                - 'generic "Speed: Good"': S
+                      - generic [ref=e406]:
+                        - generic [ref=e407]:
+                          - generic [ref=e408]: Tides — Barwon Heads
+                          - button "7-Day" [ref=e409]:
+                            - generic [ref=e410]: 7-Day
+                        - generic [ref=e411]:
+                          - img [ref=e412]:
+                            - generic [ref=e414]: 2 PM
+                            - generic [ref=e416]: 4 PM
+                            - generic [ref=e418]: 6 PM
+                            - generic [ref=e420]: 8 PM
+                            - generic [ref=e422]:
+                              - generic [ref=e426]: 0.93m ↓
+                              - generic [ref=e427]: 1:15
+                          - generic [ref=e429]: ▼ Falling
+              - generic [ref=e56]:
+                - heading "Site Information" [level=2] [ref=e58]:
+                  - img [ref=e59]
+                  - text: Site Information
+                - generic [ref=e61]:
+                  - generic [ref=e62]:
+                    - img [ref=e64]
+                    - paragraph [ref=e67]: Ideal Dir
+                    - paragraph [ref=e68]: S-SW
+                  - generic [ref=e69]:
+                    - img [ref=e71]
+                    - paragraph [ref=e75]: Wind Range
+                    - paragraph [ref=e76]: 10-14
+                  - generic [ref=e77]:
+                    - img [ref=e79]
+                    - generic [ref=e81]:
+                      - paragraph [ref=e82]: PG Rating
+                      - paragraph [ref=e83]: PG2 Supervised
+                  - generic [ref=e84]:
+                    - img [ref=e86]
+                    - generic [ref=e88]:
+                      - paragraph [ref=e89]: HG Rating
+                      - paragraph [ref=e90]: HG Supervised
+                  - generic [ref=e91]:
+                    - img [ref=e93]
+                    - paragraph [ref=e96]: Site Type
+                    - paragraph [ref=e97]: Coastal
+                  - generic [ref=e98]:
+                    - generic [ref=e99]:
+                      - img [ref=e101]
+                      - paragraph [ref=e103]: Contact
+                    - paragraph [ref=e104]: Dynasoarers, Rob van der Klooster, Jan Bennewitz
+                    - paragraph [ref=e105]: 0408 335 559, 0423 139 923
+                  - button "Emergency Hospitals" [ref=e106] [cursor=pointer]:
+                    - img [ref=e108]
+                    - paragraph [ref=e110]: Emergency
+                    - paragraph [ref=e111]: Hospitals
+                  - link "Navigate Directions" [ref=e112] [cursor=pointer]:
+                    - /url: https://www.google.com/maps?q=-38.28133,144.4391
+                    - img [ref=e114]
+                    - generic [ref=e117]:
+                      - paragraph [ref=e118]: Navigate
+                      - paragraph [ref=e119]: Directions
+                  - link "Siteguide View Info" [ref=e120] [cursor=pointer]:
+                    - /url: https://siteguide.org.au/Sites/Details/Barwon%20Heads%20(13th%20Beach)
+                    - img [ref=e122]
+                    - paragraph [ref=e124]: Siteguide
+                    - paragraph [ref=e125]: View Info
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - heading "Launch Area" [level=3] [ref=e129]
+                - paragraph [ref=e131]: Hang gliders set up and take off on the grass patch left of the access path at the westmost carpark (40W). Paragliders take off from the beach at 32W or 30W. There is no PG top launch.
+              - generic [ref=e132]:
+                - heading "Landing Zones" [level=3] [ref=e134]
+                - paragraph [ref=e136]: Anywhere on the beach. Hang gliders can top land on launch only. If possible, pack up hang gliders on the beach to reduce impact on launch vegetation.
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - heading "Known Hazards" [level=3] [ref=e140]:
+                - img [ref=e141]
+                - text: Known Hazards
+              - list [ref=e144]:
+                - listitem [ref=e145]:
+                  - generic [ref=e146]: •
+                  - generic [ref=e147]: Like all small dune sites this requires excellent ground handling skills for paragliders and good close flying skills for HG and PG.
+            - generic [ref=e148]:
+              - heading "Site Rules" [level=3] [ref=e150]:
+                - img [ref=e151]
+                - text: Site Rules
+              - generic [ref=e153]:
+                - list [ref=e154]:
+                  - listitem [ref=e155]:
+                    - generic [ref=e156]: "1."
+                    - generic [ref=e157]: Do not walk through the dunes.
+                  - listitem [ref=e158]:
+                    - generic [ref=e159]: "2."
+                    - generic [ref=e160]: Do not kite up the dunes.
+                  - listitem [ref=e161]:
+                    - generic [ref=e162]: "3."
+                    - generic [ref=e163]: Give marked Hooded Plover nest sites plenty of room.
+                  - listitem [ref=e164]:
+                    - generic [ref=e165]: "4."
+                    - generic [ref=e166]: Hang gliding operations at 13th beach are restricted to the 40W location.
+                  - listitem [ref=e167]:
+                    - generic [ref=e168]: "5."
+                    - generic [ref=e169]: Set up and launching are limited to one aircraft at any time (HG).
+                  - listitem [ref=e170]:
+                    - generic [ref=e171]: "6."
+                    - generic [ref=e172]: Top landing at 13th beach is banned except at the launch site at 40W.
+                  - listitem [ref=e173]:
+                    - generic [ref=e174]: "7."
+                    - generic [ref=e175]: If possible, pack up hang gliders on the beach to reduce impact on launch vegetation.
+                - paragraph [ref=e177]: Failure to comply with site rules may result in suspension of flying privileges.
+    - contentinfo [ref=e373]:
+      - generic [ref=e374]:
+        - generic [ref=e375]:
+          - img "SkyHigh" [ref=e377]
+          - paragraph [ref=e378]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+          - generic [ref=e379]:
+            - link "Facebook" [ref=e380] [cursor=pointer]:
+              - /url: https://www.facebook.com/groups/36791238561
+              - img [ref=e381]
+            - link "Instagram" [ref=e383] [cursor=pointer]:
+              - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+              - img [ref=e384]
+        - generic [ref=e386]:
+          - heading "Quick Links" [level=4] [ref=e387]
+          - list [ref=e388]:
+            - listitem [ref=e389]:
+              - link "Flying Sites" [ref=e390] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e391]:
+              - link "Safety & Rules" [ref=e392] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e393]:
+              - link "Join the Club" [ref=e394] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e395]:
+              - link "Admin" [ref=e396] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e397]:
+          - heading "Emergency" [level=4] [ref=e398]
+          - list [ref=e399]:
+            - listitem [ref=e400]: Dial 000 for Emergencies
+            - listitem [ref=e401]:
+              - link "Contact Safety Officers" [ref=e402] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - paragraph [ref=e404]: © 2026 SkyHigh. All rights reserved.
+  - region "Notifications alt+T"

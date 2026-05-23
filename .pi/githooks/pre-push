@@ -1,0 +1,26 @@
+#!/bin/sh
+# SKYHIGH — HARD SAFEGUARD: Block ALL git push operations
+# This hook prevents accidental pushes to GitHub which would
+# auto-deploy to Railway production.
+#
+# To install:
+#   cp .pi/githooks/pre-push .git/hooks/pre-push
+#   chmod +x .git/hooks/pre-push
+#
+# This hook is LOCAL only. It does NOT push. It ALWAYS blocks.
+
+echo "========================================"
+echo "  BLOCKED: Git push is disabled for this project."
+echo "========================================"
+echo ""
+echo "  SkyHigh has a hard rule: NO git push."
+echo "  Pushing auto-deploys to Railway production."
+echo "  All git operations must remain local."
+echo ""
+echo "  If you truly need to push, you must:"
+echo "    1. Manually remove this hook first"
+echo "    2. Get explicit approval from the project owner"
+echo "    3. Re-add the hook immediately after"
+echo ""
+echo "========================================"
+exit 1

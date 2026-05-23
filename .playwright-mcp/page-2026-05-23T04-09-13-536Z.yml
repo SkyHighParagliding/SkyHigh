@@ -1,0 +1,317 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - banner [ref=e6]:
+        - generic [ref=e8]:
+          - link "SkyHigh" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img "SkyHigh" [ref=e11]
+          - navigation [ref=e12]:
+            - link "Sites" [ref=e13] [cursor=pointer]:
+              - /url: /sites
+            - button "Pilots" [ref=e15]:
+              - text: Pilots
+              - img [ref=e16]
+            - link "News" [ref=e18] [cursor=pointer]:
+              - /url: /news
+            - link "Events" [ref=e19] [cursor=pointer]:
+              - /url: /events
+            - button "Community" [ref=e21]:
+              - text: Community
+              - img [ref=e22]
+            - link "About Us" [ref=e24] [cursor=pointer]:
+              - /url: /page/about
+            - link "Shop" [ref=e25] [cursor=pointer]:
+              - /url: /shop
+            - link "Safety/Rules" [ref=e26] [cursor=pointer]:
+              - /url: /safety
+      - main [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - img "Paragliding background" [ref=e482]
+              - img "Paragliding background" [ref=e483]
+            - generic [ref=e35]:
+              - img [ref=e36]
+              - generic [ref=e38]: Mt Broughton closed until further notice due to bushfire damage.
+            - generic [ref=e40]:
+              - img [ref=e41]
+              - generic [ref=e43]: Three Sisters (Flowerdale) — Closed Sat, 23 May – Sun, 31 May
+            - generic [ref=e44]:
+              - heading "Welcome to SkyHigh !" [level=1] [ref=e45]
+              - paragraph [ref=e46]: SkyHigh is one of Australia's largest and most active free flight paragliding clubs.
+              - generic [ref=e47]:
+                - link "New Pilots" [ref=e48] [cursor=pointer]:
+                  - /url: /page/new-pilots
+                  - button "New Pilots" [ref=e49]
+                - link "Explore Sites" [ref=e50] [cursor=pointer]:
+                  - /url: /sites
+                  - button "Explore Sites" [ref=e51]
+              - button "Smart Search" [ref=e53]:
+                - img [ref=e54]
+                - generic [ref=e56]: Smart Search
+            - generic [ref=e58]:
+              - generic [ref=e60]:
+                - img [ref=e63]
+                - heading "Community" [level=3] [ref=e68]
+                - generic [ref=e70]:
+                  - link "SkyHigh PG2's Chat" [ref=e71] [cursor=pointer]:
+                    - /url: https://t.me/+nTrYhee5T085YTQ1
+                  - link "East Coast Chat" [ref=e72] [cursor=pointer]:
+                    - /url: https://t.me/+_4u2YkQL3R1hZDJl
+                  - link "West Coast Chat" [ref=e73] [cursor=pointer]:
+                    - /url: https://t.me/+n6bQcHr15iVjNTk9
+                  - link "Inland Flying Chat" [ref=e74] [cursor=pointer]:
+                    - /url: https://t.me/joinchat/GVgl6T9tQkE2ZDJl
+                  - link "Inland Logistics *NO CHAT*" [ref=e75] [cursor=pointer]:
+                    - /url: https://t.me/joinchat/NA2B2_pGT2c0NjA1
+              - link "Safety & Rules Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely." [ref=e76] [cursor=pointer]:
+                - /url: /safety
+                - generic [ref=e77]:
+                  - img [ref=e80]
+                  - heading "Safety & Rules" [level=3] [ref=e82]
+                  - generic [ref=e83]: Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely.
+              - generic [ref=e85]:
+                - img [ref=e88]
+                - heading "Paragliding Schools" [level=3] [ref=e91]
+                - generic [ref=e93]:
+                  - link "Bright Flight" [ref=e94] [cursor=pointer]:
+                    - /url: https://www.brightflight.com.au
+                  - link "Updraft Paragliding" [ref=e484] [cursor=pointer]:
+                    - /url: https://updraftparagliding.com.au
+                  - link "Active Flight" [ref=e485] [cursor=pointer]:
+                    - /url: http://www.activeflight.com.au
+                  - link "Melbourne Paragliding" [ref=e97] [cursor=pointer]:
+                    - /url: https://www.melbourneparagliding.com
+          - generic [ref=e240]:
+            - generic [ref=e241]:
+              - heading "Current Conditions" [level=2] [ref=e242]
+              - paragraph [ref=e243]:
+                - text: Live weather at popular flying sites.
+                - text: Always check conditions yourself before flying.
+              - generic [ref=e244]:
+                - generic [ref=e247]: Good
+                - generic [ref=e250]: Light
+                - generic [ref=e253]: Cross
+                - generic [ref=e256]: Blown Out
+            - link "Bells Beach - Southside Open Live - Jan Juc · 3.3km · 1:53 PM Wind 0 kt G1 Direction W DIR NOT FLYABLE SPD LIGHT ECMWF Forecast Map 2 PM NNE 5 3 PM NE 5 4 PM NE 5 5 PM NNE 5 6 PM NNE 6 7 PM NNE 6 8 PM NNE 6 7-Day Outlook Tides Today 5kt NNW D S Sun 6kt N D S Mon 5kt NNE D S Tue 10kt SE D S Wed 9kt S D S Thu 5kt WNW D S Fri 6kt WNW D S Tides — Torquay 7-Day ▲ Rising" [ref=e258] [cursor=pointer]:
+              - /url: /sites/bells-beach
+              - generic [ref=e259]:
+                - generic [ref=e260]:
+                  - heading "Bells Beach - Southside" [level=3] [ref=e262]
+                  - generic [ref=e263]: Open
+                - generic [ref=e264]:
+                  - img [ref=e265]
+                  - generic [ref=e267]: Live - Jan Juc
+                  - generic [ref=e268]: · 3.3km
+                  - generic [ref=e269]: · 1:53 PM
+                - generic [ref=e270]:
+                  - img [ref=e273]:
+                    - generic [ref=e290]: "N"
+                    - generic [ref=e291]: E
+                    - generic [ref=e292]: S
+                    - generic [ref=e293]: W
+                  - generic [ref=e301]:
+                    - generic [ref=e302]:
+                      - paragraph [ref=e303]: Wind
+                      - generic [ref=e304]:
+                        - generic [ref=e305]: "0"
+                        - generic [ref=e306]: kt
+                        - generic [ref=e307]: G1
+                    - generic [ref=e308]:
+                      - paragraph [ref=e309]: Direction
+                      - text: W
+                    - generic [ref=e310]:
+                      - generic [ref=e311]: DIR NOT FLYABLE
+                      - generic [ref=e312]: SPD LIGHT
+                - generic [ref=e313]:
+                  - generic [ref=e314]:
+                    - paragraph [ref=e316]: ECMWF Forecast
+                    - button "Map" [ref=e317]:
+                      - img [ref=e318]
+                      - generic [ref=e320]: Map
+                  - generic [ref=e321]:
+                    - generic [ref=e322]:
+                      - generic [ref=e323]: 2 PM
+                      - generic [ref=e324]: NNE
+                      - generic [ref=e325]: "5"
+                    - generic [ref=e326]:
+                      - generic [ref=e327]: 3 PM
+                      - generic [ref=e328]: NE
+                      - generic [ref=e329]: "5"
+                    - generic [ref=e330]:
+                      - generic [ref=e331]: 4 PM
+                      - generic [ref=e332]: NE
+                      - generic [ref=e333]: "5"
+                    - generic [ref=e334]:
+                      - generic [ref=e335]: 5 PM
+                      - generic [ref=e336]: NNE
+                      - generic [ref=e337]: "5"
+                    - generic [ref=e338]:
+                      - generic [ref=e339]: 6 PM
+                      - generic [ref=e340]: NNE
+                      - generic [ref=e341]: "6"
+                    - generic [ref=e342]:
+                      - generic [ref=e343]: 7 PM
+                      - generic [ref=e344]: NNE
+                      - generic [ref=e345]: "6"
+                    - generic [ref=e346]:
+                      - generic [ref=e347]: 8 PM
+                      - generic [ref=e348]: NNE
+                      - generic [ref=e349]: "6"
+                - generic [ref=e350]:
+                  - generic [ref=e352]:
+                    - generic [ref=e353]:
+                      - generic [ref=e354]: 7-Day Outlook
+                      - button "Tides" [ref=e355]:
+                        - img [ref=e356]
+                        - generic [ref=e360]: Tides
+                    - generic [ref=e361]:
+                      - generic [ref=e362]:
+                        - generic [ref=e363]: Today
+                        - img [ref=e364]
+                        - generic [ref=e366]: 5kt
+                        - generic [ref=e367]: NNW
+                        - generic [ref=e368]:
+                          - 'generic "Direction: Not Flyable" [ref=e369]': D
+                          - 'generic "Speed: Good" [ref=e370]': S
+                      - generic [ref=e371]:
+                        - generic [ref=e372]: Sun
+                        - img [ref=e373]
+                        - generic [ref=e375]: 6kt
+                        - generic [ref=e376]: "N"
+                        - generic [ref=e377]:
+                          - 'generic "Direction: Not Flyable" [ref=e378]': D
+                          - 'generic "Speed: Good" [ref=e379]': S
+                      - generic [ref=e380]:
+                        - generic [ref=e381]: Mon
+                        - img [ref=e382]
+                        - generic [ref=e384]: 5kt
+                        - generic [ref=e385]: NNE
+                        - generic [ref=e386]:
+                          - 'generic "Direction: Not Flyable" [ref=e387]': D
+                          - 'generic "Speed: Good" [ref=e388]': S
+                      - generic [ref=e389]:
+                        - generic [ref=e390]: Tue
+                        - img [ref=e391]
+                        - generic [ref=e393]: 10kt
+                        - generic [ref=e394]: SE
+                        - generic [ref=e395]:
+                          - 'generic "Direction: Good" [ref=e396]': D
+                          - 'generic "Speed: Good" [ref=e397]': S
+                      - generic [ref=e398]:
+                        - generic [ref=e399]: Wed
+                        - img [ref=e400]
+                        - generic [ref=e402]: 9kt
+                        - generic [ref=e403]: S
+                        - generic [ref=e404]:
+                          - 'generic "Direction: Good" [ref=e405]': D
+                          - 'generic "Speed: Good" [ref=e406]': S
+                      - generic [ref=e407]:
+                        - generic [ref=e408]: Thu
+                        - img [ref=e409]
+                        - generic [ref=e411]: 5kt
+                        - generic [ref=e412]: WNW
+                        - generic [ref=e413]:
+                          - 'generic "Direction: Not Flyable" [ref=e414]': D
+                          - 'generic "Speed: Good" [ref=e415]': S
+                      - generic [ref=e416]:
+                        - generic [ref=e417]: Fri
+                        - img [ref=e418]
+                        - generic [ref=e420]: 6kt
+                        - generic [ref=e421]: WNW
+                        - generic [ref=e422]:
+                          - 'generic "Direction: Not Flyable" [ref=e423]': D
+                          - 'generic "Speed: Good" [ref=e424]': S
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Tides — Torquay
+                        - button "7-Day":
+                          - generic: 7-Day
+                      - generic:
+                        - img:
+                          - generic:
+                            - generic: 2 PM
+                          - generic:
+                            - generic: 4 PM
+                          - generic:
+                            - generic: 6 PM
+                          - generic:
+                            - generic: 8 PM
+                          - generic: H 0.87m 5:56 pm
+                          - generic:
+                            - generic: 0.51m ↑
+                            - generic: 2:08
+                        - generic:
+                          - generic: ▲ Rising
+      - contentinfo [ref=e425]:
+        - generic [ref=e426]:
+          - generic [ref=e427]:
+            - img "SkyHigh" [ref=e429]
+            - paragraph [ref=e430]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+            - generic [ref=e431]:
+              - link "Facebook" [ref=e432] [cursor=pointer]:
+                - /url: https://www.facebook.com/groups/36791238561
+                - img [ref=e433]
+              - link "Instagram" [ref=e435] [cursor=pointer]:
+                - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+                - img [ref=e436]
+          - generic [ref=e438]:
+            - heading "Quick Links" [level=4] [ref=e439]
+            - list [ref=e440]:
+              - listitem [ref=e441]:
+                - link "Flying Sites" [ref=e442] [cursor=pointer]:
+                  - /url: /sites
+              - listitem [ref=e443]:
+                - link "Safety & Rules" [ref=e444] [cursor=pointer]:
+                  - /url: /safety
+              - listitem [ref=e445]:
+                - link "Join the Club" [ref=e446] [cursor=pointer]:
+                  - /url: /join
+              - listitem [ref=e447]:
+                - link "Admin" [ref=e448] [cursor=pointer]:
+                  - /url: /admin
+          - generic [ref=e449]:
+            - heading "Emergency" [level=4] [ref=e450]
+            - list [ref=e451]:
+              - listitem [ref=e452]: Dial 000 for Emergencies
+              - listitem [ref=e453]:
+                - link "Contact Safety Officers" [ref=e454] [cursor=pointer]:
+                  - /url: /safety#safety-officer-directory
+        - paragraph [ref=e456]: © 2026 SkyHigh. All rights reserved.
+    - region "Notifications alt+T"
+  - generic [ref=e459]:
+    - generic [ref=e460]:
+      - generic [ref=e461]:
+        - img [ref=e462]
+        - generic [ref=e465]: SkyHigh Smart Assistant
+      - button "Close" [ref=e466]:
+        - img [ref=e467]
+    - generic [ref=e470]:
+      - generic [ref=e486]:
+        - generic [ref=e487]: Next Sunday I'm PG2 and planning to fly Flinders Monument with my CFI — is that OK?
+        - img [ref=e488]
+      - generic [ref=e491]:
+        - img [ref=e492]
+        - generic [ref=e495]:
+          - generic [ref=e496]: As a PG2 pilot, you require supervision at every site.
+          - generic [ref=e497]:
+            - text: Regarding
+            - link "Flinders Monument" [ref=e498] [cursor=pointer]:
+              - /url: /sites/flinders-monument
+            - text: ", a PG3 pilot cannot fly this site under any level of supervision. The site requires a minimum of PG4 with SO/SSO supervision, or PG5 to fly unsupervised. Therefore, as a PG2 pilot, you cannot fly at Flinders Monument even with CFI supervision."
+          - strong [ref=e500]: General information only. Consult SAFA/CASA docs and Site Rules.
+      - generic [ref=e501]:
+        - img [ref=e502]
+        - generic [ref=e506]:
+          - text: Enjoying our Smart Search? Please consider
+          - link "joining SkyHigh" [ref=e507] [cursor=pointer]:
+            - /url: /new-pilots
+          - text: — we'd love to have you!
+    - generic [ref=e472]:
+      - textbox "e.g. Can I fly Monument with a PG2?" [ref=e473]
+      - button "Start voice input" [ref=e474]:
+        - img [ref=e475]
+      - button [disabled] [ref=e478]:
+        - img [ref=e479]

@@ -1,0 +1,446 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: 🪂
+      - generic [ref=e5]: Confidential
+    - generic [ref=e6]:
+      - heading "Credential Recovery & Service Access Document" [level=2] [ref=e7]:
+        - text: Credential Recovery &
+        - text: Service Access Document
+      - paragraph [ref=e8]: All hosting platforms, login accounts, and recovery procedures
+    - heading "SkyHigh Paragliding Club" [level=1] [ref=e9]
+    - paragraph [ref=e10]: skyhighparagliding.org.au
+    - generic [ref=e11]:
+      - text: "Prepared: May 2026"
+      - text: "Store in: Google Drive → 01_Governance"
+      - text: "Review after: Every AGM / committee changeover"
+      - text: "Access: Committee members only"
+  - generic [ref=e12]:
+    - heading "How to Use This Document" [level=2] [ref=e14]
+    - paragraph [ref=e15]: This document lists every digital service used to operate the SkyHigh website and club administration. For each service it records the login URL, the account used, what it controls, who should have access, and step-by-step recovery procedures if access is lost.
+    - generic [ref=e16]:
+      - strong [ref=e17]: ⚠ Actual passwords are NOT stored here.
+      - text: All passwords and 2FA backup codes are in the club's Bitwarden password manager. If you see
+      - emphasis [ref=e18]: "\"[Bitwarden → \"Entry name\"]\""
+      - text: ", look it up there. The password manager entry name is shown as a guide."
+    - generic [ref=e19]:
+      - strong [ref=e20]: "🔑 Master web account:"
+      - text: All infrastructure services below use
+      - strong [ref=e21]: web@skyhighparagliding.org.au
+      - text: as the primary login. Recovering this Google Workspace account unlocks access to most services. See Section 2.7 (Google Workspace) for recovery details.
+    - generic [ref=e22]:
+      - heading "Contents" [level=3] [ref=e23]
+      - list [ref=e24]:
+        - listitem [ref=e25]: Railway — Website Hosting & Database (primary infrastructure)
+        - listitem [ref=e26]: GitHub — Source Code Repository
+        - listitem [ref=e27]: Cloudflare R2 — Image Storage
+        - listitem [ref=e28]: Google Cloud DNS — Domain Management
+        - listitem [ref=e29]: Resend — Email Delivery
+        - listitem [ref=e30]: TidyHQ — Membership Management
+        - listitem [ref=e31]: Google Workspace — Domain & Email Admin
+        - listitem [ref=e32]: Bitwarden — Password Manager
+        - listitem [ref=e33]: Railway Environment Variables — Full reference list
+        - listitem [ref=e34]: Emergency Contacts & Backup URL
+        - listitem [ref=e35]: Document Maintenance Checklist
+    - generic [ref=e36]:
+      - generic [ref=e37]: 1–8
+      - heading "Service Accounts" [level=2] [ref=e38]
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - heading "1 Railway — Website Hosting & Database" [level=3] [ref=e41]
+        - generic [ref=e42]: https://railway.com
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]: Login email
+          - generic [ref=e46]: web@skyhighparagliding.org.au
+          - generic [ref=e47]: Password
+          - generic [ref=e48]: "[Bitwarden → \"Railway\"]"
+          - generic [ref=e49]: Organisation
+          - generic [ref=e50]: SkyHighParagliding
+          - generic [ref=e51]: Project name
+          - generic [ref=e52]: skyhigh
+          - generic [ref=e53]: What it runs
+          - generic [ref=e54]: Node.js web server + PostgreSQL database. Deploys automatically on every GitHub push.
+          - generic [ref=e55]: Who needs access
+          - generic [ref=e56]: Webmaster (Admin), President (view only)
+          - generic [ref=e57]: Backup site URL
+          - generic [ref=e58]: https://skyhigh-production.up.railway.app
+        - paragraph [ref=e59]: Recovery Procedures
+        - list [ref=e60]:
+          - listitem [ref=e61]: "→ Forgot password: click \"Forgot password\" at railway.com/login with the web@ email."
+          - listitem [ref=e62]: "→ Lost 2FA device: use Railway's support (railway.com/help) with identity verification to disable 2FA."
+          - listitem [ref=e63]: "→ Account compromised: contact Railway support to freeze the account and transfer project ownership."
+          - listitem [ref=e64]: "→ Website down (not a code issue): check Railway dashboard → skyhigh → Deployments → View Logs. Common fixes: redeploy from the dashboard, or check that all environment variables are still set."
+          - listitem [ref=e65]: "→ Database inaccessible: Railway → skyhigh → PostgreSQL plugin → Connect tab shows the connection string. Restore from a Railway backup if data is lost."
+          - listitem [ref=e66]:
+            - text: →
+            - strong [ref=e67]: Do NOT transfer organisation ownership
+            - text: without involving the committee — the web@ account must remain owner.
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - heading "2 GitHub — Source Code" [level=3] [ref=e70]
+        - generic [ref=e71]: https://github.com/SkyHighParagliding
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: Login email
+          - generic [ref=e75]: web@skyhighparagliding.org.au
+          - generic [ref=e76]: Password
+          - generic [ref=e77]: "[Bitwarden → \"GitHub\"]"
+          - generic [ref=e78]: Organisation
+          - generic [ref=e79]: SkyHighParagliding (github.com/SkyHighParagliding)
+          - generic [ref=e80]: Repository
+          - generic [ref=e81]: SkyHigh
+          - generic [ref=e82]: Purpose
+          - generic [ref=e83]:
+            - text: Every code change is pushed here. Railway auto-deploys on every push to
+            - emphasis [ref=e84]: main
+            - text: branch.
+          - generic [ref=e85]: Who needs access
+          - generic [ref=e86]: "Webmaster / developer (Maintainer role). Others: Read only."
+        - paragraph [ref=e87]: Recovery Procedures
+        - list [ref=e88]:
+          - listitem [ref=e89]: "→ Forgot password: \"Forgot password\" at github.com with the web@ email."
+          - listitem [ref=e90]: "→ Lost 2FA: use GitHub's account recovery page (github.com/account_recovery). Backup codes are in Bitwarden → \"GitHub 2FA backup codes\"."
+          - listitem [ref=e91]: "→ Organisation access: any organisation owner can add/remove members at github.com/orgs/SkyHighParagliding/people."
+          - listitem [ref=e92]: "→ Accidental deletion of code: GitHub retains all history — restore via git history or contact GitHub support within 90 days of deletion."
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - heading "3 Cloudflare R2 — Image Storage" [level=3] [ref=e95]
+        - generic [ref=e96]: https://dash.cloudflare.com
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]: Login email
+          - generic [ref=e100]: web@skyhighparagliding.org.au
+          - generic [ref=e101]: Password
+          - generic [ref=e102]: "[Bitwarden → \"Cloudflare\"]"
+          - generic [ref=e103]: Bucket name
+          - generic [ref=e104]: skyhigh-media
+          - generic [ref=e105]: Public image URL
+          - generic [ref=e106]: https://pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev
+          - generic [ref=e107]: Purpose
+          - generic [ref=e108]: "Stores all website images: site photos, member photos, news images. Images are served directly from the public R2 URL."
+          - generic [ref=e109]: Who needs access
+          - generic [ref=e110]: Webmaster only
+        - paragraph [ref=e111]: Recovery Procedures
+        - list [ref=e112]:
+          - listitem [ref=e113]: "→ Forgot password: \"Forgot password\" at dash.cloudflare.com."
+          - listitem [ref=e114]: "→ Locked out entirely: Cloudflare support at support.cloudflare.com — identity verification required."
+          - listitem [ref=e115]:
+            - text: "→ Images stop loading on site: check R2 bucket CORS settings in Cloudflare → R2 → skyhigh-media → Settings → CORS. Ensure"
+            - emphasis [ref=e116]: skyhighparagliding.org.au
+            - text: is an allowed origin.
+          - listitem [ref=e117]:
+            - text: "→ API key (used by the website) compromised: generate a new R2 API token in Cloudflare → R2 → Manage R2 API Tokens. Update"
+            - strong [ref=e118]: R2_ACCESS_KEY_ID
+            - text: and
+            - strong [ref=e119]: R2_SECRET_ACCESS_KEY
+            - text: in Railway environment variables, then redeploy. Public image URLs are unaffected.
+          - listitem [ref=e120]: "→ Note: even if Cloudflare account access is lost temporarily, existing public image URLs remain accessible — images do not disappear."
+    - generic [ref=e121]:
+      - generic [ref=e122]:
+        - heading "4 Google Cloud DNS — Domain Management" [level=3] [ref=e123]
+        - generic [ref=e124]: https://console.cloud.google.com
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e127]: Login email
+          - generic [ref=e128]: web@skyhighparagliding.org.au
+          - generic [ref=e129]: Password
+          - generic [ref=e130]: Uses Google Workspace SSO — recover the web@ account to restore access
+          - generic [ref=e131]: Project name
+          - generic [ref=e132]: Skyhigh DNS Service
+          - generic [ref=e133]: Domain
+          - generic [ref=e134]: skyhighparagliding.org.au
+          - generic [ref=e135]: Key DNS record
+          - generic [ref=e136]:
+            - code [ref=e137]: www
+            - text: CNAME → Railway production URL
+          - generic [ref=e138]: Who needs access
+          - generic [ref=e139]:
+            - strong [ref=e140]: Webmaster only.
+            - text: Incorrect DNS changes can take the site offline for hours.
+        - generic [ref=e141]:
+          - strong [ref=e142]: ⚠ High risk.
+          - text: Only the Webmaster should change DNS records. If the site goes offline due to DNS, the DNS TTL is 300 seconds — corrections propagate within 5 minutes of fixing the record.
+        - paragraph [ref=e143]: Recovery Procedures
+        - list [ref=e144]:
+          - listitem [ref=e145]: → Access is via Google Workspace SSO — recover the web@skyhighparagliding.org.au Google account first (see Section 7).
+          - listitem [ref=e146]:
+            - text: → If the
+            - emphasis [ref=e147]: www
+            - text: "record is misconfigured and the site is offline: log into Google Cloud Console → Skyhigh DNS Service → Cloud DNS → skyhighparagliding.org.au → edit the"
+            - emphasis [ref=e148]: www
+            - text: CNAME to point to Railway's URL.
+          - listitem [ref=e149]:
+            - text: "→ While DNS is being fixed: redirect members to the Railway backup URL:"
+            - strong [ref=e150]: https://skyhigh-production.up.railway.app
+          - listitem [ref=e151]: "→ Domain registrar: the domain skyhighparagliding.org.au is registered separately from DNS — confirm registrar details are in Bitwarden."
+    - generic [ref=e152]:
+      - generic [ref=e153]:
+        - heading "5 Resend — Email Delivery" [level=3] [ref=e154]
+        - generic [ref=e155]: https://resend.com
+      - generic [ref=e156]:
+        - generic [ref=e157]:
+          - generic [ref=e158]: Login email
+          - generic [ref=e159]: web@skyhighparagliding.org.au
+          - generic [ref=e160]: Password
+          - generic [ref=e161]: "[Bitwarden → \"Resend\"]"
+          - generic [ref=e162]: Verified domain
+          - generic [ref=e163]: skyhighparagliding.org.au
+          - generic [ref=e164]: Purpose
+          - generic [ref=e165]: "Sends all automated emails from the website: password resets, member notifications. The \"from\" address is noreply@skyhighparagliding.org.au."
+          - generic [ref=e166]: Who needs access
+          - generic [ref=e167]: Webmaster only
+        - paragraph [ref=e168]: Recovery Procedures
+        - list [ref=e169]:
+          - listitem [ref=e170]: "→ Forgot password: \"Forgot password\" at resend.com with the web@ email."
+          - listitem [ref=e171]: "→ Emails stop sending: check Resend dashboard → Domains → skyhighparagliding.org.au is showing \"Verified\". If not, re-verify by confirming the DNS TXT records are still in Google Cloud DNS."
+          - listitem [ref=e172]:
+            - text: "→ API key (RESEND_API_KEY) compromised: generate a new key at Resend → API Keys. Update the"
+            - strong [ref=e173]: RESEND_API_KEY
+            - text: environment variable in Railway, then redeploy. Old key stops working immediately.
+          - listitem [ref=e174]: "→ Member reports not receiving emails: first check Resend dashboard → Logs to see if the email was sent and whether it bounced. A bounced address can be allowlisted in Resend → Suppressions."
+    - generic [ref=e175]:
+      - generic [ref=e176]:
+        - heading "6 TidyHQ — Membership Management" [level=3] [ref=e177]
+        - generic [ref=e178]: https://skyhigh.tidyhq.com
+      - generic [ref=e179]:
+        - generic [ref=e180]:
+          - generic [ref=e181]: Admin URL
+          - generic [ref=e182]: https://skyhigh.tidyhq.com/admin
+          - generic [ref=e183]: Club ID
+          - generic [ref=e184]: skyhigh
+          - generic [ref=e185]: Login
+          - generic [ref=e186]: Each committee member has their own personal TidyHQ account. No shared login.
+          - generic [ref=e187]: Org Owner
+          - generic [ref=e188]: Secretary — see Bitwarden → "TidyHQ Owner"
+          - generic [ref=e189]: Purpose
+          - generic [ref=e190]: Membership database, renewals, payments, event registrations. The website automatically syncs member roles, committee positions, and event data from TidyHQ via API.
+          - generic [ref=e191]: Who needs access
+          - generic [ref=e192]: President, Secretary, Membership Officer, Treasurer (each own account)
+        - generic [ref=e193]:
+          - strong [ref=e194]: ⚠ Do NOT remove the API user account.
+          - text: It powers the website's SAFA membership check and committee sync. Check that the account named "API" or similar is never deleted from TidyHQ admins.
+        - paragraph [ref=e195]: Recovery Procedures
+        - list [ref=e196]:
+          - listitem [ref=e197]: "→ Individual locked out: use \"Forgot password\" on the TidyHQ login page with their personal email."
+          - listitem [ref=e198]: "→ Transfer Organisational Owner (after AGM — Secretary changeover): TidyHQ Admin → Admins and Roles → transfer Owner to incoming Secretary. Remove outgoing Secretary's admin access."
+          - listitem [ref=e199]:
+            - text: "→ API token (TIDYHQ_ACCESS_TOKEN) compromised or expired: regenerate in TidyHQ Admin → API, update the"
+            - strong [ref=e200]: TIDYHQ_ACCESS_TOKEN
+            - text: environment variable in Railway, redeploy. Website committee display and membership sync will resume.
+          - listitem [ref=e201]: "→ Committee positions not updating on website: check that the person is in both the correct position group (e.g. \"President\") AND the \"Skyhigh Committee\" group in TidyHQ → Groups."
+    - generic [ref=e202]:
+      - generic [ref=e203]:
+        - heading "7 Google Workspace — Domain & Email Admin" [level=3] [ref=e204]
+        - generic [ref=e205]: https://admin.google.com
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e208]: Admin login
+          - generic [ref=e209]: web@skyhighparagliding.org.au
+          - generic [ref=e210]: Password
+          - generic [ref=e211]: "[Bitwarden → \"Google Workspace Admin\"]"
+          - generic [ref=e212]: Purpose
+          - generic [ref=e213]: Manages all @skyhighparagliding.org.au email accounts (including web@). Controls Google Drive shared folders. This is the master credential that unlocks Google Cloud DNS and other Google services.
+          - generic [ref=e214]: Backup admin
+          - generic [ref=e215]:
+            - strong [ref=e216]: At least two people must always have Workspace admin access.
+            - text: Typically the President and Secretary.
+          - generic [ref=e217]: Who needs access
+          - generic [ref=e218]: President (super admin), Secretary (admin)
+        - paragraph [ref=e219]: Recovery Procedures
+        - list [ref=e220]:
+          - listitem [ref=e221]: "→ Individual account locked out: any Workspace admin can reset passwords at admin.google.com → Users → select user → Reset password."
+          - listitem [ref=e222]: "→ Only one admin and they are locked out: Google provides account recovery via domain DNS verification at accounts.google.com/signin/recovery — this requires access to Google Cloud DNS or the domain registrar."
+          - listitem [ref=e223]: "→ Completely locked out (worst case): contact Google Workspace support with proof of domain ownership. Process takes 24–72 hours."
+          - listitem [ref=e224]: "→ Preventive: ensure 2FA backup codes for the web@ account are in Bitwarden, and that at least two admins are active at all times. Review at every AGM."
+    - generic [ref=e225]:
+      - generic [ref=e226]:
+        - heading "8 Bitwarden — Password Manager" [level=3] [ref=e227]
+        - generic [ref=e228]: https://vault.bitwarden.com
+      - generic [ref=e229]:
+        - generic [ref=e230]:
+          - generic [ref=e231]: Purpose
+          - generic [ref=e232]: Stores all passwords, API keys, and 2FA backup codes for every service above. This is the master key to everything.
+          - generic [ref=e233]: Access model
+          - generic [ref=e234]: Each authorised committee member has their own Bitwarden personal account, invited into the club organisation vault.
+          - generic [ref=e235]: Who needs access
+          - generic [ref=e236]: President, Secretary, Webmaster, Treasurer (for their relevant sections)
+        - generic [ref=e237]:
+          - strong [ref=e238]: ⚠ Critical.
+          - text: If you forget your Bitwarden master password, Bitwarden cannot reset it — there is no back door. Your personal vault is encrypted with your master password only.
+        - paragraph [ref=e239]: Recovery Procedures
+        - list [ref=e240]:
+          - listitem [ref=e241]:
+            - text: "→ Forgot master password: if you set up an"
+            - strong [ref=e242]: Emergency Access
+            - text: contact in Bitwarden, that person can request access after a configurable wait period (e.g. 72 hours). Set this up for key committee members.
+          - listitem [ref=e243]: "→ Member steps down: remove them from the Bitwarden organisation in vault.bitwarden.com → Organisation → Members. They lose access to shared vault immediately. Rotate any passwords they had sole access to."
+          - listitem [ref=e244]: "→ New member onboarding: invite them at Organisation → Members → Invite Member. They create a personal Bitwarden account and accept the invite."
+          - listitem [ref=e245]: "→ Organisation owner lost: Bitwarden support can assist with organisation ownership transfer via identity verification."
+          - listitem [ref=e246]: "→ Regular practice: each committee member should have Bitwarden installed on their personal phone (biometric unlock) so they are never solely dependent on their master password in an emergency."
+    - generic [ref=e247]:
+      - generic [ref=e248]: "9"
+      - heading "Railway Environment Variables — Full Reference" [level=2] [ref=e249]
+    - paragraph [ref=e250]:
+      - text: These variables must be set in Railway → skyhigh project → Variables. If the Railway project is ever rebuilt from scratch, every variable below must be re-entered. Current values are stored in
+      - strong [ref=e251]: Bitwarden → "Railway Environment Variables"
+      - text: .
+    - table [ref=e252]:
+      - rowgroup [ref=e253]:
+        - row "Variable What it is Where to find / regenerate the value" [ref=e254]:
+          - columnheader "Variable" [ref=e255]
+          - columnheader "What it is" [ref=e256]
+          - columnheader "Where to find / regenerate the value" [ref=e257]
+      - rowgroup [ref=e258]:
+        - row "DATABASE_URL PostgreSQL connection string Auto-set by Railway PostgreSQL plugin. Visible in Railway → PostgreSQL → Connect tab." [ref=e259]:
+          - cell "DATABASE_URL" [ref=e260]
+          - cell "PostgreSQL connection string" [ref=e261]
+          - cell "Auto-set by Railway PostgreSQL plugin. Visible in Railway → PostgreSQL → Connect tab." [ref=e262]
+        - row "SESSION_SECRET Random string for session signing Bitwarden. Can regenerate (use a random 64-char string) — all active sessions will be invalidated (users log out)." [ref=e263]:
+          - cell "SESSION_SECRET" [ref=e264]
+          - cell "Random string for session signing" [ref=e265]
+          - cell "Bitwarden. Can regenerate (use a random 64-char string) — all active sessions will be invalidated (users log out)." [ref=e266]
+        - row "R2_ACCOUNT_ID Cloudflare account identifier Cloudflare dashboard → top-right account ID. Also in Bitwarden." [ref=e267]:
+          - cell "R2_ACCOUNT_ID" [ref=e268]
+          - cell "Cloudflare account identifier" [ref=e269]
+          - cell "Cloudflare dashboard → top-right account ID. Also in Bitwarden." [ref=e270]
+        - row "R2_ACCESS_KEY_ID Cloudflare R2 API key ID Cloudflare → R2 → Manage R2 API Tokens. Regenerate if compromised; update Railway and redeploy." [ref=e271]:
+          - cell "R2_ACCESS_KEY_ID" [ref=e272]
+          - cell "Cloudflare R2 API key ID" [ref=e273]
+          - cell "Cloudflare → R2 → Manage R2 API Tokens. Regenerate if compromised; update Railway and redeploy." [ref=e274]
+        - row "R2_SECRET_ACCESS_KEY Cloudflare R2 API secret Same as above. Only visible once on creation — store in Bitwarden immediately." [ref=e275]:
+          - cell "R2_SECRET_ACCESS_KEY" [ref=e276]
+          - cell "Cloudflare R2 API secret" [ref=e277]
+          - cell "Same as above. Only visible once on creation — store in Bitwarden immediately." [ref=e278]
+        - 'row "R2_BUCKET_NAME Storage bucket identifier Fixed value: skyhigh-media" [ref=e279]':
+          - cell "R2_BUCKET_NAME" [ref=e280]
+          - cell "Storage bucket identifier" [ref=e281]
+          - 'cell "Fixed value: skyhigh-media" [ref=e282]':
+            - text: "Fixed value:"
+            - code [ref=e283]: skyhigh-media
+        - 'row "R2_PUBLIC_URL Base URL for public images Fixed value from Cloudflare R2 bucket settings. Current: pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev" [ref=e284]':
+          - cell "R2_PUBLIC_URL" [ref=e285]
+          - cell "Base URL for public images" [ref=e286]
+          - 'cell "Fixed value from Cloudflare R2 bucket settings. Current: pub-971a295c84fe4582b888c39e86cdbd8c.r2.dev" [ref=e287]'
+        - row "RESEND_API_KEY Resend email service key Resend dashboard → API Keys. Regenerate if compromised; update Railway and redeploy." [ref=e288]:
+          - cell "RESEND_API_KEY" [ref=e289]
+          - cell "Resend email service key" [ref=e290]
+          - cell "Resend dashboard → API Keys. Regenerate if compromised; update Railway and redeploy." [ref=e291]
+        - row "TIDYHQ_ACCESS_TOKEN TidyHQ API token TidyHQ Admin → API. Regenerate if compromised. Update Railway; membership sync resumes on next scrape cycle." [ref=e292]:
+          - cell "TIDYHQ_ACCESS_TOKEN" [ref=e293]
+          - cell "TidyHQ API token" [ref=e294]
+          - cell "TidyHQ Admin → API. Regenerate if compromised. Update Railway; membership sync resumes on next scrape cycle." [ref=e295]
+        - 'row "TIDYHQ_CLUB_ID TidyHQ club identifier Fixed value: skyhigh" [ref=e296]':
+          - cell "TIDYHQ_CLUB_ID" [ref=e297]
+          - cell "TidyHQ club identifier" [ref=e298]
+          - 'cell "Fixed value: skyhigh" [ref=e299]':
+            - text: "Fixed value:"
+            - code [ref=e300]: skyhigh
+        - row "GEMINI_API_KEY Google AI (Gemini) key Google AI Studio (aistudio.google.com). Used for site guide scraping and image AI enhancement. Regenerate in Google Cloud Console if compromised." [ref=e301]:
+          - cell "GEMINI_API_KEY" [ref=e302]
+          - cell "Google AI (Gemini) key" [ref=e303]
+          - cell "Google AI Studio (aistudio.google.com). Used for site guide scraping and image AI enhancement. Regenerate in Google Cloud Console if compromised." [ref=e304]
+        - row "DEFAULT_ADMINS Bootstrap admin email(s) Email address of the Webmaster. On fresh deploy, this account gets auto-elevated to admin. Comma-separated if multiple. Update when Webmaster changes." [ref=e305]:
+          - cell "DEFAULT_ADMINS" [ref=e306]
+          - cell "Bootstrap admin email(s)" [ref=e307]
+          - cell "Email address of the Webmaster. On fresh deploy, this account gets auto-elevated to admin. Comma-separated if multiple. Update when Webmaster changes." [ref=e308]
+        - 'row "NODE_ENV Runtime environment flag Fixed value: production" [ref=e309]':
+          - cell "NODE_ENV" [ref=e310]
+          - cell "Runtime environment flag" [ref=e311]
+          - 'cell "Fixed value: production" [ref=e312]':
+            - text: "Fixed value:"
+            - code [ref=e313]: production
+    - generic [ref=e314]:
+      - generic [ref=e315]: "10"
+      - heading "Emergency Contacts & Backup URL" [level=2] [ref=e316]
+    - generic [ref=e317]:
+      - strong [ref=e318]: 🚨 Site offline?
+      - text: "If www.skyhighparagliding.org.au is unreachable, members can access the site directly at the Railway URL:"
+      - strong [ref=e319]: https://skyhigh-production.up.railway.app
+      - text: — this bypasses DNS entirely.
+    - generic [ref=e320]:
+      - generic [ref=e321]:
+        - heading "Webmaster" [level=4] [ref=e322]
+        - paragraph [ref=e323]:
+          - text: "Current webmaster:"
+          - emphasis [ref=e324]: "[name]"
+          - emphasis [ref=e325]: "[personal email]"
+          - emphasis [ref=e326]: "[phone]"
+      - generic [ref=e327]:
+        - heading "Railway Support" [level=4] [ref=e328]
+        - paragraph [ref=e329]:
+          - text: railway.com/help
+          - text: "For: server outages, deployment failures, database issues"
+      - generic [ref=e330]:
+        - heading "Cloudflare Support" [level=4] [ref=e331]
+        - paragraph [ref=e332]:
+          - text: support.cloudflare.com
+          - text: "For: image storage issues, CORS problems, DNS propagation"
+      - generic [ref=e333]:
+        - heading "Google Workspace Support" [level=4] [ref=e334]
+        - paragraph [ref=e335]:
+          - text: support.google.com/a
+          - text: "For: email account lockouts, admin recovery"
+      - generic [ref=e336]:
+        - heading "GitHub Support" [level=4] [ref=e337]
+        - paragraph [ref=e338]:
+          - text: support.github.com
+          - text: "For: repository access, 2FA recovery, org access"
+      - generic [ref=e339]:
+        - heading "Resend Support" [level=4] [ref=e340]
+        - paragraph [ref=e341]:
+          - text: resend.com/docs
+          - text: "For: email delivery failures, domain verification issues"
+    - generic [ref=e342]:
+      - generic [ref=e343]: "11"
+      - heading "Document Maintenance Checklist" [level=2] [ref=e344]
+    - paragraph [ref=e345]: "Review and update this document after every AGM and after any committee changeover. Check off each item:"
+    - table [ref=e346]:
+      - rowgroup [ref=e347]:
+        - row "Task When Done by" [ref=e348]:
+          - columnheader "Task" [ref=e349]
+          - columnheader "When" [ref=e350]
+          - columnheader "Done by" [ref=e351]
+      - rowgroup [ref=e352]:
+        - row "Update Webmaster contact details (Section 10) When Webmaster changes Secretary" [ref=e353]:
+          - cell "Update Webmaster contact details (Section 10)" [ref=e354]
+          - cell "When Webmaster changes" [ref=e355]
+          - cell "Secretary" [ref=e356]
+        - row "Rotate any passwords held by the outgoing committee member When officer steps down Incoming officer + Webmaster" [ref=e357]:
+          - cell "Rotate any passwords held by the outgoing committee member" [ref=e358]
+          - cell "When officer steps down" [ref=e359]
+          - cell "Incoming officer + Webmaster" [ref=e360]
+        - row "Remove outgoing officer from Bitwarden organisation After changeover Bitwarden admin" [ref=e361]:
+          - cell "Remove outgoing officer from Bitwarden organisation" [ref=e362]
+          - cell "After changeover" [ref=e363]
+          - cell "Bitwarden admin" [ref=e364]
+        - row "Update DEFAULT_ADMINS in Railway if Webmaster changes When Webmaster changes Webmaster" [ref=e365]:
+          - cell "Update DEFAULT_ADMINS in Railway if Webmaster changes" [ref=e366]
+          - cell "When Webmaster changes" [ref=e367]
+          - cell "Webmaster" [ref=e368]
+        - row "Verify web@skyhighparagliding.org.au has at least 2 admins active After every AGM Secretary" [ref=e369]:
+          - cell "Verify web@skyhighparagliding.org.au has at least 2 admins active" [ref=e370]
+          - cell "After every AGM" [ref=e371]
+          - cell "Secretary" [ref=e372]
+        - row "Confirm domain skyhighparagliding.org.au renewal date is in calendar Annually Webmaster" [ref=e373]:
+          - cell "Confirm domain skyhighparagliding.org.au renewal date is in calendar" [ref=e374]
+          - cell "Annually" [ref=e375]
+          - cell "Webmaster" [ref=e376]
+        - row "Confirm Railway / TidyHQ / Resend subscriptions are paid and up to date Annually (pre-season) Treasurer" [ref=e377]:
+          - cell "Confirm Railway / TidyHQ / Resend subscriptions are paid and up to date" [ref=e378]
+          - cell "Annually (pre-season)" [ref=e379]
+          - cell "Treasurer" [ref=e380]
+        - row "Test Bitwarden Emergency Access is configured for key accounts Annually President" [ref=e381]:
+          - cell "Test Bitwarden Emergency Access is configured for key accounts" [ref=e382]
+          - cell "Annually" [ref=e383]
+          - cell "President" [ref=e384]
+        - row "Save updated version of this document to Google Drive → 01_Governance After any change Secretary" [ref=e385]:
+          - cell "Save updated version of this document to Google Drive → 01_Governance" [ref=e386]
+          - cell "After any change" [ref=e387]
+          - cell "Secretary" [ref=e388]
+    - generic [ref=e389]:
+      - generic [ref=e390]:
+        - strong [ref=e391]: SkyHigh Paragliding Club
+        - text: — Credential Recovery & Service Access Document
+        - text: "Prepared May 2026 · Google Drive: 01_Governance · Review after every AGM"
+      - generic [ref=e392]: Confidential

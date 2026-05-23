@@ -1,0 +1,201 @@
+- generic [ref=e2]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - button "Guide" [ref=e9] [cursor=pointer]:
+          - generic [ref=e12]:
+            - img
+        - generic [ref=e13]:
+          - link "YouTube Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e19]:
+              - img
+          - generic [ref=e20]: AU
+        - button "Skip navigation" [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]: Skip navigation
+      - generic [ref=e29]:
+        - search [ref=e30]:
+          - generic [ref=e31]:
+            - combobox "Search" [expanded] [ref=e34]
+            - button "Search" [ref=e35] [cursor=pointer]:
+              - generic [ref=e38]:
+                - img
+        - generic [ref=e40]:
+          - button "Search with your voice" [ref=e42] [cursor=pointer]:
+            - generic [ref=e46]:
+              - img
+          - tooltip "tooltip"
+      - generic [ref=e51]:
+        - button "Settings" [ref=e56] [cursor=pointer]:
+          - generic [ref=e59]:
+            - img
+        - link "Sign in" [ref=e62] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252Fchannel%252FUCFrMylKzNYq75VZmOG96uFQ&hl=en&ec=65620
+          - generic [ref=e66]:
+            - img
+          - generic [ref=e67]: Sign in
+  - navigation [ref=e71]:
+    - generic [ref=e72]:
+      - link "Home" [ref=e74] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e77]:
+          - img
+        - generic [ref=e78]: Home
+      - link "Shorts" [ref=e80] [cursor=pointer]:
+        - /url: /shorts/
+        - generic [ref=e83]:
+          - img
+        - generic [ref=e84]: Shorts
+      - link "Subscriptions" [ref=e86] [cursor=pointer]:
+        - /url: /feed/subscriptions
+        - generic [ref=e89]:
+          - img
+        - generic [ref=e90]: Subscriptions
+      - link "You" [ref=e92] [cursor=pointer]:
+        - /url: /feed/you
+        - generic [ref=e95]:
+          - img
+        - generic [ref=e96]: You
+  - generic [ref=e97]:
+    - main [ref=e98]:
+      - generic [ref=e105]:
+        - generic [ref=e118]:
+          - heading "iandayble" [level=1] [ref=e120]
+          - generic [ref=e121]:
+            - group [ref=e122]:
+              - generic [ref=e123]: "@iandayble"
+            - generic [ref=e124]: •
+            - group [ref=e125]:
+              - generic "505 subscribers" [ref=e126]
+              - generic [ref=e127]: •
+              - generic [ref=e128]: 1.4K videos
+          - generic [ref=e130] [cursor=pointer]:
+            - generic [ref=e131]: Click on the YouTube gear setting for quality
+            - button "Description. Click on the YouTube gear setting for quality...tap for more." [ref=e132]:
+              - generic [ref=e133]: ...more
+          - button "Subscribe" [ref=e137] [cursor=pointer]:
+            - generic [ref=e138]: Subscribe
+        - tablist [ref=e145]:
+          - tablist [ref=e149]:
+            - tab "Home" [selected] [ref=e150] [cursor=pointer]:
+              - generic [ref=e151]: Home
+            - tab "Videos" [ref=e152] [cursor=pointer]:
+              - generic [ref=e153]: Videos
+            - tab "Playlists" [ref=e154] [cursor=pointer]:
+              - generic [ref=e155]: Playlists
+            - button "Search" [ref=e159] [cursor=pointer]:
+              - generic [ref=e162]:
+                - img
+      - generic [ref=e173]:
+        - heading "Videos" [level=2] [ref=e176]:
+          - link "Videos" [ref=e179] [cursor=pointer]:
+            - /url: /@iandayble/videos?view=0&sort=dd&shelf_id=1
+            - generic [ref=e180]: Videos
+        - generic [ref=e182]:
+          - generic [ref=e185]:
+            - generic [ref=e187] [cursor=pointer]:
+              - link [ref=e188]:
+                - /url: /watch?v=Bz4ACACVKcE
+                - generic [ref=e195]: 2:47
+              - generic [ref=e197]:
+                - generic [ref=e198]:
+                  - heading "260509 Paragliding Red Bluff Sandringham Victoria Australia 2 minutes, 47 seconds" [level=3] [ref=e199]:
+                    - link "260509 Paragliding Red Bluff Sandringham Victoria Australia 2 minutes, 47 seconds" [ref=e200]:
+                      - /url: /watch?v=Bz4ACACVKcE
+                      - text: 260509 Paragliding Red Bluff Sandringham Victoria Australia
+                  - group [ref=e203]:
+                    - generic [ref=e204]: 43 views
+                    - generic [ref=e205]: •
+                    - generic [ref=e206]: 9 days ago
+                - button "More actions" [ref=e209]:
+                  - generic [ref=e213]:
+                    - img
+            - generic [ref=e218] [cursor=pointer]:
+              - link [ref=e219]:
+                - /url: /watch?v=7mjSLhAUhhk
+                - generic [ref=e226]: 2:59
+              - generic [ref=e228]:
+                - generic [ref=e229]:
+                  - heading "260505 Paragliding Red Bluff Sandringham Victoria Australia 2 minutes, 59 seconds" [level=3] [ref=e230]:
+                    - link "260505 Paragliding Red Bluff Sandringham Victoria Australia 2 minutes, 59 seconds" [ref=e231]:
+                      - /url: /watch?v=7mjSLhAUhhk
+                      - text: 260505 Paragliding Red Bluff Sandringham Victoria Australia
+                  - group [ref=e234]:
+                    - generic [ref=e235]: 37 views
+                    - generic [ref=e236]: •
+                    - generic [ref=e237]: 13 days ago
+                - button "More actions" [ref=e240]:
+                  - generic [ref=e244]:
+                    - img
+            - generic [ref=e249] [cursor=pointer]:
+              - link [ref=e250]:
+                - /url: /watch?v=btg-wDVJ2Dg
+                - generic [ref=e257]: 3:29
+              - generic [ref=e259]:
+                - generic [ref=e260]:
+                  - heading "260427 Paragliding Red Bluff Sandringham Victoria Australia 3 minutes, 29 seconds" [level=3] [ref=e261]:
+                    - link "260427 Paragliding Red Bluff Sandringham Victoria Australia 3 minutes, 29 seconds" [ref=e262]:
+                      - /url: /watch?v=btg-wDVJ2Dg
+                      - text: 260427 Paragliding Red Bluff Sandringham Victoria Australia
+                  - group [ref=e265]:
+                    - generic [ref=e266]: 72 views
+                    - generic [ref=e267]: •
+                    - generic [ref=e268]: 3 weeks ago
+                - button "More actions" [ref=e271]:
+                  - generic [ref=e275]:
+                    - img
+            - generic [ref=e280] [cursor=pointer]:
+              - link [ref=e281]:
+                - /url: /watch?v=RZTUCoNfc_4
+                - generic [ref=e288]: 4:25
+              - generic [ref=e290]:
+                - generic [ref=e291]:
+                  - heading "260222 Paragliding Fisher St Phillip Island Victoria Australia 4 minutes, 25 seconds" [level=3] [ref=e292]:
+                    - link "260222 Paragliding Fisher St Phillip Island Victoria Australia 4 minutes, 25 seconds" [ref=e293]:
+                      - /url: /watch?v=RZTUCoNfc_4
+                      - text: 260222 Paragliding Fisher St Phillip Island Victoria Australia
+                  - group [ref=e296]:
+                    - generic [ref=e297]: 103 views
+                    - generic [ref=e298]: •
+                    - generic [ref=e299]: 3 weeks ago
+                - button "More actions" [ref=e302]:
+                  - generic [ref=e306]:
+                    - img
+            - generic [ref=e311] [cursor=pointer]:
+              - link [ref=e312]:
+                - /url: /watch?v=GcA4MbsoeD0
+                - generic [ref=e319]: 5:33
+              - generic [ref=e321]:
+                - generic [ref=e322]:
+                  - heading "260408 Paragliding Flinders Golf Course and Monument Victoria Australia 5 minutes, 33 seconds" [level=3] [ref=e323]:
+                    - link "260408 Paragliding Flinders Golf Course and Monument Victoria Australia 5 minutes, 33 seconds" [ref=e324]:
+                      - /url: /watch?v=GcA4MbsoeD0
+                      - text: 260408 Paragliding Flinders Golf Course and Monument Victoria Australia
+                  - group [ref=e327]:
+                    - generic [ref=e328]: 98 views
+                    - generic [ref=e329]: •
+                    - generic [ref=e330]: 1 month ago
+                - button "More actions" [ref=e333]:
+                  - generic [ref=e337]:
+                    - img
+            - generic [ref=e342] [cursor=pointer]:
+              - link [ref=e343]:
+                - /url: /watch?v=AzN_hVcQsew
+                - generic [ref=e350]: 2:47
+              - generic [ref=e352]:
+                - generic [ref=e353]:
+                  - heading "260402 Paragliding Flinders Golf Course Victoria Australia 2 minutes, 47 seconds" [level=3] [ref=e354]:
+                    - link "260402 Paragliding Flinders Golf Course Victoria Australia 2 minutes, 47 seconds" [ref=e355]:
+                      - /url: /watch?v=AzN_hVcQsew
+                      - text: 260402 Paragliding Flinders Golf Course Victoria Australia
+                  - group [ref=e358]:
+                    - generic [ref=e359]: 28 views
+                    - generic [ref=e360]: •
+                    - generic [ref=e361]: 1 month ago
+                - button "More actions" [ref=e364]:
+                  - generic [ref=e368]:
+                    - img
+          - button "Next" [ref=e374] [cursor=pointer]:
+            - generic [ref=e378]:
+              - img
+    - text: •
