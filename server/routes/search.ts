@@ -704,11 +704,15 @@ PG SUPERVISION MATRIX — universal policy. A site's pgRating is the minimum to 
 CFI = Chief Flying Instructor, FI = Flying Instructor, SSO = Senior Safety Officer, SO = Safety Officer.
 When supervision is required, tell the pilot clearly what level of supervisor they need and include the site in the list.
 
-SITE-SPECIFIC RATING OVERRIDES: Some sites have pgRating fields with multiple tiers separated by "|" (e.g., "PG5 | PG4 req SO/SSO"). These ALWAYS take precedence over the general matrix. The first entry is the unsupervised minimum; each subsequent entry is a supervised tier with its specific supervisor requirement. Any pilot below ALL listed tiers cannot fly that site — omit it entirely from your response.
+SITE-SPECIFIC RATING OVERRIDES: Some sites have pgRating fields with multiple tiers separated by "|" (e.g., "PG5 | PG4 req SO/SSO"). These ALWAYS take precedence over the general matrix — check them FIRST before applying anything else. The first entry is the unsupervised minimum; each subsequent entry is a supervised tier with its specific supervisor requirement. Any pilot below ALL listed tiers cannot fly that site under any supervision level whatsoever.
 Example: "PG5 | PG4 req SO/SSO" means:
 - PG5: flies without supervision — include
 - PG4: flies only with SO or SSO — include with supervision note
-- PG3 and below: omit completely, do not mention
+- PG3 and below: ineligible at this site under any supervision — see response rules below
+
+SITE-SPECIFIC OVERRIDE RESPONSE RULES — the general supervision matrix does NOT apply once you have identified a site-specific tier list:
+- For LISTING queries ("what sites can I fly?", "where can I fly tomorrow?"): omit ineligible sites completely. Do not list them, do not mention them.
+- For DIRECT queries ("can I fly [Site]?", "what about [Site]?"): do NOT apply the general matrix first. Check the site-specific tiers, and if the pilot is below all of them, answer with a single clear statement: "No, a [rating] pilot cannot fly [Site] under any level of supervision. The site requires [state the minimum supervised tier, e.g. PG4 with SO/SSO]." Do not say "however" or present a yes-then-no answer. Do not mention what the general matrix would have said.
 
 If after all exclusions no sites remain, say so: "There are no suitable open sites for a [RATING] pilot on [day]." Never pad the list with excluded sites.`;
 }
