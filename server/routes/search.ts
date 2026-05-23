@@ -373,17 +373,26 @@ async function buildPublicContext(): Promise<CachedContext> {
             const fly = computeFlyability(spd, gust, dir, site);
             // Cannot assess flyability without site wind config — skip this day
             if (!fly) return null;
-            // Server-side: skip days with non-flyable or too-light conditions
-            if (fly.direction === 'Not Flyable' || fly.speed === 'Blown Out' || fly.speed === 'Light') return null;
-            // Server-side: skip days where gusts exceed site upper limit by more than 2kts
-            const siteRange = parseWindSpeedRange(site.windSpeed);
-            if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) return null;
-            const flyTag = fly ? ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ""}]` : "";
             // Label today/tomorrow explicitly so the AI cannot misidentify which day is which
             const dayLabel = d.date === todayDateStr ? `TODAY (${d.dayName})`
                            : d.date === tomorrowDateStr ? `TOMORROW (${d.dayName})`
                            : d.dayName;
-            return `${dayLabel} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
+            const siteRange = parseWindSpeedRange(site.windSpeed);
+            const speedBase = `${spd}kt${gust != null ? ` G${gust}` : ''} ${dir}`;
+            // Include unflyable days with [NOT FLYABLE: reason] instead of dropping them.
+            // Prevents the AI from confabulating today's FCST numbers for a future day
+            // that has no flyable conditions — it can now cite the actual forecast data.
+            if (fly.direction === 'Not Flyable') {
+              const reason = `wrong direction${site.windDirection ? `, requires ${site.windDirection}` : ''}`;
+              return `${dayLabel} ${speedBase} [NOT FLYABLE: ${reason}]`;
+            }
+            if (fly.speed === 'Blown Out') return `${dayLabel} ${speedBase} [NOT FLYABLE: wind too strong]`;
+            if (fly.speed === 'Light') return `${dayLabel} ${speedBase} [NOT FLYABLE: wind too light]`;
+            if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) {
+              return `${dayLabel} ${speedBase} [NOT FLYABLE: gusts exceed site limit]`;
+            }
+            const flyTag = ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ''}]`;
+            return `${dayLabel} ${speedBase} ${d.bestWeatherSummary || ''}${flyTag}`;
           })
           .filter(Boolean);
         if (dayStrs.length > 0) {
@@ -718,8 +727,8 @@ WEATHER & FLYABILITY — IMPORTANT:
 - Prioritise "Good/Good" (no gust warning) sites first. List "Cross" or gusty sites second with a clear caution note.
 - When listing sites with weather, lead with the flyability status, then the key numbers (wind speed, gusts, direction). Temperature and sky conditions are secondary.
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
-- You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Only days with flyable conditions appear in this data — if a day is missing for a site, the conditions are not flyable that day.
-- FUTURE DATE WITH NO FORECAST: If a pilot asks about a specific future date and that day does NOT appear in the 7-DAY EXTENDED FORECASTS for the queried site, this means the ECMWF forecast indicates conditions are not expected to be flyable on that day. Do NOT say "forecast not available" or "no forecast data in our system." Instead say the forecast suggests conditions are unlikely to be suitable on that date, and recommend the pilot check the site page closer to the date for updated conditions.
+- You also have access to 7-DAY EXTENDED FORECASTS when available. All 7 days appear for each site. Flyable days show [Dir:X Spd:Y] labels. Unflyable days are included with a [NOT FLYABLE: reason] tag showing the actual forecast wind data (e.g. "Monday 6kt NE [NOT FLYABLE: wrong direction, requires W-NW]"). When a day is marked NOT FLYABLE, cite the actual numbers from that entry — do NOT substitute numbers from another day or from the LIVE/FCST section.
+- FUTURE DATE WITH NO FORECAST: If a pilot asks about a specific future date and that date is completely absent from the 7-DAY EXTENDED FORECASTS (neither as a flyable nor as a [NOT FLYABLE] entry), the date is beyond the 7-day forecast window. Do NOT say "forecast not available." Instead say the forecast doesn't extend to that date yet, and recommend the pilot check the site page closer to the date for updated conditions.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
@@ -1574,10 +1583,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST")) {
-    // Old embedded eligibility rules or missing future-date instruction — upgrade
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day")) {
+    // Old embedded eligibility rules or missing NOT FLYABLE / future-date instructions — upgrade
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
-    console.log("[search] Upgraded publicSearchPrompt: added FUTURE DATE WITH NO FORECAST instruction");
+    console.log("[search] Upgraded publicSearchPrompt: unflyable days now included with [NOT FLYABLE] label");
   }
 
   // ── Eligibility rules (separate setting) ──
