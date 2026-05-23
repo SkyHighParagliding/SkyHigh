@@ -130,11 +130,25 @@ function convertSQL(raw: string): string {
     }
   }
 
+  // Append RETURNING id for tables that have a serial id column and whose
+  // callers depend on .run() → lastInsertRowid.  Only two callers read this:
+  //   • realMessageService.ts  → INSERT INTO map_messages
+  //   • siteguideVersionCheck.ts → INSERT INTO siteguide_version_checks
+  // All other INSERT callers ignore the return value.
+  // Many tables (admin_sessions, settings, breadcrumbs, etc.) have NO id
+  // column, so appending RETURNING id to everything would crash at runtime.
+  if (/(?:INTO|INTO\s+)map_messages\s/i.test(sql) ||
+      /(?:INTO|INTO\s+)siteguide_version_checks\s/i.test(sql)) {
+    if (!/RETURNING/i.test(sql)) {
+      sql = sql.trimEnd().replace(/;$/, "") + " RETURNING id";
+    }
+  }
+
   // Convert datetime expressions
   sql = sql.replace(/datetime\('now',\s*'start of day'\)/gi, "CURRENT_DATE::timestamptz");
   sql = sql.replace(/datetime\('now'\)/gi, "CURRENT_TIMESTAMP");
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+hours?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 hours'");
-  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");
+  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");
 
   // Quote camelCase identifiers to preserve case in PostgreSQL
   sql = quoteIdentifiersIfNeeded(sql);
@@ -179,7 +193,7 @@ class PgPreparedStatement {
       const result = await pool.query(sql, values);
       return {
         changes: result.rowCount ?? 0,
-        lastInsertRowid: 0,
+        lastInsertRowid: result.rows[0]?.id ?? result.rows[0]?.lastval ?? 0,
       };
     } catch (err: any) {
       log.error(`PG run failed [${sql.substring(0, 100)}]:`, err.message);
