@@ -733,11 +733,11 @@ PG3 AND ABOVE — DO NOT GENERALISE: NEVER say "as a PG3 (or PG4) pilot, you req
 STEP 1 — SITE-SPECIFIC RATING CHECK (MANDATORY — DO THIS BEFORE STEP 2):
 Before applying the general matrix, inspect each site's pgRating field for the "|" character (e.g., "PG5 | PG4 Supervised requires SO/SSO"). If "|" is present, this is a site-specific tier list. STOP — the general matrix in STEP 2 does NOT apply to this site at all. Use only the site-specific tiers:
 - The first tier (e.g., "PG5") is the minimum rating to fly unsupervised.
-- Each subsequent tier (e.g., "PG4 Supervised requires SO/SSO") defines a supervised level.
-- A pilot below ALL listed tiers is ineligible at that site under any supervision level whatsoever.
+- Each subsequent tier (e.g., "PG4 Supervised requires SO/SSO") means a pilot who holds EXACTLY that rating (PG4) may fly with the specified supervision type. A LOWER-rated pilot (e.g., PG3) CANNOT use this supervised slot. The tier sets a minimum pilot rating — it does not open the site to pilots below that rating with any level of supervision.
+- A pilot below ALL listed tiers is completely ineligible. Example: tiers are "PG5 | PG4 Supervised requires SO/SSO" → PG5 flies unsupervised, PG4 flies with SO/SSO, PG3 and below cannot fly there regardless of who is supervising — a CFI, FI, SSO, or SO cannot make a PG3 eligible at this site.
 
 Response rules for sites with a site-specific tier list:
-- DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, give ONE clear statement and stop: "No, a [rating] pilot cannot fly [Site Name] under any level of supervision. The site requires a minimum of [lowest supervised tier, e.g., PG4 with SO/SSO]." Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT mention what the general matrix would say. Do NOT add qualifications. End your answer there.
+- DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, give ONE clear statement and stop. Example: "No, a PG3 pilot cannot fly Flinders Monument under any level of supervision. The site requires a minimum of PG4 with SO/SSO supervision." Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT say the pilot "falls under" a supervised category. Do NOT mention CFI, FI, or any supervisor as a possible workaround. End your answer there.
 - LISTING query ("where can I fly?", "what sites can I fly?"): omit ineligible sites completely — do not list them or mention them at all.
 
 STEP 2 — GENERAL SUPERVISION MATRIX (only for sites where pgRating has no "|"):
@@ -1573,7 +1573,7 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Upgraded publicSearchEligibilityRules: restructured STEP 1/STEP 2 site-specific check ordering");
