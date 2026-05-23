@@ -86,6 +86,18 @@ export function useConnectionsConfig() {
   const [saSaveMsg, setSaSaveMsg] = useState<{ type: string; text: string } | null>(null);
   const { markDirty, blocker, justSaved: saJustSaved, save: adminSave } = useAdminForm({ successMessage: "Settings saved" });
 
+  const [searchLogEnabled, setSearchLogEnabled] = useState(false);
+  const [searchLogStats, setSearchLogStats] = useState<{ total: number; sizeMb: number; oldestAt: string | null; warningMb: number } | null>(null);
+  const [showSearchLogs, setShowSearchLogs] = useState(false);
+  const [searchLogEntries, setSearchLogEntries] = useState<{ id: number; search_type: string; query: string; response: string; created_at: string }[]>([]);
+  const [searchLogPage, setSearchLogPage] = useState(1);
+  const [searchLogTotal, setSearchLogTotal] = useState(0);
+  const [searchLogPages, setSearchLogPages] = useState(1);
+  const [searchLogType, setSearchLogType] = useState<"all" | "public" | "admin">("all");
+  const [loadingSearchLogs, setLoadingSearchLogs] = useState(false);
+  const [clearingSearchLogs, setClearingSearchLogs] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -159,7 +171,12 @@ export function useConnectionsConfig() {
   const toggleExpanded = (id: string) => {
     setExpandedCards((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        if (id === "smart-assistant") loadSearchLogStats();
+      }
       return next;
     });
   };
@@ -597,6 +614,62 @@ export function useConnectionsConfig() {
     setGroupSyncExpanded(!groupSyncExpanded);
   };
 
+  const loadSearchLogStats = async () => {
+    try {
+      const res = await fetch("/api/search-logs/stats", { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchLogStats(data);
+        setSearchLogEnabled(data.enabled);
+      }
+    } catch {}
+  };
+
+  const fetchSearchLogs = async (page = 1, type: "all" | "public" | "admin" = "all") => {
+    setLoadingSearchLogs(true);
+    setSearchLogType(type);
+    setSearchLogPage(page);
+    try {
+      const res = await fetch(`/api/search-logs?type=${type}&page=${page}&limit=50`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchLogEntries(data.entries || []);
+        setSearchLogTotal(data.total || 0);
+        setSearchLogPages(data.pages || 1);
+      }
+    } catch {}
+    setLoadingSearchLogs(false);
+  };
+
+  const toggleSearchLogging = async (enabled: boolean) => {
+    setSearchLogEnabled(enabled);
+    try {
+      await fetch("/api/search-logs/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enabled }),
+      });
+      setSearchLogStats(prev => prev ? { ...prev, enabled } : null);
+    } catch {}
+  };
+
+  const clearSearchLogs = async () => {
+    setClearingSearchLogs(true);
+    try {
+      const res = await fetch("/api/search-logs", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setSearchLogStats(prev => prev ? { ...prev, total: 0, sizeMb: 0, oldestAt: null } : null);
+        setSearchLogEntries([]);
+        setSearchLogTotal(0);
+        setSearchLogPages(1);
+      }
+    } catch {}
+    setClearingSearchLogs(false);
+  };
+
   const driveStatus: "connected" | "not-configured" = driveConnected ? "connected" : "not-configured";
   const driveStatusLabel = driveConnected
     ? "Connected"
@@ -646,5 +719,10 @@ export function useConnectionsConfig() {
     testTidyhqConnection, groupSyncRoleLabels, groupSyncActionColors,
     openAddMappingModal, handleAddMapping, handleDeleteMapping,
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
+    searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,
+    searchLogEntries, searchLogPage, searchLogTotal, searchLogPages,
+    searchLogType, loadingSearchLogs, clearingSearchLogs,
+    expandedLogId, setExpandedLogId,
+    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs,
   };
 }

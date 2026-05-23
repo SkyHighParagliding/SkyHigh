@@ -31,6 +31,9 @@ import {
   MessageCircle,
   Plus,
   Image as ImageIcon,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useConnectionsConfig } from "@/hooks/useConnectionsConfig";
@@ -95,6 +98,11 @@ export function AdminConnections() {
     testTidyhqConnection, groupSyncRoleLabels, groupSyncActionColors,
     openAddMappingModal, handleAddMapping, handleDeleteMapping,
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
+    searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,
+    searchLogEntries, searchLogPage, searchLogTotal, searchLogPages,
+    searchLogType, loadingSearchLogs, clearingSearchLogs,
+    expandedLogId, setExpandedLogId,
+    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs,
   } = config;
 
   const connections: ConnectionCard[] = [
@@ -1110,6 +1118,75 @@ export function AdminConnections() {
                 )}
               </div>
 
+              <div className="border border-border-subtle rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-navy text-sm flex items-center gap-2">
+                  <Database className="w-4 h-4" />
+                  Search Query Logging
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Log every public search query and response for review. Use this to diagnose bad AI answers.
+                  An email is sent when the log exceeds 10 MB — then clear the log to reset the alert.
+                </p>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={searchLogEnabled}
+                      onChange={(e) => toggleSearchLogging(e.target.checked)}
+                      className="w-4 h-4 accent-sky"
+                    />
+                    <span className="text-sm font-medium text-foreground-label">Enable logging</span>
+                  </label>
+                  {searchLogStats && searchLogStats.total > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {searchLogStats.total} {searchLogStats.total === 1 ? "entry" : "entries"} — {searchLogStats.sizeMb} MB
+                      {searchLogStats.oldestAt && (
+                        <> — oldest {new Date(searchLogStats.oldestAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</>
+                      )}
+                    </span>
+                  )}
+                  {searchLogStats && searchLogStats.total === 0 && (
+                    <span className="text-xs text-foreground-faint">No entries yet</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setShowSearchLogs(true); fetchSearchLogs(1, "all"); }}
+                    disabled={!searchLogStats || searchLogStats.total === 0}
+                    className="gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Review Logs
+                    {searchLogStats && searchLogStats.total > 0 && (
+                      <span className="ml-1 bg-sky/10 text-sky px-1.5 py-0.5 rounded text-xs font-medium">{searchLogStats.total}</span>
+                    )}
+                  </Button>
+                  {searchLogStats && searchLogStats.total > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={clearSearchLogs}
+                      disabled={clearingSearchLogs}
+                      className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      {clearingSearchLogs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Clear All Logs
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadSearchLogStats}
+                    className="gap-1.5 text-muted-foreground"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+
               {saSaveMsg && (
                 <div className={`p-3 rounded-lg text-sm ${saSaveMsg.type === "success" ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
                   {saSaveMsg.text}
@@ -1237,6 +1314,132 @@ export function AdminConnections() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSearchLogs && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex flex-col" onClick={() => setShowSearchLogs(false)}>
+          <div className="bg-card flex flex-col h-full max-h-screen" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-navy">Search Query Log</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {searchLogTotal} {searchLogTotal === 1 ? "entry" : "entries"} — public smart assistant queries
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {searchLogTotal > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearSearchLogs}
+                    disabled={clearingSearchLogs}
+                    className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    {clearingSearchLogs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Clear All
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setShowSearchLogs(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Filter tabs */}
+            <div className="flex items-center gap-1 px-6 py-3 border-b border-border shrink-0 bg-muted/30">
+              {(["all", "public", "admin"] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => fetchSearchLogs(1, type)}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors capitalize ${searchLogType === type ? "bg-navy text-white" : "text-foreground-label hover:bg-muted"}`}
+                >
+                  {type === "all" ? "All" : type === "public" ? "Public" : "Admin"}
+                </button>
+              ))}
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-y-auto">
+              {loadingSearchLogs ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 className="w-6 h-6 animate-spin text-sky" />
+                </div>
+              ) : searchLogEntries.length === 0 ? (
+                <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                  No entries found
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-muted z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle w-40">Time</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle w-20">Type</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle">Query</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle">Response</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchLogEntries.map((entry) => {
+                      const isExpanded = expandedLogId === entry.id;
+                      return (
+                        <tr
+                          key={entry.id}
+                          className="border-b border-border-faint hover:bg-muted/30 cursor-pointer align-top"
+                          onClick={() => setExpandedLogId(isExpanded ? null : entry.id)}
+                        >
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(entry.created_at).toLocaleString("en-AU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${entry.search_type === "public" ? "bg-sky/10 text-sky" : "bg-purple-100 text-purple-700"}`}>
+                              {entry.search_type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-navy max-w-xs">
+                            <p className={isExpanded ? "" : "line-clamp-2"}>{entry.query}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-foreground-label max-w-md">
+                            <p className={isExpanded ? "whitespace-pre-wrap" : "line-clamp-3"}>{entry.response}</p>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {searchLogPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-border shrink-0 bg-muted/30">
+                <span className="text-xs text-muted-foreground">
+                  Page {searchLogPage} of {searchLogPages} — {searchLogTotal} entries
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={searchLogPage <= 1 || loadingSearchLogs}
+                    onClick={() => fetchSearchLogs(searchLogPage - 1, searchLogType)}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={searchLogPage >= searchLogPages || loadingSearchLogs}
+                    onClick={() => fetchSearchLogs(searchLogPage + 1, searchLogType)}
+                    className="gap-1"
+                  >
+                    Next <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

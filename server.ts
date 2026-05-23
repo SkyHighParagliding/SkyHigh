@@ -48,6 +48,7 @@ import demoRouter from "./server/routes/demo/index.js";
 import mapMessagesRouter from "./server/routes/mapMessages.js";
 import safetyRouter from "./server/routes/safety.js";
 import populateBannersRouter from "./server/routes/admin/populate-banners.js";
+import searchLogsRouter from "./server/routes/searchLogs.js";
 import { injectServices } from "./server/services/index.js";
 import { getHealthStatus } from "./server/utils/health.js";
 import { errorHandlerMiddleware } from "./server/utils/errorHandler.js";
@@ -240,6 +241,7 @@ async function startServer() {
   app.use("/api/submissions", submissionsRouter);
   app.use("/api/safety-sections", safetyRouter);
   app.use("/api/admin", populateBannersRouter);
+  app.use("/api/search-logs", searchLogsRouter);
 
   app.get("/manifest.json", (req, res) => {
     const getVal = db.prepare("SELECT value FROM settings WHERE key = ?");
