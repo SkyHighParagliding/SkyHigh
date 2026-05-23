@@ -516,6 +516,19 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
   // in the 7-day block.
   const strippedNames = new Set<string>();
 
+  // Sites explicitly named in the query are never stripped — the pilot asked about them
+  // specifically and needs their eligibility/rating info even if no weather station exists.
+  const qLower = query.toLowerCase();
+  const mentionedInQuery = new Set<string>();
+  for (const header of sitesContext.split('\n').filter(l => l.startsWith('## '))) {
+    const name = header.replace(/^## /, '').replace(/\s*\[.*$/, '').replace(/\s*\(.*$/, '').trim();
+    if (!name) continue;
+    const nameLower = name.toLowerCase();
+    if (qLower.includes(nameLower)) { mentionedInQuery.add(name); continue; }
+    const words = nameLower.split(/[\s-]+/).filter(w => w.length > 3);
+    if (words.some(w => qLower.includes(w))) mentionedInQuery.add(name);
+  }
+
   const processed = sections.map(section => {
     if (!section.startsWith('## ')) return section;
 
@@ -547,13 +560,13 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
         return withoutHrly.join('\n');
       }
       // HRLY exists but all slots unflyable — strip for conditions queries,
-      // keep site metadata (ratings, hazards, rules) for info queries.
-      if (shouldStripUnflyable) { if (siteName) strippedNames.add(siteName); return null; }
+      // keep site metadata (ratings, hazards, rules) for info queries and named sites.
+      if (shouldStripUnflyable && !mentionedInQuery.has(siteName)) { if (siteName) strippedNames.add(siteName); return null; }
       return withoutHrly.join('\n');
     }
 
-    // No weather data at all — strip for conditions queries, keep for info queries.
-    if (shouldStripUnflyable) { if (siteName) strippedNames.add(siteName); return null; }
+    // No weather data at all — strip for conditions queries, keep for info queries and named sites.
+    if (shouldStripUnflyable && !mentionedInQuery.has(siteName)) { if (siteName) strippedNames.add(siteName); return null; }
     return filteredLines.join('\n');
   });
 
@@ -706,6 +719,7 @@ WEATHER & FLYABILITY — IMPORTANT:
 - When listing sites with weather, lead with the flyability status, then the key numbers (wind speed, gusts, direction). Temperature and sky conditions are secondary.
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
 - You also have access to 7-DAY EXTENDED FORECASTS when available. Each day already has pre-computed flyability labels (Dir/Speed). Only days with flyable conditions appear in this data — if a day is missing for a site, the conditions are not flyable that day.
+- FUTURE DATE WITH NO FORECAST: If a pilot asks about a specific future date and that day does NOT appear in the 7-DAY EXTENDED FORECASTS for the queried site, this means the ECMWF forecast indicates conditions are not expected to be flyable on that day. Do NOT say "forecast not available" or "no forecast data in our system." Instead say the forecast suggests conditions are unlikely to be suitable on that date, and recommend the pilot check the site page closer to the date for updated conditions.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
@@ -730,6 +744,8 @@ PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at 
 
 PG3 AND ABOVE — DO NOT GENERALISE: NEVER say "as a PG3 (or PG4) pilot, you require supervision at every site." That statement is ONLY true for PG2. PG3 pilots are fully qualified to fly PG2 and PG3 rated sites without any supervision whatsoever. Only mention supervision when the pilot's specific rating falls below a specific site's minimum.
 
+ECHO THE PILOT'S EXACT RATING — MANDATORY: Throughout your entire response, use the exact rating the pilot stated. If the pilot said "I am PG2", every sentence referring to their certification must say "PG2" — never "PG3" or any other level. Read the pilot's stated rating before writing each sentence and verify you are using it exactly. Substituting a different rating level (e.g. writing PG3 when the pilot said PG2) is a legal safety error.
+
 STEP 1 — SITE-SPECIFIC RATING CHECK (MANDATORY — DO THIS BEFORE STEP 2):
 Before applying the general matrix, inspect each site's pgRating field for the "|" character (e.g., "PG5 | PG4 Supervised requires SO/SSO"). If "|" is present, this is a site-specific tier list. STOP — the general matrix in STEP 2 does NOT apply to this site at all. Use only the site-specific tiers:
 - The first tier (e.g., "PG5") is the minimum rating to fly unsupervised.
@@ -737,7 +753,7 @@ Before applying the general matrix, inspect each site's pgRating field for the "
 - A pilot below ALL listed tiers is completely ineligible. Example: tiers are "PG5 | PG4 Supervised requires SO/SSO" → PG5 flies unsupervised, PG4 flies with SO/SSO, PG3 and below cannot fly there regardless of who is supervising — a CFI, FI, SSO, or SO cannot make a PG3 eligible at this site.
 
 Response rules for sites with a site-specific tier list:
-- DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, give ONE clear statement and stop. Example: "No, a PG3 pilot cannot fly Flinders Monument under any level of supervision. The site requires a minimum of PG4 with SO/SSO supervision." Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT say the pilot "falls under" a supervised category. Do NOT mention CFI, FI, or any supervisor as a possible workaround. End your answer there.
+- DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, your VERY FIRST SENTENCE must be a clear "No." FORBIDDEN OPENING: Do NOT start with "To fly [Site], a [rating] pilot requires supervision from..." — that sentence implies flying is possible and will mislead any pilot who reads only the first line. REQUIRED OPENING: Start with "No, a [rating] pilot cannot fly [Site] under any supervision." Then optionally state the minimum required rating in a second sentence. Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT say the pilot "falls under" a supervised category. Do NOT mention CFI, FI, or any supervisor as a possible workaround. End your answer there.
 - LISTING query ("where can I fly?", "what sites can I fly?"): omit ineligible sites completely — do not list them or mention them at all.
 
 STEP 2 — GENERAL SUPERVISION MATRIX (only for sites where pgRating has no "|"):
@@ -1558,10 +1574,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules")) {
-    // Old embedded eligibility rules detected — upgrade to behavior-only version
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST")) {
+    // Old embedded eligibility rules or missing future-date instruction — upgrade
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
-    console.log("[search] Upgraded publicSearchPrompt: stripped embedded eligibility rules (now separate setting)");
+    console.log("[search] Upgraded publicSearchPrompt: added FUTURE DATE WITH NO FORECAST instruction");
   }
 
   // ── Eligibility rules (separate setting) ──
@@ -1573,10 +1589,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: restructured STEP 1/STEP 2 site-specific check ordering");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added ECHO RATING, ANSWER STRUCTURE, and FORBIDDEN OPENING rules");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
