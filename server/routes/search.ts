@@ -530,11 +530,15 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
   const qLower = query.toLowerCase();
   const mentionedInQuery = new Set<string>();
   for (const header of sitesContext.split('\n').filter(l => l.startsWith('## '))) {
-    const name = header.replace(/^## /, '').replace(/\s*\[.*$/, '').replace(/\s*\(.*$/, '').trim();
+    const rawHeader = header.replace(/^## /, '').replace(/\s*\[.*$/, '').trim();
+    const name = rawHeader.replace(/\s*\(.*$/, '').trim();
     if (!name) continue;
     const nameLower = name.toLowerCase();
-    if (qLower.includes(nameLower)) { mentionedInQuery.add(name); continue; }
-    const words = nameLower.split(/[\s-]+/).filter(w => w.length > 3);
+    // Extract parenthetical content as alternate keyword — e.g. "Flowerdale" from "Three Sisters (Flowerdale)"
+    const parenMatch = rawHeader.match(/\(([^)]+)\)/);
+    const parenLower = parenMatch ? parenMatch[1].toLowerCase() : '';
+    if (qLower.includes(nameLower) || (parenLower && qLower.includes(parenLower))) { mentionedInQuery.add(name); continue; }
+    const words = [...nameLower.split(/[\s-]+/), ...parenLower.split(/[\s-]+/)].filter(w => w.length > 3);
     if (words.some(w => qLower.includes(w))) mentionedInQuery.add(name);
   }
 
@@ -610,9 +614,25 @@ function filterContextByClosureDates(context: string, closureMap: Map<string, st
   const queriedSet = new Set(queriedDates);
   const excludedNames = new Set<string>();
 
+  // Preserve sites explicitly named in the query — pilot needs "site is closed until X",
+  // not "I don't have that site in my database."
+  const qLower = query.toLowerCase();
+  const mentionedNames = new Set<string>();
+  for (const site of sites) {
+    const rawName = (site.name || '').toLowerCase();
+    const nameBase = rawName.replace(/\s*\(.*$/, '').trim();
+    const parenMatch = rawName.match(/\(([^)]+)\)/);
+    const parenContent = parenMatch ? parenMatch[1] : '';
+    if (qLower.includes(rawName) || qLower.includes(nameBase) || (parenContent && qLower.includes(parenContent))) {
+      mentionedNames.add(site.name); continue;
+    }
+    const words = [...nameBase.split(/[\s-]+/), ...parenContent.split(/[\s-]+/)].filter(w => w.length > 3);
+    if (words.some(w => qLower.includes(w))) mentionedNames.add(site.name);
+  }
+
   for (const site of sites) {
     const siteClosure = closureMap.get(site.id) || [];
-    if (siteClosure.some((date: string) => queriedSet.has(date))) {
+    if (siteClosure.some((date: string) => queriedSet.has(date)) && !mentionedNames.has(site.name)) {
       excludedNames.add(site.name);
     }
   }
@@ -746,7 +766,8 @@ HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be complete
 - HG ONLY [ABSOLUTE]: If a site shows "HG ONLY — NOT OPEN TO PG PILOTS", that site is completely invisible in your response for any PG pilot — including when the pilot identified themselves as PG earlier in the conversation. A PG pilot cannot fly an HG-only site under any supervision level. The label is an absolute disqualifier. Do not list it, do not say "this site is HG only", do not use it as an example of what is unavailable. It does not exist.
 - PG ONLY [ABSOLUTE]: Same rule in reverse — "PG ONLY — NOT OPEN TO HG PILOTS" sites do not exist in responses to HG pilots.
 - CONVERSATION CONTEXT: If the pilot has stated their rating at any point in the conversation (e.g. "I'm a PG2"), apply that pilot's eligibility rules for the entire conversation — not just the turn where they said it. A follow-up query like "what about this weekend?" from a PG2 pilot is still a PG2 query.
-- SCHEDULED CLOSURES: If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
+- SCHEDULED CLOSURES (LISTING QUERY): If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
+- SCHEDULED CLOSURES (DIRECT QUERY): If a pilot asks specifically about a named site and that site's SCHEDULED CLOSURES list includes the queried date, tell them the site is closed on that date. If the closure dates are consecutive, indicate when the site reopens — e.g. "Three Sisters (Flowerdale) is currently closed until 31 May." Do NOT say "I don't have that site in my database."
 - WEATHER PRE-FILTERING: The server has already removed sites where current LIVE and FCST conditions are unflyable (wrong direction, light winds, blown out, or gust threshold exceeded). Do not second-guess this — if a site is not in the data, conditions are not suitable. If a site has a FCST line containing "Conditions expected to improve", current conditions are poor but a later time today may be suitable — surface the improving time to the pilot as a late-day option and let them decide. Sites with no weather data at all are excluded from conditions queries.
 - GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), do not recommend that site for a PG2 or PG3 pilot. For PG4+ you may mention it with the gust note, but only if no advisory tag is also present.
 
@@ -1584,10 +1605,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG")) {
-    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag clarification — upgrade
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)")) {
+    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag / closure-direct-query rules — upgrade
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
-    console.log("[search] Upgraded publicSearchPrompt: added NOT FLYABLE weather-tag vs eligibility clarification");
+    console.log("[search] Upgraded publicSearchPrompt: added SCHEDULED CLOSURES direct-query rule");
   }
 
   // ── Eligibility rules (separate setting) ──
