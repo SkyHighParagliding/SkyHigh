@@ -124,7 +124,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
       hoodedPloversLink: aiResult.hoodedPloversLink || "",
       emergencyMarker: aiResult.emergencyMarker || "",
       what3words: aiResult.what3words || "",
-      status: aiResult._isSiteClosed ? "closed" : "open",
+      status: aiResult._isSiteClosed ? "closed" : aiResult._isRestricted ? "restricted" : "open",
       isSkyHighSite: (aiResult.responsibleClub && /sky\s*high/i.test(aiResult.responsibleClub)) ? "true" : "false",
       _essentialImages: aiResult._essentialImages || [],
       _essentialText: aiResult._essentialText || "",

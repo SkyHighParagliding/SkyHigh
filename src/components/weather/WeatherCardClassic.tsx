@@ -16,6 +16,8 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
           <h3 className="font-bold text-navy truncate text-xl sm:text-2xl">{site.name}</h3>
           {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
             <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Closed</Badge>
+          ) : site.status === 'restricted' ? (
+            <Badge className="bg-amber-500 text-white shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Restricted</Badge>
           ) : (
             <Badge variant="default" className="bg-emerald-500 shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Open</Badge>
           )}

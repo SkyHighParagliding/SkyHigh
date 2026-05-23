@@ -226,8 +226,8 @@ async function buildPublicContext(): Promise<CachedContext> {
 
   let ctx = "=== FLYING SITES ===\n";
   for (const site of sites) {
-    // Server-side hard exclusion: skip permanently closed sites entirely
-    if (site.status === 'closed' || site.status === 'permanently closed') continue;
+    // Server-side hard exclusion: skip permanently closed and restricted sites entirely
+    if (site.status === 'closed' || site.status === 'permanently closed' || site.status === 'restricted') continue;
 
     const isSH = site.isSkyHighSite === true || site.isSkyHighSite === "true";
     ctx += `\n## ${site.name} [page: /sites/${site.id}]${isSH ? " (Club Site)" : ""}\n`;
@@ -322,8 +322,8 @@ async function buildPublicContext(): Promise<CachedContext> {
         try { extMap.set(row.siteId, JSON.parse(row.forecastData)); } catch {}
       }
       for (const site of sites) {
-        // Skip closed sites (already filtered above, but guard here too)
-        if (site.status === 'closed' || site.status === 'permanently closed') continue;
+        // Skip closed and restricted sites (already filtered above, but guard here too)
+        if (site.status === 'closed' || site.status === 'permanently closed' || site.status === 'restricted') continue;
         const ext = extMap.get(site.id);
         if (!ext || !ext.days || ext.days.length === 0) continue;
         const siteClosure = closureMap.get(site.id) || [];

@@ -172,6 +172,9 @@ export function Sites() {
                       if (site.temporarilyClosed === 1) {
                         return <Badge className="bg-amber-500 text-white shadow-sm">Temporarily Closed</Badge>;
                       }
+                      if (site.status === 'restricted') {
+                        return <Badge className="bg-amber-500 text-white shadow-sm">Restricted</Badge>;
+                      }
                       if (site.status === 'closed') {
                         return <Badge variant="destructive" className="shadow-sm">Closed</Badge>;
                       }

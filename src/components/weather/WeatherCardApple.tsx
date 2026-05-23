@@ -26,6 +26,8 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         </div>
         {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
           <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-2 h-5 shrink-0">Closed</Badge>
+        ) : site.status === 'restricted' ? (
+          <Badge className="bg-amber-500 text-white shadow-sm text-[10px] py-0 px-2 h-5 shrink-0">Restricted</Badge>
         ) : (
           <span className="shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: '#22c55e' }}>Open</span>
         )}

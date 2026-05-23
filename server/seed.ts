@@ -27,7 +27,10 @@ METADATA EXTRACTION:
 Extract the following fields from the page content and sidebar metadata:
 - name: Site name (from the Page Title).
 - type: "Coastal" or "Inland".
-- status: "open" or "closed". Mark as "closed" if the page shows a Closed badge, mentions the site is closed/suspended/banned, or flying is not permitted. Default to "open".
+- status: "open", "restricted", or "closed".
+    - "closed": the site has a Closed badge, flying is suspended, banned, or not permitted.
+    - "restricted": the site is accessible ONLY to specific named schools, flight training organisations, or named groups — NOT open to the general flying public. Look for phrases like "Bright Schools only", "restricted to [school] students", "school use only", "not available for general use", "approved schools only", "flight training schools only", "exclusive use of [named school]", or any language that reserves the site for a single named group. When in doubt and the text clearly names a specific school/group as the ONLY permitted user, use "restricted".
+    - "open": all other sites. Default.
 - pgRating: Formatted PG rating (see RATING FORMATTING below).
 - hgRating: Formatted HG rating (see RATING FORMATTING below).
 - windDir: Compass direction only (e.g. "SSW" or "S-SW"). Strip any bearing degrees like "(214 deg true)".
@@ -86,7 +89,7 @@ name, type, status, pgRating, hgRating, windDir, windSpeed, lat, lon, siteOvervi
 
 Type constraints:
 - knownHazards, siteRules: arrays of strings.
-- status: "open" or "closed".
+- status: "open", "restricted", or "closed".
 - All other fields: strings (empty string if not found).`;
 
 await db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('aiSystemPrompt', defaultAiPrompt);
@@ -97,6 +100,12 @@ if (existingPrompt?.value && existingPrompt.value.includes('Rewrite the followin
 }
 if (existingPrompt?.value && (existingPrompt.value.includes('windDirectionsIdeal') || existingPrompt.value.includes('windSpeedMin'))) {
   await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(defaultAiPrompt);
+}
+// Upgrade: add "restricted" status support if the prompt only knows "open" or "closed"
+const rePromptRow = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string } | undefined;
+if (rePromptRow?.value && !rePromptRow.value.includes('"restricted"')) {
+  await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(defaultAiPrompt);
+  log.info('Upgraded aiSystemPrompt: added "restricted" status support');
 }
 
 let seedSettings: [string, string][] = [

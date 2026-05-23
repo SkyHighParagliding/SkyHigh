@@ -20,7 +20,7 @@ router.get("/closure-banners", async (_req, res) => {
       FROM site_closure_dates scd
       JOIN sites s ON scd.site_id = s.id
       WHERE scd.closure_date >= ?
-        AND s.status != 'closed'
+        AND s.status NOT IN ('closed', 'restricted')
       GROUP BY scd.site_id, s.name
     `).all(today) as { site_id: string; site_name: string; first_date: string; last_date: string }[];
 

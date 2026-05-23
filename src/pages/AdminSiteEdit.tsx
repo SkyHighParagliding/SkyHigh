@@ -396,24 +396,29 @@ export function AdminSiteEdit() {
                   <div className="space-y-3">
                     <label className="text-sm font-medium text-foreground-label">Closure Dates</label>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="permanentlyClosed"
-                        checked={formData.status === 'closed'}
-                        onChange={(e) => {
-                          setFormData(prev => ({ ...prev, status: e.target.checked ? 'closed' : 'open' }));
-                          markDirty();
-                        }}
-                        className="w-4 h-4 rounded border-border cursor-pointer accent-red-500"
-                      />
-                      <label htmlFor="permanentlyClosed" className="text-sm font-medium text-foreground-label cursor-pointer select-none">
-                        Permanently Closed
-                      </label>
+                      {(['open', 'restricted', 'closed'] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => { setFormData(prev => ({ ...prev, status: s })); markDirty(); }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                            formData.status === s
+                              ? s === 'closed'
+                                ? 'bg-red-500 text-white border-red-500'
+                                : s === 'restricted'
+                                ? 'bg-amber-500 text-white border-amber-500'
+                                : 'bg-emerald-500 text-white border-emerald-500'
+                              : 'bg-transparent text-foreground-secondary border-border hover:border-foreground-secondary'
+                          }`}
+                        >
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </button>
+                      ))}
                     </div>
                     <ClosureDatePicker
                       selectedDates={closureDates}
                       onChange={(dates) => { setClosureDates(dates); markDirty(); }}
-                      disabled={formData.status === 'closed'}
+                      disabled={formData.status === 'closed' || formData.status === 'restricted'}
                     />
                     <div className="flex items-center gap-3 pt-1">
                       <label className="text-sm text-foreground-secondary whitespace-nowrap">Max date pills on site page</label>

@@ -155,7 +155,7 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
           continue;
         }
 
-        const { allText, isSiteClosed, $ } = scrapeSiteguidePage(html);
+        const { allText, isSiteClosed, isRestricted, $ } = scrapeSiteguidePage(html);
 
         if (!allText || allText.length < 50) {
           bulkImportProgress.completed++;
@@ -199,7 +199,7 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
           hgRating: aiData.hgRating || null,
           windDir: normaliseWindDir(aiData.windDir) || null,
           windSpeed: normaliseWindSpeed(aiData.windSpeed) || null,
-          status: isSiteClosed ? "closed" : "open",
+          status: isSiteClosed ? "closed" : isRestricted ? "restricted" : "open",
           hazardLevel: "low",
           lat: aiData.lat ? parseFloat(aiData.lat) : null,
           lon: aiData.lon ? parseFloat(aiData.lon) : null,
