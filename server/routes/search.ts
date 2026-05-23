@@ -790,6 +790,12 @@ Before applying the general matrix, inspect each site's pgRating field for the "
 - Each subsequent tier (e.g., "PG4 Supervised requires SO/SSO") means a pilot who holds EXACTLY that rating (PG4) may fly with the specified supervision type. A LOWER-rated pilot (e.g., PG3) CANNOT use this supervised slot. The tier sets a minimum pilot rating — it does not open the site to pilots below that rating with any level of supervision.
 - A pilot below ALL listed tiers is completely ineligible. Example: tiers are "PG5 | PG4 Supervised requires SO/SSO" → PG5 flies unsupervised, PG4 flies with SO/SSO, PG3 and below cannot fly there regardless of who is supervising — a CFI, FI, SSO, or SO cannot make a PG3 eligible at this site.
 
+MULTI-LAUNCH EXCEPTION (applies when tier entries include a launch name in parentheses, e.g. "(North)", "(South)", "(North launch)", "(South launch)"):
+When tiers describe separate launches, each launch has its own independent minimum rating — do NOT apply the single-launch tier logic above. Instead:
+- A tier like "PG4 (South)" means the South launch requires PG4 minimum unsupervised. Pilots below PG4 CANNOT fly the South launch under any supervision — there is no supervised path to the South launch unless a separate "PG3 Supervised (South)" tier also appears.
+- A tier like "PG2 Supervised (North)" means the North launch is rated PG2 Supervised. This means: PG2 pilots may fly North with the appropriate supervision (use the GENERAL MATRIX in STEP 2 to find the required supervisor level). Pilots ABOVE PG2 — i.e. PG3, PG4, PG5 — qualify for the North launch WITHOUT any supervision. PG1 pilots cannot fly North.
+- Tell the pilot which launches they can access and under what conditions. Example for PG3 at "PG2 Supervised (North) | PG4 (South)": "As a PG3, you can fly the North launch unsupervised. You cannot fly the South launch (minimum PG4 required)."
+
 Response rules for sites with a site-specific tier list:
 - DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, your VERY FIRST SENTENCE must be a clear "No." FORBIDDEN OPENING: Do NOT start with "To fly [Site], a [rating] pilot requires supervision from..." — that sentence implies flying is possible and will mislead any pilot who reads only the first line. REQUIRED OPENING: Start with "No, a [rating] pilot cannot fly [Site] under any supervision." Then optionally state the minimum required rating in a second sentence. Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT say the pilot "falls under" a supervised category. Do NOT mention CFI, FI, or any supervisor as a possible workaround. End your answer there.
 - LISTING query ("where can I fly?", "what sites can I fly?"): omit ineligible sites completely — do not list them or mention them at all.
@@ -1627,10 +1633,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added SCHEDULED CLOSURES direct-query rule");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added MULTI-LAUNCH EXCEPTION for sites with (North)/(South) tiers");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
