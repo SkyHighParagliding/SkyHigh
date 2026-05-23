@@ -791,10 +791,20 @@ Before applying the general matrix, inspect each site's pgRating field for the "
 - A pilot below ALL listed tiers is completely ineligible. Example: tiers are "PG5 | PG4 Supervised requires SO/SSO" → PG5 flies unsupervised, PG4 flies with SO/SSO, PG3 and below cannot fly there regardless of who is supervising — a CFI, FI, SSO, or SO cannot make a PG3 eligible at this site.
 
 MULTI-LAUNCH EXCEPTION (applies when tier entries include a launch name in parentheses, e.g. "(North)", "(South)", "(North launch)", "(South launch)"):
-When tiers describe separate launches, each launch has its own independent minimum rating — do NOT apply the single-launch tier logic above. Instead:
-- A tier like "PG4 (South)" means the South launch requires PG4 minimum unsupervised. Pilots below PG4 CANNOT fly the South launch under any supervision — there is no supervised path to the South launch unless a separate "PG3 Supervised (South)" tier also appears.
-- A tier like "PG2 Supervised (North)" means the North launch is rated PG2 Supervised. This means: PG2 pilots may fly North with the appropriate supervision (use the GENERAL MATRIX in STEP 2 to find the required supervisor level). Pilots ABOVE PG2 — i.e. PG3, PG4, PG5 — qualify for the North launch WITHOUT any supervision. PG1 pilots cannot fly North.
-- Tell the pilot which launches they can access and under what conditions. Example for PG3 at "PG2 Supervised (North) | PG4 (South)": "As a PG3, you can fly the North launch unsupervised. You cannot fly the South launch (minimum PG4 required)."
+When tiers describe separate launches, each launch has its own independent minimum rating — do NOT apply the single-launch tier logic above. For each launch, determine access as follows:
+
+For a tier like "PG4 (South)":
+- PG4 and above: can fly South launch unsupervised
+- PG3 and below: CANNOT fly South launch — no supervised path exists unless a separate "(South)" supervised tier is listed
+
+For a tier like "PG2 Supervised (North)":
+- PG5, PG4, PG3: can fly North launch UNSUPERVISED — they exceed the minimum and need no supervisor
+- PG2: can fly North launch with a PG4 or SO supervisor (DO NOT say CFI/FI/SSO — the required supervisor for PG2 at a PG2-rated launch is PG4 or SO)
+- PG1: cannot fly North launch
+
+CRITICAL: PG3 at "PG2 Supervised (North)" = NO supervision required. PG3 flies North independently.
+
+Tell the pilot which launches they can access and what conditions apply to each. Correct example for PG3 at "PG2 Supervised (North) | PG4 (South)": "As a PG3, you can fly the North launch unsupervised. You cannot fly the South launch — minimum PG4 required."
 
 Response rules for sites with a site-specific tier list:
 - DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, your VERY FIRST SENTENCE must be a clear "No." FORBIDDEN OPENING: Do NOT start with "To fly [Site], a [rating] pilot requires supervision from..." — that sentence implies flying is possible and will mislead any pilot who reads only the first line. REQUIRED OPENING: Start with "No, a [rating] pilot cannot fly [Site] under any supervision." Then optionally state the minimum required rating in a second sentence. Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT say the pilot "falls under" a supervised category. Do NOT mention CFI, FI, or any supervisor as a possible workaround. End your answer there.
