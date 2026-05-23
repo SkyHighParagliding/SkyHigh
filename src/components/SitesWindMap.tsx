@@ -369,6 +369,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             <span className="text-white/70">{clubName}</span>
             <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5"></span>
             <span className="text-white/70">Other</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5"></span>
+            <span className="text-white/70">Restricted</span>
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5"></span>
             <span className="text-white/70">Closed</span>
           </div>

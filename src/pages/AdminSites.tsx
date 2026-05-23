@@ -764,7 +764,8 @@ export function AdminSites() {
                     </div>
                     {(() => {
                       const { isClosedToday } = getClosureStatus(site);
-                      const isClosed = site.status !== 'open' || isClosedToday;
+                      if (site.status === 'restricted') return <Badge className="bg-amber-500 text-white shrink-0">Restricted</Badge>;
+                      const isClosed = site.status === 'closed' || isClosedToday;
                       return isClosed
                         ? <Badge variant="destructive" className="shrink-0">Closed</Badge>
                         : <Badge variant="default" className="bg-emerald-500 shrink-0">Open</Badge>;
@@ -804,7 +805,8 @@ export function AdminSites() {
                       <td className="p-4">
                         {(() => {
                           const { isClosedToday } = getClosureStatus(site);
-                          const isClosed = site.status !== 'open' || isClosedToday;
+                          if (site.status === 'restricted') return <Badge className="bg-amber-500 text-white">Restricted</Badge>;
+                          const isClosed = site.status === 'closed' || isClosedToday;
                           return isClosed
                             ? <Badge variant="destructive">Closed</Badge>
                             : <Badge variant="default" className="bg-emerald-500">Open</Badge>;
