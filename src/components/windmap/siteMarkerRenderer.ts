@@ -25,7 +25,10 @@ export function drawSiteMarkers(
     ctx.arc(sp[0], sp[1], r, 0, 2 * Math.PI);
     const todayStr = new Date().toISOString().split('T')[0];
     const isClosedToday = site.status === 'closed' || (site.upcomingClosureDates?.includes(todayStr) ?? false);
-    ctx.fillStyle = isClosedToday ? '#ef4444' : site.isSkyHighSite === 'true' ? '#22c55e' : '#0ea5e9';
+    ctx.fillStyle = isClosedToday ? '#ef4444'
+      : site.status === 'restricted' ? '#f59e0b'
+      : site.isSkyHighSite === 'true' ? '#22c55e'
+      : '#0ea5e9';
     ctx.fill();
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;

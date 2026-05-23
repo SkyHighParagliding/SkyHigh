@@ -188,6 +188,9 @@ export function SiteDetail() {
                     if (isPermanentlyClosed) {
                       return <Badge variant="destructive" className="border-none">Closed</Badge>;
                     }
+                    if (site.status === 'restricted') {
+                      return <Badge variant="outline" className="border-amber-500 text-amber-600 border bg-amber-100">Restricted</Badge>;
+                    }
                     if (isClosedToday) {
                       return (
                         <>

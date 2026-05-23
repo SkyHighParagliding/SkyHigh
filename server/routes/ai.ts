@@ -292,7 +292,7 @@ router.post("/generate", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const html = await scrapeRes.text();
-  const { allText, isSiteClosed, $ } = scrapeSiteguidePage(html);
+  const { allText, isSiteClosed, isRestricted, $ } = scrapeSiteguidePage(html);
 
   if (!allText || allText.length < 50) {
      throw new Error("Could not extract enough meaningful text from the page.");
@@ -317,6 +317,7 @@ router.post("/generate", requireAuth, asyncHandler(async (req, res) => {
   }
 
   aiResponse._isSiteClosed = isSiteClosed;
+  aiResponse._isRestricted = isRestricted;
 
   const siteId = (aiResponse.name || "site").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   if (isAllowedScrapeUrl(url)) {

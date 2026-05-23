@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 export interface ScrapeResult {
   allText: string;
   isSiteClosed: boolean;
+  isRestricted: boolean;
   $: cheerio.CheerioAPI;
   title: string;
 }
@@ -90,6 +91,20 @@ export function scrapeSiteguidePage(html: string): ScrapeResult {
     /\btemporarily\s+prohibited\b/.test(closedText);
   const closedNotice = isSiteClosed ? '\n\nSITE STATUS: This site is marked as CLOSED on siteguide.org.au. Set status to "closed".' : '';
 
+  // Restriction detection — site is only accessible to specific named schools or groups
+  const restrictedText = $('body').text().toLowerCase();
+  const isRestricted = !isSiteClosed && (
+    /\brestricted\s+to\s+\w[\w\s]*\s+(students?|pilots?|school|only)\b/.test(restrictedText) ||
+    /\bschool\s+use\s+only\b/.test(restrictedText) ||
+    /\bflight\s+training\s+schools?\s+only\b/.test(restrictedText) ||
+    /\bapproved\s+schools?\s+only\b/.test(restrictedText) ||
+    /\bnot\s+(open|available)\s+to\s+(the\s+)?general\s+(flying\s+)?(public|pilots?)\b/.test(restrictedText) ||
+    /\bonly\s+available\s+to\s+\w[\w\s]*\s+(school|students?|pilots?)\b/.test(restrictedText) ||
+    /\bexclusive\s+use\s+of\s+\w[\w\s]*\s+(school|club|group)\b/.test(restrictedText) ||
+    /\b(bright|dynasoarers|active\s+flight|melbourne\s+paragliding|updraft)\s+(schools?\s+only|students?\s+only|pilots?\s+only|use\s+only)\b/.test(restrictedText)
+  );
+  const restrictedNotice = isRestricted ? '\n\nSITE STATUS: This site has access restrictions — it is NOT open to the general flying public (school or named-group use only). Set status to "restricted".' : '';
+
   const links: string[] = [];
   $('a[href]').each((_i, el) => {
     const href = $(el).attr('href') || '';
@@ -100,7 +115,7 @@ export function scrapeSiteguidePage(html: string): ScrapeResult {
   });
   const linksSection = links.length > 0 ? `\n\nIMPORTANT LINKS FOUND ON PAGE:\n${links.join('\n')}` : '';
 
-  const allText = `Page Title: ${title}\n\n${tableText}\n\n${bodyText}${sidebarSection}${linksSection}${closedNotice}`.trim();
+  const allText = `Page Title: ${title}\n\n${tableText}\n\n${bodyText}${sidebarSection}${linksSection}${closedNotice}${restrictedNotice}`.trim();
 
-  return { allText, isSiteClosed, $, title };
+  return { allText, isSiteClosed, isRestricted, $, title };
 }
