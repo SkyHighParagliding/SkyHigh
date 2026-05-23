@@ -1528,10 +1528,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
+  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT") || !eligibilityRow.value.includes("SITE-SPECIFIC OVERRIDE RESPONSE RULES")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added HG ONLY ABSOLUTE + CONVERSATION CONTEXT rules");
+    console.log("[search] Upgraded publicSearchEligibilityRules: added SITE-SPECIFIC OVERRIDE RESPONSE RULES");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
