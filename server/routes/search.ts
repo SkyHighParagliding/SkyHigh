@@ -321,6 +321,8 @@ async function buildPublicContext(): Promise<CachedContext> {
       for (const row of extRows) {
         try { extMap.set(row.siteId, JSON.parse(row.forecastData)); } catch {}
       }
+      const todayDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+      const tomorrowDateStr = new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
       for (const site of sites) {
         // Skip closed and restricted sites (already filtered above, but guard here too)
         if (site.status === 'closed' || site.status === 'permanently closed' || site.status === 'restricted') continue;
@@ -332,8 +334,8 @@ async function buildPublicContext(): Promise<CachedContext> {
             const spd = d.bestSpeed ?? 0;
             const dir = d.bestDirection || '?';
             // Server-side: skip days where this site has a scheduled closure
-            const dayDate = dayNameToDate.get(d.dayName);
-            if (dayDate && siteClosure.includes(dayDate)) return null;
+            // Use d.date (YYYY-MM-DD) directly — avoids ambiguity when day name repeats (e.g. two Saturdays)
+            if (siteClosure.includes(d.date)) return null;
             const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
             const gust = bestSlot.windGust ?? null;
             const fly = computeFlyability(spd, gust, dir, site);
@@ -345,7 +347,11 @@ async function buildPublicContext(): Promise<CachedContext> {
             const siteRange = parseWindSpeedRange(site.windSpeed);
             if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) return null;
             const flyTag = fly ? ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ""}]` : "";
-            return `${d.dayName} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
+            // Label today/tomorrow explicitly so the AI cannot misidentify which day is which
+            const dayLabel = d.date === todayDateStr ? `TODAY (${d.dayName})`
+                           : d.date === tomorrowDateStr ? `TOMORROW (${d.dayName})`
+                           : d.dayName;
+            return `${dayLabel} ${spd}kt${gust != null ? ` G${gust}` : ""} ${dir} ${d.bestWeatherSummary || ''}${flyTag}`;
           })
           .filter(Boolean);
         if (dayStrs.length > 0) {
@@ -1428,7 +1434,10 @@ Do NOT wrap your response in JSON or code blocks.`;
 
   const models = await getTextModels();
 
-  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${query}`;
+  const nowMelb = new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
+  const tomorrowMelb = new Date(Date.now() + 86400000).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
+  const dateContext = `CURRENT DATE (Melbourne time): ${nowMelb}\nTomorrow is: ${tomorrowMelb}\n\n`;
+  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${dateContext}${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${query}`;
 
   let clientDisconnected = false;
   req.on("close", () => { clientDisconnected = true; });
