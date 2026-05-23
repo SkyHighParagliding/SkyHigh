@@ -365,18 +365,24 @@ async function buildPublicContext(): Promise<CachedContext> {
           .map((d: any) => {
             const spd = d.bestSpeed ?? 0;
             const dir = d.bestDirection || '?';
-            // Server-side: skip days where this site has a scheduled closure
-            // Use d.date (YYYY-MM-DD) directly — avoids ambiguity when day name repeats (e.g. two Saturdays)
-            if (siteClosure.includes(d.date)) return null;
+            // Label today/tomorrow explicitly so the AI cannot misidentify which day is which
+            const dayLabel = d.date === todayDateStr ? `TODAY (${d.dayName})`
+                           : d.date === tomorrowDateStr ? `TOMORROW (${d.dayName})`
+                           : d.dayName;
+            // Tag closure days instead of dropping them. Dropping produces an empty extended-forecast
+            // entry for the whole closure window — direct-named queries then have no weather context.
+            // Query-time filterContextByClosureDates() strips the entire site line for listing queries,
+            // so these tagged entries are invisible there.
+            if (siteClosure.includes(d.date)) {
+              const gust0 = d.slots?.[0]?.windGust ?? null;
+              const speedBase0 = `${spd}kt${gust0 != null ? ` G${gust0}` : ''} ${dir}`;
+              return `${dayLabel} ${speedBase0} [SCHEDULED CLOSURE]`;
+            }
             const bestSlot = d.slots?.find((s: any) => s.windSpeed === spd && s.windDirection === dir) || d.slots?.[0] || {};
             const gust = bestSlot.windGust ?? null;
             const fly = computeFlyability(spd, gust, dir, site);
             // Cannot assess flyability without site wind config — skip this day
             if (!fly) return null;
-            // Label today/tomorrow explicitly so the AI cannot misidentify which day is which
-            const dayLabel = d.date === todayDateStr ? `TODAY (${d.dayName})`
-                           : d.date === tomorrowDateStr ? `TOMORROW (${d.dayName})`
-                           : d.dayName;
             const siteRange = parseWindSpeedRange(site.windSpeed);
             const speedBase = `${spd}kt${gust != null ? ` G${gust}` : ''} ${dir}`;
             // Include unflyable days with [NOT FLYABLE: reason] instead of dropping them.
@@ -747,9 +753,10 @@ WEATHER & FLYABILITY — IMPORTANT:
 - Prioritise "Good/Good" (no gust warning) sites first. List "Cross" or gusty sites second with a clear caution note.
 - When listing sites with weather, lead with the flyability status, then the key numbers (wind speed, gusts, direction). Temperature and sky conditions are secondary.
 - Always suggest the pilot check the site page for the full live view and 6-hour forecast.
-- You also have access to 7-DAY EXTENDED FORECASTS when available. All 7 days appear for each site. Flyable days show [Dir:X Spd:Y] labels. Unflyable days are included with a [NOT FLYABLE: reason] tag showing the actual forecast wind data (e.g. "Monday 6kt NE [NOT FLYABLE: wrong direction, requires W-NW]"). When a day is marked NOT FLYABLE, cite the actual numbers from that entry — do NOT substitute numbers from another day or from the LIVE/FCST section.
+- You also have access to 7-DAY EXTENDED FORECASTS when available. All 7 days appear for each site. Flyable days show [Dir:X Spd:Y] labels. Unflyable days are included with a [NOT FLYABLE: reason] tag showing the actual forecast wind data (e.g. "Monday 6kt NE [NOT FLYABLE: wrong direction, requires W-NW]"). Days that fall within a scheduled site closure show a [SCHEDULED CLOSURE] tag — they still include the forecast wind numbers so you can tell the pilot what conditions are expected during the closure period. When a day is marked NOT FLYABLE or SCHEDULED CLOSURE, cite the actual numbers from that entry — do NOT substitute numbers from another day or from the LIVE/FCST section.
 - CRITICAL — [NOT FLYABLE] IS A WEATHER TAG, NOT AN ELIGIBILITY TAG: A [NOT FLYABLE] entry in the 7-day forecast means the weather conditions on that day are not suitable — it has absolutely no effect on whether a pilot is eligible to fly the site. For a direct eligibility query ("can I fly [Site] on [day]?"), always answer eligibility first based solely on the site's rating tiers and the pilot's rating. Then separately state the weather conditions. Example of a CORRECT answer for PG4 at a PG5|PG4-SO/SSO site with a blown-out forecast: "As a PG4 pilot, you can fly [Site] with SO/SSO supervision. However, the forecast for [day] shows [conditions] — conditions are not suitable that day."
-- FUTURE DATE WITH NO FORECAST: If a pilot asks about a specific future date and that date is completely absent from the 7-DAY EXTENDED FORECASTS (neither as a flyable nor as a [NOT FLYABLE] entry), the date is beyond the 7-day forecast window. Do NOT say "forecast not available." Instead say the forecast doesn't extend to that date yet, and recommend the pilot check the site page closer to the date for updated conditions.
+- CRITICAL — [SCHEDULED CLOSURE] IS AN OPERATIONAL TAG, NOT A WEATHER TAG: A [SCHEDULED CLOSURE] entry means the site is closed by the club on that day — flying is not permitted regardless of weather or pilot rating. Always state the closure clearly and indicate the reopening date if available. Still quote the wind numbers from the entry so the pilot knows what conditions to expect when it reopens.
+- FUTURE DATE WITH NO FORECAST: If a pilot asks about a specific future date and that date is completely absent from the 7-DAY EXTENDED FORECASTS (neither as a flyable, a [NOT FLYABLE], nor a [SCHEDULED CLOSURE] entry), the date is beyond the 7-day forecast window. Do NOT say "forecast not available." Instead say the forecast doesn't extend to that date yet, and recommend the pilot check the site page closer to the date for updated conditions.
 
 RULES:
 1. If the pilot asks about physical club equipment or items (porosity meter, reserve parachute for testing, club gear, etc.), tell them to contact a committee member and link to the committee page
@@ -1605,10 +1612,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG")) {
-    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag rules — upgrade
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURE] IS AN OPERATIONAL TAG")) {
+    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag / closure-tag rules — upgrade
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
-    console.log("[search] Upgraded publicSearchPrompt: added NOT FLYABLE weather-tag clarification");
+    console.log("[search] Upgraded publicSearchPrompt: added SCHEDULED CLOSURE tag rule");
   }
 
   // ── Eligibility rules (separate setting) ──
