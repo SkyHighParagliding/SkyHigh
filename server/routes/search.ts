@@ -696,7 +696,18 @@ HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be complete
 
 PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at EVERY site without exception. There is no site a PG2 can fly unsupervised. When responding to a PG2 pilot, state this clearly at the start of your response before listing any sites. Every site you include must carry a supervision requirement.
 
-PG SUPERVISION MATRIX — universal policy. A site's pgRating is the minimum to fly unsupervised. Pilots below that minimum may still fly with appropriate supervision:
+STEP 1 — SITE-SPECIFIC RATING CHECK (MANDATORY — DO THIS BEFORE STEP 2):
+Before applying the general matrix, inspect each site's pgRating field for the "|" character (e.g., "PG5 | PG4 Supervised requires SO/SSO"). If "|" is present, this is a site-specific tier list. STOP — the general matrix in STEP 2 does NOT apply to this site at all. Use only the site-specific tiers:
+- The first tier (e.g., "PG5") is the minimum rating to fly unsupervised.
+- Each subsequent tier (e.g., "PG4 Supervised requires SO/SSO") defines a supervised level.
+- A pilot below ALL listed tiers is ineligible at that site under any supervision level whatsoever.
+
+Response rules for sites with a site-specific tier list:
+- DIRECT query ("can I fly [Site]?", "what about [Site]?", "can I go to [Site]?"): If the pilot is below all tiers, give ONE clear statement and stop: "No, a [rating] pilot cannot fly [Site Name] under any level of supervision. The site requires a minimum of [lowest supervised tier, e.g., PG4 with SO/SSO]." Do NOT say "however". Do NOT present a yes-then-no answer. Do NOT mention what the general matrix would say. Do NOT add qualifications. End your answer there.
+- LISTING query ("where can I fly?", "what sites can I fly?"): omit ineligible sites completely — do not list them or mention them at all.
+
+STEP 2 — GENERAL SUPERVISION MATRIX (only for sites where pgRating has no "|"):
+A site's pgRating is the minimum to fly unsupervised. Pilots below that minimum may still fly with appropriate supervision:
 
   Pilot Cert | Site Rating 2 | Site Rating 3 | Site Rating 4   | Site Rating 5
   PG2        | PG4           | PG5           | CFI, FI or SSO  | CFI, FI or SSO
@@ -707,16 +718,6 @@ PG SUPERVISION MATRIX — universal policy. A site's pgRating is the minimum to 
 "(qualified)" means the pilot meets or exceeds the site rating — no supervision needed.
 CFI = Chief Flying Instructor, FI = Flying Instructor, SSO = Senior Safety Officer, SO = Safety Officer.
 When supervision is required, tell the pilot clearly what level of supervisor they need and include the site in the list.
-
-SITE-SPECIFIC RATING OVERRIDES: Some sites have pgRating fields with multiple tiers separated by "|" (e.g., "PG5 | PG4 req SO/SSO"). These ALWAYS take precedence over the general matrix — check them FIRST before applying anything else. The first entry is the unsupervised minimum; each subsequent entry is a supervised tier with its specific supervisor requirement. Any pilot below ALL listed tiers cannot fly that site under any supervision level whatsoever.
-Example: "PG5 | PG4 req SO/SSO" means:
-- PG5: flies without supervision — include
-- PG4: flies only with SO or SSO — include with supervision note
-- PG3 and below: ineligible at this site under any supervision — see response rules below
-
-SITE-SPECIFIC OVERRIDE RESPONSE RULES — the general supervision matrix does NOT apply once you have identified a site-specific tier list:
-- For LISTING queries ("what sites can I fly?", "where can I fly tomorrow?"): omit ineligible sites completely. Do not list them, do not mention them.
-- For DIRECT queries ("can I fly [Site]?", "what about [Site]?"): do NOT apply the general matrix first. Check the site-specific tiers, and if the pilot is below all of them, answer with a single clear statement: "No, a [rating] pilot cannot fly [Site] under any level of supervision. The site requires [state the minimum supervised tier, e.g. PG4 with SO/SSO]." Do not say "however" or present a yes-then-no answer. Do not mention what the general matrix would have said.
 
 If after all exclusions no sites remain, say so: "There are no suitable open sites for a [RATING] pilot on [day]." Never pad the list with excluded sites.`;
 }
@@ -1532,10 +1533,10 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("GUST THRESHOLD") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT") || !eligibilityRow.value.includes("SITE-SPECIFIC OVERRIDE RESPONSE RULES")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG2 UNIVERSAL SUPERVISION RULE") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("CONVERSATION CONTEXT")) {
     // Missing one or more required rule sections — upgrade to current default
     await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
-    console.log("[search] Upgraded publicSearchEligibilityRules: added SITE-SPECIFIC OVERRIDE RESPONSE RULES");
+    console.log("[search] Upgraded publicSearchEligibilityRules: restructured STEP 1/STEP 2 site-specific check ordering");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }
