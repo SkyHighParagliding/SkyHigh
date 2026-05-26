@@ -427,33 +427,52 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
 import { saveContactPhoto, deleteContactPhoto } from "../services/photoService.js";
 import bcrypt from "bcrypt";
 
-// Self-service photo upload (via login on admin login page)
+// Self-service photo upload — authenticates with email + password from request body
 router.post("/photo/self-upload", asyncHandler(async (req, res) => {
-  if (!req.files || !req.files.photo) {
+  const { email, password, imageBuffer } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
+  if (!imageBuffer) {
     return res.status(400).json({ error: "No photo provided" });
   }
-  const file = Array.isArray(req.files.photo) ? req.files.photo[0] : req.files.photo;
-  const { contactId } = req.body;
-  if (!contactId) {
-    return res.status(400).json({ error: "Contact ID is required" });
+
+  const contact = await db.prepare(
+    "SELECT id, password, photoUrl FROM contacts WHERE LOWER(email) = LOWER(?) AND isAdmin = 1"
+  ).get(email) as { id: string; password: string; photoUrl?: string } | undefined;
+
+  if (!contact || !contact.password) {
+    return res.status(401).json({ error: "Invalid email or password" });
   }
-  const photoUrl = await saveContactPhoto(file.data, contactId);
-  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contactId);
+
+  const ok = await bcrypt.compare(password, contact.password);
+  if (!ok) {
+    return res.status(401).json({ error: "Invalid email or password" });
+  }
+
+  if (contact.photoUrl) {
+    await deleteContactPhoto(contact.photoUrl);
+  }
+
+  const buffer = Buffer.from(imageBuffer, "base64");
+  const photoUrl = await saveContactPhoto(buffer, contact.id);
+  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contact.id);
   res.json({ success: true, photoUrl });
 }));
 
 router.post("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
-  if (!req.files || !req.files.photo) {
+  const { imageBuffer } = req.body;
+  if (!imageBuffer) {
     return res.status(400).json({ error: "No photo provided" });
   }
-  const file = Array.isArray(req.files.photo) ? req.files.photo[0] : req.files.photo;
   const { id } = req.params;
   const contact = await db.prepare("SELECT id, photoUrl FROM contacts WHERE id = ?").get(id) as any;
   if (!contact) return res.status(404).json({ error: "Contact not found" });
   if (contact.photoUrl) {
     await deleteContactPhoto(contact.photoUrl);
   }
-  const photoUrl = await saveContactPhoto(file.data, id);
+  const buffer = Buffer.from(imageBuffer, "base64");
+  const photoUrl = await saveContactPhoto(buffer, id);
   await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, id);
   res.json({ success: true, photoUrl });
 }));
