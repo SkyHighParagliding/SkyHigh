@@ -18,8 +18,8 @@ function generateId() {
 
 router.get("/public/committee", asyncHandler(async (req, res) => {
   const members = await db.prepare(
-    "SELECT id, name, surname, organisation, phone, email, position, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
-  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; fullNameDisplay: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; photoUrl?: string }[];
+    "SELECT id, name, surname, organisation, phone, email, position, safetyOfficerType, isSafetyCommittee, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
+  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; safetyOfficerType?: string | null; isSafetyCommittee?: number; fullNameDisplay: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; photoUrl?: string }[];
   const filtered = await filterByCurrentMembers(members);
   res.json(filtered.map(m => ({
     ...m,
@@ -274,7 +274,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, password } = req.body;
+  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoAuthorised, password } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
   if (isCommittee) isAdmin = true;
@@ -306,7 +306,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
     isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
     isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
     displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0, fullNameDisplay !== false ? 1 : 0,
-    showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0,
+    showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0, photoAuthorised ? 1 : 0,
   ];
 
   if (password && needsPassword) {
@@ -330,7 +330,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   const result = await db.prepare(
     `UPDATE contacts SET organisation = ?, name = ?, surname = ?, phone = ?, email = ?, notes = ?,
      isAdmin = ?, isCommittee = ?, isContractor = ?, isParksVic = ?, isSafetyCommittee = ?, isSocialMedia = ?, soAuthorised = ?,
-     displayCommittee = ?, displaySafety = ?, fullNameDisplay = ?, showTelegram = ?, showPhone = ?, showEmail = ?, showAdminEmail = ?${passwordUpdate},
+     displayCommittee = ?, displaySafety = ?, fullNameDisplay = ?, showTelegram = ?, showPhone = ?, showEmail = ?, showAdminEmail = ?, photoAuthorised = ?${passwordUpdate},
      updatedAt = datetime('now') WHERE id = ?`
   ).run(...params);
 
@@ -382,9 +382,14 @@ router.post("/bulk-delete", requireAuth, asyncHandler(async (req, res) => {
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   const force = req.query.force === "true";
+  const currentUserId = (req as any).user?.id;
 
   const contact = await db.prepare("SELECT isAdmin FROM contacts WHERE id = ?").get(req.params.id) as any;
   if (!contact) return res.status(404).json({ error: "Contact not found" });
+
+  if (req.params.id === currentUserId) {
+    return res.status(400).json({ error: "Cannot delete your own account" });
+  }
 
   if (contact.isAdmin) {
     const adminCount = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE isAdmin = 1").get() as any;
