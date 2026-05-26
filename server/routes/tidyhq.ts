@@ -160,7 +160,7 @@ router.post("/webhook", asyncHandler(async (req, res) => {
       if (mapping.localRoleFlag === "isPosition") {
         const displayName = `${localContact.name}${localContact.surname ? ` ${localContact.surname}` : ""}`;
         if (eventType === "contact.group.added") {
-          const current = await db.prepare("SELECT position FROM contacts WHERE id = ?").get(localContact.id) as any;
+          const current = await db.prepare("SELECT position, isSafetyCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
           const currentPos = (current?.position || "").trim();
           let newPosition: string;
           if (!currentPos || currentPos === "Committee") {
@@ -171,12 +171,20 @@ router.post("/webhook", asyncHandler(async (req, res) => {
             newPosition = currentPos;
           }
           await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
+          // If this is an SO or SSO position and contact is a safety committee member, update safetyOfficerType
+          if ((tidyhqGroupName === "SSO" || tidyhqGroupName === "SO") && current?.isSafetyCommittee) {
+            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(tidyhqGroupName, localContact.id);
+          }
         } else {
           const current = await db.prepare("SELECT position, isCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
           const currentPos = (current?.position || "").trim();
           const parts = currentPos.split(", ").map((p: string) => p.trim()).filter((p: string) => p && p !== tidyhqGroupName);
           const newPosition = parts.length > 0 ? parts.join(", ") : (current?.isCommittee ? "Committee" : null);
           await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
+          // If removing SO/SSO, clear safetyOfficerType
+          if (tidyhqGroupName === "SSO" || tidyhqGroupName === "SO") {
+            await db.prepare("UPDATE contacts SET safetyOfficerType = NULL WHERE id = ?").run(localContact.id);
+          }
         }
         await db.prepare(
           `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, localContactId, localContactName, roleFlag, action, detail)
@@ -215,6 +223,21 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           if (currentPos === "Committee") {
             await db.prepare("UPDATE contacts SET position = NULL WHERE id = ?").run(localContact.id);
           }
+        }
+      }
+
+      if (mapping.localRoleFlag === "isSafetyCommittee") {
+        if (flagValue === 1) {
+          // When adding to Safety Committee, auto-enable display and set safetyOfficerType based on position
+          await db.prepare("UPDATE contacts SET displaySafety = 1 WHERE id = ?").run(localContact.id);
+          const current = await db.prepare("SELECT position FROM contacts WHERE id = ?").get(localContact.id) as any;
+          const currentPos = (current?.position || "").trim();
+          if (currentPos === "SSO" || currentPos === "SO") {
+            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(currentPos, localContact.id);
+          }
+        } else {
+          // When removing from Safety Committee, disable display
+          await db.prepare("UPDATE contacts SET displaySafety = 0 WHERE id = ?").run(localContact.id);
         }
       }
 
