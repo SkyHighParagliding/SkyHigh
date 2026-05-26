@@ -459,6 +459,13 @@ export function AdminLogin() {
               >
                 Sign up as Provider
               </button>
+              <button
+                type="button"
+                className="w-full text-sm text-muted-foreground hover:text-navy transition-colors py-1"
+                onClick={() => switchView("photo-upload")}
+              >
+                <Camera className="w-3.5 h-3.5 inline mr-1" /> Update your photo
+              </button>
             </div>
           </form>
         </CardContent>
