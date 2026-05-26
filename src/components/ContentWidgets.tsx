@@ -25,9 +25,9 @@ function SchoolsWidget({ shuffle = true }: { shuffle?: boolean }) {
         <h3 className="text-lg font-bold text-purple-800">Paragliding Schools</h3>
       </div>
       <div className="flex flex-wrap gap-2">
-        {displayed.map((school, i) => (
+        {displayed.map((school) => (
           <a
-            key={i}
+            key={school.name}
             href={school.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -57,9 +57,9 @@ function TelegramWidget() {
         <h3 className="text-lg font-bold text-navy">Telegram Groups</h3>
       </div>
       <div className="flex flex-wrap gap-2">
-        {groups.map((group, i) => (
+        {groups.map((group) => (
           <a
-            key={i}
+            key={group.name}
             href={group.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -105,9 +105,9 @@ function CustomTagWidget({ tagName }: { tagName: string }) {
           <h3 className="text-lg font-bold text-purple-800">Paragliding Schools</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          {filtered.map((school, i) => (
+          {filtered.map((school) => (
             <a
-              key={i}
+              key={school.name}
               href={school.url}
               target="_blank"
               rel="noopener noreferrer"
@@ -128,9 +128,9 @@ function CustomTagWidget({ tagName }: { tagName: string }) {
         <h3 className="text-lg font-bold text-navy">Telegram Groups</h3>
       </div>
       <div className="flex flex-wrap gap-2">
-        {filtered.map((group, i) => (
+        {filtered.map((group) => (
           <a
-            key={i}
+            key={group.name}
             href={group.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -152,14 +152,22 @@ interface CommitteeMember {
   phone: string;
   email: string;
   position?: string;
+  fullNameDisplay?: number;
   showTelegram?: number;
   showPhone?: number;
   showEmail?: number;
   showAdminEmail?: number;
+  photoUrl?: string;
 }
 
-function getDisplayName(person: { name: string; surname?: string }, allPeople: { name: string; surname?: string }[]): string {
+function getDisplayName(person: { name: string; surname?: string; fullNameDisplay?: number }, allPeople: { name: string; surname?: string }[]): string {
   const firstName = person.name;
+  const showFullName = person.fullNameDisplay !== 0;
+
+  if (showFullName && person.surname) {
+    return `${firstName} ${person.surname}`;
+  }
+
   const dupes = allPeople.filter(p => p.name === firstName);
   if (dupes.length > 1 && person.surname) {
     return `${firstName} ${person.surname.charAt(0)}`;
@@ -202,6 +210,15 @@ function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember;
   return (
     <Card className="hover:shadow-md transition-shadow border-t-4 border-t-sky">
       <CardContent className="pt-6 text-center">
+        {member.photoUrl && (
+          <div className="mx-auto mb-3">
+            <img
+              src={member.photoUrl}
+              alt={displayName}
+              className="w-20 h-20 rounded-lg object-cover border-2 border-border"
+            />
+          </div>
+        )}
         <h3 className="font-bold text-lg text-navy">{displayName}</h3>
         <p className="text-sm text-sky font-medium">{extractRole(member.position)}</p>
         {member.organisation && (
@@ -309,7 +326,12 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
 }
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 function processStyleSyntax(text: string): string {
