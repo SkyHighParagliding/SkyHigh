@@ -482,13 +482,26 @@ export function AdminContacts() {
 
   const handleBulkDelete = async () => {
     if (bulkSelectedIds.size === 0) return;
+
+    // Safety check: prevent deleting if selecting too many contacts
+    const deleteCount = bulkSelectedIds.size;
+    const totalContacts = contacts.length;
+    const deletePercentage = (deleteCount / totalContacts) * 100;
+
+    // Block deletion of 75%+ of all contacts or all contacts
+    if (deletePercentage >= 75) {
+      setDeleteError(`Cannot delete ${deleteCount} of ${totalContacts} contacts (${Math.round(deletePercentage)}%). This would remove most/all contacts. Check your filter before deleting.`);
+      setShowBulkConfirm(false);
+      return;
+    }
+
     setBulkDeleting(true);
     try {
       await api.post("/api/contacts/bulk-delete", { ids: Array.from(bulkSelectedIds) }, token);
       setBulkSelectedIds(new Set());
       setBulkSelectMode(false);
       setShowBulkConfirm(false);
-      toast.success("Contacts deleted");
+      toast.success(`Deleted ${deleteCount} contacts`);
       fetchContacts();
     } catch (e: unknown) {
       setDeleteError(e instanceof Error ? e.message : "Delete failed");
@@ -1299,6 +1312,11 @@ export function AdminContacts() {
             <p className="text-foreground-secondary mb-2">
               Are you sure you want to delete <strong>{bulkSelectedIds.size} contact{bulkSelectedIds.size !== 1 ? "s" : ""}</strong>? This action cannot be undone.
             </p>
+            {bulkSelectedIds.size > 10 && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                ⚠️ You are deleting {bulkSelectedIds.size} contacts ({Math.round((bulkSelectedIds.size / contacts.length) * 100)}% of all contacts). Please verify the list below is correct.
+              </div>
+            )}
             <div className="mb-4 max-h-[200px] overflow-y-auto border border-border rounded-lg">
               {filtered.filter(c => bulkSelectedIds.has(c.id)).map(c => (
                 <div key={c.id} className="px-3 py-2 border-b border-border-faint last:border-0 text-sm">
