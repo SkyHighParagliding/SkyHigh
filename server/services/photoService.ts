@@ -11,8 +11,9 @@ import { saveFile, deleteFile, StorageKey } from "../storage.js";
  */
 export async function saveContactPhoto(imageBuffer: Buffer, contactId: string): Promise<string> {
   try {
-    // Resize to 300×300, strip EXIF (Sharp does this automatically on resize)
+    // Auto-rotate based on EXIF orientation, resize to 300×300, strip EXIF
     const resized = await sharp(imageBuffer)
+      .rotate()
       .resize(300, 300, {
         fit: "cover",
         position: "center",
