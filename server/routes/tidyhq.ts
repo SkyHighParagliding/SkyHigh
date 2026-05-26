@@ -175,7 +175,8 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           // Extract clean SO/SSO name (handles "SO." with period)
           const cleanPosition = tidyhqGroupName.replace(/\.$/, "").trim();
           if ((cleanPosition === "SSO" || cleanPosition === "SO") && current?.isSafetyCommittee) {
-            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(cleanPosition, localContact.id);
+            // TODO: safetyOfficerType column doesn't exist yet (migration 017 didn't run)
+            // await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(cleanPosition, localContact.id);
           }
         } else {
           const current = await db.prepare("SELECT position, isCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
@@ -186,7 +187,8 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           // If removing SO/SSO, clear safetyOfficerType (handles "SO." with period)
           const cleanPosition = tidyhqGroupName.replace(/\.$/, "").trim();
           if (cleanPosition === "SSO" || cleanPosition === "SO") {
-            await db.prepare("UPDATE contacts SET safetyOfficerType = NULL WHERE id = ?").run(localContact.id);
+            // TODO: safetyOfficerType column doesn't exist yet (migration 017 didn't run)
+            // await db.prepare("UPDATE contacts SET safetyOfficerType = NULL WHERE id = ?").run(localContact.id);
           }
         }
         await db.prepare(
@@ -245,7 +247,8 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           }
 
           if (safetyType) {
-            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(safetyType, localContact.id);
+            // TODO: safetyOfficerType column doesn't exist yet (migration 017 didn't run)
+            // await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(safetyType, localContact.id);
           }
         } else {
           // When removing from Safety Committee, disable display
