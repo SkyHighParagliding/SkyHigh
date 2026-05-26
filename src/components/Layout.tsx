@@ -46,6 +46,7 @@ function ClassicHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
+    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   return (
@@ -89,11 +90,6 @@ function ClassicHeader() {
                 <Button variant="orange" size="sm">
                   Online Check-in
                 </Button>
-              </Link>
-            )}
-            {user && !isSoSession && (
-              <Link to="/admin" className="text-sm font-medium hover:text-sky transition-colors whitespace-nowrap">
-                Admin
               </Link>
             )}
           </nav>
