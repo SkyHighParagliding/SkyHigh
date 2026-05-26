@@ -172,8 +172,10 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           }
           await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
           // If this is an SO or SSO position and contact is a safety committee member, update safetyOfficerType
-          if ((tidyhqGroupName === "SSO" || tidyhqGroupName === "SO") && current?.isSafetyCommittee) {
-            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(tidyhqGroupName, localContact.id);
+          // Extract clean SO/SSO name (handles "SO." with period)
+          const cleanPosition = tidyhqGroupName.replace(/\.$/, "").trim();
+          if ((cleanPosition === "SSO" || cleanPosition === "SO") && current?.isSafetyCommittee) {
+            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(cleanPosition, localContact.id);
           }
         } else {
           const current = await db.prepare("SELECT position, isCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
@@ -181,8 +183,9 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           const parts = currentPos.split(", ").map((p: string) => p.trim()).filter((p: string) => p && p !== tidyhqGroupName);
           const newPosition = parts.length > 0 ? parts.join(", ") : (current?.isCommittee ? "Committee" : null);
           await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
-          // If removing SO/SSO, clear safetyOfficerType
-          if (tidyhqGroupName === "SSO" || tidyhqGroupName === "SO") {
+          // If removing SO/SSO, clear safetyOfficerType (handles "SO." with period)
+          const cleanPosition = tidyhqGroupName.replace(/\.$/, "").trim();
+          if (cleanPosition === "SSO" || cleanPosition === "SO") {
             await db.prepare("UPDATE contacts SET safetyOfficerType = NULL WHERE id = ?").run(localContact.id);
           }
         }
@@ -232,8 +235,17 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           await db.prepare("UPDATE contacts SET displaySafety = 1 WHERE id = ?").run(localContact.id);
           const current = await db.prepare("SELECT position FROM contacts WHERE id = ?").get(localContact.id) as any;
           const currentPos = (current?.position || "").trim();
-          if (currentPos === "SSO" || currentPos === "SO") {
-            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(currentPos, localContact.id);
+
+          // Extract SO/SSO from position field using pattern matching (handles "SO.", "SSO", or in longer strings)
+          let safetyType: string | null = null;
+          if (currentPos.includes("SSO")) {
+            safetyType = "SSO";
+          } else if (currentPos.includes("SO")) {
+            safetyType = "SO";
+          }
+
+          if (safetyType) {
+            await db.prepare("UPDATE contacts SET safetyOfficerType = ? WHERE id = ?").run(safetyType, localContact.id);
           }
         } else {
           // When removing from Safety Committee, disable display
