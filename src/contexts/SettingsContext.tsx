@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 interface Settings {
   onlineCheckInEnabled: boolean;
@@ -51,6 +51,7 @@ interface Settings {
   homeCardEventsLink?: string;
   homeCardEventsLinkText?: string;
   homeCustomCards?: string;
+  homeWeatherCardCount?: string;
   socialFacebook?: string;
   socialInstagram?: string;
   socialYoutube?: string;
@@ -70,6 +71,7 @@ interface Settings {
   publicSearchCtaFrequency?: string;
   qrCodeMode?: string;
   imageLibrary?: string;
+  screenshotLibrary?: string;
   clubName?: string;
   clubTagline?: string;
   clubPrimaryColor?: string;
@@ -98,6 +100,7 @@ interface Settings {
   xcMapsDescription?: string;
   xcDistanceRings?: string;
   businessDirectoryEnabled?: boolean;
+  bulkUploadLimit?: string;
   xcAirspaceEnabled: boolean;
   xcCompetitionsEnabled: boolean;
   flightTrackerEnabled: boolean;
@@ -140,6 +143,9 @@ interface Settings {
   wfOpacity?: string;
   wfMaxParticleSpeed?: string;
   wfParticleMaxAge?: string;
+  windMapDefaultLat?: string;
+  windMapDefaultLon?: string;
+  windMapDefaultZoom?: string;
   [key: string]: string | boolean | undefined;
 }
 
@@ -216,153 +222,157 @@ const SettingsContext = createContext<SettingsContextType>({
   darkLogos: emptyLogos,
 });
 
+function buildSettings(data: Record<string, any>): Settings {
+  const cleanString = (val: any) => val === "undefined" ? "" : val;
+  return {
+    onlineCheckInEnabled: data.onlineCheckInEnabled === "true",
+    homeHeroTitle: cleanString(data.homeHeroTitle),
+    homeHeroSubtitle: cleanString(data.homeHeroSubtitle),
+    homeHeroImages: data.homeHeroImages,
+    homeHeroImageMode: data.homeHeroImageMode,
+    homeHeroStaticImageIndex: data.homeHeroStaticImageIndex,
+    alertBannerEnabled: data.alertBannerEnabled === "true",
+    alertBannerText: cleanString(data.alertBannerText),
+    homeCta1Text: cleanString(data.homeCta1Text),
+    homeCta1Link: cleanString(data.homeCta1Link),
+    homeCta2Text: cleanString(data.homeCta2Text),
+    homeCta2Link: cleanString(data.homeCta2Link),
+    featuredSiteId: data.featuredSiteId,
+    featuredSiteEnabled: data.featuredSiteEnabled === "true",
+    photoSliderEnabled: data.photoSliderEnabled === "true",
+    photoSliderReverse: data.photoSliderReverse === "true",
+    photoSliderAutoScroll: data.photoSliderAutoScroll !== "false",
+    youtubeCarouselEnabled: data.youtubeCarouselEnabled === "true",
+    youtubeCarouselReverse: data.youtubeCarouselReverse === "true",
+    youtubeCarouselAutoScroll: data.youtubeCarouselAutoScroll !== "false",
+    weatherScraperMinInterval: data.weatherScraperMinInterval,
+    weatherScraperMaxInterval: data.weatherScraperMaxInterval,
+    weatherScraperStartHour: data.weatherScraperStartHour,
+    weatherScraperEndHour: data.weatherScraperEndHour,
+    homeBox1Desc: cleanString(data.homeBox1Desc),
+    homeBox2Desc: cleanString(data.homeBox2Desc),
+    homeBox3Desc: cleanString(data.homeBox3Desc),
+    weatherScraperLastRun: data.weatherScraperLastRun,
+    fineGridLastRun: data.fineGridLastRun,
+    fineGridLastResult: data.fineGridLastResult,
+    coarseGridLastRun: data.coarseGridLastRun,
+    coarseGridLastResult: data.coarseGridLastResult,
+    extendedForecastLastRun: data.extendedForecastLastRun,
+    extendedForecastLastResult: data.extendedForecastLastResult,
+    homeCardsSelection: cleanString(data.homeCardsSelection),
+    homeCardsCycle: data.homeCardsCycle === "true",
+    homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),
+    homeCardSitesTitle: cleanString(data.homeCardSitesTitle),
+    homeCardSitesLink: cleanString(data.homeCardSitesLink),
+    homeCardSitesLinkText: cleanString(data.homeCardSitesLinkText),
+    homeCardSafetyTitle: cleanString(data.homeCardSafetyTitle),
+    homeCardSafetyLink: cleanString(data.homeCardSafetyLink),
+    homeCardSafetyLinkText: cleanString(data.homeCardSafetyLinkText),
+    homeCardCommunityTitle: cleanString(data.homeCardCommunityTitle),
+    homeCardCommunityLink: cleanString(data.homeCardCommunityLink),
+    homeCardCommunityLinkText: cleanString(data.homeCardCommunityLinkText),
+    homeCardEventsTitle: cleanString(data.homeCardEventsTitle),
+    homeCardEventsLink: cleanString(data.homeCardEventsLink),
+    homeCardEventsLinkText: cleanString(data.homeCardEventsLinkText),
+    homeCustomCards: data.homeCustomCards || "",
+    socialFacebook: cleanString(data.socialFacebook),
+    socialInstagram: cleanString(data.socialInstagram),
+    socialYoutube: cleanString(data.socialYoutube),
+    socialTiktok: cleanString(data.socialTiktok),
+    socialTwitter: cleanString(data.socialTwitter),
+    socialLinkedin: cleanString(data.socialLinkedin),
+    socialStrava: cleanString(data.socialStrava),
+    socialWebsite: cleanString(data.socialWebsite),
+    homeSchools: data.homeSchools || "",
+    homeTelegramGroups: data.homeTelegramGroups || "",
+    homeSponsors: data.homeSponsors || "",
+    youtubeVideos: data.youtubeVideos || "",
+    instagramEmbeds: data.instagramEmbeds || "",
+    publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
+    publicSearchPrompt: data.publicSearchPrompt || "",
+    publicSearchCtaMessage: data.publicSearchCtaMessage || "",
+    publicSearchCtaFrequency: data.publicSearchCtaFrequency || "2",
+    qrCodeMode: data.qrCodeMode || "off",
+    imageLibrary: data.imageLibrary || "",
+    screenshotLibrary: data.screenshotLibrary || "",
+    clubName: cleanString(data.clubName) || "SkyHigh",
+    clubTagline: cleanString(data.clubTagline) || "",
+    clubPrimaryColor: cleanString(data.clubPrimaryColor) || "",
+    clubLogoOriginal: cleanString(data.clubLogoOriginal) || "",
+    clubLogoNav: cleanString(data.clubLogoNav) || "",
+    clubLogoFooter: cleanString(data.clubLogoFooter) || "",
+    clubLogoFavicon: cleanString(data.clubLogoFavicon) || "",
+    clubLogoSplash: cleanString(data.clubLogoSplash) || "",
+    clubLogoDarkOriginal: cleanString(data.clubLogoDarkOriginal) || "",
+    clubLogoDarkNav: cleanString(data.clubLogoDarkNav) || "",
+    clubLogoDarkFooter: cleanString(data.clubLogoDarkFooter) || "",
+    clubLogoDarkFavicon: cleanString(data.clubLogoDarkFavicon) || "",
+    clubLogoDarkSplash: cleanString(data.clubLogoDarkSplash) || "",
+    pwaIcon192: cleanString(data.pwaIcon192) || "",
+    pwaIcon512: cleanString(data.pwaIcon512) || "",
+    activeTemplate: data.activeTemplate || "classic",
+    groundHandlingEnabled: data.groundHandlingEnabled === "true",
+    xcMapsEnabled: data.xcMapsEnabled === "true",
+    xcMapsTitle: data.xcMapsTitle || "",
+    xcMapsDescription: data.xcMapsDescription || "",
+    xcDistanceRings: data.xcDistanceRings || "",
+    businessDirectoryEnabled: data.businessDirectoryEnabled === "true",
+    xcAirspaceEnabled: data.xcAirspaceEnabled === "true",
+    xcCompetitionsEnabled: data.xcCompetitionsEnabled === "true",
+    flightTrackerEnabled: data.flightTrackerEnabled === "true",
+    satTrackerGarminVisible: data.satTrackerGarminVisible !== "false",
+    satTrackerSpotVisible: data.satTrackerSpotVisible !== "false",
+    satTrackerZoleoVisible: data.satTrackerZoleoVisible !== "false",
+    ftGpsInterval: data.ftGpsInterval || "3",
+    ftAutoStartSpeed: data.ftAutoStartSpeed || "15",
+    ftAutoStartAltitude: data.ftAutoStartAltitude || "20",
+    ftAutoStopSpeed: data.ftAutoStopSpeed || "3",
+    ftAutoStopDuration: data.ftAutoStopDuration || "30",
+    ftPreRecordBuffer: data.ftPreRecordBuffer || "15",
+    ftCrumbFlushInterval: data.ftCrumbFlushInterval || "3",
+    ftCrumbWindowSize: data.ftCrumbWindowSize || "200",
+    ftGuestCacheExpiry: data.ftGuestCacheExpiry || "48",
+    ftSplineTension: data.ftSplineTension || "0.5",
+    ftTrailColor: data.ftTrailColor || "#FF4444",
+    ftTrailWidth: data.ftTrailWidth || "3",
+    ftOfflineTileRadius: data.ftOfflineTileRadius || "50",
+    ftOfflineZoomMin: data.ftOfflineZoomMin || "8",
+    ftOfflineZoomMax: data.ftOfflineZoomMax || "13",
+    ftOfflineLayers: data.ftOfflineLayers || '["streets"]',
+    homeWeatherCardCount: data.homeWeatherCardCount || "6",
+    joinPageEnabled: data.joinPageEnabled === "true",
+    joinTidyhqUrl: cleanString(data.joinTidyhqUrl) || "",
+    joinTiers: data.joinTiers || "",
+    joinFaqs: data.joinFaqs || "",
+    joinHeroTitle: cleanString(data.joinHeroTitle) || "",
+    joinHeroSubtitle: cleanString(data.joinHeroSubtitle) || "",
+    wfParticleCount: data.wfParticleCount || "1200",
+    wfTrailLength: data.wfTrailLength || "12",
+    wfMaxInfluenceKm: data.wfMaxInfluenceKm || "120",
+    wfFadeStartKm: data.wfFadeStartKm || "80",
+    wfIdwPower: data.wfIdwPower || "2",
+    wfSpeedScale: data.wfSpeedScale || "0.4",
+    wfLineWidth: data.wfLineWidth || "1.5",
+    wfOpacity: data.wfOpacity || "0.7",
+    wfMaxParticleSpeed: data.wfMaxParticleSpeed || "4",
+    wfParticleMaxAge: data.wfParticleMaxAge || "180",
+    windMapDefaultLat: data.windMapDefaultLat,
+    windMapDefaultLon: data.windMapDefaultLon,
+    windMapDefaultZoom: data.windMapDefaultZoom,
+    bulkUploadLimit: data.bulkUploadLimit || "20",
+    ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
+  };
+}
+
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        const cleanString = (val: any) => val === "undefined" ? "" : val;
-        setSettings({
-          onlineCheckInEnabled: data.onlineCheckInEnabled === "true",
-          homeHeroTitle: cleanString(data.homeHeroTitle),
-          homeHeroSubtitle: cleanString(data.homeHeroSubtitle),
-          homeHeroImages: data.homeHeroImages,
-          homeHeroImageMode: data.homeHeroImageMode,
-          homeHeroStaticImageIndex: data.homeHeroStaticImageIndex,
-          alertBannerEnabled: data.alertBannerEnabled === "true",
-          alertBannerText: cleanString(data.alertBannerText),
-          homeCta1Text: cleanString(data.homeCta1Text),
-          homeCta1Link: cleanString(data.homeCta1Link),
-          homeCta2Text: cleanString(data.homeCta2Text),
-          homeCta2Link: cleanString(data.homeCta2Link),
-          featuredSiteId: data.featuredSiteId,
-          featuredSiteEnabled: data.featuredSiteEnabled === "true",
-          photoSliderEnabled: data.photoSliderEnabled === "true",
-          photoSliderReverse: data.photoSliderReverse === "true",
-          photoSliderAutoScroll: data.photoSliderAutoScroll !== "false",
-          youtubeCarouselEnabled: data.youtubeCarouselEnabled === "true",
-          youtubeCarouselReverse: data.youtubeCarouselReverse === "true",
-          youtubeCarouselAutoScroll: data.youtubeCarouselAutoScroll !== "false",
-          weatherScraperMinInterval: data.weatherScraperMinInterval,
-          weatherScraperMaxInterval: data.weatherScraperMaxInterval,
-          weatherScraperStartHour: data.weatherScraperStartHour,
-          weatherScraperEndHour: data.weatherScraperEndHour,
-          homeBox1Desc: cleanString(data.homeBox1Desc),
-          homeBox2Desc: cleanString(data.homeBox2Desc),
-          homeBox3Desc: cleanString(data.homeBox3Desc),
-          weatherScraperLastRun: data.weatherScraperLastRun,
-          fineGridLastRun: data.fineGridLastRun,
-          fineGridLastResult: data.fineGridLastResult,
-          coarseGridLastRun: data.coarseGridLastRun,
-          coarseGridLastResult: data.coarseGridLastResult,
-          extendedForecastLastRun: data.extendedForecastLastRun,
-          extendedForecastLastResult: data.extendedForecastLastResult,
-          homeCardsSelection: cleanString(data.homeCardsSelection),
-          homeCardsCycle: data.homeCardsCycle === "true",
-          homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),
-          homeCardSitesTitle: cleanString(data.homeCardSitesTitle),
-          homeCardSitesLink: cleanString(data.homeCardSitesLink),
-          homeCardSitesLinkText: cleanString(data.homeCardSitesLinkText),
-          homeCardSafetyTitle: cleanString(data.homeCardSafetyTitle),
-          homeCardSafetyLink: cleanString(data.homeCardSafetyLink),
-          homeCardSafetyLinkText: cleanString(data.homeCardSafetyLinkText),
-          homeCardCommunityTitle: cleanString(data.homeCardCommunityTitle),
-          homeCardCommunityLink: cleanString(data.homeCardCommunityLink),
-          homeCardCommunityLinkText: cleanString(data.homeCardCommunityLinkText),
-          homeCardEventsTitle: cleanString(data.homeCardEventsTitle),
-          homeCardEventsLink: cleanString(data.homeCardEventsLink),
-          homeCardEventsLinkText: cleanString(data.homeCardEventsLinkText),
-          homeCustomCards: data.homeCustomCards || "",
-          socialFacebook: cleanString(data.socialFacebook),
-          socialInstagram: cleanString(data.socialInstagram),
-          socialYoutube: cleanString(data.socialYoutube),
-          socialTiktok: cleanString(data.socialTiktok),
-          socialTwitter: cleanString(data.socialTwitter),
-          socialLinkedin: cleanString(data.socialLinkedin),
-          socialStrava: cleanString(data.socialStrava),
-          socialWebsite: cleanString(data.socialWebsite),
-          homeSchools: data.homeSchools || "",
-          homeTelegramGroups: data.homeTelegramGroups || "",
-          homeSponsors: data.homeSponsors || "",
-          youtubeVideos: data.youtubeVideos || "",
-          instagramEmbeds: data.instagramEmbeds || "",
-          publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
-          publicSearchPrompt: data.publicSearchPrompt || "",
-          publicSearchCtaMessage: data.publicSearchCtaMessage || "",
-          publicSearchCtaFrequency: data.publicSearchCtaFrequency || "2",
-          qrCodeMode: data.qrCodeMode || "off",
-          imageLibrary: data.imageLibrary || "",
-          screenshotLibrary: data.screenshotLibrary || "",
-          clubName: cleanString(data.clubName) || "SkyHigh",
-          clubTagline: cleanString(data.clubTagline) || "",
-          clubPrimaryColor: cleanString(data.clubPrimaryColor) || "",
-          clubLogoOriginal: cleanString(data.clubLogoOriginal) || "",
-          clubLogoNav: cleanString(data.clubLogoNav) || "",
-          clubLogoFooter: cleanString(data.clubLogoFooter) || "",
-          clubLogoFavicon: cleanString(data.clubLogoFavicon) || "",
-          clubLogoSplash: cleanString(data.clubLogoSplash) || "",
-          clubLogoDarkOriginal: cleanString(data.clubLogoDarkOriginal) || "",
-          clubLogoDarkNav: cleanString(data.clubLogoDarkNav) || "",
-          clubLogoDarkFooter: cleanString(data.clubLogoDarkFooter) || "",
-          clubLogoDarkFavicon: cleanString(data.clubLogoDarkFavicon) || "",
-          clubLogoDarkSplash: cleanString(data.clubLogoDarkSplash) || "",
-          pwaIcon192: cleanString(data.pwaIcon192) || "",
-          pwaIcon512: cleanString(data.pwaIcon512) || "",
-          activeTemplate: data.activeTemplate || "classic",
-          groundHandlingEnabled: data.groundHandlingEnabled === "true",
-          xcMapsEnabled: data.xcMapsEnabled === "true",
-          xcMapsTitle: data.xcMapsTitle || "",
-          xcMapsDescription: data.xcMapsDescription || "",
-          xcDistanceRings: data.xcDistanceRings || "",
-          businessDirectoryEnabled: data.businessDirectoryEnabled === "true",
-          xcAirspaceEnabled: data.xcAirspaceEnabled === "true",
-          xcCompetitionsEnabled: data.xcCompetitionsEnabled === "true",
-          flightTrackerEnabled: data.flightTrackerEnabled === "true",
-          satTrackerGarminVisible: data.satTrackerGarminVisible !== "false",
-          satTrackerSpotVisible: data.satTrackerSpotVisible !== "false",
-          satTrackerZoleoVisible: data.satTrackerZoleoVisible !== "false",
-          ftGpsInterval: data.ftGpsInterval || "3",
-          ftAutoStartSpeed: data.ftAutoStartSpeed || "15",
-          ftAutoStartAltitude: data.ftAutoStartAltitude || "20",
-          ftAutoStopSpeed: data.ftAutoStopSpeed || "3",
-          ftAutoStopDuration: data.ftAutoStopDuration || "30",
-          ftPreRecordBuffer: data.ftPreRecordBuffer || "15",
-          ftCrumbFlushInterval: data.ftCrumbFlushInterval || "3",
-          ftCrumbWindowSize: data.ftCrumbWindowSize || "200",
-          ftGuestCacheExpiry: data.ftGuestCacheExpiry || "48",
-          ftSplineTension: data.ftSplineTension || "0.5",
-          ftTrailColor: data.ftTrailColor || "#FF4444",
-          ftTrailWidth: data.ftTrailWidth || "3",
-          ftOfflineTileRadius: data.ftOfflineTileRadius || "50",
-          ftOfflineZoomMin: data.ftOfflineZoomMin || "8",
-          ftOfflineZoomMax: data.ftOfflineZoomMax || "13",
-          ftOfflineLayers: data.ftOfflineLayers || '["streets"]',
-          homeWeatherCardCount: data.homeWeatherCardCount || "6",
-          joinPageEnabled: data.joinPageEnabled === "true",
-          joinTidyhqUrl: cleanString(data.joinTidyhqUrl) || "",
-          joinTiers: data.joinTiers || "",
-          joinFaqs: data.joinFaqs || "",
-          joinHeroTitle: cleanString(data.joinHeroTitle) || "",
-          joinHeroSubtitle: cleanString(data.joinHeroSubtitle) || "",
-          wfParticleCount: data.wfParticleCount || "1200",
-          wfTrailLength: data.wfTrailLength || "12",
-          wfMaxInfluenceKm: data.wfMaxInfluenceKm || "120",
-          wfFadeStartKm: data.wfFadeStartKm || "80",
-          wfIdwPower: data.wfIdwPower || "2",
-          wfSpeedScale: data.wfSpeedScale || "0.4",
-          wfLineWidth: data.wfLineWidth || "1.5",
-          wfOpacity: data.wfOpacity || "0.7",
-          wfMaxParticleSpeed: data.wfMaxParticleSpeed || "4",
-          wfParticleMaxAge: data.wfParticleMaxAge || "180",
-          windMapDefaultLat: data.windMapDefaultLat,
-          windMapDefaultLon: data.windMapDefaultLon,
-          windMapDefaultZoom: data.windMapDefaultZoom,
-          bulkUploadLimit: data.bulkUploadLimit || "20",
-          ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
-        });
+        setSettings(buildSettings(data));
         setLoading(false);
       })
       .catch((err) => {
@@ -371,158 +381,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/settings", { cache: "no-store" });
       const data = await res.json();
-      const cleanString = (val: any) => val === "undefined" ? "" : val;
-      setSettings({
-        onlineCheckInEnabled: data.onlineCheckInEnabled === "true",
-        homeHeroTitle: cleanString(data.homeHeroTitle),
-        homeHeroSubtitle: cleanString(data.homeHeroSubtitle),
-        homeHeroImages: data.homeHeroImages,
-        homeHeroImageMode: data.homeHeroImageMode,
-        homeHeroStaticImageIndex: data.homeHeroStaticImageIndex,
-        alertBannerEnabled: data.alertBannerEnabled === "true",
-        alertBannerText: cleanString(data.alertBannerText),
-        homeCta1Text: cleanString(data.homeCta1Text),
-        homeCta1Link: cleanString(data.homeCta1Link),
-        homeCta2Text: cleanString(data.homeCta2Text),
-        homeCta2Link: cleanString(data.homeCta2Link),
-        featuredSiteId: data.featuredSiteId,
-        featuredSiteEnabled: data.featuredSiteEnabled === "true",
-        photoSliderEnabled: data.photoSliderEnabled === "true",
-        photoSliderReverse: data.photoSliderReverse === "true",
-        photoSliderAutoScroll: data.photoSliderAutoScroll !== "false",
-        youtubeCarouselEnabled: data.youtubeCarouselEnabled === "true",
-        youtubeCarouselReverse: data.youtubeCarouselReverse === "true",
-        youtubeCarouselAutoScroll: data.youtubeCarouselAutoScroll !== "false",
-        weatherScraperMinInterval: data.weatherScraperMinInterval,
-        weatherScraperMaxInterval: data.weatherScraperMaxInterval,
-        weatherScraperStartHour: data.weatherScraperStartHour,
-        weatherScraperEndHour: data.weatherScraperEndHour,
-        homeBox1Desc: cleanString(data.homeBox1Desc),
-        homeBox2Desc: cleanString(data.homeBox2Desc),
-        homeBox3Desc: cleanString(data.homeBox3Desc),
-        weatherScraperLastRun: data.weatherScraperLastRun,
-        fineGridLastRun: data.fineGridLastRun,
-        fineGridLastResult: data.fineGridLastResult,
-        coarseGridLastRun: data.coarseGridLastRun,
-        coarseGridLastResult: data.coarseGridLastResult,
-        extendedForecastLastRun: data.extendedForecastLastRun,
-        extendedForecastLastResult: data.extendedForecastLastResult,
-        homeCardsSelection: cleanString(data.homeCardsSelection),
-        homeCardsCycle: data.homeCardsCycle === "true",
-        homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),
-        homeCardSitesTitle: cleanString(data.homeCardSitesTitle),
-        homeCardSitesLink: cleanString(data.homeCardSitesLink),
-        homeCardSitesLinkText: cleanString(data.homeCardSitesLinkText),
-        homeCardSafetyTitle: cleanString(data.homeCardSafetyTitle),
-        homeCardSafetyLink: cleanString(data.homeCardSafetyLink),
-        homeCardSafetyLinkText: cleanString(data.homeCardSafetyLinkText),
-        homeCardCommunityTitle: cleanString(data.homeCardCommunityTitle),
-        homeCardCommunityLink: cleanString(data.homeCardCommunityLink),
-        homeCardCommunityLinkText: cleanString(data.homeCardCommunityLinkText),
-        homeCardEventsTitle: cleanString(data.homeCardEventsTitle),
-        homeCardEventsLink: cleanString(data.homeCardEventsLink),
-        homeCardEventsLinkText: cleanString(data.homeCardEventsLinkText),
-        homeCustomCards: data.homeCustomCards || "",
-        socialFacebook: cleanString(data.socialFacebook),
-        socialInstagram: cleanString(data.socialInstagram),
-        socialYoutube: cleanString(data.socialYoutube),
-        socialTiktok: cleanString(data.socialTiktok),
-        socialTwitter: cleanString(data.socialTwitter),
-        socialLinkedin: cleanString(data.socialLinkedin),
-        socialStrava: cleanString(data.socialStrava),
-        socialWebsite: cleanString(data.socialWebsite),
-        homeSchools: data.homeSchools || "",
-        homeTelegramGroups: data.homeTelegramGroups || "",
-        homeSponsors: data.homeSponsors || "",
-        youtubeVideos: data.youtubeVideos || "",
-        instagramEmbeds: data.instagramEmbeds || "",
-        publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
-        publicSearchPrompt: data.publicSearchPrompt || "",
-        publicSearchCtaMessage: data.publicSearchCtaMessage || "",
-        publicSearchCtaFrequency: data.publicSearchCtaFrequency || "2",
-        qrCodeMode: data.qrCodeMode || "off",
-        imageLibrary: data.imageLibrary || "",
-        screenshotLibrary: data.screenshotLibrary || "",
-        clubName: cleanString(data.clubName) || "SkyHigh",
-        clubTagline: cleanString(data.clubTagline) || "",
-        clubPrimaryColor: cleanString(data.clubPrimaryColor) || "",
-        clubLogoOriginal: cleanString(data.clubLogoOriginal) || "",
-        clubLogoNav: cleanString(data.clubLogoNav) || "",
-        clubLogoFooter: cleanString(data.clubLogoFooter) || "",
-        clubLogoFavicon: cleanString(data.clubLogoFavicon) || "",
-        clubLogoSplash: cleanString(data.clubLogoSplash) || "",
-        clubLogoDarkOriginal: cleanString(data.clubLogoDarkOriginal) || "",
-        clubLogoDarkNav: cleanString(data.clubLogoDarkNav) || "",
-        clubLogoDarkFooter: cleanString(data.clubLogoDarkFooter) || "",
-        clubLogoDarkFavicon: cleanString(data.clubLogoDarkFavicon) || "",
-        clubLogoDarkSplash: cleanString(data.clubLogoDarkSplash) || "",
-        pwaIcon192: cleanString(data.pwaIcon192) || "",
-        pwaIcon512: cleanString(data.pwaIcon512) || "",
-        activeTemplate: data.activeTemplate || "classic",
-        groundHandlingEnabled: data.groundHandlingEnabled === "true",
-        xcMapsEnabled: data.xcMapsEnabled === "true",
-        xcMapsTitle: data.xcMapsTitle || "",
-        xcMapsDescription: data.xcMapsDescription || "",
-        xcDistanceRings: data.xcDistanceRings || "",
-        businessDirectoryEnabled: data.businessDirectoryEnabled === "true",
-        xcAirspaceEnabled: data.xcAirspaceEnabled === "true",
-        xcCompetitionsEnabled: data.xcCompetitionsEnabled === "true",
-        flightTrackerEnabled: data.flightTrackerEnabled === "true",
-        satTrackerGarminVisible: data.satTrackerGarminVisible !== "false",
-        satTrackerSpotVisible: data.satTrackerSpotVisible !== "false",
-        satTrackerZoleoVisible: data.satTrackerZoleoVisible !== "false",
-        ftGpsInterval: data.ftGpsInterval || "3",
-        ftAutoStartSpeed: data.ftAutoStartSpeed || "15",
-        ftAutoStartAltitude: data.ftAutoStartAltitude || "20",
-        ftAutoStopSpeed: data.ftAutoStopSpeed || "3",
-        ftAutoStopDuration: data.ftAutoStopDuration || "30",
-        ftPreRecordBuffer: data.ftPreRecordBuffer || "15",
-        ftCrumbFlushInterval: data.ftCrumbFlushInterval || "3",
-        ftCrumbWindowSize: data.ftCrumbWindowSize || "200",
-        ftGuestCacheExpiry: data.ftGuestCacheExpiry || "30",
-        ftSplineTension: data.ftSplineTension || "0.5",
-        ftTrailColor: data.ftTrailColor || "#ff4444",
-        ftTrailWidth: data.ftTrailWidth || "3",
-        ftOfflineTileRadius: data.ftOfflineTileRadius || "10",
-        ftOfflineZoomMin: data.ftOfflineZoomMin || "10",
-        ftOfflineZoomMax: data.ftOfflineZoomMax || "15",
-        ftOfflineLayers: data.ftOfflineLayers || "osm,topo",
-        homeWeatherCardCount: data.homeWeatherCardCount || "6",
-        joinPageEnabled: data.joinPageEnabled === "true",
-        joinTidyhqUrl: cleanString(data.joinTidyhqUrl) || "",
-        joinTiers: data.joinTiers || "",
-        joinFaqs: data.joinFaqs || "",
-        joinHeroTitle: cleanString(data.joinHeroTitle) || "",
-        joinHeroSubtitle: cleanString(data.joinHeroSubtitle) || "",
-        wfParticleCount: data.wfParticleCount || "1200",
-        wfTrailLength: data.wfTrailLength || "12",
-        wfMaxInfluenceKm: data.wfMaxInfluenceKm || "120",
-        wfFadeStartKm: data.wfFadeStartKm || "80",
-        wfIdwPower: data.wfIdwPower || "2",
-        wfSpeedScale: data.wfSpeedScale || "0.4",
-        wfLineWidth: data.wfLineWidth || "1.5",
-        wfOpacity: data.wfOpacity || "0.7",
-        wfMaxParticleSpeed: data.wfMaxParticleSpeed || "4",
-        wfParticleMaxAge: data.wfParticleMaxAge || "180",
-        windMapDefaultLat: data.windMapDefaultLat,
-        windMapDefaultLon: data.windMapDefaultLon,
-        windMapDefaultZoom: data.windMapDefaultZoom,
-        bulkUploadLimit: data.bulkUploadLimit || "20",
-        ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
-      });
+      setSettings(buildSettings(data));
     } catch (err) {
       console.error("Failed to refresh settings:", err);
     }
-  };
+  }, []);
 
-  const updateSettings = async (newSettings: Record<string, string | boolean>) => {
-    const updated = { ...settings, ...newSettings } as Settings;
-    setSettings(updated);
-    
+  const updateSettings = useCallback(async (newSettings: Record<string, string | boolean>) => {
+    setSettings(prev => ({ ...prev, ...newSettings } as Settings));
+
     const payload: Record<string, string> = {};
     for (const [key, value] of Object.entries(newSettings)) {
       payload[key] = value == null ? "" : String(value);
@@ -542,10 +413,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const errText = await res.text().catch(() => "Unknown error");
       throw new Error(`Failed to save settings (${res.status}): ${errText}`);
     }
-  };
+  }, []);
+
+  const providerValue = useMemo(() => ({
+    settings,
+    updateSettings,
+    refreshSettings,
+    loading,
+    activeLogos: resolveActiveLogos(settings),
+    lightLogos: resolveLightLogos(settings),
+    darkLogos: resolveDarkLogos(settings),
+  }), [settings, updateSettings, refreshSettings, loading]);
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, refreshSettings, loading, activeLogos: resolveActiveLogos(settings), lightLogos: resolveLightLogos(settings), darkLogos: resolveDarkLogos(settings) }}>
+    <SettingsContext.Provider value={providerValue}>
       {children}
     </SettingsContext.Provider>
   );
