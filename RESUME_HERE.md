@@ -23,7 +23,7 @@ Session 19 completed the photo upload feature end-to-end with full testing on bo
 - Self-service and admin-assisted uploads both functional ✅
 - Cache invalidation triggers immediate UI updates ✅
 
-**Commits this session:** fb41793
+**Commits this session:** fb41793, 8ef5581, 523d763
 
 ## Last completed task
 - Session 19: Photo upload feature (complete) — all tests passed, deployed and verified (2026-05-26)
