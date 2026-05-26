@@ -1,25 +1,32 @@
-# RESUME_HERE — Last updated: 2026-05-23 (session 18)
+# RESUME_HERE — Last updated: 2026-05-26 (session 19)
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅ on Railway
 
 ## Where I left off
 
-Session 18 fixed three smart search bugs discovered during Three Sisters (Flowerdale) testing, and created the 50-question test bank (wiki/smart-search-test-questions.md).
+Session 19 completed the photo upload feature end-to-end with full testing on both About and Safety pages. All cache invalidation issues fixed. Feature is production-ready.
 
-**Bugs fixed (session 18):**
-- BUG-7 (closure days dropped from extended forecast): `buildPublicContext()` returned `null` for extended forecast days within a closure period. Three Sisters (closed May 23–31) had ZERO extended forecast entries, so the AI had no weather data for any explicitly-named query. Fix: closure days now emit `[SCHEDULED CLOSURE]` tags (same pattern as `[NOT FLYABLE]`), preserving actual wind data. Query-time `filterContextByClosureDates()` still strips the line for generic listing queries.
-- BUG-8 (multi-launch eligibility): Three Sisters pgRating `"PG2 Supervised (North) | PG4 (South)"` was misread by STEP 1 (single-launch model). AI incorrectly said PG3 can fly South unsupervised (South requires PG4). Fix: Added MULTI-LAUNCH EXCEPTION to eligibility rules — launch-specific tiers with `(North)`/`(South)` labels evaluated independently. Self-contained rules: "PG2 Supervised (North)" means PG3+ unsupervised, PG2 needs PG4/SO; "PG4 (South)" means PG3 and below cannot fly South.
-- BUG-9 (explicit date parsing): `extractQueryDates()` only matched day names ("friday") not explicit dates ("June 5th"). Queries about post-closure dates fell back to the 7-day default window (which was within the closure), causing Three Sisters to be incorrectly excluded. Fix: Added month+day regex parsing ("June 5th", "May 30", "5 June" etc.) mapping to YYYY-MM-DD.
+**Photo feature completed (session 19):**
+- ✅ Self-service upload from admin login page (300×300px, EXIF stripped, no approval queue)
+- ✅ Admin-assisted upload from contacts manager (with consent message in amber box)
+- ✅ Photos appear centered on committee member cards (About page) and safety officer cards (Safety page)
+- ✅ Immediate cache invalidation after upload/save/delete (Added useQueryClient to AdminContacts.tsx and AdminLogin.tsx)
+- ✅ Full Name Display checkbox persists correctly (fixed cache invalidation in contacts PUT endpoint)
+- ✅ Mobile camera capture support via `capture="user"` attribute
+- ✅ TidyHQ sync protection (photos not overwritten during syncs)
+- ✅ Self-deletion protection added (users cannot delete their own account)
 
-**Session 18 test results (production verified):**
-- ✅ "Im a PG3 can I fly Flowerdale next friday" — closed until 31 May; North unsupervised (but noting site closure); South requires PG4; weather shown
-- ✅ "Im a PG3 can I fly Flowerdale on June 5th" — North unsupervised ✅, South requires PG4 ✅, closed until 31 May noted ✅, weather cited ✅
+**Testing completed:**
+- Photos upload and display centered immediately on public pages ✅
+- Full Name Display toggle works and persists across navigation ✅
+- Self-service and admin-assisted uploads both functional ✅
+- Cache invalidation triggers immediate UI updates ✅
 
-**Commits this session:** d5826d7, 2f720e0, c411106, cbb9b4d
+**Commits this session:** fb41793
 
 ## Last completed task
-- Session 18: BUG-7/8/9 fixes (Three Sisters closure + multi-launch eligibility + explicit date parsing) — all verified on production (2026-05-23)
+- Session 19: Photo upload feature (complete) — all tests passed, deployed and verified (2026-05-26)
 
 ## Currently in progress
 - Nothing
@@ -32,4 +39,4 @@ Session 18 fixed three smart search bugs discovered during Three Sisters (Flower
 - None
 
 ## Quick context refresher
-Smart search handles Three Sisters (Flowerdale) correctly: closure days tagged `[SCHEDULED CLOSURE]` in extended forecasts (not dropped), multi-launch tiers with `(North)`/`(South)` evaluated independently via MULTI-LAUNCH EXCEPTION rule, explicit date formats like "June 5th" now parsed by `extractQueryDates()`. Monument (PG5 | PG4 SO/SSO) remains the canonical single-launch test case. All v5 tests still pass.
+Photo upload feature is complete and tested: users can upload 300×300px passport-style photos either from the admin login page (self-service with email/password) or via admin contacts manager (admin-assisted with consent message). Photos appear centered on About and Safety pages, cache invalidation ensures real-time updates, and Full Name Display checkbox controls whether committee/officer cards show full name vs first name only.
