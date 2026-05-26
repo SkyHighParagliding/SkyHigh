@@ -152,6 +152,8 @@ interface CommitteeMember {
   phone: string;
   email: string;
   position?: string;
+  safetyOfficerType?: string | null;
+  isSafetyCommittee?: number;
   fullNameDisplay?: number;
   showTelegram?: number;
   showPhone?: number;
@@ -175,15 +177,41 @@ function getDisplayName(person: { name: string; surname?: string; fullNameDispla
   return firstName;
 }
 
-function extractRole(position?: string): string {
-  if (!position) return "Committee";
-  const parts = position.split(",").map(p => p.trim());
-  const role = parts.find(p => !p.toLowerCase().includes("committee") && !p.toLowerCase().includes("skyhigh"));
-  return role || "Committee";
+function extractRole(member: CommitteeMember): string {
+  const positionRoles = ["President", "Vice President", "Treasurer", "Secretary", "PG2 Representative", "PG2 Rep"];
+
+  // Extract position role (first choice)
+  let displayRole = "";
+  if (member.position) {
+    const parts = member.position.split(",").map(p => p.trim());
+    const foundRole = parts.find(p => {
+      const lower = p.toLowerCase();
+      return positionRoles.some(role => lower.includes(role.toLowerCase())) &&
+             !lower.includes("committee") && !lower.includes("skyhigh");
+    });
+    if (foundRole) displayRole = foundRole;
+  }
+
+  // If no position role, check for committee
+  if (!displayRole && member.isSafetyCommittee) {
+    displayRole = "Committee";
+  }
+
+  // Add SO/SSO if applicable
+  if (member.safetyOfficerType) {
+    if (displayRole) {
+      // If we have a position or committee, add SO/SSO on new line or with separator
+      displayRole += "\n" + member.safetyOfficerType;
+    } else {
+      displayRole = member.safetyOfficerType;
+    }
+  }
+
+  return displayRole || "Committee";
 }
 
-function getSortOrder(position?: string): number {
-  const role = extractRole(position)?.toLowerCase() || "";
+function getSortOrder(member: CommitteeMember): number {
+  const role = extractRole(member).split("\n")[0].toLowerCase() || "";
   const roleMap: Record<string, number> = {
     "president": 0,
     "vice president": 1,
@@ -197,8 +225,8 @@ function getSortOrder(position?: string): number {
 
 function sortCommitteeMembers(members: CommitteeMember[]): CommitteeMember[] {
   return [...members].sort((a, b) => {
-    const orderA = getSortOrder(a.position);
-    const orderB = getSortOrder(b.position);
+    const orderA = getSortOrder(a);
+    const orderB = getSortOrder(b);
     if (orderA !== orderB) return orderA - orderB;
     return (a.name || "").localeCompare(b.name || "");
   });
@@ -218,7 +246,7 @@ function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember;
           />
         )}
         <h3 className="font-bold text-lg text-navy">{displayName}</h3>
-        <p className="text-sm text-sky font-medium">{extractRole(member.position)}</p>
+        <p className="text-sm text-sky font-medium whitespace-pre-line">{extractRole(member)}</p>
         {member.organisation && (
           <p className="text-sm text-sky font-medium mb-2">{member.organisation}</p>
         )}
@@ -292,7 +320,7 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20"
             >
               {displayName}
-              <span className="text-white/70 font-normal">· {extractRole(member.position)}</span>
+              <span className="text-white/70 font-normal">· {extractRole(member)}</span>
               {member.organisation && (
                 <span className="text-white/70 font-normal">· {member.organisation}</span>
               )}
