@@ -428,88 +428,19 @@ import { saveContactPhoto, deleteContactPhoto } from "../services/photoService.j
 import bcrypt from "bcrypt";
 
 // Self-service photo upload (via login on admin login page)
+// TODO: Disabled until photoUrl and photoAuthorised columns are added (migration 031)
 router.post("/photo/self-upload", asyncHandler(async (req, res) => {
-  const { email, password, imageBuffer } = req.body;
-
-  if (!email || !password || !imageBuffer) {
-    return res.status(400).json({ error: "Email, password, and image are required" });
-  }
-
-  // Find contact by email
-  const contact = await db.prepare(
-    "SELECT id, password, photoAuthorised, isAdmin, isCommittee, isSafetyCommittee FROM contacts WHERE email = ?"
-  ).get(email);
-
-  if (!contact) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
-  // Check if contact has any permission to upload
-  const canUpload = contact.isAdmin || contact.isCommittee || contact.isSafetyCommittee;
-  if (!canUpload) {
-    return res.status(403).json({ error: "You do not have permission to upload a photo" });
-  }
-
-  // Check if photoAuthorised flag is set
-  if (!contact.photoAuthorised) {
-    return res.status(403).json({ error: "Your account is not authorized for photo uploads. Please contact an administrator." });
-  }
-
-  // Validate password
-  if (!contact.password || !await bcrypt.compare(password, contact.password)) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
-  // Save photo
-  const photoUrl = await saveContactPhoto(Buffer.from(imageBuffer, 'base64'), contact.id);
-
-  // Update contact with new photoUrl
-  await db.prepare("UPDATE contacts SET photoUrl = ? WHERE id = ?").run(photoUrl, contact.id);
-
-  res.json({ success: true, photoUrl });
+  return res.status(503).json({ error: "Photo upload feature is temporarily unavailable" });
 }));
 
 router.post("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
-  const { imageBuffer, contactId: bodyContactId } = req.body;
-  const contactId = bodyContactId || req.params.id;
-
-  if (!imageBuffer) {
-    return res.status(400).json({ error: "No image data provided" });
-  }
-
-  const contact = await db.prepare("SELECT id, photoUrl FROM contacts WHERE id = ?").get(contactId);
-  if (!contact) {
-    return res.status(404).json({ error: "Contact not found" });
-  }
-
-  // Delete old photo if it exists
-  if (contact.photoUrl) {
-    await deleteContactPhoto(contact.photoUrl).catch(err => {
-      console.warn(`[contacts] Failed to delete old photo: ${err.message}`);
-    });
-  }
-
-  // Save new photo
-  const photoUrl = await saveContactPhoto(Buffer.from(imageBuffer, 'base64'), contactId);
-
-  // Update contact with new photoUrl
-  await db.prepare("UPDATE contacts SET photoUrl = ? WHERE id = ?").run(photoUrl, contactId);
-
-  res.json({ success: true, photoUrl });
+  // TODO: Disabled until photoUrl column is added (migration 031)
+  return res.status(503).json({ error: "Photo upload feature is temporarily unavailable" });
 }));
 
 router.delete("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
-  const contact = await db.prepare("SELECT id, photoUrl FROM contacts WHERE id = ?").get(req.params.id);
-  if (!contact) {
-    return res.status(404).json({ error: "Contact not found" });
-  }
-
-  if (contact.photoUrl) {
-    await deleteContactPhoto(contact.photoUrl);
-    await db.prepare("UPDATE contacts SET photoUrl = NULL WHERE id = ?").run(req.params.id);
-  }
-
-  res.json({ success: true });
+  // TODO: Disabled until photoUrl column is added (migration 031)
+  return res.status(503).json({ error: "Photo deletion feature is temporarily unavailable" });
 }));
 
 export default router;
