@@ -428,19 +428,53 @@ import { saveContactPhoto, deleteContactPhoto } from "../services/photoService.j
 import bcrypt from "bcrypt";
 
 // Self-service photo upload (via login on admin login page)
-// TODO: Disabled until photoUrl and photoAuthorised columns are added (migration 031)
 router.post("/photo/self-upload", asyncHandler(async (req, res) => {
-  return res.status(503).json({ error: "Photo upload feature is temporarily unavailable" });
+  if (!req.files || !req.files.photo) {
+    return res.status(400).json({ error: "No photo provided" });
+  }
+  const file = Array.isArray(req.files.photo) ? req.files.photo[0] : req.files.photo;
+  const { contactId } = req.body;
+  if (!contactId) {
+    return res.status(400).json({ error: "Contact ID is required" });
+  }
+
+  const photoUrl = await saveContactPhoto(file.data, contactId);
+  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contactId);
+  res.json({ success: true, photoUrl });
 }));
 
 router.post("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
-  // TODO: Disabled until photoUrl column is added (migration 031)
-  return res.status(503).json({ error: "Photo upload feature is temporarily unavailable" });
+  if (!req.files || !req.files.photo) {
+    return res.status(400).json({ error: "No photo provided" });
+  }
+  const file = Array.isArray(req.files.photo) ? req.files.photo[0] : req.files.photo;
+  const { id } = req.params;
+
+  const contact = await db.prepare("SELECT id FROM contacts WHERE id = ?").get(id);
+  if (!contact) {
+    return res.status(404).json({ error: "Contact not found" });
+  }
+
+  if (contact.photoUrl) {
+    await deleteContactPhoto(contact.photoUrl);
+  }
+
+  const photoUrl = await saveContactPhoto(file.data, id);
+  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, id);
+  res.json({ success: true, photoUrl });
 }));
 
 router.delete("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
-  // TODO: Disabled until photoUrl column is added (migration 031)
-  return res.status(503).json({ error: "Photo deletion feature is temporarily unavailable" });
+  const { id } = req.params;
+  const contact = await db.prepare("SELECT photoUrl FROM contacts WHERE id = ?").get(id) as { photoUrl?: string };
+  if (!contact) {
+    return res.status(404).json({ error: "Contact not found" });
+  }
+  if (contact.photoUrl) {
+    await deleteContactPhoto(contact.photoUrl);
+  }
+  await db.prepare("UPDATE contacts SET photoUrl = NULL WHERE id = ?").run(id);
+  res.json({ success: true });
 }));
 
 export default router;
