@@ -179,6 +179,7 @@ function getDisplayName(person: { name: string; surname?: string; fullNameDispla
 
 function extractRole(member: CommitteeMember): string {
   const positionRoles = ["President", "Vice President", "Treasurer", "Secretary", "PG2 Representative", "PG2 Rep"];
+  const abbreviations = ["VP", "VP.", "SO.", "S.O.", "SSO", "SSO."];
 
   // Extract position role (first choice)
   let displayRole = "";
@@ -186,6 +187,8 @@ function extractRole(member: CommitteeMember): string {
     const parts = member.position.split(",").map(p => p.trim());
     const foundRole = parts.find(p => {
       const lower = p.toLowerCase();
+      // Skip abbreviations and common keywords
+      if (abbreviations.some(abbr => abbr.toLowerCase() === lower)) return false;
       return positionRoles.some(role => lower.includes(role.toLowerCase())) &&
              !lower.includes("committee") && !lower.includes("skyhigh");
     });
