@@ -3,10 +3,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, LogIn, Mail, ArrowLeft, UserPlus } from "lucide-react";
+import { Lock, LogIn, Mail, ArrowLeft, UserPlus, Camera } from "lucide-react";
 import { api } from "@/lib/apiClient";
+import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
-type View = "login" | "forgot" | "first-time" | "provider-signup";
+type View = "login" | "forgot" | "first-time" | "provider-signup" | "photo-upload";
 
 export function AdminLogin() {
   const { login, isAuthenticated } = useAuth();
@@ -20,6 +21,10 @@ export function AdminLogin() {
   const [successMessage, setSuccessMessage] = useState("");
   const [providerName, setProviderName] = useState("");
   const [providerEmail, setProviderEmail] = useState("");
+  const [showPhotoDialog, setShowPhotoDialog] = useState(false);
+  const [photoEmail, setPhotoEmail] = useState("");
+  const [photoPassword, setPhotoPassword] = useState("");
+  const [photoLoading, setPhotoLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -77,6 +82,30 @@ export function AdminLogin() {
     setError("");
     setSuccessMessage("");
     setLoading(false);
+  };
+
+  const handlePhotoUpload = async (imageBuffer: string) => {
+    setPhotoLoading(true);
+    try {
+      const res = await fetch("/api/contacts/photo/self-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: photoEmail,
+          password: photoPassword,
+          imageBuffer,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setSuccessMessage("Photo uploaded successfully!");
+      setShowPhotoDialog(false);
+      setTimeout(() => switchView("login"), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setPhotoLoading(false);
+    }
   };
 
   if (view === "forgot" || view === "first-time") {
@@ -255,6 +284,90 @@ export function AdminLogin() {
             )}
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (view === "photo-upload") {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-sky">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-16 h-16 bg-sky/10 rounded-full flex items-center justify-center mb-4">
+              <Camera className="w-8 h-8 text-sky" />
+            </div>
+            <CardTitle className="text-2xl text-navy">Update Your Photo</CardTitle>
+            <p className="text-muted-foreground text-sm mt-1">
+              Upload a passport-style photo to your committee profile
+            </p>
+          </CardHeader>
+          <CardContent>
+            {successMessage ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                  {successMessage}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground-label">Email</label>
+                  <input
+                    type="email"
+                    value={photoEmail}
+                    onChange={(e) => setPhotoEmail(e.target.value)}
+                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    placeholder="your@email.com"
+                    disabled={showPhotoDialog}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground-label">Password</label>
+                  <input
+                    type="password"
+                    value={photoPassword}
+                    onChange={(e) => setPhotoPassword(e.target.value)}
+                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    placeholder="Enter your password"
+                    disabled={showPhotoDialog}
+                  />
+                </div>
+
+                <Button
+                  onClick={() => setShowPhotoDialog(true)}
+                  disabled={!photoEmail || !photoPassword || photoLoading}
+                  className="w-full bg-sky hover:bg-sky-dark text-white"
+                >
+                  <Camera className="w-4 h-4 mr-2" /> Select Photo
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => switchView("login")}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <PhotoUploadDialog
+          isOpen={showPhotoDialog}
+          onClose={() => setShowPhotoDialog(false)}
+          onUpload={handlePhotoUpload}
+          isLoading={photoLoading}
+          contactName="your profile"
+        />
       </div>
     );
   }

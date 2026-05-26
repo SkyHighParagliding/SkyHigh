@@ -210,6 +210,7 @@ export interface SafetyOfficer {
   showPhone?: number;
   showEmail?: number;
   showAdminEmail?: number;
+  photoUrl?: string;
 }
 
 export interface PublicContact {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare, Camera } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
 interface TidyHQGroup {
   id: string;
@@ -90,6 +91,9 @@ export function AdminContacts() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [showPhotoUploadDialog, setShowPhotoUploadDialog] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
   const [deleteWarning, setDeleteWarning] = useState<{ projects: string[] } | null>(null);
@@ -161,6 +165,7 @@ export function AdminContacts() {
 
   const openEdit = (c: Contact) => {
     setEditingId(c.id);
+    setPhotoUrl(c.photoUrl);
     setForm({
       organisation: c.organisation || "",
       name: c.name,
@@ -256,6 +261,46 @@ export function AdminContacts() {
       fetchContacts();
     } catch (e: unknown) {
       setDeleteError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handlePhotoUpload = async (imageBuffer: string) => {
+    if (!editingId) return;
+    setPhotoLoading(true);
+    try {
+      const res = await fetch(`/api/contacts/${editingId}/photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ imageBuffer }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setPhotoUrl(data.photoUrl);
+      setShowPhotoUploadDialog(false);
+      toast.success("Photo uploaded successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!editingId) return;
+    setPhotoLoading(true);
+    try {
+      const res = await fetch(`/api/contacts/${editingId}/photo`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      setPhotoUrl(null);
+      toast.success("Photo deleted successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setPhotoLoading(false);
     }
   };
 
@@ -741,6 +786,15 @@ export function AdminContacts() {
                           />
                           Full Name Disp
                         </label>
+                        <label className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={form.photoAuthorised}
+                            onChange={e => setForm(prev => ({ ...prev, photoAuthorised: e.target.checked }))}
+                            className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                          />
+                          Allow self-upload photo
+                        </label>
                         <div className="flex gap-4">
                           {([["showTelegram", "Show Telegram"], ["showPhone", "Show Phone"], ["showEmail", "Show Personal Email"], ["showAdminEmail", "Via Admin Email"]] as const).map(([field, label]) => (
                             <label key={field} className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground">
@@ -817,6 +871,60 @@ export function AdminContacts() {
                 </div>
               )}
 
+              {editingId && (form.isCommittee || form.isSafetyCommittee) && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Camera className="w-5 h-5 text-purple-600" />
+                      <h4 className="text-sm font-medium text-purple-800">Photo</h4>
+                    </div>
+                    {photoUrl && (
+                      <img
+                        src={photoUrl}
+                        alt={form.name}
+                        className="w-12 h-12 rounded-lg object-cover border border-border"
+                      />
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {!photoUrl ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        disabled={photoLoading}
+                        onClick={() => setShowPhotoUploadDialog(true)}
+                      >
+                        <Camera className="w-4 h-4 mr-2" /> Upload Photo
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled={photoLoading}
+                          onClick={() => setShowPhotoUploadDialog(true)}
+                        >
+                          <Camera className="w-4 h-4 mr-2" /> Replace
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          disabled={photoLoading}
+                          onClick={handleDeletePhoto}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-foreground-label mb-1">Notes</label>
                 <textarea
@@ -839,6 +947,14 @@ export function AdminContacts() {
               </div>
             </div>
           </div>
+
+          <PhotoUploadDialog
+            isOpen={showPhotoUploadDialog}
+            onClose={() => setShowPhotoUploadDialog(false)}
+            onUpload={handlePhotoUpload}
+            isLoading={photoLoading}
+            contactName={form.name}
+          />
         </div>
       )}
 
