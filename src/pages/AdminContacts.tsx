@@ -31,10 +31,13 @@ interface Contact {
   soAuthorised: number;
   displayCommittee: number;
   displaySafety: number;
+  fullNameDisplay: number;
   showTelegram: number;
   showPhone: number;
   showEmail: number;
   showAdminEmail: number;
+  photoUrl: string | null;
+  photoAuthorised: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,8 +73,8 @@ const roleBadgeColors: Record<string, string> = {
 const emptyForm = {
   organisation: "", name: "", surname: "", phone: "", email: "", notes: "",
   isAdmin: false, isCommittee: false, isContractor: false, isParksVic: false, isSafetyCommittee: false,
-  isSocialMedia: false, soAuthorised: false, displayCommittee: true, displaySafety: true,
-  showTelegram: false, showPhone: false, showEmail: false, showAdminEmail: false,
+  isSocialMedia: false, soAuthorised: false, displayCommittee: true, displaySafety: true, fullNameDisplay: true,
+  showTelegram: false, showPhone: false, showEmail: false, showAdminEmail: false, photoAuthorised: false,
   password: "",
 };
 
@@ -174,10 +177,12 @@ export function AdminContacts() {
       soAuthorised: !!c.soAuthorised,
       displayCommittee: c.displayCommittee !== 0,
       displaySafety: c.displaySafety !== 0,
+      fullNameDisplay: c.fullNameDisplay !== 0,
       showTelegram: !!c.showTelegram,
       showPhone: !!c.showPhone,
       showEmail: !!c.showEmail,
       showAdminEmail: !!c.showAdminEmail,
+      photoAuthorised: !!c.photoAuthorised,
       password: "",
     });
     setFormError("");
@@ -224,8 +229,8 @@ export function AdminContacts() {
       if (!res.ok) throw new Error(data.error || "Failed to save contact");
       setShowModal(false);
       fetchContacts();
-    } catch (e: any) {
-      setFormError(e.message);
+    } catch (e: unknown) {
+      setFormError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }
@@ -249,8 +254,8 @@ export function AdminContacts() {
       setDeleteTarget(null);
       setDeleteWarning(null);
       fetchContacts();
-    } catch (e: any) {
-      setDeleteError(e.message);
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -262,8 +267,8 @@ export function AdminContacts() {
     try {
       const data = await api.get<any[]>(`/api/contacts/tidyhq-search?q=${encodeURIComponent(tidySearch)}`, token);
       setTidyResults(data);
-    } catch (e: any) {
-      setTidyError(e.message);
+    } catch (e: unknown) {
+      setTidyError(e instanceof Error ? e.message : String(e));
     } finally {
       setTidySearching(false);
     }
@@ -332,8 +337,8 @@ export function AdminContacts() {
       setSelectedContactIds(new Set(allContacts.map(c => c.tidyhqId)));
       setContactGroupMap(cgMap);
       setContactsLoaded(true);
-    } catch (e: any) {
-      setGroupError(e.message);
+    } catch (e: unknown) {
+      setGroupError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoadingGroupContacts(false);
     }
@@ -726,18 +731,29 @@ export function AdminContacts() {
                   {(form.isCommittee || form.isSafetyCommittee) && (
                     <div className="col-span-3 mt-2 pt-2 border-t border-border-faint">
                       <p className="text-xs text-muted-foreground mb-1">Reveal Contact options (shown when someone clicks "Reveal Contact")</p>
-                      <div className="flex gap-4">
-                        {([["showTelegram", "Show Telegram"], ["showPhone", "Show Phone"], ["showEmail", "Show Personal Email"], ["showAdminEmail", "Via Admin Email"]] as const).map(([field, label]) => (
-                          <label key={field} className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground">
-                            <input
-                              type="checkbox"
-                              checked={form[field]}
-                              onChange={e => setForm(prev => ({ ...prev, [field]: e.target.checked }))}
-                              className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
-                            />
-                            {label}
-                          </label>
-                        ))}
+                      <div className="flex flex-col gap-2">
+                        <label className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={form.fullNameDisplay}
+                            onChange={e => setForm(prev => ({ ...prev, fullNameDisplay: e.target.checked }))}
+                            className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                          />
+                          Full Name Disp
+                        </label>
+                        <div className="flex gap-4">
+                          {([["showTelegram", "Show Telegram"], ["showPhone", "Show Phone"], ["showEmail", "Show Personal Email"], ["showAdminEmail", "Via Admin Email"]] as const).map(([field, label]) => (
+                            <label key={field} className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                checked={form[field]}
+                                onChange={e => setForm(prev => ({ ...prev, [field]: e.target.checked }))}
+                                className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
