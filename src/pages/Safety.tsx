@@ -20,8 +20,14 @@ interface SafetySection {
   linkLabel: string | null;
 }
 
-function getDisplayName(person: { name: string; surname?: string }, allPeople: { name: string; surname?: string }[]): string {
+function getDisplayName(person: { name: string; surname?: string; fullNameDisplay?: number }, allPeople: { name: string; surname?: string }[]): string {
   const firstName = person.name;
+  const showFullName = person.fullNameDisplay !== 0;
+
+  if (showFullName && person.surname) {
+    return `${firstName} ${person.surname}`;
+  }
+
   const dupes = allPeople.filter(p => p.name === firstName);
   if (dupes.length > 1 && person.surname) {
     return `${firstName} ${person.surname.charAt(0)}`;
@@ -149,8 +155,8 @@ function CustomSection({ section }: { section: SafetySection }) {
 export function Safety() {
   const { settings } = useSettings();
   const { hash } = useLocation();
-  const { data: officers = [], isLoading: loadingOfficers, error } = useSafetyOfficers();
-  const { data: sections = [], isLoading: loadingSections } = useQuery({
+  const { data: officers = [], isLoading: loadingOfficers, error: officersError } = useSafetyOfficers();
+  const { data: sections = [], isLoading: loadingSections, error: sectionsError } = useQuery({
     queryKey: ['safety-sections'],
     queryFn: () => api.get<SafetySection[]>('/api/safety-sections'),
   });
@@ -169,7 +175,8 @@ export function Safety() {
   }, [loading, hash]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div></div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error.message}</div>;
+  const error = officersError || sectionsError;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {(error as Error).message}</div>;
 
   return (
     <div className="bg-background min-h-screen py-12">

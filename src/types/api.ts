@@ -107,3 +107,134 @@ export interface ExternalSite {
   stateAbbr?: string;
   region?: string;
 }
+
+// ===== API Response Types (also defined in src/hooks/api/*.ts — keep in sync) =====
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  author: string;
+  category: string;
+  published: boolean;
+  publishedAt: string;
+  image: string;
+}
+
+export interface PageData {
+  slug: string;
+  title: string;
+  content: string;
+  template: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PageAttachment {
+  id: string;
+  pageSlug: string;
+  originalFilename: string;
+  fileSize: number;
+  mimeType: string;
+  downloadCount: number;
+  uploadedAt: string;
+}
+
+export interface Flight {
+  id: string;
+  pilotId: string;
+  siteId: string;
+  siteName: string;
+  startedAt: string;
+  endedAt: string | null;
+  status: string;
+  maxAltitude: number;
+  maxSpeed: number;
+  totalDistance: number;
+  altitudeGain: number;
+  altitudeLoss: number;
+}
+
+export interface Breadcrumb {
+  id: number;
+  flightId: string;
+  timestamp: number;
+  lat: number;
+  lon: number;
+  altitude: number;
+  speed: number;
+  heading: number;
+}
+
+export interface FlightDetail extends Flight {
+  breadcrumbs: Breadcrumb[];
+}
+
+export interface Competition {
+  id: string;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  pilotRating: string;
+  rulesSummary: string;
+  registrationUrl: string;
+  status: string;
+}
+
+export interface BusinessListing {
+  id: string;
+  businessName: string;
+  memberName: string;
+  category: string;
+  description: string;
+  phone: string;
+  email: string;
+  websiteUrl: string;
+  imagePath: string;
+}
+
+export interface SafetyOfficer {
+  id: string;
+  type: 'SO' | 'SSO';
+  name: string;
+  surname?: string;
+  phone?: string;
+  email?: string;
+  fullNameDisplay?: number;
+  showTelegram?: number;
+  showPhone?: number;
+  showEmail?: number;
+  showAdminEmail?: number;
+}
+
+export interface PublicContact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  isDriver: boolean;
+  displayName: string;
+  [key: string]: unknown;
+}
+
+export interface XCSite {
+  id: string;
+  name: string;
+  lat: string;
+  lon: string;
+  useLiveWeather: string;
+  [key: string]: unknown;
+}
+
+export interface ClosureBanner {
+  siteId: string;
+  siteName: string;
+  firstDate: string;
+  lastDate: string;
+}
