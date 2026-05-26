@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface Competition {
   id: string;
   name: string;
@@ -14,6 +15,7 @@ export interface Competition {
   status: string;
 }
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface BusinessListing {
   id: string;
   businessName: string;
@@ -26,6 +28,7 @@ export interface BusinessListing {
   imagePath: string;
 }
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface SafetyOfficer {
   id: string;
   type: 'SO' | 'SSO';
@@ -33,6 +36,7 @@ export interface SafetyOfficer {
   surname?: string;
   phone?: string;
   email?: string;
+  fullNameDisplay?: number;
   showTelegram?: number;
   showPhone?: number;
   showEmail?: number;
@@ -52,10 +56,11 @@ export function useCompetitions() {
   });
 }
 
-export function useBusinessDirectory() {
+export function useBusinessDirectory(enabled = true) {
   return useQuery({
     queryKey: publicKeys.businessDirectory(),
     queryFn: () => api.get<BusinessListing[]>('/api/business-directory'),
+    enabled,
   });
 }
 
