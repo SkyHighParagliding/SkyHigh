@@ -12,7 +12,7 @@ export function run(db: Database.Database) {
     clubLogoFooter: "",
     clubLogoFavicon: "",
     clubLogoSplash: "",
-    activeTemplate: "classic",
+    activeTemplate: "wonderful-white",
   };
   const upsert = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
   for (const [key, value] of Object.entries(brandingDefaults)) {
