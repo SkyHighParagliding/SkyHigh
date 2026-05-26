@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, LogIn, Mail, ArrowLeft, UserPlus, Camera } from "lucide-react";
 import { api } from "@/lib/apiClient";
+import { useQueryClient } from "@tanstack/react-query";
 import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
 type View = "login" | "forgot" | "first-time" | "provider-signup" | "photo-upload";
@@ -12,6 +13,7 @@ type View = "login" | "forgot" | "first-time" | "provider-signup" | "photo-uploa
 export function AdminLogin() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [view, setView] = useState<View>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -100,6 +102,9 @@ export function AdminLogin() {
       if (!res.ok) throw new Error(data.error || "Upload failed");
       setSuccessMessage("Photo uploaded successfully!");
       setShowPhotoDialog(false);
+      // Invalidate public query caches so About/Safety pages see updated photo
+      queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
+      queryClient.invalidateQueries({ queryKey: ['officers'] });
       setTimeout(() => switchView("login"), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");

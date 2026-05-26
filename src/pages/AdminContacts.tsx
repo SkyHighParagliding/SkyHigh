@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
 interface TidyHQGroup {
@@ -84,6 +85,7 @@ const roleKeys: RoleKey[] = ["isAdmin", "isCommittee", "isSafetyCommittee", "isS
 
 export function AdminContacts() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -234,6 +236,9 @@ export function AdminContacts() {
       if (!res.ok) throw new Error(data.error || "Failed to save contact");
       setShowModal(false);
       fetchContacts();
+      // Invalidate public query caches so About/Safety pages see updated data
+      queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
+      queryClient.invalidateQueries({ queryKey: ['officers'] });
     } catch (e: unknown) {
       setFormError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -278,6 +283,9 @@ export function AdminContacts() {
       setPhotoUrl(data.photoUrl);
       setShowPhotoUploadDialog(false);
       toast.success("Photo uploaded successfully!");
+      // Invalidate public query caches
+      queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
+      queryClient.invalidateQueries({ queryKey: ['officers'] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -297,6 +305,9 @@ export function AdminContacts() {
       if (!res.ok) throw new Error(data.error || "Delete failed");
       setPhotoUrl(null);
       toast.success("Photo deleted successfully!");
+      // Invalidate public query caches
+      queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
+      queryClient.invalidateQueries({ queryKey: ['officers'] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     } finally {

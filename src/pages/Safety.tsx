@@ -40,15 +40,13 @@ function SafetyOfficerCard({ officer, displayName }: { officer: SafetyOfficer; d
 
   return (
     <Card className="hover:shadow-md transition-shadow border-t-4 border-t-sky">
-      <CardContent className="pt-6 text-center">
+      <CardContent className="pt-6 text-center flex flex-col items-center">
         {officer.photoUrl && (
-          <div className="mx-auto mb-3">
-            <img
-              src={officer.photoUrl}
-              alt={displayName}
-              className="w-20 h-20 rounded-lg object-cover border-2 border-border"
-            />
-          </div>
+          <img
+            src={officer.photoUrl}
+            alt={displayName}
+            className="w-20 h-20 rounded-lg object-cover border-2 border-border mb-3"
+          />
         )}
         <h3 className="font-bold text-lg text-navy">{displayName}</h3>
         <p className="text-sm text-sky font-medium mb-2">{officer.type === 'SSO' ? 'Senior Safety Officer' : 'Safety Officer'}</p>
