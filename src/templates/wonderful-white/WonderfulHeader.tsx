@@ -64,7 +64,7 @@ export function WonderfulHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
-    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
+    ...(!isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   const dropdownBg = isDark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
