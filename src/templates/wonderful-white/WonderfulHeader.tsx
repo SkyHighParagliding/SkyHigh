@@ -64,6 +64,7 @@ export function WonderfulHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
+    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   const dropdownBg = isDark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -141,15 +142,6 @@ export function WonderfulHeader() {
                 style={{ background: "var(--tmpl-accent)" }}
               >
                 Check-in
-              </Link>
-            )}
-            {user && !isSoSession && (
-              <Link
-                to="/admin"
-                className="text-[16px] font-light tracking-[0.01em] transition-all whitespace-nowrap opacity-80 hover:opacity-100"
-                style={{ color: textColor, fontFamily: "var(--tmpl-font-body)", transition: "color 0.3s ease" }}
-              >
-                Admin
               </Link>
             )}
           </div>
