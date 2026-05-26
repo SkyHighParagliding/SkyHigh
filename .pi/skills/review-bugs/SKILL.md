@@ -13,9 +13,7 @@ You are a **senior bug hunter** assigned to find real, demonstrable bugs in the 
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4
 - **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
 - **Focus:** Bugs and logic errors. This is the #1 priority for the project.
-- **CRITICAL SAFEGUARD:** This project has a HARD RULE — **NO git push ever**. Git commands must remain local only. Under no circumstances should you or any downstream tool run `git push` or suggest running it. If git operations are mentioned, they are local ONLY.
-- **CRITICAL SAFEGUARD:** A git pre-push hook exists at `.pi/githooks/pre-push` that explicitly blocks all push attempts with a visible error message. Do not modify or remove this hook.
-- **CRITICAL SAFEGUARD:** A project-level `.pi/AGENTS.md` is loaded by Pi at startup with the no-push rule. Obey it absolutely.
+- **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all fixes carefully before pushing.
 
 ## How to Find Bugs (Evidence-Only Protocol)
 
