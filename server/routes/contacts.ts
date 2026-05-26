@@ -18,8 +18,8 @@ function generateId() {
 
 router.get("/public/committee", asyncHandler(async (req, res) => {
   const members = await db.prepare(
-    "SELECT id, name, surname, organisation, phone, email, position, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
-  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; fullNameDisplay: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number }[];
+    "SELECT id, name, surname, organisation, phone, email, position, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
+  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; fullNameDisplay: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; photoUrl?: string }[];
   const filtered = await filterByCurrentMembers(members);
   res.json(filtered.map(m => ({
     ...m,
@@ -30,7 +30,7 @@ router.get("/public/committee", asyncHandler(async (req, res) => {
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const { limit, offset } = getPaginationParams(req.query);
-  const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?").all(limit, offset);
+  const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?").all(limit, offset);
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts").get() as { count: number };
   const total = countResult.count;
   res.set('X-Total-Count', String(total));
@@ -46,7 +46,7 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   const term = `%${q}%`;
   const { limit, offset } = getPaginationParams(req.query);
   const contacts = await db.prepare(
-    "SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ? ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?"
+    "SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, createdAt, updatedAt FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ? ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?"
   ).all(term, term, term, limit, offset);
   const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ?").get(term, term, term) as { count: number };
   const total = countResult.count;
@@ -221,7 +221,7 @@ router.get("/tidyhq-search", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
+  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
   if (!contact) return res.status(404).json({ error: "Contact not found" });
   res.json(contact);
 }));
@@ -269,7 +269,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
     displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0, fullNameDisplay !== false ? 1 : 0,
     showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0, hashedPassword);
 
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE id = ?").get(id);
+  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, createdAt, updatedAt FROM contacts WHERE id = ?").get(id);
   res.status(201).json(contact);
 }));
 
@@ -335,7 +335,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   ).run(...params);
 
   if (result.changes === 0) return res.status(404).json({ error: "Contact not found" });
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
+  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
   res.json(contact);
 }));
 
