@@ -18,8 +18,8 @@ function generateId() {
 
 router.get("/public/committee", asyncHandler(async (req, res) => {
   const members = await db.prepare(
-    "SELECT id, name, surname, organisation, phone, email, position, safetyOfficerType, isSafetyCommittee, showTelegram, showPhone, showEmail, showAdminEmail FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
-  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; safetyOfficerType?: string | null; isSafetyCommittee?: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number }[];
+    "SELECT id, name, surname, organisation, phone, email, position, isSafetyCommittee, showTelegram, showPhone, showEmail, showAdminEmail FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
+  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; isSafetyCommittee?: number; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number }[];
   const filtered = await filterByCurrentMembers(members);
   res.json(filtered.map(m => ({
     ...m,

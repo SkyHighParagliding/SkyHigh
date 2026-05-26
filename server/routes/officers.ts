@@ -9,10 +9,10 @@ const router = Router();
 
 router.get("/", asyncHandler(async (req, res) => {
   const officers = await db.prepare(
-    `SELECT id, name, surname, phone, email, showTelegram, showPhone, showEmail, showAdminEmail, safetyOfficerType
+    `SELECT id, name, surname, phone, email, showTelegram, showPhone, showEmail, showAdminEmail
      FROM contacts WHERE isSafetyCommittee = 1 AND displaySafety = 1
      ORDER BY name ASC`
-  ).all() as { id: string; name: string; surname: string; phone: string; email: string; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; safetyOfficerType?: string }[];
+  ).all() as { id: string; name: string; surname: string; phone: string; email: string; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number }[];
   const filtered = await filterByCurrentMembers(officers);
   res.json(filtered.map(o => ({
     ...o,
