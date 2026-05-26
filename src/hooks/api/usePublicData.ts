@@ -31,7 +31,7 @@ export interface BusinessListing {
 // Type also defined in src/types/api.ts — keep in sync
 export interface SafetyOfficer {
   id: string;
-  type: 'SO' | 'SSO';
+  safetyOfficerType?: 'SO' | 'SSO';
   name: string;
   surname?: string;
   phone?: string;

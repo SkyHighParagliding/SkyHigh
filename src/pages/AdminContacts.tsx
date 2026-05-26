@@ -30,6 +30,7 @@ interface Contact {
   isParksVic: number;
   isSafetyCommittee: number;
   isSocialMedia: number;
+  safetyOfficerType: string | null;
   soAuthorised: number;
   displayCommittee: number;
   displaySafety: number;
@@ -75,7 +76,7 @@ const roleBadgeColors: Record<string, string> = {
 const emptyForm = {
   organisation: "", name: "", surname: "", phone: "", email: "", notes: "",
   isAdmin: false, isCommittee: false, isContractor: false, isParksVic: false, isSafetyCommittee: false,
-  isSocialMedia: false, soAuthorised: false, displayCommittee: true, displaySafety: true, fullNameDisplay: true,
+  isSocialMedia: false, safetyOfficerType: null, soAuthorised: false, displayCommittee: true, displaySafety: true, fullNameDisplay: true,
   showTelegram: false, showPhone: false, showEmail: false, showAdminEmail: false, photoAuthorised: false,
   password: "",
 };
@@ -181,6 +182,7 @@ export function AdminContacts() {
       isParksVic: !!c.isParksVic,
       isSafetyCommittee: !!c.isSafetyCommittee,
       isSocialMedia: !!c.isSocialMedia,
+      safetyOfficerType: c.safetyOfficerType,
       soAuthorised: !!c.soAuthorised,
       displayCommittee: c.displayCommittee !== 0,
       displaySafety: c.displaySafety !== 0,
@@ -823,15 +825,31 @@ export function AdminContacts() {
                     </div>
                   )}
                   {form.isSafetyCommittee && (
-                    <label className="flex items-center gap-2 cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={form.soAuthorised}
-                        onChange={e => setForm(prev => ({ ...prev, soAuthorised: e.target.checked }))}
-                        className="rounded border-border text-amber-600 focus:ring-amber-500"
-                      />
-                      <span className="text-amber-800">SO Site Access</span>
-                    </label>
+                    <div className="col-span-3 mt-2 pt-2 border-t border-border-faint space-y-2">
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={form.soAuthorised}
+                            onChange={e => setForm(prev => ({ ...prev, soAuthorised: e.target.checked }))}
+                            className="rounded border-border text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="text-amber-800">SO Site Access</span>
+                        </label>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-foreground-label mb-1">Officer Type</label>
+                        <select
+                          value={form.safetyOfficerType || ""}
+                          onChange={e => setForm(prev => ({ ...prev, safetyOfficerType: e.target.value || null }))}
+                          className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        >
+                          <option value="">Select Type...</option>
+                          <option value="SSO">Senior Safety Officer (SSO)</option>
+                          <option value="SO">Safety Officer (SO)</option>
+                        </select>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

@@ -200,7 +200,7 @@ export interface BusinessListing {
 
 export interface SafetyOfficer {
   id: string;
-  type: 'SO' | 'SSO';
+  safetyOfficerType?: 'SO' | 'SSO';
   name: string;
   surname?: string;
   phone?: string;
