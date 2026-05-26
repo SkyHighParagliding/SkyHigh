@@ -46,7 +46,7 @@ function ClassicHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
-    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
+    ...(!isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   return (
