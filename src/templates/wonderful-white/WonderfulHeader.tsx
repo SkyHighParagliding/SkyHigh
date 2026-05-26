@@ -64,7 +64,6 @@ export function WonderfulHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
-    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   const dropdownBg = isDark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -134,7 +133,7 @@ export function WonderfulHeader() {
             )}
           </nav>
 
-          <div className="hidden lg:flex items-center justify-end gap-3 shrink-0" style={{ width: "200px" }}>
+          <div className="hidden lg:flex items-center justify-end gap-3 shrink-0 flex-wrap">
             {settings.onlineCheckInEnabled && (
               <Link
                 to="/check-in"
@@ -142,6 +141,15 @@ export function WonderfulHeader() {
                 style={{ background: "var(--tmpl-accent)" }}
               >
                 Check-in
+              </Link>
+            )}
+            {user && !isSoSession && (
+              <Link
+                to="/admin"
+                className="text-[16px] font-light tracking-[0.01em] transition-all whitespace-nowrap opacity-80 hover:opacity-100"
+                style={{ color: textColor, fontFamily: "var(--tmpl-font-body)", transition: "color 0.3s ease" }}
+              >
+                Admin
               </Link>
             )}
           </div>
@@ -185,6 +193,16 @@ export function WonderfulHeader() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Online Check-in
+              </Link>
+            )}
+            {user && !isSoSession && (
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-lg text-[15px] font-medium transition-colors"
+                style={{ color: textColor }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
               </Link>
             )}
           </div>

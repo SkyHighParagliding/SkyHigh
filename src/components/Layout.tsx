@@ -46,7 +46,6 @@ function ClassicHeader() {
     { name: "About Us", path: "/page/about" },
     { name: "Shop", path: "/shop" },
     { name: "Safety/Rules", path: "/safety" },
-    ...(user && !isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
   return (
@@ -92,6 +91,11 @@ function ClassicHeader() {
                 </Button>
               </Link>
             )}
+            {user && !isSoSession && (
+              <Link to="/admin" className="text-sm font-medium hover:text-sky transition-colors whitespace-nowrap">
+                Admin
+              </Link>
+            )}
           </nav>
 
           <div className="lg:hidden flex items-center">
@@ -126,6 +130,15 @@ function ClassicHeader() {
                 <Button variant="orange" className="w-full justify-center">
                   Online Check-in
                 </Button>
+              </Link>
+            )}
+            {user && !isSoSession && (
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-navy hover:text-white"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
               </Link>
             )}
           </div>
