@@ -67,7 +67,7 @@ export function WonderfulHeader() {
     ...(!isSoSession ? [{ name: "Admin", path: "/admin" }] : []),
   ];
 
-  const dropdownBg = isDark ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
+  const dropdownBg = isDark ? "rgba(0,0,0,0.80)" : "rgba(255,255,255,0.80)";
   const dropdownBorder = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.08)";
   const dropdownHoverBg = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
 

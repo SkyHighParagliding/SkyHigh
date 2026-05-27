@@ -40,7 +40,7 @@ export async function getLastDetectedVersion(): Promise<string | null> {
 
 export async function getLastChangedCheck(): Promise<VersionCheckResult | null> {
   const row = await queryOne<VersionCheckResult>(
-    "SELECT * FROM siteguide_version_checks WHERE changed = true ORDER BY id DESC LIMIT 1"
+    "SELECT * FROM siteguide_version_checks WHERE changed = 1 ORDER BY id DESC LIMIT 1"
   );
   return row ?? null;
 }
@@ -54,7 +54,7 @@ export async function getLastBulkImportTime(): Promise<string | null> {
 
 export async function getVersionBeforeLastChange(): Promise<string | null> {
   const row = await queryOne<{ previousVersion: string }>(
-    `SELECT "previousVersion" FROM siteguide_version_checks WHERE changed = true ORDER BY id DESC LIMIT 1`
+    `SELECT "previousVersion" FROM siteguide_version_checks WHERE changed = 1 ORDER BY id DESC LIMIT 1`
   );
   return row?.previousVersion ?? null;
 }
@@ -64,7 +64,7 @@ export async function getChangedSinceLastImport(): Promise<boolean> {
   if (!lastImportTime) return false;
 
   const row = await queryOne<{ id: number }>(
-    `SELECT id FROM siteguide_version_checks WHERE changed = true AND "checkedAt" > $1 LIMIT 1`,
+    `SELECT id FROM siteguide_version_checks WHERE changed = 1 AND "checkedAt" > $1 LIMIT 1`,
     [lastImportTime]
   );
   return row != null;
