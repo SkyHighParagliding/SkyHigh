@@ -1,43 +1,38 @@
-# RESUME_HERE — Last updated: 2026-05-27 (session 23)
+# RESUME_HERE — Last updated: 2026-05-27 (session 23 end)
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — SQLite fully removed, pure PG-native codebase
+## Status: **LIVE** ✅ on Railway — pure PG codebase, all fixes pushed
 
 ## Where I left off
 
-Session 23 completed the full SQLite removal across the entire codebase. The project
-is now 100% PostgreSQL-native with zero `better-sqlite3` / `db.prepare` references.
+Session 23 completed SQLite removal, fixed several INTEGER = boolean bugs introduced
+during the conversion, darkened nav dropdown opacity to 0.80, and pushed everything
+to production. Railway is currently deploying commit `55f86ef`.
 
-**All done this session (SQLite removal):**
-
-- Converted all remaining routes: `procedures.ts`, `searchLogs.ts`, `pageviews.ts`, `populate-banners.ts`
-- Converted all services/utils/middleware: `auth.ts`, `sessionTokens.ts`, `weather.ts`,
-  `scheduledJobs.ts`, `victoriaGrid.ts`, `extendedForecast.ts`, `realMessageService.ts`,
-  `demoRetrievalService.ts`, `realFlightService.ts`, `realRetrievalService.ts`,
-  `siteguideVersionCheck.ts`, `googleDrive.ts`, `freeflightwx.ts`, `tides.ts`,
-  and all simple utils (aiModels, fixStaleImages, tidyhqMemberFilter, siteguideZoneData, health)
-- Deleted dead code: `databaseMaintenance.ts`, `queryOptimization.ts`, `edgeCases.ts`,
-  `migrations.ts` runner, 28 TypeScript migration files, `migrate_storage.ts`, `api.test.ts`
-- Deleted SQLite adapter layer: `sqliteDb.ts`, `pgDb.ts`
-- Stripped `server/db.ts` — SQLite code removed, only PG migration runner remains
-- Converted `server/seed.ts` — full `db.transaction` → `transaction(client => ...)` rewrite
-- Converted `server.ts` — removed `import db`, converted `submissionLimiter.max` and `/manifest.json`
-- Removed `better-sqlite3` from `package.json`
-- All committed in phases; **NOT YET PUSHED to GitHub/Railway**
+**All done this session:**
+- SQLite fully removed — `better-sqlite3` uninstalled, pure PG-native codebase
+- Dev tested on local Docker Postgres before pushing — caught `seed.ts` boolean bug
+- Fixed 6 INTEGER = boolean SQL bugs introduced by conversion subagent:
+  - `auth.ts`: `isAdmin`, `soAuthorised`, `isSafetyCommittee` (were `= true`, now `= 1`)
+  - `scheduledJobs.ts`: `isSocialMedia` (was `= true`, now `= 1`)
+  - `siteguideVersionCheck.ts`: `changed` ×3 (were `= true`, now `= 1`)
+  - `seed.ts`: `enabled` in safety_sections (was `true`, now `1`)
+- Nav dropdown opacity: `0.35 → 0.80` (user-tuned from 0.90)
+- Full audit of all INTEGER flag columns — no further issues found
+- All .md files updated to reflect current state
 
 ## What's next
 
-1. **Verify production** — Railway is deploying now; check logs for migration errors
-2. Pick from the feature backlog (see tasks/todo.md)
+1. Verify production after Railway deploy completes
+2. Pick from the feature backlog — TASK-031 (XC Flight History Export) is the highest priority quick win
 
 ## Open questions / blockers
-- Smart Search bugs (BUG-A through BUG-G) remain open — 7 bugs from the 50Q test run
-- Q40–Q50 of the Smart Search test run not yet completed
+- Smart Search bugs BUG-A through BUG-G remain open (7 bugs, Q40–Q50 test run not completed)
 
 ## Quick context refresher
 
-The codebase is now fully PG-native. `server/pg.ts` exports `query`, `queryOne`, `execute`,
-`transaction` — these are the only DB primitives used everywhere. `server/db.ts` is a
-side-effect-only module that runs PG migrations on startup. No SQLite dependency anywhere.
-All camelCase column names are double-quoted in every SQL statement. The 9 phases of
-SQLite removal are committed locally; a `git push` will deploy them to Railway.
+Pure PostgreSQL codebase as of today. All DB access via `server/pg.ts` (`query`, `queryOne`,
+`execute`, `transaction`). INTEGER flag columns (contacts: `isAdmin`, `isSafetyCommittee`, etc.)
+must use `= 1`/`= 0` in SQL — never `= true`/`= false`. Sites boolean columns are TEXT
+`'true'`/`'false'` — different pattern, different table. Local dev: Docker Postgres 16
+(`skyhigh-pg-dev` container on port 5432) + `npm run dev`.
