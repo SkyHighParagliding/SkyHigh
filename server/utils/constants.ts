@@ -71,10 +71,10 @@ export const API_CONFIG = {
 };
 
 // Application Settings
+// NOTE: LOG_LEVEL config lives in logger.ts — do not duplicate here
 export const APP_CONFIG = {
   PASSWORD_SALT_ROUNDS: 10,
   SESSION_CLEANUP_INTERVAL_MS: 60 * 60 * 1000, // 1 hour
-  LOG_LEVEL: (process.env.LOG_LEVEL as any) || 'info',
 };
 
 // Weather Scraper Settings

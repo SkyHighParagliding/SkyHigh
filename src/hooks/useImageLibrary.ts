@@ -343,8 +343,6 @@ export function useImageLibrary() {
         // Only localize relative URLs that don't start with / or http(s)://
         setImages(pairs);
         setSavedImages(pairs);
-        setImages(pairs);
-        setSavedImages(pairs);
       } catch {
         setImages([]);
         setSavedImages([]);
@@ -506,7 +504,6 @@ export function useImageLibrary() {
 
   const handleEnhancedAccept = async (wideImage: string, bannerImage?: string, name?: string, sliderData?: SliderData) => {
     const imgName = name || siteName;
-    const existingIndex = images.findIndex(p => p.wide === wideImage);
     let localWide = wideImage;
     let slider: SliderData = sliderData || {};
     let localBanner = bannerImage || "";
@@ -532,14 +529,16 @@ export function useImageLibrary() {
       sliderSmEnabled: true,
       sliderPortraitEnabled: true,
     };
-    if (existingIndex >= 0) {
-      const updated = [...images];
-      updated[existingIndex] = { ...updated[existingIndex], ...newEntry };
-      markChanged(updated);
-    } else {
-      const updated = [...images, newEntry];
-      markChanged(updated);
-    }
+    setImages(prev => {
+      const idx = prev.findIndex(p => p.wide === wideImage);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], ...newEntry };
+        return updated;
+      }
+      return [...prev, newEntry];
+    });
+    markDirty();
     setSiteName("");
   };
 
@@ -553,8 +552,8 @@ export function useImageLibrary() {
       sliderSmEnabled: false,
       sliderPortraitEnabled: false,
     }));
-    const updated = [...images, ...newEntries];
-    markChanged(updated);
+    setImages(prev => [...prev, ...newEntries]);
+    markDirty();
   };
 
   const handleAddUrl = async () => {

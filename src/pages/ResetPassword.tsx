@@ -25,7 +25,13 @@ export function ResetPassword() {
       return;
     }
 
-    api.get<{ valid: boolean; name?: string }>(`/api/auth/validate-reset-token?token=${encodeURIComponent(token)}`)
+    api.get<{
+      valid: boolean;
+      name?: string;
+      email?: string;
+      accountType?: string;
+      error?: string;
+    }>(`/api/auth/validate-reset-token?token=${encodeURIComponent(token)}`)
       .then(data => {
         if (data.valid) {
           setStatus("valid");

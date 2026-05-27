@@ -251,7 +251,9 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       const projection = projectionRef.current;
       const currentTransform = transformRef.current;
       for (const site of siteMarkersRef.current) {
-        const sp = currentTransform.apply(projection([site.lon, site.lat])!);
+        const proj = projection([site.lon, site.lat]);
+        if (!proj) continue;
+        const sp = currentTransform.apply(proj);
         const dist = Math.sqrt((sp[0] - x) ** 2 + (sp[1] - y) ** 2);
         if (dist < 12) {
           onSiteClick(site, x, y);

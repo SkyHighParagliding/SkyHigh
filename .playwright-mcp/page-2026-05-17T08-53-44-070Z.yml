@@ -1,5 +1,0 @@
-- generic [ref=e4]:
-  - heading "Something went wrong" [level=1] [ref=e5]
-  - paragraph [ref=e6]: An unexpected error occurred. Please try refreshing the page.
-  - paragraph [ref=e7]: "Failed to fetch dynamically imported module: https://skyhigh-production.up.railway.app/assets/AdminLogin-DDxttoEq.js"
-  - button "Refresh Page" [ref=e8]

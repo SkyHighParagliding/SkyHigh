@@ -5,6 +5,11 @@ import { MarkdownWithWidgets } from "@/components/ContentWidgets";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import type { PageData } from "@/hooks/api";
+
+interface PageDetail extends PageData {
+  heroImage?: string;
+}
 
 function resolveTokens(text: string, tokens: Record<string, string>): string {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key) => tokens[key] || `{{${key}}}`);
@@ -16,7 +21,7 @@ export function Page() {
 
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['pages', slug],
-    queryFn: () => api.get<Record<string, any>>(`/api/pages/${slug}`),
+    queryFn: () => api.get<PageDetail>(`/api/pages/${slug}`),
     enabled: !!slug,
   });
 

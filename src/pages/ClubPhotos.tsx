@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Camera, X, Upload, Loader2, CheckCircle, AlertCircle, Maximize } from "lucide-react";
+import { api } from "@/lib/apiClient";
 
 interface ImageEntry {
   wide?: string;
@@ -199,9 +200,7 @@ export function ClubPhotos() {
       if (photographerName.trim()) {
         formData.append("photographerCredit", photographerName.trim());
       }
-      const res = await fetch("/api/submissions", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      const data = await api.post<{ submissions?: Array<{ status: string }> }>("/api/submissions", formData);
       const quarantined = data.submissions?.filter((s: any) => s.status === "quarantined").length || 0;
       const pending = data.submissions?.filter((s: any) => s.status === "pending").length || 0;
       let message = `${pending} image${pending !== 1 ? "s" : ""} submitted successfully!`;

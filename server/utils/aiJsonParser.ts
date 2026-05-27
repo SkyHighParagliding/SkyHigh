@@ -1,3 +1,7 @@
+import createLogger from "./logger.js";
+
+const log = createLogger("ai-json-parser");
+
 export function parseAiJsonResponse(responseText: string): any {
   let cleaned = responseText.replace(/```json\n?|```/g, "").trim();
 
@@ -21,15 +25,19 @@ export function parseAiJsonResponse(responseText: string): any {
       try {
         return JSON.parse(extracted);
       } catch {
+        log.warn("extracted JSON parse failed, trying fixBrokenJson");
         const fixed = fixBrokenJson(extracted);
         try {
           return JSON.parse(fixed);
         } catch {
+          log.warn("fixBrokenJson parse failed, trying rebuildJson");
           const rebuilt = rebuildJson(responseText);
           if (rebuilt) {
             try {
               return JSON.parse(rebuilt);
-            } catch {}
+            } catch {
+              log.warn("rebuildJson parse failed after fixBrokenJson");
+            }
           }
         }
       }
@@ -39,7 +47,9 @@ export function parseAiJsonResponse(responseText: string): any {
     if (rebuilt) {
       try {
         return JSON.parse(rebuilt);
-      } catch {}
+      } catch {
+        log.warn("rebuildJson parse failed in outer fallback");
+      }
     }
 
     console.error("[aiJsonParser] All parse attempts failed. Raw response (first 2000 chars):", responseText.substring(0, 2000));

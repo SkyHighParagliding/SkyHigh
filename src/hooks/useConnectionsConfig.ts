@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -168,7 +168,7 @@ export function useConnectionsConfig() {
     }
   }, [location.hash]);
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = useCallback((id: string) => {
     setExpandedCards((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -179,7 +179,7 @@ export function useConnectionsConfig() {
       }
       return next;
     });
-  };
+  }, []);
 
   const saveSmartAssistant = async () => {
     setSaSaveMsg(null);

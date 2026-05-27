@@ -167,9 +167,9 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
               <p className="text-sm text-foreground-faint text-center py-4">No images in this category.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
-                {currentImages.map((img, i) => (
+                {currentImages.map((img) => (
                   <button
-                    key={i}
+                    key={img.src}
                     type="button"
                     onClick={() => handleLibrarySelect(img)}
                     className="relative block w-full border border-border rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-sky hover:border-sky transition-all group"

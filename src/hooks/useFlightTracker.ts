@@ -438,7 +438,7 @@ export function useFlightTracker() {
           heading: crumb.heading,
           totalDistance: totalDistRef.current,
           elapsed: Date.now() - startTimeRef.current,
-          breadcrumbCount: breadcrumbs.length + pendingCrumbsRef.current.length,
+          breadcrumbCount: fullTrailRef.current.length + pendingCrumbsRef.current.length,
           smoothedAltitude: smoothed.smoothedAltitude,
           verticalSpeed: smoothed.verticalSpeed,
           barometerActive: barometerActiveRef.current,
@@ -466,7 +466,7 @@ export function useFlightTracker() {
         }
       }
     },
-    [state, pilot, pilotToken, breadcrumbs.length, autoStartSpeed, autoStartAltitude, autoStopSpeed, autoStopDuration, autoStopVerticalSpeed, gpsInterval, preRecordBuffer, computeSmoothedAltitude]
+    [state, pilot, pilotToken, autoStartSpeed, autoStartAltitude, autoStopSpeed, autoStopDuration, autoStopVerticalSpeed, gpsInterval, preRecordBuffer, computeSmoothedAltitude]
   );
 
   addBreadcrumbRef.current = addBreadcrumb;

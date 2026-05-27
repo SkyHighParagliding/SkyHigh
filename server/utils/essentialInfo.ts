@@ -55,7 +55,9 @@ export async function extractEssentialInfo($: cheerio.CheerioAPI, siteId: string
       if (imgRes.ok) {
         const buf = Buffer.from(await imgRes.arrayBuffer());
         const ext = fullUrl.match(/\.(jpg|jpeg|png|gif|webp)/i)?.[1] || (isGoogleMap ? 'png' : 'jpg');
-        const filename = `essential-${siteId}-${i + 1}.${ext}`;
+        // Sanitize siteId to prevent path traversal attacks
+        const sanitizedSiteId = siteId.replace(/[^a-zA-Z0-9-_]/g, '');
+        const filename = `essential-${sanitizedSiteId}-${i + 1}.${ext}`;
         const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
         const savedUrl = await saveFile(buf, StorageKey.essential(filename), contentType);
         savedPaths.push(savedUrl);

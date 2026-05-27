@@ -12,7 +12,13 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(curl -s http://localhost:3001/api/settings)",
-      "Bash(curl -s http://localhost:5173)"
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(Start-Sleep -Seconds 4)",
+      "Bash(Get-Content \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-User-Documents-CodeFolder-SkyHigh\\\\53dc0f2f-4fb6-4653-9dfb-45ef1056da9c\\\\tasks\\\\bjjbjxvpe.output\" -Tail 20)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "Bash(browser-harness *)"
     ]
   }
 }

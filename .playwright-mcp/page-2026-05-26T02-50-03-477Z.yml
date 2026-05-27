@@ -1,0 +1,83 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e55]:
+      - generic [ref=e57]:
+        - link "SkyHigh" [ref=e59] [cursor=pointer]:
+          - /url: /
+          - img "SkyHigh" [ref=e60]
+        - navigation [ref=e61]:
+          - link "Sites" [ref=e62] [cursor=pointer]:
+            - /url: /sites
+          - button "Pilots" [ref=e64]:
+            - text: Pilots
+            - img [ref=e65]
+          - link "News" [ref=e67] [cursor=pointer]:
+            - /url: /news
+          - link "Events" [ref=e68] [cursor=pointer]:
+            - /url: /events
+          - button "Community" [ref=e70]:
+            - text: Community
+            - img [ref=e71]
+          - link "About Us" [ref=e73] [cursor=pointer]:
+            - /url: /page/about
+          - link "Shop" [ref=e74] [cursor=pointer]:
+            - /url: /shop
+          - link "Safety/Rules" [ref=e75] [cursor=pointer]:
+            - /url: /safety
+    - main [ref=e27]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - img [ref=e80]
+          - heading "Admin Login" [level=3] [ref=e83]
+          - paragraph [ref=e84]: Sign in to access the admin dashboard
+        - generic [ref=e86]:
+          - generic [ref=e134]: Invalid email or password
+          - generic [ref=e87]:
+            - generic [ref=e88]: Email
+            - textbox "your@email.com" [ref=e89]: jonpamment@gmail.com
+          - generic [ref=e90]:
+            - generic [ref=e91]: Password
+            - textbox "Enter your password" [ref=e92]: BIG.brass.balls
+            - button "Forgot password?" [ref=e94]
+          - button "Sign In" [ref=e95]:
+            - img [ref=e135]
+            - text: Sign In
+          - generic [ref=e99]:
+            - button "First time? Set your password" [ref=e100]
+            - button "Sign up as Provider" [ref=e101]
+    - contentinfo [ref=e102]:
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - img "SkyHigh" [ref=e106]
+          - paragraph [ref=e107]: Connecting pilots across Victoria's premier flight sites—from the coastal bluffs of the Mornington Peninsula to the soaring peaks of Central Victoria.
+          - generic [ref=e108]:
+            - link "Facebook" [ref=e109] [cursor=pointer]:
+              - /url: https://www.facebook.com/groups/36791238561
+              - img [ref=e110]
+            - link "Instagram" [ref=e112] [cursor=pointer]:
+              - /url: https://www.instagram.com/_skyhighparaglidingclub_/
+              - img [ref=e113]
+        - generic [ref=e115]:
+          - heading "Quick Links" [level=4] [ref=e116]
+          - list [ref=e117]:
+            - listitem [ref=e118]:
+              - link "Flying Sites" [ref=e119] [cursor=pointer]:
+                - /url: /sites
+            - listitem [ref=e120]:
+              - link "Safety & Rules" [ref=e121] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e122]:
+              - link "Join the Club" [ref=e123] [cursor=pointer]:
+                - /url: /join
+            - listitem [ref=e124]:
+              - link "Admin" [ref=e125] [cursor=pointer]:
+                - /url: /admin
+        - generic [ref=e126]:
+          - heading "Emergency" [level=4] [ref=e127]
+          - list [ref=e128]:
+            - listitem [ref=e129]: Dial 000 for Emergencies
+            - listitem [ref=e130]:
+              - link "Contact Safety Officers" [ref=e131] [cursor=pointer]:
+                - /url: /safety#safety-officer-directory
+      - paragraph [ref=e133]: © 2026 SkyHigh. All rights reserved.
+  - region "Notifications alt+T"

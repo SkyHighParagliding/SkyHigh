@@ -41,83 +41,136 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+function dbUnavailable(reason: unknown): never {
+  console.warn("IndexedDB is unavailable:", reason);
+  throw reason;
+}
+
 export async function saveFlight(flight: LocalFlight): Promise<void> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("flights", "readwrite");
+    const tx = db!.transaction("flights", "readwrite");
     tx.objectStore("flights").put(flight);
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.oncomplete = () => { db!.close(); resolve(); };
+    tx.onerror = () => { db!.close(); reject(tx.error); };
   });
 }
 
 export async function getFlight(id: string): Promise<LocalFlight | undefined> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("flights", "readonly");
+    const tx = db!.transaction("flights", "readonly");
     const req = tx.objectStore("flights").get(id);
-    req.onsuccess = () => { db.close(); resolve(req.result); };
-    req.onerror = () => { db.close(); reject(req.error); };
+    req.onsuccess = () => { db!.close(); resolve(req.result); };
+    req.onerror = () => { db!.close(); reject(req.error); };
   });
 }
 
 export async function getAllFlights(): Promise<LocalFlight[]> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("flights", "readonly");
+    const tx = db!.transaction("flights", "readonly");
     const req = tx.objectStore("flights").getAll();
-    req.onsuccess = () => { db.close(); resolve(req.result); };
-    req.onerror = () => { db.close(); reject(req.error); };
+    req.onsuccess = () => { db!.close(); resolve(req.result); };
+    req.onerror = () => { db!.close(); reject(req.error); };
   });
 }
 
 export async function saveBreadcrumb(flightId: string, crumb: Breadcrumb): Promise<void> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("breadcrumbs", "readwrite");
+    const tx = db!.transaction("breadcrumbs", "readwrite");
     tx.objectStore("breadcrumbs").put({ ...crumb, flightId });
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.oncomplete = () => { db!.close(); resolve(); };
+    tx.onerror = () => { db!.close(); reject(tx.error); };
   });
 }
 
 export async function saveBreadcrumbs(flightId: string, crumbs: Breadcrumb[]): Promise<void> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("breadcrumbs", "readwrite");
+    const tx = db!.transaction("breadcrumbs", "readwrite");
     const store = tx.objectStore("breadcrumbs");
     for (const c of crumbs) {
       store.put({ ...c, flightId });
     }
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    tx.oncomplete = () => { db!.close(); resolve(); };
+    tx.onerror = () => { db!.close(); reject(tx.error); };
   });
 }
 
 export async function getFlightBreadcrumbs(flightId: string): Promise<Breadcrumb[]> {
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    dbUnavailable(e);
+  }
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("breadcrumbs", "readonly");
+    const tx = db!.transaction("breadcrumbs", "readonly");
     const index = tx.objectStore("breadcrumbs").index("byFlight");
     const req = index.getAll(flightId);
     req.onsuccess = () => {
-      db.close();
+      db!.close();
       const crumbs = (req.result || []).sort((a: any, b: any) => a.timestamp - b.timestamp);
       resolve(crumbs);
     };
-    req.onerror = () => { db.close(); reject(req.error); };
+    req.onerror = () => { db!.close(); reject(req.error); };
   });
 }
 
 export async function getUnsyncedBreadcrumbs(flightId: string, lastSyncedTimestamp: number): Promise<Breadcrumb[]> {
-  const all = await getFlightBreadcrumbs(flightId);
+  let all: Breadcrumb[];
+  try {
+    all = await getFlightBreadcrumbs(flightId);
+  } catch (e) {
+    console.warn("getUnsyncedBreadcrumbs: IndexedDB unavailable, returning empty:", e);
+    return [];
+  }
   return all.filter((c) => c.timestamp > lastSyncedTimestamp);
 }
 
 export async function deleteOldFlights(maxAgeHours: number): Promise<void> {
-  const flights = await getAllFlights();
+  let flights: LocalFlight[];
+  try {
+    flights = await getAllFlights();
+  } catch (e) {
+    console.warn("deleteOldFlights: IndexedDB unavailable, skipping:", e);
+    return;
+  }
   const cutoff = Date.now() - maxAgeHours * 60 * 60 * 1000;
-  const db = await openDb();
+  let db: IDBDatabase;
+  try {
+    db = await openDb();
+  } catch (e) {
+    console.warn("deleteOldFlights: cannot open DB, skipping:", e);
+    return;
+  }
   const tx = db.transaction(["flights", "breadcrumbs"], "readwrite");
   for (const f of flights) {
     if (f.startedAt < cutoff && f.status === "completed") {

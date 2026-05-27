@@ -78,9 +78,9 @@ Notes, Copy of contact details and invoice in documents below.', 'active',
 -- Project contacts
 INSERT INTO project_contacts ("projectId", "contactId", role)
 VALUES ('proj-yy2qtjlii', 'con-0l0kzacb4', 'parks_vic')
-ON CONFLICT DO NOTHING;
+ON CONFLICT ("projectId","contactId") DO NOTHING;
 
 INSERT INTO project_contacts ("projectId", "contactId", role)
 VALUES ('proj-yy2qtjlii', 'con-x3hv5oa04', 'contractor')
-ON CONFLICT DO NOTHING;
+ON CONFLICT ("projectId","contactId") DO NOTHING;
 

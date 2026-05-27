@@ -136,11 +136,11 @@ export function LivePilotMarkers({ pilots, enableMessaging, currentPilotId }: { 
     }
 
     for (const p of pilots) {
-      const altFt = Math.round(p.altitude * 3.281);
-      const altM = Math.round(p.altitude);
-      const spdKmh = Math.round(p.speed);
-      const headingDeg = Math.round(p.heading || 0);
-      const vspeedMps = p.verticalSpeed || 0;
+      const altFt = p.altitude != null ? Math.round(p.altitude * 3.281) : 0;
+      const altM = p.altitude != null ? Math.round(p.altitude) : 0;
+      const spdKmh = p.speed != null ? Math.round(p.speed) : 0;
+      const headingDeg = p.heading != null ? Math.round(p.heading) : 0;
+      const vspeedMps = p.verticalSpeed ?? 0;
       const vspeedFpm = Math.round(vspeedMps * 196.85);
       const safeName = escapeHtml(p.firstName);
       const isLanded = !!p.landed;

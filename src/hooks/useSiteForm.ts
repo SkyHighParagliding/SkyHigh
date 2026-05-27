@@ -7,6 +7,18 @@ import { convertToDirectImageUrl } from "@/lib/urlHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 
+/** Safely coerce an unknown value to string, returning fallback on null/undefined. */
+function safeStr(val: unknown, fallback = ""): string {
+  if (val == null) return fallback;
+  return String(val);
+}
+
+/** Safely coerce an unknown value to string[], returning [] if not an array. */
+function safeStrArr(val: unknown): string[] {
+  if (Array.isArray(val)) return val.map(v => safeStr(v));
+  return [];
+}
+
 export function useSiteForm() {
   const { token } = useAuth();
   const { settings } = useSettings();
@@ -68,34 +80,50 @@ export function useSiteForm() {
       api.get<Record<string, unknown>>(`/api/sites/${id}`)
         .then(data => {
           setFormData({
-            name: (data.name as string) || "", type: ((data.type as string) || "").toLowerCase().includes("inland") ? "Inland" : "Coastal",
-            pgRating: (data.pgRating as string) || "", hgRating: (data.hgRating as string) || "",
-            windDir: (data.windDir as string) || "", windSpeed: (data.windSpeed as string) || "",
-            status: (data.status as string) || "open", hazardLevel: (data.hazardLevel as string) || "low",
+            name: safeStr(data.name),
+            type: safeStr(data.type).toLowerCase().includes("inland") ? "Inland" : "Coastal",
+            pgRating: safeStr(data.pgRating),
+            hgRating: safeStr(data.hgRating),
+            windDir: safeStr(data.windDir),
+            windSpeed: safeStr(data.windSpeed),
+            status: safeStr(data.status) || "open",
+            hazardLevel: safeStr(data.hazardLevel) || "low",
             lat: data.lat !== null && data.lat !== undefined ? String(data.lat) : "",
             lon: data.lon !== null && data.lon !== undefined ? String(data.lon) : "",
-            useLiveWeather: (data.useLiveWeather as string) || "false",
-            liveStationId: (data.liveStationId as string) || "", liveStationIdAlt: (data.liveStationIdAlt as string) || "",
-            description: (data.description as string) || "", launch: (data.launch as string) || "", landing: (data.landing as string) || "",
-            hazards: data.hazards ? (data.hazards as string[]).join('\n') : "",
-            rules: data.rules ? (data.rules as string[]).join('\n') : "",
-            image: (data.image as string) || "", siteguideUrl: (data.siteguideUrl as string) || "",
-            siteContact: (data.siteContact as string) || "", siteContactPhone: (data.siteContactPhone as string) || "",
-            navigateTo: (data.navigateTo as string) || "", launchHeight: (data.launchHeight as string) || "",
-            launchHeightHigh: (data.launchHeightHigh as string) || "",
-            launchHeight2: (data.launchHeight2 as string) || "", landingHeight2: (data.landingHeight2 as string) || "",
-            hoodedPloversLink: (data.hoodedPloversLink as string) || "", hoodedPloversActive: (data.hoodedPloversActive as string) || "false",
-            emergencyMarker: (data.emergencyMarker as string) || "", what3words: (data.what3words as string) || "",
-            isSkyHighSite: (data.isSkyHighSite as string) || "false",
-            crossLeft: (data.crossLeft as string) || "false", crossRight: (data.crossRight as string) || "false",
-            overrideHideClosed: (data.overrideHideClosed as string) || "false",
-            unassignedText: (data.unassignedText as string) || "",
-            siteguideVersion: (data.siteguideVersion as string) || "", siteguideScrapedAt: (data.siteguideScrapedAt as string) || "",
-            isTidal: (data.isTidal as string) || "false", tideStationId: (data.tideStationId as string) || "",
-            skipBulkImport: (data.skipBulkImport as string) || "false",
-            isXCSite: (data.isXCSite as string) || "false",
+            useLiveWeather: safeStr(data.useLiveWeather) || "false",
+            liveStationId: safeStr(data.liveStationId),
+            liveStationIdAlt: safeStr(data.liveStationIdAlt),
+            description: safeStr(data.description),
+            launch: safeStr(data.launch),
+            landing: safeStr(data.landing),
+            hazards: safeStrArr(data.hazards).join('\n'),
+            rules: safeStrArr(data.rules).join('\n'),
+            image: safeStr(data.image),
+            siteguideUrl: safeStr(data.siteguideUrl),
+            siteContact: safeStr(data.siteContact),
+            siteContactPhone: safeStr(data.siteContactPhone),
+            navigateTo: safeStr(data.navigateTo),
+            launchHeight: safeStr(data.launchHeight),
+            launchHeightHigh: safeStr(data.launchHeightHigh),
+            launchHeight2: safeStr(data.launchHeight2),
+            landingHeight2: safeStr(data.landingHeight2),
+            hoodedPloversLink: safeStr(data.hoodedPloversLink),
+            hoodedPloversActive: safeStr(data.hoodedPloversActive) || "false",
+            emergencyMarker: safeStr(data.emergencyMarker),
+            what3words: safeStr(data.what3words),
+            isSkyHighSite: safeStr(data.isSkyHighSite) || "false",
+            crossLeft: safeStr(data.crossLeft) || "false",
+            crossRight: safeStr(data.crossRight) || "false",
+            overrideHideClosed: safeStr(data.overrideHideClosed) || "false",
+            unassignedText: safeStr(data.unassignedText),
+            siteguideVersion: safeStr(data.siteguideVersion),
+            siteguideScrapedAt: safeStr(data.siteguideScrapedAt),
+            isTidal: safeStr(data.isTidal) || "false",
+            tideStationId: safeStr(data.tideStationId),
+            skipBulkImport: safeStr(data.skipBulkImport) || "false",
+            isXCSite: safeStr(data.isXCSite) || "false",
           });
-          setEssentialImages((data.essentialInfoImages as string[]) || []);
+          setEssentialImages(safeStrArr(data.essentialInfoImages));
           setClosurePillsMax(typeof data.closurePillsMax === 'number' ? data.closurePillsMax : 7);
         });
       api.get<string[]>(`/api/sites/${id}/closure-dates`)

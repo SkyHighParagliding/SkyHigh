@@ -16,5 +16,14 @@ export function convertToDirectImageUrl(url: string): string {
     }
   }
 
+  // Google Photos URLs (photos.google.com, photos.app.goo.gl) don't support direct linking.
+  // Warn the user and return as-is (it will fail to render as an image).
+  if (/photos\.google\.com|photos\.app\.goo\.gl/.test(trimmed)) {
+    console.warn(
+      "Google Photos URLs cannot be used as direct image sources. " +
+      "Upload the image via the image picker instead."
+    );
+  }
+
   return trimmed;
 }

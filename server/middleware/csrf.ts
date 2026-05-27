@@ -35,9 +35,11 @@ export function csrfTokenValidator(req: Request, res: Response, next: NextFuncti
   }
 
   const user = (req as any).user;
+  const pilot = (req as any).pilot;
 
   // Unauthenticated requests don't need CSRF validation (handled by requireAuth)
-  if (!user || !user.id) {
+  // Pilot-authenticated routes still need CSRF.
+  if ((!user || !user.id) && (!pilot || !pilot.id)) {
     return next();
   }
 
@@ -46,13 +48,15 @@ export function csrfTokenValidator(req: Request, res: Response, next: NextFuncti
   const tokenFromBody = (req.body as any)?.csrfToken as string;
   const token = tokenFromHeader || tokenFromBody;
 
+  const userId = user?.id ?? pilot?.id;
+
   if (!token) {
-    log.warn(`Missing CSRF token from ${user.id} on ${req.method} ${req.path}`);
+    log.warn(`Missing CSRF token from ${userId} on ${req.method} ${req.path}`);
     return res.status(403).json({ error: "CSRF token required" });
   }
 
-  if (!validateCSRFToken(user.id, token)) {
-    log.warn(`Invalid CSRF token from ${user.id} on ${req.method} ${req.path}`);
+  if (!validateCSRFToken(userId, token)) {
+    log.warn(`Invalid CSRF token from ${userId} on ${req.method} ${req.path}`);
     return res.status(403).json({ error: "Invalid CSRF token" });
   }
 

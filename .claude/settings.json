@@ -1,0 +1,110 @@
+{
+  "description": "Project-level Claude Code settings with hooks and permissions",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(node *)",
+      "Bash(npx *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git reset --hard*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git reset --hard discards uncommitted changes' -ForegroundColor Yellow; Write-Host '   Confirm you have committed or stashed important work.' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git push --force*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git push --force overwrites remote history' -ForegroundColor Yellow; Write-Host '   This can erase teammates work. Confirm intent.' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git push -f*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git push -f overwrites remote history' -ForegroundColor Yellow; Write-Host '   This can erase teammates work. Confirm intent.' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git clean -f*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git clean -f deletes untracked files permanently' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git checkout --*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git checkout -- discards uncommitted changes to file(s)' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git restore *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git restore discards uncommitted changes' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git branch -D*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  DESTRUCTIVE: git branch -D force-deletes a branch (no merge check)' -ForegroundColor Yellow\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(git rebase -i*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host ''; Write-Host '⚠️  CAUTION: git rebase -i rewrites history. Avoid on shared branches.' -ForegroundColor Yellow\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host '📋 SESSION START PROTOCOL' -ForegroundColor Green; Write-Host ''; Write-Host 'Before you start work:' -ForegroundColor Green; Write-Host '1. ✓ Read CLAUDE.md (Section 0: project context)' -ForegroundColor Green; Write-Host '2. ✓ Read .claude/settings.json' -ForegroundColor Green; Write-Host '3. ✓ Read RESUME_HERE.md' -ForegroundColor Green; Write-Host '4. ✓ Read memory/MEMORY.md' -ForegroundColor Green; Write-Host '5. ✓ Read tasks/todo.md' -ForegroundColor Green; Write-Host '6. ✓ Review memory/feedback.md' -ForegroundColor Green; Write-Host ''; Write-Host 'Then ask: What should we work on?' -ForegroundColor Green\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -Command \"Write-Host '💾 END OF SESSION' -ForegroundColor Magenta; Write-Host ''; Write-Host 'Before you close:' -ForegroundColor Magenta; Write-Host '1. Update RESUME_HERE.md with current state' -ForegroundColor Magenta; Write-Host '2. Update memory/feedback.md if there were corrections' -ForegroundColor Magenta; Write-Host '3. Update memory/project.md if scope changed' -ForegroundColor Magenta; Write-Host '4. Git commit if significant changes were made' -ForegroundColor Magenta\""
+          }
+        ]
+      }
+    ]
+  }
+}

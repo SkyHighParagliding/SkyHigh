@@ -258,7 +258,9 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">Coordinates</div>
-                        <div className="font-medium text-navy">{Number(aiResult.lat)?.toFixed(4)}, {Number(aiResult.lon)?.toFixed(4)}</div>
+                        <div className="font-medium text-navy">
+                          {aiResult.lat != null ? Number(aiResult.lat).toFixed(4) : "—"}, {aiResult.lon != null ? Number(aiResult.lon).toFixed(4) : "—"}
+                        </div>
                       </div>
                     </div>
                   </section>

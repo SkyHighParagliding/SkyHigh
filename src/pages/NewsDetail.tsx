@@ -5,12 +5,21 @@ import { MarkdownWithWidgets } from "@/components/ContentWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 
+interface NewsDetail {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  date: string;
+  heroImage?: string;
+}
+
 export function NewsDetail() {
   const { id } = useParams();
 
   const { data: item, isLoading, error } = useQuery({
     queryKey: ['news', id],
-    queryFn: () => api.get<Record<string, any>>(`/api/news/${id}`),
+    queryFn: () => api.get<NewsDetail>(`/api/news/${id}`),
     enabled: !!id,
   });
 

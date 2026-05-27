@@ -6,6 +6,12 @@ import { ShieldCheck, AlertTriangle, CheckCircle2, MapPin, Info } from "lucide-r
 import { useSettings } from "@/contexts/SettingsContext";
 import { useSites, useCreateCheckin } from "@/hooks/api";
 
+interface CheckinResult {
+  id: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
 export function CheckIn() {
   const [searchParams] = useSearchParams();
   const initialSite = searchParams.get("site") || "";
@@ -19,14 +25,14 @@ export function CheckIn() {
 
   const { data: sites = [], isLoading: loading } = useSites();
   const checkinMutation = useCreateCheckin();
-  const [checkinResult, setCheckinResult] = useState<Record<string, unknown> | null>(null);
+  const [checkinResult, setCheckinResult] = useState<CheckinResult | null>(null);
 
   const handleCheckIn = async () => {
     setIsSubmitting(true);
     try {
       const data = await checkinMutation.mutateAsync({ siteId: selectedSite });
       if (data.success) {
-        setCheckinResult(data.checkin);
+        setCheckinResult(data.checkin as CheckinResult);
         setStep(3);
       } else {
         alert("Failed to check in: " + (data.error || "Unknown error"));

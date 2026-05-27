@@ -142,6 +142,7 @@ function ContactPicker({
   const [results, setResults] = useState<Contact[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const searchContactsRef = useRef<(q: string) => void>(() => {});
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -170,10 +171,13 @@ function ContactPicker({
     [token, excludeIds]
   );
 
+  // keep ref in sync so debounce always calls the latest searchContacts
+  useEffect(() => { searchContactsRef.current = searchContacts; }, [searchContacts]);
+
   const handleChange = (value: string) => {
     setQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchContacts(value), 300);
+    debounceRef.current = setTimeout(() => searchContactsRef.current(value), 300);
   };
 
   return (
@@ -1183,8 +1187,8 @@ function DocumentModal({
       }
       const doc = await res.json();
       onDocumentAdded({ ...doc, linked: 0 });
-    } catch (err: any) {
-      setUploadError(err.message);
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : String(err));
     } finally {
       setUploading(false);
     }
@@ -1214,7 +1218,7 @@ function DocumentModal({
       else setLinkResults([]);
     }, 400);
     return () => clearTimeout(timer);
-  }, [linkQuery]);
+  }, [linkQuery, handleLinkSearch]);
 
   const handleLinkDocument = async (file: DriveSearchResult) => {
     if (!token) return;
