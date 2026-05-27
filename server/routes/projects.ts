@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
@@ -26,7 +27,7 @@ function generateId() {
 }
 
 router.get("/settings/parks-vic-defaults", requireAuth, asyncHandler(async (req, res) => {
-  const expectations = await db.prepare("SELECT value FROM settings WHERE key = 'pvDefaultExpectations'").get() as any;
+  const expectations = await queryOne<any>("SELECT value FROM settings WHERE key = 'pvDefaultExpectations'");
   res.json({
     expectations: expectations?.value || "",
   });
@@ -34,54 +35,57 @@ router.get("/settings/parks-vic-defaults", requireAuth, asyncHandler(async (req,
 
 router.put("/settings/parks-vic-defaults", requireAuth, asyncHandler(async (req, res) => {
   const { expectations } = req.body;
-  await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("pvDefaultExpectations", expectations || "");
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    ["pvDefaultExpectations", expectations || ""]
+  );
   res.json({ success: true });
 }));
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
-  const projects = await db.prepare(`
+  const projects = await query<any>(`
     SELECT p.*,
-      s.name as relatedSiteName,
-      c.name as coordinatorName,
-      c.organisation as coordinatorOrg,
-      (SELECT COUNT(*) FROM project_documents pd WHERE pd.projectId = p.id) as documentCount,
-      (SELECT COUNT(*) FROM project_contacts pc WHERE pc.projectId = p.id) as contactCount
+      s.name as "relatedSiteName",
+      c.name as "coordinatorName",
+      c.organisation as "coordinatorOrg",
+      (SELECT COUNT(*) FROM project_documents pd WHERE pd."projectId" = p.id) as "documentCount",
+      (SELECT COUNT(*) FROM project_contacts pc WHERE pc."projectId" = p.id) as "contactCount"
     FROM projects p
-    LEFT JOIN sites s ON s.id = p.relatedSiteId
-    LEFT JOIN contacts c ON c.id = p.coordinatorContactId
+    LEFT JOIN sites s ON s.id = p."relatedSiteId"
+    LEFT JOIN contacts c ON c.id = p."coordinatorContactId"
     ORDER BY
       CASE p.status WHEN 'active' THEN 0 WHEN 'on-hold' THEN 1 WHEN 'completed' THEN 2 WHEN 'archived' THEN 3 END,
-      p.updatedAt DESC
-  `).all();
+      p."updatedAt" DESC
+  `);
   res.json(projects);
 }));
 
 router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const project = await db.prepare(`
-    SELECT p.*, s.name as relatedSiteName
+  const project = await queryOne<any>(`
+    SELECT p.*, s.name as "relatedSiteName"
     FROM projects p
-    LEFT JOIN sites s ON s.id = p.relatedSiteId
-    WHERE p.id = ?
-  `).get(req.params.id) as any;
+    LEFT JOIN sites s ON s.id = p."relatedSiteId"
+    WHERE p.id = $1
+  `, [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  const contacts = await db.prepare(`
+  const contacts = await query<any>(`
     SELECT c.*, pc.role FROM project_contacts pc
-    JOIN contacts c ON c.id = pc.contactId
-    WHERE pc.projectId = ?
+    JOIN contacts c ON c.id = pc."contactId"
+    WHERE pc."projectId" = $1
     ORDER BY pc.role, c.name
-  `).all(req.params.id);
+  `, [req.params.id]);
 
-  const documents = await db.prepare(`
-    SELECT d.*, CASE WHEN d.driveFileId IS NOT NULL THEN 1 ELSE 0 END as linked FROM project_documents pd
-    JOIN documents d ON d.id = pd.documentId
-    WHERE pd.projectId = ?
-    ORDER BY d.createdAt DESC
-  `).all(req.params.id);
+  const documents = await query<any>(`
+    SELECT d.*, CASE WHEN d."driveFileId" IS NOT NULL THEN 1 ELSE 0 END as linked FROM project_documents pd
+    JOIN documents d ON d.id = pd."documentId"
+    WHERE pd."projectId" = $1
+    ORDER BY d."createdAt" DESC
+  `, [req.params.id]);
 
   let coordinatorContact = null;
   if (project.coordinatorContactId) {
-    coordinatorContact = await db.prepare("SELECT * FROM contacts WHERE id = ?").get(project.coordinatorContactId) || null;
+    coordinatorContact = await queryOne<any>("SELECT * FROM contacts WHERE id = $1", [project.coordinatorContactId]) || null;
   }
 
   project.contacts = contacts;
@@ -96,17 +100,17 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 
   let finalPvExpectations = pvExpectations;
   if (parksVic && !pvExpectations) {
-    const defaults = await db.prepare("SELECT value FROM settings WHERE key = 'pvDefaultExpectations'").get() as any;
+    const defaults = await queryOne<any>("SELECT value FROM settings WHERE key = 'pvDefaultExpectations'");
     finalPvExpectations = defaults?.value || "";
   }
 
   const id = generateId();
-  await db.prepare(`
-    INSERT INTO projects (id, name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, finalPvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || "");
+  await execute(`
+    INSERT INTO projects (id, name, description, status, "relatedSiteId", "parksVic", "pvContactId", "pvExpectations", "worksRequired", "contractorNotes", "landownerNotes", "stakeholderNotes", "coordinatorContactId", "estimatedBudget", "fundingSource", "insuranceRequirements", "supplierQuotes", "complianceNotes", "approvedBy", "approvalDate")
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+  `, [id, name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, finalPvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || ""]);
 
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(id);
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [id]);
   res.status(201).json(project);
 }));
 
@@ -114,36 +118,36 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   const { name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate } = req.body;
   if (!name) return res.status(400).json({ error: "Project name is required" });
 
-  const result = await db.prepare(`
+  const result = await execute(`
     UPDATE projects SET
-      name = ?, description = ?, status = ?, relatedSiteId = ?,
-      parksVic = ?, pvContactId = ?, pvExpectations = ?,
-      worksRequired = ?, contractorNotes = ?, landownerNotes = ?, stakeholderNotes = ?,
-      coordinatorContactId = ?,
-      estimatedBudget = ?, fundingSource = ?, insuranceRequirements = ?,
-      supplierQuotes = ?, complianceNotes = ?, approvedBy = ?, approvalDate = ?,
-      updatedAt = datetime('now')
-    WHERE id = ?
-  `).run(name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, pvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || "", req.params.id);
+      name = $1, description = $2, status = $3, "relatedSiteId" = $4,
+      "parksVic" = $5, "pvContactId" = $6, "pvExpectations" = $7,
+      "worksRequired" = $8, "contractorNotes" = $9, "landownerNotes" = $10, "stakeholderNotes" = $11,
+      "coordinatorContactId" = $12,
+      "estimatedBudget" = $13, "fundingSource" = $14, "insuranceRequirements" = $15,
+      "supplierQuotes" = $16, "complianceNotes" = $17, "approvedBy" = $18, "approvalDate" = $19,
+      "updatedAt" = NOW()
+    WHERE id = $20
+  `, [name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, pvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || "", req.params.id]);
 
-  if (result.changes === 0) return res.status(404).json({ error: "Project not found" });
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Project not found" });
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   res.json(project);
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id);
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  await db.prepare("DELETE FROM project_contacts WHERE projectId = ?").run(req.params.id);
-  await db.prepare("DELETE FROM project_documents WHERE projectId = ?").run(req.params.id);
-  await db.prepare("DELETE FROM projects WHERE id = ?").run(req.params.id);
+  await execute("DELETE FROM project_contacts WHERE \"projectId\" = $1", [req.params.id]);
+  await execute("DELETE FROM project_documents WHERE \"projectId\" = $1", [req.params.id]);
+  await execute("DELETE FROM projects WHERE id = $1", [req.params.id]);
   res.json({ success: true });
 }));
 
 router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHandler(async (req, res) => {
   driveFilesCache.delete(req.params.id);
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id) as any;
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
   if (!req.file) return res.status(400).json({ error: "No file provided" });
 
@@ -164,19 +168,21 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
       const data = await response.json() as any;
       if (data.success && data.file) {
         const docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-        await db.prepare(
-          "INSERT INTO documents (id, driveFileId, name, mimeType, size, category, driveFolderId, webViewLink, uploadedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).run(docId, data.file.id, data.file.name, data.file.mimeType, data.file.size || req.file.size, "08", null, data.file.url, (req as any).user?.name || "admin");
+        await execute(
+          "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+          [docId, data.file.id, data.file.name, data.file.mimeType, data.file.size || req.file.size, "08", null, data.file.url, (req as any).user?.name || "admin"]
+        );
 
-        await db.prepare(
-          "INSERT INTO project_documents (projectId, documentId, linked) VALUES (?, ?, 0)"
-        ).run(req.params.id, docId);
+        await execute(
+          "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
+          [req.params.id, docId]
+        );
 
         if (!project.driveFolderName) {
-          await db.prepare("UPDATE projects SET driveFolderName = ? WHERE id = ?").run(safeName, req.params.id);
+          await execute("UPDATE projects SET \"driveFolderName\" = $1 WHERE id = $2", [safeName, req.params.id]);
         }
 
-        const doc = await db.prepare("SELECT * FROM documents WHERE id = ?").get(docId);
+        const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [docId]);
         return res.status(201).json(doc);
       }
       return res.status(500).json({ error: data.error || "Upload failed" });
@@ -202,7 +208,7 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
     if (!folderId) {
       return res.status(500).json({ error: "Failed to create project folder in Drive" });
     }
-    await db.prepare("UPDATE projects SET driveFolderId = ? WHERE id = ?").run(folderId, req.params.id);
+    await execute("UPDATE projects SET \"driveFolderId\" = $1 WHERE id = $2", [folderId, req.params.id]);
   }
 
   const result = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, folderId);
@@ -211,15 +217,17 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
   }
 
   const docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-  await db.prepare(
-    "INSERT INTO documents (id, driveFileId, name, mimeType, size, category, driveFolderId, webViewLink, uploadedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run(docId, result.id, result.name, req.file.mimetype, req.file.size, "08", folderId, result.webViewLink, (req as any).user?.name || "admin");
+  await execute(
+    "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+    [docId, result.id, result.name, req.file.mimetype, req.file.size, "08", folderId, result.webViewLink, (req as any).user?.name || "admin"]
+  );
 
-  await db.prepare(
-    "INSERT INTO project_documents (projectId, documentId, linked) VALUES (?, ?, 0)"
-  ).run(req.params.id, docId);
+  await execute(
+    "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
+    [req.params.id, docId]
+  );
 
-  const doc = await db.prepare("SELECT * FROM documents WHERE id = ?").get(docId);
+  const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [docId]);
   res.status(201).json(doc);
 }));
 
@@ -229,7 +237,7 @@ router.get("/:id/documents/drive", requireAuth, asyncHandler(async (req, res) =>
     return res.json({ files: cached.files, source: "drive", folderName: cached.folderName, cached: true });
   }
 
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id) as any;
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   const appScriptUrl = await getAppScriptUrl();
@@ -258,46 +266,48 @@ router.post("/:id/documents/link", requireAuth, asyncHandler(async (req, res) =>
   driveFilesCache.delete(req.params.id);
   const { documentId, driveFileId, name, mimeType, webViewLink } = req.body;
 
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id);
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   let docId = documentId;
 
   if (!docId && driveFileId) {
-    const existing = await db.prepare("SELECT id FROM documents WHERE driveFileId = ?").get(driveFileId) as any;
+    const existing = await queryOne<any>("SELECT id FROM documents WHERE \"driveFileId\" = $1", [driveFileId]);
     if (existing) {
       docId = existing.id;
     } else {
       docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-      await db.prepare(
-        "INSERT INTO documents (id, driveFileId, name, mimeType, category, webViewLink) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(docId, driveFileId, name || "Linked Document", mimeType || "", "08", webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`);
+      await execute(
+        "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", category, \"webViewLink\") VALUES ($1, $2, $3, $4, $5, $6)",
+        [docId, driveFileId, name || "Linked Document", mimeType || "", "08", webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`]
+      );
     }
   }
 
   if (!docId) return res.status(400).json({ error: "documentId or driveFileId is required" });
 
-  const existingLink = await db.prepare("SELECT * FROM project_documents WHERE projectId = ? AND documentId = ?").get(req.params.id, docId);
+  const existingLink = await queryOne<any>("SELECT * FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, docId]);
   if (existingLink) return res.status(409).json({ error: "Document already linked to this project" });
 
-  await db.prepare(
-    "INSERT INTO project_documents (projectId, documentId, linked) VALUES (?, ?, 1)"
-  ).run(req.params.id, docId);
+  await execute(
+    "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 1)",
+    [req.params.id, docId]
+  );
 
   res.status(201).json({ success: true, documentId: docId });
 }));
 
 router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res) => {
   driveFilesCache.delete(req.params.id);
-  const link = await db.prepare("SELECT * FROM project_documents WHERE projectId = ? AND documentId = ?").get(req.params.id, req.params.docId) as any;
+  const link = await queryOne<any>("SELECT * FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, req.params.docId]);
   if (!link) return res.status(404).json({ error: "Document not linked to this project" });
 
-  await db.prepare("DELETE FROM project_documents WHERE projectId = ? AND documentId = ?").run(req.params.id, req.params.docId);
+  await execute("DELETE FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, req.params.docId]);
 
   if (link.linked === 0) {
-    const otherLinks = await db.prepare("SELECT COUNT(*) as c FROM project_documents WHERE documentId = ?").get(req.params.docId) as any;
+    const otherLinks = await queryOne<any>("SELECT COUNT(*) as c FROM project_documents WHERE \"documentId\" = $1", [req.params.docId]);
     if (!otherLinks?.c) {
-      const doc = await db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.docId) as any;
+      const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [req.params.docId]);
       if (doc?.driveFileId) {
         let driveDeleted = false;
         const appScriptUrl = await getAppScriptUrl();
@@ -322,7 +332,7 @@ router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res
           log.warn(`Drive file ${doc.driveFileId} may not have been deleted — removing local record anyway`);
         }
       }
-      await db.prepare("DELETE FROM documents WHERE id = ?").run(req.params.docId);
+      await execute("DELETE FROM documents WHERE id = $1", [req.params.docId]);
     }
   }
 
@@ -333,25 +343,26 @@ router.post("/:id/contacts", requireAuth, asyncHandler(async (req, res) => {
   const { contactId, role } = req.body;
   if (!contactId) return res.status(400).json({ error: "contactId is required" });
 
-  const project = await db.prepare("SELECT * FROM projects WHERE id = ?").get(req.params.id);
+  const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  const contact = await db.prepare("SELECT * FROM contacts WHERE id = ?").get(contactId);
+  const contact = await queryOne<any>("SELECT * FROM contacts WHERE id = $1", [contactId]);
   if (!contact) return res.status(404).json({ error: "Contact not found" });
 
-  const existing = await db.prepare("SELECT * FROM project_contacts WHERE projectId = ? AND contactId = ?").get(req.params.id, contactId);
+  const existing = await queryOne<any>("SELECT * FROM project_contacts WHERE \"projectId\" = $1 AND \"contactId\" = $2", [req.params.id, contactId]);
   if (existing) return res.status(409).json({ error: "Contact already linked to this project" });
 
-  await db.prepare(
-    "INSERT INTO project_contacts (projectId, contactId, role) VALUES (?, ?, ?)"
-  ).run(req.params.id, contactId, role || "stakeholder");
+  await execute(
+    "INSERT INTO project_contacts (\"projectId\", \"contactId\", role) VALUES ($1, $2, $3)",
+    [req.params.id, contactId, role || "stakeholder"]
+  );
 
   res.status(201).json({ success: true });
 }));
 
 router.delete("/:id/contacts/:contactId", requireAuth, asyncHandler(async (req, res) => {
-  const result = await db.prepare("DELETE FROM project_contacts WHERE projectId = ? AND contactId = ?").run(req.params.id, req.params.contactId);
-  if (result.changes === 0) return res.status(404).json({ error: "Contact not linked to this project" });
+  const result = await execute("DELETE FROM project_contacts WHERE \"projectId\" = $1 AND \"contactId\" = $2", [req.params.id, req.params.contactId]);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Contact not linked to this project" });
   res.json({ success: true });
 }));
 
