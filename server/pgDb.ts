@@ -1,31 +1,9 @@
 import "dotenv/config";
-import { Pool, PoolClient } from "pg";
+import { PoolClient } from "pg";
+import { pool } from "./pg.js";
 import createLogger from "./utils/logger.js";
 
 const log = createLogger("database");
-
-const poolMax = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 20;
-const stmtTimeoutMs = parseInt(process.env.DB_STATEMENT_TIMEOUT ?? '', 10);
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes("localhost") ? false : { rejectUnauthorized: false },
-  max: poolMax,
-  idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT_MS ? parseInt(process.env.DB_IDLE_TIMEOUT_MS, 10) : 60000,
-  connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT_MS ? parseInt(process.env.DB_CONNECTION_TIMEOUT_MS, 10) : 10000,
-  statement_timeout: Number.isFinite(stmtTimeoutMs) ? stmtTimeoutMs : 30000,
-});
-
-pool.on("error", (err) => {
-  log.error("Postgres pool error:", err.message);
-});
-
-// Monitor pool exhaustion
-pool.on("connect", () => {
-  if (pool.totalCount >= poolMax * 0.8) {
-    log.warn(`Database connection pool at ${Math.round((pool.totalCount / poolMax) * 100)}% capacity (${pool.totalCount}/${poolMax})`);
-  }
-});
 
 // ─── PreparedStatement shim ───────────────────────────────────────────────────
 // Wraps a parameterised SQL string and provides the same .get() / .all() / .run()
