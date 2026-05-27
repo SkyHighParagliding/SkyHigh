@@ -5,8 +5,9 @@ import fs from "fs";
 import path from "path";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
-import db from "./server/db.js";
+import "./server/db.js";
 import "./server/seed.js";
+import { queryOne } from "./server/pg.js";
 import { fetchWeatherData } from "./server/weather.js";
 import { cleanExpiredSessions } from "./server/middleware/auth.js";
 import { csrfTokenProvider, csrfTokenValidator, getCSRFTokenRoute } from "./server/middleware/csrf.js";
@@ -80,9 +81,9 @@ const searchLimiter = rateLimit({
 
 const submissionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: () => {
+  max: async () => {
     try {
-      const row = db.prepare("SELECT value FROM settings WHERE key = 'submissionRateLimit'").get() as { value: string } | undefined;
+      const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'submissionRateLimit'");
       const val = row?.value ? parseInt(row.value, 10) : 100;
       return (val > 0 && val <= 500) ? val : 100;
     } catch { return 100; }
@@ -243,13 +244,12 @@ async function startServer() {
   app.use("/api/admin", populateBannersRouter);
   app.use("/api/search-logs", searchLogsRouter);
 
-  app.get("/manifest.json", (req, res) => {
-    const getVal = db.prepare("SELECT value FROM settings WHERE key = ?");
-    const clubName = (getVal.get("clubName") as any)?.value || "SkyHigh";
-    const pwaIcon192 = (getVal.get("pwaIcon192") as any)?.value || "";
-    const pwaIcon512 = (getVal.get("pwaIcon512") as any)?.value || "";
-    const clubFavicon = (getVal.get("clubLogoFavicon") as any)?.value || "";
-    const themeColor = (getVal.get("clubPrimaryColor") as any)?.value || "#00a8e8";
+  app.get("/manifest.json", async (req, res) => {
+    const clubName = (await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["clubName"]))?.value || "SkyHigh";
+    const pwaIcon192 = (await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["pwaIcon192"]))?.value || "";
+    const pwaIcon512 = (await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["pwaIcon512"]))?.value || "";
+    const clubFavicon = (await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["clubLogoFavicon"]))?.value || "";
+    const themeColor = (await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["clubPrimaryColor"]))?.value || "#00a8e8";
 
     const icons: any[] = [];
     if (pwaIcon192) {
