@@ -1,6 +1,6 @@
 import { Router } from "express";
 import crypto from "crypto";
-import db from "../db.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import bcrypt from "bcryptjs";
@@ -16,14 +16,67 @@ const log = createLogger("contacts");
 const router = Router();
 const SALT_ROUNDS = 10;
 
+interface ContactRow {
+  id: string;
+  organisation: string;
+  name: string;
+  surname: string;
+  phone: string;
+  email: string;
+  notes: string;
+  position: string | null;
+  isAdmin: number;
+  isCommittee: number;
+  isContractor: number;
+  isParksVic: number;
+  isSafetyCommittee: number;
+  isSocialMedia: number;
+  soAuthorised: number;
+  displayCommittee: number;
+  displaySafety: number;
+  showTelegram: number;
+  showPhone: number;
+  showEmail: number;
+  showAdminEmail: number;
+  photoUrl: string | null;
+  photoAuthorised: number;
+  fullNameDisplay: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CommitteeRow {
+  id: string;
+  name: string;
+  surname: string;
+  organisation: string;
+  phone: string;
+  email: string;
+  position: string | null;
+  isSafetyCommittee?: number;
+  safetyOfficerType?: string | null;
+  showTelegram: number;
+  showPhone: number;
+  showEmail: number;
+  showAdminEmail: number;
+  photoUrl?: string | null;
+  photoAuthorised?: number;
+  fullNameDisplay?: number;
+}
+
 function generateId() {
   return `con-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 router.get("/public/committee", asyncHandler(async (req, res) => {
-  const members = await db.prepare(
-    "SELECT id, name, surname, organisation, phone, email, position, isSafetyCommittee, safetyOfficerType, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay FROM contacts WHERE isCommittee = 1 AND displayCommittee = 1 ORDER BY name ASC"
-  ).all() as { id: string; name: string; surname: string; organisation: string; phone: string; email: string; position: string | null; isSafetyCommittee?: number; safetyOfficerType?: string | null; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; photoUrl?: string | null; photoAuthorised?: number; fullNameDisplay?: number }[];
+  const members = await query<CommitteeRow>(
+    `SELECT id, name, surname, organisation, phone, email, position, "isSafetyCommittee",
+            "safetyOfficerType", "showTelegram", "showPhone", "showEmail", "showAdminEmail",
+            "photoUrl", "photoAuthorised", "fullNameDisplay"
+       FROM contacts
+      WHERE "isCommittee" = 1 AND "displayCommittee" = 1
+      ORDER BY name ASC`
+  );
   const filtered = await filterByCurrentMembers(members);
   res.json(filtered.map(m => ({
     ...m,
@@ -34,9 +87,21 @@ router.get("/public/committee", asyncHandler(async (req, res) => {
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const { limit, offset } = getPaginationParams(req.query);
-  const contacts = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay, createdAt, updatedAt FROM contacts ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?").all(limit, offset);
-  const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts").get() as { count: number };
-  const total = countResult.count;
+  const contacts = await query<ContactRow>(
+    `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin",
+            "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia",
+            "soAuthorised", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
+            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
+            "createdAt", "updatedAt"
+       FROM contacts
+      ORDER BY organisation ASC, name ASC
+      LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  const countResult = await queryOne<{ count: number }>(
+    "SELECT COUNT(*) as count FROM contacts"
+  );
+  const total = countResult?.count || 0;
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
@@ -49,11 +114,24 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   }
   const term = `%${q}%`;
   const { limit, offset } = getPaginationParams(req.query);
-  const contacts = await db.prepare(
-    "SELECT id, organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay, createdAt, updatedAt FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ? ORDER BY organisation ASC, name ASC LIMIT ? OFFSET ?"
-  ).all(term, term, term, limit, offset);
-  const countResult = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE name LIKE ? OR surname LIKE ? OR organisation LIKE ?").get(term, term, term) as { count: number };
-  const total = countResult.count;
+  const contacts = await query<ContactRow>(
+    `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin",
+            "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia",
+            "soAuthorised", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
+            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
+            "createdAt", "updatedAt"
+       FROM contacts
+      WHERE name ILIKE $1 OR surname ILIKE $2 OR organisation ILIKE $3
+      ORDER BY organisation ASC, name ASC
+      LIMIT $4 OFFSET $5`,
+    [term, term, term, limit, offset]
+  );
+  const countResult = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM contacts
+      WHERE name ILIKE $1 OR surname ILIKE $2 OR organisation ILIKE $3`,
+    [term, term, term]
+  );
+  const total = countResult?.count || 0;
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
@@ -130,7 +208,10 @@ router.post("/tidyhq-import-group", requireAuth, asyncHandler(async (req, res) =
     }
 
     const existing = email
-      ? await db.prepare("SELECT id, position FROM contacts WHERE LOWER(email) = ?").get(email) as any
+      ? await queryOne<{ id: string; position: string | null }>(
+          `SELECT id, position FROM contacts WHERE LOWER(email) = LOWER($1)`,
+          [email]
+        )
       : null;
 
     const organisation = (tc.organisation || "").trim();
@@ -170,7 +251,7 @@ router.post("/tidyhq-import-group", requireAuth, asyncHandler(async (req, res) =
         const allowedColumns = ["name", "surname", "phone", "organisation", ...validRoleFlags, "isAdmin", "position"];
         const { sql, params } = buildSafeUpdateClauses(updateClauses, allowedColumns);
         params.push(existing.id);
-        await db.prepare(`UPDATE contacts SET ${sql}, updatedAt = datetime('now') WHERE id = ?`).run(...params);
+        await execute(`UPDATE contacts SET ${sql}, "updatedAt" = NOW() WHERE id = $${params.length}`, params);
       }
       updated++;
     } else {
@@ -181,17 +262,19 @@ router.post("/tidyhq-import-group", requireAuth, asyncHandler(async (req, res) =
       } else if (roleFlags.isCommittee) {
         position = "Committee";
       }
-      await db.prepare(
-        `INSERT INTO contacts (id, name, surname, organisation, phone, email, isAdmin, isCommittee, isSafetyCommittee, isContractor, isParksVic, position)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        id, firstName, lastName, organisation, tc.phone || "", email,
-        roleFlags.isCommittee ? 1 : 0,
-        roleFlags.isCommittee ? 1 : 0,
-        roleFlags.isSafetyCommittee ? 1 : 0,
-        roleFlags.isContractor ? 1 : 0,
-        roleFlags.isParksVic ? 1 : 0,
-        position
+      await execute(
+        `INSERT INTO contacts (id, name, surname, organisation, phone, email, "isAdmin",
+                               "isCommittee", "isSafetyCommittee", "isContractor", "isParksVic", position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [
+          id, firstName, lastName, organisation, tc.phone || "", email,
+          roleFlags.isCommittee ? 1 : 0,
+          roleFlags.isCommittee ? 1 : 0,
+          roleFlags.isSafetyCommittee ? 1 : 0,
+          roleFlags.isContractor ? 1 : 0,
+          roleFlags.isParksVic ? 1 : 0,
+          position
+        ]
       );
       created++;
     }
@@ -220,9 +303,9 @@ router.post("/tidyhq-smart-import", requireAuth, asyncHandler(async (req, res) =
   }
 
   // Load all group mappings, indexed by TidyHQ group ID
-  const mappings = await db.prepare(
-    'SELECT "tidyhqGroupId", "tidyhqGroupName", "localRoleFlag" FROM tidyhq_group_mappings'
-  ).all() as { tidyhqGroupId: string; tidyhqGroupName: string; localRoleFlag: string }[];
+  const mappings = await query<{ tidyhqGroupId: string; tidyhqGroupName: string; localRoleFlag: string }>(
+    `SELECT "tidyhqGroupId", "tidyhqGroupName", "localRoleFlag" FROM tidyhq_group_mappings`
+  );
 
   const byGroup = new Map<string, Array<{ flag: string; name: string }>>();
   for (const m of mappings) {
@@ -270,7 +353,10 @@ router.post("/tidyhq-smart-import", requireAuth, asyncHandler(async (req, res) =
       : (boolFlags.isCommittee ? "Committee" : null);
 
     const existing = email
-      ? (await db.prepare("SELECT id, position, photoUrl FROM contacts WHERE LOWER(email) = ?").get(email)) as any
+      ? await queryOne<{ id: string; position: string | null; photoUrl: string | null }>(
+          `SELECT id, position, "photoUrl" FROM contacts WHERE LOWER(email) = LOWER($1)`,
+          [email]
+        )
       : null;
 
     let contactId: string;
@@ -303,23 +389,26 @@ router.post("/tidyhq-smart-import", requireAuth, asyncHandler(async (req, res) =
       const { sql, params } = buildSafeUpdateClauses(clauses, allowedCols);
       if (sql) {
         params.push(existing.id);
-        await db.prepare(`UPDATE contacts SET ${sql}, updatedAt = datetime('now') WHERE id = ?`).run(...params);
+        await execute(`UPDATE contacts SET ${sql}, "updatedAt" = NOW() WHERE id = $${params.length}`, params);
       }
       updated++;
     } else {
       contactId = generateId();
-      await db.prepare(
-        `INSERT INTO contacts (id, name, surname, organisation, phone, email, isAdmin, isCommittee, isSafetyCommittee, isContractor, isParksVic, safetyOfficerType, position)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        contactId, firstName, lastName, organisation, phone, email,
-        boolFlags.isAdmin || 0,
-        boolFlags.isCommittee || 0,
-        boolFlags.isSafetyCommittee || 0,
-        boolFlags.isContractor || 0,
-        boolFlags.isParksVic || 0,
-        safetyOfficerType,
-        positionValue
+      await execute(
+        `INSERT INTO contacts (id, name, surname, organisation, phone, email, "isAdmin",
+                               "isCommittee", "isSafetyCommittee", "isContractor", "isParksVic",
+                               "safetyOfficerType", position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [
+          contactId, firstName, lastName, organisation, phone, email,
+          boolFlags.isAdmin || 0,
+          boolFlags.isCommittee || 0,
+          boolFlags.isSafetyCommittee || 0,
+          boolFlags.isContractor || 0,
+          boolFlags.isParksVic || 0,
+          safetyOfficerType,
+          positionValue
+        ]
       );
       created++;
     }
@@ -332,7 +421,10 @@ router.post("/tidyhq-smart-import", requireAuth, asyncHandler(async (req, res) =
         if (imgRes.ok) {
           const buffer = Buffer.from(await imgRes.arrayBuffer());
           const photoUrl = await saveContactPhoto(buffer, contactId);
-          await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contactId);
+          await execute(
+            `UPDATE contacts SET "photoUrl" = $1, "photoAuthorised" = 1 WHERE id = $2`,
+            [photoUrl, contactId]
+          );
           imagesSynced++;
         }
       } catch (imgErr: any) {
@@ -370,7 +462,16 @@ router.get("/tidyhq-search", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
+  const contact = await queryOne<ContactRow>(
+    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+            "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
+            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
+            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
+            "updatedAt"
+       FROM contacts
+      WHERE id = $1`,
+    [req.params.id]
+  );
   if (!contact) return res.status(404).json({ error: "Contact not found" });
   res.json(contact);
 }));
@@ -394,7 +495,10 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (isAdmin && email) {
-    const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+    const existing = await queryOne(
+      `SELECT id FROM contacts WHERE email = $1 AND "isAdmin" = 1`,
+      [email]
+    );
     if (existing) {
       return res.status(400).json({ error: "An admin contact with that email already exists" });
     }
@@ -409,16 +513,29 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
     hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
   }
 
-  await db.prepare(
-    `INSERT INTO contacts (id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, password)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, organisation || "", name, surname || "", phone || "", email || "", notes || "",
-    isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
-    isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
-    displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
-    showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0, hashedPassword);
+  await execute(
+    `INSERT INTO contacts (id, organisation, name, surname, phone, email, notes, "isAdmin",
+                           "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee",
+                           "isSocialMedia", "soAuthorised", "displayCommittee", "displaySafety",
+                           "showTelegram", "showPhone", "showEmail", "showAdminEmail", password)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+    [id, organisation || "", name, surname || "", phone || "", email || "", notes || "",
+      isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
+      isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
+      displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
+      showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0, hashedPassword]
+  );
 
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay, createdAt, updatedAt FROM contacts WHERE id = ?").get(id);
+  const contact = await queryOne<ContactRow>(
+    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+            "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
+            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
+            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
+            "updatedAt"
+       FROM contacts
+      WHERE id = $1`,
+    [id]
+  );
   res.status(201).json(contact);
 }));
 
@@ -435,7 +552,10 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (isAdmin && email) {
-    const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1 AND id != ?").get(email, req.params.id) as any;
+    const existing = await queryOne(
+      `SELECT id FROM contacts WHERE email = $1 AND "isAdmin" = 1 AND id != $2`,
+      [email, req.params.id]
+    );
     if (existing) {
       return res.status(400).json({ error: "An admin contact with that email already exists" });
     }
@@ -460,14 +580,17 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 
   if (password && needsPassword) {
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    passwordUpdate = ", password = ?";
+    passwordUpdate = ", password = $21";
     params.push(hashed);
   } else if (needsPassword && !password) {
-    const current = await db.prepare("SELECT password FROM contacts WHERE id = ?").get(req.params.id) as any;
+    const current = await queryOne<{ password: string }>(
+      `SELECT password FROM contacts WHERE id = $1`,
+      [req.params.id]
+    );
     if (!current?.password) {
       const tempPassword = crypto.randomUUID();
       const hashed = await bcrypt.hash(tempPassword, SALT_ROUNDS);
-      passwordUpdate = ", password = ?";
+      passwordUpdate = ", password = $21";
       params.push(hashed);
     }
   } else if (!isAdmin && !(isSafetyCommittee && soAuthorised)) {
@@ -476,15 +599,29 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 
   params.push(req.params.id);
 
-  const result = await db.prepare(
-    `UPDATE contacts SET organisation = ?, name = ?, surname = ?, phone = ?, email = ?, notes = ?,
-     isAdmin = ?, isCommittee = ?, isContractor = ?, isParksVic = ?, isSafetyCommittee = ?, isSocialMedia = ?, soAuthorised = ?,
-     displayCommittee = ?, displaySafety = ?, showTelegram = ?, showPhone = ?, showEmail = ?, showAdminEmail = ?${passwordUpdate},
-     updatedAt = datetime('now') WHERE id = ?`
-  ).run(...params);
+  const result = await execute(
+    `UPDATE contacts
+        SET organisation = $1, name = $2, surname = $3, phone = $4, email = $5, notes = $6,
+            "isAdmin" = $7, "isCommittee" = $8, "isContractor" = $9, "isParksVic" = $10,
+            "isSafetyCommittee" = $11, "isSocialMedia" = $12, "soAuthorised" = $13,
+            "displayCommittee" = $14, "displaySafety" = $15, "showTelegram" = $16,
+            "showPhone" = $17, "showEmail" = $18, "showAdminEmail" = $19${passwordUpdate},
+            "updatedAt" = NOW()
+      WHERE id = $${params.length}`,
+    params
+  );
 
-  if (result.changes === 0) return res.status(404).json({ error: "Contact not found" });
-  const contact = await db.prepare("SELECT id, organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay, createdAt, updatedAt FROM contacts WHERE id = ?").get(req.params.id);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Contact not found" });
+  const contact = await queryOne<ContactRow>(
+    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+            "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
+            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
+            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
+            "updatedAt"
+       FROM contacts
+      WHERE id = $1`,
+    [req.params.id]
+  );
   res.json(contact);
 }));
 
@@ -494,37 +631,37 @@ router.post("/bulk-delete", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "No contact IDs provided" });
   }
 
-  const adminCount = (await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE isAdmin = 1").get() as any).count;
-  const adminIdsToDelete = (await db.prepare(
-    `SELECT id FROM contacts WHERE isAdmin = 1 AND id IN (${ids.map(() => "?").join(",")})`
-  ).all(...ids) as { id: string }[]).map(r => r.id);
+  const adminCountResult = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+  );
+  const adminCount = adminCountResult?.count || 0;
+
+  const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
+  const adminIdsToDelete = await query<{ id: string }>(
+    `SELECT id FROM contacts WHERE "isAdmin" = 1 AND id IN (${placeholders})`,
+    ids
+  );
 
   if (adminIdsToDelete.length >= adminCount) {
     return res.status(400).json({ error: "Cannot delete all admin contacts — at least one must remain" });
   }
 
   let deleted = 0;
-  let skippedProjects: string[] = [];
 
-  const deleteOne = await db.prepare("DELETE FROM contacts WHERE id = ?");
-  const deleteSession = await db.prepare("DELETE FROM admin_sessions WHERE userId = ?");
-  const deleteProjectLinks = await db.prepare("DELETE FROM project_contacts WHERE contactId = ?");
-  const findProjects = await db.prepare(
-    "SELECT p.name FROM project_contacts pc JOIN projects p ON p.id = pc.projectId WHERE pc.contactId = ?"
-  );
-
-  const tx = await db.transaction(async () => {
+  await transaction(async (client) => {
     for (const id of ids) {
-      const linked = await findProjects.all(id) as { name: string }[];
+      const { rows: linked } = await client.query<{ name: string }>(
+        `SELECT p.name FROM project_contacts pc JOIN projects p ON p.id = pc."projectId" WHERE pc."contactId" = $1`,
+        [id]
+      );
       if (linked.length > 0) {
-        await deleteProjectLinks.run(id);
+        await client.query(`DELETE FROM project_contacts WHERE "contactId" = $1`, [id]);
       }
-      await deleteSession.run(id);
-      const result = await deleteOne.run(id);
-      if (result.changes > 0) deleted++;
+      await client.query(`DELETE FROM admin_sessions WHERE "userId" = $1`, [id]);
+      const result = await client.query(`DELETE FROM contacts WHERE id = $1`, [id]);
+      if ((result as any).rowCount > 0) deleted++;
     }
   });
-  await tx();
 
   res.json({ deleted, total: ids.length });
 }));
@@ -533,7 +670,10 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   const force = req.query.force === "true";
   const currentUserId = (req as any).user?.id;
 
-  const contact = await db.prepare("SELECT isAdmin FROM contacts WHERE id = ?").get(req.params.id) as any;
+  const contact = await queryOne<{ isAdmin: number }>(
+    `SELECT "isAdmin" FROM contacts WHERE id = $1`,
+    [req.params.id]
+  );
   if (!contact) return res.status(404).json({ error: "Contact not found" });
 
   if (req.params.id === currentUserId) {
@@ -541,15 +681,18 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (contact.isAdmin) {
-    const adminCount = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE isAdmin = 1").get() as any;
-    if (adminCount.count <= 1) {
+    const adminCount = await queryOne<{ count: number }>(
+      `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+    );
+    if ((adminCount?.count || 0) <= 1) {
       return res.status(400).json({ error: "Cannot delete the last admin contact" });
     }
   }
 
-  const linkedProjects = await db.prepare(
-    "SELECT p.name FROM project_contacts pc JOIN projects p ON p.id = pc.projectId WHERE pc.contactId = ?"
-  ).all(req.params.id) as { name: string }[];
+  const linkedProjects = await query<{ name: string }>(
+    `SELECT p.name FROM project_contacts pc JOIN projects p ON p.id = pc."projectId" WHERE pc."contactId" = $1`,
+    [req.params.id]
+  );
 
   if (linkedProjects.length > 0 && !force) {
     return res.status(409).json({
@@ -560,15 +703,15 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (contact.isAdmin) {
-    await db.prepare("DELETE FROM admin_sessions WHERE userId = ?").run(req.params.id);
+    await execute(`DELETE FROM admin_sessions WHERE "userId" = $1`, [req.params.id]);
   }
 
   if (force) {
-    await db.prepare("DELETE FROM project_contacts WHERE contactId = ?").run(req.params.id);
+    await execute(`DELETE FROM project_contacts WHERE "contactId" = $1`, [req.params.id]);
   }
 
-  const result = await db.prepare("DELETE FROM contacts WHERE id = ?").run(req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: "Contact not found" });
+  const result = await execute(`DELETE FROM contacts WHERE id = $1`, [req.params.id]);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Contact not found" });
   res.json({ success: true });
 }));
 
@@ -585,9 +728,10 @@ router.post("/photo/self-upload", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "No photo provided" });
   }
 
-  const contact = await db.prepare(
-    "SELECT id, password, photoUrl FROM contacts WHERE LOWER(email) = LOWER(?) AND isAdmin = 1"
-  ).get(email) as { id: string; password: string; photoUrl?: string } | undefined;
+  const contact = await queryOne<{ id: string; password: string; photoUrl?: string }>(
+    `SELECT id, password, "photoUrl" FROM contacts WHERE LOWER(email) = LOWER($1) AND "isAdmin" = 1`,
+    [email]
+  );
 
   if (!contact || !contact.password) {
     return res.status(401).json({ error: "Invalid email or password" });
@@ -604,7 +748,10 @@ router.post("/photo/self-upload", asyncHandler(async (req, res) => {
 
   const buffer = Buffer.from(imageBuffer, "base64");
   const photoUrl = await saveContactPhoto(buffer, contact.id);
-  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contact.id);
+  await execute(
+    `UPDATE contacts SET "photoUrl" = $1, "photoAuthorised" = 1 WHERE id = $2`,
+    [photoUrl, contact.id]
+  );
   res.json({ success: true, photoUrl });
 }));
 
@@ -614,25 +761,34 @@ router.post("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "No photo provided" });
   }
   const { id } = req.params;
-  const contact = await db.prepare("SELECT id, photoUrl FROM contacts WHERE id = ?").get(id) as any;
+  const contact = await queryOne<{ id: string; photoUrl?: string }>(
+    `SELECT id, "photoUrl" FROM contacts WHERE id = $1`,
+    [id]
+  );
   if (!contact) return res.status(404).json({ error: "Contact not found" });
   if (contact.photoUrl) {
     await deleteContactPhoto(contact.photoUrl);
   }
   const buffer = Buffer.from(imageBuffer, "base64");
   const photoUrl = await saveContactPhoto(buffer, id);
-  await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, id);
+  await execute(
+    `UPDATE contacts SET "photoUrl" = $1, "photoAuthorised" = 1 WHERE id = $2`,
+    [photoUrl, id]
+  );
   res.json({ success: true, photoUrl });
 }));
 
 router.delete("/:id/photo", requireAuth, asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const contact = await db.prepare("SELECT photoUrl FROM contacts WHERE id = ?").get(id) as { photoUrl?: string };
+  const contact = await queryOne<{ photoUrl?: string }>(
+    `SELECT "photoUrl" FROM contacts WHERE id = $1`,
+    [id]
+  );
   if (!contact) return res.status(404).json({ error: "Contact not found" });
   if (contact.photoUrl) {
     await deleteContactPhoto(contact.photoUrl);
   }
-  await db.prepare("UPDATE contacts SET photoUrl = NULL WHERE id = ?").run(id);
+  await execute(`UPDATE contacts SET "photoUrl" = NULL WHERE id = $1`, [id]);
   res.json({ success: true });
 }));
 

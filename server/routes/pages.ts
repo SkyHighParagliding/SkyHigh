@@ -3,7 +3,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
@@ -21,53 +21,81 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
+interface PageRow {
+  slug: string;
+  title: string;
+  content: string;
+  heroImage: string | null;
+  lastUpdated: string;
+}
+
+interface PageAttachmentRow {
+  id: string;
+  pageSlug: string;
+  filename: string;
+  originalFilename: string;
+  fileSize: number;
+  mimeType: string;
+  downloadCount: number;
+  uploadedAt: string;
+}
+
 router.get("/", asyncHandler(async (req, res) => {
-  const pages = await db.prepare("SELECT slug, title, lastUpdated FROM pages").all();
+  const pages = await query<PageRow>(`SELECT slug, title, "lastUpdated" FROM pages`);
   res.json(pages);
 }));
 
 router.get("/:slug", asyncHandler(async (req, res) => {
-  const page = await db.prepare("SELECT * FROM pages WHERE slug = ?").get(req.params.slug);
+  const page = await queryOne<PageRow>(`SELECT * FROM pages WHERE slug = $1`, [req.params.slug]);
   if (!page) return res.status(404).json({ error: "Page not found" });
   res.json(page);
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
   const { slug, title, content, heroImage } = req.body;
-  await db.prepare("INSERT INTO pages (slug, title, content, heroImage, lastUpdated) VALUES (@slug, @title, @content, @heroImage, CURRENT_TIMESTAMP)").run({ slug, title, content, heroImage: heroImage || null });
+  await execute(
+    `INSERT INTO pages (slug, title, content, "heroImage", "lastUpdated") VALUES ($1, $2, $3, $4, NOW())`,
+    [slug, title, content, heroImage || null]
+  );
   invalidateSearchCaches();
   res.status(201).json({ success: true });
 }));
 
 router.put("/:slug", requireAuth, asyncHandler(async (req, res) => {
   const { title, content, heroImage } = req.body;
-  await db.prepare("UPDATE pages SET title = @title, content = @content, heroImage = @heroImage, lastUpdated = CURRENT_TIMESTAMP WHERE slug = @slug").run({ slug: req.params.slug, title, content, heroImage: heroImage || null });
+  await execute(
+    `UPDATE pages SET title = $1, content = $2, "heroImage" = $3, "lastUpdated" = NOW() WHERE slug = $4`,
+    [title, content, heroImage || null, req.params.slug]
+  );
   invalidateSearchCaches();
   res.json({ success: true });
 }));
 
 router.delete("/:slug", requireAuth, asyncHandler(async (req, res) => {
-  const result = await db.prepare("DELETE FROM pages WHERE slug = ?").run(req.params.slug);
-  if (result.changes === 0) return res.status(404).json({ error: "Page not found" });
-  const attachments = await db.prepare("SELECT * FROM page_attachments WHERE pageSlug = ?").all(req.params.slug) as any[];
+  const result = await execute(`DELETE FROM pages WHERE slug = $1`, [req.params.slug]);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Page not found" });
+  const attachments = await query<PageAttachmentRow>(`SELECT * FROM page_attachments WHERE "pageSlug" = $1`, [req.params.slug]);
   for (const att of attachments) {
     const filePath = path.join(attachmentsDir, att.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
-  await db.prepare("DELETE FROM page_attachments WHERE pageSlug = ?").run(req.params.slug);
+  await execute(`DELETE FROM page_attachments WHERE "pageSlug" = $1`, [req.params.slug]);
   invalidateSearchCaches();
   res.json({ success: true });
 }));
 
 router.get("/:slug/attachments", asyncHandler(async (req, res) => {
-  const attachments = await db.prepare("SELECT id, pageSlug, originalFilename, fileSize, mimeType, downloadCount, uploadedAt FROM page_attachments WHERE pageSlug = ?").all(req.params.slug);
+  const attachments = await query<PageAttachmentRow>(
+    `SELECT id, "pageSlug", "originalFilename", "fileSize", "mimeType", "downloadCount", "uploadedAt" FROM page_attachments WHERE "pageSlug" = $1`,
+    [req.params.slug]
+  );
   res.json(attachments);
 }));
 
 router.post("/:slug/attachments", requireAuth, upload.single("file"), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-  const page = await db.prepare("SELECT slug FROM pages WHERE slug = ?").get(req.params.slug);
+  const page = await queryOne<{ slug: string }>(`SELECT slug FROM pages WHERE slug = $1`, [req.params.slug]);
   if (!page) return res.status(404).json({ error: "Page not found" });
 
   const id = `att-${crypto.randomBytes(8).toString("hex")}`;
@@ -76,9 +104,10 @@ router.post("/:slug/attachments", requireAuth, upload.single("file"), asyncHandl
 
   const storedUrl = await saveFile(req.file.buffer, StorageKey.attachment(filename), req.file.mimetype);
 
-  await db.prepare(
-    "INSERT INTO page_attachments (id, pageSlug, filename, originalFilename, fileSize, mimeType) VALUES (?, ?, ?, ?, ?, ?)"
-  ).run(id, req.params.slug, storedUrl, req.file.originalname, req.file.size, req.file.mimetype);
+  await execute(
+    `INSERT INTO page_attachments (id, "pageSlug", filename, "originalFilename", "fileSize", "mimeType") VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, req.params.slug, storedUrl, req.file.originalname, req.file.size, req.file.mimetype]
+  );
 
   res.status(201).json({
     id,
@@ -91,10 +120,16 @@ router.post("/:slug/attachments", requireAuth, upload.single("file"), asyncHandl
 }));
 
 router.get("/:slug/attachments/:id/download", asyncHandler(async (req, res) => {
-  const attachment = await db.prepare("SELECT * FROM page_attachments WHERE id = ? AND pageSlug = ?").get(req.params.id, req.params.slug) as any;
+  const attachment = await queryOne<PageAttachmentRow>(
+    `SELECT * FROM page_attachments WHERE id = $1 AND "pageSlug" = $2`,
+    [req.params.id, req.params.slug]
+  );
   if (!attachment) return res.status(404).json({ error: "Attachment not found" });
 
-  await db.prepare("UPDATE page_attachments SET downloadCount = downloadCount + 1 WHERE id = ?").run(req.params.id);
+  await execute(
+    `UPDATE page_attachments SET "downloadCount" = "downloadCount" + 1 WHERE id = $1`,
+    [req.params.id]
+  );
 
   res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(attachment.originalFilename)}"`);
   res.setHeader("Content-Type", attachment.mimeType || "application/octet-stream");
@@ -112,11 +147,14 @@ router.get("/:slug/attachments/:id/download", asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:slug/attachments/:id", requireAuth, asyncHandler(async (req, res) => {
-  const attachment = await db.prepare("SELECT * FROM page_attachments WHERE id = ? AND pageSlug = ?").get(req.params.id, req.params.slug) as any;
+  const attachment = await queryOne<PageAttachmentRow>(
+    `SELECT * FROM page_attachments WHERE id = $1 AND "pageSlug" = $2`,
+    [req.params.id, req.params.slug]
+  );
   if (!attachment) return res.status(404).json({ error: "Attachment not found" });
 
   await deleteFile(attachment.filename);
-  await db.prepare("DELETE FROM page_attachments WHERE id = ?").run(req.params.id);
+  await execute(`DELETE FROM page_attachments WHERE id = $1`, [req.params.id]);
   res.json({ success: true });
 }));
 
