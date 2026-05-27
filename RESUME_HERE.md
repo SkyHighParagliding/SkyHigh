@@ -1,68 +1,48 @@
-# RESUME_HERE — Last updated: 2026-05-27 (session 22)
+# RESUME_HERE — Last updated: 2026-05-27 (session 23)
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — local Postgres dev now fully operational
+## Status: **LIVE** ✅ on Railway — SQLite fully removed, pure PG-native codebase
 
 ## Where I left off
 
-Session 22 completed the full Postgres dev setup AND the TidyHQ flow redesign.
+Session 23 completed the full SQLite removal across the entire codebase. The project
+is now 100% PostgreSQL-native with zero `better-sqlite3` / `db.prepare` references.
 
-**All done this session:**
+**All done this session (SQLite removal):**
 
-### Postgres dev setup (Phases 1-3)
-- Docker Compose for local Postgres 16 (`docker-compose.dev.yml`)
-- `DATABASE_URL` set in `.env` — dev now runs on real Postgres
-- All 36 migrations applied successfully to local PG
-- `server/db.ts`: new quote-aware SQL splitter handles single-quoted strings,
-  dollar-quoted blocks, and `--` line comments (fixes migration v6/v12/v25 bugs)
-- `server/pg_migrations/018`: renamed from duplicate v17 (fixes PK violation)
-- `server/pgDb.ts`: `ESCAPE` added to keywords list (fixes wind grid ILIKE crash)
-- `scripts/lint-migrations.mjs`: pre-commit lint for unquoted camelCase columns
-  and duplicate version numbers — wired into `.git/hooks/pre-commit`
-- Migrations 030/031 fixed to use proper quoting (migration 032 still runs idempotently)
-
-### TidyHQ flow redesign (root cause: "S.O." ≠ "SO")
-- **Root cause confirmed**: TidyHQ group labels `"S.O."` / `"S.S.O."` were stored as
-  `"SO."` / `"SSO"` in group_mappings. Webhook `.replace(/\.$/, "")` → `"S.O"` never
-  matched `"SO"`. `safetyOfficerType` was never set via any code path.
-- **Migration 035**: dropped dead `isSO`/`isSSO` columns; cleaned S.O./S.S.O. label
-  fragments from `contacts.position` field for safety committee contacts
-- **Migration 036**: fixed `tidyhq_group_mappings` — group 210063 → `safetyOfficerType:SO`,
-  group 210060 → `safetyOfficerType:SSO`; added Safety Committee + Skyhigh Committee
-- **`server/routes/tidyhq.ts`**: added `safetyOfficerType:SO`/`SSO` dispatch in webhook
-  handler; removed broken `cleanPosition` checks; cleaned `isSafetyCommittee` handler
-- **`server/routes/contacts.ts`**: new `POST /tidyhq-smart-import` endpoint — fetches
-  full contacts from TidyHQ with embedded groups, single-pass role detection from
-  `tidyhq_group_mappings`, profile image sync (`/original/` variant)
-- **`src/pages/AdminContacts.tsx`**: "Quick Import" button opens modal with
-  one-click "Import Safety Committee" and "Import Skyhigh Committee" buttons
+- Converted all remaining routes: `procedures.ts`, `searchLogs.ts`, `pageviews.ts`, `populate-banners.ts`
+- Converted all services/utils/middleware: `auth.ts`, `sessionTokens.ts`, `weather.ts`,
+  `scheduledJobs.ts`, `victoriaGrid.ts`, `extendedForecast.ts`, `realMessageService.ts`,
+  `demoRetrievalService.ts`, `realFlightService.ts`, `realRetrievalService.ts`,
+  `siteguideVersionCheck.ts`, `googleDrive.ts`, `freeflightwx.ts`, `tides.ts`,
+  and all simple utils (aiModels, fixStaleImages, tidyhqMemberFilter, siteguideZoneData, health)
+- Deleted dead code: `databaseMaintenance.ts`, `queryOptimization.ts`, `edgeCases.ts`,
+  `migrations.ts` runner, 28 TypeScript migration files, `migrate_storage.ts`, `api.test.ts`
+- Deleted SQLite adapter layer: `sqliteDb.ts`, `pgDb.ts`
+- Stripped `server/db.ts` — SQLite code removed, only PG migration runner remains
+- Converted `server/seed.ts` — full `db.transaction` → `transaction(client => ...)` rewrite
+- Converted `server.ts` — removed `import db`, converted `submissionLimiter.max` and `/manifest.json`
+- Removed `better-sqlite3` from `package.json`
+- All committed in phases; **NOT YET PUSHED to GitHub/Railway**
 
 ## What's next (MOST IMPORTANT — DO FIRST)
 
-**Re-import both committees** to backfill `safetyOfficerType` and images:
-1. Start the dev server: `npm run dev`
-2. Log in as admin → Admin Contacts
-3. Click "Quick Import" → "Import Safety Committee" → wait for results
-4. Click "Quick Import" → "Import Skyhigh Committee" → wait for results
-5. Check safety officer directory — all SO/SSO cards should now show correct titles
-
-Then push to production:
-1. `git push` to GitHub → Railway auto-deploys
-2. On production, the app restarts → migrations 035 + 036 apply automatically
-3. Then use the live admin panel to run Quick Imports for Safety Committee + Skyhigh Committee
+1. **`git push`** → GitHub → Railway auto-deploys the SQLite-free build
+2. **Re-import both committees** on production (or dev):
+   - Admin → Contacts → "Quick Import" → "Import Safety Committee"
+   - Admin → Contacts → "Quick Import" → "Import Skyhigh Committee"
+3. **Verify production** — check Railway logs for migration errors, test a few pages
 
 ## Open questions / blockers
-- The position titles for Skyhigh Committee (President, VP, etc.) require those
-  sub-groups to be in `tidyhq_group_mappings` with `isPosition` flag. Currently only
-  the parent group is mapped. If those sub-group IDs are needed, they must be added
-  via Admin → TidyHQ → Group Mappings, then re-run Skyhigh Committee Quick Import.
-- Smart Search bugs (BUG-A through BUG-G from session prior to 21) remain open.
-- Phase 4 (CI workflow) and Phase 5 (docs) of Postgres setup are deferred.
+- Smart Search bugs (BUG-A through BUG-G) remain open — 7 bugs from the 50Q test run
+- Q40–Q50 of the Smart Search test run not yet completed
+- Skyhigh Committee sub-group IDs (President, VP, etc.) may need adding to group_mappings
+  if position titles are required — add via Admin → TidyHQ → Group Mappings then re-import
 
 ## Quick context refresher
 
-Local dev now uses Docker Postgres 16 (matches Railway). All 36 migrations run
-cleanly. The safetyOfficerType bug is fixed end-to-end — the group_mappings data
-is correct, the webhook handler dispatches directly to the new column, and the
-smart import endpoint does the full embedded-groups walk + image sync in one shot.
-The committees just need to be re-imported to backfill existing data.
+The codebase is now fully PG-native. `server/pg.ts` exports `query`, `queryOne`, `execute`,
+`transaction` — these are the only DB primitives used everywhere. `server/db.ts` is a
+side-effect-only module that runs PG migrations on startup. No SQLite dependency anywhere.
+All camelCase column names are double-quoted in every SQL statement. The 9 phases of
+SQLite removal are committed locally; a `git push` will deploy them to Railway.

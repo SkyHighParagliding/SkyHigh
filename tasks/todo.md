@@ -1,9 +1,17 @@
-# Current Tasks — Last updated: 2026-05-20
+# Current Tasks — Last updated: 2026-05-27
 
 > **6 incomplete tasks remain.** Pick from this list when resuming.
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## ✅ Done
+
+### TASK-SQLITE-REMOVAL — Complete SQLite → PostgreSQL migration
+- **Completed:** 2026-05-27
+- **What changed:** Removed `better-sqlite3` entirely. Converted all server code to use
+  `query`/`queryOne`/`execute`/`transaction` from `server/pg.ts`. Deleted 28 migration files,
+  4 dead utility files, `sqliteDb.ts`, `pgDb.ts`, `migrate_storage.ts`, `api.test.ts`.
+  Stripped `server/db.ts` to PG-only. Zero `db.prepare` / `import db from` references remain.
+  **NOT YET PUSHED — run `git push` to deploy.**
 
 ### TASK-035 — Add cross-env to package.json
 - **Completed:** 2026-05-20
