@@ -1,38 +1,43 @@
-# RESUME_HERE — Last updated: 2026-05-27 (session 23 end)
+# RESUME_HERE — Last updated: 2026-05-27 (session 24/25 end)
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — pure PG codebase, all fixes pushed
+## Status: **LIVE** ✅ on Railway — weather cards now working
 
 ## Where I left off
 
-Session 23 completed SQLite removal, fixed several INTEGER = boolean bugs introduced
-during the conversion, darkened nav dropdown opacity to 0.80, and pushed everything
-to production. Railway is currently deploying commit `55f86ef`.
+Session 24/25 fixed the weather card "No weather data available" bug on production.
+Latest commit is `08178fe` (deployed to Railway, confirmed fixed by user).
 
 **All done this session:**
-- SQLite fully removed — `better-sqlite3` uninstalled, pure PG-native codebase
-- Dev tested on local Docker Postgres before pushing — caught `seed.ts` boolean bug
-- Fixed 6 INTEGER = boolean SQL bugs introduced by conversion subagent:
-  - `auth.ts`: `isAdmin`, `soAuthorised`, `isSafetyCommittee` (were `= true`, now `= 1`)
-  - `scheduledJobs.ts`: `isSocialMedia` (was `= true`, now `= 1`)
-  - `siteguideVersionCheck.ts`: `changed` ×3 (were `= true`, now `= 1`)
-  - `seed.ts`: `enabled` in safety_sections (was `true`, now `1`)
-- Nav dropdown opacity: `0.35 → 0.80` (user-tuned from 0.90)
-- Full audit of all INTEGER flag columns — no further issues found
-- All .md files updated to reflect current state
+- Fixed Railway build failure (commit `520ad78`): 4 route files had stale `import db from "../db.js"` —
+  committed the locally-correct PG-native versions of `search.ts`, `weather.ts`, `tidyhq.ts`, `competitions.ts`
+- Fixed weather forecast pipeline (commit `c276c30`):
+  - Root cause: `fetchWeatherData` called `fetchFineGrid()` without force — production `wind_grid_data`
+    cache was empty/stale (from old SQLite-era deployment), so no forecasts could be extracted
+  - Fix: when `isManual=true`, now calls `fetchFineGrid(true)` to force a fresh Open-Meteo fetch
+  - Also: `fetchWeatherData` now returns `WeatherScrapeResult` with detailed diagnostics
+  - `/api/weather/scrape-now` now returns diagnostics in response (visible in Network tab)
+  - Confirmed: 74/74 sites got forecasts, 390 grid points, no errors
+- Fixed bulk endpoint returning `{ error: true }` for all sites (commit `08178fe`):
+  - Root cause: PostgreSQL folds unquoted SQL aliases to lowercase at the wire level
+  - The query used `wf."siteId" as forecast_siteId` — pg returned key `forecast_siteid`
+  - JS did `item.forecast_siteId === siteId` which always read `undefined`
+  - Fix: double-quoted all camelCase aliases in the SELECT so PG preserves case
 
 ## What's next
 
-1. Verify production after Railway deploy completes
-2. Pick from the feature backlog — TASK-031 (XC Flight History Export) is the highest priority quick win
+1. Pick from the feature backlog — TASK-031 (XC Flight History Export) is the highest priority quick win
+2. Smart Search bugs BUG-A through BUG-G remain open (7 bugs, Q40–Q50 test run not completed)
 
 ## Open questions / blockers
-- Smart Search bugs BUG-A through BUG-G remain open (7 bugs, Q40–Q50 test run not completed)
+- None
 
 ## Quick context refresher
 
-Pure PostgreSQL codebase as of today. All DB access via `server/pg.ts` (`query`, `queryOne`,
-`execute`, `transaction`). INTEGER flag columns (contacts: `isAdmin`, `isSafetyCommittee`, etc.)
-must use `= 1`/`= 0` in SQL — never `= true`/`= false`. Sites boolean columns are TEXT
-`'true'`/`'false'` — different pattern, different table. Local dev: Docker Postgres 16
-(`skyhigh-pg-dev` container on port 5432) + `npm run dev`.
+Pure PostgreSQL codebase. All DB access via `server/pg.ts` (`query`, `queryOne`, `execute`, `transaction`).
+INTEGER flag columns (contacts: `isAdmin`, `isSafetyCommittee`, etc.) must use `= 1`/`= 0` in SQL.
+Sites boolean columns are TEXT `'true'`/`'false'` — different pattern.
+**CRITICAL PG RULE**: SQL column aliases with camelCase MUST be double-quoted (`as "forecast_siteId"`),
+otherwise PostgreSQL folds them to lowercase and JS property access breaks silently.
+Local dev: Docker Postgres 16 (`skyhigh-pg-dev` container, port 5432) + `npm run dev`.
+Weather forecasts: populated by `fetchWeatherData()` on startup + 15–30 min timer + manual /scrape-now.
