@@ -52,9 +52,9 @@ Recently hardened (7 critical security fixes) and optimized (wind map: 10x faste
 **Why:** Ensures the high-level brain is always accurate for the next sub-agent or session.
 
 ### 3. Mandatory Pre-Exit Sync
-**Rule:** If the user uses any language suggesting they are stopping (e.g., "quit", "take a break", "exit", "goodnight", "done for now"), you MUST run the "At session end" protocol from Section 4 immediately. This includes updating `RESUME_HERE.md`, `memory/feedback.md`, and making a `[SESSION-SUMMARY]` git commit.
+**Rule:** If the user uses any language suggesting they are stopping (e.g., "quit", "take a break", "exit", "goodnight", "done for now"), you MUST run the "At session end" protocol from Section 4 immediately. This includes updating `RESUME_HERE.md`, `memory/feedback.md`, making a `[SESSION-SUMMARY]` git commit, and killing the dev server processes on ports 3001 and 5173.
 **Apply when:** User signals intent to close the session.
-**Why:** Captures volatile state and mental context that hasn't been committed to the wiki yet.
+**Why:** Captures volatile state and mental context that hasn't been committed to the wiki yet. Killing the server prevents orphaned Node processes consuming memory after the session closes.
 
 ## Section 1: Your Role
 
@@ -141,18 +141,25 @@ SkyHigh/
 │
 ├── wiki/                        # Project brain (intra-session)
 │   ├── README.md                # Wiki navigation guide
+│   ├── index.md                 # Wiki table of contents
 │   ├── 00-overview.md           # Project description, goals, scope
 │   ├── 01-architecture.md       # Tech stack, structure, rationale
 │   ├── 02-tasks.md              # Master task list (the plan)
 │   ├── 03-decisions-log.md      # Why we made each significant choice
 │   ├── 04-glossary.md           # Project-specific terms defined
-│   ├── 05-file-map.md           # Where files live (correlates with this structure)
-│   ├── 06-integrations.md       # External integrations (TidyHQ, Gemini, Open-Metoe, R2)
+│   ├── 05-file-map.md           # Where files live
+│   ├── 06-deployment.md         # Deployment procedures and environment
+│   ├── 07-credential-recovery.md # Emergency access recovery
+│   ├── 08-deployment-guide.md   # Deployment runbooks
+│   ├── 09-integrations.md       # External integrations (TidyHQ, Gemini, Open-Meteo, R2)
+│   ├── 10-code-review-process.md # Subagent code review pipeline
+│   ├── 11-codebase-areas-runbook.md # Codebase audit area runbook
 │   ├── prompts/                 # Generated prompts for each task
 │   │   ├── TASK-001.md
-│   │   ├── TASK-002.md
 │   │   └── ...
-│   └── decisions/               # Detailed decision records
+│   ├── decisions/               # Detailed decision records
+│   ├── future/                  # Future plans and proposals
+│   └── skyhigh-*.md             # Additional SkyHigh-specific docs
 │
 ├── memory/                      # Project memory (inter-session, not git-tracked)
 │   ├── MEMORY.md                # Index of all memories
@@ -197,6 +204,10 @@ SkyHigh/
 - Update memory/feedback.md with any lessons learned this session
 - Update memory/project.md if project scope/decisions changed
 - Git commit with `[SESSION-SUMMARY]` if there were significant changes
+- **Kill the dev server:** stop any processes on ports 3001 and 5173
+  ```powershell
+  Get-NetTCPConnection -LocalPort 3001,5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+  ```
 
 ---
 
@@ -514,7 +525,40 @@ These are how-tos. Typing `/fix-bug` etc. in Claude Code will not invoke them �
 
 ---
 
-## Section 18: First-Run Behavior
+## Section 18: Autonomous Code Audit Pipeline
+
+The project uses a **pi-subagents autonomous pipeline** to audit and fix code in 10 manageable areas. This runs via the `pi` CLI, not Claude Code.
+
+**Quick reference:**
+- **Wiki runbook:** `wiki/11-codebase-areas-runbook.md` — all 10 areas with copy-paste commands
+- **Task files:** `tasks/run-area-N-robust.md` — detailed JSON chain instructions
+- **Output artifacts:** `worker/` — scout findings, fix plans, worker summaries, reviewer reports
+- **Model:** `deepseek/deepseek-v4-flash` (orchestrator + all subagents) via direct DeepSeek API key
+- **Pipeline:** scout → planner → worker → 2× parallel reviewers
+
+**Completed areas:**
+- ✅ Area 1 (Databases & Migrations) — 3 clean passes, all verified
+
+**Known infrastructure fixes applied (see db.ts):**
+- Migration v6 semicolon-in-JSON bug fixed (state-machine based SQL splitter)
+- Migration v12 nested transaction bug fixed (PL/pgSQL DO blocks stripped)
+- Migration v14+ PG-specific JSON errors gracefully skipped
+- Old user agent definitions deleted (builtin subagent agents now have full tool access)
+- Duplicate subagent extension directory removed
+
+**To run the full automated audit:**
+```powershell
+pi --model deepseek/deepseek-v4-flash "Read and execute ~/.pi/agent/tasks/master-orchestrator.md"
+```
+
+**To run a single area manually**:
+1. Open a **fresh PowerShell** window
+2. `cd SkyHigh`
+3. `pi --model deepseek/deepseek-v4-flash "Please read and execute the instructions in tasks/run-area-N-robust.md."`
+
+---
+
+## Section 19: First-Run Behavior
 
 **If the wiki/ folder is empty:** You're in Stage A (Initialization). Follow the initialization protocol above.
 
