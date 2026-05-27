@@ -78,7 +78,17 @@ export function degreesToDirection(degrees: number): string {
   return arr[(val % 16)];
 }
 
-export async function fetchWeatherData(isManual = false) {
+export interface WeatherScrapeResult {
+  liveStationsUpdated: number;
+  forecastsUpdated: number;
+  totalSites: number;
+  gridPoints: number;
+  gridAgeMin: number;
+  forecastError: string | null;
+  skippedOutsideHours: boolean;
+}
+
+export async function fetchWeatherData(isManual = false): Promise<WeatherScrapeResult | null> {
   const settings = await query<{ key: string; value: string }>("SELECT key, value FROM settings WHERE key LIKE 'weatherScraper%'");
   const config = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as any);
   
@@ -87,6 +97,16 @@ export async function fetchWeatherData(isManual = false) {
   const startHour = parseInt(config.weatherScraperStartHour || '7');
   const endHour = parseInt(config.weatherScraperEndHour || '20');
 
+  const result: WeatherScrapeResult = {
+    liveStationsUpdated: 0,
+    forecastsUpdated: 0,
+    totalSites: 0,
+    gridPoints: 0,
+    gridAgeMin: 0,
+    forecastError: null,
+    skippedOutsideHours: false,
+  };
+
   try {
     const now = new Date();
     const melbourneTime = new Intl.DateTimeFormat('en-AU', {
@@ -94,13 +114,14 @@ export async function fetchWeatherData(isManual = false) {
       hour: 'numeric',
       hour12: false
     }).format(now);
-    
+
     const hour = parseInt(melbourneTime);
-    
+
     if (!isManual && (hour < startHour || hour >= endHour)) {
       console.log(`Weather scraper: Outside operating hours (${startHour}am-${endHour % 24}pm). Current hour in Melbourne: ${hour}`);
       scheduleNextFetch(minInterval, maxInterval);
-      return;
+      result.skippedOutsideHours = true;
+      return result;
     }
 
     const sitesWithLiveWeather = await query<{ id: string; liveStationId: string; liveStationIdAlt: string | null }>(
@@ -208,6 +229,7 @@ export async function fetchWeatherData(isManual = false) {
     for (const site of sitesWithLiveWeather) {
       try {
         await fetchStationData(site.liveStationId, site.id, site.id, isManual);
+        result.liveStationsUpdated++;
       } catch (err) {
         log.error(`Weather scraper: Failed to fetch primary weather data for ${site.id}:`, err);
       }
@@ -222,17 +244,19 @@ export async function fetchWeatherData(isManual = false) {
 
     try {
       const { fetchFineGrid, extractSiteForecast } = await import("./victoriaGrid.js");
-      const grid = await fetchFineGrid();
-      const gridAgeMin = Math.round((Date.now() - grid.fetchedAt) / 60000);
-      if (gridAgeMin > 60) log.warn(`Weather scraper: Fine grid is ${gridAgeMin}min old — forecasts may be stale`);
+      // Force-refresh the grid when triggered manually so stale/missing cache can't block forecasts
+      const grid = await fetchFineGrid(isManual);
+      result.gridPoints = grid.points.length;
+      result.gridAgeMin = Math.round((Date.now() - grid.fetchedAt) / 60000);
+      if (result.gridAgeMin > 60) log.warn(`Weather scraper: Fine grid is ${result.gridAgeMin}min old — forecasts may be stale`);
 
       const sites = await query<{ id: string; lat: number; lon: number }>("SELECT id, lat, lon FROM sites");
-      let forecastsUpdated = 0;
+      result.totalSites = sites.length;
       for (const site of sites) {
         if (!site.lat || !site.lon) continue;
 
         try {
-          const forecast = extractSiteForecast(grid, site.id, site.lat, site.lon);
+          const forecast = extractSiteForecast(grid, site.id, Number(site.lat), Number(site.lon));
           if (forecast) {
             await execute(
               `INSERT INTO weather_forecasts ("siteId", timestamp, temperature, "windSpeed", "windGust", "windDirection", icon, summary, forecasts)
@@ -248,15 +272,17 @@ export async function fetchWeatherData(isManual = false) {
                  forecasts = EXCLUDED.forecasts`,
               [forecast.siteId, forecast.timestamp, forecast.temperature, forecast.windSpeed, forecast.windGust, forecast.windDirection, forecast.icon, forecast.summary, forecast.forecasts]
             );
-            forecastsUpdated++;
+            result.forecastsUpdated++;
           }
         } catch (err) {
           log.error(`Weather scraper: Failed to extract forecast for ${site.id}:`, err);
         }
       }
-      console.log(`Weather scraper: Updated ECMWF forecasts for ${forecastsUpdated}/${sites.length} sites (grid age: ${gridAgeMin}min)`);
-    } catch (err) {
-      log.error("Weather scraper: Failed to process forecasts:", err);
+      console.log(`Weather scraper: Updated ECMWF forecasts for ${result.forecastsUpdated}/${result.totalSites} sites (grid age: ${result.gridAgeMin}min, ${result.gridPoints} points)`);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      log.error("Weather scraper: Failed to process forecasts:", msg);
+      result.forecastError = msg;
     }
 
     await execute(
@@ -268,6 +294,7 @@ export async function fetchWeatherData(isManual = false) {
   }
 
   scheduleNextFetch(minInterval, maxInterval);
+  return result;
 }
 
 async function initExtendedForecast() {

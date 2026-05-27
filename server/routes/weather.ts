@@ -769,8 +769,12 @@ router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
 }));
 
 router.post("/scrape-now", asyncHandler(async (req, res) => {
-  await fetchWeatherData(true);
-  res.json({ success: true, message: "Weather data updated successfully" });
+  const result = await fetchWeatherData(true);
+  res.json({
+    success: true,
+    message: "Weather data updated successfully",
+    diagnostics: result ?? null,
+  });
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
