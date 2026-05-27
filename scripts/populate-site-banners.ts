@@ -1,9 +1,10 @@
-import db from "../server/db.js";
+import "dotenv/config";
+import { query, queryOne } from "../server/pg.js";
 
 async function main() {
   try {
     console.log("Fetching image library...");
-    const libRow = await db.prepare("SELECT value FROM settings WHERE key = 'imageLibrary'").get() as { value: string } | undefined;
+    const libRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["imageLibrary"]);
 
     if (!libRow?.value) {
       console.error("No image library found in settings!");
@@ -22,7 +23,7 @@ async function main() {
 
     // Get all sites
     console.log("\nFetching all sites...");
-    const sites = await db.prepare("SELECT id, name, type FROM sites").all() as any[];
+    const sites = await query<{ id: string; name: string; type: string }>("SELECT id, name, type FROM sites");
     console.log(`Found ${sites.length} sites`);
 
     let updated = 0;
@@ -42,7 +43,7 @@ async function main() {
 
         const randomImage = pool[Math.floor(Math.random() * pool.length)];
 
-        await db.prepare("UPDATE sites SET image = ? WHERE id = ?").run(randomImage.banner, site.id);
+        await query("UPDATE sites SET image = $1 WHERE id = $2", [randomImage.banner, site.id]);
         updated++;
         console.log(`✓ ${site.name}: set to random banner`);
       } catch (err: any) {
