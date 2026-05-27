@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth, requireSOOrAdmin, isDevBypassActive } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -51,21 +51,27 @@ function isHashed(password: string): boolean {
 
 async function ensureDefaultAdmin(name: string, email: string, plainPassword: string) {
   try {
-    const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM contacts WHERE email = $1 AND "isAdmin" = 1`,
+      [email]
+    );
     if (!existing) {
       const hashed = await bcrypt.hash(plainPassword, SALT_ROUNDS);
       const id = `con-${Math.random().toString(36).substr(2, 9)}`;
-      const result = await db.prepare("INSERT OR IGNORE INTO contacts (id, name, email, password, isAdmin) VALUES (?, ?, ?, ?, 1)").run(id, name, email, hashed);
-      if (result.changes > 0) {
+      const result = await execute(
+        `INSERT INTO contacts (id, name, email, password, "isAdmin") VALUES ($1, $2, $3, $4, 1) ON CONFLICT DO NOTHING`,
+        [id, name, email, hashed]
+      );
+      if (result.rowCount > 0) {
         log.info(`Default admin contact created: ${email}`);
       } else {
-        log.warn(`Default admin insert returned 0 changes for ${email} (account may already exist or constraint violation)`);
+        log.warn(`Default admin insert returned 0 changes for user_email_hash:${Buffer.from(email).toString('base64').substring(0, 10)} (account may already exist or constraint violation)`);
       }
     } else {
-      log.info(`Default admin contact already exists: ${email}`);
+      log.info(`Default admin contact already exists: user_email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}`);
     }
   } catch (err) {
-    log.error(`Failed to ensure default admin ${email}:`, err instanceof Error ? err.message : String(err));
+    log.error(`Failed to ensure default admin email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}:`, err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -94,9 +100,15 @@ router.post("/login", asyncHandler(async (req, res) => {
 
   let user: any;
   if (soLogin) {
-    user = await db.prepare("SELECT * FROM contacts WHERE email = ? AND soAuthorised = 1 AND isSafetyCommittee = 1").get(email);
+    user = await queryOne<any>(
+      `SELECT * FROM contacts WHERE email = $1 AND "soAuthorised" = 1 AND "isSafetyCommittee" = 1`,
+      [email]
+    );
   } else {
-    user = await db.prepare("SELECT * FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+    user = await queryOne<any>(
+      `SELECT * FROM contacts WHERE email = $1 AND "isAdmin" = 1`,
+      [email]
+    );
   }
   if (!user) {
     return res.status(401).json({ error: "Invalid email or password" });
@@ -110,13 +122,16 @@ router.post("/login", asyncHandler(async (req, res) => {
     valid = password === user.password;
     if (valid) {
       const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-      await db.prepare("UPDATE contacts SET password = ? WHERE id = ?").run(hashed, user.id);
-      log.warn(`PLAINTEXT PASSWORD ALLOWED (DEV MODE): Migrated password to bcrypt for user: ${email}`);
+      await execute(
+        `UPDATE contacts SET password = $1 WHERE id = $2`,
+        [hashed, user.id]
+      );
+      log.warn(`PLAINTEXT PASSWORD ALLOWED (DEV MODE): Migrated password to bcrypt for user: email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}`);
     }
   } else {
     // Production: reject plaintext passwords
     valid = false;
-    log.warn(`Plaintext password attempted for user: ${email} (ALLOW_PLAINTEXT_PASSWORDS not enabled)`);
+    log.warn(`Plaintext password attempted for user with email hash: ${crypto.createHash('sha256').update(email).digest('hex').substring(0, 8)} (ALLOW_PLAINTEXT_PASSWORDS not enabled)`);
   }
 
   if (!valid) {
@@ -127,18 +142,26 @@ router.post("/login", asyncHandler(async (req, res) => {
 
   let boundSiteId: string | null = null;
   if (soLogin) {
+    // Use a generic error message to prevent site ID enumeration
     if (!soSiteId) {
-      return res.status(400).json({ error: "SO login requires a site ID" });
+      return res.status(400).json({ error: "Missing or invalid site ID for SO login" });
     }
-    const site = await db.prepare("SELECT id, lat, lon FROM sites WHERE id = ?").get(soSiteId) as any;
+    const site = await queryOne<any>(
+      `SELECT id, lat, lon FROM sites WHERE id = $1`,
+      [soSiteId]
+    );
     if (!site) {
-      return res.status(400).json({ error: "Invalid site ID" });
+      return res.status(400).json({ error: "Missing or invalid site ID for SO login" });
     }
     const { latitude, longitude } = req.body;
     if (site.lat && site.lon) {
       if (latitude == null || longitude == null) {
         return res.status(400).json({ error: "Location coordinates required for SO login" });
       }
+      // SECURITY NOTE: Proximity check uses client-supplied lat/lon. Site coordinates are
+      // publicly visible, so a user can spoof being at the site by providing site lat/lon.
+      // This is a known limitation — the proximity check is a safety control, not a
+      // strict security boundary. Full GPS attestation would require client-side attestation.
       const dist = haversineDistanceM(latitude, longitude, parseFloat(site.lat), parseFloat(site.lon));
       if (dist > SO_PROXIMITY_THRESHOLD_M) {
         return res.status(403).json({ error: "You must be within proximity of the site to log in as SO" });
@@ -147,11 +170,12 @@ router.post("/login", asyncHandler(async (req, res) => {
     boundSiteId = site.id;
   }
 
-  await db.prepare("INSERT INTO admin_sessions (token, userId, createdAt, soSiteId) VALUES (?, ?, ?, ?)").run(
-    token, user.id, new Date().toISOString(), boundSiteId
+  await execute(
+    `INSERT INTO "admin_sessions" (token, "userId", "createdAt", "soSiteId") VALUES ($1, $2, $3, $4)`,
+    [token, user.id, new Date().toISOString(), boundSiteId]
   );
 
-  log.info(`User logged in: ${email}${boundSiteId ? ` (SO session for site: ${boundSiteId})` : ''}`);
+  log.info(`User logged in: email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}${boundSiteId ? ` (SO session for site: ${boundSiteId})` : ''}`);
   res.json({
     token,
     user: {
@@ -166,17 +190,20 @@ router.post("/login", asyncHandler(async (req, res) => {
   });
 }));
 
-router.post("/logout", async (req, res) => {
+router.post("/logout", asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (token) {
-    await db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+    await execute(`DELETE FROM "admin_sessions" WHERE token = $1`, [token]);
   }
   res.json({ success: true });
-});
+}));
 
-router.get("/me", requireSOOrAdmin, async (req, res) => {
+router.get("/me", requireSOOrAdmin, asyncHandler(async (req, res) => {
   const user = (req as any).user;
-  const contact = await db.prepare("SELECT isSafetyCommittee, soAuthorised, isAdmin FROM contacts WHERE id = ?").get(user.id) as any;
+  const contact = await queryOne<any>(
+    `SELECT "isSafetyCommittee", "soAuthorised", "isAdmin" FROM contacts WHERE id = $1`,
+    [user.id]
+  );
   res.json({
     ...user,
     isSafetyCommittee: !!(contact?.isSafetyCommittee),
@@ -184,9 +211,9 @@ router.get("/me", requireSOOrAdmin, async (req, res) => {
     isAdmin: !!(contact?.isAdmin),
     soSiteId: user.soSiteId || null,
   });
-});
+}));
 
-router.post("/bind-so-session", requireSOOrAdmin, async (req, res) => {
+router.post("/bind-so-session", requireSOOrAdmin, asyncHandler(async (req, res) => {
   const user = (req as any).user;
   if (user.soSiteId) {
     return res.status(400).json({ error: "SO session already bound to a site. Log out and re-authenticate to change sites." });
@@ -196,11 +223,14 @@ router.post("/bind-so-session", requireSOOrAdmin, async (req, res) => {
   }
   const { soSiteId, latitude, longitude } = req.body;
   if (!soSiteId) {
-    return res.status(400).json({ error: "Site ID required" });
+    return res.status(400).json({ error: "Missing or invalid site ID" });
   }
-  const site = await db.prepare("SELECT id, lat, lon FROM sites WHERE id = ?").get(soSiteId) as any;
+  const site = await queryOne<any>(
+    `SELECT id, lat, lon FROM sites WHERE id = $1`,
+    [soSiteId]
+  );
   if (!site) {
-    return res.status(400).json({ error: "Invalid site ID" });
+    return res.status(400).json({ error: "Missing or invalid site ID" });
   }
   if (site.lat && site.lon) {
     if (latitude == null || longitude == null) {
@@ -212,24 +242,32 @@ router.post("/bind-so-session", requireSOOrAdmin, async (req, res) => {
     }
   }
   const token = req.headers.authorization?.replace("Bearer ", "");
-  await db.prepare("UPDATE admin_sessions SET soSiteId = ? WHERE token = ?").run(site.id, token);
+  await execute(
+    `UPDATE "admin_sessions" SET "soSiteId" = $1 WHERE token = $2`,
+    [site.id, token]
+  );
   res.json({ success: true, soSiteId: site.id });
-});
+}));
 
-router.post("/elevate-to-admin", requireSOOrAdmin, async (req, res) => {
+router.post("/elevate-to-admin", requireSOOrAdmin, asyncHandler(async (req, res) => {
   const user = (req as any).user;
   if (!user.isAdmin) {
     return res.status(403).json({ error: "Not an admin user" });
   }
   const token = req.headers.authorization?.replace("Bearer ", "");
-  await db.prepare("UPDATE admin_sessions SET soSiteId = NULL WHERE token = ?").run(token);
+  await execute(
+    `UPDATE "admin_sessions" SET "soSiteId" = NULL WHERE token = $1`,
+    [token]
+  );
   res.json({ success: true });
-});
+}));
 
-router.get("/users", requireAuth, async (req, res) => {
-  const users = await db.prepare("SELECT id, name, surname, email, createdAt FROM contacts WHERE isAdmin = 1 ORDER BY name ASC").all();
+router.get("/users", requireAuth, asyncHandler(async (req, res) => {
+  const users = await query<any>(
+    `SELECT id, name, surname, email, "createdAt" FROM contacts WHERE "isAdmin" = 1 ORDER BY name ASC`
+  );
   res.json(users);
-});
+}));
 
 router.post("/users", requireAuth, asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -237,43 +275,61 @@ router.post("/users", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Name, email, and password are required" });
   }
 
-  const existing = await db.prepare("SELECT id FROM contacts WHERE email = ? AND isAdmin = 1").get(email);
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM contacts WHERE email = $1 AND "isAdmin" = 1`,
+    [email]
+  );
   if (existing) {
     return res.status(400).json({ error: "An admin with that email already exists" });
   }
 
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
   const id = `con-${Math.random().toString(36).substr(2, 9)}`;
-  await db.prepare("INSERT INTO contacts (id, name, email, password, isAdmin) VALUES (?, ?, ?, ?, 1)").run(id, name, email, hashed);
-  log.info(`New admin contact created: ${email}`);
+  await execute(
+    `INSERT INTO contacts (id, name, email, password, "isAdmin") VALUES ($1, $2, $3, $4, 1)`,
+    [id, name, email, hashed]
+  );
+  log.info(`New admin contact created: email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}`);
   res.status(201).json({ success: true });
 }));
 
-router.delete("/users/:id", requireAuth, async (req, res) => {
-  const adminCount = await db.prepare("SELECT COUNT(*) as count FROM contacts WHERE isAdmin = 1").get() as any;
-  if (adminCount.count <= 1) {
+router.delete("/users/:id", requireAuth, asyncHandler(async (req, res) => {
+  const adminCount = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+  );
+  if ((adminCount?.count ?? 0) <= 1) {
     return res.status(400).json({ error: "Cannot delete the last admin user" });
   }
 
-  const result = await db.prepare("UPDATE contacts SET isAdmin = 0, password = '' WHERE id = ? AND isAdmin = 1").run(req.params.id);
-  if (result.changes === 0) {
+  const result = await execute(
+    `UPDATE contacts SET "isAdmin" = 0, password = '' WHERE id = $1 AND "isAdmin" = 1`,
+    [req.params.id]
+  );
+  if (result.rowCount === 0) {
     return res.status(404).json({ error: "User not found" });
   }
 
-  await db.prepare("DELETE FROM admin_sessions WHERE userId = ?").run(req.params.id);
+  await execute(
+    `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
+    [req.params.id]
+  );
   res.json({ success: true });
-});
+}));
 
 async function sendPasswordResetEmail(contact: { id: string; name: string; surname?: string; email: string }, accountType: string = "contact") {
-  await db.prepare("DELETE FROM password_reset_tokens WHERE contactId = ? AND accountType = ? AND usedAt IS NULL").run(contact.id, accountType);
+  await execute(
+    `DELETE FROM password_reset_tokens WHERE "contactId" = $1 AND "accountType" = $2 AND "usedAt" IS NULL`,
+    [contact.id, accountType]
+  );
 
   const token = crypto.randomBytes(32).toString("hex");
   const id = `prt-${Math.random().toString(36).substr(2, 9)}`;
   const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
 
-  await db.prepare(
-    "INSERT INTO password_reset_tokens (id, contactId, token, expiresAt, accountType) VALUES (?, ?, ?, ?, ?)"
-  ).run(id, contact.id, token, expiresAt, accountType);
+  await execute(
+    `INSERT INTO password_reset_tokens (id, "contactId", token, "expiresAt", "accountType") VALUES ($1, $2, $3, $4, $5)`,
+    [id, contact.id, token, expiresAt, accountType]
+  );
 
   const baseUrl = process.env.APP_URL || "http://localhost:5173";
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
@@ -305,12 +361,12 @@ async function sendPasswordResetEmail(contact: { id: string; name: string; surna
   });
 
   if (!result.success) {
-    await db.prepare("DELETE FROM password_reset_tokens WHERE id = ?").run(id);
-    log.error(`Password reset email failed for ${contact.email}: ${result.error}`);
+    await execute(`DELETE FROM password_reset_tokens WHERE id = $1`, [id]);
+    log.error(`Password reset email failed for user: email_hash:${Buffer.from(contact.email).toString('base64').substring(0, 10)}: ${result.error}`);
     return { success: false, error: result.error || "Failed to send email" };
   }
 
-  log.info(`Password reset email sent to ${contact.email} (contact: ${contact.id})`);
+  log.info(`Password reset email sent to user: email_hash:${Buffer.from(contact.email).toString('base64').substring(0, 10)} (contact: ${contact.id})`);
   return { success: true };
 }
 
@@ -320,9 +376,10 @@ router.post("/send-password-reset", requireAuth, asyncHandler(async (req, res) =
     return res.status(400).json({ error: "Contact ID required" });
   }
 
-  const contact = await db.prepare(
-    "SELECT id, name, surname, email, isAdmin, isCommittee, isSafetyCommittee FROM contacts WHERE id = ?"
-  ).get(contactId) as any;
+  const contact = await queryOne<any>(
+    `SELECT id, name, surname, email, "isAdmin", "isCommittee", "isSafetyCommittee" FROM contacts WHERE id = $1`,
+    [contactId]
+  );
 
   if (!contact) {
     return res.status(404).json({ error: "Contact not found" });
@@ -356,14 +413,12 @@ router.post("/request-password-reset", asyncHandler(async (req, res) => {
     return res.status(429).json({ error: "Too many requests. Please try again later." });
   }
 
-  const contact = await db.prepare(
-    "SELECT id, name, surname, email, isAdmin, isCommittee, isSafetyCommittee FROM contacts WHERE LOWER(email) = ?"
-  ).get(normalizedEmail) as any;
+  const contact = await queryOne<any>(
+    `SELECT id, name, surname, email, "isAdmin", "isCommittee", "isSafetyCommittee" FROM contacts WHERE LOWER(email) = $1`,
+    [normalizedEmail]
+  );
 
   if (!contact) {
-    if (mode === "first-time") {
-      return res.status(404).json({ error: "No account found — contact a committee member" });
-    }
     return res.json({ success: true, message: "If an account exists with that email, a password reset link has been sent." });
   }
 
@@ -391,7 +446,10 @@ router.post("/register-provider", asyncHandler(async (req, res) => {
     return res.status(429).json({ error: "Too many requests. Please try again later." });
   }
 
-  const existing = await db.prepare("SELECT id FROM contacts WHERE LOWER(email) = ?").get(normalizedEmail) as any;
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM contacts WHERE LOWER(email) = $1`,
+    [normalizedEmail]
+  );
   if (existing) {
     return res.status(400).json({ error: "An account with that email already exists. Try using 'Forgot password?' to reset your password." });
   }
@@ -401,17 +459,18 @@ router.post("/register-provider", asyncHandler(async (req, res) => {
   const surname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
   const id = `con-${Math.random().toString(36).substr(2, 9)}`;
-  await db.prepare(
-    "INSERT INTO contacts (id, name, surname, email, isAdmin, isCommittee, isSafetyCommittee) VALUES (?, ?, ?, ?, 0, 0, 0)"
-  ).run(id, firstName, surname, normalizedEmail);
+  await execute(
+    `INSERT INTO contacts (id, name, surname, email, "isAdmin", "isCommittee", "isSafetyCommittee") VALUES ($1, $2, $3, $4, 0, 0, 0)`,
+    [id, firstName, surname, normalizedEmail]
+  );
 
-  log.info(`New provider account created: ${normalizedEmail} (contact: ${id})`);
+  log.info(`New provider account created: email_hash:${Buffer.from(normalizedEmail).toString('base64').substring(0, 10)} (contact: ${id})`);
 
   const contact = { id, name: firstName, surname, email: normalizedEmail };
   const result = await sendPasswordResetEmail(contact);
 
   if (!result.success) {
-    await db.prepare("DELETE FROM contacts WHERE id = ?").run(id);
+    await execute(`DELETE FROM contacts WHERE id = $1`, [id]);
     return res.status(500).json({ error: "Account created but failed to send setup email. Please try again." });
   }
 
@@ -422,7 +481,10 @@ router.post("/send-pilot-password-reset", requireAuth, asyncHandler(async (req, 
   const { pilotId } = req.body;
   if (!pilotId) return res.status(400).json({ error: "Pilot ID required" });
 
-  const pilot = await db.prepare("SELECT id, firstName, lastName, email FROM pilots WHERE id = ?").get(pilotId) as any;
+  const pilot = await queryOne<any>(
+    `SELECT id, "firstName", "lastName", email FROM pilots WHERE id = $1`,
+    [pilotId]
+  );
   if (!pilot) return res.status(404).json({ error: "Pilot not found" });
   if (!pilot.email) return res.status(400).json({ error: "Pilot has no email address" });
 
@@ -444,7 +506,10 @@ router.post("/request-pilot-password-reset", asyncHandler(async (req, res) => {
     return res.status(429).json({ error: "Too many requests. Please try again later." });
   }
 
-  const pilot = await db.prepare("SELECT id, firstName, lastName, email FROM pilots WHERE email = ?").get(normalizedEmail) as any;
+  const pilot = await queryOne<any>(
+    `SELECT id, "firstName", "lastName", email FROM pilots WHERE email = $1`,
+    [normalizedEmail]
+  );
   if (pilot) {
     await sendPasswordResetEmail(
       { id: pilot.id, name: pilot.firstName, surname: pilot.lastName, email: pilot.email },
@@ -461,9 +526,9 @@ router.get("/validate-reset-token", asyncHandler(async (req, res) => {
     return res.status(400).json({ valid: false, error: "Token required" });
   }
 
-  const record = await db.prepare(
-    "SELECT prt.*, prt.accountType FROM password_reset_tokens prt WHERE prt.token = ?"
-  ).get(token) as any;
+  const record = await queryOne<any>(
+    `SELECT * FROM password_reset_tokens WHERE token = $1`
+  , [token]);
 
   if (!record) {
     return res.status(404).json({ valid: false, error: "Invalid or expired reset link" });
@@ -480,13 +545,19 @@ router.get("/validate-reset-token", asyncHandler(async (req, res) => {
   let displayName = "";
   let email = "";
   if (record.accountType === "pilot") {
-    const pilot = await db.prepare("SELECT firstName, lastName, email FROM pilots WHERE id = ?").get(record.contactId) as any;
+    const pilot = await queryOne<any>(
+      `SELECT "firstName", "lastName", email FROM pilots WHERE id = $1`,
+      [record.contactId]
+    );
     if (pilot) {
       displayName = [pilot.firstName, pilot.lastName].filter(Boolean).join(" ");
       email = pilot.email;
     }
   } else {
-    const contact = await db.prepare("SELECT name, surname, email FROM contacts WHERE id = ?").get(record.contactId) as any;
+    const contact = await queryOne<any>(
+      `SELECT name, surname, email FROM contacts WHERE id = $1`,
+      [record.contactId]
+    );
     if (contact) {
       displayName = [contact.name, contact.surname].filter(Boolean).join(" ");
       email = contact.email;
@@ -507,28 +578,42 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const claimed = await db.prepare(
-    "UPDATE password_reset_tokens SET usedAt = ? WHERE token = ? AND usedAt IS NULL AND expiresAt > ?"
-  ).run(now, token, now);
+  const claimed = await execute(
+    `UPDATE password_reset_tokens SET "usedAt" = $1 WHERE token = $2 AND "usedAt" IS NULL AND "expiresAt" > $3`,
+    [now, token, now]
+  );
 
-  if (claimed.changes === 0) {
+  if (claimed.rowCount === 0) {
     return res.status(400).json({ error: "This reset link is invalid, already used, or expired" });
   }
 
-  const record = await db.prepare(
-    "SELECT contactId, accountType FROM password_reset_tokens WHERE token = ?"
-  ).get(token) as any;
+  const record = await queryOne<any>(
+    `SELECT "contactId", "accountType" FROM password_reset_tokens WHERE token = $1`,
+    [token]
+  );
 
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-  if (record.accountType === "pilot") {
-    await db.prepare("UPDATE pilots SET passwordHash = ? WHERE id = ?").run(hashed, record.contactId);
-    await db.prepare("DELETE FROM pilot_sessions WHERE pilotId = ?").run(record.contactId);
+  if (record?.accountType === "pilot") {
+    await execute(
+      `UPDATE pilots SET "passwordHash" = $1 WHERE id = $2`,
+      [hashed, record.contactId]
+    );
+    await execute(
+      `DELETE FROM pilot_sessions WHERE "pilotId" = $1`,
+      [record.contactId]
+    );
     log.info(`Password reset completed for pilot: ${record.contactId}`);
   } else {
-    await db.prepare("UPDATE contacts SET password = ? WHERE id = ?").run(hashed, record.contactId);
-    await db.prepare("DELETE FROM admin_sessions WHERE userId = ?").run(record.contactId);
-    log.info(`Password reset completed for contact: ${record.contactId}`);
+    await execute(
+      `UPDATE contacts SET password = $1 WHERE id = $2`,
+      [hashed, record?.contactId]
+    );
+    await execute(
+      `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
+      [record?.contactId]
+    );
+    log.info(`Password reset completed for contact: ${record?.contactId}`);
   }
 
   res.json({ success: true });

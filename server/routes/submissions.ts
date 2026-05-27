@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -14,6 +14,29 @@ import { generateTextWithFallback } from "../utils/aiModels.js";
 
 const log = createLogger("submissions");
 const router = Router();
+
+interface BannedIpRow {
+  id: string;
+  ip: string;
+  reason: string | null;
+  bannedAt: string;
+}
+
+interface ImageSubmissionRow {
+  id: string;
+  originalFilename: string;
+  storedFilename: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  status: string;
+  moderationFlag: string | null;
+  moderationNote: string | null;
+  submitterIp: string;
+  photographerCredit: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+}
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -145,7 +168,7 @@ router.post("/", upload.array("images", 10), asyncHandler(async (req, res) => {
 
   const submitterIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
 
-  const banned = await db.prepare("SELECT id FROM banned_ips WHERE ip = ?").get(submitterIp);
+  const banned = await queryOne<{ id: string }>("SELECT id FROM banned_ips WHERE ip = $1", [submitterIp]);
   if (banned) {
     log.warn(`Blocked submission from banned IP: ${submitterIp}`);
     return res.status(403).json({ error: "Submissions are not available from this network." });
@@ -175,10 +198,11 @@ router.post("/", upload.array("images", 10), asyncHandler(async (req, res) => {
       const storageKey = `submissions/quarantine/${storedFilename}`;
       const storedUrl = await saveFile(compressed.buffer, storageKey, storedMimeType);
 
-      await db.prepare(
+      await execute(
         `INSERT INTO image_submissions (id, "originalFilename", "storedFilename", "filePath", "fileSize", "mimeType", status, "moderationFlag", "moderationNote", "submitterIp", "photographerCredit")
-         VALUES (?, ?, ?, ?, ?, ?, 'quarantined', ?, ?, ?, ?)`
-      ).run(id, file.originalname, storedFilename, storedUrl, compressed.buffer.length, storedMimeType, safety.flag || "nsfw", safety.note || "", submitterIp, photographerCredit || null);
+         VALUES ($1, $2, $3, $4, $5, $6, 'quarantined', $7, $8, $9, $10)`,
+        [id, file.originalname, storedFilename, storedUrl, compressed.buffer.length, storedMimeType, safety.flag || "nsfw", safety.note || "", submitterIp, photographerCredit || null]
+      );
 
       log.warn(`Submission ${id} quarantined: ${safety.note}`);
       results.push({ id, filename: file.originalname, status: "quarantined" });
@@ -189,10 +213,11 @@ router.post("/", upload.array("images", 10), asyncHandler(async (req, res) => {
 
     const savedSize = compressed.buffer.length;
     const originalSize = file.buffer.length;
-    await db.prepare(
+    await execute(
       `INSERT INTO image_submissions (id, "originalFilename", "storedFilename", "filePath", "fileSize", "mimeType", status, "moderationNote", "submitterIp", "photographerCredit")
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
-    ).run(id, file.originalname, storedFilename, storedUrl, savedSize, storedMimeType, safety.note || null, submitterIp, photographerCredit || null);
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)`,
+      [id, file.originalname, storedFilename, storedUrl, savedSize, storedMimeType, safety.note || null, submitterIp, photographerCredit || null]
+    );
 
     log.info(`Submission ${id} stored: ${file.originalname} (${(originalSize / 1024).toFixed(0)}KB → ${(savedSize / 1024).toFixed(0)}KB)`);
     results.push({ id, filename: file.originalname, status: "pending" });
@@ -203,27 +228,41 @@ router.post("/", upload.array("images", 10), asyncHandler(async (req, res) => {
 
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const status = (req.query.status as string) || "pending";
-  const submissions = await db.prepare(
-    "SELECT * FROM image_submissions WHERE status = ? ORDER BY submittedAt DESC"
-  ).all(status);
+  const submissions = await query<ImageSubmissionRow>(
+    "SELECT * FROM image_submissions WHERE status = $1 ORDER BY \"submittedAt\" DESC",
+    [status]
+  );
   res.json(submissions);
 }));
 
 router.get("/all", requireAuth, asyncHandler(async (req, res) => {
-  const submissions = await db.prepare(
-    "SELECT * FROM image_submissions ORDER BY submittedAt DESC"
-  ).all();
+  const submissions = await query<ImageSubmissionRow>(
+    "SELECT * FROM image_submissions ORDER BY \"submittedAt\" DESC"
+  );
   res.json(submissions);
 }));
 
 function resolveSubmissionPath(filePath: string): string {
   if (filePath.startsWith("http")) return filePath;
-  const cleaned = filePath.replace(/^\/+/, "");
-  return path.join(process.cwd(), cleaned);
+  
+  // Sanitize the filePath to prevent path traversal
+  const normalizedPath = path.normalize(filePath);
+  const cleanedPath = normalizedPath.replace(/^\\/g, "");
+  const finalPath = path.join(process.cwd(), cleanedPath);
+  
+  // Ensure the resolved path is within the expected directory
+  const resolvedFinal = path.resolve(finalPath);
+  const allowedRoot = path.resolve(process.cwd());
+  
+  if (!resolvedFinal.startsWith(allowedRoot)) {
+    throw new Error("Invalid file path - outside allowed directory");
+  }
+  
+  return resolvedFinal;
 }
 
 router.get("/banned-ips", requireAuth, asyncHandler(async (_req, res) => {
-  const ips = await db.prepare("SELECT * FROM banned_ips ORDER BY bannedAt DESC").all();
+  const ips = await query<BannedIpRow>("SELECT * FROM banned_ips ORDER BY \"bannedAt\" DESC");
   res.json(ips);
 }));
 
@@ -233,32 +272,38 @@ router.post("/banned-ips", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "IP address is required" });
   }
   const trimmedIp = ip.trim();
-  const existing = await db.prepare("SELECT id FROM banned_ips WHERE ip = ?").get(trimmedIp);
+  const existing = await queryOne<{ id: string }>("SELECT id FROM banned_ips WHERE ip = $1", [trimmedIp]);
   if (existing) return res.status(409).json({ error: "IP already banned" });
 
-  await db.prepare("INSERT INTO banned_ips (ip, reason) VALUES (?, ?)").run(trimmedIp, reason || null);
+  await execute(
+    "INSERT INTO banned_ips (ip, reason) VALUES ($1, $2)",
+    [trimmedIp, reason || null]
+  );
   log.info(`IP banned: ${trimmedIp} — ${reason || "No reason"}`);
   res.json({ success: true });
 }));
 
 router.delete("/banned-ips/:id", requireAuth, asyncHandler(async (req, res) => {
-  const result = await db.prepare("DELETE FROM banned_ips WHERE id = ?").run(req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: "Banned IP not found" });
+  const result = await execute("DELETE FROM banned_ips WHERE id = $1", [req.params.id]);
+  if (result.rowCount === 0) return res.status(404).json({ error: "Banned IP not found" });
   res.json({ success: true });
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
+  const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
   await deleteFile(submission.filePath);
 
-  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+  await execute(
+    "UPDATE image_submissions SET status = 'rejected', \"reviewedAt\" = NOW() WHERE id = $1",
+    [req.params.id]
+  );
   res.json({ success: true });
 }));
 
 router.get("/:id/image", requireAuth, asyncHandler(async (req, res) => {
-  const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
+  const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
   if (submission.filePath.startsWith("http")) {
@@ -274,7 +319,7 @@ router.get("/:id/image", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/:id/process", requireAuth, asyncHandler(async (req, res) => {
-  const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
+  const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
   if (submission.status !== "pending" && submission.status !== "quarantined") return res.status(400).json({ error: `Cannot process submission with status '${submission.status}'` });
 
@@ -292,31 +337,37 @@ router.post("/:id/process", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/:id/approve", requireAuth, asyncHandler(async (req, res) => {
-  const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
+  const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  const result = await db.prepare("UPDATE image_submissions SET status = 'approved', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: "Submission not found" });
+  const result = await execute(
+    "UPDATE image_submissions SET status = 'approved', \"reviewedAt\" = NOW() WHERE id = $1",
+    [req.params.id]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: "Submission not found" });
   res.json({ success: true });
 }));
 
 router.post("/:id/ban-ip", requireAuth, asyncHandler(async (req, res) => {
-  const submission = await db.prepare("SELECT * FROM image_submissions WHERE id = ?").get(req.params.id) as any;
+  const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
   if (!submission.submitterIp || submission.submitterIp === "unknown") {
     return res.status(400).json({ error: "No IP address recorded for this submission" });
   }
 
-  const existing = await db.prepare("SELECT id FROM banned_ips WHERE ip = ?").get(submission.submitterIp);
+  const existing = await queryOne<{ id: string }>("SELECT id FROM banned_ips WHERE ip = $1", [submission.submitterIp]);
   if (!existing) {
-    await db.prepare("INSERT INTO banned_ips (ip, reason) VALUES (?, ?)").run(
-      submission.submitterIp,
-      `Banned from submission ${submission.id}`
+    await execute(
+      "INSERT INTO banned_ips (ip, reason) VALUES ($1, $2)",
+      [submission.submitterIp, `Banned from submission ${submission.id}`]
     );
   }
 
   await deleteFile(submission.filePath);
-  await db.prepare("UPDATE image_submissions SET status = 'rejected', reviewedAt = CURRENT_TIMESTAMP WHERE id = ?").run(req.params.id);
+  await execute(
+    "UPDATE image_submissions SET status = 'rejected', \"reviewedAt\" = NOW() WHERE id = $1",
+    [req.params.id]
+  );
 
   log.info(`IP ${submission.submitterIp} banned from submission ${submission.id}`);
   res.json({ success: true, bannedIp: submission.submitterIp });

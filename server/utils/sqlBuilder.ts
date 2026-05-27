@@ -29,8 +29,8 @@ export function buildSafeUpdateClauses(
     if (!allowedSet.has(clause.column)) {
       throw new Error(`Column "${clause.column}" is not allowed. Allowed columns: ${allowedColumns.join(", ")}`);
     }
-    sql.push(`${clause.column} = ?`);
     params.push(clause.value);
+    sql.push(`"${clause.column}" = $${params.length}`);
   }
 
   return {
