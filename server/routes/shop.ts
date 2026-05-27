@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../db.js";
+import { queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -42,8 +42,12 @@ function mapProduct(p: any): MappedProduct {
   };
 }
 
+interface SettingsRow {
+  value: string;
+}
+
 async function getHiddenProductIds(): Promise<string[]> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'hiddenShopProducts'").get() as { value: string } | undefined;
+  const row = await queryOne<SettingsRow>("SELECT value FROM settings WHERE key = 'hiddenShopProducts'");
   if (!row) return [];
   try {
     const parsed = JSON.parse(row.value);
@@ -87,14 +91,18 @@ async function fetchTidyHQProducts(): Promise<MappedProduct[]> {
 
 fetchTidyHQProducts().catch(e => log.warn("Initial shop products fetch failed", e?.message));
 
+interface AdminSessionRow {
+  token: string;
+}
+
 async function isAdminRequest(req: any): Promise<boolean> {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) return false;
-  const session = await db.prepare(`
+  const session = await queryOne<AdminSessionRow>(`
     SELECT admin_sessions.token FROM admin_sessions
     JOIN contacts ON admin_sessions.userId = contacts.id
-    WHERE admin_sessions.token = ? AND contacts.isAdmin = 1
-  `).get(token);
+    WHERE admin_sessions.token = $1 AND contacts."isAdmin" = 1
+  `, [token]);
   return !!session;
 }
 
@@ -141,8 +149,10 @@ router.put("/products/:id/visibility", requireAuth, asyncHandler(async (req, res
     updated = hiddenIds.filter(h => h !== idStr);
   }
 
-  await db.prepare("INSERT INTO settings (key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = @value")
-    .run({ key: "hiddenShopProducts", value: JSON.stringify(updated) });
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT(key) DO UPDATE SET value = $2",
+    ["hiddenShopProducts", JSON.stringify(updated)]
+  );
 
   res.json({ success: true, hiddenProductIds: updated });
 }));

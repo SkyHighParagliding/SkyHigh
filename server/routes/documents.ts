@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -26,7 +27,9 @@ function generateId() {
 
 router.get("/status", requireAuth, asyncHandler(async (req, res) => {
   const driveApiConnected = await isDriveConnected();
-  const settingRow = await db.prepare("SELECT value FROM settings WHERE key = 'drive_appscript_url'").get() as { value: string } | undefined;
+  const settingRow = await queryOne<{ value: string }>(
+    `SELECT value FROM settings WHERE key = 'drive_appscript_url'`
+  );
   const appScriptConnected = !!(settingRow?.value);
   res.json({ connected: driveApiConnected || appScriptConnected });
 }));
@@ -54,7 +57,10 @@ router.get("/categories", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const categories = await Promise.all(CATEGORY_FOLDERS.map(async cat => {
-    const count = await db.prepare("SELECT COUNT(*) as count FROM documents WHERE category = ?").get(cat.code) as { count: number };
+    const count = await queryOne<{ count: number }>(
+      `SELECT COUNT(*) as count FROM documents WHERE category = $1`,
+      [cat.code]
+    );
     return {
       code: cat.code,
       name: cat.name,
@@ -97,9 +103,10 @@ router.get("/category/:code", requireAuth, asyncHandler(async (req, res) => {
     }
   }
 
-  const documents = await db.prepare(
-    "SELECT * FROM documents WHERE category = ? ORDER BY createdAt DESC"
-  ).all(code);
+  const documents = await query<any>(
+    `SELECT * FROM documents WHERE category = $1 ORDER BY "createdAt" DESC`,
+    [code]
+  );
   res.json(documents);
 }));
 
@@ -209,7 +216,9 @@ router.get("/category/:code/subfolder/:name", requireAuth, asyncHandler(async (r
 }));
 
 router.get("/sites/names", requireAuth, asyncHandler(async (_req, res) => {
-  const sites = await db.prepare("SELECT name FROM sites ORDER BY name").all() as { name: string }[];
+  const sites = await query<{ name: string }>(
+    `SELECT name FROM sites ORDER BY name`
+  );
   res.json(sites.map(s => s.name));
 }));
 
@@ -243,9 +252,10 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const term = `%${q}%`;
-  const documents = await db.prepare(
-    "SELECT * FROM documents WHERE name LIKE ? ORDER BY createdAt DESC"
-  ).all(term);
+  const documents = await query<any>(
+    `SELECT * FROM documents WHERE name ILIKE $1 ORDER BY "createdAt" DESC`,
+    [term]
+  );
   res.json(documents);
 }));
 
@@ -324,16 +334,24 @@ router.post("/upload", requireAuth, upload.single("file"), asyncHandler(async (r
   }
 
   const id = generateId();
-  await db.prepare(
-    "INSERT INTO documents (id, driveFileId, name, mimeType, size, category, driveFolderId, webViewLink, uploadedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run(id, result.id, result.name, req.file.mimetype, req.file.size, category, folderId, result.webViewLink, (req as any).user?.name || "admin");
+  await execute(
+    `INSERT INTO documents (id, "driveFileId", name, "mimeType", size, category, "driveFolderId", "webViewLink", "uploadedBy")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [id, result.id, result.name, req.file.mimetype, req.file.size, category, folderId, result.webViewLink, (req as any).user?.name || "admin"]
+  );
 
-  const doc = await db.prepare("SELECT * FROM documents WHERE id = ?").get(id);
+  const doc = await queryOne<any>(
+    `SELECT * FROM documents WHERE id = $1`,
+    [id]
+  );
   res.status(201).json(doc);
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const doc = await db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as any;
+  const doc = await queryOne<any>(
+    `SELECT * FROM documents WHERE id = $1`,
+    [req.params.id]
+  );
 
   if (!doc) {
     const appScriptUrl = await getAppScriptUrl();
@@ -362,8 +380,14 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
     }
   }
 
-  await db.prepare("DELETE FROM project_documents WHERE documentId = ?").run(req.params.id);
-  await db.prepare("DELETE FROM documents WHERE id = ?").run(req.params.id);
+  await execute(
+    `DELETE FROM project_documents WHERE "documentId" = $1`,
+    [req.params.id]
+  );
+  await execute(
+    `DELETE FROM documents WHERE id = $1`,
+    [req.params.id]
+  );
   res.json({ success: true });
 }));
 
@@ -461,10 +485,20 @@ router.get("/download/:fileId", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.get("/index/status", requireAuth, asyncHandler(async (_req, res) => {
-  const total = await db.prepare("SELECT COUNT(*) as count FROM document_index").get() as { count: number };
-  const readable = await db.prepare("SELECT COUNT(*) as count FROM document_index WHERE readable = 1").get() as { count: number };
-  const lastIndexed = await db.prepare("SELECT MAX(indexedAt) as ts FROM document_index").get() as { ts: string | null };
-  const docs = await db.prepare("SELECT driveFileId, name, category, mimeType, charCount, readable, indexedAt, lastModified FROM document_index ORDER BY name").all();
+  const total = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM document_index`
+  );
+  const readable = await queryOne<{ count: number }>(
+    `SELECT COUNT(*) as count FROM document_index WHERE readable = 1`
+  );
+  const lastIndexed = await queryOne<{ ts: string | null }>(
+    `SELECT MAX("indexedAt") as ts FROM document_index`
+  );
+  const docs = await query<any>(
+    `SELECT "driveFileId", name, category, "mimeType", "charCount", readable, "indexedAt", "lastModified"
+     FROM document_index
+     ORDER BY name`
+  );
   res.json({
     totalDocuments: total?.count || 0,
     readableDocuments: readable?.count || 0,
@@ -474,7 +508,9 @@ router.get("/index/status", requireAuth, asyncHandler(async (_req, res) => {
 }));
 
 export async function runDocumentIndexSync(): Promise<{ success: boolean; error?: string; totalDocuments?: number; indexed?: number; skipped?: number; pdfErrors?: string[]; message?: string }> {
-  const settingRow = await db.prepare("SELECT value FROM settings WHERE key = 'drive_appscript_url'").get() as { value: string } | undefined;
+  const settingRow = await queryOne<{ value: string }>(
+    `SELECT value FROM settings WHERE key = 'drive_appscript_url'`
+  );
   const appScriptUrl = settingRow?.value || "";
 
   if (!appScriptUrl) {
@@ -508,13 +544,10 @@ export async function runDocumentIndexSync(): Promise<{ success: boolean; error?
   let indexed = 0;
   let skipped = 0;
 
-  const upsert = await db.prepare(`
-    INSERT OR REPLACE INTO document_index (driveFileId, name, category, mimeType, driveUrl, textContent, charCount, readable, indexedAt, lastModified)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
-  `);
-
   const existingIds = new Set(
-    (await db.prepare("SELECT driveFileId FROM document_index").all() as { driveFileId: string }[]).map(r => r.driveFileId)
+    (await query<{ driveFileId: string }>(
+      `SELECT "driveFileId" FROM document_index`
+    )).map(r => r.driveFileId)
   );
 
   const incomingIds = new Set<string>();
@@ -524,16 +557,30 @@ export async function runDocumentIndexSync(): Promise<{ success: boolean; error?
     incomingIds.add(doc.id);
     const text = doc.text || "";
     const hasPdfError = doc.mimeType === "application/pdf" && (text.startsWith("[PDF text extraction") || text.startsWith("[PDF "));
-    await upsert.run(
-      doc.id,
-      doc.name,
-      doc.category || "",
-      doc.mimeType || "",
-      doc.url || "",
-      hasPdfError ? "" : text,
-      hasPdfError ? 0 : text.length,
-      hasPdfError ? 0 : (doc.readable ? 1 : 0),
-      doc.lastUpdated || doc.dateCreated || ""
+    await execute(
+      `INSERT INTO document_index ("driveFileId", name, category, "mimeType", "driveUrl", "textContent", "charCount", readable, "indexedAt", "lastModified")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
+       ON CONFLICT ("driveFileId") DO UPDATE SET
+         name = EXCLUDED.name,
+         category = EXCLUDED.category,
+         "mimeType" = EXCLUDED."mimeType",
+         "driveUrl" = EXCLUDED."driveUrl",
+         "textContent" = EXCLUDED."textContent",
+         "charCount" = EXCLUDED."charCount",
+         readable = EXCLUDED.readable,
+         "indexedAt" = NOW(),
+         "lastModified" = EXCLUDED."lastModified"`,
+      [
+        doc.id,
+        doc.name,
+        doc.category || "",
+        doc.mimeType || "",
+        doc.url || "",
+        hasPdfError ? "" : text,
+        hasPdfError ? 0 : text.length,
+        hasPdfError ? 0 : (doc.readable ? 1 : 0),
+        doc.lastUpdated || doc.dateCreated || ""
+      ]
     );
     if (hasPdfError) {
       pdfErrors.push(`${doc.name}: ${text}`);
@@ -547,7 +594,10 @@ export async function runDocumentIndexSync(): Promise<{ success: boolean; error?
 
   for (const existingId of existingIds) {
     if (!incomingIds.has(existingId)) {
-      await db.prepare("DELETE FROM document_index WHERE driveFileId = ?").run(existingId);
+      await execute(
+        `DELETE FROM document_index WHERE "driveFileId" = $1`,
+        [existingId]
+      );
     }
   }
 
@@ -586,7 +636,7 @@ router.post("/index/sync", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/index/clear", requireAuth, asyncHandler(async (_req, res) => {
-  await db.prepare("DELETE FROM document_index").run();
+  await execute(`DELETE FROM document_index`);
   invalidateSearchCaches();
   log.info("Document index cleared");
   res.json({ success: true, message: "Document index cleared" });
@@ -594,9 +644,11 @@ router.delete("/index/clear", requireAuth, asyncHandler(async (_req, res) => {
 
 export async function getIndexedDocumentsContext(): Promise<string> {
   try {
-    const docs = await db.prepare(
-      "SELECT name, category, textContent, charCount, driveUrl FROM document_index WHERE readable = 1 AND charCount > 0 ORDER BY category, name"
-    ).all() as { name: string; category: string; textContent: string; charCount: number; driveUrl: string }[];
+    const docs = await query<{ name: string; category: string; textContent: string; charCount: number; driveUrl: string }>(
+      `SELECT name, category, "textContent", "charCount", "driveUrl" FROM document_index
+       WHERE readable = 1 AND "charCount" > 0
+       ORDER BY category, name`
+    );
 
     if (docs.length === 0) return "";
 
@@ -613,9 +665,11 @@ export async function getIndexedDocumentsContext(): Promise<string> {
       ctx += text + "\n\n";
     }
 
-    const nonReadable = await db.prepare(
-      "SELECT name, category, mimeType FROM document_index WHERE readable = 0 OR charCount = 0 ORDER BY category, name"
-    ).all() as { name: string; category: string; mimeType: string }[];
+    const nonReadable = await query<{ name: string; category: string; mimeType: string }>(
+      `SELECT name, category, "mimeType" FROM document_index
+       WHERE readable = 0 OR "charCount" = 0
+       ORDER BY category, name`
+    );
 
     if (nonReadable.length > 0) {
       ctx += "--- Other files (names only, content not readable — images, videos, etc.) ---\n";
@@ -633,9 +687,11 @@ export async function getIndexedDocumentsContext(): Promise<string> {
 
 export async function getPublicDocumentsContext(): Promise<string> {
   try {
-    const docs = await db.prepare(
-      "SELECT name, category, textContent, charCount, driveUrl FROM document_index WHERE readable = 1 AND charCount > 0 AND category = '09_Public Reference' ORDER BY name"
-    ).all() as { name: string; category: string; textContent: string; charCount: number; driveUrl: string }[];
+    const docs = await query<{ name: string; category: string; textContent: string; charCount: number; driveUrl: string }>(
+      `SELECT name, category, "textContent", "charCount", "driveUrl" FROM document_index
+       WHERE readable = 1 AND "charCount" > 0 AND category = '09_Public Reference'
+       ORDER BY name`
+    );
 
     if (docs.length === 0) return "";
 

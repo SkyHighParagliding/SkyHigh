@@ -3,7 +3,8 @@ import multer from "multer";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs";
-import db from "../db.js";
+import { queryOne, execute, transaction } from "../pg.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { saveFile, deleteFile, StorageKey } from "../storage.js";
@@ -35,7 +36,7 @@ const VARIANTS: LogoVariant[] = [
   { key: "clubLogoSplash", height: 512 },
 ];
 
-router.post("/logo", requireAuth, upload.single("logo"), async (req, res) => {
+router.post("/logo", requireAuth, upload.single("logo"), asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -73,13 +74,15 @@ router.post("/logo", requireAuth, upload.single("logo"), async (req, res) => {
       results[variant.key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
-    const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
-    const tx = await db.transaction(async () => {
+    await transaction(async (client) => {
       for (const [key, value] of Object.entries(results)) {
-        await upsert.run(key, value);
+        await client.query(
+          `INSERT INTO settings (key, value) VALUES ($1, $2)
+           ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`,
+          [key, value]
+        );
       }
     });
-    await tx();
 
     log.info(`Logo uploaded and resized: ${Object.keys(results).length} variants`);
     res.json({ success: true, paths: results });
@@ -87,9 +90,9 @@ router.post("/logo", requireAuth, upload.single("logo"), async (req, res) => {
     log.error("Logo upload failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
-router.post("/logo-dark", requireAuth, upload.single("logo"), async (req, res) => {
+router.post("/logo-dark", requireAuth, upload.single("logo"), asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -134,13 +137,15 @@ router.post("/logo-dark", requireAuth, upload.single("logo"), async (req, res) =
       results[variant.key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
-    const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
-    const tx = await db.transaction(async () => {
+    await transaction(async (client) => {
       for (const [key, value] of Object.entries(results)) {
-        await upsert.run(key, value);
+        await client.query(
+          `INSERT INTO settings (key, value) VALUES ($1, $2)
+           ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`,
+          [key, value]
+        );
       }
     });
-    await tx();
 
     log.info(`Dark logo uploaded and resized: ${Object.keys(results).length} variants`);
     res.json({ success: true, paths: results });
@@ -148,20 +153,18 @@ router.post("/logo-dark", requireAuth, upload.single("logo"), async (req, res) =
     log.error("Dark logo upload failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
-router.delete("/logo-dark", requireAuth, async (req, res) => {
+router.delete("/logo-dark", requireAuth, asyncHandler(async (req, res) => {
   try {
     const keys = ["clubLogoDarkOriginal", "clubLogoDarkNav", "clubLogoDarkFooter", "clubLogoDarkFavicon", "clubLogoDarkSplash"];
-    const getVal = await db.prepare("SELECT value FROM settings WHERE key = ?");
-    const clearVal = await db.prepare("UPDATE settings SET value = '' WHERE key = ?");
 
     for (const key of keys) {
-      const row = await getVal.get(key) as any;
+      const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", [key]);
       if (row?.value) {
         await deleteFile(row.value);
       }
-      await clearVal.run(key);
+      await execute("UPDATE settings SET value = '' WHERE key = $1", [key]);
     }
 
     log.info("Dark logo reset to defaults");
@@ -170,9 +173,9 @@ router.delete("/logo-dark", requireAuth, async (req, res) => {
     log.error("Dark logo delete failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
-router.post("/pwa-icon", requireAuth, upload.single("logo"), async (req, res) => {
+router.post("/pwa-icon", requireAuth, upload.single("logo"), asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -196,13 +199,15 @@ router.post("/pwa-icon", requireAuth, upload.single("logo"), async (req, res) =>
       results[key] = await saveFile(buffer, StorageKey.branding(filename), "image/png");
     }
 
-    const upsert = await db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
-    const tx = await db.transaction(async () => {
+    await transaction(async (client) => {
       for (const [key, value] of Object.entries(results)) {
-        await upsert.run(key, value);
+        await client.query(
+          `INSERT INTO settings (key, value) VALUES ($1, $2)
+           ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`,
+          [key, value]
+        );
       }
     });
-    await tx();
 
     log.info(`PWA icon uploaded: ${Object.keys(results).length} sizes`);
     res.json({ success: true, paths: results });
@@ -210,20 +215,18 @@ router.post("/pwa-icon", requireAuth, upload.single("logo"), async (req, res) =>
     log.error("PWA icon upload failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
-router.delete("/pwa-icon", requireAuth, async (req, res) => {
+router.delete("/pwa-icon", requireAuth, asyncHandler(async (req, res) => {
   try {
     const keys = ["pwaIcon192", "pwaIcon512"];
-    const getVal = await db.prepare("SELECT value FROM settings WHERE key = ?");
-    const clearVal = await db.prepare("UPDATE settings SET value = '' WHERE key = ?");
 
     for (const key of keys) {
-      const row = await getVal.get(key) as any;
+      const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", [key]);
       if (row?.value) {
         await deleteFile(row.value);
       }
-      await clearVal.run(key);
+      await execute("UPDATE settings SET value = '' WHERE key = $1", [key]);
     }
 
     log.info("PWA icon removed");
@@ -232,20 +235,18 @@ router.delete("/pwa-icon", requireAuth, async (req, res) => {
     log.error("PWA icon delete failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
-router.delete("/logo", requireAuth, async (req, res) => {
+router.delete("/logo", requireAuth, asyncHandler(async (req, res) => {
   try {
     const keys = ["clubLogoOriginal", "clubLogoNav", "clubLogoFooter", "clubLogoFavicon", "clubLogoSplash"];
-    const getVal = await db.prepare("SELECT value FROM settings WHERE key = ?");
-    const clearVal = await db.prepare("UPDATE settings SET value = '' WHERE key = ?");
 
     for (const key of keys) {
-      const row = await getVal.get(key) as any;
+      const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", [key]);
       if (row?.value) {
         await deleteFile(row.value);
       }
-      await clearVal.run(key);
+      await execute("UPDATE settings SET value = '' WHERE key = $1", [key]);
     }
 
     log.info("Logo reset to defaults");
@@ -254,6 +255,6 @@ router.delete("/logo", requireAuth, async (req, res) => {
     log.error("Logo delete failed:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
 export default router;
