@@ -341,11 +341,11 @@ router.post("/bulk", asyncHandler(async (req, res) => {
   const allWeatherData = await query<BulkWeatherRow>(`
     SELECT
       s.id, s."useLiveWeather", s."liveStationIdAlt",
-      wf."siteId" as forecast_siteId, wf.forecasts as forecast_forecasts, wf.icon as forecast_icon,
-      wf."windSpeed" as forecast_windSpeed, wf."windGust" as forecast_windGust, wf."windDirection" as forecast_direction, wf.timestamp as forecast_timestamp,
-      wo."siteId" as observation_siteId, wo."windSpeed", wo."windGust", wo.direction, wo."stationName", wo."stationLat", wo."stationLon", wo.timestamp,
-      wo_alt."windSpeed" as alt_windSpeed, wo_alt."windGust" as alt_windGust, wo_alt.direction as alt_direction,
-      wo_alt."stationName" as alt_stationName, wo_alt."stationLat" as alt_stationLat, wo_alt."stationLon" as alt_stationLon, wo_alt.timestamp as alt_timestamp
+      wf."siteId" as "forecast_siteId", wf.forecasts as forecast_forecasts, wf.icon as forecast_icon,
+      wf."windSpeed" as "forecast_windSpeed", wf."windGust" as "forecast_windGust", wf."windDirection" as forecast_direction, wf.timestamp as forecast_timestamp,
+      wo."siteId" as "observation_siteId", wo."windSpeed", wo."windGust", wo.direction, wo."stationName", wo."stationLat", wo."stationLon", wo.timestamp,
+      wo_alt."windSpeed" as "alt_windSpeed", wo_alt."windGust" as "alt_windGust", wo_alt.direction as alt_direction,
+      wo_alt."stationName" as "alt_stationName", wo_alt."stationLat" as "alt_stationLat", wo_alt."stationLon" as "alt_stationLon", wo_alt.timestamp as alt_timestamp
     FROM sites s
     LEFT JOIN weather_forecasts wf ON s.id = wf."siteId"
     LEFT JOIN LATERAL (
