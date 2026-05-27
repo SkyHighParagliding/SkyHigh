@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 import { GoogleGenAI } from "@google/genai";
-import db from "../../db.js";
+import { query, queryOne, execute } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { parseAiJsonResponse } from "../../utils/aiJsonParser.js";
@@ -45,6 +45,11 @@ router.post("/bulk-import", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "State is required" });
   }
 
+  const validStates = Object.values(STATE_ABBREVIATIONS) as string[];
+  if (!validStates.includes(state)) {
+    return res.status(400).json({ error: `Invalid state. Must be one of: ${validStates.join(", ")}` });
+  }
+
   if (bulkImportProgress?.running) {
     return res.status(409).json({ error: "A bulk import is already in progress" });
   }
@@ -59,17 +64,18 @@ router.post("/bulk-import", requireAuth, asyncHandler(async (req, res) => {
     abbrToFull[abbr] = full;
   }
   const fullStateName = abbrToFull[state] || state;
-  let sitesToImport = await db.prepare(
-    "SELECT name, url FROM external_site_listings WHERE state = ? OR state LIKE ? OR state LIKE ? ORDER BY name"
-  ).all(state, state + ' >%', fullStateName + ' >%') as { name: string, url: string }[];
+  let sitesToImport = await query<{ name: string, url: string }>(
+    "SELECT name, url FROM external_site_listings WHERE state = $1 OR state LIKE $2 OR state LIKE $3 ORDER BY name",
+    [state, state + ' >%', fullStateName + ' >%']
+  );
   if (sitesToImport.length === 0) {
     return res.status(404).json({ error: `No sites found for state: ${state}` });
   }
 
   if (missingWindOnly) {
-    const sitesWithWind = await db.prepare(
-      "SELECT siteguideUrl FROM sites WHERE windDir IS NOT NULL AND windDir != ''"
-    ).all() as { siteguideUrl: string }[];
+    const sitesWithWind = await query<{ siteguideUrl: string }>(
+      `SELECT "siteguideUrl" FROM sites WHERE "windDir" IS NOT NULL AND "windDir" != ''`
+    );
     const urlsWithWind = new Set(sitesWithWind.map(s => s.siteguideUrl));
     sitesToImport = sitesToImport.filter(s => !urlsWithWind.has(s.url));
     if (sitesToImport.length === 0) {
@@ -87,8 +93,10 @@ router.post("/bulk-import", requireAuth, asyncHandler(async (req, res) => {
     done: false,
   };
 
-  await db.prepare("INSERT INTO settings (key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = @value")
-    .run({ key: "lastImportedState", value: state });
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    ["lastImportedState", state]
+  );
 
   res.json({ success: true, started: true, total: sitesToImport.length });
 
@@ -97,7 +105,7 @@ router.post("/bulk-import", requireAuth, asyncHandler(async (req, res) => {
 
 async function runBulkImportLoop(sitesToImport: { name: string, url: string }[], apiKey: string) {
   try {
-    const promptRow = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string } | undefined;
+    const promptRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiSystemPrompt'");
     const systemPrompt = promptRow?.value || "";
     const ai = new GoogleGenAI({ apiKey });
     let siteguideVersion: string | null = null;
@@ -122,7 +130,10 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
       if (!bulkImportProgress) break;
       bulkImportProgress.currentSite = externalSite.name;
       try {
-        const skipCheck = await db.prepare("SELECT skipBulkImport FROM sites WHERE siteguideUrl = ?").get(externalSite.url) as { skipBulkImport: string } | undefined;
+        const skipCheck = await queryOne<{ skipBulkImport: string }>(
+          `SELECT "skipBulkImport" FROM sites WHERE "siteguideUrl" = $1`,
+          [externalSite.url]
+        );
         if (skipCheck?.skipBulkImport === "true") {
           bulkImportProgress.completed++;
           bulkImportProgress.remaining = bulkImportProgress.total - bulkImportProgress.completed;
@@ -146,7 +157,10 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
         const html = await scrapeRes.text();
 
         const newHash = computeContentHash(html);
-        const existingSite = await db.prepare("SELECT id, contentHash FROM sites WHERE siteguideUrl = ?").get(externalSite.url) as { id: string, contentHash: string | null } | undefined;
+        const existingSite = await queryOne<{ id: string, contentHash: string | null }>(
+          `SELECT id, "contentHash" FROM sites WHERE "siteguideUrl" = $1`,
+          [externalSite.url]
+        );
         if (existingSite?.contentHash && existingSite.contentHash === newHash) {
           bulkImportProgress.completed++;
           bulkImportProgress.remaining = bulkImportProgress.total - bulkImportProgress.completed;
@@ -240,35 +254,110 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
           } catch {}
         }
 
-        const existingByUrl = await db.prepare("SELECT id FROM sites WHERE siteguideUrl = ?").get(externalSite.url) as { id: string } | undefined;
-        const existingById = await db.prepare("SELECT id FROM sites WHERE id = ?").get(siteId) as { id: string } | undefined;
+        const existingByUrl = await queryOne<{ id: string }>(
+          `SELECT id FROM sites WHERE "siteguideUrl" = $1`,
+          [externalSite.url]
+        );
+        const existingById = await queryOne<{ id: string }>(
+          "SELECT id FROM sites WHERE id = $1",
+          [siteId]
+        );
         const existing = existingByUrl || existingById;
         if (existing) {
           siteData.id = existing.id;
-          await db.prepare(`
+          await execute(`
             UPDATE sites SET
-              type=@type, lat=COALESCE(@lat, lat), lon=COALESCE(@lon, lon),
-              description=@description, launch=@launch, landing=@landing, hazards=@hazards, rules=@rules,
-              siteguideUrl=@siteguideUrl, siteContact=COALESCE(@siteContact, siteContact), siteContactPhone=COALESCE(@siteContactPhone, siteContactPhone),
-              navigateTo=COALESCE(@navigateTo, navigateTo), launchHeight=COALESCE(@launchHeight, launchHeight), launchHeightHigh=COALESCE(@launchHeightHigh, launchHeightHigh),
-              hoodedPloversLink=COALESCE(@hoodedPloversLink, hoodedPloversLink),
-              emergencyMarker=COALESCE(@emergencyMarker, emergencyMarker), what3words=COALESCE(@what3words, what3words),
-              essentialInfoImages=@essentialInfoImages, essentialInfoText=@essentialInfoText,
-              unassignedText=CASE WHEN CAST(@unassignedText AS TEXT) != '' THEN @unassignedText ELSE COALESCE(unassignedText, @unassignedText) END,
-              siteguideVersion=@siteguideVersion, siteguideScrapedAt=@siteguideScrapedAt, contentHash=@contentHash,
-              pgRating=COALESCE(pgRating, @pgRating), hgRating=COALESCE(hgRating, @hgRating),
-              windDir=COALESCE(windDir, @windDir), windSpeed=COALESCE(windSpeed, @windSpeed),
-              isSkyHighSite=@isSkyHighSite
-            WHERE id=@id
-          `).run(siteData);
+              type=$1, lat=COALESCE($2, lat), lon=COALESCE($3, lon),
+              description=$4, launch=$5, landing=$6, hazards=$7, rules=$8,
+              "siteguideUrl"=$9, "siteContact"=COALESCE($10, "siteContact"), "siteContactPhone"=COALESCE($11, "siteContactPhone"),
+              "navigateTo"=COALESCE($12, "navigateTo"), "launchHeight"=COALESCE($13, "launchHeight"), "launchHeightHigh"=COALESCE($14, "launchHeightHigh"),
+              "hoodedPloversLink"=COALESCE($15, "hoodedPloversLink"),
+              "emergencyMarker"=COALESCE($16, "emergencyMarker"), "what3words"=COALESCE($17, "what3words"),
+              "essentialInfoImages"=$18, "essentialInfoText"=$19,
+              "unassignedText"=CASE WHEN $20 IS NOT NULL AND $20 != '' THEN $20 ELSE COALESCE("unassignedText", $20) END,
+              "siteguideVersion"=$21, "siteguideScrapedAt"=$22, "contentHash"=$23,
+              "pgRating"=COALESCE("pgRating", $24), "hgRating"=COALESCE("hgRating", $25),
+              "windDir"=COALESCE("windDir", $26), "windSpeed"=COALESCE("windSpeed", $27),
+              "isSkyHighSite"=$28
+            WHERE id=$29
+          `, [
+            siteData.type,           // $1
+            siteData.lat,            // $2
+            siteData.lon,            // $3
+            siteData.description,    // $4
+            siteData.launch,         // $5
+            siteData.landing,        // $6
+            siteData.hazards,        // $7
+            siteData.rules,          // $8
+            siteData.siteguideUrl,   // $9
+            siteData.siteContact,    // $10
+            siteData.siteContactPhone, // $11
+            siteData.navigateTo,     // $12
+            siteData.launchHeight,   // $13
+            siteData.launchHeightHigh, // $14
+            siteData.hoodedPloversLink, // $15
+            siteData.emergencyMarker, // $16
+            siteData.what3words,     // $17
+            siteData.essentialInfoImages, // $18
+            siteData.essentialInfoText,   // $19
+            siteData.unassignedText, // $20
+            siteData.siteguideVersion,    // $21
+            siteData.siteguideScrapedAt,  // $22
+            siteData.contentHash,    // $23
+            siteData.pgRating,       // $24
+            siteData.hgRating,       // $25
+            siteData.windDir,        // $26
+            siteData.windSpeed,      // $27
+            siteData.isSkyHighSite,  // $28
+            siteData.id,             // $29
+          ]);
           bulkImportProgress!.completed++;
           bulkImportProgress!.remaining = bulkImportProgress!.total - bulkImportProgress!.completed;
           bulkImportProgress!.results.push({ name: siteData.name, status: "updated" });
         } else {
-          await db.prepare(`
-            INSERT INTO sites (id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, hoodedPloversLink, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, contentHash)
-            VALUES (@id, @name, @type, @pgRating, @hgRating, @windDir, @windSpeed, @status, @hazardLevel, @lat, @lon, @description, @launch, @landing, @hazards, @rules, @image, @useLiveWeather, @liveStationId, @siteguideUrl, @siteContact, @siteContactPhone, @navigateTo, @launchHeight, @launchHeightHigh, @hoodedPloversLink, @emergencyMarker, @what3words, @weatherStationLink, @isSkyHighSite, @crossLeft, @crossRight, @essentialInfoImages, @essentialInfoText, @unassignedText, @siteguideVersion, @siteguideScrapedAt, @contentHash)
-          `).run(siteData);
+          await execute(`
+            INSERT INTO sites (id, name, type, "pgRating", "hgRating", "windDir", "windSpeed", status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, "useLiveWeather", "liveStationId", "siteguideUrl", "siteContact", "siteContactPhone", "navigateTo", "launchHeight", "launchHeightHigh", "hoodedPloversLink", "emergencyMarker", "what3words", "weatherStationLink", "isSkyHighSite", "crossLeft", "crossRight", "essentialInfoImages", "essentialInfoText", "unassignedText", "siteguideVersion", "siteguideScrapedAt", "contentHash")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38)
+          `, [
+            siteData.id,             // $1
+            siteData.name,           // $2
+            siteData.type,           // $3
+            siteData.pgRating,       // $4
+            siteData.hgRating,       // $5
+            siteData.windDir,        // $6
+            siteData.windSpeed,      // $7
+            siteData.status,         // $8
+            siteData.hazardLevel,    // $9
+            siteData.lat,            // $10
+            siteData.lon,            // $11
+            siteData.description,    // $12
+            siteData.launch,         // $13
+            siteData.landing,        // $14
+            siteData.hazards,        // $15
+            siteData.rules,          // $16
+            siteData.image,          // $17
+            siteData.useLiveWeather, // $18
+            siteData.liveStationId,  // $19
+            siteData.siteguideUrl,   // $20
+            siteData.siteContact,    // $21
+            siteData.siteContactPhone, // $22
+            siteData.navigateTo,     // $23
+            siteData.launchHeight,   // $24
+            siteData.launchHeightHigh, // $25
+            siteData.hoodedPloversLink, // $26
+            siteData.emergencyMarker, // $27
+            siteData.what3words,     // $28
+            siteData.weatherStationLink, // $29
+            siteData.isSkyHighSite,  // $30
+            siteData.crossLeft,      // $31
+            siteData.crossRight,     // $32
+            siteData.essentialInfoImages, // $33
+            siteData.essentialInfoText,   // $34
+            siteData.unassignedText, // $35
+            siteData.siteguideVersion,    // $36
+            siteData.siteguideScrapedAt,  // $37
+            siteData.contentHash,    // $38
+          ]);
           bulkImportProgress!.completed++;
           bulkImportProgress!.remaining = bulkImportProgress!.total - bulkImportProgress!.completed;
           bulkImportProgress!.results.push({ name: siteData.name, status: "created" });
@@ -320,6 +409,11 @@ export async function triggerBulkImport(state: string): Promise<{ started: boole
     return { started: false, error: "A bulk import is already in progress" };
   }
 
+  const validStates = Object.values(STATE_ABBREVIATIONS) as string[];
+  if (!validStates.includes(state)) {
+    return { started: false, error: `Invalid state. Must be one of: ${validStates.join(", ")}` };
+  }
+
   const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return { started: false, error: "Gemini API key not configured" };
@@ -330,9 +424,10 @@ export async function triggerBulkImport(state: string): Promise<{ started: boole
     abbrToFull[abbr] = full;
   }
   const fullStateName = abbrToFull[state] || state;
-  const sitesToImport = await db.prepare(
-    "SELECT name, url FROM external_site_listings WHERE state = ? OR state LIKE ? OR state LIKE ? ORDER BY name"
-  ).all(state, state + ' >%', fullStateName + ' >%') as { name: string, url: string }[];
+  const sitesToImport = await query<{ name: string, url: string }>(
+    "SELECT name, url FROM external_site_listings WHERE state = $1 OR state LIKE $2 OR state LIKE $3 ORDER BY name",
+    [state, state + ' >%', fullStateName + ' >%']
+  );
 
   if (sitesToImport.length === 0) {
     return { started: false, error: `No sites found for state: ${state}` };
@@ -348,8 +443,10 @@ export async function triggerBulkImport(state: string): Promise<{ started: boole
     done: false,
   };
 
-  await db.prepare("INSERT INTO settings (key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = @value")
-    .run({ key: "lastImportedState", value: state });
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    ["lastImportedState", state]
+  );
 
   runBulkImportLoop(sitesToImport, apiKey);
 

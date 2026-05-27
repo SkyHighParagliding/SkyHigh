@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { query, queryOne, execute } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { fetchFreeFlightWxData, getSlugFromStationId, parseGaugeUrl } from "../../freeflightwx.js";
@@ -35,7 +35,7 @@ router.get("/tide-stations", (_req, res) => {
 });
 
 router.get("/:id/tides", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT id, type, isTidal, tideStationId, lat, lon FROM sites WHERE id = ?").get(req.params.id) as any;
+  const site = await queryOne<any>('SELECT id, type, "isTidal", "tideStationId", lat, lon FROM sites WHERE id = $1', [req.params.id]);
   if (!site) return res.status(404).json({ error: "Site not found" });
   const isCoastal = !(site.type || "").toLowerCase().includes("inland");
   if (!isCoastal && site.isTidal !== "true") return res.status(404).json({ error: "Site is not tidal" });
@@ -51,7 +51,10 @@ router.get("/:id/tides", asyncHandler(async (req, res) => {
 }));
 
 router.get("/:id/weather-gauge", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT liveStationId, liveStationIdAlt FROM sites WHERE id = ?").get(req.params.id) as { liveStationId: string | null, liveStationIdAlt: string | null } | undefined;
+  const site = await queryOne<{ liveStationId: string | null, liveStationIdAlt: string | null }>(
+    'SELECT "liveStationId", "liveStationIdAlt" FROM sites WHERE id = $1',
+    [req.params.id]
+  );
   if (!site) return res.status(404).json({ error: "Site not found" });
   const ffwxId = [site.liveStationId, site.liveStationIdAlt].find(id => id?.startsWith('freeflightwx-'));
   if (!ffwxId) return res.status(404).json({ error: "No freeflightwx station configured" });
@@ -69,7 +72,7 @@ router.post("/wtf-compare", requireAuth, asyncHandler(async (req, res) => {
     return res.json({ success: false, error: "Could not fetch WTF data" });
   }
 
-  const sites = await db.prepare("SELECT id, name, windSpeed, windDir, siteguideUrl FROM sites ORDER BY name").all() as any[];
+  const sites = await query<any>('SELECT id, name, "windSpeed", "windDir", "siteguideUrl" FROM sites ORDER BY name');
   const comparisons: any[] = [];
 
   for (const site of sites) {
@@ -112,12 +115,11 @@ router.post("/wtf-apply", requireAuth, asyncHandler(async (req, res) => {
     return res.json({ success: false, error: "Could not fetch WTF data" });
   }
 
-  const updateStmt = await db.prepare("UPDATE sites SET windSpeed = ? WHERE id = ?");
   let updated = 0;
   const results: any[] = [];
 
   for (const siteId of siteIds) {
-    const site = await db.prepare("SELECT id, name, windSpeed, siteguideUrl FROM sites WHERE id = ?").get(siteId) as any;
+    const site = await queryOne<any>('SELECT id, name, "windSpeed", "siteguideUrl" FROM sites WHERE id = $1', [siteId]);
     if (!site) continue;
 
     const wtfMatch = matchWtfSite(site.siteguideUrl, site.name, wtfData);
@@ -126,7 +128,7 @@ router.post("/wtf-apply", requireAuth, asyncHandler(async (req, res) => {
     const wtfWind = getWtfWindData(wtfMatch);
     const wtfSpeed = normaliseWindSpeed(wtfWind.windSpeed);
     if (wtfSpeed && wtfSpeed !== site.windSpeed) {
-      await updateStmt.run(wtfSpeed, site.id);
+      await execute('UPDATE sites SET "windSpeed" = $1 WHERE id = $2', [wtfSpeed, site.id]);
       results.push({ siteId: site.id, name: site.name, oldSpeed: site.windSpeed, newSpeed: wtfSpeed });
       updated++;
     }
@@ -140,11 +142,11 @@ router.post("/wtf-apply", requireAuth, asyncHandler(async (req, res) => {
 const EMERGENCY_CACHE_TTL_MS = 48 * 60 * 60 * 1000;
 
 router.get("/:id/emergency-hospitals", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT id, lat, lon, what3words FROM sites WHERE id = ?").get(req.params.id) as any;
+  const site = await queryOne<any>('SELECT id, lat, lon, "what3words" FROM sites WHERE id = $1', [req.params.id]);
   if (!site) return res.status(404).json({ error: "Site not found" });
   if (site.lat == null || site.lon == null) return res.json({ hospitals: [], what3words: site.what3words || null });
 
-  const cached = await db.prepare("SELECT hospitals, cachedAt FROM emergency_hospitals_cache WHERE siteId = ?").get(site.id) as any;
+  const cached = await queryOne<any>('SELECT hospitals, "cachedAt" FROM emergency_hospitals_cache WHERE "siteId" = $1', [site.id]);
   if (cached) {
     const cachedTime = new Date(cached.cachedAt).getTime();
     if (Date.now() - cachedTime < EMERGENCY_CACHE_TTL_MS) {
@@ -261,9 +263,10 @@ router.get("/:id/emergency-hospitals", asyncHandler(async (req, res) => {
       .sort((a: any, b: any) => a.distanceKm - b.distanceKm)
       .slice(0, 5);
 
-    await db.prepare(
-      "INSERT OR REPLACE INTO emergency_hospitals_cache (siteId, hospitals, cachedAt) VALUES (?, ?, ?)"
-    ).run(site.id, JSON.stringify(hospitals), new Date().toISOString());
+    await execute(
+      'INSERT INTO emergency_hospitals_cache ("siteId", hospitals, "cachedAt") VALUES ($1, $2, $3) ON CONFLICT ("siteId") DO UPDATE SET hospitals = EXCLUDED.hospitals, "cachedAt" = EXCLUDED."cachedAt"',
+      [site.id, JSON.stringify(hospitals), new Date().toISOString()]
+    );
 
     res.json({ hospitals, what3words: site.what3words || null });
   } catch (err: any) {

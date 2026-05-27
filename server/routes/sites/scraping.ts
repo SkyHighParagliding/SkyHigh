@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as cheerio from 'cheerio';
-import db from "../../db.js";
+import { query, queryOne, execute, transaction } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { extractEssentialInfo, isAllowedScrapeUrl } from "../../utils/essentialInfo.js";
@@ -15,7 +15,7 @@ export const externalSitesRouter = Router();
 
 externalSitesRouter.get("/", async (req, res) => {
   try {
-    const sites = await db.prepare("SELECT * FROM external_site_listings ORDER BY name ASC").all() as any[];
+    const sites = await query<any>("SELECT * FROM external_site_listings ORDER BY name ASC");
     const mapped = sites.map((s: any) => {
       const firstPart = (s.state || '').split('>')[0].split('-')[0].trim();
       const stateAbbr = STATE_ABBREVIATIONS[firstPart] || firstPart;
@@ -90,23 +90,21 @@ router.post("/scrape-urls", requireAuth, asyncHandler(async (req, res) => {
 
   console.log(`Found ${sites.length} sites across all states.`);
 
-  const insert = await db.prepare("INSERT INTO external_site_listings (name, url, state, region) VALUES (@name, @url, @state, @region)");
-  const clear = await db.prepare("DELETE FROM external_site_listings");
-
-  const transaction = await db.transaction(async (sitesToInsert: typeof sites) => {
-    await clear.run();
-    for (const site of sitesToInsert) {
-      await insert.run(site);
+  await transaction(async (client) => {
+    await client.query("DELETE FROM external_site_listings");
+    for (const site of sites) {
+      await client.query(
+        "INSERT INTO external_site_listings (name, url, state, region) VALUES ($1, $2, $3, $4)",
+        [site.name, site.url, site.state, site.region]
+      );
     }
   });
-
-  await transaction(sites);
 
   res.json({ success: true, count: sites.length });
 }));
 
 router.post("/:id/scrape-essential-info", requireAuth, asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT id, siteguideUrl FROM sites WHERE id = ?").get(req.params.id) as any;
+  const site = await queryOne<any>(`SELECT id, "siteguideUrl" FROM sites WHERE id = $1`, [req.params.id]);
   if (!site) return res.status(404).json({ error: "Site not found" });
   if (!site.siteguideUrl) return res.status(400).json({ error: "No siteguide URL configured for this site" });
   if (!isAllowedScrapeUrl(site.siteguideUrl)) return res.status(400).json({ error: "URL must be from siteguide.org.au" });
@@ -121,18 +119,22 @@ router.post("/:id/scrape-essential-info", requireAuth, asyncHandler(async (req, 
   const $page = cheerio.load(html);
   const essentialInfo = await extractEssentialInfo($page, site.id, site.siteguideUrl);
 
-  await db.prepare("UPDATE sites SET essentialInfoImages = ?, essentialInfoText = ?, contentHash = ? WHERE id = ?")
-    .run(JSON.stringify(essentialInfo.images), essentialInfo.text, newHash, site.id);
+  await execute(
+    `UPDATE sites SET "essentialInfoImages" = $1, "essentialInfoText" = $2, "contentHash" = $3 WHERE id = $4`,
+    [JSON.stringify(essentialInfo.images), essentialInfo.text, newHash, site.id]
+  );
 
   res.json({ success: true, images: essentialInfo.images, textLength: essentialInfo.text.length });
 }));
 
 router.put("/:id/essential-info", requireAuth, asyncHandler(async (req, res) => {
   const { images, text } = req.body;
-  const site = await db.prepare("SELECT id FROM sites WHERE id = ?").get(req.params.id) as any;
+  const site = await queryOne<any>("SELECT id FROM sites WHERE id = $1", [req.params.id]);
   if (!site) return res.status(404).json({ error: "Site not found" });
-  await db.prepare("UPDATE sites SET essentialInfoImages = ?, essentialInfoText = ? WHERE id = ?")
-    .run(JSON.stringify(images || []), text || "", req.params.id);
+  await execute(
+    `UPDATE sites SET "essentialInfoImages" = $1, "essentialInfoText" = $2 WHERE id = $3`,
+    [JSON.stringify(images || []), text || "", req.params.id]
+  );
   res.json({ success: true });
 }));
 
@@ -182,8 +184,8 @@ router.post("/siteguide-version-check/run", requireAuth, asyncHandler(async (req
   const shouldAutoImport = result.changed || await getChangedSinceLastImport();
 
   if (shouldAutoImport) {
-    const autoEnabled = await db.prepare("SELECT value FROM settings WHERE key = 'autoImportEnabled'").get() as { value: string } | undefined;
-    const lastState = await db.prepare("SELECT value FROM settings WHERE key = 'lastImportedState'").get() as { value: string } | undefined;
+    const autoEnabled = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'autoImportEnabled'");
+    const lastState = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'lastImportedState'");
     const requestState = req.body?.state as string | undefined;
     const importState = requestState || lastState?.value;
 
@@ -209,9 +211,10 @@ router.post("/check-changes", requireAuth, asyncHandler(async (req, res) => {
     abbrToFull[abbr] = full;
   }
   const fullStateName = abbrToFull[state] || state;
-  const externalSites = await db.prepare(
-    "SELECT name, url FROM external_site_listings WHERE state = ? OR state LIKE ? OR state LIKE ? ORDER BY name"
-  ).all(state, state + ' >%', fullStateName + ' >%') as { name: string, url: string }[];
+  const externalSites = await query<{ name: string, url: string }>(
+    "SELECT name, url FROM external_site_listings WHERE state = $1 OR state LIKE $2 OR state LIKE $3 ORDER BY name",
+    [state, state + ' >%', fullStateName + ' >%']
+  );
 
   if (externalSites.length === 0) {
     return res.status(404).json({ error: `No sites found for state: ${state}` });
@@ -231,7 +234,10 @@ router.post("/check-changes", requireAuth, asyncHandler(async (req, res) => {
       }
       const html = await scrapeRes.text();
       const newHash = computeContentHash(html);
-      const existing = await db.prepare("SELECT contentHash FROM sites WHERE siteguideUrl = ?").get(ext.url) as { contentHash: string | null } | undefined;
+      const existing = await queryOne<{ contentHash: string | null }>(
+        `SELECT "contentHash" FROM sites WHERE "siteguideUrl" = $1`,
+        [ext.url]
+      );
 
       if (!existing) {
         results.push({ name: ext.name, status: "new", url: ext.url });
@@ -295,7 +301,7 @@ router.post("/scan-club-sites", requireAuth, asyncHandler(async (req: any, res) 
     }
   });
 
-  const allDbSites = await db.prepare("SELECT id, name FROM sites").all() as { id: string; name: string }[];
+  const allDbSites = await query<{ id: string; name: string }>("SELECT id, name FROM sites");
 
   function normalizeForMatch(s: string): string {
     return s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -323,8 +329,10 @@ router.post("/scan-club-sites", requireAuth, asyncHandler(async (req: any, res) 
       });
 
       if (matchedSite) {
-        await db.prepare("UPDATE sites SET isSkyHighSite = ?, siteguideUrl = COALESCE(siteguideUrl, ?) WHERE id = ?")
-          .run(isSkyHigh ? 'true' : 'false', vs.url, matchedSite.id);
+        await execute(
+          `UPDATE sites SET "isSkyHighSite" = $1, "siteguideUrl" = COALESCE("siteguideUrl", $2) WHERE id = $3`,
+          [isSkyHigh ? 'true' : 'false', vs.url, matchedSite.id]
+        );
         results.push({ name: vs.name, siteguideUrl: vs.url, responsibleClub, isSkyHighSite: isSkyHigh, matched: true, dbSiteId: matchedSite.id });
       } else {
         results.push({ name: vs.name, siteguideUrl: vs.url, responsibleClub, isSkyHighSite: isSkyHigh, matched: false });
