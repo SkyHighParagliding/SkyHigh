@@ -6,6 +6,88 @@ import createLogger from "./utils/logger.js";
 
 const log = createLogger("database");
 
+// Quote-aware SQL splitter — splits on semicolons outside of:
+//   - single-quoted strings ('...' with '' escape)
+//   - dollar-quoted strings ($$...$$ or $tag$...$tag$)
+//   - line comments (-- ... \n)
+// Used by both PG and SQLite migration runners.
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = '';
+  let inString = false;
+  let dollarTag: string | null = null;
+  let i = 0;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+
+    // Inside a dollar-quoted block — look for the closing tag
+    if (dollarTag !== null) {
+      if (sql.startsWith(dollarTag, i)) {
+        current += dollarTag;
+        i += dollarTag.length;
+        dollarTag = null;
+      } else {
+        current += ch;
+        i++;
+      }
+      continue;
+    }
+
+    // Inside a single-quoted string
+    if (inString) {
+      if (ch === "'" && sql[i + 1] === "'") {
+        current += "''";
+        i += 2;
+      } else if (ch === "'") {
+        inString = false;
+        current += ch;
+        i++;
+      } else {
+        current += ch;
+        i++;
+      }
+      continue;
+    }
+
+    // Line comment — skip to end of line (semicolons inside don't count)
+    if (ch === '-' && sql[i + 1] === '-') {
+      const end = sql.indexOf('\n', i);
+      if (end === -1) { i = sql.length; } else { current += sql.slice(i, end + 1); i = end + 1; }
+      continue;
+    }
+
+    // Outside any string — check for start of quoted context or semicolon
+    if (ch === "'") {
+      inString = true;
+      current += ch;
+      i++;
+    } else if (ch === '$') {
+      const match = sql.slice(i).match(/^\$([A-Za-z0-9_]*)\$/);
+      if (match) {
+        dollarTag = match[0];
+        current += dollarTag;
+        i += dollarTag.length;
+      } else {
+        current += ch;
+        i++;
+      }
+    } else if (ch === ';') {
+      const trimmed = current.trim();
+      if (trimmed) statements.push(trimmed);
+      current = '';
+      i++;
+    } else {
+      current += ch;
+      i++;
+    }
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) statements.push(trimmed);
+  return statements;
+}
+
 // ─── Adapter selection ────────────────────────────────────────────────────────
 // Set DATABASE_URL in .env to use PostgreSQL.
 // Leave it unset to use the local SQLite file (database/db.sqlite).
@@ -193,13 +275,7 @@ async function runPostgresMigrations() {
         try {
           log.info(`Running PostgreSQL migration v${version}: ${description}`);
 
-          // Split SQL by semicolons and execute each statement separately
-          const statements = sql
-            .split(';')
-            .map(stmt => stmt.trim())
-            .filter(stmt => stmt.length > 0);
-
-          for (const stmt of statements) {
+          for (const stmt of splitSqlStatements(sql)) {
             await client.query(stmt);
           }
 
@@ -274,37 +350,7 @@ async function runSQLiteMigrations(database: any) {
         .replace(/^\s*COMMIT;?\s*$/gim, '');
       database.exec("BEGIN");
       if (sqliteContent.trim()) {
-        // Split into individual statements (respecting semicolons inside string literals)
-        // and execute with error tolerance for idempotent operations
-        const statements: string[] = [];
-        let current = '';
-        let inString = false;
-        for (let i = 0; i < sqliteContent.length; i++) {
-          const ch = sqliteContent[i];
-          const next = sqliteContent[i + 1] || '';
-          if (ch === "'" && !inString) {
-            inString = true;
-            current += ch;
-          } else if (ch === "'" && inString) {
-            if (next === "'") {
-              // escaped single quote '' inside string
-              current += ch + next;
-              i++;
-            } else {
-              inString = false;
-              current += ch;
-            }
-          } else if (ch === ';' && !inString) {
-            const trimmed = current.trim();
-            if (trimmed) statements.push(trimmed);
-            current = '';
-          } else {
-            current += ch;
-          }
-        }
-        const trimmed = current.trim();
-        if (trimmed) statements.push(trimmed);
-        for (const stmt of statements) {
+        for (const stmt of splitSqlStatements(sqliteContent)) {
           try {
             if (stmt.trim()) {
               database.exec(stmt.trim() + ';');
