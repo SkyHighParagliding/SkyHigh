@@ -8,6 +8,16 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
+function sanitizeSiteName(name: string): string {
+  // Basic sanitization to escape known dangerous characters
+  return name
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   const dirTextColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#ff6b35' : windStatus.directionStatus.label === 'Blown Out' || windStatus.directionStatus.label === 'Not Flyable' ? '#ef4444' : '#1d1d1f';
   const parsedSpeed = parseWindSpeed(site.windSpeed) || parseWindSpeed(site.windDir);
@@ -22,7 +32,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
     <div className="rounded-2xl p-6 sm:p-8 flex flex-col h-full" style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 8px 30px rgba(0,0,0,0.07)' }}>
       <div className="flex items-start justify-between w-full mb-1 gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="font-semibold truncate text-2xl" style={{ color: '#1d1d1f' }}>{site.name}</h3>
+          <h3 className="font-semibold truncate text-2xl" style={{ color: '#1d1d1f' }}>{sanitizeSiteName(site.name)}</h3>
         </div>
         {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
           <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-2 h-5 shrink-0">Closed</Badge>
@@ -35,7 +45,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
 
       <div className="flex items-center gap-1.5 text-[12px] mb-5" style={{ color: '#86868b' }}>
         <Navigation className="w-3 h-3" />
-        <span>{activeWeather.type === 'live' ? 'Live' : 'Forecast'} - {activeWeather.stationName || site.name}</span>
+        <span>{activeWeather.type === 'live' ? 'Live' : 'Forecast'} - {activeWeather.stationName || sanitizeSiteName(site.name)}</span>
         {distance && <span>· {distance}km</span>}
         <span>· {formatDisplayTime(activeWeather.timestamp)}</span>
         {hasAlt && (

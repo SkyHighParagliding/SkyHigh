@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE TABLE IF NOT EXISTS admin_sessions (
   token TEXT PRIMARY KEY,
-  "userId" TEXT NOT NULL,
+  "userId" INTEGER NOT NULL,
   "createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   "soSiteId" TEXT
 );

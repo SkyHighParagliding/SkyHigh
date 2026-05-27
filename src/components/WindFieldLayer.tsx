@@ -172,7 +172,6 @@ export function WindFieldLayer({ observations, visible, settings: settingsOverri
         canvasRef.current.style.display = 'none';
       }
       if (animFrameRef.current) {
-        clearTimeout(animFrameRef.current);
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = 0;
       }
@@ -285,11 +284,7 @@ export function WindFieldLayer({ observations, visible, settings: settingsOverri
     const activeParticles = particlesRef.current;
 
     function scheduleNext() {
-      if (isMobile) {
-        animFrameRef.current = window.setTimeout(() => render(performance.now()), frameInterval) as unknown as number;
-      } else {
-        animFrameRef.current = requestAnimationFrame(render);
-      }
+      animFrameRef.current = requestAnimationFrame(render);
     }
 
     function render(now: number) {
@@ -375,11 +370,7 @@ export function WindFieldLayer({ observations, visible, settings: settingsOverri
 
     function cancelAnim() {
       if (animFrameRef.current) {
-        if (isMobile) {
-          clearTimeout(animFrameRef.current);
-        } else {
-          cancelAnimationFrame(animFrameRef.current);
-        }
+        cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = 0;
       }
     }
@@ -403,7 +394,6 @@ export function WindFieldLayer({ observations, visible, settings: settingsOverri
   useEffect(() => {
     return () => {
       if (animFrameRef.current) {
-        clearTimeout(animFrameRef.current);
         cancelAnimationFrame(animFrameRef.current);
       }
       if (canvasRef.current) {

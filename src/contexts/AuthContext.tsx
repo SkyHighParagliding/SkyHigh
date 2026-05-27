@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 interface AdminUser {
   id: number;
@@ -41,14 +41,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isSoSession = !!soSiteId;
 
-  const setSoSession = (siteId: string | null) => {
+  const setSoSession = useCallback((siteId: string | null) => {
     setSoSiteId(siteId);
     if (siteId) {
       localStorage.setItem("soSiteId", siteId);
     } else {
       localStorage.removeItem("soSiteId");
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetch("/api/dev-mode")
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         setLoading(false);
       });
-  }, [token]);
+  }, [token, soSiteId]);
 
   const login = async (email: string, password: string, soLogin?: boolean, loginSoSiteId?: string, latitude?: number, longitude?: number): Promise<string | null> => {
     try {
@@ -136,8 +136,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSoSiteId(null);
   };
 
+  const providerValue = useMemo(() => ({
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    isAuthenticated: !!user,
+    isSoSession,
+    soSiteId,
+    setSoSession,
+  }), [user, token, loading, login, logout, isSoSession, soSiteId, setSoSession]);
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAuthenticated: !!user, isSoSession, soSiteId, setSoSession }}>
+    <AuthContext.Provider value={providerValue}>
       {children}
     </AuthContext.Provider>
   );

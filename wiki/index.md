@@ -13,14 +13,14 @@
 - [[04-glossary]]
 - [[05-file-map]]
 - [[06-deployment]]
-- [[07-deployment-guide]]
-- [[07-integrations]]
+- [[08-deployment-guide]]
+- [[09-integrations]]
 
 ---
 
 ## SkyHigh Platform Build Wiki
 
-This section is migrated from the `Claude_LLM_Wiki` and contains the complete, agent-optimized wiki for rebuilding the SkyHigh platform from scratch using parallel development workstreams.
+This section contains the complete, agent-optimized wiki for rebuilding the SkyHigh platform from scratch using parallel development workstreams.
 
 **Purpose**: This wiki enables multiple Claude Code agents to independently develop, test, and verify 12 major system components in parallel, then integrate them into a production-ready platform.
 

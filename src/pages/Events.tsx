@@ -2,6 +2,20 @@ import { Calendar, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUpcomingEvents } from '@/hooks/api';
+import LazyMarkdown from '@/components/LazyMarkdown';
+
+interface TidyHQEvent {
+  id: string;
+  name: string;
+  public_url?: string;
+  image_url?: string;
+  start_at_iso?: string;
+  start_at?: string;
+  end_at_iso?: string;
+  end_at?: string;
+  location?: string;
+  body?: string;
+}
 
 export function Events() {
   const { data: events = [], isLoading: loading } = useUpcomingEvents();
@@ -26,24 +40,25 @@ export function Events() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {events.map(event => {
-                const startDate = new Date(event.start_at_iso || event.start_at);
-                const endDate = new Date(event.end_at_iso || event.end_at);
+                const typedEvent = event as unknown as TidyHQEvent;
+                const startDate = new Date(typedEvent.start_at_iso || typedEvent.start_at);
+                const endDate = new Date(typedEvent.end_at_iso || typedEvent.end_at);
                 const isSameDay = startDate.toDateString() === endDate.toDateString();
                 
                 return (
                   <a 
-                    key={event.id} 
-                    href={event.public_url} 
+                    key={typedEvent.id} 
+                    href={typedEvent.public_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="block group"
                   >
                     <Card className="h-full border-none shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
-                      {event.image_url && (
+                      {typedEvent.image_url && (
                         <div className="h-48 overflow-hidden">
                           <img 
-                            src={event.image_url} 
-                            alt={event.name} 
+                            src={typedEvent.image_url} 
+                            alt={typedEvent.name} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             referrerPolicy="no-referrer"
                             loading="lazy"
@@ -59,20 +74,22 @@ export function Events() {
                           </span>
                         </div>
                         <CardTitle className="text-xl text-navy group-hover:text-sky transition-colors line-clamp-2">
-                          {event.name}
+                          {typedEvent.name}
                         </CardTitle>
-                        {event.location && (
+                        {typedEvent.location && (
                           <div className="flex items-center gap-1 text-muted-foreground text-sm mt-2">
                             <MapPin className="w-4 h-4" />
-                            <span className="line-clamp-1">{event.location}</span>
+                            <span className="line-clamp-1">{typedEvent.location}</span>
                           </div>
                         )}
                       </CardHeader>
                       <CardContent className="pt-4 bg-card">
-                        <div 
-                          className="text-foreground-secondary text-sm line-clamp-3 prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: event.body }}
-                        />
+                        <div className="text-foreground-secondary text-sm line-clamp-3 prose prose-sm max-w-none">
+                          <LazyMarkdown 
+                            variant="sanitized"
+                            children={typedEvent.body || ''}
+                          />
+                        </div>
                         <div className="mt-4 text-sky font-semibold text-sm group-hover:underline flex items-center">
                           View Details &rarr;
                         </div>

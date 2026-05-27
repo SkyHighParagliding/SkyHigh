@@ -12,10 +12,13 @@ import { BASEMAPS } from '@/lib/xcMapUtils';
 import type { MapOrientation } from '@/lib/xcMapUtils';
 import { DriverFollower, requestCompassPermission } from '@/components/xcmap/MapHelpers';
 
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 function pilotIcon(name: string, driverName?: string | null, positionSource?: 'phone' | 'satellite') {

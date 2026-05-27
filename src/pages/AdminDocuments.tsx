@@ -203,7 +203,7 @@ export function AdminDocuments() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, handleSearch]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -276,8 +276,8 @@ export function AdminDocuments() {
       setNewFolderName("");
       setCreatingFolder(false);
       fetchSubfolders(selectedCategory, currentPath || undefined);
-    } catch (err: any) {
-      setNewFolderError(err.message || "Failed to create folder. Check your connection and try again.");
+    } catch (err: unknown) {
+      setNewFolderError(err instanceof Error ? err.message : String(err) || "Failed to create folder. Check your connection and try again.");
     } finally {
       setSavingFolder(false);
     }
@@ -904,8 +904,8 @@ function MoveCopyModal({
       }
       setSuccess(true);
       setTimeout(() => onComplete(), 1200);
-    } catch (err: any) {
-      setError(err.message || `Failed to ${mode} file`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err) || `Failed to ${mode} file`);
     } finally {
       setSaving(false);
     }
@@ -1143,8 +1143,8 @@ function UploadModal({
       }
       setNewSubfolderName("");
       setShowNewFolder(false);
-    } catch (err: any) {
-      setError(err.message || "Failed to create folder. Check your connection.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err) || "Failed to create folder. Check your connection.");
     } finally {
       setCreatingSub(false);
     }
@@ -1177,8 +1177,8 @@ function UploadModal({
         throw new Error(data.error || "Upload failed");
       }
       onComplete();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setUploading(false);
     }

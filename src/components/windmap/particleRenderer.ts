@@ -14,7 +14,7 @@ export interface Particle {
   trail: number[][];
 }
 
-export const POOL_PARTICLES = 8000;
+export const POOL_PARTICLES = 2400;
 export const POOL_TRAIL = 60;
 const MARGIN = 80;
 
@@ -93,19 +93,28 @@ export function updateAndDrawParticles(
     }
 
     const [u, v] = windVector;
-    const speedMs = Math.sqrt(u * u + v * v);
-    if (speedMs < 0.01) continue;
-
-    const dirU = u / speedMs;
-    const dirV = v / speedMs;
+    const speedMsSq = u * u + v * v;
+    // Compare squared values instead of calling Math.sqrt for performance
+    if (speedMsSq < 0.0001) continue; // 0.0001 = 0.01^2
+    
+    const speedMs = Math.sqrt(speedMsSq);
+    const reciprocalSpeed = 1.0 / speedMs; // Calculate only once 
+    const dirU = u * reciprocalSpeed;
+    const dirV = v * reciprocalSpeed;
     const moveScale = sp.speed * p.speedMultiplier * Math.min(speedMs / 3.0, 2.5);
 
+    // Store old position once instead of re-copying later
+    const oldX = p.x;
+    const oldY = p.y;
+    
+    // Optimize trail updates by shifting elements more efficiently
     for (let t = POOL_TRAIL - 1; t > 0; t--) {
       p.trail[t][0] = p.trail[t - 1][0];
       p.trail[t][1] = p.trail[t - 1][1];
     }
-    p.trail[0][0] = p.x;
-    p.trail[0][1] = p.y;
+    // Now update with the new position at trail head
+    p.trail[0][0] = oldX;
+    p.trail[0][1] = oldY;
 
     p.x += dirU * moveScale;
     p.y -= dirV * moveScale;

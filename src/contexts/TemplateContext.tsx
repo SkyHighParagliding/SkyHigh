@@ -59,8 +59,14 @@ export function TemplateProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--font-body", tokens["--tmpl-font-body"]);
   }, [template, settings.clubPrimaryColor]);
 
+  const providerValue = useMemo(() => ({
+    template,
+    isWonderfulWhite,
+    isClassic,
+  }), [template, isWonderfulWhite, isClassic]);
+
   return (
-    <TemplateContext.Provider value={{ template, isWonderfulWhite, isClassic }}>
+    <TemplateContext.Provider value={providerValue}>
       {children}
     </TemplateContext.Provider>
   );

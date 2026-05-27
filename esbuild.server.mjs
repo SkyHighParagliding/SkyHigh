@@ -23,6 +23,9 @@ await esbuild.build({
 
 const srcMigrations = path.join('server', 'migrations');
 const distMigrations = path.join('dist', 'migrations');
+const srcPgMigrations = path.join('server', 'pg_migrations');
+const distPgMigrations = path.join('dist', 'pg_migrations');
+
 if (fs.existsSync(srcMigrations)) {
   fs.mkdirSync(distMigrations, { recursive: true });
   const files = fs.readdirSync(srcMigrations).filter(f => f.endsWith('.sql') || f.endsWith('.ts') || f.endsWith('.js'));
@@ -46,6 +49,15 @@ if (fs.existsSync(srcMigrations)) {
   }
 
   console.log(`Copied ${nonTsFiles.length} SQL + transpiled ${tsFiles.length} TS migration files to ${distMigrations}`);
+}
+
+if (fs.existsSync(srcPgMigrations)) {
+  fs.mkdirSync(distPgMigrations, { recursive: true });
+  const files = fs.readdirSync(srcPgMigrations).filter(f => f.endsWith('.sql'));
+  for (const file of files) {
+    fs.copyFileSync(path.join(srcPgMigrations, file), path.join(distPgMigrations, file));
+  }
+  console.log(`Copied ${files.length} SQL migration files to ${distPgMigrations}`);
 }
 
 console.log('Server built to dist/server.mjs');

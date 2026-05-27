@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 import { toast } from 'sonner';
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface Flight {
   id: string;
   pilotId: string;
@@ -17,6 +18,7 @@ export interface Flight {
   altitudeLoss: number;
 }
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface Breadcrumb {
   id: number;
   flightId: string;
@@ -28,6 +30,7 @@ export interface Breadcrumb {
   heading: number;
 }
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface FlightDetail extends Flight {
   breadcrumbs: Breadcrumb[];
 }

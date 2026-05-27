@@ -21,8 +21,8 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 | Flying domain and technical term definitions | [04-glossary.md](04-glossary.md) |
 | Important files and their roles | [05-file-map.md](05-file-map.md) |
 | Admin accounts, credentials, infrastructure | [06-deployment.md](06-deployment.md) |
-| Deployment procedures and migration guides | [07-deployment-guide.md](07-deployment-guide.md) |
-| External integrations (TidyHQ, APIs, webhooks) | [07-integrations.md](07-integrations.md) |
+| Deployment procedures and migration guides | [08-deployment-guide.md](08-deployment-guide.md) |
+| External integrations (TidyHQ, APIs, webhooks) | [09-integrations.md](09-integrations.md) |
 
 ---
 
@@ -82,14 +82,14 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 - **Billing summary:** All service costs and payment methods
 - **⚠️ KEEP SECURE:** Store in password-protected location after deployment completion
 
-### [07-deployment-guide.md](07-deployment-guide.md)
+### [08-deployment-guide.md](08-deployment-guide.md)
 **Operational procedures for deployment and platform migration:**
 - **Firebase Migration:** Step-by-step guide to move from Google Sites to Firebase while keeping old site as backup
 - **DNS migration:** Custom domain setup, A records, SSL provisioning
 - **Site accessibility:** How to keep old site accessible via private Google URL after migration
 - **Migration checklist:** Owner responsibilities, DNS provider steps, verification process
 
-### [07-integrations.md](07-integrations.md)
+### [09-integrations.md](09-integrations.md)
 **External integrations and webhooks:**
 - **TidyHQ Setup:** Access tokens, webhooks, contact/group/shop product sync
 - **Webhook configuration:** Event-driven role sync when TidyHQ group membership changes

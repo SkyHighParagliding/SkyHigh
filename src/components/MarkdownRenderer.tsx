@@ -8,8 +8,7 @@ const sanitizeSchema = {
   tagNames: [...(defaultSchema.tagNames || []), "div", "span"],
   attributes: {
     ...defaultSchema.attributes,
-    div: [...(defaultSchema.attributes?.div || []), "style"],
-    span: [...(defaultSchema.attributes?.span || []), "style"],
+    // style intentionally omitted — rehype-raw + inline styles allow CSS overlay attacks.
   },
 };
 

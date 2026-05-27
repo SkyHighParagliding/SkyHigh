@@ -3,11 +3,7 @@ import L from "leaflet";
 import { usePilotAuth } from "@/contexts/PilotAuthContext";
 import { useDataUsage, trackSSEMessage } from "@/hooks/useDataUsage";
 import { api } from "@/lib/apiClient";
-
-function getDemoRole(): string | null {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('demo');
-}
+import { getDemoRole } from "@/lib/demoConfig";
 
 interface LivePilotData {
   pilotId: string;

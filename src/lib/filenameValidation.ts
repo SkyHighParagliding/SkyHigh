@@ -45,14 +45,19 @@ export function generateCorrectedFilename(filename: string): string {
   return `${datePrefix}_${cleaned}${ext}`;
 }
 
+/**
+ * Rename a File object. Falls back to a Blob with a name property if the
+ * File constructor is unavailable (e.g. in some older environments). The
+ * fallback Blob passes `name` checks but fails `instanceof File`.
+ */
 export function renameFile(file: File, newName: string): File {
   try {
     return new File([file], newName, { type: file.type, lastModified: file.lastModified });
   } catch {
-    const blob: any = new Blob([file], { type: file.type });
+    const blob = new Blob([file], { type: file.type }) as Blob & { name: string; lastModified: number };
     blob.name = newName;
     blob.lastModified = file.lastModified || Date.now();
-    return blob as File;
+    return blob as unknown as File;
   }
 }
 

@@ -180,8 +180,18 @@ export function PilotAuthProvider({ children }: { children: React.ReactNode }) {
     setPilot(data.pilot);
   }, [token]);
 
+  const providerValue = useMemo(() => ({
+    pilot,
+    token,
+    loading,
+    login,
+    register,
+    logout,
+    updateProfile,
+  }), [pilot, token, loading, login, register, logout, updateProfile]);
+
   return (
-    <PilotAuthContext.Provider value={{ pilot, token, loading, login, register, logout, updateProfile }}>
+    <PilotAuthContext.Provider value={providerValue}>
       {children}
     </PilotAuthContext.Provider>
   );

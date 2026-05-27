@@ -85,8 +85,8 @@ export function AdminBranding() {
       }
       await res.json();
       await refreshSettings();
-    } catch (err: any) {
-      setUploadError(err.message);
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : String(err));
     } finally {
       setUploading(false);
       const ref = variant === "light" ? fileLightRef : fileDarkRef;
@@ -120,8 +120,8 @@ export function AdminBranding() {
         throw new Error(data.error || "Upload failed");
       }
       await refreshSettings();
-    } catch (err: any) {
-      setUploadError(err.message);
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : String(err));
     } finally {
       setUploadingPwa(false);
       if (filePwaRef.current) filePwaRef.current.value = "";
@@ -141,8 +141,8 @@ export function AdminBranding() {
     try {
       await updateSettings({ [`logoMode_${templateId}`]: mode });
       setTimeout(() => setLogoModeSaved(null), 2000);
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : String(err));
       setLogoModeSaved(null);
     }
   }

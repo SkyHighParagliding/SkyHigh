@@ -592,12 +592,12 @@ export function Home() {
                 </div>
                 <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--tmpl-heading-color)' }}>{featuredSite.name}</h2>
                 <p className="text-[15px] leading-relaxed line-clamp-4" style={{ color: '#86868b' }}>
-                  {featuredSite.description}
+                  {featuredSite.description || ""}
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--tmpl-heading-color)' }}>
                     <CloudSun className="w-4 h-4" style={{ color: 'var(--tmpl-accent)' }} />
-                    <span>{featuredSite.windDir}</span>
+                    <span>{featuredSite.windDir || "—"}</span>
                   </div>
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--tmpl-heading-color)' }}>
                     <ShieldAlert className="w-4 h-4" style={{ color: 'var(--tmpl-accent)' }} />
@@ -638,12 +638,12 @@ export function Home() {
                 </div>
                 <h2 className="text-4xl font-bold tracking-tight text-orange">{featuredSite.name}</h2>
                 <p className="text-gray-300 text-lg leading-relaxed line-clamp-4">
-                  {featuredSite.description}
+                  {featuredSite.description || ""}
                 </p>
                 <div className="flex flex-wrap gap-4 pt-4">
                   <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg">
                     <CloudSun className="w-5 h-5 text-sky" />
-                    <span className="text-sm font-medium">{featuredSite.windDir}</span>
+                    <span className="text-sm font-medium">{featuredSite.windDir || "—"}</span>
                   </div>
                   <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg">
                     <ShieldAlert className="w-5 h-5 text-orange" />
@@ -674,7 +674,7 @@ export function Home() {
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-sky p-6 rounded-2xl shadow-xl hidden md:block">
                   <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Site Type</p>
-                  <p className="text-xl font-bold">{featuredSite.type}</p>
+                  <p className="text-xl font-bold">{featuredSite.type || "Site"}</p>
                 </div>
               </div>
             </div>

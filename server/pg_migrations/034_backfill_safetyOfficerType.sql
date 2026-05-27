@@ -21,3 +21,4 @@ UPDATE contacts SET "safetyOfficerType" = 'SO'
 WHERE "isSafetyCommittee" = 1
   AND position LIKE '%SO%'
   AND "safetyOfficerType" IS NULL;
+

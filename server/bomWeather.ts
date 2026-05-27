@@ -180,8 +180,10 @@ export async function fetchBomObservation(productCode: string, stationNum: strin
       return null;
     }
 
-    const windSpeed = obs.wind_spd_kt != null ? Math.round(obs.wind_spd_kt) : 0;
-    const windGust = obs.gust_kt != null ? Math.round(obs.gust_kt) : windSpeed;
+    const rawSpeed = Number(obs.wind_spd_kt);
+    const windSpeed = !isNaN(rawSpeed) ? Math.round(rawSpeed) : 0;
+    const rawGust = Number(obs.gust_kt);
+    const windGust = !isNaN(rawGust) ? Math.round(rawGust) : windSpeed;
     const direction = obs.wind_dir || "N/A";
     const stationName = header?.name || `BOM ${stationNum}`;
 

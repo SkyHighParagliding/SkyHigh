@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface NewsItem {
   id: string;
   title: string;

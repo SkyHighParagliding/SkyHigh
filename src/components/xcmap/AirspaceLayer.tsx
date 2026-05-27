@@ -31,34 +31,6 @@ export function AirspaceLayer({ data, altitudeFt, disabledTypes, isRecording, ve
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!isRecording) {
-      if (flashIntervalRef.current) {
-        clearInterval(flashIntervalRef.current);
-        flashIntervalRef.current = null;
-      }
-      return;
-    }
-
-    flashIntervalRef.current = setInterval(() => {
-      flashVisibleRef.current = !flashVisibleRef.current;
-      if (flashLayerRef.current) {
-        const opacity = flashVisibleRef.current ? 1 : 0;
-        flashLayerRef.current.setStyle({
-          fillOpacity: opacity * 0.35,
-          opacity: opacity,
-        });
-      }
-    }, 1000);
-
-    return () => {
-      if (flashIntervalRef.current) {
-        clearInterval(flashIntervalRef.current);
-        flashIntervalRef.current = null;
-      }
-    };
-  }, [isRecording]);
-
-  useEffect(() => {
     function rebuild() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(doRebuild, 200);
@@ -191,12 +163,34 @@ export function AirspaceLayer({ data, altitudeFt, disabledTypes, isRecording, ve
         flashLayer.addTo(map);
         flashLayerRef.current = flashLayer;
       }
+
+      // Start flash interval when flash features exist and recording is active
+      if (flashFeatures.length > 0 && isRecording) {
+        if (flashIntervalRef.current) clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = setInterval(() => {
+          flashVisibleRef.current = !flashVisibleRef.current;
+          if (flashLayerRef.current) {
+            const opacity = flashVisibleRef.current ? 1 : 0;
+            flashLayerRef.current.setStyle({
+              fillOpacity: opacity * 0.35,
+              opacity: opacity,
+            });
+          }
+        }, 1000);
+      } else if (flashIntervalRef.current) {
+        clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = null;
+      }
     }
 
     rebuildRef.current = rebuild;
     rebuild();
 
     return () => {
+      if (flashIntervalRef.current) {
+        clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = null;
+      }
       rebuildRef.current = null;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (solidLayerRef.current) solidLayerRef.current.remove();

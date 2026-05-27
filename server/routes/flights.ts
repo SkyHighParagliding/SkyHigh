@@ -46,7 +46,7 @@ router.post(
       return res.status(400).json({ error: "breadcrumbs array required" });
     }
 
-    const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
+    const sessionToken = req.headers["x-session-token"]; // Only accept from header, not query
     const result = await svc.addBreadcrumbs(req.params.id, breadcrumbs, req.pilot || null, sessionToken);
     if (!result) {
       return res.status(404).json({ error: "Flight not found" });
@@ -104,7 +104,7 @@ router.put(
     const svc = (req.services as Services).flights;
     const rSvc = (req.services as Services).retrievals;
     const { stats } = req.body;
-    const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
+    const sessionToken = req.headers["x-session-token"]; // Only accept from header, not query
 
     const result = await svc.endFlight(req.params.id, stats, req.pilot || null, sessionToken);
     if (!result.ok) {
@@ -131,7 +131,7 @@ router.get(
   optionalAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).flights;
-    const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
+    const sessionToken = req.headers["x-session-token"]; // Only accept from header, not query
     const result = await svc.getFlightWithBreadcrumbs(req.params.id, req.pilot || null, sessionToken);
     if (!result) {
       return res.status(404).json({ error: "Flight not found" });
@@ -149,7 +149,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).flights;
     const pilotId = req.pilot?.id || null;
-    const sessionToken = req.query.sessionToken;
+    const sessionToken = req.headers["x-session-token"]; // Only accept from header, not query
     const flights = await svc.listFlights(pilotId, sessionToken);
     res.json(flights);
   })
@@ -160,7 +160,7 @@ router.delete(
   optionalAuth,
   asyncHandler(async (req: any, res) => {
     const svc = (req.services as Services).flights;
-    const sessionToken = req.headers["x-session-token"] || req.query.sessionToken;
+    const sessionToken = req.headers["x-session-token"]; // Only accept from header, not query
     const result = await svc.deleteFlight(req.params.id, req.pilot || null, sessionToken);
     if (!result.ok) {
       return res.status(result.status || 500).json({ error: result.error });

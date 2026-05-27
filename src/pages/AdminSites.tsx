@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { getClosureStatus } from "@/utils/closureStatus";
+import { Site } from "@/types/api";
 
 interface VersionCheckStatus {
   currentVersion: string | null;
@@ -150,9 +151,58 @@ function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered
   );
 }
 
+interface BulkImportResult {
+  error?: string;
+  message?: string;
+  created?: number;
+  updated?: number;
+  unchanged?: number;
+  errors?: number;
+  skipped?: number;
+  results?: Array<{ name: string; status: string; error?: string }>;
+}
+
+interface DiffEntry {
+  siteId: string;
+  siteName: string;
+  status: "modified" | "added" | "removed";
+  fields: Array<{ field: string; archived: string | null; current: string | null }>;
+}
+
+interface DiffData {
+  version: string;
+  totalDiffs: number;
+  diffs: DiffEntry[];
+}
+
+interface WtfComparison {
+  siteId: string;
+  siteName: string;
+  wtfSiteName: string;
+  currentWindSpeed: string;
+  wtfWindSpeed: string;
+  changed: boolean;
+}
+
+interface WtfData {
+  error?: string;
+  success?: boolean;
+  wtfSiteCount?: number;
+  matchedCount?: number;
+  changedCount: number;
+  comparisons: WtfComparison[];
+}
+
+interface WtfApplyResult {
+  error?: string;
+  success?: boolean;
+  updated?: number;
+  results?: Array<{ siteId: string; name: string; oldSpeed: string; newSpeed: string }>;
+}
+
 export function AdminSites() {
   const { token } = useAuth();
-  const [sites, setSites] = useState<any[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [siteToDelete, setSiteToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [hideClosedSites, setHideClosedSites] = useState(false);
@@ -162,7 +212,7 @@ export function AdminSites() {
   const [externalSites, setExternalSites] = useState<{name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [bulkImporting, setBulkImporting] = useState(false);
-  const [bulkImportResult, setBulkImportResult] = useState<any>(null);
+  const [bulkImportResult, setBulkImportResult] = useState<BulkImportResult | null>(null);
   const [bulkRemaining, setBulkRemaining] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
   const [bulkCurrentSite, setBulkCurrentSite] = useState("");
@@ -174,21 +224,21 @@ export function AdminSites() {
   const [restoring, setRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
-  const [diffData, setDiffData] = useState<any>(null);
+  const [diffData, setDiffData] = useState<DiffData | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
   const [showDiffModal, setShowDiffModal] = useState(false);
   const [expandedDiffs, setExpandedDiffs] = useState<Set<string>>(new Set());
 
   const [wtfLoading, setWtfLoading] = useState(false);
-  const [wtfData, setWtfData] = useState<any>(null);
+  const [wtfData, setWtfData] = useState<WtfData | null>(null);
   const [wtfApplying, setWtfApplying] = useState(false);
-  const [wtfApplyResult, setWtfApplyResult] = useState<any>(null);
+  const [wtfApplyResult, setWtfApplyResult] = useState<WtfApplyResult | null>(null);
   const [wtfSelectedIds, setWtfSelectedIds] = useState<Set<string>>(new Set());
   const [wtfShowAll, setWtfShowAll] = useState(false);
 
   useEffect(() => {
     api.get<{ data: Array<Record<string, unknown>> }>('/api/sites?limit=500')
-      .then(response => setSites(response.data))
+      .then(response => setSites(response.data as unknown as Site[]))
       .catch(() => {});
     api.get<Record<string, string>>('/api/settings')
       .then(data => {
@@ -199,14 +249,14 @@ export function AdminSites() {
       })
       .catch(() => {});
     api.get<Array<Record<string, unknown>>>('/api/external-sites')
-      .then(setExternalSites)
+      .then(data => setExternalSites(data as {name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]))
       .catch(err => console.error("Failed to fetch external sites", err));
   }, []);
 
   useEffect(() => {
     if (token) {
       api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-        .then(setArchives)
+        .then(data => setArchives(data as unknown as ArchiveEntry[]))
         .catch(() => {});
     }
   }, [token]);
@@ -238,17 +288,17 @@ export function AdminSites() {
           setBulkImportResult({ error: "Import process ended unexpectedly" });
           return;
         }
-        setBulkRemaining(data.remaining);
-        setBulkTotal(data.total);
-        setBulkCurrentSite(data.currentSite ? `${data.currentSite}` : "");
+        setBulkRemaining(data.remaining as number);
+        setBulkTotal(data.total as number);
+        setBulkCurrentSite(data.currentSite ? String(data.currentSite) : "");
         if (data.done) {
           stopPolling();
           setBulkImporting(false);
-          setBulkImportResult(data.summary);
-          api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
+          setBulkImportResult(data.summary as unknown as BulkImportResult);
+          api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
           if (token) {
             api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-              .then(setArchives)
+              .then(data => setArchives(data as unknown as ArchiveEntry[]))
               .catch(() => {});
           }
         }
@@ -273,7 +323,7 @@ export function AdminSites() {
       if (data.success) {
         setRefreshMessage({ type: "success", text: `Successfully refreshed site list. Found ${data.count} sites.` });
         api.get<Array<Record<string, unknown>>>('/api/external-sites')
-          .then(setExternalSites)
+          .then(data => setExternalSites(data as unknown as {name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]))
           .catch(() => {});
       } else {
         setRefreshMessage({ type: "error", text: `Failed to refresh sites: ${data.error}` });
@@ -295,17 +345,17 @@ export function AdminSites() {
     try {
       const data = await api.post<Record<string, unknown>>("/api/sites/bulk-import", { state: selectedState }, token);
       if (data.message) {
-        setBulkImportResult(data);
+        setBulkImportResult(data as unknown as BulkImportResult);
         setBulkImporting(false);
         return;
       }
       if (data.started) {
-        setBulkTotal(data.total);
-        setBulkRemaining(data.total);
+        setBulkTotal(data.total as number);
+        setBulkRemaining(data.total as number);
         startPolling();
       }
-    } catch (e: any) {
-      setBulkImportResult({ error: e.message });
+    } catch (e: unknown) {
+      setBulkImportResult({ error: e instanceof Error ? e.message : String(e) });
       setBulkImporting(false);
     }
   };
@@ -318,9 +368,9 @@ export function AdminSites() {
     try {
       const data = await api.post<{ restored: number; version: string }>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/restore`, {}, token);
       setRestoreMessage({ type: "success", text: `Restored ${data.restored} sites from archive version ${data.version}.` });
-      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
+      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
       api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-        .then(setArchives)
+        .then(data => setArchives(data as unknown as ArchiveEntry[]))
         .catch(() => {});
     } catch (e: unknown) {
       setRestoreMessage({ type: "error", text: e instanceof Error ? e.message : "Restore failed" });
@@ -335,7 +385,7 @@ export function AdminSites() {
     setDiffData(null);
     try {
       const data = await api.get<Record<string, unknown>>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/diff`, token);
-      setDiffData(data);
+      setDiffData(data as unknown as DiffData);
       setExpandedDiffs(new Set());
       setShowDiffModal(true);
     } catch (e: unknown) {
@@ -362,11 +412,12 @@ export function AdminSites() {
     try {
       const data = await api.post<Record<string, unknown>>("/api/sites/wtf-compare", {}, token);
       if (!data.success) throw new Error((data.error as string) || "Failed to fetch WTF data");
-      setWtfData(data);
-      const changedIds = new Set(data.comparisons.filter((c: any) => c.changed).map((c: any) => c.siteId));
+      setWtfData(data as unknown as WtfData);
+      const comparisons = data.comparisons as unknown as WtfComparison[];
+      const changedIds = new Set<string>(comparisons.filter(c => c.changed).map(c => c.siteId));
       setWtfSelectedIds(changedIds);
-    } catch (e: any) {
-      setWtfData({ error: e.message });
+    } catch (e: unknown) {
+      setWtfData({ error: e instanceof Error ? e.message : String(e) } as WtfData);
     } finally {
       setWtfLoading(false);
     }
@@ -381,7 +432,8 @@ export function AdminSites() {
       if (!data.success) throw new Error((data.error as string) || "Failed to apply WTF data");
       setWtfApplyResult(data);
       toast.success("WTF data applied");
-      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
+      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
+      setWtfApplyResult(data as unknown as WtfApplyResult);
     } catch (e: unknown) {
       setWtfApplyResult({ error: e instanceof Error ? e.message : "Failed" });
     } finally {
@@ -533,7 +585,7 @@ export function AdminSites() {
                 {bulkImportResult.message || `Import complete: ${bulkImportResult.created} created, ${bulkImportResult.updated} updated${bulkImportResult.unchanged ? `, ${bulkImportResult.unchanged} unchanged` : ''}, ${bulkImportResult.errors} errors, ${bulkImportResult.skipped} skipped`}
               </div>
               <div className="max-h-[200px] overflow-y-auto space-y-1">
-                {bulkImportResult.results?.map((r: any, i: number) => (
+                {bulkImportResult.results?.map((r: { name: string; status: string; error?: string }, i: number) => (
                   <div key={i} className={`text-xs px-2 py-1 rounded ${r.status === 'created' ? 'bg-emerald-100 text-emerald-700' : r.status === 'updated' ? 'bg-blue-100 text-blue-700' : r.status === 'unchanged' ? 'bg-slate-100 text-slate-500' : r.status === 'skipped' ? 'bg-muted text-muted-foreground' : 'bg-red-100 text-red-700'}`}>
                     {r.name}: {r.status}{r.error ? ` — ${r.error}` : ''}
                   </div>
@@ -648,10 +700,10 @@ export function AdminSites() {
                           <th className="p-2 w-8">
                             <input
                               type="checkbox"
-                              checked={wtfData.comparisons.filter((c: any) => c.changed).every((c: any) => wtfSelectedIds.has(c.siteId))}
+                              checked={wtfData.comparisons.filter((c: WtfComparison) => c.changed).every((c: WtfComparison) => wtfSelectedIds.has(c.siteId))}
                               onChange={() => {
-                                const changedIds = wtfData.comparisons.filter((c: any) => c.changed).map((c: any) => c.siteId);
-                                const allSelected = changedIds.every((id: number) => wtfSelectedIds.has(id));
+                                const changedIds = wtfData.comparisons.filter((c: WtfComparison) => c.changed).map((c: WtfComparison) => c.siteId);
+                                const allSelected = changedIds.every((id: string) => wtfSelectedIds.has(id));
                                 setWtfSelectedIds(allSelected ? new Set() : new Set(changedIds));
                               }}
                               className="w-4 h-4 rounded border-border text-sky focus:ring-1 focus:ring-sky"
@@ -666,8 +718,8 @@ export function AdminSites() {
                       </thead>
                       <tbody>
                         {wtfData.comparisons
-                          .filter((c: any) => wtfShowAll || c.changed)
-                          .map((c: any) => (
+                          .filter((c: WtfComparison) => wtfShowAll || c.changed)
+                          .map((c: WtfComparison) => (
                             <tr key={c.siteId} className={`border-b border-border last:border-0 ${c.changed ? '' : 'opacity-60'}`}>
                               <td className="p-2">
                                 {c.changed && (
@@ -712,7 +764,7 @@ export function AdminSites() {
               {wtfApplyResult && !wtfApplyResult.error && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg space-y-1">
                   <div className="text-sm font-medium text-emerald-700">Updated {wtfApplyResult.updated} site{wtfApplyResult.updated !== 1 ? 's' : ''}</div>
-                  {wtfApplyResult.results?.map((r: any) => (
+                  {wtfApplyResult.results?.map((r: { siteId: string; name: string; oldSpeed: string; newSpeed: string }) => (
                     <div key={r.siteId} className="text-xs text-emerald-600">{r.name}: {r.oldSpeed} → {r.newSpeed}</div>
                   ))}
                 </div>
@@ -907,23 +959,23 @@ export function AdminSites() {
               ) : (
                 <>
                   <div className="flex gap-3 text-xs mb-4">
-                    {diffData.diffs.filter((d: any) => d.status === "modified").length > 0 && (
+                    {diffData.diffs.filter((d: DiffEntry) => d.status === "modified").length > 0 && (
                       <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded font-medium">
-                        {diffData.diffs.filter((d: any) => d.status === "modified").length} Modified
+                        {diffData.diffs.filter((d: DiffEntry) => d.status === "modified").length} Modified
                       </span>
                     )}
-                    {diffData.diffs.filter((d: any) => d.status === "added").length > 0 && (
+                    {diffData.diffs.filter((d: DiffEntry) => d.status === "added").length > 0 && (
                       <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded font-medium">
-                        {diffData.diffs.filter((d: any) => d.status === "added").length} Added (new)
+                        {diffData.diffs.filter((d: DiffEntry) => d.status === "added").length} Added (new)
                       </span>
                     )}
-                    {diffData.diffs.filter((d: any) => d.status === "removed").length > 0 && (
+                    {diffData.diffs.filter((d: DiffEntry) => d.status === "removed").length > 0 && (
                       <span className="px-2 py-1 bg-red-100 text-red-800 rounded font-medium">
-                        {diffData.diffs.filter((d: any) => d.status === "removed").length} Removed
+                        {diffData.diffs.filter((d: DiffEntry) => d.status === "removed").length} Removed
                       </span>
                     )}
                   </div>
-                  {diffData.diffs.map((diff: any) => (
+                  {diffData.diffs.map((diff: DiffEntry) => (
                     <div key={diff.siteId} className="border border-border rounded-lg overflow-hidden">
                       <button
                         className="w-full flex items-center gap-2 p-3 text-left hover:bg-muted/50 transition-colors"
@@ -955,8 +1007,8 @@ export function AdminSites() {
                               </tr>
                             </thead>
                             <tbody>
-                              {diff.fields.map((f: any) => {
-                                const isEmpty = (v: any) => v === null || v === "" || v === undefined;
+                              {diff.fields.map((f: { field: string; archived: string | null; current: string | null }) => {
+                                const isEmpty = (v: unknown) => v === null || v === "" || v === undefined;
                                 const changeType = isEmpty(f.archived) && !isEmpty(f.current) ? "Added" :
                                   !isEmpty(f.archived) && isEmpty(f.current) ? "Removed" : "Changed";
                                 return (

@@ -1,9 +1,689 @@
 [
   {
+    "id": 64,
+    "name": "Alexandra Headland",
+    "url": "https://siteguide.org.au/Sites/Details/Alexandra%20Headland",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 106,
+    "name": "Arthurs Seat",
+    "url": "https://siteguide.org.au/Sites/Details/Arthurs%20Seat",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 220,
+    "name": "Avalon",
+    "url": "https://siteguide.org.au/Sites/Details/Avalon",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 179,
+    "name": "Back Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Back%20Beach",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 72,
+    "name": "Barn Hill (The Bluff)",
+    "url": "https://siteguide.org.au/Sites/Details/Barn%20Hill%20(The%20Bluff)",
+    "state": "South Australia",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 25,
+    "name": "Bartletts Reserve - NE Bonnys",
+    "url": "https://siteguide.org.au/Sites/Details/Bartletts%20Reserve%20-%20NE%20Bonnys",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 147,
+    "name": "Barwon Heads (13th Beach)",
+    "url": "https://siteguide.org.au/Sites/Details/Barwon%20Heads%20(13th%20Beach)",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 215,
+    "name": "Bastion",
+    "url": "https://siteguide.org.au/Sites/Details/Bastion",
+    "state": "Western Australia > North-West > Kimberley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 60,
+    "name": "Beechmont - Rosin's Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Beechmont%20-%20Rosin%27s%20Lookout",
+    "state": "Queensland > South Queensland > Canungra",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 148,
+    "name": "Bells Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Bells%20Beach",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 149,
+    "name": "Bells Beach - Winkipop",
+    "url": "https://siteguide.org.au/Sites/Details/Bells%20Beach%20-%20Winkipop",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 162,
+    "name": "Ben More",
+    "url": "https://siteguide.org.au/Sites/Details/Ben%20More",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 163,
+    "name": "Ben Nevis",
+    "url": "https://siteguide.org.au/Sites/Details/Ben%20Nevis",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 164,
+    "name": "Birchip Tow Paddock",
+    "url": "https://siteguide.org.au/Sites/Details/Birchip%20Tow%20Paddock",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 79,
+    "name": "Bothwell Flying Site 1",
+    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%201",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 80,
+    "name": "Bothwell Flying Site 2",
+    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%202",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 81,
+    "name": "Bothwell Flying Site 3",
+    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%203",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 93,
+    "name": "Brighton Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Brighton%20Flying%20Site",
+    "state": "Tasmania > South",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 16,
+    "name": "Broadwater National Park",
+    "url": "https://siteguide.org.au/Sites/Details/Broadwater%20National%20Park",
+    "state": "New South Wales > Far North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 202,
+    "name": "Brunswick Junction",
+    "url": "https://siteguide.org.au/Sites/Details/Brunswick%20Junction",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 65,
+    "name": "Buchy's, at Gerrards Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Buchy%27s,%20at%20Gerrards%20Lookout%20",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 203,
+    "name": "Bunbury Back Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Bunbury%20Back%20Beach",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 39,
+    "name": "Bungan",
+    "url": "https://siteguide.org.au/Sites/Details/Bungan",
+    "state": "New South Wales > Northern Beaches",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 221,
+    "name": "Burns Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Burns%20Beach",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 107,
+    "name": "Cairns Bay",
+    "url": "https://siteguide.org.au/Sites/Details/Cairns%20Bay",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 48,
+    "name": "Cambewarra",
+    "url": "https://siteguide.org.au/Sites/Details/Cambewarra",
+    "state": "New South Wales > South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 214,
+    "name": "Cape Couvier",
+    "url": "https://siteguide.org.au/Sites/Details/Cape%20Couvier",
+    "state": "Western Australia > North-West > Gascoyne",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 73,
+    "name": "Cape Jervis",
+    "url": "https://siteguide.org.au/Sites/Details/Cape%20Jervis",
+    "state": "South Australia",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 108,
+    "name": "Cape Liptrap",
+    "url": "https://siteguide.org.au/Sites/Details/Cape%20Liptrap",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 34,
+    "name": "Catherine Hill Bay (Catho's)",
+    "url": "https://siteguide.org.au/Sites/Details/Catherine%20Hill%20Bay%20(Catho%27s)",
+    "state": "New South Wales > Newcastle",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 165,
+    "name": "Cave Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Cave%20Hill",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 194,
+    "name": "City View",
+    "url": "https://siteguide.org.au/Sites/Details/City%20View",
+    "state": "Western Australia > Geraldton and Midwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 166,
+    "name": "Colliers Gap",
+    "url": "https://siteguide.org.au/Sites/Details/Colliers%20Gap",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 47,
+    "name": "Conargo (Deniliquin)",
+    "url": "https://siteguide.org.au/Sites/Details/Conargo%20(Deniliquin)",
+    "state": "New South Wales > Riverina",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 204,
+    "name": "Conto Springs",
+    "url": "https://siteguide.org.au/Sites/Details/Conto%20Springs",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 40,
+    "name": "Cooks Terrace",
+    "url": "https://siteguide.org.au/Sites/Details/Cooks%20Terrace",
+    "state": "New South Wales > Northern Beaches",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 205,
+    "name": "Cosy Corner",
+    "url": "https://siteguide.org.au/Sites/Details/Cosy%20Corner",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 222,
+    "name": "Cottesloe",
+    "url": "https://siteguide.org.au/Sites/Details/Cottesloe",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 15,
+    "name": "Crackneck Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Crackneck%20Lookout",
+    "state": "New South Wales > Central Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 109,
+    "name": "Craigie Rd, Mt Martha",
+    "url": "https://siteguide.org.au/Sites/Details/Craigie%20Rd,%20Mt%20Martha",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 26,
+    "name": "Crescent Head",
+    "url": "https://siteguide.org.au/Sites/Details/Crescent%20Head",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 58,
+    "name": "Dalby Aerodrome",
+    "url": "https://siteguide.org.au/Sites/Details/Dalby%20Aerodrome",
+    "state": "Queensland > South Queensland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 206,
+    "name": "Dalyellup",
+    "url": "https://siteguide.org.au/Sites/Details/Dalyellup",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 87,
+    "name": "Devonport Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Devonport%20Flying%20Site",
+    "state": "Tasmania > North",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 180,
+    "name": "Dingo's Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Dingo%27s%20Beach",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 119,
+    "name": "Dunvegan Road, Phillip Island",
+    "url": "https://siteguide.org.au/Sites/Details/Dunvegan%20Road,%20Phillip%20Island",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 125,
+    "name": "Eagle Rise",
+    "url": "https://siteguide.org.au/Sites/Details/Eagle%20Rise",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 110,
+    "name": "Eagles Nest",
+    "url": "https://siteguide.org.au/Sites/Details/Eagles%20Nest",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 167,
+    "name": "Elmhurst Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Elmhurst%20Hill",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 74,
+    "name": "Eucla",
+    "url": "https://siteguide.org.au/Sites/Details/Eucla",
+    "state": "South Australia",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 150,
+    "name": "Eumeralla (Red Rocks)",
+    "url": "https://siteguide.org.au/Sites/Details/Eumeralla%20(Red%20Rocks)",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 55,
+    "name": "Eungella",
+    "url": "https://siteguide.org.au/Sites/Details/Eungella",
+    "state": "Queensland > North Queensland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 120,
+    "name": "Fisher Street, Phillip Island",
+    "url": "https://siteguide.org.au/Sites/Details/Fisher%20Street,%20Phillip%20Island",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 151,
+    "name": "Flaxmans Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Flaxmans%20Hill",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 111,
+    "name": "Flinders Golf Club",
+    "url": "https://siteguide.org.au/Sites/Details/Flinders%20Golf%20Club",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 112,
+    "name": "Flinders Monument",
+    "url": "https://siteguide.org.au/Sites/Details/Flinders%20Monument",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 61,
+    "name": "Flying Fox",
+    "url": "https://siteguide.org.au/Sites/Details/Flying%20Fox",
+    "state": "Queensland > South Queensland > Canungra",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 191,
+    "name": "Frenchman's Peak",
+    "url": "https://siteguide.org.au/Sites/Details/Frenchman%27s%20Peak",
+    "state": "Western Australia > Esperance",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 56,
+    "name": "Gillies Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Gillies%20Lookout",
+    "state": "Queensland > North Queensland > Cairns",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 223,
+    "name": "Gingin",
+    "url": "https://siteguide.org.au/Sites/Details/Gingin",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 20,
+    "name": "Glennies Ridge - Lake St Clair (Little Europe)",
+    "url": "https://siteguide.org.au/Sites/Details/Glennies%20Ridge%20-%20Lake%20St%20Clair%20(Little%20Europe)",
+    "state": "New South Wales > Hunter Valley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 168,
+    "name": "Gordon",
+    "url": "https://siteguide.org.au/Sites/Details/Gordon",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 169,
+    "name": "Grampians",
+    "url": "https://siteguide.org.au/Sites/Details/Grampians",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 152,
+    "name": "Grannies Grave",
+    "url": "https://siteguide.org.au/Sites/Details/Grannies%20Grave",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 27,
+    "name": "Grants Headland - SE Bonnys",
+    "url": "https://siteguide.org.au/Sites/Details/Grants%20Headland%20-%20SE%20Bonnys",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 126,
+    "name": "Great Missenden (Previously known as Landscape)",
+    "url": "https://siteguide.org.au/Sites/Details/Great%20Missenden%20(Previously%20known%20as%20Landscape)",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 207,
+    "name": "Greenhills",
+    "url": "https://siteguide.org.au/Sites/Details/Greenhills",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 121,
+    "name": "Grossard Point, Phillip Island",
+    "url": "https://siteguide.org.au/Sites/Details/Grossard%20Point,%20Phillip%20Island",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 127,
+    "name": "Gundowring (Savhill)",
+    "url": "https://siteguide.org.au/Sites/Details/Gundowring%20(Savhill)",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 28,
+    "name": "Harrys Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Harrys%20Lookout",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 49,
+    "name": "Hill 60",
+    "url": "https://siteguide.org.au/Sites/Details/Hill%2060",
+    "state": "New South Wales > South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 62,
+    "name": "Hinchcliffe's (Hart's, Flattop)",
+    "url": "https://siteguide.org.au/Sites/Details/Hinchcliffe%27s%20(Hart%27s,%20Flattop)",
+    "state": "Queensland > South Queensland > Canungra",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 94,
+    "name": "Hobart Flying Site 1",
+    "url": "https://siteguide.org.au/Sites/Details/Hobart%20Flying%20Site%201",
+    "state": "Tasmania > South",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
     "id": 1,
     "name": "Honeysuckle",
     "url": "https://siteguide.org.au/Sites/Details/Honeysuckle",
     "state": "Australian Capital Territory - Canberra and NSW surrounds",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 195,
+    "name": "Horrocks Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Horrocks%20Beach",
+    "state": "Western Australia > Geraldton and Midwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 21,
+    "name": "Hunter Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Hunter%20Lookout",
+    "state": "New South Wales > Hunter Valley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 29,
+    "name": "Indian Head",
+    "url": "https://siteguide.org.au/Sites/Details/Indian%20Head",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 208,
+    "name": "Injidup",
+    "url": "https://siteguide.org.au/Sites/Details/Injidup",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 88,
+    "name": "Irishtown Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Irishtown%20Flying%20Site",
+    "state": "Tasmania > North",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 82,
+    "name": "Jericho Flying Site 1",
+    "url": "https://siteguide.org.au/Sites/Details/Jericho%20Flying%20Site%201",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 153,
+    "name": "Johanna",
+    "url": "https://siteguide.org.au/Sites/Details/Johanna",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 196,
+    "name": "Kalbarri North Coastal - Zuytdorp Sea Cliffs",
+    "url": "https://siteguide.org.au/Sites/Details/Kalbarri%20North%20Coastal%20-%20Zuytdorp%20Sea%20Cliffs",
+    "state": "Western Australia > Geraldton and Midwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 197,
+    "name": "Kalbarri South Sea Cliffs",
+    "url": "https://siteguide.org.au/Sites/Details/Kalbarri%20South%20Sea%20Cliffs",
+    "state": "Western Australia > Geraldton and Midwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 201,
+    "name": "Kalgoorlie - Lake Perkolilly",
+    "url": "https://siteguide.org.au/Sites/Details/Kalgoorlie%20-%20Lake%20Perkolilly",
+    "state": "Western Australia > Goldfields",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 113,
+    "name": "Kilcunda",
+    "url": "https://siteguide.org.au/Sites/Details/Kilcunda",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 59,
+    "name": "Killarney",
+    "url": "https://siteguide.org.au/Sites/Details/Killarney",
+    "state": "Queensland > South Queensland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -40,90 +720,18 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 6,
-    "name": "One Tree Hill, Gungahlin",
-    "url": "https://siteguide.org.au/Sites/Details/One%20Tree%20Hill,%20Gungahlin",
-    "state": "Australian Capital Territory - Canberra and NSW surrounds",
+    "id": 95,
+    "name": "Lauderdale Flying Site 1",
+    "url": "https://siteguide.org.au/Sites/Details/Lauderdale%20Flying%20Site%201",
+    "state": "Tasmania > South",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 7,
-    "name": "Pig Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Pig%20Hill",
-    "state": "Australian Capital Territory - Canberra and NSW surrounds",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 8,
-    "name": "Spring Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Spring%20Hill",
-    "state": "Australian Capital Territory - Canberra and NSW surrounds",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 9,
-    "name": "Mount Ovens",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Ovens",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 10,
-    "name": "Mount Rankin",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Rankin",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 11,
-    "name": "Mt Blackheath",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Blackheath",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 12,
-    "name": "Sofala",
-    "url": "https://siteguide.org.au/Sites/Details/Sofala",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 13,
-    "name": "Table Rock",
-    "url": "https://siteguide.org.au/Sites/Details/Table%20Rock",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 14,
-    "name": "Wolgan",
-    "url": "https://siteguide.org.au/Sites/Details/Wolgan",
-    "state": "New South Wales > Blue Mountains",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 15,
-    "name": "Crackneck Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Crackneck%20Lookout",
-    "state": "New South Wales > Central Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 16,
-    "name": "Broadwater National Park",
-    "url": "https://siteguide.org.au/Sites/Details/Broadwater%20National%20Park",
-    "state": "New South Wales > Far North Coast",
+    "id": 96,
+    "name": "Lauderdale Flying Site 2",
+    "url": "https://siteguide.org.au/Sites/Details/Lauderdale%20Flying%20Site%202",
+    "state": "Tasmania > South",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -136,186 +744,26 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 18,
-    "name": "Montes",
-    "url": "https://siteguide.org.au/Sites/Details/Montes",
-    "state": "New South Wales > Far North Coast",
+    "id": 154,
+    "name": "Levy's Point Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Levy%27s%20Point%20Beach",
+    "state": "Victoria > West Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 19,
-    "name": "Possums",
-    "url": "https://siteguide.org.au/Sites/Details/Possums",
-    "state": "New South Wales > Far North Coast",
+    "id": 128,
+    "name": "Locksley Field",
+    "url": "https://siteguide.org.au/Sites/Details/Locksley%20Field",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 20,
-    "name": "Glennies Ridge - Lake St Clair (Little Europe)",
-    "url": "https://siteguide.org.au/Sites/Details/Glennies%20Ridge%20-%20Lake%20St%20Clair%20(Little%20Europe)",
-    "state": "New South Wales > Hunter Valley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 21,
-    "name": "Hunter Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Hunter%20Lookout",
-    "state": "New South Wales > Hunter Valley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 22,
-    "name": "NNE Heaton Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/NNE%20Heaton%20Lookout",
-    "state": "New South Wales > Hunter Valley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 23,
-    "name": "SE Heaton Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/SE%20Heaton%20Lookout",
-    "state": "New South Wales > Hunter Valley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 24,
-    "name": "West Heaton Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/West%20Heaton%20Lookout",
-    "state": "New South Wales > Hunter Valley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 25,
-    "name": "Bartletts Reserve - NE Bonnys",
-    "url": "https://siteguide.org.au/Sites/Details/Bartletts%20Reserve%20-%20NE%20Bonnys",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 26,
-    "name": "Crescent Head",
-    "url": "https://siteguide.org.au/Sites/Details/Crescent%20Head",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 27,
-    "name": "Grants Headland - SE Bonnys",
-    "url": "https://siteguide.org.au/Sites/Details/Grants%20Headland%20-%20SE%20Bonnys",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 28,
-    "name": "Harrys Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Harrys%20Lookout",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 29,
-    "name": "Indian Head",
-    "url": "https://siteguide.org.au/Sites/Details/Indian%20Head",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 30,
-    "name": "Middle brother",
-    "url": "https://siteguide.org.au/Sites/Details/Middle%20brother",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 31,
-    "name": "Nellies",
-    "url": "https://siteguide.org.au/Sites/Details/Nellies",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 32,
-    "name": "North Brother Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/North%20Brother%20Lookout",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 33,
-    "name": "Rocky Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Rocky%20Beach",
-    "state": "New South Wales > Mid North Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 34,
-    "name": "Catherine Hill Bay (Catho's)",
-    "url": "https://siteguide.org.au/Sites/Details/Catherine%20Hill%20Bay%20(Catho%27s)",
-    "state": "New South Wales > Newcastle",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 35,
-    "name": "Merewether - Hickson Street Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/%20Merewether%20-%20Hickson%20Street%20Lookout",
-    "state": "New South Wales > Newcastle",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 36,
-    "name": "Moonee Moonee",
-    "url": "https://siteguide.org.au/Sites/Details/Moonee%20Moonee",
-    "state": "New South Wales > Newcastle",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 37,
-    "name": "Strzelecki lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Strzelecki%20lookout",
-    "state": "New South Wales > Newcastle",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 38,
-    "name": "Manilla - Mt Borah",
-    "url": "https://siteguide.org.au/Sites/Details/Manilla%20-%20Mt%20Borah",
-    "state": "New South Wales > New England",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 39,
-    "name": "Bungan",
-    "url": "https://siteguide.org.au/Sites/Details/Bungan",
-    "state": "New South Wales > Northern Beaches",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 40,
-    "name": "Cooks Terrace",
-    "url": "https://siteguide.org.au/Sites/Details/Cooks%20Terrace",
-    "state": "New South Wales > Northern Beaches",
+    "id": 155,
+    "name": "Logans Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Logans%20Beach",
+    "state": "Victoria > West Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -336,82 +784,18 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 43,
-    "name": "Mona Vale",
-    "url": "https://siteguide.org.au/Sites/Details/Mona%20Vale",
-    "state": "New South Wales > Northern Beaches",
+    "id": 181,
+    "name": "Lowlands Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Lowlands%20Beach",
+    "state": "Western Australia > Albany and South Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 44,
-    "name": "Newport",
-    "url": "https://siteguide.org.au/Sites/Details/Newport",
-    "state": "New South Wales > Northern Beaches",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 45,
-    "name": "Turimetta",
-    "url": "https://siteguide.org.au/Sites/Details/Turimetta",
-    "state": "New South Wales > Northern Beaches",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 46,
-    "name": "Warriewood",
-    "url": "https://siteguide.org.au/Sites/Details/Warriewood",
-    "state": "New South Wales > Northern Beaches",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 47,
-    "name": "Conargo (Deniliquin)",
-    "url": "https://siteguide.org.au/Sites/Details/Conargo%20(Deniliquin)",
-    "state": "New South Wales > Riverina",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 48,
-    "name": "Cambewarra",
-    "url": "https://siteguide.org.au/Sites/Details/Cambewarra",
-    "state": "New South Wales > South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 49,
-    "name": "Hill 60",
-    "url": "https://siteguide.org.au/Sites/Details/Hill%2060",
-    "state": "New South Wales > South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 50,
-    "name": "Stanwell Park - Bald Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Stanwell%20Park%20-%20Bald%20Hill",
-    "state": "New South Wales > South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 51,
-    "name": "Tongarra",
-    "url": "https://siteguide.org.au/Sites/Details/Tongarra",
-    "state": "New South Wales > South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 52,
-    "name": "Mt Gillen - West Gap, South Face",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Gillen%20-%20West%20Gap,%20South%20Face",
-    "state": "Northern Territory > Alice Springs",
+    "id": 198,
+    "name": "Lynton Farm",
+    "url": "https://siteguide.org.au/Sites/Details/Lynton%20Farm",
+    "state": "Western Australia > Geraldton and Midwest",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -424,74 +808,322 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 54,
-    "name": "Wilson's",
-    "url": "https://siteguide.org.au/Sites/Details/Wilson%27s",
-    "state": "Queensland",
+    "id": 38,
+    "name": "Manilla - Mt Borah",
+    "url": "https://siteguide.org.au/Sites/Details/Manilla%20-%20Mt%20Borah",
+    "state": "New South Wales > New England",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 55,
-    "name": "Eungella",
-    "url": "https://siteguide.org.au/Sites/Details/Eungella",
-    "state": "Queensland > North Queensland",
+    "id": 129,
+    "name": "Manny's",
+    "url": "https://siteguide.org.au/Sites/Details/Manny%27s",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 56,
-    "name": "Gillies Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Gillies%20Lookout",
-    "state": "Queensland > North Queensland > Cairns",
+    "id": 156,
+    "name": "Marriners Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Marriners%20Lookout",
+    "state": "Victoria > West Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 57,
-    "name": "Rex Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Rex%20Lookout",
-    "state": "Queensland > North Queensland > Cairns",
+    "id": 231,
+    "name": "Masters",
+    "url": "https://siteguide.org.au/Sites/Details/Masters",
+    "state": "Western Australia > Wheatbelt",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 58,
-    "name": "Dalby Aerodrome",
-    "url": "https://siteguide.org.au/Sites/Details/Dalby%20Aerodrome",
-    "state": "Queensland > South Queensland",
+    "id": 114,
+    "name": "Mentone",
+    "url": "https://siteguide.org.au/Sites/Details/Mentone",
+    "state": "Victoria > East Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 59,
-    "name": "Killarney",
-    "url": "https://siteguide.org.au/Sites/Details/Killarney",
-    "state": "Queensland > South Queensland",
+    "id": 35,
+    "name": "Merewether - Hickson Street Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/%20Merewether%20-%20Hickson%20Street%20Lookout",
+    "state": "New South Wales > Newcastle",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 60,
-    "name": "Beechmont - Rosin's Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Beechmont%20-%20Rosin%27s%20Lookout",
-    "state": "Queensland > South Queensland > Canungra",
+    "id": 30,
+    "name": "Middle brother",
+    "url": "https://siteguide.org.au/Sites/Details/Middle%20brother",
+    "state": "New South Wales > Mid North Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 61,
-    "name": "Flying Fox",
-    "url": "https://siteguide.org.au/Sites/Details/Flying%20Fox",
-    "state": "Queensland > South Queensland > Canungra",
+    "id": 43,
+    "name": "Mona Vale",
+    "url": "https://siteguide.org.au/Sites/Details/Mona%20Vale",
+    "state": "New South Wales > Northern Beaches",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 62,
-    "name": "Hinchcliffe's (Hart's, Flattop)",
-    "url": "https://siteguide.org.au/Sites/Details/Hinchcliffe%27s%20(Hart%27s,%20Flattop)",
-    "state": "Queensland > South Queensland > Canungra",
+    "id": 18,
+    "name": "Montes",
+    "url": "https://siteguide.org.au/Sites/Details/Montes",
+    "state": "New South Wales > Far North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 36,
+    "name": "Moonee Moonee",
+    "url": "https://siteguide.org.au/Sites/Details/Moonee%20Moonee",
+    "state": "New South Wales > Newcastle",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 209,
+    "name": "Moses Rocks",
+    "url": "https://siteguide.org.au/Sites/Details/Moses%20Rocks",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 224,
+    "name": "Mosman Park",
+    "url": "https://siteguide.org.au/Sites/Details/Mosman%20Park",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 232,
+    "name": "Mount Bakewell (lower launch)",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Bakewell%20(lower%20launch)",
+    "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 233,
+    "name": "Mount Bakewell (top launches)",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Bakewell%20(top%20launches)",
+    "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 218,
+    "name": "Mount Nameless",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Nameless",
+    "state": "Western Australia > North-West > Pilbara",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 9,
+    "name": "Mount Ovens",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Ovens",
+    "state": "New South Wales > Blue Mountains",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 10,
+    "name": "Mount Rankin",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Rankin",
+    "state": "New South Wales > Blue Mountains",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 199,
+    "name": "Mount Rennie",
+    "url": "https://siteguide.org.au/Sites/Details/Mount%20Rennie",
+    "state": "Western Australia > Geraldton and Midwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 11,
+    "name": "Mt Blackheath",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Blackheath",
+    "state": "New South Wales > Blue Mountains",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 130,
+    "name": "Mt Broughton (Thistle Hill)",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Broughton%20(Thistle%20Hill)",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 170,
+    "name": "Mt Buangor",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buangor",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 132,
+    "name": "Mt Buffalo - The Gorge HG Ramp",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buffalo%20-%20The%20Gorge%20HG%20Ramp",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 131,
+    "name": "Mt Buffalo – Reed’s Lookout Paraglider launch",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buffalo%20%E2%80%93%20Reed%E2%80%99s%20Lookout%20Paraglider%20launch",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 171,
+    "name": "Mt Buninyong",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buninyong",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 133,
+    "name": "Mt Dandenong",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Dandenong",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 134,
+    "name": "Mt Donna Buang",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Donna%20Buang",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 172,
+    "name": "Mt Elephant",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Elephant",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 135,
+    "name": "Mt Elliot",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Elliot",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 136,
+    "name": "Mt Emu",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Emu",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 52,
+    "name": "Mt Gillen - West Gap, South Face",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Gillen%20-%20West%20Gap,%20South%20Face",
+    "state": "Northern Territory > Alice Springs",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 216,
+    "name": "Mt Harrison",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Harrison",
+    "state": "Western Australia > North-West > Kimberley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 173,
+    "name": "Mt Hollowback",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Hollowback",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 174,
+    "name": "Mt Langhi Ghiran",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Langhi%20Ghiran",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 175,
+    "name": "Mt Lonarch",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Lonarch",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 157,
+    "name": "Mt Meuron",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Meuron",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 137,
+    "name": "Mt Mittamatite",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Mittamatite",
+    "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 234,
+    "name": "Mt Nardie, Toodyay",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Nardie,%20Toodyay",
+    "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 176,
+    "name": "Mt Sugarloaf",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Sugarloaf",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 177,
+    "name": "Mt Tarrengower",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Tarrengower",
+    "state": "Victoria > West Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 138,
+    "name": "Mt Terrible",
+    "url": "https://siteguide.org.au/Sites/Details/Mt%20Terrible",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -504,22 +1136,6 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 64,
-    "name": "Alexandra Headland",
-    "url": "https://siteguide.org.au/Sites/Details/Alexandra%20Headland",
-    "state": "Queensland > South Queensland > Sunshine Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 65,
-    "name": "Buchy's, at Gerrards Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Buchy%27s,%20at%20Gerrards%20Lookout%20",
-    "state": "Queensland > South Queensland > Sunshine Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
     "id": 66,
     "name": "Mt. Widgee",
     "url": "https://siteguide.org.au/Sites/Details/Mt.%20Widgee",
@@ -528,66 +1144,26 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 67,
-    "name": "North End Sunshine Beach",
-    "url": "https://siteguide.org.au/Sites/Details/North%20End%20Sunshine%20Beach",
-    "state": "Queensland > South Queensland > Sunshine Coast",
+    "id": 225,
+    "name": "Mullaloo Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Mullaloo%20Beach",
+    "state": "Western Australia > Perth Region",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 68,
-    "name": "Point Cartwright",
-    "url": "https://siteguide.org.au/Sites/Details/Point%20Cartwright",
-    "state": "Queensland > South Queensland > Sunshine Coast",
+    "id": 139,
+    "name": "Murmungee",
+    "url": "https://siteguide.org.au/Sites/Details/Murmungee",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 69,
-    "name": "Rainbow Beach - Carlo Sand Blow",
-    "url": "https://siteguide.org.au/Sites/Details/Rainbow%20Beach%20-%20Carlo%20Sand%20Blow",
-    "state": "Queensland > South Queensland > Sunshine Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 70,
-    "name": "Sunrise Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Sunrise%20Beach",
-    "state": "Queensland > South Queensland > Sunshine Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 71,
-    "name": "Teewah Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Teewah%20Beach",
-    "state": "Queensland > South Queensland > Sunshine Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 72,
-    "name": "Barn Hill (The Bluff)",
-    "url": "https://siteguide.org.au/Sites/Details/Barn%20Hill%20(The%20Bluff)",
-    "state": "South Australia",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 73,
-    "name": "Cape Jervis",
-    "url": "https://siteguide.org.au/Sites/Details/Cape%20Jervis",
-    "state": "South Australia",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 74,
-    "name": "Eucla",
-    "url": "https://siteguide.org.au/Sites/Details/Eucla",
-    "state": "South Australia",
+    "id": 182,
+    "name": "Muttonbird Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Muttonbird%20Beach",
+    "state": "Western Australia > Albany and South Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -600,106 +1176,50 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 76,
-    "name": "Ochre Point - Maslins",
-    "url": "https://siteguide.org.au/Sites/Details/Ochre%20Point%20-%20Maslins",
-    "state": "South Australia",
+    "id": 140,
+    "name": "Mystic",
+    "url": "https://siteguide.org.au/Sites/Details/Mystic",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 77,
-    "name": "Sellicks Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Sellicks%20Beach",
-    "state": "South Australia",
+    "id": 22,
+    "name": "NNE Heaton Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/NNE%20Heaton%20Lookout",
+    "state": "New South Wales > Hunter Valley",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 78,
-    "name": "Tunkalilla",
-    "url": "https://siteguide.org.au/Sites/Details/Tunkalilla",
-    "state": "South Australia",
+    "id": 31,
+    "name": "Nellies",
+    "url": "https://siteguide.org.au/Sites/Details/Nellies",
+    "state": "New South Wales > Mid North Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 79,
-    "name": "Bothwell Flying Site 1",
-    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%201",
-    "state": "Tasmania > Midlands",
+    "id": 44,
+    "name": "Newport",
+    "url": "https://siteguide.org.au/Sites/Details/Newport",
+    "state": "New South Wales > Northern Beaches",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 80,
-    "name": "Bothwell Flying Site 2",
-    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%202",
-    "state": "Tasmania > Midlands",
+    "id": 235,
+    "name": "Noondeening Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Noondeening%20Hill",
+    "state": "Western Australia > Wheatbelt",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 81,
-    "name": "Bothwell Flying Site 3",
-    "url": "https://siteguide.org.au/Sites/Details/Bothwell%20Flying%20Site%203",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 82,
-    "name": "Jericho Flying Site 1",
-    "url": "https://siteguide.org.au/Sites/Details/Jericho%20Flying%20Site%201",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 83,
-    "name": "Oatlands Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Oatlands%20Flying%20Site",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 84,
-    "name": "Ouse Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Ouse%20Flying%20Site",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 85,
-    "name": "Ross Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Ross%20Flying%20Site",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 86,
-    "name": "Tunbridge Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Tunbridge%20Flying%20Site",
-    "state": "Tasmania > Midlands",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 87,
-    "name": "Devonport Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Devonport%20Flying%20Site",
-    "state": "Tasmania > North",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 88,
-    "name": "Irishtown Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Irishtown%20Flying%20Site",
-    "state": "Tasmania > North",
+    "id": 32,
+    "name": "North Brother Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/North%20Brother%20Lookout",
+    "state": "New South Wales > Mid North Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -712,10 +1232,322 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
+    "id": 67,
+    "name": "North End Sunshine Beach",
+    "url": "https://siteguide.org.au/Sites/Details/North%20End%20Sunshine%20Beach",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 83,
+    "name": "Oatlands Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Oatlands%20Flying%20Site",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 192,
+    "name": "Observatory Point - Twilight Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Observatory%20Point%20-%20Twilight%20Beach",
+    "state": "Western Australia > Esperance",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 158,
+    "name": "Ocean Grove",
+    "url": "https://siteguide.org.au/Sites/Details/Ocean%20Grove",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 76,
+    "name": "Ochre Point - Maslins",
+    "url": "https://siteguide.org.au/Sites/Details/Ochre%20Point%20-%20Maslins",
+    "state": "South Australia",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 6,
+    "name": "One Tree Hill, Gungahlin",
+    "url": "https://siteguide.org.au/Sites/Details/One%20Tree%20Hill,%20Gungahlin",
+    "state": "Australian Capital Territory - Canberra and NSW surrounds",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 84,
+    "name": "Ouse Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Ouse%20Flying%20Site",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 183,
+    "name": "Parry Beach - Point Hillier",
+    "url": "https://siteguide.org.au/Sites/Details/Parry%20Beach%20-%20Point%20Hillier",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 184,
+    "name": "Perkins Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Perkins%20Beach",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 122,
+    "name": "Phillip Island",
+    "url": "https://siteguide.org.au/Sites/Details/Phillip%20Island",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 7,
+    "name": "Pig Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Pig%20Hill",
+    "state": "Australian Capital Territory - Canberra and NSW surrounds",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 68,
+    "name": "Point Cartwright",
+    "url": "https://siteguide.org.au/Sites/Details/Point%20Cartwright",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 185,
+    "name": "Point King - Albany Town",
+    "url": "https://siteguide.org.au/Sites/Details/Point%20King%20-%20Albany%20Town",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 210,
+    "name": "Point Matthew",
+    "url": "https://siteguide.org.au/Sites/Details/Point%20Matthew",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 186,
+    "name": "Porongorups",
+    "url": "https://siteguide.org.au/Sites/Details/Porongorups",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 159,
+    "name": "Portland",
+    "url": "https://siteguide.org.au/Sites/Details/Portland",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 115,
+    "name": "Portsea",
+    "url": "https://siteguide.org.au/Sites/Details/Portsea",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 19,
+    "name": "Possums",
+    "url": "https://siteguide.org.au/Sites/Details/Possums",
+    "state": "New South Wales > Far North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 123,
+    "name": "Potters Road, San Remo",
+    "url": "https://siteguide.org.au/Sites/Details/Potters%20Road,%20San%20Remo",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 102,
+    "name": "Queenstown Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Queenstown%20Flying%20Site",
+    "state": "Tasmania > South West",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 226,
+    "name": "Quinns Rocks",
+    "url": "https://siteguide.org.au/Sites/Details/Quinns%20Rocks",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 69,
+    "name": "Rainbow Beach - Carlo Sand Blow",
+    "url": "https://siteguide.org.au/Sites/Details/Rainbow%20Beach%20-%20Carlo%20Sand%20Blow",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 116,
+    "name": "Red Bluff",
+    "url": "https://siteguide.org.au/Sites/Details/Red%20Bluff",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 57,
+    "name": "Rex Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Rex%20Lookout",
+    "state": "Queensland > North Queensland > Cairns",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 124,
+    "name": "Rhyll, Phillip Island",
+    "url": "https://siteguide.org.au/Sites/Details/Rhyll,%20Phillip%20Island",
+    "state": "Victoria > East Coast > Phillip Island",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 33,
+    "name": "Rocky Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Rocky%20Beach",
+    "state": "New South Wales > Mid North Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 85,
+    "name": "Ross Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Ross%20Flying%20Site",
+    "state": "Tasmania > Midlands",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 23,
+    "name": "SE Heaton Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/SE%20Heaton%20Lookout",
+    "state": "New South Wales > Hunter Valley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 187,
+    "name": "Sand Patch",
+    "url": "https://siteguide.org.au/Sites/Details/Sand%20Patch",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 211,
+    "name": "Sarge Bay",
+    "url": "https://siteguide.org.au/Sites/Details/Sarge%20Bay",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
     "id": 90,
     "name": "Scottsdale Flying Site",
     "url": "https://siteguide.org.au/Sites/Details/Scottsdale%20Flying%20Site",
     "state": "Tasmania > North",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 227,
+    "name": "Seabird",
+    "url": "https://siteguide.org.au/Sites/Details/Seabird",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 77,
+    "name": "Sellicks Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Sellicks%20Beach",
+    "state": "South Australia",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 228,
+    "name": "Serpentine",
+    "url": "https://siteguide.org.au/Sites/Details/Serpentine",
+    "state": "Western Australia > Perth Region",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 188,
+    "name": "Shelley Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Shelley%20Beach",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 117,
+    "name": "Shoreham",
+    "url": "https://siteguide.org.au/Sites/Details/Shoreham",
+    "state": "Victoria > East Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 12,
+    "name": "Sofala",
+    "url": "https://siteguide.org.au/Sites/Details/Sofala",
+    "state": "New South Wales > Blue Mountains",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 97,
+    "name": "South Arm Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/South%20Arm%20Flying%20Site",
+    "state": "Tasmania > South",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 160,
+    "name": "Spion Kop (Fairhaven, Aireys, Moggs)",
+    "url": "https://siteguide.org.au/Sites/Details/Spion%20Kop%20(Fairhaven,%20Aireys,%20Moggs)",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 8,
+    "name": "Spring Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Spring%20Hill",
+    "state": "Australian Capital Territory - Canberra and NSW surrounds",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -728,50 +1560,66 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 92,
-    "name": "Wynyard Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Wynyard%20Flying%20Site",
-    "state": "Tasmania > North",
+    "id": 50,
+    "name": "Stanwell Park - Bald Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Stanwell%20Park%20-%20Bald%20Hill",
+    "state": "New South Wales > South Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 93,
-    "name": "Brighton Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Brighton%20Flying%20Site",
-    "state": "Tasmania > South",
+    "id": 189,
+    "name": "Stirlings",
+    "url": "https://siteguide.org.au/Sites/Details/Stirlings",
+    "state": "Western Australia > Albany and South Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 94,
-    "name": "Hobart Flying Site 1",
-    "url": "https://siteguide.org.au/Sites/Details/Hobart%20Flying%20Site%201",
-    "state": "Tasmania > South",
+    "id": 103,
+    "name": "Strahan Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Strahan%20Flying%20Site",
+    "state": "Tasmania > South West",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 95,
-    "name": "Lauderdale Flying Site 1",
-    "url": "https://siteguide.org.au/Sites/Details/Lauderdale%20Flying%20Site%201",
-    "state": "Tasmania > South",
+    "id": 37,
+    "name": "Strzelecki lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Strzelecki%20lookout",
+    "state": "New South Wales > Newcastle",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 96,
-    "name": "Lauderdale Flying Site 2",
-    "url": "https://siteguide.org.au/Sites/Details/Lauderdale%20Flying%20Site%202",
-    "state": "Tasmania > South",
+    "id": 118,
+    "name": "Sunnyside",
+    "url": "https://siteguide.org.au/Sites/Details/Sunnyside",
+    "state": "Victoria > East Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 97,
-    "name": "South Arm Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/South%20Arm%20Flying%20Site",
-    "state": "Tasmania > South",
+    "id": 70,
+    "name": "Sunrise Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Sunrise%20Beach",
+    "state": "Queensland > South Queensland > Sunshine Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 219,
+    "name": "Table Mountain",
+    "url": "https://siteguide.org.au/Sites/Details/Table%20Mountain",
+    "state": "Western Australia > North-West > Pilbara",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 13,
+    "name": "Table Rock",
+    "url": "https://siteguide.org.au/Sites/Details/Table%20Rock",
+    "state": "New South Wales > Blue Mountains",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -808,322 +1656,26 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 102,
-    "name": "Queenstown Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Queenstown%20Flying%20Site",
-    "state": "Tasmania > South West",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 103,
-    "name": "Strahan Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Strahan%20Flying%20Site",
-    "state": "Tasmania > South West",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 104,
-    "name": "Trial Harbour Flying Site",
-    "url": "https://siteguide.org.au/Sites/Details/Trial%20Harbour%20Flying%20Site",
-    "state": "Tasmania > South West",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 105,
-    "name": "Wilderness Hike and Fly",
-    "url": "https://siteguide.org.au/Sites/Details/Wilderness%20Hike%20and%20Fly",
-    "state": "Tasmania > South West",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 106,
-    "name": "Arthurs Seat",
-    "url": "https://siteguide.org.au/Sites/Details/Arthurs%20Seat",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 107,
-    "name": "Cairns Bay",
-    "url": "https://siteguide.org.au/Sites/Details/Cairns%20Bay",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 108,
-    "name": "Cape Liptrap",
-    "url": "https://siteguide.org.au/Sites/Details/Cape%20Liptrap",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 109,
-    "name": "Craigie Rd, Mt Martha",
-    "url": "https://siteguide.org.au/Sites/Details/Craigie%20Rd,%20Mt%20Martha",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 110,
-    "name": "Eagles Nest",
-    "url": "https://siteguide.org.au/Sites/Details/Eagles%20Nest",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 111,
-    "name": "Flinders Golf Club",
-    "url": "https://siteguide.org.au/Sites/Details/Flinders%20Golf%20Club",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 112,
-    "name": "Flinders Monument",
-    "url": "https://siteguide.org.au/Sites/Details/Flinders%20Monument",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 113,
-    "name": "Kilcunda",
-    "url": "https://siteguide.org.au/Sites/Details/Kilcunda",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 114,
-    "name": "Mentone",
-    "url": "https://siteguide.org.au/Sites/Details/Mentone",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 115,
-    "name": "Portsea",
-    "url": "https://siteguide.org.au/Sites/Details/Portsea",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 116,
-    "name": "Red Bluff",
-    "url": "https://siteguide.org.au/Sites/Details/Red%20Bluff",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 117,
-    "name": "Shoreham",
-    "url": "https://siteguide.org.au/Sites/Details/Shoreham",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 118,
-    "name": "Sunnyside",
-    "url": "https://siteguide.org.au/Sites/Details/Sunnyside",
-    "state": "Victoria > East Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 119,
-    "name": "Dunvegan Road, Phillip Island",
-    "url": "https://siteguide.org.au/Sites/Details/Dunvegan%20Road,%20Phillip%20Island",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 120,
-    "name": "Fisher Street, Phillip Island",
-    "url": "https://siteguide.org.au/Sites/Details/Fisher%20Street,%20Phillip%20Island",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 121,
-    "name": "Grossard Point, Phillip Island",
-    "url": "https://siteguide.org.au/Sites/Details/Grossard%20Point,%20Phillip%20Island",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 122,
-    "name": "Phillip Island",
-    "url": "https://siteguide.org.au/Sites/Details/Phillip%20Island",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 123,
-    "name": "Potters Road, San Remo",
-    "url": "https://siteguide.org.au/Sites/Details/Potters%20Road,%20San%20Remo",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 124,
-    "name": "Rhyll, Phillip Island",
-    "url": "https://siteguide.org.au/Sites/Details/Rhyll,%20Phillip%20Island",
-    "state": "Victoria > East Coast > Phillip Island",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 125,
-    "name": "Eagle Rise",
-    "url": "https://siteguide.org.au/Sites/Details/Eagle%20Rise",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 126,
-    "name": "Great Missenden (Previously known as Landscape)",
-    "url": "https://siteguide.org.au/Sites/Details/Great%20Missenden%20(Previously%20known%20as%20Landscape)",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 127,
-    "name": "Gundowring (Savhill)",
-    "url": "https://siteguide.org.au/Sites/Details/Gundowring%20(Savhill)",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 128,
-    "name": "Locksley Field",
-    "url": "https://siteguide.org.au/Sites/Details/Locksley%20Field",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 129,
-    "name": "Manny's",
-    "url": "https://siteguide.org.au/Sites/Details/Manny%27s",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 130,
-    "name": "Mt Broughton (Thistle Hill)",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Broughton%20(Thistle%20Hill)",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 131,
-    "name": "Mt Buffalo – Reed’s Lookout Paraglider launch",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buffalo%20%E2%80%93%20Reed%E2%80%99s%20Lookout%20Paraglider%20launch",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 132,
-    "name": "Mt Buffalo - The Gorge HG Ramp",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buffalo%20-%20The%20Gorge%20HG%20Ramp",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 133,
-    "name": "Mt Dandenong",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Dandenong",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 134,
-    "name": "Mt Donna Buang",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Donna%20Buang",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 135,
-    "name": "Mt Elliot",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Elliot",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 136,
-    "name": "Mt Emu",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Emu",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 137,
-    "name": "Mt Mittamatite",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Mittamatite",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 138,
-    "name": "Mt Terrible",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Terrible",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 139,
-    "name": "Murmungee",
-    "url": "https://siteguide.org.au/Sites/Details/Murmungee",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 140,
-    "name": "Mystic",
-    "url": "https://siteguide.org.au/Sites/Details/Mystic",
-    "state": "Victoria > East Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
     "id": 141,
     "name": "Tawonga Gap",
     "url": "https://siteguide.org.au/Sites/Details/Tawonga%20Gap",
     "state": "Victoria > East Inland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 161,
+    "name": "Teddys Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/Teddys%20Lookout",
+    "state": "Victoria > West Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 71,
+    "name": "Teewah Beach",
+    "url": "https://siteguide.org.au/Sites/Details/Teewah%20Beach",
+    "state": "Queensland > South Queensland > Sunshine Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -1144,6 +1696,14 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
+    "id": 236,
+    "name": "The Range, Toodyay",
+    "url": "https://siteguide.org.au/Sites/Details/The%20Range,%20Toodyay",
+    "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
     "id": 144,
     "name": "Three Sisters (Flowerdale)",
     "url": "https://siteguide.org.au/Sites/Details/Three%20Sisters%20(Flowerdale)",
@@ -1152,674 +1712,42 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 145,
-    "name": "Warrigal Rocks",
-    "url": "https://siteguide.org.au/Sites/Details/Warrigal%20Rocks",
-    "state": "Victoria > East Inland",
+    "id": 51,
+    "name": "Tongarra",
+    "url": "https://siteguide.org.au/Sites/Details/Tongarra",
+    "state": "New South Wales > South Coast",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 146,
-    "name": "Yarragon",
-    "url": "https://siteguide.org.au/Sites/Details/Yarragon",
-    "state": "Victoria > East Inland",
+    "id": 104,
+    "name": "Trial Harbour Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Trial%20Harbour%20Flying%20Site",
+    "state": "Tasmania > South West",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 147,
-    "name": "Barwon Heads (13th Beach)",
-    "url": "https://siteguide.org.au/Sites/Details/Barwon%20Heads%20(13th%20Beach)",
-    "state": "Victoria > West Coast",
+    "id": 86,
+    "name": "Tunbridge Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Tunbridge%20Flying%20Site",
+    "state": "Tasmania > Midlands",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 148,
-    "name": "Bells Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Bells%20Beach",
-    "state": "Victoria > West Coast",
+    "id": 78,
+    "name": "Tunkalilla",
+    "url": "https://siteguide.org.au/Sites/Details/Tunkalilla",
+    "state": "South Australia",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 149,
-    "name": "Bells Beach - Winkipop",
-    "url": "https://siteguide.org.au/Sites/Details/Bells%20Beach%20-%20Winkipop",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 150,
-    "name": "Eumeralla (Red Rocks)",
-    "url": "https://siteguide.org.au/Sites/Details/Eumeralla%20(Red%20Rocks)",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 151,
-    "name": "Flaxmans Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Flaxmans%20Hill",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 152,
-    "name": "Grannies Grave",
-    "url": "https://siteguide.org.au/Sites/Details/Grannies%20Grave",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 153,
-    "name": "Johanna",
-    "url": "https://siteguide.org.au/Sites/Details/Johanna",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 154,
-    "name": "Levy's Point Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Levy%27s%20Point%20Beach",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 155,
-    "name": "Logans Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Logans%20Beach",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 156,
-    "name": "Marriners Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Marriners%20Lookout",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 157,
-    "name": "Mt Meuron",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Meuron",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 158,
-    "name": "Ocean Grove",
-    "url": "https://siteguide.org.au/Sites/Details/Ocean%20Grove",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 159,
-    "name": "Portland",
-    "url": "https://siteguide.org.au/Sites/Details/Portland",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 160,
-    "name": "Spion Kop (Fairhaven, Aireys, Moggs)",
-    "url": "https://siteguide.org.au/Sites/Details/Spion%20Kop%20(Fairhaven,%20Aireys,%20Moggs)",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 161,
-    "name": "Teddys Lookout",
-    "url": "https://siteguide.org.au/Sites/Details/Teddys%20Lookout",
-    "state": "Victoria > West Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 162,
-    "name": "Ben More",
-    "url": "https://siteguide.org.au/Sites/Details/Ben%20More",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 163,
-    "name": "Ben Nevis",
-    "url": "https://siteguide.org.au/Sites/Details/Ben%20Nevis",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 164,
-    "name": "Birchip Tow Paddock",
-    "url": "https://siteguide.org.au/Sites/Details/Birchip%20Tow%20Paddock",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 165,
-    "name": "Cave Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Cave%20Hill",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 166,
-    "name": "Colliers Gap",
-    "url": "https://siteguide.org.au/Sites/Details/Colliers%20Gap",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 167,
-    "name": "Elmhurst Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Elmhurst%20Hill",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 168,
-    "name": "Gordon",
-    "url": "https://siteguide.org.au/Sites/Details/Gordon",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 169,
-    "name": "Grampians",
-    "url": "https://siteguide.org.au/Sites/Details/Grampians",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 170,
-    "name": "Mt Buangor",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buangor",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 171,
-    "name": "Mt Buninyong",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Buninyong",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 172,
-    "name": "Mt Elephant",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Elephant",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 173,
-    "name": "Mt Hollowback",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Hollowback",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 174,
-    "name": "Mt Langhi Ghiran",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Langhi%20Ghiran",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 175,
-    "name": "Mt Lonarch",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Lonarch",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 176,
-    "name": "Mt Sugarloaf",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Sugarloaf",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 177,
-    "name": "Mt Tarrengower",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Tarrengower",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 178,
-    "name": "Werribee Gorge",
-    "url": "https://siteguide.org.au/Sites/Details/Werribee%20Gorge",
-    "state": "Victoria > West Inland",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 179,
-    "name": "Back Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Back%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 180,
-    "name": "Dingo's Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Dingo%27s%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 181,
-    "name": "Lowlands Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Lowlands%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 182,
-    "name": "Muttonbird Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Muttonbird%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 183,
-    "name": "Parry Beach - Point Hillier",
-    "url": "https://siteguide.org.au/Sites/Details/Parry%20Beach%20-%20Point%20Hillier",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 184,
-    "name": "Perkins Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Perkins%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 185,
-    "name": "Point King - Albany Town",
-    "url": "https://siteguide.org.au/Sites/Details/Point%20King%20-%20Albany%20Town",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 186,
-    "name": "Porongorups",
-    "url": "https://siteguide.org.au/Sites/Details/Porongorups",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 187,
-    "name": "Sand Patch",
-    "url": "https://siteguide.org.au/Sites/Details/Sand%20Patch",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 188,
-    "name": "Shelley Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Shelley%20Beach",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 189,
-    "name": "Stirlings",
-    "url": "https://siteguide.org.au/Sites/Details/Stirlings",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 190,
-    "name": "Windy Harbour",
-    "url": "https://siteguide.org.au/Sites/Details/Windy%20Harbour",
-    "state": "Western Australia > Albany and South Coast",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 191,
-    "name": "Frenchman's Peak",
-    "url": "https://siteguide.org.au/Sites/Details/Frenchman%27s%20Peak",
-    "state": "Western Australia > Esperance",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 192,
-    "name": "Observatory Point - Twilight Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Observatory%20Point%20-%20Twilight%20Beach",
-    "state": "Western Australia > Esperance",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 193,
-    "name": "Wagga (80m dunes)",
-    "url": "https://siteguide.org.au/Sites/Details/Wagga%20(80m%20dunes)",
-    "state": "Western Australia > Esperance",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 194,
-    "name": "City View",
-    "url": "https://siteguide.org.au/Sites/Details/City%20View",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 195,
-    "name": "Horrocks Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Horrocks%20Beach",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 196,
-    "name": "Kalbarri North Coastal - Zuytdorp Sea Cliffs",
-    "url": "https://siteguide.org.au/Sites/Details/Kalbarri%20North%20Coastal%20-%20Zuytdorp%20Sea%20Cliffs",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 197,
-    "name": "Kalbarri South Sea Cliffs",
-    "url": "https://siteguide.org.au/Sites/Details/Kalbarri%20South%20Sea%20Cliffs",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 198,
-    "name": "Lynton Farm",
-    "url": "https://siteguide.org.au/Sites/Details/Lynton%20Farm",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 199,
-    "name": "Mount Rennie",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Rennie",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 200,
-    "name": "Wozza's Knob",
-    "url": "https://siteguide.org.au/Sites/Details/Wozza%27s%20Knob",
-    "state": "Western Australia > Geraldton and Midwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 201,
-    "name": "Kalgoorlie - Lake Perkolilly",
-    "url": "https://siteguide.org.au/Sites/Details/Kalgoorlie%20-%20Lake%20Perkolilly",
-    "state": "Western Australia > Goldfields",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 202,
-    "name": "Brunswick Junction",
-    "url": "https://siteguide.org.au/Sites/Details/Brunswick%20Junction",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 203,
-    "name": "Bunbury Back Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Bunbury%20Back%20Beach",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 204,
-    "name": "Conto Springs",
-    "url": "https://siteguide.org.au/Sites/Details/Conto%20Springs",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 205,
-    "name": "Cosy Corner",
-    "url": "https://siteguide.org.au/Sites/Details/Cosy%20Corner",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 206,
-    "name": "Dalyellup",
-    "url": "https://siteguide.org.au/Sites/Details/Dalyellup",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 207,
-    "name": "Greenhills",
-    "url": "https://siteguide.org.au/Sites/Details/Greenhills",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 208,
-    "name": "Injidup",
-    "url": "https://siteguide.org.au/Sites/Details/Injidup",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 209,
-    "name": "Moses Rocks",
-    "url": "https://siteguide.org.au/Sites/Details/Moses%20Rocks",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 210,
-    "name": "Point Matthew",
-    "url": "https://siteguide.org.au/Sites/Details/Point%20Matthew",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 211,
-    "name": "Sarge Bay",
-    "url": "https://siteguide.org.au/Sites/Details/Sarge%20Bay",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 212,
-    "name": "Yallingup - Rabbit Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Yallingup%20-%20Rabbit%20Hill",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 213,
-    "name": "Yallingup - Three Bears",
-    "url": "https://siteguide.org.au/Sites/Details/Yallingup%20-%20Three%20Bears",
-    "state": "Western Australia > Margaret River and Southwest",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 214,
-    "name": "Cape Couvier",
-    "url": "https://siteguide.org.au/Sites/Details/Cape%20Couvier",
-    "state": "Western Australia > North-West > Gascoyne",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 215,
-    "name": "Bastion",
-    "url": "https://siteguide.org.au/Sites/Details/Bastion",
-    "state": "Western Australia > North-West > Kimberley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 216,
-    "name": "Mt Harrison",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Harrison",
-    "state": "Western Australia > North-West > Kimberley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 217,
-    "name": "Wyndham Towing",
-    "url": "https://siteguide.org.au/Sites/Details/Wyndham%20Towing",
-    "state": "Western Australia > North-West > Kimberley",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 218,
-    "name": "Mount Nameless",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Nameless",
-    "state": "Western Australia > North-West > Pilbara",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 219,
-    "name": "Table Mountain",
-    "url": "https://siteguide.org.au/Sites/Details/Table%20Mountain",
-    "state": "Western Australia > North-West > Pilbara",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 220,
-    "name": "Avalon",
-    "url": "https://siteguide.org.au/Sites/Details/Avalon",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 221,
-    "name": "Burns Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Burns%20Beach",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 222,
-    "name": "Cottesloe",
-    "url": "https://siteguide.org.au/Sites/Details/Cottesloe",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 223,
-    "name": "Gingin",
-    "url": "https://siteguide.org.au/Sites/Details/Gingin",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 224,
-    "name": "Mosman Park",
-    "url": "https://siteguide.org.au/Sites/Details/Mosman%20Park",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 225,
-    "name": "Mullaloo Beach",
-    "url": "https://siteguide.org.au/Sites/Details/Mullaloo%20Beach",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 226,
-    "name": "Quinns Rocks",
-    "url": "https://siteguide.org.au/Sites/Details/Quinns%20Rocks",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 227,
-    "name": "Seabird",
-    "url": "https://siteguide.org.au/Sites/Details/Seabird",
-    "state": "Western Australia > Perth Region",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 228,
-    "name": "Serpentine",
-    "url": "https://siteguide.org.au/Sites/Details/Serpentine",
-    "state": "Western Australia > Perth Region",
+    "id": 45,
+    "name": "Turimetta",
+    "url": "https://siteguide.org.au/Sites/Details/Turimetta",
+    "state": "New South Wales > Northern Beaches",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -1832,6 +1760,14 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
+    "id": 193,
+    "name": "Wagga (80m dunes)",
+    "url": "https://siteguide.org.au/Sites/Details/Wagga%20(80m%20dunes)",
+    "state": "Western Australia > Esperance",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
     "id": 230,
     "name": "Warnbro",
     "url": "https://siteguide.org.au/Sites/Details/Warnbro",
@@ -1840,50 +1776,34 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 231,
-    "name": "Masters",
-    "url": "https://siteguide.org.au/Sites/Details/Masters",
-    "state": "Western Australia > Wheatbelt",
+    "id": 46,
+    "name": "Warriewood",
+    "url": "https://siteguide.org.au/Sites/Details/Warriewood",
+    "state": "New South Wales > Northern Beaches",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 232,
-    "name": "Mount Bakewell (lower launch)",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Bakewell%20(lower%20launch)",
-    "state": "Western Australia > Wheatbelt",
+    "id": 145,
+    "name": "Warrigal Rocks",
+    "url": "https://siteguide.org.au/Sites/Details/Warrigal%20Rocks",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 233,
-    "name": "Mount Bakewell (top launches)",
-    "url": "https://siteguide.org.au/Sites/Details/Mount%20Bakewell%20(top%20launches)",
-    "state": "Western Australia > Wheatbelt",
+    "id": 178,
+    "name": "Werribee Gorge",
+    "url": "https://siteguide.org.au/Sites/Details/Werribee%20Gorge",
+    "state": "Victoria > West Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 234,
-    "name": "Mt Nardie, Toodyay",
-    "url": "https://siteguide.org.au/Sites/Details/Mt%20Nardie,%20Toodyay",
-    "state": "Western Australia > Wheatbelt",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 235,
-    "name": "Noondeening Hill",
-    "url": "https://siteguide.org.au/Sites/Details/Noondeening%20Hill",
-    "state": "Western Australia > Wheatbelt",
-    "region": null,
-    "lastScraped": "2026-03-08 04:44:03"
-  },
-  {
-    "id": 236,
-    "name": "The Range, Toodyay",
-    "url": "https://siteguide.org.au/Sites/Details/The%20Range,%20Toodyay",
-    "state": "Western Australia > Wheatbelt",
+    "id": 24,
+    "name": "West Heaton Lookout",
+    "url": "https://siteguide.org.au/Sites/Details/West%20Heaton%20Lookout",
+    "state": "New South Wales > Hunter Valley",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -1912,10 +1832,50 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
+    "id": 105,
+    "name": "Wilderness Hike and Fly",
+    "url": "https://siteguide.org.au/Sites/Details/Wilderness%20Hike%20and%20Fly",
+    "state": "Tasmania > South West",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 54,
+    "name": "Wilson's",
+    "url": "https://siteguide.org.au/Sites/Details/Wilson%27s",
+    "state": "Queensland",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
     "id": 240,
     "name": "Windmill Hill, Toodyay",
     "url": "https://siteguide.org.au/Sites/Details/Windmill%20Hill,%20Toodyay",
     "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 190,
+    "name": "Windy Harbour",
+    "url": "https://siteguide.org.au/Sites/Details/Windy%20Harbour",
+    "state": "Western Australia > Albany and South Coast",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 14,
+    "name": "Wolgan",
+    "url": "https://siteguide.org.au/Sites/Details/Wolgan",
+    "state": "New South Wales > Blue Mountains",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 200,
+    "name": "Wozza's Knob",
+    "url": "https://siteguide.org.au/Sites/Details/Wozza%27s%20Knob",
+    "state": "Western Australia > Geraldton and Midwest",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -1928,10 +1888,42 @@
     "lastScraped": "2026-03-08 04:44:03"
   },
   {
-    "id": 242,
-    "name": "York Airstrip",
-    "url": "https://siteguide.org.au/Sites/Details/York%20Airstrip",
-    "state": "Western Australia > Wheatbelt",
+    "id": 217,
+    "name": "Wyndham Towing",
+    "url": "https://siteguide.org.au/Sites/Details/Wyndham%20Towing",
+    "state": "Western Australia > North-West > Kimberley",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 92,
+    "name": "Wynyard Flying Site",
+    "url": "https://siteguide.org.au/Sites/Details/Wynyard%20Flying%20Site",
+    "state": "Tasmania > North",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 212,
+    "name": "Yallingup - Rabbit Hill",
+    "url": "https://siteguide.org.au/Sites/Details/Yallingup%20-%20Rabbit%20Hill",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 213,
+    "name": "Yallingup - Three Bears",
+    "url": "https://siteguide.org.au/Sites/Details/Yallingup%20-%20Three%20Bears",
+    "state": "Western Australia > Margaret River and Southwest",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 146,
+    "name": "Yarragon",
+    "url": "https://siteguide.org.au/Sites/Details/Yarragon",
+    "state": "Victoria > East Inland",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"
   },
@@ -1939,6 +1931,14 @@
     "id": 243,
     "name": "York - Greenhills Towing",
     "url": "https://siteguide.org.au/Sites/Details/York%20-%20Greenhills%20Towing",
+    "state": "Western Australia > Wheatbelt",
+    "region": null,
+    "lastScraped": "2026-03-08 04:44:03"
+  },
+  {
+    "id": 242,
+    "name": "York Airstrip",
+    "url": "https://siteguide.org.au/Sites/Details/York%20Airstrip",
     "state": "Western Australia > Wheatbelt",
     "region": null,
     "lastScraped": "2026-03-08 04:44:03"

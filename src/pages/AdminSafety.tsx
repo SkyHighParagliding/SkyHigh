@@ -47,11 +47,19 @@ export function AdminSafety() {
     if (fetchedSections) setSections(fetchedSections);
   }, [fetchedSections]);
 
+  const savingRef = useRef(false);
+
   const saveSection = useCallback(async (section: SafetySection) => {
-    await save(async () => {
-      await api.put(`/api/safety-sections/${section.id}`, section, token);
-      qc.invalidateQueries({ queryKey: ['safety-sections-admin'] });
-    });
+    if (savingRef.current) return; // prevent concurrent saves
+    savingRef.current = true;
+    try {
+      await save(async () => {
+        await api.put(`/api/safety-sections/${section.id}`, section, token);
+        qc.invalidateQueries({ queryKey: ['safety-sections-admin'] });
+      });
+    } finally {
+      savingRef.current = false;
+    }
   }, [save, token, qc]);
 
   const updateField = (id: string, field: string, value: string | number) => {

@@ -8,12 +8,22 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
+function sanitizeSiteName(name: string): string {
+  // Basic sanitization to escape known dangerous characters
+  return name
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   return (
     <div className="border rounded-3xl p-5 sm:p-8 flex flex-col items-center hover:shadow-xl transition-all bg-card border-sky/10 h-full">
       <div className="flex items-center justify-between w-full mb-5 px-1 gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="font-bold text-navy truncate text-xl sm:text-2xl">{site.name}</h3>
+          <h3 className="font-bold text-navy truncate text-xl sm:text-2xl">{sanitizeSiteName(site.name)}</h3>
           {(site.status === 'closed' || getClosureStatus(site).isClosedToday) ? (
             <Badge variant="destructive" className="shadow-sm text-[10px] py-0 px-1.5 h-5 shrink-0">Closed</Badge>
           ) : site.status === 'restricted' ? (
@@ -80,7 +90,7 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
             {activeWeather.type === 'live' ? 'LIVE' : 'FCST'}
           </span>
           <span className="truncate font-medium text-foreground-secondary">
-            {activeWeather.stationName ? `Obs: ${activeWeather.stationName}` : `Fcst: ${site.name}`}
+            {activeWeather.stationName ? `Obs: ${activeWeather.stationName}` : `Fcst: ${sanitizeSiteName(site.name)}`}
             {distance && ` • ${distance}km`}
           </span>
           {hasAlt && (

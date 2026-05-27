@@ -223,7 +223,7 @@ export function useRetrievalStatus({
     sendPos();
     const interval = setInterval(sendPos, 60000);
     return () => clearInterval(interval);
-  }, [pilotId, pilotToken, retrievalStatus?.active, trackerState, demoApiOpts]);
+  }, [pilotId, pilotToken, retrievalStatus?.active ?? false, trackerState, demoApiOpts]);
 
   const handlePilotPickedUp = useCallback(async () => {
     if (!pilotId || !pilotToken) return;

@@ -43,7 +43,7 @@ export function WindMapLab() {
   const [sites, setSites] = useState<any[]>([]);
   const [showTuning, setShowTuning] = useState(true);
   const [setpoints, setSetpoints] = useState<ZoomSetpoints>(() => {
-    const saved = localStorage.getItem("windMapLabSetpoints");
+    const saved = (() => { try { return localStorage.getItem("windMapLabSetpoints"); } catch { return null; } })();
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -56,7 +56,7 @@ export function WindMapLab() {
   });
 
   useEffect(() => {
-    localStorage.setItem("windMapLabSetpoints", JSON.stringify(setpoints));
+    try { localStorage.setItem("windMapLabSetpoints", JSON.stringify(setpoints)); } catch {}
   }, [setpoints]);
 
   useEffect(() => {

@@ -41,6 +41,14 @@ router.get(
       clearInterval(heartbeat);
       svc.removeSseClient(client);
     });
+    req.on('end', () => {
+      clearInterval(heartbeat);
+      svc.removeSseClient(client);
+    });
+    res.on('error', () => {
+      clearInterval(heartbeat);
+      svc.removeSseClient(client);
+    });
   }
 );
 

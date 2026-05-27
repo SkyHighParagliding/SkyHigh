@@ -9,7 +9,7 @@ export function BusinessDirectory() {
   const { settings, loading: settingsLoading } = useSettings();
   const navigate = useNavigate();
   const enabled = !settingsLoading && !!settings.businessDirectoryEnabled;
-  const { data: listings = [], isLoading: loading } = useBusinessDirectory();
+  const { data: listings = [], isLoading: loading } = useBusinessDirectory(enabled);
   const [filter, setFilter] = useState("All");
   const categories = useMemo(() => {
     const cats = Array.from(new Set(listings.map((l) => l.category).filter(Boolean))) as string[];

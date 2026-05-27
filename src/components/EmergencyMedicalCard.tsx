@@ -17,8 +17,8 @@ interface Hospital {
 
 interface EmergencyMedicalCardProps {
   siteId: string;
-  siteLat: number;
-  siteLon: number;
+  siteLat: number | null;
+  siteLon: number | null;
   what3words?: string;
 }
 
@@ -49,6 +49,8 @@ function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression }) {
 }
 
 export function EmergencyMedicalCard({ siteId, siteLat, siteLon, what3words }: EmergencyMedicalCardProps) {
+  if (siteLat == null || siteLon == null) return null;
+
   const { data: hospitalData, isLoading: loading, isError: error } = useQuery({
     queryKey: ['sites', siteId, 'emergency-hospitals'],
     queryFn: () => api.get<{ hospitals: Hospital[] }>(`/api/sites/${siteId}/emergency-hospitals`),

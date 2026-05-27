@@ -11,6 +11,7 @@ import { haversineDistance } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { recordSiteView } from "@/lib/recentSites";
+import type { Site, WeatherData } from "@/types/api";
 
 const isValid = (value: string | undefined | null) => {
   if (!value) return false;
@@ -26,13 +27,13 @@ export function SiteFieldView() {
 
   const { data: site, isLoading: loading, error: siteError } = useQuery({
     queryKey: ['sites', id],
-    queryFn: () => api.get<Record<string, any>>(`/api/sites/${id}`),
+    queryFn: () => api.get<Site>(`/api/sites/${id}`),
     enabled: !!id,
   });
 
   const { data: weather } = useQuery({
     queryKey: ['weather', site?.id],
-    queryFn: () => api.get<Record<string, any>>(`/api/weather/${site!.id}`).catch(() => ({ error: true })),
+    queryFn: () => api.get<WeatherData>(`/api/weather/${site!.id}`).catch(() => ({ error: true } as WeatherData)),
     enabled: !!site?.id,
   });
 
@@ -165,7 +166,7 @@ export function SiteFieldView() {
               <h2 className="text-sm font-bold text-navy">Current Weather</h2>
             </div>
             <div className="scale-[0.92] origin-top">
-              <WeatherCard weather={weather} site={site} distance={distance} variant={isGlass ? 'apple' : 'classic'} />
+              <WeatherCard weather={weather} site={site} distance={distance ? Number(distance) : undefined} variant={isGlass ? 'apple' : 'classic'} />
             </div>
           </div>
         )}

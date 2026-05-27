@@ -14,10 +14,12 @@ export function drawSiteMarkers(
   const labelPad = 2;
   const labelHeight = 10;
 
-  const markerScreenPositions = markers.map(site => ({
-    site,
-    sp: currentTransform.apply(projection([site.lon, site.lat])!),
-  }));
+  const markerScreenPositions: { site: SiteMarker; sp: [number, number] }[] = [];
+  for (const site of markers) {
+    const proj = projection([site.lon, site.lat]);
+    if (!proj) continue;
+    markerScreenPositions.push({ site, sp: currentTransform.apply(proj) });
+  }
 
   for (const { site, sp } of markerScreenPositions) {
     const r = 6;
@@ -72,7 +74,9 @@ export function drawSingleSiteMarker(
   siteLat: number,
   siteName?: string,
 ) {
-  const siteScreen = currentTransform.apply(projection([siteLon, siteLat])!);
+  const proj = projection([siteLon, siteLat]);
+  if (!proj) return;
+  const siteScreen = currentTransform.apply(proj);
   const r = 5;
   ctx.beginPath();
   ctx.arc(siteScreen[0], siteScreen[1], r, 0, 2 * Math.PI);

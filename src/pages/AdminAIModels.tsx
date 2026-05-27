@@ -128,8 +128,8 @@ export function AdminAIModels() {
       setImageModels(Array.isArray(data.imageModels) ? data.imageModels : []);
       setDefaultTextModels(Array.isArray(data.defaultTextModels) ? data.defaultTextModels : []);
       setDefaultImageModels(Array.isArray(data.defaultImageModels) ? data.defaultImageModels : []);
-    } catch (e: any) {
-      toast.error("Failed to load AI configuration");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to load AI configuration");
     } finally {
       setLoading(false);
     }
@@ -143,9 +143,9 @@ export function AdminAIModels() {
       const data = await api.get<{ models: AvailableModel[] }>("/api/ai/models", token);
       setAvailableModels(Array.isArray(data?.models) ? data.models : []);
       setSearchDone(true);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to fetch models:", e);
-      toast.error(e.message || "Failed to fetch available models from Google");
+      toast.error(e instanceof Error ? e.message : "Failed to fetch available models from Google");
     } finally {
       setSearching(false);
     }

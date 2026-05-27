@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface PageData {
   slug: string;
   title: string;
@@ -13,6 +14,7 @@ export interface PageData {
   updatedAt: string;
 }
 
+// Type also defined in src/types/api.ts — keep in sync
 export interface PageAttachment {
   id: string;
   pageSlug: string;

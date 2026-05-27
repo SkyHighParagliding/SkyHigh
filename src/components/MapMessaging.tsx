@@ -133,13 +133,13 @@ export function MapMessaging({ pilotId, pilotName, pilotToken, composeTarget, on
     sendingRef.current = true;
 
     try {
+      let snapshot: QueuedMessage[] = [];
       setSendQueue(prev => {
         const queuedItems = prev.filter(q => q.status === 'queued');
         if (!queuedItems.length) return prev;
+        snapshot = queuedItems.map(q => ({ ...q, status: 'sending' as const }));
         return prev.map(q => q.status === 'queued' ? { ...q, status: 'sending' as const } : q);
       });
-
-      const snapshot = sendQueue.filter(q => q.status === 'queued' || q.status === 'sending');
       let needsRetry = false;
       let maxRetryCount = 0;
 

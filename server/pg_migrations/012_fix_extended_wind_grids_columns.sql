@@ -2,8 +2,6 @@
 -- Previous migration created unquoted columns which became lowercase in PostgreSQL
 -- This migration renames them to properly quoted camelCase identifiers
 
-BEGIN;
-
 -- Check if the table exists and has the old column names
 DO $$
 BEGIN
@@ -23,5 +21,3 @@ BEGIN
     ALTER TABLE extended_wind_grids RENAME COLUMN winddata TO "windData";
   END IF;
 END $$;
-
-COMMIT;

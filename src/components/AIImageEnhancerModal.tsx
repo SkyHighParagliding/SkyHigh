@@ -475,6 +475,11 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
 
     try {
       const cropRegion = getWizardCropRegion();
+      if (!cropRegion) {
+        setError("Could not determine crop region. Please ensure the image is fully loaded.");
+        setWizardProcessing(false);
+        return;
+      }
       let newBanner = bannerResult;
       let newSliders = { ...sliderResults };
 

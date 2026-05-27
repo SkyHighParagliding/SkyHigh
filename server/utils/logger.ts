@@ -1,7 +1,14 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LEVEL_ORDER: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
-const MIN_LEVEL: LogLevel = (process.env.LOG_LEVEL as LogLevel) || "info";
+const VALID_LOG_LEVELS: LogLevel[] = ["debug", "info", "warn", "error"];
+const rawLogLevel = (process.env.LOG_LEVEL || "info").toLowerCase();
+const MIN_LEVEL: LogLevel = VALID_LOG_LEVELS.includes(rawLogLevel as LogLevel)
+  ? (rawLogLevel as LogLevel)
+  : "info";
+if (!VALID_LOG_LEVELS.includes(rawLogLevel as LogLevel)) {
+  console.warn(`[logger] Invalid LOG_LEVEL "${process.env.LOG_LEVEL}", falling back to "info"`);
+}
 
 function formatTimestamp(): string {
   return new Date().toISOString();

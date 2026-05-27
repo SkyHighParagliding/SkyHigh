@@ -12,10 +12,13 @@ import { api } from '@/lib/apiClient';
 import 'leaflet/dist/leaflet.css';
 import { BASEMAPS } from '@/lib/xcMapUtils';
 
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 interface RetrievalRecord {
