@@ -195,22 +195,18 @@ function extractRole(member: CommitteeMember): string {
     if (foundRole) displayRole = foundRole;
   }
 
-  // If no position role, check for committee
-  if (!displayRole && member.isSafetyCommittee) {
+  // All cards on this page are committee members — default to "Committee" if no named position
+  if (!displayRole) {
     displayRole = "Committee";
   }
 
-  // Add SO/SSO if applicable
+  // Append SO/SSO below the position/committee label
   if (member.safetyOfficerType) {
-    if (displayRole) {
-      // If we have a position or committee, add SO/SSO on new line or with separator
-      displayRole += "\n" + member.safetyOfficerType;
-    } else {
-      displayRole = member.safetyOfficerType;
-    }
+    const soLabel = member.safetyOfficerType === "SSO" ? "Senior Safety Officer" : "Safety Officer";
+    displayRole += "\n" + soLabel;
   }
 
-  return displayRole || "Committee";
+  return displayRole;
 }
 
 function getSortOrder(member: CommitteeMember): number {

@@ -11,7 +11,7 @@ router.get("/", asyncHandler(async (req, res) => {
   const officers = await db.prepare(
     `SELECT id, name, surname, phone, email, position, safetyOfficerType, showTelegram, showPhone, showEmail, showAdminEmail, photoUrl, photoAuthorised, fullNameDisplay
      FROM contacts WHERE isSafetyCommittee = 1 AND displaySafety = 1
-     ORDER BY name ASC`
+     ORDER BY CASE "safetyOfficerType" WHEN 'SSO' THEN 0 WHEN 'SO' THEN 1 ELSE 2 END, name ASC`
   ).all() as { id: string; name: string; surname: string; phone: string; email: string; position: string | null; safetyOfficerType?: string | null; showTelegram: number; showPhone: number; showEmail: number; showAdminEmail: number; photoUrl?: string | null; photoAuthorised?: number; fullNameDisplay?: number }[];
   const filtered = await filterByCurrentMembers(officers);
   res.json(filtered.map(o => ({

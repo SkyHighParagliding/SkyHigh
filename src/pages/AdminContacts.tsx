@@ -345,7 +345,9 @@ export function AdminContacts() {
         "/api/contacts/tidyhq-smart-import", { groupId }, token
       );
       setQuickImportResult({ groupName, ...result });
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      fetchContacts();
+      queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
+      queryClient.invalidateQueries({ queryKey: ['officers'] });
     } catch (e: unknown) {
       setQuickImportError(e instanceof Error ? e.message : `Failed to import ${groupName}`);
     } finally {
@@ -587,16 +589,16 @@ export function AdminContacts() {
                     <CheckSquare className="w-4 h-4 mr-2" /> Bulk Select
                   </Button>
                   <Button variant="outline" onClick={() => { setShowQuickImport(true); setQuickImportResult(null); setQuickImportError(""); }}>
-                    <Users className="w-4 h-4 mr-2" /> Quick Import
+                    <Users className="w-4 h-4 mr-2" /> Imp Committees
                   </Button>
                   <Button variant="outline" onClick={openGroupImport}>
-                    <Users className="w-4 h-4 mr-2" /> Import from TidyHQ Group
+                    <Users className="w-4 h-4 mr-2" /> Imp THQ Group
                   </Button>
                   <Button variant="outline" onClick={() => { setShowTidyHQ(true); setTidySearch(""); setTidyResults([]); setTidyError(""); }}>
-                    <Download className="w-4 h-4 mr-2" /> Import from TidyHQ
+                    <Download className="w-4 h-4 mr-2" /> Imp from THQ
                   </Button>
                   <Button onClick={openAdd} className="bg-navy hover:bg-navy-light text-white">
-                    <Plus className="w-4 h-4 mr-2" /> Add Contact
+                    <Plus className="w-4 h-4 mr-2" /> Contact
                   </Button>
                 </>
               )}
