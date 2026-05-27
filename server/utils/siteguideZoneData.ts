@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import createLogger from "./logger.js";
-import db from "../db.js";
+import { queryOne, execute } from "../pg.js";
 
 const log = createLogger("siteguide-zone-data");
 
@@ -468,10 +468,10 @@ export function invalidateCache() {
 }
 
 export async function getZoneDataVersion(): Promise<string | null> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'zoneDataVersion'").get() as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'zoneDataVersion'");
   return row?.value ?? null;
 }
 
 export async function setZoneDataVersion(version: string) {
-  await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('zoneDataVersion', ?)").run(version);
+  await execute("INSERT INTO settings (key, value) VALUES ('zoneDataVersion', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [version]);
 }

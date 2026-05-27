@@ -1,5 +1,5 @@
 import { fromZonedTime } from 'date-fns-tz';
-import db from "./db.js";
+import { query, queryOne, execute } from "./pg.js";
 import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
 import { parseBomStationId, fetchBomObservation } from "./bomWeather.js";
 import createLogger from "./utils/logger.js";
@@ -33,6 +33,11 @@ async function fetchWithRetry(url: string, options: any = {}, retries = 5, backo
           continue;
         }
         throw new Error(errorMsg);
+      }
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Expected JSON but got ${contentType}: ${text.slice(0, 200)}`);
       }
       return await response.json();
     } catch (err) {
@@ -74,7 +79,7 @@ export function degreesToDirection(degrees: number): string {
 }
 
 export async function fetchWeatherData(isManual = false) {
-  const settings = await db.prepare("SELECT key, value FROM settings WHERE key LIKE 'weatherScraper%'").all() as { key: string, value: string }[];
+  const settings = await query<{ key: string; value: string }>("SELECT key, value FROM settings WHERE key LIKE 'weatherScraper%'");
   const config = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as any);
   
   const minInterval = parseInt(config.weatherScraperMinInterval || '15');
@@ -98,7 +103,9 @@ export async function fetchWeatherData(isManual = false) {
       return;
     }
 
-    const sitesWithLiveWeather = await db.prepare("SELECT id, liveStationId, liveStationIdAlt FROM sites WHERE useLiveWeather = 'true' AND liveStationId IS NOT NULL").all() as { id: string, liveStationId: string, liveStationIdAlt: string | null }[];
+    const sitesWithLiveWeather = await query<{ id: string; liveStationId: string; liveStationIdAlt: string | null }>(
+      "SELECT id, \"liveStationId\", \"liveStationIdAlt\" FROM sites WHERE \"useLiveWeather\" = 'true' AND \"liveStationId\" IS NOT NULL"
+    );
     
     const allStationIds = sitesWithLiveWeather.flatMap(s => [s.liveStationId, s.liveStationIdAlt].filter(Boolean) as string[]);
     let liveWindData: any = null;
@@ -119,12 +126,19 @@ export async function fetchWeatherData(isManual = false) {
         const wmoid = stationId.replace('livewind-', '');
         const stationData = liveWindData?.find((d: any) => d.wmoid === wmoid);
         if (stationData) {
-          await db.prepare("DELETE FROM weather_observations WHERE siteId = ?").run(dbKey);
+          const windSpeed = typeof stationData.speed_kt === 'number' ? stationData.speed_kt : 0;
+          const windGust = typeof stationData.gust_kt === 'number' ? stationData.gust_kt : 0;
+          const direction = stationData.direction ?? 'N';
+          const siteName = stationData.site_name || 'Unknown';
+          const lat = typeof stationData.lat === 'number' ? stationData.lat : null;
+          const lon = typeof stationData.lon === 'number' ? stationData.lon : null;
+          await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
           const timestamp = new Date().toISOString();
-          await db.prepare("INSERT INTO weather_observations (siteId, windSpeed, windGust, direction, stationName, stationLat, stationLon, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-            dbKey, stationData.speed_kt, stationData.gust_kt, stationData.direction, stationData.site_name, stationData.lat, stationData.lon, timestamp
+          await execute(
+            "INSERT INTO weather_observations (\"siteId\", \"windSpeed\", \"windGust\", direction, \"stationName\", \"stationLat\", \"stationLon\", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [dbKey, windSpeed, windGust, direction, siteName, lat, lon, timestamp]
           );
-          console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${stationData.speed_kt}kt (Gust ${stationData.gust_kt}kt) ${stationData.direction} from ${stationData.site_name} (Live-Wind)`);
+          console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${siteName} (Live-Wind)`);
         }
       } else if (stationId.startsWith('freeflightwx-')) {
         const stationSlug = getSlugFromStationId(stationId);
@@ -136,10 +150,11 @@ export async function fetchWeatherData(isManual = false) {
           const windGust = Math.round(wxData.current.windGustKts);
           const direction = wxData.current.windDirectionCardinal;
           const stationName = stationSlug.charAt(0).toUpperCase() + stationSlug.slice(1) + ' (FreeFlightWx)';
-          await db.prepare("DELETE FROM weather_observations WHERE siteId = ?").run(dbKey);
+          await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
           const timestamp = new Date(wxData.current.timestamp).toISOString();
-          await db.prepare("INSERT INTO weather_observations (siteId, windSpeed, windGust, direction, stationName, stationLat, stationLon, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-            dbKey, windSpeed, windGust, direction, stationName, null, null, timestamp
+          await execute(
+            "INSERT INTO weather_observations (\"siteId\", \"windSpeed\", \"windGust\", direction, \"stationName\", \"stationLat\", \"stationLon\", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [dbKey, windSpeed, windGust, direction, stationName, null, null, timestamp]
           );
           console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${stationName}`);
         }
@@ -152,9 +167,10 @@ export async function fetchWeatherData(isManual = false) {
         console.log(`Weather scraper: Fetching BOM data for site ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (Station: ${stationId})${isManualTrigger ? ' (Manual Trigger)' : ''}...`);
         const bomObs = await fetchBomObservation(parsed.productCode, parsed.stationNum);
         if (bomObs) {
-          await db.prepare("DELETE FROM weather_observations WHERE siteId = ?").run(dbKey);
-          await db.prepare("INSERT INTO weather_observations (siteId, windSpeed, windGust, direction, stationName, stationLat, stationLon, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-            dbKey, bomObs.windSpeed, bomObs.windGust, bomObs.direction, bomObs.stationName, bomObs.stationLat, bomObs.stationLon, bomObs.timestamp
+          await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
+          await execute(
+            "INSERT INTO weather_observations (\"siteId\", \"windSpeed\", \"windGust\", direction, \"stationName\", \"stationLat\", \"stationLon\", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [dbKey, bomObs.windSpeed, bomObs.windGust, bomObs.direction, bomObs.stationName, bomObs.stationLat, bomObs.stationLon, bomObs.timestamp]
           );
           console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${bomObs.windSpeed}kt (Gust ${bomObs.windGust}kt) ${bomObs.direction} from ${bomObs.stationName} (BOM)`);
         }
@@ -174,14 +190,15 @@ export async function fetchWeatherData(isManual = false) {
         });
         const latest = data.observations?.[0];
         if (latest) {
-          const windSpeed = Math.round(latest.metric.windSpeed * 0.539957);
-          const windGust = Math.round(latest.metric.windGust * 0.539957);
-          const direction = degreesToDirection(latest.winddir);
+          const windSpeed = Math.round((latest.metric?.windSpeed ?? 0) * 0.539957);
+          const windGust = Math.round((latest.metric?.windGust ?? 0) * 0.539957);
+          const direction = degreesToDirection(latest.winddir ?? 0);
           const stationName = latest.neighborhood || stationId;
-          await db.prepare("DELETE FROM weather_observations WHERE siteId = ?").run(dbKey);
+          await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
           const timestamp = new Date(latest.obsTimeUtc).toISOString();
-          await db.prepare("INSERT INTO weather_observations (siteId, windSpeed, windGust, direction, stationName, stationLat, stationLon, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
-            dbKey, windSpeed, windGust, direction, stationName, latest.lat, latest.lon, timestamp
+          await execute(
+            "INSERT INTO weather_observations (\"siteId\", \"windSpeed\", \"windGust\", direction, \"stationName\", \"stationLat\", \"stationLon\", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [dbKey, windSpeed, windGust, direction, stationName, latest.lat, latest.lon, timestamp]
           );
           console.log(`Weather scraper: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} weather - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${stationName} (WU)`);
         }
@@ -209,7 +226,7 @@ export async function fetchWeatherData(isManual = false) {
       const gridAgeMin = Math.round((Date.now() - grid.fetchedAt) / 60000);
       if (gridAgeMin > 60) log.warn(`Weather scraper: Fine grid is ${gridAgeMin}min old — forecasts may be stale`);
 
-      const sites = await db.prepare("SELECT id, lat, lon FROM sites").all() as { id: string, lat: number, lon: number }[];
+      const sites = await query<{ id: string; lat: number; lon: number }>("SELECT id, lat, lon FROM sites");
       let forecastsUpdated = 0;
       for (const site of sites) {
         if (!site.lat || !site.lon) continue;
@@ -217,8 +234,19 @@ export async function fetchWeatherData(isManual = false) {
         try {
           const forecast = extractSiteForecast(grid, site.id, site.lat, site.lon);
           if (forecast) {
-            await db.prepare("INSERT OR REPLACE INTO weather_forecasts (siteId, timestamp, temperature, windSpeed, windGust, windDirection, icon, summary, forecasts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
-              forecast.siteId, forecast.timestamp, forecast.temperature, forecast.windSpeed, forecast.windGust, forecast.windDirection, forecast.icon, forecast.summary, forecast.forecasts
+            await execute(
+              `INSERT INTO weather_forecasts ("siteId", timestamp, temperature, "windSpeed", "windGust", "windDirection", icon, summary, forecasts)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               ON CONFLICT ("siteId") DO UPDATE SET
+                 timestamp = EXCLUDED.timestamp,
+                 temperature = EXCLUDED.temperature,
+                 "windSpeed" = EXCLUDED."windSpeed",
+                 "windGust" = EXCLUDED."windGust",
+                 "windDirection" = EXCLUDED."windDirection",
+                 icon = EXCLUDED.icon,
+                 summary = EXCLUDED.summary,
+                 forecasts = EXCLUDED.forecasts`,
+              [forecast.siteId, forecast.timestamp, forecast.temperature, forecast.windSpeed, forecast.windGust, forecast.windDirection, forecast.icon, forecast.summary, forecast.forecasts]
             );
             forecastsUpdated++;
           }
@@ -231,7 +259,10 @@ export async function fetchWeatherData(isManual = false) {
       log.error("Weather scraper: Failed to process forecasts:", err);
     }
 
-    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run('weatherScraperLastRun', new Date().toISOString());
+    await execute(
+      "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      ['weatherScraperLastRun', new Date().toISOString()]
+    );
   } catch (err) {
     log.error("Weather scraper: CRITICAL ERROR in fetchWeatherData:", err);
   }

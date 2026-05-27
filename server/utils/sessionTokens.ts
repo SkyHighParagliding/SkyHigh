@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import db from '../db.js';
+import { query, queryOne, execute } from '../pg.js';
 import createLogger from './logger.js';
 import { SESSION_TOKEN_LENGTH, SESSION_TTL_MS, SESSION_CLEANUP_INTERVAL_MS } from '../constants.js';
 
@@ -46,10 +46,10 @@ export class SessionManager {
     const session = this.generateToken(userId, ipAddress, userAgent);
 
     try {
-      await db.prepare(`
-        INSERT INTO sessions (id, userId, token, expiresAt, createdAt, lastActivity, ipAddress, userAgent)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      await execute(`
+        INSERT INTO sessions (id, "userId", token, "expiresAt", "createdAt", "lastActivity", "ipAddress", "userAgent")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
         session.id,
         session.userId,
         session.token,
@@ -57,8 +57,8 @@ export class SessionManager {
         session.createdAt.toISOString(),
         session.lastActivity.toISOString(),
         session.ipAddress || null,
-        session.userAgent || null
-      );
+        session.userAgent || null,
+      ]);
 
       log.info(`Session created for user ${userId}`);
       return session.token;
@@ -73,11 +73,11 @@ export class SessionManager {
    */
   async validateSession(token: string): Promise<SessionToken | null> {
     try {
-      const row = await db.prepare(`
-        SELECT id, userId, token, expiresAt, createdAt, lastActivity, ipAddress, userAgent
+      const row = await queryOne<any>(`
+        SELECT id, "userId", token, "expiresAt", "createdAt", "lastActivity", "ipAddress", "userAgent"
         FROM sessions
-        WHERE token = ?
-      `).get(token) as any;
+        WHERE token = $1
+      `, [token]);
 
       if (!row) {
         return null;
@@ -94,9 +94,10 @@ export class SessionManager {
       }
 
       // Update last activity
-      await db.prepare(`
-        UPDATE sessions SET lastActivity = ? WHERE token = ?
-      `).run(new Date().toISOString(), token);
+      await execute(
+        `UPDATE sessions SET "lastActivity" = $1 WHERE token = $2`,
+        [new Date().toISOString(), token]
+      );
 
       return {
         id: row.id,
@@ -119,8 +120,8 @@ export class SessionManager {
    */
   async destroySession(token: string): Promise<boolean> {
     try {
-      const result = await db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
-      if (result.changes > 0) {
+      const result = await execute('DELETE FROM sessions WHERE token = $1', [token]);
+      if (result.rowCount > 0) {
         log.info(`Session destroyed`);
         return true;
       }
@@ -136,12 +137,12 @@ export class SessionManager {
    */
   async getUserSessions(userId: string): Promise<SessionToken[]> {
     try {
-      const rows = await db.prepare(`
-        SELECT id, userId, token, expiresAt, createdAt, lastActivity, ipAddress, userAgent
+      const rows = await query<any>(`
+        SELECT id, "userId", token, "expiresAt", "createdAt", "lastActivity", "ipAddress", "userAgent"
         FROM sessions
-        WHERE userId = ? AND expiresAt > CURRENT_TIMESTAMP
-        ORDER BY lastActivity DESC
-      `).all(userId) as any[];
+        WHERE "userId" = $1 AND "expiresAt" > NOW()
+        ORDER BY "lastActivity" DESC
+      `, [userId]);
 
       return rows.map(row => ({
         id: row.id,
@@ -164,15 +165,15 @@ export class SessionManager {
    */
   async cleanupExpiredSessions(): Promise<number> {
     try {
-      const result = await db.prepare(`
-        DELETE FROM sessions WHERE expiresAt < CURRENT_TIMESTAMP
-      `).run();
+      const result = await execute(`
+        DELETE FROM sessions WHERE "expiresAt" < NOW()
+      `);
 
-      if (result.changes > 0) {
-        log.info(`Cleaned up ${result.changes} expired sessions`);
+      if (result.rowCount > 0) {
+        log.info(`Cleaned up ${result.rowCount} expired sessions`);
       }
 
-      return result.changes;
+      return result.rowCount;
     } catch (e: any) {
       log.error(`Failed to cleanup sessions: ${e.message}`);
       return 0;
@@ -210,12 +211,12 @@ export class SessionManager {
    */
   async invalidateUserSessions(userId: string): Promise<number> {
     try {
-      const result = await db.prepare(`
-        DELETE FROM sessions WHERE userId = ?
-      `).run(userId);
+      const result = await execute(`
+        DELETE FROM sessions WHERE "userId" = $1
+      `, [userId]);
 
-      log.info(`Invalidated ${result.changes} sessions for user ${userId}`);
-      return result.changes;
+      log.info(`Invalidated ${result.rowCount} sessions for user ${userId}`);
+      return result.rowCount;
     } catch (e: any) {
       log.error(`Failed to invalidate user sessions: ${e.message}`);
       return 0;

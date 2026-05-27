@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import db from '../db.js';
+import { execute } from '../pg.js';
 import createLogger from './logger.js';
 
 const log = createLogger('health');
@@ -38,7 +38,7 @@ const startTime = Date.now();
 async function checkDatabase(): Promise<{ connected: boolean; latency: number }> {
   const start = Date.now();
   try {
-    await db.prepare("SELECT 1").get();
+    await execute("SELECT 1");
     const latency = Date.now() - start;
     return { connected: true, latency };
   } catch (e: any) {

@@ -1,4 +1,4 @@
-import db from "./db.js";
+import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid, getTimeWindow, getGridBounds, type GridFetchStatus } from "./victoriaGrid.js";
@@ -221,8 +221,10 @@ export async function fetchExtendedForecast(): Promise<void> {
 
     const gridJson = JSON.stringify(grid);
     const today = new Date().toISOString().split('T')[0];
-    await db.prepare("INSERT OR REPLACE INTO extended_forecasts (id, gridData, fetchedAt) VALUES (?, ?, CURRENT_TIMESTAMP)")
-      .run(`extended_grid_${today}`, gridJson);
+    await execute(
+      `INSERT INTO extended_forecasts (id, "gridData", "fetchedAt") VALUES ($1, $2, CURRENT_TIMESTAMP) ON CONFLICT (id) DO UPDATE SET "gridData" = EXCLUDED."gridData", "fetchedAt" = EXCLUDED."fetchedAt"`,
+      [`extended_grid_${today}`, gridJson]
+    );
     console.log(`Extended forecast: Saved grid for ${today} (${allPoints.length} points, ${(gridJson.length / 1024).toFixed(0)}KB)`);
 
     await cleanupOldExtendedForecasts();
@@ -257,9 +259,9 @@ function findNearestExtendedPoint(grid: ExtendedGrid, lat: number, lon: number):
 }
 
 async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Promise<void> {
-  const sites = await db.prepare("SELECT id, lat, lon, windSpeed, windDir FROM sites").all() as { id: string; lat: number; lon: number; windSpeed: string | null; windDir: string | null }[];
+  const sites = await query<{ id: string; lat: number; lon: number; windSpeed: string | null; windDir: string | null }>("SELECT id, lat, lon, \"windSpeed\", \"windDir\" FROM sites");
 
-  const existingForecasts = await db.prepare("SELECT siteId, forecasts FROM weather_forecasts").all() as { siteId: string; forecasts: string }[];
+  const existingForecasts = await query<{ siteId: string; forecasts: string }>(`SELECT "siteId", forecasts FROM weather_forecasts`);
   const forecastMap = new Map(existingForecasts.map(f => [f.siteId, f.forecasts]));
 
   const vicGrid = await getCachedFineGrid();
@@ -277,8 +279,10 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
     try {
       const forecast = buildSiteExtendedForecast(site.id, site.lat, site.lon, extendedGrid, forecastMap.get(site.id), vicGrid, site);
       if (forecast) {
-        await db.prepare("INSERT OR REPLACE INTO site_extended_forecasts (siteId, forecastData, updatedAt) VALUES (?, ?, CURRENT_TIMESTAMP)")
-          .run(site.id, JSON.stringify(forecast));
+        await execute(
+          `INSERT INTO site_extended_forecasts ("siteId", "forecastData", "updatedAt") VALUES ($1, $2, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "forecastData" = EXCLUDED."forecastData", "updatedAt" = EXCLUDED."updatedAt"`,
+          [site.id, JSON.stringify(forecast)]
+        );
         updated++;
       } else {
         skippedNullForecast.push(site.id);
@@ -636,13 +640,13 @@ function cacheWindGrid(windGrid: any): void {
 export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
   try {
     const today = new Date().toISOString().split('T')[0];
-    let row = await db.prepare("SELECT gridData FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+    let row = await queryOne<{ id?: string; gridData: string }>(`SELECT "gridData" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
 
     if (!row) {
-      const rows = await db.prepare("SELECT id, gridData FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      const rows = await query<{ id: string; gridData: string }>(`SELECT id, "gridData" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
       if (rows.length > 0) {
         row = rows[0];
-        console.log(`Extended forecast: Today's cache not found, using fallback from ${row.id.replace('extended_grid_', '')}`);
+        console.log(`Extended forecast: Today's cache not found, using fallback from ${rows[0].id.replace('extended_grid_', '')}`);
       }
     }
 
@@ -655,7 +659,7 @@ export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
 
 export async function getSiteExtendedForecast(siteId: string): Promise<SiteExtendedForecast | null> {
   try {
-    const row = await db.prepare("SELECT forecastData FROM site_extended_forecasts WHERE siteId = ?").get(siteId) as any;
+    const row = await queryOne<{ forecastData: string }>(`SELECT "forecastData" FROM site_extended_forecasts WHERE "siteId" = $1`, [siteId]);
     if (row) return JSON.parse(row.forecastData);
   } catch (e) {
     console.error(`Extended forecast: Read error for ${siteId}`, e);
@@ -666,7 +670,7 @@ export async function getSiteExtendedForecast(siteId: string): Promise<SiteExten
 export async function getAllSiteExtendedForecasts(): Promise<Map<string, SiteExtendedForecast>> {
   const map = new Map<string, SiteExtendedForecast>();
   try {
-    const rows = await db.prepare("SELECT siteId, forecastData FROM site_extended_forecasts").all() as any[];
+    const rows = await query<{ siteId: string; forecastData: string }>(`SELECT "siteId", "forecastData" FROM site_extended_forecasts`);
     for (const row of rows) {
       try {
         map.set(row.siteId, JSON.parse(row.forecastData));
@@ -681,9 +685,9 @@ export async function getAllSiteExtendedForecasts(): Promise<Map<string, SiteExt
 async function cleanupOldExtendedForecasts(): Promise<void> {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const result = await db.prepare("DELETE FROM extended_forecasts WHERE id LIKE 'extended_grid_%' AND id < ?").run(`extended_grid_${sevenDaysAgo}`);
-    if ((result as any).changes > 0) {
-      console.log(`Extended forecast: Cleaned up ${(result as any).changes} old forecast records`);
+    const result = await execute(`DELETE FROM extended_forecasts WHERE id LIKE 'extended_grid_%' AND id < $1`, [`extended_grid_${sevenDaysAgo}`]);
+    if (result.rowCount > 0) {
+      console.log(`Extended forecast: Cleaned up ${result.rowCount} old forecast records`);
     }
   } catch (e) {
     console.error("Extended forecast: Cleanup error", e);
@@ -693,7 +697,7 @@ async function cleanupOldExtendedForecasts(): Promise<void> {
 let extendedScheduleTimeout: NodeJS.Timeout | null = null;
 
 async function getSettingInt(key: string, fallback: number): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = $1`, [key]);
   const val = parseInt(row?.value || String(fallback), 10);
   return Number.isFinite(val) ? val : fallback;
 }
@@ -733,19 +737,19 @@ export async function scheduleExtendedForecast(): Promise<void> {
     const ts = new Date().toISOString();
     try {
       await fetchExtendedForecast();
-      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
-      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", "ok");
+      await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastRun", ts]);
+      await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastResult", "ok"]);
     } catch (e: any) {
-      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
-      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", e.message || "Unknown error");
+      await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastRun", ts]);
+      await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastResult", e.message || "Unknown error"]);
     }
     scheduleExtendedForecast();
   }, Math.max(msUntilNext, 60000));
 
   const today = new Date().toISOString().split('T')[0];
-  let cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+  let cached = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
   if (!cached) {
-    const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+    const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
     if (rows.length > 0) cached = rows[0];
   }
   if (!cached) {
@@ -763,9 +767,9 @@ export async function scheduleExtendedForecast(): Promise<void> {
 export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus> {
   try {
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+    let cached = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
     if (!cached) {
-      const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
       if (rows.length > 0) cached = rows[0];
     }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : null;
@@ -781,9 +785,9 @@ export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus
 
     await fetchExtendedForecast();
 
-    let updated = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id = ?").get(`extended_grid_${today}`) as any;
+    let updated = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
     if (!updated) {
-      const rows = await db.prepare("SELECT fetchedAt FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1").all() as any[];
+      const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
       if (rows.length > 0) updated = rows[0];
     }
     const newCacheAgeMs = updated ? Date.now() - new Date(updated.fetchedAt).getTime() : null;

@@ -1,9 +1,29 @@
-import db from "./db.js";
+import { queryOne } from "./pg.js";
 
 const FETCH_TIMEOUT_MS = 10000;
 
+/** Local retry helper — avoids circular dep from importing fetchWithRetry from weather.ts */
+async function fetchWithRetryLocal(url: string, options: RequestInit & { signal: AbortSignal }, retries = 3, backoff = 1000): Promise<Response> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok && (response.status === 429 || response.status >= 500) && attempt < retries - 1) {
+        const wait = backoff * Math.pow(2, attempt);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+      return response;
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      const wait = backoff * Math.pow(2, attempt);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts`);
+}
+
 async function getCacheTtlMs(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheFreeFlightWxTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheFreeFlightWxTtl"]);
   const seconds = parseInt(row?.value || "30", 10);
   return seconds * 1000;
 }
@@ -168,7 +188,7 @@ export async function fetchFreeFlightWxData(gaugeUrl: string): Promise<FreeFligh
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    const response = await fetch(ajaxUrl, {
+    const response = await fetchWithRetryLocal(ajaxUrl, {
       signal: controller.signal,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; SkyHighParagliding/1.0)" },
     });

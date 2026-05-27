@@ -1,4 +1,4 @@
-import db from "../db.js";
+import { queryOne, query, execute } from "../pg.js";
 import createLogger from "./logger.js";
 
 const log = createLogger("fixStaleImages");
@@ -14,7 +14,7 @@ interface ImageLibraryEntry {
 
 async function getRandomImageFromLibrary(siteType?: string): Promise<string | null> {
   try {
-    const row = await db.prepare("SELECT value FROM settings WHERE key = 'imageLibrary'").get() as { value: string } | undefined;
+    const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'imageLibrary'");
     if (!row?.value) return null;
 
     const images: ImageLibraryEntry[] = JSON.parse(row.value);
@@ -58,12 +58,12 @@ export async function fixAllStaleImages(): Promise<{ updated: number; failed: nu
   let skipped = 0;
 
   try {
-    const sites = await db.prepare("SELECT id, name, type, image FROM sites").all() as Array<{
+    const sites = await query<{
       id: string;
       name: string;
       type: string;
       image: string | null;
-    }>;
+    }>("SELECT id, name, type, image FROM sites");
 
     log.info(`Found ${sites.length} sites to check`);
 
@@ -82,7 +82,7 @@ export async function fixAllStaleImages(): Promise<{ updated: number; failed: nu
           continue;
         }
 
-        await db.prepare("UPDATE sites SET image = ? WHERE id = ?").run(newImage, site.id);
+        await execute("UPDATE sites SET image = $1 WHERE id = $2", [newImage, site.id]);
         log.info(`Updated ${site.id} (${site.name}): ${site.image} → ${newImage}`);
         updated++;
       } catch (e) {

@@ -1,6 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import db from "../db.js";
 import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -199,7 +198,7 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
 
   let folderId = project.driveFolderId;
   if (!folderId) {
-    const folderMap = await ensureFolderStructure(db);
+    const folderMap = await ensureFolderStructure();
     const projectsParent = folderMap?.["08"];
     if (!projectsParent) {
       return res.status(500).json({ error: "Could not find Projects folder in Drive" });

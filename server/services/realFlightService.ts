@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import db from "../db.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import createLogger from "../utils/logger.js";
 import type { FlightService, Flight, Breadcrumb, Pilot, LivePilotPosition, FlightStats } from "./types.js";
 
@@ -8,7 +8,10 @@ const log = createLogger("flights");
 const livePilots = new Map<string, LivePilotPosition>();
 
 async function getSettingNum(key: string, fallback: number): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>(
+    "SELECT value FROM settings WHERE key = $1",
+    [key]
+  );
   if (!row?.value) return fallback;
   const n = Number(row.value);
   return isNaN(n) ? fallback : n;
@@ -40,35 +43,56 @@ export class RealFlightService implements FlightService {
     const id = crypto.randomUUID();
     const sToken = pilotId ? null : sessionToken || crypto.randomUUID();
 
-    await db.prepare(
-      `INSERT INTO flights (id, pilotId, sessionToken, siteId, siteName, startedAt, status)
-       VALUES (?, ?, ?, ?, ?, datetime('now'), 'recording')`
-    ).run(id, pilotId, sToken, siteId || null, siteName || "");
+    await execute(
+      `INSERT INTO flights (id, "pilotId", "sessionToken", "siteId", "siteName", "startedAt", status)
+       VALUES ($1, $2, $3, $4, $5, NOW(), 'recording')`,
+      [id, pilotId, sToken, siteId || null, siteName || ""]
+    );
 
     log.info(`Flight created: ${id} pilot=${pilotId || "guest"}`);
     return { id, pilotId, sessionToken: sToken, siteId: siteId || null, siteName: siteName || "", startedAt: new Date().toISOString(), endedAt: null, status: "recording", maxAltitude: 0, maxSpeed: 0, totalDistance: 0, altitudeGain: 0, altitudeLoss: 0 };
   }
 
   async addBreadcrumbs(flightId: string, breadcrumbs: Breadcrumb[], pilot: Pilot | null, sessionToken?: string) {
-    const flight = await db.prepare("SELECT * FROM flights WHERE id = ?").get(flightId) as any;
-    if (!flight) return null;
-    if (!verifyFlightOwnership(flight, pilot, sessionToken)) return { error: "Not authorized for this flight", status: 403 };
+    // Atomic check: verify ownership in a single query to prevent race conditions
+    let authorized = false;
+    if (pilot?.id) {
+      const checkFlight = await queryOne(
+        `SELECT id FROM flights WHERE id = $1 AND "pilotId" = $2 LIMIT 1`,
+        [flightId, pilot.id]
+      );
+      authorized = !!checkFlight;
+    } else if (sessionToken) {
+      const checkSession = await queryOne(
+        `SELECT id FROM flights WHERE id = $1 AND "sessionToken" = $2 LIMIT 1`,
+        [flightId, sessionToken]
+      );
+      authorized = !!checkSession;
+    }
 
-    const insert = await db.prepare(
-      `INSERT OR IGNORE INTO breadcrumbs (flightId, timestamp, lat, lon, altitude, speed, heading)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    );
+    if (!authorized) {
+      const flightCheck = await queryOne(
+        "SELECT id FROM flights WHERE id = $1 LIMIT 1",
+        [flightId]
+      );
+      if (!flightCheck) return null;
+      return { error: "Not authorized for this flight", status: 403 };
+    }
 
-    const insertMany = await db.transaction(async (crumbs: any[]) => {
+    const inserted = await transaction(async (client) => {
       let count = 0;
-      for (const c of crumbs) {
-        const result = await insert.run(flightId, c.timestamp, c.lat, c.lon, c.altitude || 0, c.speed || 0, c.heading || 0);
-        if (result.changes > 0) count++;
+      for (const c of breadcrumbs) {
+        const res = await client.query(
+          `INSERT INTO breadcrumbs ("flightId", timestamp, lat, lon, altitude, speed, heading)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT ("flightId", timestamp) DO NOTHING`,
+          [flightId, c.timestamp, c.lat, c.lon, c.altitude || 0, c.speed || 0, c.heading || 0]
+        );
+        if ((res.rowCount ?? 0) > 0) count++;
       }
       return count;
     });
 
-    const inserted = await insertMany(breadcrumbs);
     return { inserted, total: breadcrumbs.length };
   }
 
@@ -118,33 +142,37 @@ export class RealFlightService implements FlightService {
   }
 
   async endFlight(flightId: string, stats: FlightStats | undefined, pilot: Pilot | null, sessionToken?: string) {
-    const flight = await db.prepare("SELECT * FROM flights WHERE id = ?").get(flightId) as any;
+    const flight = await queryOne("SELECT * FROM flights WHERE id = $1", [flightId]);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };
     if (!verifyFlightOwnership(flight, pilot, sessionToken)) return { ok: false, error: "Not authorized for this flight", status: 403 };
 
-    await db.prepare(
+    await execute(
       `UPDATE flights SET
-        endedAt = datetime('now'),
+        "endedAt" = NOW(),
         status = 'completed',
-        maxAltitude = ?,
-        maxSpeed = ?,
-        totalDistance = ?,
-        altitudeGain = ?,
-        altitudeLoss = ?
-       WHERE id = ?`
-    ).run(
-      stats?.maxAltitude || 0,
-      stats?.maxSpeed || 0,
-      stats?.totalDistance || 0,
-      stats?.altitudeGain || 0,
-      stats?.altitudeLoss || 0,
-      flightId
+        "maxAltitude" = $1,
+        "maxSpeed" = $2,
+        "totalDistance" = $3,
+        "altitudeGain" = $4,
+        "altitudeLoss" = $5
+       WHERE id = $6`,
+      [
+        stats?.maxAltitude || 0,
+        stats?.maxSpeed || 0,
+        stats?.totalDistance || 0,
+        stats?.altitudeGain || 0,
+        stats?.altitudeLoss || 0,
+        flightId,
+      ]
     );
 
     let pilotName = pilot?.firstName || pilot?.name || "Pilot";
     if (flight.pilotId && flight.pilotId !== pilot?.id) {
-      const session = await db.prepare("SELECT firstName, lastName FROM pilot_sessions WHERE pilotId = ? ORDER BY createdAt DESC LIMIT 1").get(flight.pilotId) as any;
-      if (session?.firstName) pilotName = session.firstName;
+      const p = await queryOne<{ name: string }>(
+        "SELECT name FROM pilots WHERE id = $1",
+        [flight.pilotId]
+      );
+      if (p?.name) pilotName = p.name;
     }
 
     log.info(`Flight ended: ${flightId}`);
@@ -152,40 +180,48 @@ export class RealFlightService implements FlightService {
   }
 
   async getFlightWithBreadcrumbs(flightId: string, pilot: Pilot | null, sessionToken?: string) {
-    const flight = await db.prepare("SELECT * FROM flights WHERE id = ?").get(flightId) as any;
+    const flight = await queryOne("SELECT * FROM flights WHERE id = $1", [flightId]);
     if (!flight) return null;
     if (!verifyFlightOwnership(flight, pilot, sessionToken)) return { error: "Not authorized for this flight", status: 403 };
-    const breadcrumbs = await db.prepare("SELECT * FROM breadcrumbs WHERE flightId = ? ORDER BY timestamp ASC").all(flightId);
+    const breadcrumbs = await query(
+      `SELECT * FROM breadcrumbs WHERE "flightId" = $1 ORDER BY timestamp ASC`,
+      [flightId]
+    );
     return { flight, breadcrumbs };
   }
 
   async listFlights(pilotId: string | null, sessionToken?: string) {
     if (pilotId) {
-      return await db.prepare("SELECT * FROM flights WHERE pilotId = ? ORDER BY startedAt DESC LIMIT 500").all(pilotId) as Flight[];
+      return await query<Flight>(
+        `SELECT * FROM flights WHERE "pilotId" = $1 ORDER BY "startedAt" DESC LIMIT 500`,
+        [pilotId]
+      );
     }
     if (sessionToken) {
-      return await db.prepare("SELECT * FROM flights WHERE sessionToken = ? ORDER BY startedAt DESC LIMIT 500").all(sessionToken) as Flight[];
+      return await query<Flight>(
+        `SELECT * FROM flights WHERE "sessionToken" = $1 ORDER BY "startedAt" DESC LIMIT 500`,
+        [sessionToken]
+      );
     }
     return [];
   }
 
   async deleteFlight(flightId: string, pilot: Pilot | null, sessionToken?: string) {
-    const flight = await db.prepare("SELECT * FROM flights WHERE id = ?").get(flightId) as any;
+    const flight = await queryOne("SELECT * FROM flights WHERE id = $1", [flightId]);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };
     if (!verifyFlightOwnership(flight, pilot, sessionToken)) return { ok: false, error: "Not authorized for this flight", status: 403 };
 
-    const deleteTx = await db.transaction(async () => {
-      await db.prepare("DELETE FROM breadcrumbs WHERE flightId = ?").run(flightId);
-      await db.prepare("DELETE FROM flights WHERE id = ?").run(flightId);
+    await transaction(async (client) => {
+      await client.query(`DELETE FROM breadcrumbs WHERE "flightId" = $1`, [flightId]);
+      await client.query("DELETE FROM flights WHERE id = $1", [flightId]);
     });
-    await deleteTx();
 
     log.info(`Flight deleted: ${flightId} by pilot=${pilot?.id || "guest"}`);
     return { ok: true };
   }
 
   async getFlight(flightId: string) {
-    return await db.prepare("SELECT * FROM flights WHERE id = ?").get(flightId) as Flight | null;
+    return await queryOne<Flight>("SELECT * FROM flights WHERE id = $1", [flightId]) ?? null;
   }
 
   verifyOwnership(flight: Flight, pilot: Pilot | null, sessionToken?: string) {

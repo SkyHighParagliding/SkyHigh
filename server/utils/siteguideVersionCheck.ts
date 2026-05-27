@@ -1,4 +1,4 @@
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import createLogger from "./logger.js";
 
 const log = createLogger("siteguide-version-check");
@@ -25,37 +25,37 @@ export async function fetchSiteguideVersion(): Promise<string> {
 }
 
 export async function getLastVersionCheck(): Promise<VersionCheckResult | null> {
-  const row = await db.prepare(
+  const row = await queryOne<VersionCheckResult>(
     "SELECT * FROM siteguide_version_checks ORDER BY id DESC LIMIT 1"
-  ).get() as VersionCheckResult | undefined;
+  );
   return row ?? null;
 }
 
 export async function getLastDetectedVersion(): Promise<string | null> {
-  const row = await db.prepare(
-    "SELECT detectedVersion FROM siteguide_version_checks WHERE detectedVersion IS NOT NULL ORDER BY id DESC LIMIT 1"
-  ).get() as { detectedVersion: string } | undefined;
+  const row = await queryOne<{ detectedVersion: string }>(
+    `SELECT "detectedVersion" FROM siteguide_version_checks WHERE "detectedVersion" IS NOT NULL ORDER BY id DESC LIMIT 1`
+  );
   return row?.detectedVersion ?? null;
 }
 
 export async function getLastChangedCheck(): Promise<VersionCheckResult | null> {
-  const row = await db.prepare(
-    "SELECT * FROM siteguide_version_checks WHERE changed = 1 ORDER BY id DESC LIMIT 1"
-  ).get() as VersionCheckResult | undefined;
+  const row = await queryOne<VersionCheckResult>(
+    "SELECT * FROM siteguide_version_checks WHERE changed = true ORDER BY id DESC LIMIT 1"
+  );
   return row ?? null;
 }
 
 export async function getLastBulkImportTime(): Promise<string | null> {
-  const row = await db.prepare(
-    "SELECT MAX(siteguideScrapedAt) as lastImport FROM sites WHERE siteguideScrapedAt IS NOT NULL AND siteguideScrapedAt != ''"
-  ).get() as { lastImport: string | null } | undefined;
+  const row = await queryOne<{ lastImport: string | null }>(
+    `SELECT MAX("siteguideScrapedAt") as "lastImport" FROM sites WHERE "siteguideScrapedAt" IS NOT NULL AND "siteguideScrapedAt" != ''`
+  );
   return row?.lastImport ?? null;
 }
 
 export async function getVersionBeforeLastChange(): Promise<string | null> {
-  const row = await db.prepare(
-    "SELECT previousVersion FROM siteguide_version_checks WHERE changed = 1 ORDER BY id DESC LIMIT 1"
-  ).get() as { previousVersion: string } | undefined;
+  const row = await queryOne<{ previousVersion: string }>(
+    `SELECT "previousVersion" FROM siteguide_version_checks WHERE changed = true ORDER BY id DESC LIMIT 1`
+  );
   return row?.previousVersion ?? null;
 }
 
@@ -63,9 +63,10 @@ export async function getChangedSinceLastImport(): Promise<boolean> {
   const lastImportTime = await getLastBulkImportTime();
   if (!lastImportTime) return false;
 
-  const row = await db.prepare(
-    "SELECT id FROM siteguide_version_checks WHERE changed = 1 AND checkedAt > ? LIMIT 1"
-  ).get(lastImportTime) as { id: number } | undefined;
+  const row = await queryOne<{ id: number }>(
+    `SELECT id FROM siteguide_version_checks WHERE changed = true AND "checkedAt" > $1 LIMIT 1`,
+    [lastImportTime]
+  );
   return row != null;
 }
 
@@ -84,16 +85,14 @@ export async function runVersionCheck(): Promise<VersionCheckResult> {
   const changed = detectedVersion !== null && previousVersion !== null && detectedVersion !== previousVersion;
 
   const checkedAt = new Date().toISOString();
-  const stmt = await db.prepare(
-    "INSERT INTO siteguide_version_checks (checkedAt, detectedVersion, previousVersion, changed, error) VALUES (?, ?, ?, ?, ?)"
+  const rows = await query<{ id: number }>(
+    `INSERT INTO siteguide_version_checks ("checkedAt", "detectedVersion", "previousVersion", changed, error)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id`,
+    [checkedAt, detectedVersion, previousVersion, changed, error]
   );
-  const result = await stmt.run(
-    checkedAt,
-    detectedVersion,
-    previousVersion,
-    changed ? 1 : 0,
-    error
-  );
+
+  const newId = rows[0]?.id;
 
   if (changed) {
     log.info(`Siteguide version CHANGED: ${previousVersion} → ${detectedVersion}`);
@@ -102,7 +101,7 @@ export async function runVersionCheck(): Promise<VersionCheckResult> {
   }
 
   return {
-    id: result.lastInsertRowid as number,
+    id: newId as number,
     checkedAt,
     detectedVersion,
     previousVersion,

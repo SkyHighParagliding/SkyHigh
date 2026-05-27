@@ -1,6 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import db from "../db.js";
 import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -322,7 +321,7 @@ router.post("/upload", requireAuth, upload.single("file"), asyncHandler(async (r
     return res.status(503).json({ error: "Google Drive not connected. Connect Google Drive to enable file uploads." });
   }
 
-  const folderMap = await ensureFolderStructure(db);
+  const folderMap = await ensureFolderStructure();
   if (!folderMap || !folderMap[category]) {
     return res.status(500).json({ error: "Could not find or create the target Drive folder" });
   }

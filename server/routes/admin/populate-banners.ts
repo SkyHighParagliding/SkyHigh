@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { queryOne, query, execute } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import createLogger from "../../utils/logger.js";
@@ -12,7 +12,7 @@ router.post("/populate-banners", requireAuth, asyncHandler(async (req, res) => {
     log.info("Starting site banner population");
 
     // Get the image library from settings
-    const libRow = await db.prepare("SELECT value FROM settings WHERE key = 'imageLibrary'").get() as { value: string } | undefined;
+    const libRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'imageLibrary'");
 
     if (!libRow?.value) {
       log.error("No image library found in settings");
@@ -29,7 +29,7 @@ router.post("/populate-banners", requireAuth, asyncHandler(async (req, res) => {
     log.info(`Coastal: ${coastal.length}, Inland: ${inland.length}`);
 
     // Get all sites
-    const sites = await db.prepare("SELECT id, name, type FROM sites").all() as any[];
+    const sites = await query<{ id: any; name: string; type: string }>("SELECT id, name, type FROM sites");
     log.info(`Found ${sites.length} sites to update`);
 
     let updated = 0;
@@ -51,7 +51,7 @@ router.post("/populate-banners", requireAuth, asyncHandler(async (req, res) => {
         }
 
         const randomImage = pool[Math.floor(Math.random() * pool.length)];
-        await db.prepare("UPDATE sites SET image = ? WHERE id = ?").run(randomImage.banner, site.id);
+        await execute("UPDATE sites SET image = $1 WHERE id = $2", [randomImage.banner, site.id]);
         updated++;
         results.push({ site: site.name, status: "updated", image: randomImage.banner });
         log.info(`✓ ${site.name}: set banner`);

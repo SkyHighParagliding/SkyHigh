@@ -2,12 +2,12 @@ import cron from "node-cron";
 import createLogger from "./logger.js";
 import { runVersionCheck } from "./siteguideVersionCheck.js";
 import { sendEmail } from "./email.js";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 
 const log = createLogger("scheduled-jobs");
 
 async function getSetting(key: string, fallback: string): Promise<string> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", [key]);
   return row?.value || fallback;
 }
 
@@ -19,30 +19,33 @@ async function getSettingInt(key: string, fallback: number): Promise<number> {
 async function checkAndNotifySubmissions() {
   try {
     const jobStart = new Date().toISOString();
-    const lastNotified = await db.prepare("SELECT value FROM settings WHERE key = 'lastSubmissionNotification'").get() as { value: string } | undefined;
+    const lastNotified = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'lastSubmissionNotification'");
     const since = lastNotified?.value || "2000-01-01T00:00:00";
 
-    const pending = await db.prepare(
-      "SELECT COUNT(*) as count FROM image_submissions WHERE status = 'pending' AND submittedAt > ? AND submittedAt <= ?"
-    ).get(since, jobStart) as { count: number };
+    const pendingRow = await queryOne<{ count: string }>(
+      "SELECT COUNT(*) as count FROM image_submissions WHERE status = 'pending' AND \"submittedAt\" > $1 AND \"submittedAt\" <= $2",
+      [since, jobStart]
+    );
+    const pending = { count: parseInt(pendingRow?.count ?? "0", 10) };
 
     if (pending.count === 0) {
       log.info("No new submissions since last notification — skipping email");
       return;
     }
 
-    const socialMediaContacts = await db.prepare(
-      "SELECT name, surname, email FROM contacts WHERE isSocialMedia = 1 AND email != '' AND email IS NOT NULL"
-    ).all() as { name: string; surname: string; email: string }[];
+    const socialMediaContacts = await query<{ name: string; surname: string; email: string }>(
+      "SELECT name, surname, email FROM contacts WHERE \"isSocialMedia\" = true AND email != '' AND email IS NOT NULL"
+    );
 
     if (socialMediaContacts.length === 0) {
       log.info("No Social Media contacts configured — skipping submission notification");
       return;
     }
 
-    const totalPending = await db.prepare(
+    const totalPendingRow = await queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM image_submissions WHERE status = 'pending'"
-    ).get() as { count: number };
+    );
+    const totalPending = { count: parseInt(totalPendingRow?.count ?? "0", 10) };
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -72,7 +75,10 @@ async function checkAndNotifySubmissions() {
     }
 
     if (anySent) {
-      await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('lastSubmissionNotification', ?)").run(jobStart);
+      await execute(
+        "INSERT INTO settings (key, value) VALUES ('lastSubmissionNotification', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        [jobStart]
+      );
       log.info(`Submission notification sent to ${socialMediaContacts.length} Social Media contact(s)`);
     } else {
       log.error("All submission notification emails failed — watermark not advanced");
@@ -92,7 +98,10 @@ async function runDriveSync() {
     const result = await runDocumentIndexSync();
     if (result.success) {
       log.info(`Scheduled Drive sync complete: ${result.message}`);
-      await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('driveSyncLastRun', ?)").run(new Date().toISOString());
+      await execute(
+        "INSERT INTO settings (key, value) VALUES ('driveSyncLastRun', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        [new Date().toISOString()]
+      );
     } else {
       log.error(`Scheduled Drive sync failed: ${result.error}`);
     }
@@ -106,12 +115,12 @@ async function fetchFineGridDaily() {
   try {
     const { fetchFineGrid } = await import("../victoriaGrid.js");
     await fetchFineGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", "ok");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", "ok"]);
     log.info("Fine grid daily fetch completed");
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", e.message || "Unknown error");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", e.message || "Unknown error"]);
     log.error(`Fine grid daily fetch failed: ${e.message}`);
   }
 }
@@ -121,12 +130,12 @@ async function fetchCoarseGridDaily() {
   try {
     const { fetchCoarseGrid } = await import("../victoriaGrid.js");
     await fetchCoarseGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", "ok");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastResult", "ok"]);
     log.info("Coarse grid daily fetch completed");
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", e.message || "Unknown error");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastResult", e.message || "Unknown error"]);
     log.error(`Coarse grid daily fetch failed: ${e.message}`);
   }
 }
@@ -135,7 +144,7 @@ async function startupGridCheck() {
   const RECENT_FETCH_MS = 22 * 60 * 60 * 1000; // 22 hours — safe window before next 5am run; prevents evening deploys from refetching
 
   // Check fine grid: only fetch if NOT fetched within last 12 hours
-  const vicLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'fineGridLastRun'").get() as { value: string } | undefined;
+  const vicLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'fineGridLastRun'");
   if (vicLastRun?.value) {
     const timeSinceLastRun = Date.now() - new Date(vicLastRun.value).getTime();
     if (timeSinceLastRun < RECENT_FETCH_MS) {
@@ -150,7 +159,7 @@ async function startupGridCheck() {
   }
 
   // Check coarse grid: only fetch if NOT fetched within last 12 hours
-  const wideLastRun = await db.prepare("SELECT value FROM settings WHERE key = 'coarseGridLastRun'").get() as { value: string } | undefined;
+  const wideLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'coarseGridLastRun'");
   if (wideLastRun?.value) {
     const timeSinceLastRun = Date.now() - new Date(wideLastRun.value).getTime();
     if (timeSinceLastRun < RECENT_FETCH_MS) {
@@ -209,8 +218,8 @@ export async function startScheduledJobs() {
             log.info("Auto-download of zone data is disabled. Skipping.");
           }
 
-          const autoEnabled = await db.prepare("SELECT value FROM settings WHERE key = 'autoImportEnabled'").get() as { value: string } | undefined;
-          const lastState = await db.prepare("SELECT value FROM settings WHERE key = 'lastImportedState'").get() as { value: string } | undefined;
+          const autoEnabled = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'autoImportEnabled'");
+          const lastState = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'lastImportedState'");
 
           if (autoEnabled?.value === "false") {
             log.info("Auto-import is disabled. Skipping automatic bulk import.");

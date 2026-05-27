@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import db from "../db.js";
+import { queryOne } from "../pg.js";
 import createLogger from "../utils/logger.js";
 import { calculateSequentialETAs } from "../utils/osrm.js";
 import type { RetrievalService, Pilot, Retrieval, DriverPosition, LaunchSiteInfo, RetrievalStatusResponse, SseClient } from "./types.js";
@@ -93,7 +93,7 @@ export class DemoRetrievalService implements RetrievalService {
     if (driverPos.lat != null && driverPos.lon != null) {
       this.recalcDriverETAs(driver.id, driverPos.lat, driverPos.lon).then(() => {
         this.broadcastUpdate();
-      }).catch(() => {});
+      }).catch((err: any) => log.warn(`Demo ETA recalc after claim failed: ${err.message}`));
     }
 
     this.broadcastUpdate();
@@ -129,7 +129,7 @@ export class DemoRetrievalService implements RetrievalService {
     if (prevDriverId && prevDriverLat != null && prevDriverLon != null) {
       this.recalcDriverETAs(prevDriverId, prevDriverLat, prevDriverLon).then(() => {
         this.broadcastUpdate();
-      }).catch(() => {});
+      }).catch((err: any) => log.warn(`Demo ETA recalc after unclaim failed: ${err.message}`));
     }
 
     log.info(`Demo retrieval unclaimed for pilot ${pilotId} by ${caller.id}`);
@@ -186,7 +186,7 @@ export class DemoRetrievalService implements RetrievalService {
         this.driverEtaLastCalc.set(driver.id, Date.now());
         this.recalcDriverETAs(driver.id, lat, lon).then(() => {
           this.broadcastUpdate();
-        }).catch(() => {});
+        }).catch((err: any) => log.warn(`Demo ETA recalc after position update failed: ${err.message}`));
       }
     }
 
@@ -294,7 +294,10 @@ export class DemoRetrievalService implements RetrievalService {
     if (this.flightService) {
       for (const flight of this.flightService.flights.values()) {
         if (flight.status === 'recording' && flight.siteName) {
-          const site = await db.prepare("SELECT id, name, lat, lon FROM sites WHERE id = ?").get(flight.siteId || '') as any;
+          const site = await queryOne<{ id: string; name: string; lat: number; lon: number }>(
+            "SELECT id, name, lat, lon FROM sites WHERE id = $1",
+            [flight.siteId || '']
+          );
           if (site?.lat != null && site?.lon != null) {
             return { available: true, name: site.name, lat: site.lat, lon: site.lon };
           }
@@ -302,7 +305,10 @@ export class DemoRetrievalService implements RetrievalService {
       }
       for (const flight of this.flightService.flights.values()) {
         if (flight.siteName) {
-          const site = await db.prepare("SELECT id, name, lat, lon FROM sites WHERE id = ?").get(flight.siteId || '') as any;
+          const site = await queryOne<{ id: string; name: string; lat: number; lon: number }>(
+            "SELECT id, name, lat, lon FROM sites WHERE id = $1",
+            [flight.siteId || '']
+          );
           if (site?.lat != null && site?.lon != null) {
             return { available: true, name: site.name, lat: site.lat, lon: site.lon };
           }
@@ -371,7 +377,7 @@ export class DemoRetrievalService implements RetrievalService {
     this.activeRecalcs.clear();
     this.dutyPilotPosition = null;
     for (const client of this.sseClients) {
-      try { client.res.end(); } catch {}
+      try { client.res.end(); } catch { log.warn("Error ending SSE client in clear()"); }
     }
     this.sseClients.clear();
   }
@@ -386,6 +392,7 @@ export class DemoRetrievalService implements RetrievalService {
       try {
         client.res.write(`data: ${data}\n\n`);
       } catch {
+        log.warn("Removed broken SSE client during demo broadcast");
         this.sseClients.delete(client);
       }
     }
