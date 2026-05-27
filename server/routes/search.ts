@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { generateTextWithFallback, getTextModels } from "../utils/aiModels.js";
@@ -11,31 +11,33 @@ import { sendEmail } from "../utils/email.js";
 
 const router = Router();
 
-async function logPublicSearch(query: string, response: string): Promise<void> {
+async function logPublicSearch(searchQuery: string, response: string): Promise<void> {
   try {
-    const enabledRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLoggingEnabled'").get() as { value: string } | undefined;
+    const enabledRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'searchLoggingEnabled'");
     if (enabledRow?.value !== "true") return;
 
-    await db.prepare("INSERT INTO search_logs (search_type, query, response) VALUES (?, ?, ?)").run("public", query, response);
+    await execute(
+      `INSERT INTO search_logs (search_type, query, response) VALUES ($1, $2, $3)`,
+      ["public", searchQuery, response]
+    );
 
-    // Check size threshold and send a one-time warning email if exceeded
-    const warnSentRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLogWarningSent'").get() as { value: string } | undefined;
+    const warnSentRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'searchLogWarningSent'");
     if (warnSentRow?.value === "true") return;
 
-    const warnMbRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLogSizeWarningMb'").get() as { value: string } | undefined;
+    const warnMbRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'searchLogSizeWarningMb'");
     const warnMb = parseFloat(warnMbRow?.value || "10");
-    const sizeRow = await db.prepare("SELECT SUM(LENGTH(query) + LENGTH(response)) as bytes FROM search_logs").get() as { bytes: number | null };
+    const sizeRow = await queryOne<{ bytes: string | null }>("SELECT SUM(LENGTH(query) + LENGTH(response)) as bytes FROM search_logs");
     const currentMb = Number(sizeRow?.bytes || 0) / (1024 * 1024);
 
     if (currentMb >= warnMb) {
-      const countRow = await db.prepare("SELECT COUNT(*) as total FROM search_logs").get() as { total: number | string };
-      const total = parseInt(String(countRow.total));
+      const countRow = await queryOne<{ total: string }>("SELECT COUNT(*) as total FROM search_logs");
+      const total = parseInt(String(countRow?.total ?? "0"));
       await sendEmail({
         to: process.env.ADMIN_NOTIFICATION_EMAIL || "web@skyhighparagliding.org.au",
         subject: "SkyHigh Smart Search log needs review",
         html: `<p>The Smart Search query log has reached <strong>${Math.round(currentMb * 10) / 10} MB</strong> (${total} entries), exceeding the configured threshold of ${warnMb} MB.</p><p>Please review and clear the log in <strong>Admin → API Settings → Smart Assistant → Search Query Logging</strong>.</p>`,
       });
-      await db.prepare("INSERT INTO settings (key, value) VALUES ('searchLogWarningSent', 'true') ON CONFLICT (key) DO UPDATE SET value = 'true'").run();
+      await execute(`INSERT INTO settings (key, value) VALUES ('searchLogWarningSent', 'true') ON CONFLICT (key) DO UPDATE SET value = 'true'`);
     }
   } catch {
     // Never let logging errors surface to callers
@@ -43,7 +45,7 @@ async function logPublicSearch(query: string, response: string): Promise<void> {
 }
 
 async function getClubName(): Promise<string> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'clubName'").get() as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'clubName'");
   return row?.value || "SkyHigh";
 }
 
@@ -134,7 +136,7 @@ let internalContextCache: { data: string; timestamp: number } | null = null;
 let adminContextCache: { data: string; sites: any[]; timestamp: number } | null = null;
 
 async function getContextTtl(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheSearchContextTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheSearchContextTtl"]);
   const minutes = parseInt(row?.value || "5", 10);
   return minutes * 60 * 1000;
 }
@@ -143,7 +145,7 @@ async function getContextTtl(): Promise<number> {
 let assetCache: { data: string; timestamp: number } | null = null;
 
 async function getAssetTtl(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAssetRegisterTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheAssetRegisterTtl"]);
   const minutes = parseInt(row?.value || "10", 10);
   return minutes * 60 * 1000;
 }
@@ -163,7 +165,7 @@ async function getCachedAssetData(): Promise<string> {
     return assetCache.data;
   }
 
-  const appScriptUrlRow = await db.prepare("SELECT value FROM settings WHERE key = 'asset_appscript_url'").get() as SettingRow | undefined;
+  const appScriptUrlRow = await queryOne<SettingRow>("SELECT value FROM settings WHERE key = 'asset_appscript_url'");
   const appScriptUrl = appScriptUrlRow?.value || "";
   const allowedDomains = ["script.google.com", "script.googleusercontent.com"];
   const isValid = appScriptUrl && (() => {
@@ -227,18 +229,25 @@ async function buildPublicContext(): Promise<CachedContext> {
     return publicContextCache;
   }
 
-  const sites = await db.prepare("SELECT id, name, description, pgRating, hgRating, windDir, windSpeed, launch, landing, hazards, rules, type, navigateTo, isSkyHighSite, status, crossLeft, crossRight FROM sites ORDER BY name").all() as any[];
-  const weatherObs = await db.prepare("SELECT siteId, windSpeed, windGust, direction, stationName, timestamp FROM weather_observations").all() as any[];
-  const weatherForecasts = await db.prepare("SELECT siteId, temperature, windSpeed, windGust, windDirection, summary, forecasts FROM weather_forecasts").all() as any[];
+  const sites = await query<any>(
+    `SELECT id, name, description, "pgRating", "hgRating", "windDir", "windSpeed", launch, landing, hazards, rules, type, "navigateTo", "isSkyHighSite", status, "crossLeft", "crossRight" FROM sites ORDER BY name`
+  );
+  const weatherObs = await query<any>(
+    `SELECT "siteId", "windSpeed", "windGust", direction, "stationName", timestamp FROM weather_observations`
+  );
+  const weatherForecasts = await query<any>(
+    `SELECT "siteId", temperature, "windSpeed", "windGust", "windDirection", summary, forecasts FROM weather_forecasts`
+  );
   const obsMap = new Map(weatherObs.map((w: any) => [w.siteId, w]));
   const forecastMap = new Map(weatherForecasts.map((w: any) => [w.siteId, w]));
 
   // Upcoming closure dates (next 14 days) — keyed by site_id
   const today = new Date().toISOString().slice(0, 10);
   const in14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-  const closureRows = await db.prepare(
-    "SELECT site_id, closure_date FROM site_closure_dates WHERE closure_date >= ? AND closure_date <= ? ORDER BY site_id, closure_date"
-  ).all(today, in14) as { site_id: string; closure_date: string }[];
+  const closureRows = await query<{ site_id: string; closure_date: string }>(
+    `SELECT site_id, closure_date FROM site_closure_dates WHERE closure_date >= $1 AND closure_date <= $2 ORDER BY site_id, closure_date`,
+    [today, in14]
+  );
   const closureMap = new Map<string, string[]>();
   for (const r of closureRows) {
     const existing = closureMap.get(r.site_id) || [];
@@ -346,7 +355,7 @@ async function buildPublicContext(): Promise<CachedContext> {
   }
 
   try {
-    const extRows = await db.prepare("SELECT siteId, forecastData FROM site_extended_forecasts").all() as any[];
+    const extRows = await query<any>(`SELECT "siteId", "forecastData" FROM site_extended_forecasts`);
     if (extRows.length > 0) {
       ctx += "\n=== 7-DAY EXTENDED FORECASTS ===\n";
       const extMap = new Map<string, any>();
@@ -414,14 +423,14 @@ async function buildPublicContext(): Promise<CachedContext> {
 
 // ─── Pilot-type filter: strip HG-only sites for PG queries and vice versa ───
 // This runs at query time so the shared cache is never modified.
-function filterContextByPilotType(context: string, query: string, sites: any[]): string {
-  const isPgQuery = /\bpg\d?\b|\bparaglid/i.test(query);
-  const isHgQuery = /\bhg\d?\b|\bhang.?glid/i.test(query);
+function filterContextByPilotType(context: string, queryStr: string, sites: any[]): string {
+  const isPgQuery = /\bpg\d?\b|\bparaglid/i.test(queryStr);
+  const isHgQuery = /\bhg\d?\b|\bhang.?glid/i.test(queryStr);
   // For conditions/forecast queries with no explicit pilot type, default to PG behaviour
   // and strip HG-only sites. HG pilots asking about conditions almost always say "HG";
   // a generic "what's flyable this weekend?" is almost always from a PG pilot, and
   // conversational follow-ups lose the PG context from the previous turn.
-  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|weekend|this\s+week|saturday|sunday|monday|tuesday|wednesday|thursday|friday|today|tonight/i.test(query);
+  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|weekend|this\s+week|saturday|sunday|monday|tuesday|wednesday|thursday|friday|today|tonight/i.test(queryStr);
   const effectivelyPg = isPgQuery || (!isHgQuery && isConditionsQuery);
 
   if (!effectivelyPg && !isHgQuery) return context;
@@ -458,8 +467,8 @@ function filterContextByPilotType(context: string, query: string, sites: any[]):
 // ─── Query-aware context filtering ───
 // Extract dates from the query (day names, today, tomorrow, weekend) as YYYY-MM-DD strings in Melbourne time.
 // Returns an empty array if no dates are detected — callers should fall back to a default window.
-function extractQueryDates(query: string): string[] {
-  const q = query.toLowerCase();
+function extractQueryDates(queryStr: string): string[] {
+  const q = queryStr.toLowerCase();
   const toMelbDate = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
   const dates = new Set<string>();
 
@@ -531,17 +540,17 @@ function findGoodHrlySlot(hrlyLine: string): { time: string; dir: string } | nul
 // • If no flyable data at all → strip the entire site section.
 // • Sites with no weather lines at all → strip only for conditions queries.
 // Runs at query time so the shared cache is never modified.
-function filterContextByAdvisoryExclusions(context: string, query: string = ''): string {
+function filterContextByAdvisoryExclusions(context: string, queryStr: string = ''): string {
   const EXCLUSION_TAGS = [
     '[WRONG DIRECTION — do not recommend]',
     '[LIGHT WINDS — do not recommend]',
     '[BLOWN OUT — do not recommend]',
     '[GUST THRESHOLD EXCEEDED — do not recommend]',
   ];
-  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|today|tonight|now|current|good.*site|blown|gust|sites.*available|where.*fly/i.test(query);
+  const isConditionsQuery = /weather|wind|fly|flyable|conditions|forecast|today|tonight|now|current|good.*site|blown|gust|sites.*available|where.*fly/i.test(queryStr);
   // Rating/eligibility queries ("Im a PG3, can I fly X?") must not strip sites based on
   // current conditions — the pilot needs the site's rules and ratings regardless of today's wind.
-  const isRatingQuery = /\bpg\d\b|\bhg\d\b/i.test(query);
+  const isRatingQuery = /\bpg\d\b|\bhg\d\b/i.test(queryStr);
   const shouldStripUnflyable = isConditionsQuery && !isRatingQuery;
 
   // The 7-DAY block is appended without a '## ' prefix so it fuses to the last site
@@ -559,7 +568,7 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
 
   // Sites explicitly named in the query are never stripped — the pilot asked about them
   // specifically and needs their eligibility/rating info even if no weather station exists.
-  const qLower = query.toLowerCase();
+  const qLower = queryStr.toLowerCase();
   const mentionedInQuery = new Set<string>();
   for (const header of sitesContext.split('\n').filter(l => l.startsWith('## '))) {
     const rawHeader = header.replace(/^## /, '').replace(/\s*\[.*$/, '').trim();
@@ -632,8 +641,8 @@ function filterContextByAdvisoryExclusions(context: string, query: string = ''):
 
 // Query-time filter: remove site sections for sites that have scheduled closures overlapping the queried dates.
 // Falls back to a 7-day window when the query doesn't mention specific dates.
-function filterContextByClosureDates(context: string, closureMap: Map<string, string[]>, sites: any[], query: string): string {
-  let queriedDates = extractQueryDates(query);
+function filterContextByClosureDates(context: string, closureMap: Map<string, string[]>, sites: any[], queryStr: string): string {
+  let queriedDates = extractQueryDates(queryStr);
 
   if (queriedDates.length === 0) {
     // Generic query — use the next 7 days as the default window
@@ -648,7 +657,7 @@ function filterContextByClosureDates(context: string, closureMap: Map<string, st
 
   // Preserve sites explicitly named in the query — pilot needs "site is closed until X",
   // not "I don't have that site in my database."
-  const qLower = query.toLowerCase();
+  const qLower = queryStr.toLowerCase();
   const mentionedNames = new Set<string>();
   for (const site of sites) {
     const rawName = (site.name || '').toLowerCase();
@@ -696,8 +705,8 @@ function filterContextByClosureDates(context: string, closureMap: Map<string, st
   return filteredSites + filteredExt;
 }
 
-function filterContextBySites(fullContext: string, sites: any[], query: string): string {
-  const qLower = query.toLowerCase();
+function filterContextBySites(fullContext: string, sites: any[], queryStr: string): string {
+  const qLower = queryStr.toLowerCase();
 
   const isWeatherQuery = /weather|wind|fly|flyable|conditions|forecast|today|now|current|good.*site|blown|gust/i.test(qLower);
   const isRatingQuery = /rating|pg\d|hg\d|can i fly|where can i|sites? for|allowed/i.test(qLower);
@@ -892,8 +901,8 @@ interface SettingRow {
 
 // ─── Internal search (admin bar) ───
 router.post("/", asyncHandler(async (req, res) => {
-  const { query } = req.body;
-  if (!query || typeof query !== "string" || query.trim().length < 2) {
+  const { query: queryStr } = req.body;
+  if (!queryStr || typeof queryStr !== "string" || queryStr.trim().length < 2) {
     return res.status(400).json({ error: "Please enter a search query" });
   }
 
@@ -907,8 +916,8 @@ router.post("/", asyncHandler(async (req, res) => {
   if (internalContextCache && Date.now() - internalContextCache.timestamp < contextTtl) {
     fullContext = internalContextCache.data;
   } else {
-    const procedures = await db.prepare("SELECT id, title, description, steps FROM procedures ORDER BY sortOrder").all() as ProcedureRow[];
-    const sites = await db.prepare("SELECT id, name, pgRating, hgRating, windDir, windSpeed, type, navigateTo, isSkyHighSite, description, hazards, launch, landing, rules FROM sites ORDER BY name").all() as any[];
+    const procedures = await query<ProcedureRow>(`SELECT id, title, description, steps FROM procedures ORDER BY "sortOrder"`);
+    const sites = await query<any>(`SELECT id, name, "pgRating", "hgRating", "windDir", "windSpeed", type, "navigateTo", "isSkyHighSite", description, hazards, launch, landing, rules FROM sites ORDER BY name`);
 
     let proceduresContext = "=== PROCEDURES MANUAL ===\n";
     for (const proc of procedures) {
@@ -975,7 +984,7 @@ ANTI-HALLUCINATION — CRITICAL:
   const ai = new GoogleGenAI({ apiKey });
   const { text } = await generateTextWithFallback(ai, {
     contents: [
-      { role: "user", parts: [{ text: `${systemPrompt}\n\n--- CLUB DATA ---\n${fullContext}\n\n--- USER QUESTION ---\n${query}` }] }
+      { role: "user", parts: [{ text: `${systemPrompt}\n\n--- CLUB DATA ---\n${fullContext}\n\n--- USER QUESTION ---\n${queryStr}` }] }
     ],
     config: {
       responseMimeType: "application/json",
@@ -1059,8 +1068,8 @@ RESPONSE FORMAT — return ONLY valid JSON, no markdown fences, no backticks wra
 }`;
 }
 
-function filterAdminContext(fullContext: string, query: string, sites: any[]): string {
-  const qLower = query.toLowerCase();
+function filterAdminContext(fullContext: string, queryStr: string, sites: any[]): string {
+  const qLower = queryStr.toLowerCase();
 
   const isBroadQuery = /all sites|every site|list.*sites|how many|overview|dashboard|everything/i.test(qLower);
   if (isBroadQuery) return fullContext;
@@ -1191,12 +1200,12 @@ function filterAdminContext(fullContext: string, query: string, sites: any[]): s
   return filtered;
 }
 
-const ADMIN_SITES_COLUMNS = "id, name, type, status, pgRating, hgRating, windDir, windSpeed, useLiveWeather, liveStationId, lat, lon, hazardLevel, isSkyHighSite, siteguideUrl, overrideHideClosed, crossLeft, crossRight";
+const ADMIN_SITES_COLUMNS = `id, name, type, status, "pgRating", "hgRating", "windDir", "windSpeed", "useLiveWeather", "liveStationId", lat, lon, "hazardLevel", "isSkyHighSite", "siteguideUrl", "overrideHideClosed", "crossLeft", "crossRight"`;
 
 // ─── Admin search ───
 router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
-  const { query } = req.body;
-  if (!query || typeof query !== "string" || query.trim().length < 2) {
+  const { query: queryStr } = req.body;
+  if (!queryStr || typeof queryStr !== "string" || queryStr.trim().length < 2) {
     return res.status(400).json({ error: "Please enter a search query" });
   }
 
@@ -1212,11 +1221,11 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
     context = adminContextCache.data;
     sitesList = adminContextCache.sites;
   } else {
-    const procedures = await db.prepare("SELECT id, title, description, steps FROM procedures ORDER BY sortOrder").all() as ProcedureRow[];
-    const sites = await db.prepare(`SELECT ${ADMIN_SITES_COLUMNS} FROM sites ORDER BY name`).all() as any[];
+    const procedures = await query<ProcedureRow>(`SELECT id, title, description, steps FROM procedures ORDER BY "sortOrder"`);
+    const sites = await query<any>(`SELECT ${ADMIN_SITES_COLUMNS} FROM sites ORDER BY name`);
     sitesList = sites;
-    const pages = await db.prepare("SELECT slug, title, content FROM pages").all() as any[];
-    const news = await db.prepare("SELECT id, title, content, date FROM news ORDER BY date DESC LIMIT 20").all() as any[];
+    const pages = await query<any>(`SELECT slug, title, content FROM pages`);
+    const news = await query<any>(`SELECT id, title, content, date FROM news ORDER BY date DESC LIMIT 20`);
 
     context = "=== ADMIN NAVIGATION & FEATURES ===\n";
     for (const nav of ADMIN_NAV_INDEX) {
@@ -1251,7 +1260,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       context += `- ${item.title} (${item.date}) [path: /admin/news/${item.id}/edit]: ${(item.content || "").substring(0, 150)}\n`;
     }
 
-    const adminSponsors = await db.prepare("SELECT id, name, url, markdown, sort_order FROM sponsors ORDER BY sort_order ASC, id ASC").all() as any[];
+    const adminSponsors = await query<any>(`SELECT id, name, url, markdown, sort_order FROM sponsors ORDER BY sort_order ASC, id ASC`);
     if (adminSponsors.length > 0) {
       context += "\n\n=== SPONSORS ===\n";
       for (const s of adminSponsors) {
@@ -1259,7 +1268,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const businessListings = await db.prepare("SELECT id, business_name AS businessName, member_name AS memberName, category FROM business_directory ORDER BY business_name").all() as any[];
+    const businessListings = await query<any>(`SELECT id, business_name AS "businessName", member_name AS "memberName", category FROM business_directory ORDER BY business_name`);
     if (businessListings.length > 0) {
       context += "\n\n=== BUSINESS DIRECTORY ===\n";
       for (const b of businessListings) {
@@ -1267,7 +1276,9 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const allContacts = await db.prepare("SELECT id, name, surname, organisation, phone, email, notes, isAdmin, isCommittee, isSafetyCommittee, isContractor, isParksVic, isSocialMedia, position, displayCommittee, displaySafety FROM contacts ORDER BY name").all() as any[];
+    const allContacts = await query<any>(
+      `SELECT id, name, surname, organisation, phone, email, notes, "isAdmin", "isCommittee", "isSafetyCommittee", "isContractor", "isParksVic", "isSocialMedia", position, "displayCommittee", "displaySafety" FROM contacts ORDER BY name`
+    );
     if (allContacts.length > 0) {
       context += "\n\n=== CONTACTS & COMMITTEE ===\n";
       for (const c of allContacts) {
@@ -1285,7 +1296,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const allProjects = await db.prepare("SELECT id, name, status, relatedSiteId, parksVic FROM projects ORDER BY name").all() as any[];
+    const allProjects = await query<any>(`SELECT id, name, status, "relatedSiteId", "parksVic" FROM projects ORDER BY name`);
     if (allProjects.length > 0) {
       context += "\n\n=== PROJECTS ===\n";
       for (const p of allProjects) {
@@ -1294,7 +1305,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const socialSettings = await db.prepare("SELECT key, value FROM settings WHERE key LIKE 'social%' AND value IS NOT NULL AND value != ''").all() as SettingRow[];
+    const socialSettings = await query<SettingRow>(`SELECT key, value FROM settings WHERE key ILIKE 'social%' AND value IS NOT NULL AND value != ''`);
     if (socialSettings.length > 0) {
       context += "\n\n=== SOCIAL MEDIA LINKS ===\n";
       for (const s of socialSettings) {
@@ -1303,8 +1314,8 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const homeSchools = await db.prepare("SELECT value FROM settings WHERE key = 'homeSchools'").get() as SettingRow | undefined;
-    const homeTelegram = await db.prepare("SELECT value FROM settings WHERE key = 'homeTelegramGroups'").get() as SettingRow | undefined;
+    const homeSchools = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'homeSchools'`);
+    const homeTelegram = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'homeTelegramGroups'`);
     let widgetCtx = "";
     if (homeSchools?.value) {
       try {
@@ -1328,7 +1339,8 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
     if (widgetCtx) context += widgetCtx;
 
     const featureKeys = ["enableCheckins", "enableFeaturedSite", "enablePhotoCarousel", "enableVideoCarousel", "qrCodesMode", "clubName", "clubTagline", "template", "primaryColor"];
-    const featureSettings = await db.prepare(`SELECT key, value FROM settings WHERE key IN (${featureKeys.map(() => "?").join(",")})`).all(...featureKeys) as SettingRow[];
+    const featurePlaceholders = featureKeys.map((_, i) => `$${i + 1}`).join(",");
+    const featureSettings = await query<SettingRow>(`SELECT key, value FROM settings WHERE key IN (${featurePlaceholders})`, featureKeys);
     if (featureSettings.length > 0) {
       context += "\n\n=== SITE FEATURES & CONFIGURATION ===\n";
       for (const f of featureSettings) {
@@ -1337,19 +1349,20 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
     }
 
     const schedKeys = ["schedSiteguideHour", "schedSiteguideMinute", "schedExtendedForecastHour", "schedExtendedForecastMinute", "submissionNotifyHour", "submissionNotifyEnabled", "weatherScraperMinInterval", "weatherScraperMaxInterval", "weatherScraperStartHour", "weatherScraperEndHour", "schedDriveSyncHour", "schedDriveSyncMinute", "driveSyncEnabled", "driveSyncLastRun", "weatherScraperLastRun"];
-    const schedSettings = await db.prepare(`SELECT key, value FROM settings WHERE key IN (${schedKeys.map(() => "?").join(",")})`).all(...schedKeys) as SettingRow[];
+    const schedPlaceholders = schedKeys.map((_, i) => `$${i + 1}`).join(",");
+    const schedSettings = await query<SettingRow>(`SELECT key, value FROM settings WHERE key IN (${schedPlaceholders})`, schedKeys);
     if (schedSettings.length > 0) {
       context += "\n\n=== SCHEDULED TASKS ===\n";
       context += "Configurable at [path: /admin/scheduled-tasks]\n";
       for (const s of schedSettings) context += `- ${s.key}: ${s.value}\n`;
     }
 
-    const driveStatus = await db.prepare("SELECT value FROM settings WHERE key = 'drive_appscript_url'").get() as SettingRow | undefined;
-    const docCount = await db.prepare("SELECT COUNT(*) as c FROM document_index WHERE readable = 1 AND charCount > 0").get() as { c: number };
+    const driveStatus = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'drive_appscript_url'`);
+    const docCount = await queryOne<{ c: string }>(`SELECT COUNT(*) as c FROM document_index WHERE readable = 1 AND "charCount" > 0`);
     context += `\n\n=== GOOGLE DRIVE STATUS ===\n`;
     context += `Connected: ${driveStatus?.value ? "Yes" : "No"}\n`;
-    context += `Indexed documents: ${docCount.c}\n`;
-    if (driveStatus?.value && docCount.c === 0) {
+    context += `Indexed documents: ${docCount?.c ?? 0}\n`;
+    if (driveStatus?.value && Number(docCount?.c ?? 0) === 0) {
       context += `NOTE: Google Drive is connected but no documents have been indexed yet. The admin should go to API Settings [path: /admin/connections] and click 'Sync Documents' to index Drive content for search.\n`;
     }
 
@@ -1362,10 +1375,10 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
     adminContextCache = { data: context, sites: sitesList, timestamp: Date.now() };
   }
 
-  const filteredContext = filterAdminContext(context, query, sitesList);
+  const filteredContext = filterAdminContext(context, queryStr, sitesList);
   console.log(`>>> Admin search context: ${(context.length / 1024).toFixed(0)}KB full → ${(filteredContext.length / 1024).toFixed(0)}KB filtered (${Math.round((1 - filteredContext.length / context.length) * 100)}% reduction)`);
 
-  const customPromptRow = await db.prepare("SELECT value FROM settings WHERE key = 'adminSearchPrompt'").get() as SettingRow | undefined;
+  const customPromptRow = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'adminSearchPrompt'`);
   const searchPrompt = customPromptRow?.value || await getDefaultAdminSearchPrompt();
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -1376,7 +1389,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
 
   const ai = new GoogleGenAI({ apiKey });
   const models = await getTextModels();
-  const promptText = `${searchPrompt}\n\n--- ADMIN DATA ---\n${filteredContext}\n\n--- ADMIN QUERY ---\n${query}`;
+  const promptText = `${searchPrompt}\n\n--- ADMIN DATA ---\n${filteredContext}\n\n--- ADMIN QUERY ---\n${queryStr}`;
 
   let clientDisconnected = false;
   req.on("close", () => { clientDisconnected = true; });
@@ -1463,8 +1476,8 @@ router.get("/admin/default-prompt", async (_req, res) => {
 
 // ─── Public assistant (STREAMING) ───
 router.post("/public", asyncHandler(async (req, res) => {
-  const { query, history } = req.body;
-  if (!query || typeof query !== "string" || query.trim().length < 2) {
+  const { query: queryStr, history } = req.body;
+  if (!queryStr || typeof queryStr !== "string" || queryStr.trim().length < 2) {
     return res.status(400).json({ error: "Please enter a question" });
   }
 
@@ -1475,24 +1488,26 @@ router.post("/public", asyncHandler(async (req, res) => {
 
   const { data: sitesContext, sites, closureMap } = await buildPublicContext();
 
-  const allOfficers = await db.prepare("SELECT name, 'Safety Committee' as type, phone, email FROM contacts WHERE isSafetyCommittee = 1 AND displaySafety = 1 ORDER BY name ASC").all() as OfficerRow[];
+  const allOfficers = await query<OfficerRow>(
+    `SELECT name, 'Safety Committee' as type, phone, email FROM contacts WHERE "isSafetyCommittee" = 1 AND "displaySafety" = 1 ORDER BY name ASC`
+  );
   const officers = await filterByCurrentMembers(allOfficers);
 
-  const committeeRedirectRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchCommitteeLink'").get() as SettingRow | undefined;
+  const committeeRedirectRow = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'publicSearchCommitteeLink'`);
   const committeeLink = committeeRedirectRow?.value || "/page/committee";
 
   const filteredSitesContext = filterContextByAdvisoryExclusions(
     filterContextByClosureDates(
       filterContextByPilotType(
-        filterContextBySites(sitesContext, sites, query),
-        query,
+        filterContextBySites(sitesContext, sites, queryStr),
+        queryStr,
         sites
       ),
       closureMap,
       sites,
-      query
+      queryStr
     ),
-    query
+    queryStr
   );
 
   let officersContext = "\n\n=== COMMITTEE & SAFETY OFFICERS ===\n";
@@ -1509,9 +1524,9 @@ router.post("/public", asyncHandler(async (req, res) => {
     }
   }
 
-  const customPromptRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as SettingRow | undefined;
+  const customPromptRow = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'publicSearchPrompt'`);
   const behaviorPrompt = customPromptRow?.value || await getDefaultPublicPrompt();
-  const eligibilityRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'").get() as SettingRow | undefined;
+  const eligibilityRow = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'`);
   const eligibilityRules = eligibilityRow?.value || getDefaultEligibilityRules();
 
   const ANTI_HALLUCINATION_BLOCK = `
@@ -1550,7 +1565,7 @@ Include a conversational answer to the pilot's question.
 If you need more info (like their rating), ask for it at the end.
 Do NOT wrap your response in JSON or code blocks.`;
 
-  const sponsors = await db.prepare("SELECT name, url, markdown FROM sponsors ORDER BY sort_order ASC, id ASC").all() as any[];
+  const sponsors = await query<any>(`SELECT name, url, markdown FROM sponsors ORDER BY sort_order ASC, id ASC`);
   let sponsorsContext = "";
   if (sponsors.length > 0) {
     sponsorsContext = "\n\n=== CLUB SPONSORS ===\n";
@@ -1576,7 +1591,7 @@ Do NOT wrap your response in JSON or code blocks.`;
   const nowMelb = new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
   const tomorrowMelb = new Date(Date.now() + 86400000).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
   const dateContext = `CURRENT DATE (Melbourne time): ${nowMelb}\nTomorrow is: ${tomorrowMelb}\n\n`;
-  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${dateContext}${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${query}`;
+  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${dateContext}${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${queryStr}`;
 
   let clientDisconnected = false;
   req.on("close", () => { clientDisconnected = true; });
@@ -1640,38 +1655,38 @@ Do NOT wrap your response in JSON or code blocks.`;
   res.end();
 
   if (streamed && loggedResponse) {
-    logPublicSearch(query, loggedResponse).catch(() => {});
+    logPublicSearch(queryStr, loggedResponse).catch(() => {});
   }
 }));
 
 export async function seedPublicPrompt(): Promise<void> {
   // ── Behavior prompt ──
-  const promptRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchPrompt'").get() as { value: string } | undefined;
+  const promptRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'publicSearchPrompt'`);
   const prompt = await getDefaultPublicPrompt();
   if (promptRow === undefined) {
-    await db.prepare("INSERT INTO settings (key, value) VALUES ('publicSearchPrompt', ?)").run(prompt);
+    await execute(`INSERT INTO settings (key, value) VALUES ('publicSearchPrompt', $1)`, [prompt]);
     console.log("[search] Seeded publicSearchPrompt into settings (first-run)");
   } else if (!promptRow.value) {
-    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
+    await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchPrompt'`, [prompt]);
     console.log("[search] Populated empty publicSearchPrompt in settings");
   } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURE] IS AN OPERATIONAL TAG")) {
     // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag / closure-tag rules — upgrade
-    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchPrompt'").run(prompt);
+    await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchPrompt'`, [prompt]);
     console.log("[search] Upgraded publicSearchPrompt: added SCHEDULED CLOSURE tag rule");
   }
 
   // ── Eligibility rules (separate setting) ──
-  const eligibilityRow = await db.prepare("SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'").get() as { value: string } | undefined;
+  const eligibilityRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'publicSearchEligibilityRules'`);
   const rules = getDefaultEligibilityRules();
   if (eligibilityRow === undefined) {
-    await db.prepare("INSERT INTO settings (key, value) VALUES ('publicSearchEligibilityRules', ?)").run(rules);
+    await execute(`INSERT INTO settings (key, value) VALUES ('publicSearchEligibilityRules', $1)`, [rules]);
     console.log("[search] Seeded publicSearchEligibilityRules into settings (first-run)");
   } else if (!eligibilityRow.value) {
-    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
+    await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchEligibilityRules'`, [rules]);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
   } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION") || !eligibilityRow.value.includes("NO supervision required")) {
     // Missing one or more required rule sections — upgrade to current default
-    await db.prepare("UPDATE settings SET value = ? WHERE key = 'publicSearchEligibilityRules'").run(rules);
+    await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchEligibilityRules'`, [rules]);
     console.log("[search] Upgraded publicSearchEligibilityRules: self-contained multi-launch North launch rules");
   }
   // Otherwise: admin has customized the rules — leave them alone
