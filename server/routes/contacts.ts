@@ -8,6 +8,10 @@ import { tidyhqFetch } from "../utils/tidyhqFetch.js";
 import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
 import { filterByCurrentMembers } from "../utils/tidyhqMemberFilter.js";
 import { getPaginationParams, createPaginatedResponse } from "../utils/pagination.js";
+import createLogger from "../utils/logger.js";
+import { saveContactPhoto } from "../services/photoService.js";
+
+const log = createLogger("contacts");
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -73,6 +77,7 @@ router.get("/tidyhq-groups", requireAuth, asyncHandler(async (req, res) => {
     res.status(500).json({ error: `Failed to fetch TidyHQ groups: ${err.message}` });
   }
 }));
+
 
 router.get("/tidyhq-groups/:groupId/contacts", requireAuth, asyncHandler(async (req, res) => {
   try {
@@ -193,6 +198,150 @@ router.post("/tidyhq-import-group", requireAuth, asyncHandler(async (req, res) =
   }
 
   res.json({ created, updated, skipped, total: importContacts.length });
+}));
+
+// Smart import: POST { groupId }
+// Fetches full contact data from TidyHQ (with embedded groups[]), walks each
+// contact's group memberships, applies all matching mappings from
+// tidyhq_group_mappings in a single pass, and syncs profile images.
+// Use this for the two main groups: Safety Committee (143877) and Skyhigh Committee (139632).
+router.post("/tidyhq-smart-import", requireAuth, asyncHandler(async (req, res) => {
+  const { groupId } = req.body;
+  if (!groupId) return res.status(400).json({ error: "groupId is required" });
+
+  const tidyRes = await tidyhqFetch(`/groups/${groupId}/contacts`);
+  if (!tidyRes.ok) {
+    const text = await tidyRes.text();
+    return res.status(tidyRes.status).json({ error: `TidyHQ API error: ${text}` });
+  }
+  const tidyContacts: any[] = await tidyRes.json();
+  if (!Array.isArray(tidyContacts)) {
+    return res.status(500).json({ error: "Unexpected TidyHQ response format" });
+  }
+
+  // Load all group mappings, indexed by TidyHQ group ID
+  const mappings = await db.prepare(
+    'SELECT "tidyhqGroupId", "tidyhqGroupName", "localRoleFlag" FROM tidyhq_group_mappings'
+  ).all() as { tidyhqGroupId: string; tidyhqGroupName: string; localRoleFlag: string }[];
+
+  const byGroup = new Map<string, Array<{ flag: string; name: string }>>();
+  for (const m of mappings) {
+    if (!byGroup.has(m.tidyhqGroupId)) byGroup.set(m.tidyhqGroupId, []);
+    byGroup.get(m.tidyhqGroupId)!.push({ flag: m.localRoleFlag, name: m.tidyhqGroupName });
+  }
+
+  let created = 0, updated = 0, skipped = 0, imagesSynced = 0;
+
+  for (const tc of tidyContacts) {
+    const emailObj = Array.isArray(tc.email_addresses) ? tc.email_addresses[0] : null;
+    const email = (emailObj?.address || tc.email_address || "").trim().toLowerCase();
+    const firstName = (tc.first_name || "").trim();
+    const lastName = (tc.last_name || "").trim();
+    const phoneObj = Array.isArray(tc.phone_numbers) ? tc.phone_numbers[0] : null;
+    const phone = phoneObj?.number || tc.phone_number || "";
+    const organisation = (tc.company || "").trim();
+
+    if (!firstName && !email) { skipped++; continue; }
+
+    // Walk embedded groups[] and derive all role flags in one pass
+    const boolFlags: Record<string, number> = {};
+    let safetyOfficerType: string | null = null;
+    const positionParts: string[] = [];
+
+    for (const g of tc.groups || []) {
+      const entries = byGroup.get(String(g.id)) || [];
+      for (const { flag, name } of entries) {
+        if (flag === "safetyOfficerType:SO") {
+          safetyOfficerType = "SO";
+        } else if (flag === "safetyOfficerType:SSO") {
+          safetyOfficerType = "SSO";
+        } else if (flag === "isPosition") {
+          if (name && !positionParts.includes(name)) positionParts.push(name);
+        } else {
+          boolFlags[flag] = 1;
+        }
+      }
+    }
+
+    if (boolFlags.isCommittee) boolFlags.isAdmin = 1;
+
+    const positionValue = positionParts.length > 0
+      ? positionParts.join(", ")
+      : (boolFlags.isCommittee ? "Committee" : null);
+
+    const existing = email
+      ? (await db.prepare("SELECT id, position, photoUrl FROM contacts WHERE LOWER(email) = ?").get(email)) as any
+      : null;
+
+    let contactId: string;
+
+    if (existing) {
+      contactId = existing.id;
+      const clauses: Array<{ column: string; value: any }> = [
+        { column: "name", value: firstName },
+      ];
+      if (lastName) clauses.push({ column: "surname", value: lastName });
+      if (phone) clauses.push({ column: "phone", value: phone });
+      if (organisation) clauses.push({ column: "organisation", value: organisation });
+
+      for (const [col, val] of Object.entries(boolFlags)) {
+        clauses.push({ column: col, value: val });
+      }
+      if (safetyOfficerType !== null) {
+        clauses.push({ column: "safetyOfficerType", value: safetyOfficerType });
+      }
+      if (positionValue !== null) {
+        const currentPos = (existing.position || "").trim();
+        if (!currentPos || currentPos === "Committee") {
+          clauses.push({ column: "position", value: positionValue });
+        }
+      }
+
+      const allowedCols = ["name", "surname", "phone", "organisation",
+        "isAdmin", "isCommittee", "isSafetyCommittee", "isContractor", "isParksVic",
+        "safetyOfficerType", "position"];
+      const { sql, params } = buildSafeUpdateClauses(clauses, allowedCols);
+      if (sql) {
+        params.push(existing.id);
+        await db.prepare(`UPDATE contacts SET ${sql}, updatedAt = datetime('now') WHERE id = ?`).run(...params);
+      }
+      updated++;
+    } else {
+      contactId = generateId();
+      await db.prepare(
+        `INSERT INTO contacts (id, name, surname, organisation, phone, email, isAdmin, isCommittee, isSafetyCommittee, isContractor, isParksVic, safetyOfficerType, position)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        contactId, firstName, lastName, organisation, phone, email,
+        boolFlags.isAdmin || 0,
+        boolFlags.isCommittee || 0,
+        boolFlags.isSafetyCommittee || 0,
+        boolFlags.isContractor || 0,
+        boolFlags.isParksVic || 0,
+        safetyOfficerType,
+        positionValue
+      );
+      created++;
+    }
+
+    // Image sync: download from TidyHQ if present and no existing photo
+    if (tc.profile_image && !existing?.photoUrl) {
+      try {
+        const imageUrl = String(tc.profile_image).replace("/s200/", "/original/");
+        const imgRes = await fetch(imageUrl);
+        if (imgRes.ok) {
+          const buffer = Buffer.from(await imgRes.arrayBuffer());
+          const photoUrl = await saveContactPhoto(buffer, contactId);
+          await db.prepare("UPDATE contacts SET photoUrl = ?, photoAuthorised = 1 WHERE id = ?").run(photoUrl, contactId);
+          imagesSynced++;
+        }
+      } catch (imgErr: any) {
+        log.warn(`Image sync failed for contact ${contactId}: ${imgErr.message}`);
+      }
+    }
+  }
+
+  res.json({ created, updated, skipped, imagesSynced, total: tidyContacts.length });
 }));
 
 router.get("/tidyhq-search", requireAuth, asyncHandler(async (req, res) => {
@@ -424,8 +573,7 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 // ─── Photo Upload/Delete ──────────────────────────────────────────────────────
-import { saveContactPhoto, deleteContactPhoto } from "../services/photoService.js";
-import bcrypt from "bcrypt";
+import { deleteContactPhoto } from "../services/photoService.js";
 
 // Self-service photo upload — authenticates with email + password from request body
 router.post("/photo/self-upload", asyncHandler(async (req, res) => {

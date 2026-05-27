@@ -112,6 +112,10 @@ export function AdminContacts() {
   const [tidySearching, setTidySearching] = useState(false);
   const [tidyError, setTidyError] = useState("");
   const [showGroupImport, setShowGroupImport] = useState(false);
+  const [showQuickImport, setShowQuickImport] = useState(false);
+  const [quickImporting, setQuickImporting] = useState<string | null>(null);
+  const [quickImportResult, setQuickImportResult] = useState<{ groupName: string; created: number; updated: number; skipped: number; imagesSynced: number; total: number } | null>(null);
+  const [quickImportError, setQuickImportError] = useState("");
   const [tidyGroups, setTidyGroups] = useState<TidyHQGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
@@ -329,6 +333,23 @@ export function AdminContacts() {
       setTidyError(e instanceof Error ? e.message : String(e));
     } finally {
       setTidySearching(false);
+    }
+  };
+
+  const handleQuickImport = async (groupId: string, groupName: string) => {
+    setQuickImporting(groupId);
+    setQuickImportError("");
+    setQuickImportResult(null);
+    try {
+      const result = await api.post<{ created: number; updated: number; skipped: number; imagesSynced: number; total: number }>(
+        "/api/contacts/tidyhq-smart-import", { groupId }, token
+      );
+      setQuickImportResult({ groupName, ...result });
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    } catch (e: unknown) {
+      setQuickImportError(e instanceof Error ? e.message : `Failed to import ${groupName}`);
+    } finally {
+      setQuickImporting(null);
     }
   };
 
@@ -564,6 +585,9 @@ export function AdminContacts() {
                 <>
                   <Button variant="outline" onClick={() => { setBulkSelectMode(true); setBulkSelectedIds(new Set()); }}>
                     <CheckSquare className="w-4 h-4 mr-2" /> Bulk Select
+                  </Button>
+                  <Button variant="outline" onClick={() => { setShowQuickImport(true); setQuickImportResult(null); setQuickImportError(""); }}>
+                    <Users className="w-4 h-4 mr-2" /> Quick Import
                   </Button>
                   <Button variant="outline" onClick={openGroupImport}>
                     <Users className="w-4 h-4 mr-2" /> Import from TidyHQ Group
@@ -1045,6 +1069,71 @@ export function AdminContacts() {
             )}
             {!tidySearching && tidyResults.length === 0 && tidySearch && !tidyError && (
               <p className="text-sm text-foreground-faint text-center py-4">No results. Try a different name.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showQuickImport && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-navy">Quick Import from TidyHQ</h3>
+              <button onClick={() => setShowQuickImport(false)} className="p-2 hover:bg-muted rounded-lg">
+                <X className="w-5 h-5 text-foreground-faint" />
+              </button>
+            </div>
+
+            {quickImportError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">{quickImportError}</div>
+            )}
+
+            {quickImportResult ? (
+              <div>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
+                  <p className="text-green-800 font-semibold mb-2">{quickImportResult.groupName} imported</p>
+                  <div className="grid grid-cols-2 gap-3 text-center">
+                    <div><div className="text-2xl font-bold text-green-700">{quickImportResult.created}</div><div className="text-sm text-green-600">Created</div></div>
+                    <div><div className="text-2xl font-bold text-blue-700">{quickImportResult.updated}</div><div className="text-sm text-blue-600">Updated</div></div>
+                    <div><div className="text-2xl font-bold text-gray-500">{quickImportResult.skipped}</div><div className="text-sm text-gray-500">Skipped</div></div>
+                    <div><div className="text-2xl font-bold text-purple-700">{quickImportResult.imagesSynced}</div><div className="text-sm text-purple-600">Photos Synced</div></div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setQuickImportResult(null)}>Import Another</Button>
+                  <Button onClick={() => setShowQuickImport(false)} className="bg-navy hover:bg-navy-light text-white">Done</Button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Fetches contacts directly from TidyHQ, auto-detects all roles from embedded group memberships, and syncs profile photos.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    className="bg-navy hover:bg-navy-light text-white justify-start"
+                    disabled={!!quickImporting}
+                    onClick={() => handleQuickImport("143877", "Safety Committee")}
+                  >
+                    {quickImporting === "143877" ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Importing Safety Committee...</>
+                    ) : (
+                      <><Users className="w-4 h-4 mr-2" /> Import Safety Committee</>
+                    )}
+                  </Button>
+                  <Button
+                    className="bg-navy hover:bg-navy-light text-white justify-start"
+                    disabled={!!quickImporting}
+                    onClick={() => handleQuickImport("139632", "Skyhigh Committee")}
+                  >
+                    {quickImporting === "139632" ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Importing Skyhigh Committee...</>
+                    ) : (
+                      <><Users className="w-4 h-4 mr-2" /> Import Skyhigh Committee</>
+                    )}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
