@@ -14,7 +14,7 @@ const WonderfulFooter = lazy(() => import("@/templates/wonderful-white/Wonderful
 function ClassicHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { settings, activeLogos } = useSettings();
-  const { user, isSoSession } = useAuth();
+  const { isSoSession } = useAuth();
   const clubName = settings.clubName || "SkyHigh";
   const logoNav = activeLogos.nav;
 
@@ -126,15 +126,6 @@ function ClassicHeader() {
                 <Button variant="orange" className="w-full justify-center">
                   Online Check-in
                 </Button>
-              </Link>
-            )}
-            {user && !isSoSession && (
-              <Link
-                to="/admin"
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-navy hover:text-white"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Admin
               </Link>
             )}
           </div>
