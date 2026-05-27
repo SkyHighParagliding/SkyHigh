@@ -36,6 +36,13 @@ pool.on("connect", () => {
 // This shim converts both forms automatically.
 
 function toPostgresParams(sql: string, params: any[]): { sql: string; values: any[] } {
+
+  // Guard: reject queries that mix ? and @param placeholders
+  const hasQ = /\?/.test(sql);
+  const hasAt = /@[a-zA-Z_]/.test(sql);
+  if (hasQ && hasAt) {
+    throw new Error(`SQL query mixes ? and @param placeholders: ${sql.substring(0, 100)}`);
+  }
   // Handle named params (@key) → convert to positional
   if (params.length === 1 && typeof params[0] === "object" && !Array.isArray(params[0]) && params[0] !== null) {
     const obj = params[0];
@@ -58,7 +65,7 @@ function quoteIdentifiersIfNeeded(sql: string): string {
   // Quote camelCase column names to preserve case in PostgreSQL.
   // This handles identifiers in SELECT, WHERE, SET, JOIN ON, etc.
 
-  const keywords = /^(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|USING|WITH|OVER|PARTITION|RECURSIVE|SUM|COUNT|AVG|MAX|MIN|COALESCE|SUBSTRING|POSITION|TRIM|UPPER|LOWER|LENGTH|ASC|DESC)$/i;
+  const keywords = /^(SELECT|FROM|WHERE|INSERT|INTO|UPDATE|DELETE|SET|VALUES|AND|OR|NOT|ON|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|DISTINCT|CASE|WHEN|THEN|ELSE|END|IN|EXISTS|BETWEEN|LIKE|ILIKE|ESCAPE|IS|NULL|TRUE|FALSE|DEFAULT|PRIMARY|KEY|FOREIGN|CONSTRAINT|INDEX|CREATE|DROP|ALTER|ADD|TABLE|VIEW|DATABASE|SCHEMA|COLLATE|CAST|CURRENT_TIMESTAMP|INTERVAL|EXTRACT|DATE|TIME|TIMESTAMP|NOW|CURRENT_DATE|CURRENT_TIME|INT|TEXT|BOOLEAN|REAL|SERIAL|CONFLICT|DO|NOTHING|EXCLUDED|USING|WITH|OVER|PARTITION|RECURSIVE|SUM|COUNT|AVG|MAX|MIN|COALESCE|SUBSTRING|POSITION|TRIM|UPPER|LOWER|LENGTH|ASC|DESC|ALL|ANY|ROW|CHECK|TYPE|RETURNING|ROWS|RANGE|GROUPS|FILTER|WITHIN|ARRAY|FIRST|LAST|NEXT|PRECEDING|UNBOUNDED)$/i;
 
   // Match identifiers in broader contexts: after operators (=, !=, <, >, etc.), commas, parens, spaces, periods
   // Use lookahead to match what comes after without consuming it (so we can keep it)
@@ -104,27 +111,69 @@ function convertSQL(raw: string): string {
     }
   }
 
-  // Convert INSERT OR REPLACE -> INSERT ... ON CONFLICT UPDATE
+  // Convert INSERT OR REPLACE -> INSERT ... ON CONFLICT DO UPDATE SET
   if (/INSERT\s+OR\s+REPLACE\s+INTO/i.test(sql)) {
     sql = sql.replace(/INSERT\s+OR\s+REPLACE\s+INTO/gi, "INSERT INTO");
     if (!/ON CONFLICT/i.test(sql)) {
-      if (sql.toLowerCase().includes("into settings")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (key) DO UPDATE SET \"value\" = EXCLUDED.\"value\"";
-      } else if (sql.toLowerCase().includes("into sites")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"name\" = EXCLUDED.\"name\"";
-      } else if (sql.toLowerCase().includes("into site_extended_forecasts")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"forecastData\" = EXCLUDED.\"forecastData\", \"updatedAt\" = EXCLUDED.\"updatedAt\"";
-      } else if (sql.toLowerCase().includes("into weather_forecasts")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"timestamp\" = EXCLUDED.\"timestamp\", \"temperature\" = EXCLUDED.\"temperature\", \"windSpeed\" = EXCLUDED.\"windSpeed\", \"windGust\" = EXCLUDED.\"windGust\", \"windDirection\" = EXCLUDED.\"windDirection\", \"icon\" = EXCLUDED.\"icon\", \"summary\" = EXCLUDED.\"summary\", \"forecasts\" = EXCLUDED.\"forecasts\"";
-      } else if (sql.toLowerCase().includes("into wind_grid_data")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"gridData\" = EXCLUDED.\"gridData\", \"gridSize\" = EXCLUDED.\"gridSize\", \"gridSpacing\" = EXCLUDED.\"gridSpacing\", \"updatedAt\" = EXCLUDED.\"updatedAt\"";
-      } else if (sql.toLowerCase().includes("into extended_forecasts")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (id) DO UPDATE SET \"gridData\" = EXCLUDED.\"gridData\", \"fetchedAt\" = EXCLUDED.\"fetchedAt\"";
-      } else if (sql.toLowerCase().includes("into document_index")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"driveFileId\") DO UPDATE SET \"name\" = EXCLUDED.\"name\", \"category\" = EXCLUDED.\"category\", \"mimeType\" = EXCLUDED.\"mimeType\", \"driveUrl\" = EXCLUDED.\"driveUrl\", \"textContent\" = EXCLUDED.\"textContent\", \"charCount\" = EXCLUDED.\"charCount\", \"readable\" = EXCLUDED.\"readable\", \"indexedAt\" = EXCLUDED.\"indexedAt\", \"lastModified\" = EXCLUDED.\"lastModified\"";
-      } else if (sql.toLowerCase().includes("into emergency_hospitals_cache")) {
-        sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT (\"siteId\") DO UPDATE SET \"hospitals\" = EXCLUDED.\"hospitals\", \"cachedAt\" = EXCLUDED.\"cachedAt\"";
+      // Extract the table name and column list from the SQL
+      const tableMatch = sql.match(/INSERT\s+INTO\s+([\w"]+)/i);
+      if (tableMatch) {
+        const tableName = tableMatch[1].toLowerCase().replace(/"/g, "");
+        
+        // Define a map of tables to their conflict columns (PK or unique constraint)
+        const tablePrimaryKeys: Record<string, string> = {
+          'settings': 'key',
+          'sites': 'id',
+          'site_extended_forecasts': '"siteId"',
+          'weather_forecasts': '"siteId"',
+          'wind_grid_data': '"siteId"',
+          'extended_forecasts': 'id',
+          'document_index': '"driveFileId"',
+          'emergency_hospitals_cache': '"siteId"',
+          'pilots': 'id',
+          'contacts': 'id',
+          'users': 'id',
+          'admin_sessions': 'token',
+          'search_logs': '"id"',
+          'extended_wind_grids': '"id"',
+          'site_closure_dates': '"site_id","closure_date"',
+          'flights': 'id',
+          'breadcrumbs': 'id',
+          'flight_breadcrumbs': 'id',
+          'pilot_sessions': 'token',
+        };
+        
+        const primaryKey = tablePrimaryKeys[tableName];
+        if (primaryKey) {
+          // Extract all columns from the INSERT column list and build a full DO UPDATE SET
+          // This ensures ALL columns get updated on conflict (matching SQLite INSERT OR REPLACE semantics)
+          const columnsMatch = sql.match(/INSERT INTO [\w"]+ \(([^)]+)\) VALUES/i);
+          if (columnsMatch) {
+            const columnsList = columnsMatch[1].replace(/\s+/g, '').split(',');
+            const pkParts = primaryKey.split(',').map(p => p.replace(/"/g, '').trim());
+            const updateCols = columnsList
+              .filter(col => {
+                const bare = col.replace(/"/g, '').trim();
+                return !pkParts.includes(bare);
+              })
+              .map(col => `${col} = EXCLUDED.${col}`)
+              .join(', ');
+            if (updateCols) {
+              sql = sql.trimEnd().replace(/;$/, "") + ` ON CONFLICT (${primaryKey}) DO UPDATE SET ${updateCols}`;
+            } else {
+              // Only PK columns in INSERT — use DO NOTHING
+              sql = sql.trimEnd().replace(/;$/, "") + ` ON CONFLICT (${primaryKey}) DO NOTHING`;
+            }
+          } else {
+            // Fallback if column list can't be parsed — use DO NOTHING
+            sql = sql.trimEnd().replace(/;$/, "") + ` ON CONFLICT (${primaryKey}) DO NOTHING`;
+          }
+        } else {
+          // Unknown table — use conservative fallback
+          sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
+        }
       } else {
+        // Can't extract table name — use conservative fallback
         sql = sql.trimEnd().replace(/;$/, "") + " ON CONFLICT DO NOTHING";
       }
     }
@@ -145,11 +194,37 @@ function convertSQL(raw: string): string {
   }
 
   // Convert datetime expressions
+  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+hours?',\s*'start of day'\)/gi, "date_trunc('day', CURRENT_TIMESTAMP - interval '$1 hours')");
   sql = sql.replace(/datetime\('now',\s*'start of day'\)/gi, "CURRENT_DATE::timestamptz");
   sql = sql.replace(/datetime\('now'\)/gi, "CURRENT_TIMESTAMP");
   sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+hours?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 hours'");
-  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");
+  sql = sql.replace(/datetime\('now',\s*'-(\d+)\s+days?'\)/gi, "CURRENT_TIMESTAMP - interval '$1 days'");
 
+  // Special case: DATE('now') → CURRENT_DATE (PG does not accept CAST('now' AS DATE))
+  // This must come before the general DATE() regex to avoid matching 'now' as an expression.
+  sql = sql.replace(/DATE\('now'\)/gi, "CURRENT_DATE");
+
+  // SQLite DATE() function: DATE(expression) → PG CAST expression as DATE
+  sql = sql.replace(/DATE\(([^)]+)\)/gi, "CAST($1 AS DATE)");
+
+  // Convert SQLite JSON functions to PostgreSQL equivalents
+  sql = sql.replace(/JSON_GROUP_ARRAY\(/gi, "JSON_AGG(");
+  
+  // Handle json_object function conversion
+  sql = sql.replace(/json_object\(([^)]+)\)/g, "JSON_BUILD_OBJECT($1)");
+  
+  // Convert json_extract(column, '$.path') → PG jsonb_extract_path_text or ->/->> operators
+  // Pattern: json_extract(column, '$.path') → column#>>'{path}'  (returns text)
+  sql = sql.replace(/json_extract\(([^,]+),\s*'\$\.([^']+)'\)/g, "$1#>>'{$2}'");
+
+  // Convert SQLite LIKE to Postgres ILIKE for case-insensitive pattern matching
+  sql = sql.replace(/\bLIKE\b/gi, "ILIKE");
+
+  // SQLite and PostgreSQL both support || for string concatenation.
+  // SQLite treats NULL || 'x' as 'x' (NULL as empty), while PG treats it as NULL.
+  // If NULL-safe concatenation is needed, use CONCAT(col1, col2, ...) in the caller instead.
+  // We leave || unchanged since PG handles it natively.
+  
   // Quote camelCase identifiers to preserve case in PostgreSQL
   sql = quoteIdentifiersIfNeeded(sql);
 

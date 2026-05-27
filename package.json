@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "clean": "npx rimraf dist",
     "analyze": "cross-env ANALYZE=1 vite build && node esbuild.server.mjs",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "lint:migrations": "node scripts/lint-migrations.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1034.0",

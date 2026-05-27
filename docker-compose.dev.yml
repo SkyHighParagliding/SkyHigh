@@ -1,0 +1,22 @@
+# docker-compose.dev.yml — local dev only, not deployed
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: skyhigh-pg-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: skyhigh
+      POSTGRES_PASSWORD: skyhigh_dev
+      POSTGRES_DB: skyhigh_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - skyhigh_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skyhigh -d skyhigh_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  skyhigh_pg_data:
