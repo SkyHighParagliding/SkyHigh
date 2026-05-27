@@ -21,6 +21,7 @@ scratch/
 *.code-workspace
 lint_output.txt
 memory/
+worker/
 tasks/lessons.md
 
 # Sensitive governance docs — keep local only
