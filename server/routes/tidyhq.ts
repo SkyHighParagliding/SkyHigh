@@ -1,6 +1,6 @@
 import { Router } from "express";
 import crypto from "crypto";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -95,19 +95,23 @@ router.post("/webhook", asyncHandler(async (req, res) => {
     const tidyhqGroupId = String(groupData.id || "");
     const tidyhqGroupName = groupData.label || groupData.name || "";
 
-    let mappings = await db.prepare(
-      "SELECT localRoleFlag FROM tidyhq_group_mappings WHERE tidyhqGroupId = ?"
-    ).all(tidyhqGroupId) as { localRoleFlag: string }[];
+    let mappings = await query<{ localRoleFlag: string }>(
+      `SELECT "localRoleFlag" FROM tidyhq_group_mappings WHERE "tidyhqGroupId" = $1`,
+      [tidyhqGroupId]
+    );
 
     if (mappings.length === 0 && tidyhqGroupName) {
-      mappings = await db.prepare(
-        "SELECT localRoleFlag FROM tidyhq_group_mappings WHERE tidyhqGroupName = ?"
-      ).all(tidyhqGroupName) as { localRoleFlag: string }[];
+      mappings = await query<{ localRoleFlag: string }>(
+        `SELECT "localRoleFlag" FROM tidyhq_group_mappings WHERE "tidyhqGroupName" = $1`,
+        [tidyhqGroupName]
+      );
       if (mappings.length > 0 && tidyhqGroupId) {
         log.info(`Matched group by name "${tidyhqGroupName}" (webhook ID ${tidyhqGroupId} differs from stored ID)`);
         try {
-          await db.prepare("UPDATE tidyhq_group_mappings SET tidyhqGroupId = ? WHERE tidyhqGroupName = ?")
-            .run(tidyhqGroupId, tidyhqGroupName);
+          await execute(
+            `UPDATE tidyhq_group_mappings SET "tidyhqGroupId" = $1 WHERE "tidyhqGroupName" = $2`,
+            [tidyhqGroupId, tidyhqGroupName]
+          );
         } catch (e: any) {
           log.warn(`Failed to auto-update group ID for "${tidyhqGroupName}": ${e.message}`);
         }
@@ -116,38 +120,45 @@ router.post("/webhook", asyncHandler(async (req, res) => {
 
     if (mappings.length === 0) {
       log.info(`No mapping found for group ${tidyhqGroupId} (${tidyhqGroupName}), skipping`);
-      await db.prepare(
-        `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, action, detail)
-         VALUES (?, ?, ?, ?, 'skipped', 'No mapping configured for this group')`
-      ).run(eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName);
+      await execute(
+        `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", action, detail)
+         VALUES ($1, $2, $3, $4, 'skipped', 'No mapping configured for this group')`,
+        [eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName]
+      );
       return res.json({ status: "ok", action: "skipped" });
     }
 
     if (!contactEmail) {
       log.warn(`Webhook contact has no email, cannot match locally`);
-      await db.prepare(
-        `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, action, detail)
-         VALUES (?, ?, ?, ?, 'skipped', 'Contact has no email address')`
-      ).run(eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName);
+      await execute(
+        `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", action, detail)
+         VALUES ($1, $2, $3, $4, 'skipped', 'Contact has no email address')`,
+        [eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName]
+      );
       return res.json({ status: "ok", action: "skipped" });
     }
 
-    let localContact = await db.prepare("SELECT id, name, surname FROM contacts WHERE LOWER(email) = LOWER(?)").get(contactEmail) as any;
+    let localContact = await queryOne<{ id: string; name: string; surname: string }>(
+      `SELECT id, name, surname FROM contacts WHERE LOWER(email) = LOWER($1)`,
+      [contactEmail]
+    );
 
     if (!localContact && eventType === "contact.group.added") {
       const id = generateId();
-      await db.prepare(
-        "INSERT INTO contacts (id, name, surname, email) VALUES (?, ?, ?, ?)"
-      ).run(id, contactName, contactSurname, contactEmail);
+      await execute(
+        `INSERT INTO contacts (id, name, surname, email) VALUES ($1, $2, $3, $4)`,
+        [id, contactName, contactSurname, contactEmail]
+      );
       localContact = { id, name: contactName, surname: contactSurname };
       log.info(`Auto-created local contact ${id} for ${contactEmail}`);
     }
 
     if (!localContact) {
-      await db.prepare(
-        `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, action, detail)
-         VALUES (?, ?, ?, ?, 'skipped', 'Contact not found locally')`
-      ).run(eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName);
+      await execute(
+        `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", action, detail)
+         VALUES ($1, $2, $3, $4, 'skipped', 'Contact not found locally')`,
+        [eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName]
+      );
       return res.json({ status: "ok", action: "skipped" });
     }
 
@@ -162,17 +173,24 @@ router.post("/webhook", asyncHandler(async (req, res) => {
         const soType = mapping.localRoleFlag.split(":")[1]; // "SO" or "SSO"
         const displayName = `${localContact.name}${localContact.surname ? ` ${localContact.surname}` : ""}`;
         if (eventType === "contact.group.added") {
-          await db.prepare("UPDATE contacts SET \"safetyOfficerType\" = ?, updatedAt = datetime('now') WHERE id = ?").run(soType, localContact.id);
+          await execute(
+            `UPDATE contacts SET "safetyOfficerType" = $1, "updatedAt" = NOW() WHERE id = $2`,
+            [soType, localContact.id]
+          );
         } else {
-          await db.prepare("UPDATE contacts SET \"safetyOfficerType\" = NULL, updatedAt = datetime('now') WHERE id = ?").run(localContact.id);
+          await execute(
+            `UPDATE contacts SET "safetyOfficerType" = NULL, "updatedAt" = NOW() WHERE id = $1`,
+            [localContact.id]
+          );
         }
-        await db.prepare(
-          `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, localContactId, localContactName, roleFlag, action, detail)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
-          localContact.id, displayName, mapping.localRoleFlag, actionLabel,
-          `safetyOfficerType ${eventType === "contact.group.added" ? `set to ${soType}` : "cleared"} for ${displayName} via webhook`
+        await execute(
+          `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", "localContactId", "localContactName", "roleFlag", action, detail)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
+            localContact.id, displayName, mapping.localRoleFlag, actionLabel,
+            `safetyOfficerType ${eventType === "contact.group.added" ? `set to ${soType}` : "cleared"} for ${displayName} via webhook`
+          ]
         );
         log.info(`${actionLabel}: safetyOfficerType=${soType} for ${displayName}`);
         continue;
@@ -181,7 +199,10 @@ router.post("/webhook", asyncHandler(async (req, res) => {
       if (mapping.localRoleFlag === "isPosition") {
         const displayName = `${localContact.name}${localContact.surname ? ` ${localContact.surname}` : ""}`;
         if (eventType === "contact.group.added") {
-          const current = await db.prepare("SELECT position, isSafetyCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
+          const current = await queryOne<{ position: string | null; isSafetyCommittee: number }>(
+            `SELECT position, "isSafetyCommittee" FROM contacts WHERE id = $1`,
+            [localContact.id]
+          );
           const currentPos = (current?.position || "").trim();
           let newPosition: string;
           if (!currentPos || currentPos === "Committee") {
@@ -191,21 +212,31 @@ router.post("/webhook", asyncHandler(async (req, res) => {
           } else {
             newPosition = currentPos;
           }
-          await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
+          await execute(
+            `UPDATE contacts SET position = $1, "updatedAt" = NOW() WHERE id = $2`,
+            [newPosition, localContact.id]
+          );
         } else {
-          const current = await db.prepare("SELECT position, isCommittee FROM contacts WHERE id = ?").get(localContact.id) as any;
+          const current = await queryOne<{ position: string | null; isCommittee: number }>(
+            `SELECT position, "isCommittee" FROM contacts WHERE id = $1`,
+            [localContact.id]
+          );
           const currentPos = (current?.position || "").trim();
           const parts = currentPos.split(", ").map((p: string) => p.trim()).filter((p: string) => p && p !== tidyhqGroupName);
           const newPosition = parts.length > 0 ? parts.join(", ") : (current?.isCommittee ? "Committee" : null);
-          await db.prepare("UPDATE contacts SET position = ?, updatedAt = datetime('now') WHERE id = ?").run(newPosition, localContact.id);
+          await execute(
+            `UPDATE contacts SET position = $1, "updatedAt" = NOW() WHERE id = $2`,
+            [newPosition, localContact.id]
+          );
         }
-        await db.prepare(
-          `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, localContactId, localContactName, roleFlag, action, detail)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
-          localContact.id, displayName, "isPosition", actionLabel,
-          `Position ${flagValue ? "set to" : "removed"} "${tidyhqGroupName}" for ${displayName} via webhook`
+        await execute(
+          `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", "localContactId", "localContactName", "roleFlag", action, detail)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
+            localContact.id, displayName, "isPosition", actionLabel,
+            `Position ${flagValue ? "set to" : "removed"} "${tidyhqGroupName}" for ${displayName} via webhook`
+          ]
         );
         log.info(`${actionLabel}: position "${tidyhqGroupName}" for ${displayName}`);
         continue;
@@ -213,48 +244,83 @@ router.post("/webhook", asyncHandler(async (req, res) => {
 
       if (!validFlags.includes(mapping.localRoleFlag)) continue;
 
-      const flagUpdateStmts: Record<string, ReturnType<typeof db.prepare>> = {
-        isCommittee: await db.prepare("UPDATE contacts SET isCommittee = ?, updatedAt = datetime('now') WHERE id = ?"),
-        isSafetyCommittee: await db.prepare("UPDATE contacts SET isSafetyCommittee = ?, updatedAt = datetime('now') WHERE id = ?"),
-        isContractor: await db.prepare("UPDATE contacts SET isContractor = ?, updatedAt = datetime('now') WHERE id = ?"),
-        isParksVic: await db.prepare("UPDATE contacts SET isParksVic = ?, updatedAt = datetime('now') WHERE id = ?"),
-      };
-      const stmt = flagUpdateStmts[mapping.localRoleFlag];
-      if (stmt) await stmt.run(flagValue, localContact.id);
+      if (mapping.localRoleFlag === "isCommittee") {
+        await execute(
+          `UPDATE contacts SET "isCommittee" = $1, "updatedAt" = NOW() WHERE id = $2`,
+          [flagValue, localContact.id]
+        );
+      } else if (mapping.localRoleFlag === "isSafetyCommittee") {
+        await execute(
+          `UPDATE contacts SET "isSafetyCommittee" = $1, "updatedAt" = NOW() WHERE id = $2`,
+          [flagValue, localContact.id]
+        );
+      } else if (mapping.localRoleFlag === "isContractor") {
+        await execute(
+          `UPDATE contacts SET "isContractor" = $1, "updatedAt" = NOW() WHERE id = $2`,
+          [flagValue, localContact.id]
+        );
+      } else if (mapping.localRoleFlag === "isParksVic") {
+        await execute(
+          `UPDATE contacts SET "isParksVic" = $1, "updatedAt" = NOW() WHERE id = $2`,
+          [flagValue, localContact.id]
+        );
+      }
 
       if (mapping.localRoleFlag === "isCommittee") {
         if (flagValue === 1) {
-          await db.prepare("UPDATE contacts SET isAdmin = 1 WHERE id = ?").run(localContact.id);
-          const current = await db.prepare("SELECT position FROM contacts WHERE id = ?").get(localContact.id) as any;
+          await execute(
+            `UPDATE contacts SET "isAdmin" = 1 WHERE id = $1`,
+            [localContact.id]
+          );
+          const current = await queryOne<{ position: string | null }>(
+            `SELECT position FROM contacts WHERE id = $1`,
+            [localContact.id]
+          );
           const currentPos = (current?.position || "").trim();
           if (!currentPos) {
-            await db.prepare("UPDATE contacts SET position = 'Committee' WHERE id = ?").run(localContact.id);
+            await execute(
+              `UPDATE contacts SET position = 'Committee' WHERE id = $1`,
+              [localContact.id]
+            );
           }
         } else {
-          const current = await db.prepare("SELECT position FROM contacts WHERE id = ?").get(localContact.id) as any;
+          const current = await queryOne<{ position: string | null }>(
+            `SELECT position FROM contacts WHERE id = $1`,
+            [localContact.id]
+          );
           const currentPos = (current?.position || "").trim();
           if (currentPos === "Committee") {
-            await db.prepare("UPDATE contacts SET position = NULL WHERE id = ?").run(localContact.id);
+            await execute(
+              `UPDATE contacts SET position = NULL WHERE id = $1`,
+              [localContact.id]
+            );
           }
         }
       }
 
       if (mapping.localRoleFlag === "isSafetyCommittee") {
         if (flagValue === 1) {
-          await db.prepare("UPDATE contacts SET displaySafety = 1 WHERE id = ?").run(localContact.id);
+          await execute(
+            `UPDATE contacts SET "displaySafety" = 1 WHERE id = $1`,
+            [localContact.id]
+          );
         } else {
-          await db.prepare("UPDATE contacts SET displaySafety = 0 WHERE id = ?").run(localContact.id);
+          await execute(
+            `UPDATE contacts SET "displaySafety" = 0 WHERE id = $1`,
+            [localContact.id]
+          );
         }
       }
 
       const displayName = `${localContact.name}${localContact.surname ? ` ${localContact.surname}` : ""}`;
-      await db.prepare(
-        `INSERT INTO tidyhq_webhook_log (eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName, localContactId, localContactName, roleFlag, action, detail)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
-        localContact.id, displayName, mapping.localRoleFlag, actionLabel,
-        `${mapping.localRoleFlag} ${flagValue ? "set" : "cleared"} for ${displayName} via webhook`
+      await execute(
+        `INSERT INTO tidyhq_webhook_log ("eventType", "tidyhqContactId", "tidyhqGroupId", "tidyhqGroupName", "localContactId", "localContactName", "roleFlag", action, detail)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          eventType, tidyhqContactId, tidyhqGroupId, tidyhqGroupName,
+          localContact.id, displayName, mapping.localRoleFlag, actionLabel,
+          `${mapping.localRoleFlag} ${flagValue ? "set" : "cleared"} for ${displayName} via webhook`
+        ]
       );
 
       log.info(`${actionLabel}: ${mapping.localRoleFlag} for ${displayName}`);
@@ -263,9 +329,10 @@ router.post("/webhook", asyncHandler(async (req, res) => {
     return res.json({ status: "ok", action: actionLabel });
   }
 
-  await db.prepare(
-    `INSERT INTO tidyhq_webhook_log (eventType, action, detail) VALUES (?, 'ignored', 'Unhandled event type')`
-  ).run(eventType);
+  await execute(
+    `INSERT INTO tidyhq_webhook_log ("eventType", action, detail) VALUES ($1, 'ignored', 'Unhandled event type')`,
+    [eventType]
+  );
 
   res.json({ status: "ok", action: "ignored" });
 }));
@@ -273,8 +340,14 @@ router.post("/webhook", asyncHandler(async (req, res) => {
 router.get("/status", requireAuth, asyncHandler(async (_req, res) => {
   const hasToken = !!process.env.TIDYHQ_ACCESS_TOKEN;
   const hasSigningKey = !!process.env.TIDYHQ_WEBHOOK_SIGNING_KEY;
-  const mappingCount = (await db.prepare("SELECT COUNT(*) as count FROM tidyhq_group_mappings").get() as any)?.count || 0;
-  const recentWebhooks = (await db.prepare("SELECT COUNT(*) as count FROM tidyhq_webhook_log WHERE createdAt > datetime('now', '-7 days')").get() as any)?.count || 0;
+  const mappingCountResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count FROM tidyhq_group_mappings`
+  );
+  const mappingCount = mappingCountResult?.count ? parseInt(mappingCountResult.count, 10) : 0;
+  const recentWebhooksResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count FROM tidyhq_webhook_log WHERE "createdAt" > NOW() - INTERVAL '7 days'`
+  );
+  const recentWebhooks = recentWebhooksResult?.count ? parseInt(recentWebhooksResult.count, 10) : 0;
 
   res.json({
     hasToken,
@@ -305,7 +378,9 @@ router.post("/test-connection", requireAuth, asyncHandler(async (_req, res) => {
 }));
 
 router.get("/group-mappings", requireAuth, asyncHandler(async (req, res) => {
-  const mappings = await db.prepare("SELECT * FROM tidyhq_group_mappings ORDER BY tidyhqGroupName ASC").all();
+  const mappings = await query(
+    `SELECT * FROM tidyhq_group_mappings ORDER BY "tidyhqGroupName" ASC`
+  );
   res.json(mappings);
 }));
 
@@ -321,12 +396,13 @@ router.post("/group-mappings", requireAuth, asyncHandler(async (req, res) => {
   }
 
   try {
-    await db.prepare(
-      "INSERT INTO tidyhq_group_mappings (tidyhqGroupId, tidyhqGroupName, localRoleFlag) VALUES (?, ?, ?)"
-    ).run(tidyhqGroupId, tidyhqGroupName, localRoleFlag);
+    await execute(
+      `INSERT INTO tidyhq_group_mappings ("tidyhqGroupId", "tidyhqGroupName", "localRoleFlag") VALUES ($1, $2, $3)`,
+      [tidyhqGroupId, tidyhqGroupName, localRoleFlag]
+    );
     res.status(201).json({ status: "ok" });
   } catch (e: any) {
-    if (e.message?.includes("UNIQUE constraint")) {
+    if (e.message?.includes("UNIQUE constraint") || e.message?.includes("duplicate key")) {
       return res.status(409).json({ error: "This group-to-role mapping already exists" });
     }
     throw e;
@@ -334,16 +410,20 @@ router.post("/group-mappings", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/group-mappings/:id", requireAuth, asyncHandler(async (req, res) => {
-  const result = await db.prepare("DELETE FROM tidyhq_group_mappings WHERE id = ?").run(req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: "Mapping not found" });
+  const result = await execute(
+    `DELETE FROM tidyhq_group_mappings WHERE id = $1`,
+    [req.params.id]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: "Mapping not found" });
   res.json({ status: "ok" });
 }));
 
 router.get("/webhook-log", requireAuth, asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const logs = await db.prepare(
-    "SELECT * FROM tidyhq_webhook_log ORDER BY createdAt DESC LIMIT ?"
-  ).all(limit);
+  const logs = await query(
+    `SELECT * FROM tidyhq_webhook_log ORDER BY "createdAt" DESC LIMIT $1`,
+    [limit]
+  );
   res.json(logs);
 }));
 

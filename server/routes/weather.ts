@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { fetchWeatherData, fetchWithRetry, degreesToDirection, LIVE_WIND_VIC_URL } from "../weather.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
@@ -13,13 +13,86 @@ import { fetchExtendedForecast } from "../extendedForecast.js";
 const router = Router();
 const log = createLogger("weather");
 
+interface SiteRow {
+  id: string;
+  useLiveWeather: string;
+  liveStationIdAlt: string | null;
+}
+
+interface SiteCoordRow {
+  id: string;
+  lat: number | null;
+  lon: number | null;
+}
+
+interface WeatherForecastRow {
+  siteId: string;
+  forecasts: string | null;
+  icon: string | null;
+  windSpeed: number | null;
+  windGust: number | null;
+  windDirection: string | null;
+  timestamp: string | null;
+}
+
+interface WeatherObservationRow {
+  siteId: string;
+  windSpeed: number | null;
+  windGust: number | null;
+  direction: string | null;
+  stationName: string | null;
+  stationLat: number | null;
+  stationLon: number | null;
+  timestamp: string | null;
+}
+
+interface WindGridRow {
+  siteId: string;
+  gridData: string;
+  gridSize: number;
+  gridSpacing: number;
+  updatedAt: string;
+}
+
+interface BulkWeatherRow {
+  id: string;
+  useLiveWeather: string;
+  liveStationIdAlt: string | null;
+  forecast_siteId: string | null;
+  forecast_forecasts: string | null;
+  forecast_icon: string | null;
+  forecast_windSpeed: number | null;
+  forecast_windGust: number | null;
+  forecast_direction: string | null;
+  forecast_timestamp: string | null;
+  observation_siteId: string | null;
+  windSpeed: number | null;
+  windGust: number | null;
+  direction: string | null;
+  stationName: string | null;
+  stationLat: number | null;
+  stationLon: number | null;
+  timestamp: string | null;
+  alt_windSpeed: number | null;
+  alt_windGust: number | null;
+  alt_direction: string | null;
+  alt_stationName: string | null;
+  alt_stationLat: number | null;
+  alt_stationLon: number | null;
+  alt_timestamp: string | null;
+}
+
 router.get("/stations/nearby", asyncHandler(async (req, res) => {
-  const { lat, lon, radius = '20', currentStationId } = req.query;
+  const _radius = Array.isArray(req.query.radius) ? req.query.radius[0] : (req.query.radius || '20');
+  const { lat, lon, currentStationId } = req.query;
   if (!lat || !lon) {
     return res.status(400).json({ error: "Missing lat or lon" });
   }
 
-  const radiusKm = parseFloat(radius as string);
+  const radiusKm = parseFloat(_radius as string);
+  if (!Number.isFinite(radiusKm) || radiusKm <= 0) {
+    return res.status(400).json({ error: "radius must be a positive number" });
+  }
   const targetLat = parseFloat(lat as string);
   const targetLon = parseFloat(lon as string);
 
@@ -27,11 +100,11 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = 
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-      Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -75,7 +148,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
       throw new Error("WU_API_KEY not configured");
     }
     const wuUrl = `https://api.weather.com/v3/location/near?geocode=${lat},${lon}&product=pws&format=json&apiKey=${wuApiKey}`;
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     const wuResponse = await fetch(wuUrl, {
@@ -86,7 +159,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    
+
     if (wuResponse.ok) {
       const wuData = await wuResponse.json();
       if (wuData.location && wuData.location.stationId) {
@@ -108,7 +181,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
   } catch (e) {
     log.error("Error fetching WU stations:", e);
   }
-  
+
   if (currentStationId && typeof currentStationId === 'string' && !stations.find(s => s.id === currentStationId)) {
     try {
       const wuApiKey = process.env.WU_API_KEY;
@@ -231,7 +304,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
   }
 
   stations.sort((a, b) => a.distanceKm - b.distanceKm);
-  
+
   res.json(stations);
 }));
 
@@ -263,55 +336,65 @@ router.post("/bulk", asyncHandler(async (req, res) => {
 
   const ids = siteIds.slice(0, 50);
   const results: Record<string, any> = {};
-  const placeholders = ids.map(() => '?').join(',');
+  const placeholders = ids.map((_: any, i: number) => `$${i + 1}`).join(',');
 
-  const sitesMap = new Map<string, any>();
-  const siteRows = await db.prepare(`SELECT id, useLiveWeather, liveStationIdAlt FROM sites WHERE id IN (${placeholders})`).all(...ids) as any[];
-  for (const s of siteRows) sitesMap.set(s.id, s);
+  const allWeatherData = await query<BulkWeatherRow>(`
+    SELECT
+      s.id, s."useLiveWeather", s."liveStationIdAlt",
+      wf."siteId" as forecast_siteId, wf.forecasts as forecast_forecasts, wf.icon as forecast_icon,
+      wf."windSpeed" as forecast_windSpeed, wf."windGust" as forecast_windGust, wf."windDirection" as forecast_direction, wf.timestamp as forecast_timestamp,
+      wo."siteId" as observation_siteId, wo."windSpeed", wo."windGust", wo.direction, wo."stationName", wo."stationLat", wo."stationLon", wo.timestamp,
+      wo_alt."windSpeed" as alt_windSpeed, wo_alt."windGust" as alt_windGust, wo_alt.direction as alt_direction,
+      wo_alt."stationName" as alt_stationName, wo_alt."stationLat" as alt_stationLat, wo_alt."stationLon" as alt_stationLon, wo_alt.timestamp as alt_timestamp
+    FROM sites s
+    LEFT JOIN weather_forecasts wf ON s.id = wf."siteId"
+    LEFT JOIN LATERAL (
+      SELECT * FROM weather_observations o2 WHERE o2."siteId" = s.id ORDER BY o2.timestamp DESC LIMIT 1
+    ) wo ON true
+    LEFT JOIN LATERAL (
+      SELECT * FROM weather_observations o3 WHERE o3."siteId" = s.id || ':alt' ORDER BY o3.timestamp DESC LIMIT 1
+    ) wo_alt ON true
+    WHERE s.id IN (${placeholders})
+  `, ids);
 
-  const forecastsMap = new Map<string, any>();
-  const forecastRows = await db.prepare(`SELECT * FROM weather_forecasts WHERE siteId IN (${placeholders})`).all(...ids) as any[];
-  for (const f of forecastRows) forecastsMap.set(f.siteId, f);
-
-  const allObsIds = [...ids, ...ids.map(id => `${id}:alt`)];
-  const obsPlaceholders = allObsIds.map(() => '?').join(',');
-  const obsMap = new Map<string, any>();
-  const obsRows = await db.prepare(`SELECT * FROM weather_observations WHERE siteId IN (${obsPlaceholders}) ORDER BY timestamp DESC`).all(...allObsIds) as any[];
-  for (const o of obsRows) {
-    if (!obsMap.has(o.siteId)) obsMap.set(o.siteId, o);
+  const groupedData = new Map<string, BulkWeatherRow[]>();
+  for (const row of allWeatherData) {
+    if (!groupedData.has(row.id)) groupedData.set(row.id, []);
+    groupedData.get(row.id)?.push(row);
   }
 
   const MAX_OBS_AGE = 6 * 60 * 60 * 1000;
 
   for (const siteId of ids) {
-    const site = sitesMap.get(siteId);
+    const siteGroup = groupedData.get(siteId);
+    const site = siteGroup?.find((item) => item.id === siteId);
     if (!site) { results[siteId] = { error: true }; continue; }
 
     const isLiveEnabled = site.useLiveWeather === 'true';
-    const forecast = forecastsMap.get(siteId);
+    const forecast = siteGroup?.find((item) => item.forecast_siteId === siteId);
 
     if (isLiveEnabled) {
-      const observation = obsMap.get(siteId);
-      const obsAge = observation ? Date.now() - new Date(observation.timestamp).getTime() : Infinity;
+      const observation = siteGroup?.find((item) => item.observation_siteId === siteId);
+      const obsAge = observation ? Date.now() - new Date(observation.timestamp as string).getTime() : Infinity;
       if (observation && obsAge < MAX_OBS_AGE) {
         const result: any = {
           ...observation,
           type: 'live',
-          forecasts: forecast?.forecasts,
-          icon: forecast?.icon || 'CloudSun'
+          forecasts: forecast?.forecast_forecasts,
+          icon: forecast?.forecast_icon || 'CloudSun'
         };
 
         if (site.liveStationIdAlt) {
-          const altObs = obsMap.get(`${siteId}:alt`);
-          if (altObs) {
+          const altObservation = siteGroup?.find((item) => item.observation_siteId === `${siteId}:alt`);
+          if (altObservation) {
             result.altObservation = {
-              windSpeed: altObs.windSpeed,
-              windGust: altObs.windGust,
-              direction: altObs.direction,
-              stationName: altObs.stationName,
-              stationLat: altObs.stationLat,
-              stationLon: altObs.stationLon,
-              timestamp: altObs.timestamp,
+              windSpeed: altObservation.alt_windSpeed,
+              windGust: altObservation.alt_windGust,
+              direction: altObservation.alt_direction,
+              stationName: altObservation.alt_stationName,
+              stationLat: altObservation.alt_stationLat,
+              stationLon: altObservation.alt_stationLon,
+              timestamp: altObservation.alt_timestamp,
             };
           }
         }
@@ -322,7 +405,16 @@ router.post("/bulk", asyncHandler(async (req, res) => {
     }
 
     if (forecast) {
-      results[siteId] = { ...forecast, type: 'forecast' };
+      results[siteId] = {
+        forecasts: forecast.forecast_forecasts,
+        icon: forecast.forecast_icon,
+        type: 'forecast',
+        siteId: forecast.forecast_siteId,
+        windSpeed: forecast.forecast_windSpeed,
+        windGust: forecast.forecast_windGust,
+        direction: forecast.forecast_direction,
+        timestamp: forecast.forecast_timestamp,
+      };
     } else {
       results[siteId] = { error: true };
     }
@@ -384,7 +476,11 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
   ] as [string, number][];
 
   for (const [key, value] of entries) {
-    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, String(value));
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [key, String(value)]
+    );
   }
 
   clearFineGridCaches();
@@ -393,25 +489,37 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.get("/:siteId", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT useLiveWeather, liveStationIdAlt FROM sites WHERE id = ?").get(req.params.siteId) as { useLiveWeather: string; liveStationIdAlt: string | null };
-  
+  const site = await queryOne<SiteRow>(
+    `SELECT "useLiveWeather", "liveStationIdAlt" FROM sites WHERE id = $1`,
+    [req.params.siteId]
+  );
+
   const isLiveEnabled = site && site.useLiveWeather === 'true';
-  const forecast = await db.prepare("SELECT * FROM weather_forecasts WHERE siteId = ?").get(req.params.siteId) as any;
+  const forecast = await queryOne<WeatherForecastRow>(
+    `SELECT * FROM weather_forecasts WHERE "siteId" = $1`,
+    [req.params.siteId]
+  );
 
   if (isLiveEnabled) {
-    const observation = await db.prepare("SELECT * FROM weather_observations WHERE siteId = ? ORDER BY timestamp DESC LIMIT 1").get(req.params.siteId) as any;
-    const obsAge = observation ? Date.now() - new Date(observation.timestamp).getTime() : Infinity;
+    const observation = await queryOne<WeatherObservationRow>(
+      `SELECT * FROM weather_observations WHERE "siteId" = $1 ORDER BY timestamp DESC LIMIT 1`,
+      [req.params.siteId]
+    );
+    const obsAge = observation ? Date.now() - new Date(observation.timestamp as string).getTime() : Infinity;
     const MAX_OBS_AGE = 6 * 60 * 60 * 1000;
     if (observation && obsAge < MAX_OBS_AGE) {
-      const result: any = { 
-        ...observation, 
+      const result: any = {
+        ...observation,
         type: 'live',
         forecasts: forecast?.forecasts,
         icon: forecast?.icon || 'CloudSun'
       };
 
-      if (site.liveStationIdAlt) {
-        const altObs = await db.prepare("SELECT * FROM weather_observations WHERE siteId = ? ORDER BY timestamp DESC LIMIT 1").get(`${req.params.siteId}:alt`) as any;
+      if (site!.liveStationIdAlt) {
+        const altObs = await queryOne<WeatherObservationRow>(
+          `SELECT * FROM weather_observations WHERE "siteId" = $1 ORDER BY timestamp DESC LIMIT 1`,
+          [`${req.params.siteId}:alt`]
+        );
         if (altObs) {
           result.altObservation = {
             windSpeed: altObs.windSpeed,
@@ -437,7 +545,10 @@ router.get("/:siteId", asyncHandler(async (req, res) => {
 }));
 
 router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT id, lat, lon FROM sites WHERE id = ?").get(req.params.siteId) as any;
+  const site = await queryOne<SiteCoordRow>(
+    `SELECT id, lat, lon FROM sites WHERE id = $1`,
+    [req.params.siteId]
+  );
   if (!site || !site.lat || !site.lon) {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
@@ -445,7 +556,10 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
   const gridSize = parseInt(req.query.gridSize as string) || 10;
   const gridSpacing = parseFloat(req.query.gridSpacing as string) || 0.025;
 
-  const cached = await db.prepare("SELECT * FROM wind_grid_data WHERE siteId = ?").get(req.params.siteId) as any;
+  const cached = await queryOne<WindGridRow>(
+    `SELECT * FROM wind_grid_data WHERE "siteId" = $1`,
+    [req.params.siteId]
+  );
   if (cached) {
     const age = Date.now() - new Date(cached.updatedAt).getTime();
     if (age < 30 * 60 * 1000 && cached.gridSize === gridSize && Math.abs(cached.gridSpacing - gridSpacing) < 0.001) {
@@ -457,7 +571,6 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
     }
   }
 
-  // Try to use cached fine or coarse grid if site falls within bounds
   const gridBounds = await getGridBounds();
   const inFine = site.lat >= gridBounds.fineLatMin && site.lat <= gridBounds.fineLatMax && site.lon >= gridBounds.fineLonMin && site.lon <= gridBounds.fineLonMax;
   const inCoarse = site.lat >= gridBounds.coarseLatMin && site.lat <= gridBounds.coarseLatMax && site.lon >= gridBounds.coarseLonMin && site.lon <= gridBounds.coarseLonMax && !inFine;
@@ -465,17 +578,23 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
 
   if (baseGridCacheKey) {
     const today = new Date().toISOString().split('T')[0];
-    let gridCache = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${baseGridCacheKey}_${today}`) as any;
+    let gridCache = await queryOne<{ gridData: string }>(
+      `SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`,
+      [`${baseGridCacheKey}_${today}`]
+    );
     if (!gridCache) {
-      const rows = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1").all(`${baseGridCacheKey}_%`) as any[];
+      const rows = await query<{ gridData: string }>(
+        `SELECT "gridData" FROM wind_grid_data WHERE "siteId" ILIKE $1 ORDER BY "siteId" DESC LIMIT 1`,
+        [`${baseGridCacheKey}_%`]
+      );
       if (rows.length > 0) gridCache = rows[0];
     }
     if (gridCache) {
       try {
         const cachedGrid = JSON.parse(gridCache.gridData);
         const gridPoints = (cachedGrid.points || []).sort((a: any, b: any) => {
-          const distA = Math.hypot(a.lat - site.lat, a.lon - site.lon);
-          const distB = Math.hypot(b.lat - site.lat, b.lon - site.lon);
+          const distA = Math.hypot(a.lat - site.lat!, a.lon - site.lon!);
+          const distB = Math.hypot(b.lat - site.lat!, b.lon - site.lon!);
           return distA - distB;
         }).slice(0, gridSize * gridSize);
 
@@ -489,8 +608,12 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
             points: gridPoints,
             generatedAt: new Date().toISOString()
           };
-          await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-            .run(site.id, JSON.stringify(result), gridSize, gridSpacing);
+          await execute(
+            `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt")
+             VALUES ($1, $2, $3, $4, NOW())
+             ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = NOW()`,
+            [site.id, JSON.stringify(result), gridSize, gridSpacing]
+          );
           return res.json(result);
         }
       } catch (e) {
@@ -566,14 +689,21 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
     generatedAt: new Date().toISOString()
   };
 
-  await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-    .run(site.id, JSON.stringify(result), gridSize, gridSpacing);
+  await execute(
+    `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt")
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = NOW()`,
+    [site.id, JSON.stringify(result), gridSize, gridSpacing]
+  );
 
   res.json(result);
 }));
 
 router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
-  const site = await db.prepare("SELECT id, lat, lon FROM sites WHERE id = ?").get(req.params.siteId) as any;
+  const site = await queryOne<SiteCoordRow>(
+    `SELECT id, lat, lon FROM sites WHERE id = $1`,
+    [req.params.siteId]
+  );
   if (!site || !site.lat || !site.lon) {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
@@ -647,12 +777,24 @@ router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_re
   const ts = new Date().toISOString();
   try {
     await fetchExtendedForecast();
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", "ok");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["extendedForecastLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["extendedForecastLastResult", "ok"]
+    );
     res.json({ success: true, message: "Extended forecast fetch completed successfully" });
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("extendedForecastLastResult", e.message || "Unknown error");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["extendedForecastLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["extendedForecastLastResult", e.message || "Unknown error"]
+    );
     res.status(500).json({ success: false, message: e.message || "Extended forecast fetch failed" });
   }
 }));
@@ -661,12 +803,24 @@ router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) 
   const ts = new Date().toISOString();
   try {
     await fetchFineGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", "ok");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["fineGridLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["fineGridLastResult", "ok"]
+    );
     res.json({ success: true, message: "Fine grid fetch completed" });
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("fineGridLastResult", e.message || "Unknown error");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["fineGridLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["fineGridLastResult", e.message || "Unknown error"]
+    );
     log.error("Manual fine grid fetch failed:", e);
     res.status(500).json({ success: false, message: e.message || "Fine grid fetch failed" });
   }
@@ -676,12 +830,24 @@ router.post("/coarse-grid/fetch-now", requireAuth, asyncHandler(async (_req, res
   const ts = new Date().toISOString();
   try {
     await fetchCoarseGrid(true);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", "ok");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["coarseGridLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["coarseGridLastResult", "ok"]
+    );
     res.json({ success: true, message: "Coarse grid fetch completed" });
   } catch (e: any) {
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastRun", ts);
-    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("coarseGridLastResult", e.message || "Unknown error");
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["coarseGridLastRun", ts]
+    );
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      ["coarseGridLastResult", e.message || "Unknown error"]
+    );
     log.error("Manual coarse grid fetch failed:", e);
     res.status(500).json({ success: false, message: e.message || "Coarse grid fetch failed" });
   }
