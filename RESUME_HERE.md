@@ -1,106 +1,68 @@
-# RESUME_HERE — Last updated: 2026-05-26 (session 21, evening exit)
+# RESUME_HERE — Last updated: 2026-05-27 (session 22)
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway (with one cosmetic bug still open)
+## Status: **LIVE** ✅ on Railway — local Postgres dev now fully operational
 
 ## Where I left off
 
-Session 21 fixed a chain of production-only bugs all traced to one root
-cause class: **PostgreSQL case-folds unquoted identifiers, SQLite doesn't.**
-Migrations 030, 031, and 017 (one of two version-17 files) had unquoted
-camelCase columns, so production silently ended up with lowercase/missing
-columns while dev "worked".
+Session 22 completed the full Postgres dev setup AND the TidyHQ flow redesign.
 
-Four new migrations went out today (032 → 034) plus several code fixes.
-Photo upload now works end-to-end on production. Committee page displays
-photos. Site is fully functional.
+**All done this session:**
 
-**One cosmetic bug still open:** Safety Officer Directory cards all show
-generic "Safety Officer" — none show "Senior Safety Officer" (SSO) or
-correct SO designation. Migration 034 tried to backfill safetyOfficerType
-from the position field, but apparently the position field for those
-contacts doesn't contain the expected "SO"/"SSO" substrings. We're
-deferring this to tomorrow because the user wants to step back and
-simplify the whole TidyHQ→contacts flow first.
+### Postgres dev setup (Phases 1-3)
+- Docker Compose for local Postgres 16 (`docker-compose.dev.yml`)
+- `DATABASE_URL` set in `.env` — dev now runs on real Postgres
+- All 36 migrations applied successfully to local PG
+- `server/db.ts`: new quote-aware SQL splitter handles single-quoted strings,
+  dollar-quoted blocks, and `--` line comments (fixes migration v6/v12/v25 bugs)
+- `server/pg_migrations/018`: renamed from duplicate v17 (fixes PK violation)
+- `server/pgDb.ts`: `ESCAPE` added to keywords list (fixes wind grid ILIKE crash)
+- `scripts/lint-migrations.mjs`: pre-commit lint for unquoted camelCase columns
+  and duplicate version numbers — wired into `.git/hooks/pre-commit`
+- Migrations 030/031 fixed to use proper quoting (migration 032 still runs idempotently)
 
-## TOMORROW — WHEN USER SAYS "I'M BACK"
+### TidyHQ flow redesign (root cause: "S.O." ≠ "SO")
+- **Root cause confirmed**: TidyHQ group labels `"S.O."` / `"S.S.O."` were stored as
+  `"SO."` / `"SSO"` in group_mappings. Webhook `.replace(/\.$/, "")` → `"S.O"` never
+  matched `"SO"`. `safetyOfficerType` was never set via any code path.
+- **Migration 035**: dropped dead `isSO`/`isSSO` columns; cleaned S.O./S.S.O. label
+  fragments from `contacts.position` field for safety committee contacts
+- **Migration 036**: fixed `tidyhq_group_mappings` — group 210063 → `safetyOfficerType:SO`,
+  group 210060 → `safetyOfficerType:SSO`; added Safety Committee + Skyhigh Committee
+- **`server/routes/tidyhq.ts`**: added `safetyOfficerType:SO`/`SSO` dispatch in webhook
+  handler; removed broken `cleanPosition` checks; cleaned `isSafetyCommittee` handler
+- **`server/routes/contacts.ts`**: new `POST /tidyhq-smart-import` endpoint — fetches
+  full contacts from TidyHQ with embedded groups, single-pass role detection from
+  `tidyhq_group_mappings`, profile image sync (`/original/` variant)
+- **`src/pages/AdminContacts.tsx`**: "Quick Import" button opens modal with
+  one-click "Import Safety Committee" and "Import Skyhigh Committee" buttons
 
-**Two tasks queued, IN THIS ORDER:**
+## What's next (MOST IMPORTANT — DO FIRST)
 
-### Priority 1 — Audit and simplify TidyHQ → contacts mapping flow
+**Re-import both committees** to backfill `safetyOfficerType` and images:
+1. Start the dev server: `npm run dev`
+2. Log in as admin → Admin Contacts
+3. Click "Quick Import" → "Import Safety Committee" → wait for results
+4. Click "Quick Import" → "Import Skyhigh Committee" → wait for results
+5. Check safety officer directory — all SO/SSO cards should now show correct titles
 
-User's words: *"I think we will look at the whole flow from TidyHQ
-download to mapping to contacts and try to simplify it as much as possible."*
-
-Scope to investigate together:
-- How TidyHQ groups are pulled (`server/routes/tidyhq.ts`) — webhook + batch sync
-- How group names map to internal flags (isCommittee, isSafetyCommittee,
-  position string, safetyOfficerType column)
-- Why position field is being used for SO/SSO detection — feels brittle
-- The dual representation: `position` (text) vs `safetyOfficerType` (column)
-  vs `isSafetyCommittee` (boolean) — too many sources of truth
-- Group mappings table in admin — does it accurately reflect what's happening?
-- Why migration 034's `position LIKE '%SO%'` matched nothing for safety
-  officers — check what's actually in the position field for safety
-  committee members
-
-Goal: one clear mapping path from TidyHQ → contacts that any human can
-audit. Probably means choosing a single source of truth (safetyOfficerType
-column) and rebuilding the sync to populate it directly from group
-membership instead of parsing the position text field.
-
-**Concrete first step for tomorrow:** open Railway DB console and run:
-```sql
-SELECT name, surname, position, "safetyOfficerType", "isSafetyCommittee"
-FROM contacts
-WHERE "isSafetyCommittee" = 1
-ORDER BY name;
-```
-This will tell us what data we actually have to work with before designing
-the new flow.
-
-### Priority 2 — Local Postgres dev setup
-
-Full plan saved to [`tasks/postgres-dev-setup.md`](tasks/postgres-dev-setup.md).
-Do this AFTER the TidyHQ flow is sorted, so we can test the new flow
-against a real local Postgres.
-
-User explicitly said: *"remind me tomorrow before we install postgres to
-fix this"* — so make sure Priority 1 is genuinely done before starting
-Priority 2.
-
-## Session 21 deployed commits (chronological)
-
-- `cc2a006` — P-001: claimedAt column for retrievals (pre-session)
-- `dad44e9` — re-enabled photo upload + safetyOfficerType (premature)
-- `ec25d88` — **permanently removed pre-push git hook**
-- `c0843fa` → `7d48409` → `8c8d441` — iterative diagnosis of column-case bug
-- Migration 032 — fix photoUrl/photoAuthorised/fullNameDisplay column case
-- `de14789` — photo upload uses base64 JSON (was multipart, frontend mismatch)
-- `b6cf966` — added photo fields to `/public/committee` and `/safety-officers`
-- `871c459` — quick fix: removed safetyOfficerType from public endpoints
-- Migration 033 — create `safetyOfficerType` (never existed; duplicate v17)
-- `4c16a17` — re-added safetyOfficerType to public endpoints
-- Migration 034 — backfill safetyOfficerType from position field (DIDN'T WORK)
+Then push to production:
+1. `git push` to GitHub → Railway auto-deploys
+2. On production, the app restarts → migrations 035 + 036 apply automatically
+3. Then use the live admin panel to run Quick Imports for Safety Committee + Skyhigh Committee
 
 ## Open questions / blockers
-- Why migration 034's backfill didn't populate safetyOfficerType. Could be:
-  (a) position field uses different wording, e.g. "Safety Officer" rather
-      than "SO", which the LIKE '%SO%' would still match — but maybe it's
-      something else like "Safety Committee" or NULL
-  (b) Railway didn't redeploy yet when user checked
-  (c) Migration ran but UPDATEs matched zero rows
-- This is the FIRST thing to investigate tomorrow via the SQL query above.
+- The position titles for Skyhigh Committee (President, VP, etc.) require those
+  sub-groups to be in `tidyhq_group_mappings` with `isPosition` flag. Currently only
+  the parent group is mapped. If those sub-group IDs are needed, they must be added
+  via Admin → TidyHQ → Group Mappings, then re-run Skyhigh Committee Quick Import.
+- Smart Search bugs (BUG-A through BUG-G from session prior to 21) remain open.
+- Phase 4 (CI workflow) and Phase 5 (docs) of Postgres setup are deferred.
 
 ## Quick context refresher
 
-Site is live and functional. Photos work. Committee page works. Only the
-Safety Officer "title" badge is wrong (everyone shows "Safety Officer"
-instead of SSO/SO). User wants to redesign the TidyHQ sync flow before we
-patch this; agreed approach is "understand the data first, then simplify
-the flow".
-
-Memory of today's recurring lesson: **don't trust dev to mirror prod when
-the two use different databases.** Every bug in this session "worked in
-dev" because SQLite is permissive. Tomorrow's Postgres dev setup will
-eliminate this class of bug going forward.
+Local dev now uses Docker Postgres 16 (matches Railway). All 36 migrations run
+cleanly. The safetyOfficerType bug is fixed end-to-end — the group_mappings data
+is correct, the webhook handler dispatches directly to the new column, and the
+smart import endpoint does the full embedded-groups walk + image sync in one shot.
+The committees just need to be re-imported to backfill existing data.
