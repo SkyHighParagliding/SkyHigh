@@ -34,7 +34,7 @@ async function checkAndNotifySubmissions() {
     }
 
     const socialMediaContacts = await query<{ name: string; surname: string; email: string }>(
-      "SELECT name, surname, email FROM contacts WHERE \"isSocialMedia\" = true AND email != '' AND email IS NOT NULL"
+      "SELECT name, surname, email FROM contacts WHERE \"isSocialMedia\" = 1 AND email != '' AND email IS NOT NULL"
     );
 
     if (socialMediaContacts.length === 0) {

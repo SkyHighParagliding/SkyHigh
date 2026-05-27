@@ -33,7 +33,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
            contacts."isAdmin", contacts."isSafetyCommittee", contacts."soAuthorised"
     FROM admin_sessions
     JOIN contacts ON admin_sessions."userId" = contacts.id
-    WHERE admin_sessions.token = $1 AND contacts."isAdmin" = true
+    WHERE admin_sessions.token = $1 AND contacts."isAdmin" = 1
   `, [token]);
 
   if (!session) {
@@ -72,7 +72,7 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
            contacts."isAdmin", contacts."isSafetyCommittee", contacts."soAuthorised"
     FROM admin_sessions
     JOIN contacts ON admin_sessions."userId" = contacts.id
-    WHERE admin_sessions.token = $1 AND (contacts."isAdmin" = true OR (contacts."soAuthorised" = true AND contacts."isSafetyCommittee" = true))
+    WHERE admin_sessions.token = $1 AND (contacts."isAdmin" = 1 OR (contacts."soAuthorised" = 1 AND contacts."isSafetyCommittee" = 1))
   `, [token]);
 
   if (!session) {
