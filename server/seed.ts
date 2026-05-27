@@ -515,7 +515,7 @@ if (Number(ghCount?.count) === 0) {
       content: `### In Case of an Accident:\n\n1. **Ensure your own safety first.**\n2. **Assess the injured pilot.** Do not move them unless they are in immediate danger.\n3. **Call 000** immediately for emergency services.\n4. **Provide exact location details** (use coordinates if possible).\n5. **Contact a Club Safety Officer** as soon as practical.\n\n### Incident Reporting\n\nAll incidents, accidents, and near-misses must be reported to SAFA and the Club Committee within 24 hours.\n\n[Submit Incident Report Form →](https://safa.asn.au/safety/reporting-an-accident/)`,
       sortOrder: 1,
       sectionType: "emergency",
-      enabled: true,
+      enabled: 1,
     },
     {
       id: "rules",
@@ -523,7 +523,7 @@ if (Number(ghCount?.count) === 0) {
       content: `1. **SAFA Membership** — All pilots flying at club sites must be current financial members of the Sports Aviation Federation of Australia (SAFA).\n2. **Club Membership** — Visiting pilots must join as temporary members. Local pilots must hold full annual club membership.\n3. **Mandatory Check-in** — All pilots must use the online check-in system before launching at any club site. Failure to do so may result in disciplinary action.\n4. **Helmets & Reserves** — Approved helmets must be worn at all times while connected to a glider. A recently repacked reserve parachute is mandatory for all flights.`,
       sortOrder: 3,
       sectionType: "rules",
-      enabled: true,
+      enabled: 1,
     },
   ];
 
