@@ -25,19 +25,14 @@ is now 100% PostgreSQL-native with zero `better-sqlite3` / `db.prepare` referenc
 - Removed `better-sqlite3` from `package.json`
 - All committed in phases; **NOT YET PUSHED to GitHub/Railway**
 
-## What's next (MOST IMPORTANT — DO FIRST)
+## What's next
 
-1. **`git push`** → GitHub → Railway auto-deploys the SQLite-free build
-2. **Re-import both committees** on production (or dev):
-   - Admin → Contacts → "Quick Import" → "Import Safety Committee"
-   - Admin → Contacts → "Quick Import" → "Import Skyhigh Committee"
-3. **Verify production** — check Railway logs for migration errors, test a few pages
+1. **Verify production** — Railway is deploying now; check logs for migration errors
+2. Pick from the feature backlog (see tasks/todo.md)
 
 ## Open questions / blockers
 - Smart Search bugs (BUG-A through BUG-G) remain open — 7 bugs from the 50Q test run
 - Q40–Q50 of the Smart Search test run not yet completed
-- Skyhigh Committee sub-group IDs (President, VP, etc.) may need adding to group_mappings
-  if position titles are required — add via Admin → TidyHQ → Group Mappings then re-import
 
 ## Quick context refresher
 
