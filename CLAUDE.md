@@ -26,6 +26,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Wind map renders via Canvas + D3 (not SVG or WebGL) — see DECISION-004
 - Deployed on Railway with PostgreSQL — see DECISION-006
 - Scheduled closure calendar: `site_closure_dates` table, unified admin calendar UI (replaces Status dropdown), auto-generated home-page banners 7 days before closure — see DECISION-008
+- 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
@@ -192,14 +193,16 @@ SkyHigh/
 
 1. Read CLAUDE.md (Section 0 especially — project context)
 2. Read .claude/settings.json — check what hooks, permissions, and env vars are configured
-3. Read RESUME_HERE.md — understand where you left off
-4. Read memory/MEMORY.md — load session history and feedback
-5. Read tasks/todo.md — check what's queued for this session
-6. Review memory/feedback.md — remember what corrections have been made
-7. If wiki was substantially changed last session, skim wiki/README.md and wiki/02-tasks.md
-8. Then ask: "What should we work on?"
+3. **Verify credentials have been drawn**: The automated 1Password `SessionStart` hook or shell profile trigger should have already run `draw-env.ps1` to populate your local gitignored `.env` file from your 1Password vault. Check that `.env` exists and contains secrets.
+4. Read RESUME_HERE.md — understand where you left off
+5. Read memory/MEMORY.md — load session history and feedback
+6. Read tasks/todo.md — check what's queued for this session
+7. Review memory/feedback.md — remember what corrections have been made
+8. If wiki was substantially changed last session, skim wiki/README.md and wiki/02-tasks.md
+9. Then ask: "What should we work on?"
 
 **At session end:**
+- **Securely wipe `.env` file**: The automated `SessionEnd` hook or shell profile trigger will run `wipe-env.ps1` to securely delete the `.env` file containing raw credentials from disk.
 - Update RESUME_HERE.md with current state (where you left off, what's next)
 - Update memory/feedback.md with any lessons learned this session
 - Update memory/project.md if project scope/decisions changed
