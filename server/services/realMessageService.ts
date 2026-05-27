@@ -1,4 +1,4 @@
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import createLogger from "../utils/logger.js";
 import type { MessageService, Pilot, MapMessage } from "./types.js";
 
@@ -8,9 +8,11 @@ const MAX_MESSAGE_LENGTH = 500;
 
 async function purgeOldMessages() {
   try {
-    const result = await db.prepare("DELETE FROM map_messages WHERE createdAt < datetime('now', '-24 hours')").run();
-    if (result.changes > 0) {
-      log.info(`Purged ${result.changes} expired map message(s)`);
+    const result = await execute(
+      "DELETE FROM map_messages WHERE \"createdAt\" < NOW() - INTERVAL '24 hours'"
+    );
+    if (result.rowCount > 0) {
+      log.info(`Purged ${result.rowCount} expired map message(s)`);
     }
   } catch (err: any) {
     log.error("Failed to purge old messages:", err.message);
@@ -32,23 +34,24 @@ export class RealMessageService implements MessageService {
       return { error: "Cannot message yourself", status: 400 };
     }
 
-    const result = await db
-      .prepare(
-        `INSERT INTO map_messages (senderPilotId, senderName, recipientPilotId, recipientName, message)
-         VALUES (?, ?, ?, ?, ?)`
-      )
-      .run(
+    const rows = await query<{ id: number }>(
+      `INSERT INTO map_messages ("senderPilotId", "senderName", "recipientPilotId", "recipientName", message)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [
         String(sender.id),
         sender.firstName || sender.name || "Pilot",
         String(recipientPilotId),
         String(recipientName || "Pilot"),
-        trimmed
-      );
+        trimmed,
+      ]
+    );
 
-    log.info(`Message sent: ${sender.firstName} → ${recipientName} (id: ${result.lastInsertRowid})`);
+    const newId = rows[0]?.id;
+    log.info(`Message sent: ${sender.firstName} → ${recipientName} (id: ${newId})`);
 
     return {
-      id: result.lastInsertRowid as number,
+      id: newId as number,
       senderPilotId: String(sender.id),
       senderName: sender.firstName || sender.name || "Pilot",
       recipientPilotId: String(recipientPilotId),
@@ -60,60 +63,61 @@ export class RealMessageService implements MessageService {
   async getInbox(pilotId: string) {
     await purgeOldMessages();
 
-    const messages = await db
-      .prepare(
-        `SELECT id, senderPilotId, senderName, recipientPilotId, recipientName,
-                message, thumbsUp, createdAt, deliveredAt
-         FROM map_messages
-         WHERE recipientPilotId = ? AND deliveredAt IS NULL
-         ORDER BY createdAt ASC
-         LIMIT 50`
-      )
-      .all(pilotId);
+    const messages = await query(
+      `SELECT id, "senderPilotId", "senderName", "recipientPilotId", "recipientName",
+              message, "thumbsUp", "createdAt", "deliveredAt"
+       FROM map_messages
+       WHERE "recipientPilotId" = $1 AND "deliveredAt" IS NULL
+       ORDER BY "createdAt" ASC
+       LIMIT 50`,
+      [pilotId]
+    );
 
-    const thumbsUps = await db
-      .prepare(
-        `SELECT id, recipientPilotId, recipientName, thumbsUp, createdAt
-         FROM map_messages
-         WHERE senderPilotId = ? AND thumbsUp IN (1, 2) AND deliveredAt IS NULL
-         ORDER BY createdAt DESC
-         LIMIT 20`
-      )
-      .all(pilotId);
+    const thumbsUps = await query(
+      `SELECT id, "recipientPilotId", "recipientName", "thumbsUp", "createdAt"
+       FROM map_messages
+       WHERE "senderPilotId" = $1 AND "thumbsUp" IN (1, 2) AND "deliveredAt" IS NULL
+       ORDER BY "createdAt" DESC
+       LIMIT 20`,
+      [pilotId]
+    );
 
     return { messages, thumbsUps };
   }
 
   async thumbsUp(msgId: string | number, pilotId: string) {
-    const msg = await db
-      .prepare("SELECT id, recipientPilotId FROM map_messages WHERE id = ?")
-      .get(msgId) as any;
+    const msg = await queryOne<{ id: number; recipientPilotId: string }>(
+      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1`,
+      [msgId]
+    );
 
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
     if (msg.recipientPilotId !== pilotId) return { ok: false, error: "Not your message", status: 403 };
 
-    await db.prepare("UPDATE map_messages SET thumbsUp = 1 WHERE id = ?").run(msgId);
+    await execute(`UPDATE map_messages SET "thumbsUp" = 1 WHERE id = $1`, [msgId]);
     log.info(`Thumbs-up on message ${msgId}`);
     return { ok: true };
   }
 
   async thumbsDown(msgId: string | number, pilotId: string) {
-    const msg = await db
-      .prepare("SELECT id, recipientPilotId FROM map_messages WHERE id = ?")
-      .get(msgId) as any;
+    const msg = await queryOne<{ id: number; recipientPilotId: string }>(
+      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1`,
+      [msgId]
+    );
 
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
     if (msg.recipientPilotId !== pilotId) return { ok: false, error: "Not your message", status: 403 };
 
-    await db.prepare("UPDATE map_messages SET thumbsUp = 2 WHERE id = ?").run(msgId);
+    await execute(`UPDATE map_messages SET "thumbsUp" = 2 WHERE id = $1`, [msgId]);
     log.info(`Thumbs-down on message ${msgId}`);
     return { ok: true };
   }
 
   async markDelivered(msgId: string | number, pilotId: string) {
-    const msg = await db
-      .prepare("SELECT id, recipientPilotId, senderPilotId, thumbsUp FROM map_messages WHERE id = ?")
-      .get(msgId) as any;
+    const msg = await queryOne<{ id: number; recipientPilotId: string; senderPilotId: string; thumbsUp: number | null }>(
+      `SELECT id, "recipientPilotId", "senderPilotId", "thumbsUp" FROM map_messages WHERE id = $1`,
+      [msgId]
+    );
 
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
 
@@ -124,7 +128,7 @@ export class RealMessageService implements MessageService {
       return { ok: false, error: "Not your message", status: 403 };
     }
 
-    await db.prepare("UPDATE map_messages SET deliveredAt = CURRENT_TIMESTAMP WHERE id = ?").run(msgId);
+    await execute(`UPDATE map_messages SET "deliveredAt" = CURRENT_TIMESTAMP WHERE id = $1`, [msgId]);
     return { ok: true };
   }
 }

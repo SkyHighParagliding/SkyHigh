@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -12,48 +12,35 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
   const offset = (page - 1) * limit;
 
-  let countQuery = "SELECT COUNT(*) as total FROM search_logs";
-  let dataQuery = "SELECT id, search_type, query, response, created_at FROM search_logs";
+  const baseCount = "SELECT COUNT(*) as total FROM search_logs";
+  const baseData = "SELECT id, search_type, query, response, created_at FROM search_logs";
 
   if (type !== "all") {
-    countQuery += " WHERE search_type = ?";
-    dataQuery += " WHERE search_type = ?";
-    const countRow = await db.prepare(countQuery).get(type) as { total: number | string };
-    const rows = await db.prepare(dataQuery + " ORDER BY created_at DESC LIMIT ? OFFSET ?").all(type, limit, offset);
-    return res.json({
-      entries: rows,
-      total: parseInt(String(countRow.total)),
-      page,
-      limit,
-      pages: Math.ceil(parseInt(String(countRow.total)) / limit),
-    });
+    const countRow = await queryOne<{ total: string }>(baseCount + " WHERE search_type = $1", [type]);
+    const rows = await query<any>(baseData + " WHERE search_type = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3", [type, limit, offset]);
+    const total = parseInt(String(countRow?.total ?? 0));
+    return res.json({ entries: rows, total, page, limit, pages: Math.ceil(total / limit) });
   }
 
-  const countRow = await db.prepare(countQuery).get() as { total: number | string };
-  const rows = await db.prepare(dataQuery + " ORDER BY created_at DESC LIMIT ? OFFSET ?").all(limit, offset);
-  const total = parseInt(String(countRow.total));
-  res.json({
-    entries: rows,
-    total,
-    page,
-    limit,
-    pages: Math.ceil(total / limit),
-  });
+  const countRow = await queryOne<{ total: string }>(baseCount);
+  const rows = await query<any>(baseData + " ORDER BY created_at DESC LIMIT $1 OFFSET $2", [limit, offset]);
+  const total = parseInt(String(countRow?.total ?? 0));
+  res.json({ entries: rows, total, page, limit, pages: Math.ceil(total / limit) });
 }));
 
 // GET /api/search-logs/stats
 router.get("/stats", requireAuth, asyncHandler(async (_req, res) => {
-  const countRow = await db.prepare("SELECT COUNT(*) as total FROM search_logs").get() as { total: number | string };
-  const sizeRow = await db.prepare("SELECT SUM(LENGTH(query) + LENGTH(response)) as bytes FROM search_logs").get() as { bytes: number | null };
-  const oldestRow = await db.prepare("SELECT MIN(created_at) as oldest FROM search_logs").get() as { oldest: string | null };
-  const enabledRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLoggingEnabled'").get() as { value: string } | undefined;
-  const warningMbRow = await db.prepare("SELECT value FROM settings WHERE key = 'searchLogSizeWarningMb'").get() as { value: string } | undefined;
+  const countRow = await queryOne<{ total: string }>("SELECT COUNT(*) as total FROM search_logs");
+  const sizeRow = await queryOne<{ bytes: string | null }>("SELECT SUM(LENGTH(query) + LENGTH(response)) as bytes FROM search_logs");
+  const oldestRow = await queryOne<{ oldest: string | null }>("SELECT MIN(created_at) as oldest FROM search_logs");
+  const enabledRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'searchLoggingEnabled'");
+  const warningMbRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'searchLogSizeWarningMb'");
 
   const bytes = Number(sizeRow?.bytes) || 0;
   const mb = bytes / (1024 * 1024);
 
   res.json({
-    total: parseInt(String(countRow.total)),
+    total: parseInt(String(countRow?.total ?? 0)),
     sizeMb: Math.round(mb * 100) / 100,
     oldestAt: oldestRow?.oldest || null,
     enabled: enabledRow?.value === "true",
@@ -64,14 +51,15 @@ router.get("/stats", requireAuth, asyncHandler(async (_req, res) => {
 // POST /api/search-logs/toggle
 router.post("/toggle", requireAuth, asyncHandler(async (req, res) => {
   const { enabled } = req.body;
-  await db.prepare("INSERT INTO settings (key, value) VALUES ('searchLoggingEnabled', ?) ON CONFLICT (key) DO UPDATE SET value = ?").run(String(!!enabled), String(!!enabled));
+  const val = String(!!enabled);
+  await execute("INSERT INTO settings (key, value) VALUES ('searchLoggingEnabled', $1) ON CONFLICT (key) DO UPDATE SET value = $1", [val]);
   res.json({ ok: true, enabled: !!enabled });
 }));
 
 // DELETE /api/search-logs
 router.delete("/", requireAuth, asyncHandler(async (_req, res) => {
-  await db.prepare("DELETE FROM search_logs").run();
-  await db.prepare("INSERT INTO settings (key, value) VALUES ('searchLogWarningSent', 'false') ON CONFLICT (key) DO UPDATE SET value = 'false'").run();
+  await execute("DELETE FROM search_logs");
+  await execute("INSERT INTO settings (key, value) VALUES ('searchLogWarningSent', 'false') ON CONFLICT (key) DO UPDATE SET value = 'false'");
   res.json({ ok: true });
 }));
 

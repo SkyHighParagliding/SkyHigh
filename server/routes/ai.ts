@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
-import db from "../db.js";
+import { queryOne, execute } from "../pg.js";
 import multer from "multer";
 import sharp from "sharp";
 import fs from "fs";
@@ -150,7 +150,7 @@ async function copyToDriveMarketingFolder(fileBuffer: Buffer, fileName: string):
     }
     const connected = await isDriveConnected();
     if (!connected) return;
-    const folderMap = await ensureFolderStructure(db);
+    const folderMap = await ensureFolderStructure();
     if (!folderMap || !folderMap["07"]) return;
     await uploadFile(fileBuffer, fileName, "image/jpeg", folderMap["07"]);
   } catch {
@@ -158,18 +158,18 @@ async function copyToDriveMarketingFolder(fileBuffer: Buffer, fileName: string):
 }
 
 router.get("/prompt", asyncHandler(async (req, res) => {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string };
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiSystemPrompt'");
   res.json({ prompt: row ? row.value : "" });
 }));
 
 router.put("/prompt", requireAuth, asyncHandler(async (req, res) => {
   const { prompt } = req.body;
-  await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(prompt);
+  await execute("UPDATE settings SET value = $1 WHERE key = 'aiSystemPrompt'", [prompt]);
   res.json({ success: true });
 }));
 
 router.get("/image-prompt", asyncHandler(async (req, res) => {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiImagePrompt'").get() as { value: string };
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiImagePrompt'");
   const defaultPrompt = `You are an expert photo editor for a paragliding club website. The output image will be used in two ways: a 1920x1080 hero image AND a 1920x600 banner crop from it. ALL subjects (people, paragliders, hang gliders, wings, pilots) must remain fully visible in both formats.
 
 Process this image following these rules:
@@ -193,25 +193,25 @@ Return the final enhanced image.`;
 
 router.put("/image-prompt", requireAuth, asyncHandler(async (req, res) => {
   const { prompt } = req.body;
-  await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('aiImagePrompt', ?)").run(prompt);
+  await execute("INSERT INTO settings (key, value) VALUES ('aiImagePrompt', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [prompt]);
   res.json({ success: true });
 }));
 
 router.get("/rating-prompt", asyncHandler(async (req, res) => {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiRatingPrompt'").get() as { value: string };
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiRatingPrompt'");
   res.json({ prompt: row ? row.value : DEFAULT_RATING_PROMPT });
 }));
 
 router.put("/rating-prompt", requireAuth, asyncHandler(async (req, res) => {
   const { prompt } = req.body;
-  await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('aiRatingPrompt', ?)").run(prompt);
+  await execute("INSERT INTO settings (key, value) VALUES ('aiRatingPrompt', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [prompt]);
   res.json({ success: true });
 }));
 
 router.post("/parse-rating", requireAuth, asyncHandler(async (req, res) => {
   let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'geminiApiKey'");
     if (row?.value) apiKey = row.value;
   }
   
@@ -224,7 +224,7 @@ router.post("/parse-rating", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Rating text is required" });
   }
 
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiRatingPrompt'").get() as { value: string };
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiRatingPrompt'");
   const promptText = row ? row.value : DEFAULT_RATING_PROMPT;
 
   const ai = new GoogleGenAI({ apiKey });
@@ -300,7 +300,7 @@ router.post("/generate", requireAuth, asyncHandler(async (req, res) => {
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const row = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string };
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiSystemPrompt'");
   const systemPrompt = row ? row.value : "";
 
   const finalPrompt = `${systemPrompt}\n\nTEXT CONTENT:\n${allText}`;
@@ -835,7 +835,7 @@ router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 999),
   const photographerName = rawName === "_" ? "" : rawName;
   console.log("[BULK UPLOAD] Photographer name:", photographerName || "(none)");
 
-  const limitRow = await db.prepare("SELECT value FROM settings WHERE key = 'bulkUploadLimit'").get() as { value: string } | undefined;
+  const limitRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'bulkUploadLimit'");
   const uploadLimit = Math.min(999, Math.max(1, parseInt(limitRow?.value || "20") || 20));
   if (req.files.length > uploadLimit) {
     return res.status(400).json({ error: `Too many files — maximum is ${uploadLimit} per upload` });
@@ -904,7 +904,7 @@ router.post("/watermark-existing", requireAuth, asyncHandler(async (req, res) =>
 router.get("/models", requireAuth, asyncHandler(async (_req, res) => {
   let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'geminiApiKey'");
     if (row?.value) apiKey = row.value;
   }
 
@@ -959,7 +959,7 @@ router.put("/models/config", requireAuth, asyncHandler(async (req, res) => {
 router.post("/models/test", requireAuth, asyncHandler(async (req, res) => {
   let apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    const row = db.prepare("SELECT value FROM settings WHERE key = 'geminiApiKey'").get() as { value: string } | undefined;
+    const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'geminiApiKey'");
     if (row?.value) apiKey = row.value;
   }
 

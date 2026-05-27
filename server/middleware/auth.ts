@@ -1,14 +1,17 @@
 import { Request, Response, NextFunction } from "express";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 
 async function getSessionTtlMs(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAdminSessionTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>(
+    "SELECT value FROM settings WHERE key = $1",
+    ["cacheAdminSessionTtl"]
+  );
   const hours = parseInt(row?.value || "24", 10);
   return hours * 60 * 60 * 1000;
 }
 
 export function isDevBypassActive(): boolean {
-  return process.env.DEV_BYPASS_AUTH?.toLowerCase() === "true";
+  return process.env.NODE_ENV === 'development' && process.env.DEV_BYPASS_AUTH?.toLowerCase() === "true";
 }
 
 const DEV_ADMIN_USER = { id: 0, name: "Dev Admin", email: "dev@localhost", isAdmin: true, isSafetyCommittee: false, soAuthorised: false, soSiteId: null };
@@ -24,14 +27,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const session = await db.prepare(`
-    SELECT admin_sessions.token, admin_sessions.createdAt, admin_sessions.soSiteId,
+  const session = await queryOne<any>(`
+    SELECT admin_sessions.token, admin_sessions."createdAt", admin_sessions."soSiteId",
            contacts.id, contacts.name, contacts.email,
-           contacts.isAdmin, contacts.isSafetyCommittee, contacts.soAuthorised
+           contacts."isAdmin", contacts."isSafetyCommittee", contacts."soAuthorised"
     FROM admin_sessions
-    JOIN contacts ON admin_sessions.userId = contacts.id
-    WHERE admin_sessions.token = ? AND contacts.isAdmin = 1
-  `).get(token) as any;
+    JOIN contacts ON admin_sessions."userId" = contacts.id
+    WHERE admin_sessions.token = $1 AND contacts."isAdmin" = true
+  `, [token]);
 
   if (!session) {
     return res.status(401).json({ error: "Invalid session" });
@@ -44,7 +47,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   const sessionAge = Date.now() - new Date(session.createdAt).getTime();
   const sessionTtlMs = await getSessionTtlMs();
   if (sessionAge > sessionTtlMs) {
-    await db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+    await execute("DELETE FROM admin_sessions WHERE token = $1", [token]);
     return res.status(401).json({ error: "Session expired" });
   }
 
@@ -63,14 +66,14 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const session = await db.prepare(`
-    SELECT admin_sessions.token, admin_sessions.createdAt, admin_sessions.soSiteId,
+  const session = await queryOne<any>(`
+    SELECT admin_sessions.token, admin_sessions."createdAt", admin_sessions."soSiteId",
            contacts.id, contacts.name, contacts.email,
-           contacts.isAdmin, contacts.isSafetyCommittee, contacts.soAuthorised
+           contacts."isAdmin", contacts."isSafetyCommittee", contacts."soAuthorised"
     FROM admin_sessions
-    JOIN contacts ON admin_sessions.userId = contacts.id
-    WHERE admin_sessions.token = ? AND (contacts.isAdmin = 1 OR (contacts.soAuthorised = 1 AND contacts.isSafetyCommittee = 1))
-  `).get(token) as any;
+    JOIN contacts ON admin_sessions."userId" = contacts.id
+    WHERE admin_sessions.token = $1 AND (contacts."isAdmin" = true OR (contacts."soAuthorised" = true AND contacts."isSafetyCommittee" = true))
+  `, [token]);
 
   if (!session) {
     return res.status(401).json({ error: "Invalid session" });
@@ -79,7 +82,7 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
   const sessionAge = Date.now() - new Date(session.createdAt).getTime();
   const sessionTtlMs = await getSessionTtlMs();
   if (sessionAge > sessionTtlMs) {
-    await db.prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+    await execute("DELETE FROM admin_sessions WHERE token = $1", [token]);
     return res.status(401).json({ error: "Session expired" });
   }
 
@@ -98,5 +101,5 @@ export async function requireSOOrAdmin(req: Request, res: Response, next: NextFu
 export async function cleanExpiredSessions() {
   const sessionTtlMs = await getSessionTtlMs();
   const cutoff = new Date(Date.now() - sessionTtlMs).toISOString();
-  await db.prepare("DELETE FROM admin_sessions WHERE createdAt < ?").run(cutoff);
+  await execute("DELETE FROM admin_sessions WHERE \"createdAt\" < $1", [cutoff]);
 }

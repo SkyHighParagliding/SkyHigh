@@ -1,5 +1,5 @@
 import createLogger from "./utils/logger.js";
-import db from "./db.js";
+import { queryOne } from "./pg.js";
 
 const log = createLogger("tides");
 
@@ -112,13 +112,13 @@ interface CachedPredictions {
 const predictionsCache: Map<string, CachedPredictions> = new Map();
 
 async function getBomTideTtlMs(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheBomTideTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheBomTideTtl"]);
   const hours = parseInt(row?.value || "6", 10);
   return hours * 60 * 60 * 1000;
 }
 
 async function getAstroTideTtlMs(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheAstroTideTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheAstroTideTtl"]);
   const minutes = parseInt(row?.value || "30", 10);
   return minutes * 60 * 1000;
 }
@@ -150,27 +150,44 @@ async function fetchBomTideData(station: TideStation): Promise<TidePrediction[] 
   const tz = station.timezone || getTimezoneForState(stateCode);
 
   for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; SkyHighPGC/1.0)",
-          Accept: "text/csv,text/plain,*/*",
-        },
-        signal: AbortSignal.timeout(8000),
-      });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; SkyHighPGC/1.0)",
+            Accept: "text/csv,text/plain,*/*",
+          },
+          signal: AbortSignal.timeout(8000),
+        });
 
-      if (!res.ok) continue;
+        if (!res.ok) {
+          if ((res.status === 429 || res.status >= 500) && attempt < 2) {
+            const retryAfter = parseInt(res.headers.get('retry-after') || '5', 10);
+            const wait = res.status === 429 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
+            log.warn(`BOM tide ${url}: ${res.status} — retrying in ${Math.round(wait / 1000)}s (attempt ${attempt + 2}/3)`);
+            await new Promise(r => setTimeout(r, wait));
+            continue;
+          }
+          continue; // non-retryable status, skip to next URL
+        }
 
-      const text = await res.text();
-      if (!text || text.length < 50 || text.includes("<!DOCTYPE") || text.includes("<html")) continue;
+        const text = await res.text();
+        if (!text || text.length < 50 || text.includes("<!DOCTYPE") || text.includes("<html")) continue;
 
-      const predictions = parseBomCsv(text, now, tz);
-      if (predictions.length >= 2) {
-        log.info(`BOM tide data fetched for ${station.name} from ${url}: ${predictions.length} predictions`);
-        return predictions;
+        const predictions = parseBomCsv(text, now, tz);
+        if (predictions.length >= 2) {
+          log.info(`BOM tide data fetched for ${station.name} from ${url}: ${predictions.length} predictions`);
+          return predictions;
+        }
+      } catch (e) {
+        if (attempt < 2) {
+          const wait = Math.pow(2, attempt + 1) * 1000;
+          await new Promise(r => setTimeout(r, wait));
+          continue;
+        }
+        log.debug(`BOM fetch attempt failed for ${station.name}: ${(e as Error).message}`);
       }
-    } catch (e) {
-      log.debug(`BOM fetch attempt failed for ${station.name}: ${(e as Error).message}`);
+      break; // success (non-retry) exit inner loop
     }
   }
 

@@ -1,13 +1,13 @@
 import { tidyhqFetch } from "./tidyhqFetch.js";
 import createLogger from "./logger.js";
-import db from "../db.js";
+import { queryOne } from "../pg.js";
 
 const log = createLogger("tidyhq-filter");
 
 const CURRENT_MEMBERS_GROUP_ID = 135716;
 
 async function getCacheTtlMs(): Promise<number> {
-  const row = await db.prepare("SELECT value FROM settings WHERE key = ?").get("cacheTidyHqMemberTtl") as { value: string } | undefined;
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", ["cacheTidyHqMemberTtl"]);
   const minutes = parseInt(row?.value || "15", 10);
   return minutes * 60 * 1000;
 }

@@ -1,4 +1,4 @@
-import db from "./db.js";
+import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
 import { fromZonedTime } from 'date-fns-tz';
 
@@ -11,6 +11,11 @@ const FINE_GRID_CACHE_KEY = "fine_grid";
 const COARSE_GRID_CACHE_KEY = "coarse_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 const COARSE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
+
+/** Escape underscores in a LIKE pattern to prevent SQL wildcard collisions. */
+function escapeLike(key: string): string {
+  return key.replace(/_/g, '\\_');
+}
 
 export interface GridFetchStatus {
   success: boolean;
@@ -43,9 +48,10 @@ export async function getGridBounds(): Promise<GridBounds> {
   const keys = ['gridFineLatMin','gridFineLatMax','gridFineLonMin','gridFineLonMax',
                  'gridCoarseLatMin','gridCoarseLatMax','gridCoarseLonMin','gridCoarseLonMax'];
   try {
-    const rows = await db.prepare(
-      `SELECT key, value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`
-    ).all(...keys) as { key: string; value: string }[];
+    const rows = await query<{ key: string; value: string }>(
+      `SELECT key, value FROM settings WHERE key IN (${keys.map((_k, i) => `$${i + 1}`).join(',')})`,
+      keys
+    );
     const s: Record<string, number> = {};
     for (const r of rows) s[r.key] = parseFloat(r.value);
     return {
@@ -71,9 +77,10 @@ export async function getGridBounds(): Promise<GridBounds> {
 async function cleanupOldGridData(baseKey: string): Promise<void> {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const result = await db.prepare(`DELETE FROM wind_grid_data WHERE siteId LIKE ? AND siteId < ?`).run(`${baseKey}_%`, `${baseKey}_${sevenDaysAgo}`);
-    if ((result as any).changes > 0) {
-      console.log(`${baseKey}: Cleaned up ${(result as any).changes} old grid records`);
+    const safePrefix = escapeLike(baseKey);
+    const result = await execute(`DELETE FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' AND "siteId" < $2`, [`${safePrefix}\\_%`, `${baseKey}_${sevenDaysAgo}`]);
+    if (result.rowCount > 0) {
+      console.log(`${baseKey}: Cleaned up ${result.rowCount} old grid records`);
     }
   } catch (e) {
     console.error(`${baseKey}: Cleanup error`, e);
@@ -153,7 +160,7 @@ export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
+      const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
         if (age < GRID_CACHE_EXPIRY) {
@@ -213,16 +220,21 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (!r?.hourly) continue;
+        const hourlyFields = r.hourly;
+        if (!Array.isArray(hourlyFields.wind_speed_10m) || !Array.isArray(hourlyFields.wind_direction_10m)) {
+          console.warn(`Fine grid: Skipping point ${tile.lats[j]},${tile.lons[j]} — missing hourly arrays`);
+          continue;
+        }
         allPoints.push({
           lat: tile.lats[j],
           lon: tile.lons[j],
           hourly: {
-            time: r.hourly.time,
-            wind_speed_10m: r.hourly.wind_speed_10m,
-            wind_gusts_10m: r.hourly.wind_gusts_10m,
-            wind_direction_10m: r.hourly.wind_direction_10m,
-            temperature_2m: r.hourly.temperature_2m,
-            weather_code: r.hourly.weather_code
+            time: hourlyFields.time ?? [],
+            wind_speed_10m: hourlyFields.wind_speed_10m,
+            wind_gusts_10m: hourlyFields.wind_gusts_10m ?? [],
+            wind_direction_10m: hourlyFields.wind_direction_10m,
+            temperature_2m: hourlyFields.temperature_2m ?? [],
+            weather_code: hourlyFields.weather_code ?? []
           }
         });
       }
@@ -246,9 +258,9 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     console.warn(`Fine grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
     if (cached) {
@@ -278,8 +290,10 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     const jsonStr = JSON.stringify(grid);
     const today = new Date().toISOString().split('T')[0];
     const cacheKey = `${FINE_GRID_CACHE_KEY}_${today}`;
-    await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(cacheKey, jsonStr, ni, FINE_DELTA);
+    await execute(
+      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+      [cacheKey, jsonStr, ni, FINE_DELTA]
+    );
     console.log(`Fine grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
     await cleanupOldGridData(FINE_GRID_CACHE_KEY);
   } catch (e) {
@@ -330,7 +344,7 @@ export async function fetchCoarseGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
+      const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
         if (age < COARSE_GRID_CACHE_EXPIRY) {
@@ -391,14 +405,19 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (!r?.hourly) continue;
+        const hourlyFields = r.hourly;
+        if (!Array.isArray(hourlyFields.wind_speed_10m) || !Array.isArray(hourlyFields.wind_direction_10m)) {
+          console.warn(`Coarse grid: Skipping point ${tile.lats[j]},${tile.lons[j]} — missing hourly arrays`);
+          continue;
+        }
         allPoints.push({
           lat: tile.lats[j],
           lon: tile.lons[j],
           hourly: {
-            time: r.hourly.time,
-            wind_speed_10m: r.hourly.wind_speed_10m,
+            time: hourlyFields.time ?? [],
+            wind_speed_10m: hourlyFields.wind_speed_10m,
             wind_gusts_10m: [],
-            wind_direction_10m: r.hourly.wind_direction_10m,
+            wind_direction_10m: hourlyFields.wind_direction_10m,
             temperature_2m: [],
             weather_code: []
           }
@@ -423,9 +442,9 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
     console.warn(`Coarse grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
     if (cached) {
@@ -455,8 +474,10 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
     const jsonStr = JSON.stringify(grid);
     const today = new Date().toISOString().split('T')[0];
     const cacheKey = `${COARSE_GRID_CACHE_KEY}_${today}`;
-    await db.prepare("INSERT OR REPLACE INTO wind_grid_data (siteId, gridData, gridSize, gridSpacing, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)")
-      .run(cacheKey, jsonStr, ni, COARSE_DELTA);
+    await execute(
+      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+      [cacheKey, jsonStr, ni, COARSE_DELTA]
+    );
     console.log(`Coarse grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
     await cleanupOldGridData(COARSE_GRID_CACHE_KEY);
   } catch (e) {
@@ -474,10 +495,10 @@ export async function getCachedFineGrid(): Promise<VictoriaGrid | null> {
   }
   try {
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
 
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
 
@@ -499,10 +520,10 @@ export async function getCachedCoarseGrid(): Promise<VictoriaGrid | null> {
   }
   try {
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
 
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
 
@@ -576,11 +597,15 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
     hourIdx = fallbackIdx;
   }
 
-  const temp = nearest.hourly.temperature_2m[hourIdx];
-  const windSpeed = Math.round(nearest.hourly.wind_speed_10m[hourIdx]);
-  const windGust = Math.round(nearest.hourly.wind_gusts_10m[hourIdx]);
-  const windDirection = degreesToDirection(nearest.hourly.wind_direction_10m[hourIdx]);
-  const weatherCode = nearest.hourly.weather_code[hourIdx];
+  if (hourIdx < 0 || hourIdx >= nearest.hourly.wind_speed_10m.length) {
+    console.warn(`extractSiteForecast: hourIdx ${hourIdx} out of bounds for ${siteId}`);
+    return null;
+  }
+  const temp = nearest.hourly.temperature_2m[hourIdx] ?? 0;
+  const windSpeed = Math.round(nearest.hourly.wind_speed_10m[hourIdx] ?? 0);
+  const windGust = Math.round(nearest.hourly.wind_gusts_10m[hourIdx] ?? 0);
+  const windDirection = degreesToDirection(nearest.hourly.wind_direction_10m[hourIdx] ?? 0);
+  const weatherCode = nearest.hourly.weather_code[hourIdx] ?? 0;
   const time = nearest.hourly.time[hourIdx];
 
   const { text: summary, icon } = getWeatherCodeSummary(weatherCode);
@@ -791,9 +816,9 @@ export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${FINE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${FINE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
@@ -855,9 +880,9 @@ export async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
     const today = new Date().toISOString().split('T')[0];
-    let cached = await db.prepare("SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId = ?").get(`${COARSE_GRID_CACHE_KEY}_${today}`) as any;
+    let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
-      const rows = await db.prepare(`SELECT gridData, updatedAt FROM wind_grid_data WHERE siteId LIKE ? ORDER BY siteId DESC LIMIT 1`).all(`${COARSE_GRID_CACHE_KEY}_%`) as any[];
+      const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
     const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
