@@ -1,5 +1,6 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { query, queryOne, execute } from "../../pg.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth, requireSOOrAdmin } from "../../middleware/auth.js";
 import { invalidateSearchCaches } from "../search.js";
 import {
@@ -18,7 +19,7 @@ const safeJsonParse = (json: string | null, fallback: any = []): any => {
 
 const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   try {
     const isPublic = req.query.public === "true";
 
@@ -29,58 +30,74 @@ router.get("/", async (req, res) => {
       res.set('Cache-Control', 'public, max-age=30');
       return res.json(getPublicSitesCache());
     }
-    let sites = await db.prepare("SELECT * FROM sites ORDER BY name ASC LIMIT ? OFFSET ?").all(limit, offset) as any[];
+    let sites = await query<any>("SELECT * FROM sites ORDER BY name ASC LIMIT $1 OFFSET $2", [limit, offset]);
 
     if (isPublic) {
-      const hideClosedSetting = await db.prepare("SELECT value FROM settings WHERE key = 'hideClosedSites'").get() as { value: string } | undefined;
+      const hideClosedSetting = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'hideClosedSites'");
       if (hideClosedSetting?.value === "true") {
         sites = sites.filter((s: any) => s.status !== "closed" || s.overrideHideClosed === "true" || s.temporarilyClosed === 1);
       }
     }
 
-    const countResult = await db.prepare("SELECT COUNT(*) as count FROM sites").get() as { count: number };
+    const countResult = await queryOne<{ count: string }>("SELECT COUNT(*) as count FROM sites");
 
-    const today = new Date().toISOString().split('T')[0];
-    const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
-    const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
-    const allClosureRows = await db.prepare(
-      "SELECT site_id, closure_date FROM site_closure_dates WHERE closure_date >= ? AND closure_date <= ? ORDER BY closure_date ASC"
-    ).all(today, sixtyDaysStr) as { site_id: string; closure_date: string }[];
-    const closuresBySite: Record<string, string[]> = {};
-    for (const row of allClosureRows) {
-      if (!closuresBySite[row.site_id]) closuresBySite[row.site_id] = [];
-      closuresBySite[row.site_id].push(row.closure_date);
+    // More efficient query: only fetch closure dates for the sites actually on this page
+    let mapped;
+
+    if (sites.length > 0) {
+      const siteIds = sites.map((s: any) => s.id);
+      const today = new Date().toISOString().split('T')[0];
+      const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
+      const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
+
+      // Build PG positional placeholders for site IDs
+      const placeholders = siteIds.map((_: any, i: number) => `$${i + 1}`).join(',');
+      const closureRows = await query<{ site_id: string; closure_date: string }>(
+        `SELECT site_id, closure_date FROM site_closure_dates WHERE site_id IN (${placeholders}) AND closure_date >= $${siteIds.length + 1} AND closure_date <= $${siteIds.length + 2} ORDER BY site_id, closure_date ASC`,
+        [...siteIds, today, sixtyDaysStr]
+      );
+
+      const closuresBySite: Record<string, string[]> = {};
+      for (const row of closureRows) {
+        if (!closuresBySite[row.site_id]) closuresBySite[row.site_id] = [];
+        closuresBySite[row.site_id].push(row.closure_date);
+      }
+
+      mapped = sites.map((s: any) => ({
+          ...s,
+          hazards: safeJsonParse(s.hazards),
+          rules: safeJsonParse(s.rules),
+          upcomingClosureDates: closuresBySite[s.id] || [],
+      }));
+    } else {
+      // Handle empty site list case
+      mapped = [];
     }
-
-    const mapped = sites.map((s: any) => ({
-        ...s,
-        hazards: safeJsonParse(s.hazards),
-        rules: safeJsonParse(s.rules),
-        upcomingClosureDates: closuresBySite[s.id] || [],
-    }));
 
     if (isPublic && !hasCustomPagination) {
       setPublicSitesCache(mapped);
       res.set('Cache-Control', 'public, max-age=30');
     }
 
-    res.set('X-Total-Count', String(countResult.count));
-    res.json(createPaginatedResponse(mapped, countResult.count, limit, offset));
+    const totalCount = Number(countResult!.count);
+    res.set('X-Total-Count', String(totalCount));
+    res.json(createPaginatedResponse(mapped, totalCount, limit, offset));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", asyncHandler(async (req, res) => {
   try {
-    const site = await db.prepare("SELECT * FROM sites WHERE id = ?").get(req.params.id) as any;
+    const site = await queryOne<any>("SELECT * FROM sites WHERE id = $1", [req.params.id]);
     if (site) {
       const today = new Date().toISOString().split('T')[0];
       const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
       const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
-      const closureRows = await db.prepare(
-        "SELECT closure_date FROM site_closure_dates WHERE site_id = ? AND closure_date >= ? AND closure_date <= ? ORDER BY closure_date ASC"
-      ).all(req.params.id, today, sixtyDaysStr) as { closure_date: string }[];
+      const closureRows = await query<{ closure_date: string }>(
+        "SELECT closure_date FROM site_closure_dates WHERE site_id = $1 AND closure_date >= $2 AND closure_date <= $3 ORDER BY closure_date ASC",
+        [req.params.id, today, sixtyDaysStr]
+      );
       res.json({
           ...site,
           hazards: safeJsonParse(site.hazards),
@@ -94,151 +111,192 @@ router.get("/:id", async (req, res) => {
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, asyncHandler(async (req, res) => {
   const { id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite } = req.body;
   try {
-      const insert = await db.prepare(`
-        INSERT INTO sites (id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax)
-        VALUES (@id, @name, @type, @pgRating, @hgRating, @windDir, @windSpeed, @status, @hazardLevel, @lat, @lon, @description, @launch, @landing, @hazards, @rules, @image, @useLiveWeather, @liveStationId, @liveStationIdAlt, @siteguideUrl, @siteContact, @siteContactPhone, @navigateTo, @launchHeight, @launchHeightHigh, @launchHeight2, @landingHeight2, @hoodedPloversLink, @hoodedPloversActive, @emergencyMarker, @what3words, @weatherStationLink, @isSkyHighSite, @crossLeft, @crossRight, @overrideHideClosed, @essentialInfoImages, @essentialInfoText, @unassignedText, @siteguideVersion, @siteguideScrapedAt, @isTidal, @tideStationId, @skipBulkImport, @isXCSite, @closurePillsMax)
-      `);
-      await insert.run({
-          id, name, type, pgRating: normalisePgRating(pgRating) || null, hgRating: hgRating || null, windDir: normaliseWindDir(windDir) || null, windSpeed: normaliseWindSpeed(windSpeed) || null, status, hazardLevel, lat, lon, description, launch, landing,
-          hazards: JSON.stringify(hazards || []),
-          rules: JSON.stringify(rules || []),
-          image: image || await getDefaultSiteImage(type),
-          useLiveWeather: useLiveWeather || 'false',
-          liveStationId: liveStationId || null,
-          liveStationIdAlt: liveStationIdAlt || null,
-          siteguideUrl: siteguideUrl || null,
-          siteContact: siteContact || null,
-          siteContactPhone: siteContactPhone || null,
-          navigateTo: navigateTo || null,
-          launchHeight: launchHeight || null,
-          launchHeightHigh: launchHeightHigh || null,
-          launchHeight2: launchHeight2 || null,
-          landingHeight2: landingHeight2 || null,
-          hoodedPloversLink: hoodedPloversLink || null,
-          hoodedPloversActive: hoodedPloversActive || 'false',
-          emergencyMarker: emergencyMarker || null,
-          what3words: what3words || null,
-          weatherStationLink: weatherStationLink || null,
-          isSkyHighSite: isSkyHighSite || 'false',
-          crossLeft: crossLeft || 'false',
-          crossRight: crossRight || 'false',
-          overrideHideClosed: overrideHideClosed || 'false',
-          essentialInfoImages: essentialInfoImages ? (typeof essentialInfoImages === 'string' ? essentialInfoImages : JSON.stringify(essentialInfoImages)) : null,
-          essentialInfoText: essentialInfoText || null,
-          unassignedText: unassignedText || null,
-          siteguideVersion: siteguideVersion || null,
-          siteguideScrapedAt: siteguideScrapedAt || null,
-          isTidal: isTidal || 'false',
-          tideStationId: tideStationId || null,
-          skipBulkImport: skipBulkImport || 'false',
-          isXCSite: isXCSite || 'false',
-          closurePillsMax: 7,
-      });
+      // $1...$47 matching column order:
+      // id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon,
+      // description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId,
+      // liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight,
+      // launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive,
+      // emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight,
+      // overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion,
+      // siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax
+      await execute(`
+        INSERT INTO sites (id, name, type, "pgRating", "hgRating", "windDir", "windSpeed", status, "hazardLevel", lat, lon, description, launch, landing, hazards, rules, image, "useLiveWeather", "liveStationId", "liveStationIdAlt", "siteguideUrl", "siteContact", "siteContactPhone", "navigateTo", "launchHeight", "launchHeightHigh", "launchHeight2", "landingHeight2", "hoodedPloversLink", "hoodedPloversActive", "emergencyMarker", "what3words", "weatherStationLink", "isSkyHighSite", "crossLeft", "crossRight", "overrideHideClosed", "essentialInfoImages", "essentialInfoText", "unassignedText", "siteguideVersion", "siteguideScrapedAt", "isTidal", "tideStationId", "skipBulkImport", "isXCSite", "closurePillsMax")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47)
+      `, [
+          id,                                                          // $1  id
+          name,                                                        // $2  name
+          type,                                                        // $3  type
+          normalisePgRating(pgRating) || null,                        // $4  pgRating
+          hgRating || null,                                           // $5  hgRating
+          normaliseWindDir(windDir) || null,                          // $6  windDir
+          normaliseWindSpeed(windSpeed) || null,                      // $7  windSpeed
+          status,                                                      // $8  status
+          hazardLevel,                                                 // $9  hazardLevel
+          lat,                                                         // $10 lat
+          lon,                                                         // $11 lon
+          description,                                                 // $12 description
+          launch,                                                      // $13 launch
+          landing,                                                     // $14 landing
+          JSON.stringify(hazards || []),                               // $15 hazards
+          JSON.stringify(rules || []),                                 // $16 rules
+          image || await getDefaultSiteImage(type),                   // $17 image
+          useLiveWeather || 'false',                                   // $18 useLiveWeather
+          liveStationId || null,                                       // $19 liveStationId
+          liveStationIdAlt || null,                                    // $20 liveStationIdAlt
+          siteguideUrl || null,                                        // $21 siteguideUrl
+          siteContact || null,                                         // $22 siteContact
+          siteContactPhone || null,                                    // $23 siteContactPhone
+          navigateTo || null,                                          // $24 navigateTo
+          launchHeight || null,                                        // $25 launchHeight
+          launchHeightHigh || null,                                    // $26 launchHeightHigh
+          launchHeight2 || null,                                       // $27 launchHeight2
+          landingHeight2 || null,                                      // $28 landingHeight2
+          hoodedPloversLink || null,                                   // $29 hoodedPloversLink
+          hoodedPloversActive || 'false',                              // $30 hoodedPloversActive
+          emergencyMarker || null,                                     // $31 emergencyMarker
+          what3words || null,                                          // $32 what3words
+          weatherStationLink || null,                                  // $33 weatherStationLink
+          isSkyHighSite || 'false',                                    // $34 isSkyHighSite
+          crossLeft || 'false',                                        // $35 crossLeft
+          crossRight || 'false',                                       // $36 crossRight
+          overrideHideClosed || 'false',                               // $37 overrideHideClosed
+          essentialInfoImages ? (typeof essentialInfoImages === 'string' ? essentialInfoImages : JSON.stringify(essentialInfoImages)) : null, // $38 essentialInfoImages
+          essentialInfoText || null,                                   // $39 essentialInfoText
+          unassignedText || null,                                      // $40 unassignedText
+          siteguideVersion || null,                                    // $41 siteguideVersion
+          siteguideScrapedAt || null,                                  // $42 siteguideScrapedAt
+          isTidal || 'false',                                          // $43 isTidal
+          tideStationId || null,                                       // $44 tideStationId
+          skipBulkImport || 'false',                                   // $45 skipBulkImport
+          isXCSite || 'false',                                         // $46 isXCSite
+          7,                                                           // $47 closurePillsMax
+      ]);
       invalidateSearchCaches();
       invalidateSitesCache();
       res.status(201).json({ success: true });
   } catch (e: any) {
-      res.status(400).json({ error: e.message });
+      res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax } = req.body;
   try {
-      const update = await db.prepare(`
+      // Parameter order for UPDATE:
+      // $1=name, $2=type, $3=pgRating, $4=hgRating, $5=windDir, $6=windSpeed,
+      // $7=status, $8=hazardLevel, $9=lat, $10=lon, $11=description, $12=launch,
+      // $13=landing, $14=hazards, $15=rules, $16=image, $17=useLiveWeather,
+      // $18=liveStationId, $19=liveStationIdAlt, $20=siteguideUrl, $21=siteContact,
+      // $22=siteContactPhone, $23=navigateTo, $24=launchHeight, $25=launchHeightHigh,
+      // $26=launchHeight2, $27=landingHeight2, $28=hoodedPloversLink, $29=hoodedPloversActive,
+      // $30=emergencyMarker, $31=what3words, $32=weatherStationLink, $33=isSkyHighSite,
+      // $34=crossLeft, $35=crossRight, $36=overrideHideClosed, $37=essentialInfoImages,
+      // $38=essentialInfoText, $39=unassignedText, $40=siteguideVersion, $41=siteguideScrapedAt,
+      // $42=isTidal, $43=tideStationId, $44=skipBulkImport, $45=isXCSite,
+      // $46=closurePillsMax, $47=id (WHERE clause)
+      await execute(`
         UPDATE sites SET
-          name = @name, type = @type,
-          pgRating = CASE WHEN CAST(@pgRating AS TEXT) != '' THEN @pgRating ELSE pgRating END,
-          hgRating = CASE WHEN CAST(@hgRating AS TEXT) != '' THEN @hgRating ELSE hgRating END,
-          windDir = CASE WHEN CAST(@windDir AS TEXT) != '' THEN @windDir ELSE windDir END,
-          windSpeed = CASE WHEN CAST(@windSpeed AS TEXT) != '' THEN @windSpeed ELSE windSpeed END,
-          status = @status, hazardLevel = @hazardLevel, lat = @lat, lon = @lon, description = @description, launch = @launch,
-          landing = @landing, hazards = @hazards, rules = @rules, image = CASE WHEN CAST(@image AS TEXT) != '' THEN @image ELSE image END,
-          useLiveWeather = @useLiveWeather, liveStationId = @liveStationId, liveStationIdAlt = @liveStationIdAlt,
-          siteguideUrl = CASE WHEN CAST(@siteguideUrl AS TEXT) != '' THEN @siteguideUrl ELSE siteguideUrl END,
-          siteContact = CASE WHEN CAST(@siteContact AS TEXT) != '' THEN @siteContact ELSE siteContact END,
-          siteContactPhone = CASE WHEN CAST(@siteContactPhone AS TEXT) != '' THEN @siteContactPhone ELSE siteContactPhone END,
-          navigateTo = CASE WHEN CAST(@navigateTo AS TEXT) != '' THEN @navigateTo ELSE navigateTo END,
-          launchHeight = CASE WHEN CAST(@launchHeight AS TEXT) != '' THEN @launchHeight ELSE launchHeight END,
-          launchHeightHigh = CASE WHEN CAST(@launchHeightHigh AS TEXT) != '' THEN @launchHeightHigh ELSE launchHeightHigh END,
-          launchHeight2 = CASE WHEN CAST(@launchHeight2 AS TEXT) != '' THEN @launchHeight2 ELSE launchHeight2 END,
-          landingHeight2 = CASE WHEN CAST(@landingHeight2 AS TEXT) != '' THEN @landingHeight2 ELSE landingHeight2 END,
-          hoodedPloversLink = CASE WHEN CAST(@hoodedPloversLink AS TEXT) != '' THEN @hoodedPloversLink ELSE hoodedPloversLink END,
-          hoodedPloversActive = @hoodedPloversActive,
-          emergencyMarker = CASE WHEN CAST(@emergencyMarker AS TEXT) != '' THEN @emergencyMarker ELSE emergencyMarker END,
-          what3words = CASE WHEN CAST(@what3words AS TEXT) != '' THEN @what3words ELSE what3words END,
-          weatherStationLink = CASE WHEN CAST(@weatherStationLink AS TEXT) != '' THEN @weatherStationLink ELSE weatherStationLink END,
-          isSkyHighSite = @isSkyHighSite, crossLeft = @crossLeft, crossRight = @crossRight, overrideHideClosed = @overrideHideClosed,
-          unassignedText = CASE WHEN CAST(@unassignedText AS TEXT) != '' THEN @unassignedText ELSE unassignedText END,
-          essentialInfoImages = CASE WHEN CAST(@essentialInfoImages AS TEXT) != '' AND CAST(@essentialInfoImages AS TEXT) != '[]' THEN @essentialInfoImages ELSE essentialInfoImages END,
-          essentialInfoText = CASE WHEN CAST(@essentialInfoText AS TEXT) != '' THEN @essentialInfoText ELSE essentialInfoText END,
-          siteguideVersion = CASE WHEN CAST(@siteguideVersion AS TEXT) != '' THEN @siteguideVersion ELSE siteguideVersion END,
-          siteguideScrapedAt = CASE WHEN CAST(@siteguideScrapedAt AS TEXT) != '' THEN @siteguideScrapedAt ELSE siteguideScrapedAt END,
-          isTidal = @isTidal, tideStationId = @tideStationId,
-          skipBulkImport = @skipBulkImport, isXCSite = @isXCSite,
-          closurePillsMax = @closurePillsMax
-        WHERE id = @id
-      `);
-      await update.run({
-          id: req.params.id, name, type,
-          pgRating: normalisePgRating(pgRating) || null, hgRating: hgRating || null,
-          windDir: normaliseWindDir(windDir) || null, windSpeed: normaliseWindSpeed(windSpeed) || null,
-          status, hazardLevel, lat, lon, description, launch, landing,
-          hazards: JSON.stringify(hazards || []),
-          rules: JSON.stringify(rules || []),
-          image,
-          useLiveWeather: useLiveWeather || 'false',
-          liveStationId: liveStationId || null,
-          liveStationIdAlt: liveStationIdAlt || null,
-          siteguideUrl: siteguideUrl || null,
-          siteContact: siteContact || null,
-          siteContactPhone: siteContactPhone || null,
-          navigateTo: navigateTo || null,
-          launchHeight: launchHeight || null,
-          launchHeightHigh: launchHeightHigh || null,
-          launchHeight2: launchHeight2 || null,
-          landingHeight2: landingHeight2 || null,
-          hoodedPloversLink: hoodedPloversLink || null,
-          hoodedPloversActive: hoodedPloversActive || 'false',
-          emergencyMarker: emergencyMarker || null,
-          what3words: what3words || null,
-          weatherStationLink: weatherStationLink || null,
-          isSkyHighSite: isSkyHighSite || 'false',
-          crossLeft: crossLeft || 'false',
-          crossRight: crossRight || 'false',
-          overrideHideClosed: overrideHideClosed || 'false',
-          essentialInfoImages: essentialInfoImages ? (typeof essentialInfoImages === 'string' ? essentialInfoImages : JSON.stringify(essentialInfoImages)) : null,
-          essentialInfoText: essentialInfoText || null,
-          unassignedText: unassignedText || null,
-          siteguideVersion: siteguideVersion || null,
-          siteguideScrapedAt: siteguideScrapedAt || null,
-          isTidal: isTidal || 'false',
-          tideStationId: tideStationId || null,
-          skipBulkImport: skipBulkImport || 'false',
-          isXCSite: isXCSite || 'false',
-          closurePillsMax: (closurePillsMax != null && !isNaN(Number(closurePillsMax))) ? Math.min(10, Math.max(1, Number(closurePillsMax))) : 7,
-      });
+          name = $1, type = $2,
+          "pgRating" = CASE WHEN $3 IS NOT NULL AND $3 != '' THEN $3 ELSE "pgRating" END,
+          "hgRating" = CASE WHEN $4 IS NOT NULL AND $4 != '' THEN $4 ELSE "hgRating" END,
+          "windDir" = CASE WHEN $5 IS NOT NULL AND $5 != '' THEN $5 ELSE "windDir" END,
+          "windSpeed" = CASE WHEN $6 IS NOT NULL AND $6 != '' THEN $6 ELSE "windSpeed" END,
+          status = $7, "hazardLevel" = $8, lat = $9, lon = $10, description = $11, launch = $12,
+          landing = $13, hazards = $14, rules = $15, image = CASE WHEN $16 IS NOT NULL AND $16 != '' THEN $16 ELSE image END,
+          "useLiveWeather" = $17, "liveStationId" = $18, "liveStationIdAlt" = $19,
+          "siteguideUrl" = CASE WHEN $20 IS NOT NULL AND $20 != '' THEN $20 ELSE "siteguideUrl" END,
+          "siteContact" = CASE WHEN $21 IS NOT NULL AND $21 != '' THEN $21 ELSE "siteContact" END,
+          "siteContactPhone" = CASE WHEN $22 IS NOT NULL AND $22 != '' THEN $22 ELSE "siteContactPhone" END,
+          "navigateTo" = CASE WHEN $23 IS NOT NULL AND $23 != '' THEN $23 ELSE "navigateTo" END,
+          "launchHeight" = CASE WHEN $24 IS NOT NULL AND $24 != '' THEN $24 ELSE "launchHeight" END,
+          "launchHeightHigh" = CASE WHEN $25 IS NOT NULL AND $25 != '' THEN $25 ELSE "launchHeightHigh" END,
+          "launchHeight2" = CASE WHEN $26 IS NOT NULL AND $26 != '' THEN $26 ELSE "launchHeight2" END,
+          "landingHeight2" = CASE WHEN $27 IS NOT NULL AND $27 != '' THEN $27 ELSE "landingHeight2" END,
+          "hoodedPloversLink" = CASE WHEN $28 IS NOT NULL AND $28 != '' THEN $28 ELSE "hoodedPloversLink" END,
+          "hoodedPloversActive" = $29,
+          "emergencyMarker" = CASE WHEN $30 IS NOT NULL AND $30 != '' THEN $30 ELSE "emergencyMarker" END,
+          "what3words" = CASE WHEN $31 IS NOT NULL AND $31 != '' THEN $31 ELSE "what3words" END,
+          "weatherStationLink" = CASE WHEN $32 IS NOT NULL AND $32 != '' THEN $32 ELSE "weatherStationLink" END,
+          "isSkyHighSite" = $33, "crossLeft" = $34, "crossRight" = $35, "overrideHideClosed" = $36,
+          "unassignedText" = CASE WHEN $39 IS NOT NULL AND $39 != '' THEN $39 ELSE "unassignedText" END,
+          "essentialInfoImages" = CASE WHEN $37 IS NOT NULL AND $37 != '' AND $37 != '[]' THEN $37 ELSE "essentialInfoImages" END,
+          "essentialInfoText" = CASE WHEN $38 IS NOT NULL AND $38 != '' THEN $38 ELSE "essentialInfoText" END,
+          "siteguideVersion" = CASE WHEN $40 IS NOT NULL AND $40 != '' THEN $40 ELSE "siteguideVersion" END,
+          "siteguideScrapedAt" = CASE WHEN $41 IS NOT NULL AND $41 != '' THEN $41 ELSE "siteguideScrapedAt" END,
+          "isTidal" = $42, "tideStationId" = $43,
+          "skipBulkImport" = $44, "isXCSite" = $45,
+          "closurePillsMax" = $46
+        WHERE id = $47
+      `, [
+          name,                                                        // $1  name
+          type,                                                        // $2  type
+          normalisePgRating(pgRating) || null,                        // $3  pgRating
+          hgRating || null,                                           // $4  hgRating
+          normaliseWindDir(windDir) || null,                          // $5  windDir
+          normaliseWindSpeed(windSpeed) || null,                      // $6  windSpeed
+          status,                                                      // $7  status
+          hazardLevel,                                                 // $8  hazardLevel
+          lat,                                                         // $9  lat
+          lon,                                                         // $10 lon
+          description,                                                 // $11 description
+          launch,                                                      // $12 launch
+          landing,                                                     // $13 landing
+          JSON.stringify(hazards || []),                               // $14 hazards
+          JSON.stringify(rules || []),                                 // $15 rules
+          image,                                                       // $16 image
+          useLiveWeather || 'false',                                   // $17 useLiveWeather
+          liveStationId || null,                                       // $18 liveStationId
+          liveStationIdAlt || null,                                    // $19 liveStationIdAlt
+          siteguideUrl || null,                                        // $20 siteguideUrl
+          siteContact || null,                                         // $21 siteContact
+          siteContactPhone || null,                                    // $22 siteContactPhone
+          navigateTo || null,                                          // $23 navigateTo
+          launchHeight || null,                                        // $24 launchHeight
+          launchHeightHigh || null,                                    // $25 launchHeightHigh
+          launchHeight2 || null,                                       // $26 launchHeight2
+          landingHeight2 || null,                                      // $27 landingHeight2
+          hoodedPloversLink || null,                                   // $28 hoodedPloversLink
+          hoodedPloversActive || 'false',                              // $29 hoodedPloversActive
+          emergencyMarker || null,                                     // $30 emergencyMarker
+          what3words || null,                                          // $31 what3words
+          weatherStationLink || null,                                  // $32 weatherStationLink
+          isSkyHighSite || 'false',                                    // $33 isSkyHighSite
+          crossLeft || 'false',                                        // $34 crossLeft
+          crossRight || 'false',                                       // $35 crossRight
+          overrideHideClosed || 'false',                               // $36 overrideHideClosed
+          essentialInfoImages ? (typeof essentialInfoImages === 'string' ? essentialInfoImages : JSON.stringify(essentialInfoImages)) : null, // $37 essentialInfoImages
+          essentialInfoText || null,                                   // $38 essentialInfoText
+          unassignedText || null,                                      // $39 unassignedText
+          siteguideVersion || null,                                    // $40 siteguideVersion
+          siteguideScrapedAt || null,                                  // $41 siteguideScrapedAt
+          isTidal || 'false',                                          // $42 isTidal
+          tideStationId || null,                                       // $43 tideStationId
+          skipBulkImport || 'false',                                   // $44 skipBulkImport
+          isXCSite || 'false',                                         // $45 isXCSite
+          (closurePillsMax != null && !isNaN(Number(closurePillsMax))) ? Math.min(10, Math.max(1, Number(closurePillsMax))) : 7, // $46 closurePillsMax
+          req.params.id,                                               // $47 id (WHERE)
+      ]);
       invalidateSearchCaches();
       invalidateSitesCache();
       res.json({ success: true });
   } catch (e: any) {
-      res.status(400).json({ error: e.message });
+      res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.patch("/:id/image", requireAuth, async (req, res) => {
+router.patch("/:id/image", requireAuth, asyncHandler(async (req, res) => {
   const { image } = req.body;
   if (!image && image !== "") {
     return res.status(400).json({ error: "image field is required" });
   }
   try {
-    const result = await db.prepare("UPDATE sites SET image = ? WHERE id = ?").run(image, req.params.id);
-    if (result.changes === 0) {
+    const result = await execute("UPDATE sites SET image = $1 WHERE id = $2", [image, req.params.id]);
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: "Site not found" });
     }
     invalidateSitesCache();
@@ -246,12 +304,12 @@ router.patch("/:id/image", requireAuth, async (req, res) => {
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   try {
-    const result = await db.prepare("DELETE FROM sites WHERE id = ?").run(req.params.id);
-    if (result.changes === 0) {
+    const result = await execute("DELETE FROM sites WHERE id = $1", [req.params.id]);
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: "Site not found" });
     }
     invalidateSearchCaches();
@@ -260,9 +318,9 @@ router.delete("/:id", requireAuth, async (req, res) => {
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.post("/:id/temporary-closure", requireSOOrAdmin, async (req, res) => {
+router.post("/:id/temporary-closure", requireSOOrAdmin, asyncHandler(async (req, res) => {
   try {
     const user = (req as any).user;
     if (!user.soAuthorised || !user.isSafetyCommittee) {
@@ -275,18 +333,18 @@ router.post("/:id/temporary-closure", requireSOOrAdmin, async (req, res) => {
       return res.status(403).json({ error: "SO session restricted to assigned site" });
     }
 
-    const site = await db.prepare("SELECT id, overrideHideClosed, preClosureOverrideHideClosed FROM sites WHERE id = ?").get(req.params.id) as any;
+    const site = await queryOne<any>("SELECT id, \"overrideHideClosed\", \"preClosureOverrideHideClosed\" FROM sites WHERE id = $1", [req.params.id]);
     if (!site) return res.status(404).json({ error: "Site not found" });
 
-    await db.prepare("UPDATE sites SET temporarilyClosed = 1, preClosureOverrideHideClosed = overrideHideClosed, overrideHideClosed = 'true' WHERE id = ?").run(req.params.id);
+    await execute("UPDATE sites SET \"temporarilyClosed\" = 1, \"preClosureOverrideHideClosed\" = \"overrideHideClosed\", \"overrideHideClosed\" = 'true' WHERE id = $1", [req.params.id]);
     invalidateSitesCache();
     res.json({ success: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
-router.post("/:id/reopen", requireSOOrAdmin, async (req, res) => {
+router.post("/:id/reopen", requireSOOrAdmin, asyncHandler(async (req, res) => {
   try {
     const user = (req as any).user;
     if (!user.soAuthorised || !user.isSafetyCommittee) {
@@ -299,16 +357,16 @@ router.post("/:id/reopen", requireSOOrAdmin, async (req, res) => {
       return res.status(403).json({ error: "SO session restricted to assigned site" });
     }
 
-    const site = await db.prepare("SELECT id, preClosureOverrideHideClosed FROM sites WHERE id = ?").get(req.params.id) as any;
+    const site = await queryOne<any>("SELECT id, \"preClosureOverrideHideClosed\" FROM sites WHERE id = $1", [req.params.id]);
     if (!site) return res.status(404).json({ error: "Site not found" });
 
     const restoreValue = site.preClosureOverrideHideClosed || 'false';
-    await db.prepare("UPDATE sites SET temporarilyClosed = 0, overrideHideClosed = ?, preClosureOverrideHideClosed = NULL WHERE id = ?").run(restoreValue, req.params.id);
+    await execute("UPDATE sites SET \"temporarilyClosed\" = 0, \"overrideHideClosed\" = $1, \"preClosureOverrideHideClosed\" = NULL WHERE id = $2", [restoreValue, req.params.id]);
     invalidateSitesCache();
     res.json({ success: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
-});
+}));
 
 export default router;

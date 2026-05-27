@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { queryOne, execute } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { validateURLSafety } from "../../utils/urlValidator.js";
@@ -7,7 +7,7 @@ import { validateURLSafety } from "../../utils/urlValidator.js";
 const router = Router();
 
 router.get("/slider-photos", asyncHandler(async (_req, res) => {
-  const libRow = (await db.prepare("SELECT value FROM settings WHERE key = 'imageLibrary'").get() as any);
+  const libRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'imageLibrary'");
   const result: { src: string; variant: string }[] = [];
   if (libRow) {
     try {
@@ -27,7 +27,7 @@ router.get("/slider-photos", asyncHandler(async (_req, res) => {
 }));
 
 router.get("/youtube-videos", asyncHandler(async (_req, res) => {
-  const row = (await db.prepare("SELECT value FROM settings WHERE key = 'youtubeVideos'").get() as any);
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'youtubeVideos'");
   let result: { url: string }[] = [];
   if (row) {
     try {
@@ -124,7 +124,7 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
     (item: any) => `https://youtu.be/${item.contentDetails.videoId}`
   );
 
-  const row = (await db.prepare("SELECT value FROM settings WHERE key = 'youtubeVideos'").get() as any);
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'youtubeVideos'");
   let existing: { url: string }[] = [];
   if (row) {
     try { existing = JSON.parse(row.value); } catch {}
@@ -147,7 +147,10 @@ router.post("/youtube-scrape", requireAuth, asyncHandler(async (req, res) => {
 
   const merged = [...newUrls.map((url) => ({ url })), ...existing].slice(0, MAX_VIDEOS);
 
-  await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('youtubeVideos', ?)").run(JSON.stringify(merged));
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ('youtubeVideos', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    [JSON.stringify(merged)]
+  );
 
   res.json({
     channelId,

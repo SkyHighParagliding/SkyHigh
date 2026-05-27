@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { query, execute, transaction } from "../../pg.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { invalidateSitesCache } from "./helpers.js";
 
@@ -11,24 +11,25 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 // Must be registered before /:id routes to avoid being swallowed by the param matcher
 router.get("/closure-banners", async (_req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
 
-    const rows = await db.prepare(`
-      SELECT scd.site_id, s.name AS site_name,
-             MIN(scd.closure_date) AS first_date,
-             MAX(scd.closure_date) AS last_date
-      FROM site_closure_dates scd
-      JOIN sites s ON scd.site_id = s.id
-      WHERE scd.closure_date >= ?
-        AND s.status NOT IN ('closed', 'restricted')
-      GROUP BY scd.site_id, s.name
-    `).all(today) as { site_id: string; site_name: string; first_date: string; last_date: string }[];
+    const rows = await query<{ site_id: string; site_name: string; first_date: string; last_date: string }>(
+      `SELECT scd.site_id, s.name AS site_name,
+              MIN(scd.closure_date) AS first_date,
+              MAX(scd.closure_date) AS last_date
+       FROM site_closure_dates scd
+       JOIN sites s ON scd.site_id = s.id
+       WHERE scd.closure_date >= $1
+         AND s.status NOT IN ('closed', 'restricted')
+       GROUP BY scd.site_id, s.name`,
+      [todayStr]
+    );
 
     const active = rows.filter(r => {
-      const first = new Date(r.first_date + 'T12:00:00');
-      const bannerStart = new Date(first);
-      bannerStart.setDate(first.getDate() - 7);
-      return new Date(today + 'T12:00:00') >= bannerStart;
+      const bannerStart = new Date(r.first_date);
+      bannerStart.setDate(bannerStart.getDate() - 7);
+      const bannerStartStr = bannerStart.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+      return todayStr >= bannerStartStr;
     });
 
     res.json(active.map(r => ({
@@ -46,9 +47,10 @@ router.get("/closure-banners", async (_req, res) => {
 router.get("/:id/closure-dates", async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const rows = await db.prepare(
-      "SELECT closure_date FROM site_closure_dates WHERE site_id = ? AND closure_date >= ? ORDER BY closure_date ASC"
-    ).all(req.params.id, today) as { closure_date: string }[];
+    const rows = await query<{ closure_date: string }>(
+      "SELECT closure_date FROM site_closure_dates WHERE site_id = $1 AND closure_date >= $2 ORDER BY closure_date ASC",
+      [req.params.id, today]
+    );
     res.json(rows.map(r => r.closure_date));
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -62,12 +64,15 @@ router.put("/:id/closure-dates", requireAuth, async (req, res) => {
     if (!Array.isArray(dates)) return res.status(400).json({ error: "dates must be an array" });
     if (dates.some(d => !ISO_DATE.test(d))) return res.status(400).json({ error: "All dates must be YYYY-MM-DD format" });
 
-    await db.prepare("DELETE FROM site_closure_dates WHERE site_id = ?").run(req.params.id);
-    for (const date of dates) {
-      await db.prepare(
-        "INSERT INTO site_closure_dates (site_id, closure_date) VALUES (?, ?) ON CONFLICT DO NOTHING"
-      ).run(req.params.id, date);
-    }
+    await transaction(async (client) => {
+      await client.query("DELETE FROM site_closure_dates WHERE site_id = $1", [req.params.id]);
+      for (const date of dates) {
+        await client.query(
+          "INSERT INTO site_closure_dates (site_id, closure_date) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+          [req.params.id, date]
+        );
+      }
+    });
 
     invalidateSitesCache();
     res.json({ success: true, count: dates.length });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import db from "../../db.js";
+import { query } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { getZoneData, getAirspaceData, downloadAndParseZones, downloadAndParseAirspace, downloadAllZoneData, invalidateCache, getZoneDataVersion } from "../../utils/siteguideZoneData.js";
 
@@ -41,9 +41,12 @@ const router = Router();
 
 router.get("/xc/sites", async (req, res) => {
   try {
-    const sites = await db.prepare(
-      "SELECT id, name, type, lat, lon, windDir, launchHeight, status, useLiveWeather FROM sites WHERE isXCSite = 'true' AND lat IS NOT NULL AND lon IS NOT NULL AND status != 'closed' ORDER BY name ASC"
-    ).all() as XCSiteRow[];
+    const sites = await query<XCSiteRow>(
+      `SELECT id, name, type, lat, lon, "windDir", "launchHeight", status, "useLiveWeather"
+       FROM sites
+       WHERE "isXCSite" = 'true' AND lat IS NOT NULL AND lon IS NOT NULL AND status != 'closed'
+       ORDER BY name ASC`
+    );
     res.json(sites);
   } catch (e: unknown) {
     res.status(500).json({ error: e instanceof Error ? e.message : "Unknown error" });
@@ -154,9 +157,9 @@ router.post("/xc/zones/refresh", asyncHandler(async (req, res) => {
   }
 }));
 
-router.get("/xc/zones/version", async (req, res) => {
+router.get("/xc/zones/version", asyncHandler(async (req, res) => {
   const version = await getZoneDataVersion();
   res.json({ version });
-});
+}));
 
 export default router;

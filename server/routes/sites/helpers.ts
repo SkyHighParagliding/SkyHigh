@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import crypto from "crypto";
-import db from "../../db.js";
+import { query, queryOne, execute } from "../../pg.js";
 
 let publicSitesCache: { data: any[] | null; updatedAt: number } = { data: null, updatedAt: 0 };
 const PUBLIC_SITES_CACHE_TTL = 60 * 1000;
@@ -38,20 +38,21 @@ export function normaliseWindDir(dir: string | null | undefined): string | null 
   if (!dir || !dir.trim()) return dir as string | null;
   let s = dir.trim().toUpperCase();
 
-  s = s.replace(/\bTO\b/gi, '-');
-  s = s.replace(/\bOR\b/gi, ',');
-  s = s.replace(/\bAND\b/gi, ',');
-  s = s.replace(/\bLIGHT\b/gi, '');
-  s = s.replace(/\bSTRONG\b/gi, '');
-  s = s.replace(/\bMODERATE\b/gi, '');
+  // Simple, safe replacements to avoid complex regex that could cause ReDoS
+  s = s.replace(/\bTO(?:\s+|$)/gi, '-');
+  s = s.replace(/\bOR(?:\s+|$)/gi, ',');
+  s = s.replace(/\band(?:\s+|$)/gi, ',');
+  s = s.replace(/\blight(?:\s+|$)/gi, '');
+  s = s.replace(/\bstrong(?:\s+|$)/gi, '');
+  s = s.replace(/\bmoderate(?:\s+|$)/gi, '');
 
-  if (/ALL\s*(EXCEPT|BUT)\s*/i.test(s)) {
-    const exceptMatch = s.match(/ALL\s*(?:EXCEPT|BUT)\s*(.*)/i);
-    if (exceptMatch) {
-      const excluded = exceptMatch[1].split(/[\s,]+/).map(p => p.trim()).filter(p => COMPASS_DIRS.includes(p));
-      const included = COMPASS_DIRS.filter(d => !excluded.includes(d));
-      return included.join(',');
-    }
+  // Safe handling of ALL EXCEPT/BUT pattern to prevent ReDoS
+  const allExceptPattern = /ALL\s+(?:EXCEPT|BUT)\s+([^,]+)/i;
+  const exceptMatch = allExceptPattern.exec(s);
+  if (exceptMatch) {
+    const exclusions = exceptMatch[1].split(/[\s,]+/).map(p => p.trim().toUpperCase()).filter(p => COMPASS_DIRS.includes(p));
+    const included = COMPASS_DIRS.filter(d => !exclusions.includes(d.toUpperCase()));
+    return included.join(',');
   }
 
   const segments = s.split(',').map(seg => seg.trim()).filter(Boolean);
@@ -59,19 +60,19 @@ export function normaliseWindDir(dir: string | null | undefined): string | null 
 
   for (const seg of segments) {
     if (seg.includes('-')) {
-      const parts = seg.split('-').map(p => p.trim()).filter(p => COMPASS_DIRS.includes(p));
+      const parts = seg.split('-').map(p => p.trim()).filter(p => COMPASS_DIRS.includes(p.toUpperCase()));
       if (parts.length === 2) {
         result.push(parts.join('-'));
       } else if (parts.length === 1) {
         result.push(parts[0]);
       }
     } else {
-      const tokens = seg.split(/\s+/).filter(p => COMPASS_DIRS.includes(p));
+      const tokens = seg.split(/\s+/).filter(p => COMPASS_DIRS.includes(p.toUpperCase()));
       tokens.forEach(t => result.push(t));
     }
   }
 
-  return result.length > 0 ? result.join(',') : dir.trim();
+  return result.length > 0 ? result.join(',') : dir.trim().toUpperCase();
 }
 
 export function normaliseWindSpeed(speed: string | null | undefined): string | null {
@@ -155,7 +156,7 @@ export async function getDefaultSiteImage(siteType: string): Promise<string> {
   const category = isInland ? 'inland' : 'coastal';
 
   try {
-    const row = await db.prepare("SELECT value FROM settings WHERE key = 'imageLibrary'").get() as { value: string } | undefined;
+    const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'imageLibrary'");
     if (row?.value) {
       const pairs: { wide: string; banner: string; category?: string }[] = JSON.parse(row.value);
       const matched = pairs.filter(p => p.banner && p.category === category);
@@ -176,20 +177,23 @@ export async function getDefaultSiteImage(siteType: string): Promise<string> {
 export const MAX_ARCHIVES = 10;
 
 export async function archiveSitesBeforeImport(siteguideVersion: string): Promise<boolean> {
-  const existing = await db.prepare("SELECT id FROM site_archives WHERE siteguideVersion = ?").get(siteguideVersion);
+  const existing = await queryOne('SELECT id FROM site_archives WHERE "siteguideVersion" = $1', [siteguideVersion]);
   if (existing) return false;
 
-  const allSites = await db.prepare("SELECT * FROM sites").all();
+  const allSites = await query("SELECT * FROM sites");
   const siteData = JSON.stringify(allSites);
-  await db.prepare(
-    "INSERT INTO site_archives (siteguideVersion, archivedAt, siteCount, siteData) VALUES (?, ?, ?, ?)"
-  ).run(siteguideVersion, new Date().toISOString(), allSites.length, siteData);
+  await execute(
+    'INSERT INTO site_archives ("siteguideVersion", "archivedAt", "siteCount", "siteData") VALUES ($1, $2, $3, $4)',
+    [siteguideVersion, new Date().toISOString(), allSites.length, siteData]
+  );
 
-  const archiveCount = (await db.prepare("SELECT COUNT(*) as cnt FROM site_archives").get() as any).cnt;
+  const countRow = await queryOne<{ cnt: string }>("SELECT COUNT(*) as cnt FROM site_archives");
+  const archiveCount = parseInt(countRow!.cnt, 10);
   if (archiveCount > MAX_ARCHIVES) {
-    await db.prepare(
-      `DELETE FROM site_archives WHERE id IN (SELECT id FROM site_archives ORDER BY archivedAt ASC LIMIT ?)`
-    ).run(archiveCount - MAX_ARCHIVES);
+    await execute(
+      'DELETE FROM site_archives WHERE id IN (SELECT id FROM site_archives ORDER BY "archivedAt" ASC LIMIT $1)',
+      [archiveCount - MAX_ARCHIVES]
+    );
   }
 
   return true;
@@ -209,10 +213,7 @@ export const SITES_COLUMNS = [
   "contentHash", "skipBulkImport", "isXCSite",
 ] as const;
 
-export const SITES_INSERT_SQL = `INSERT INTO sites (${SITES_COLUMNS.join(", ")}) VALUES (${SITES_COLUMNS.map(c => `@${c}`).join(", ")})`;
-
 export const SITES_UPDATE_COLS = SITES_COLUMNS.filter(c => c !== "id");
-export const SITES_UPDATE_SQL = `UPDATE sites SET ${SITES_UPDATE_COLS.map(c => `${c}=@${c}`).join(", ")} WHERE id=@id`;
 
 export function pickSiteColumns(row: Record<string, any>): Record<string, any> {
   const picked: Record<string, any> = {};
@@ -241,11 +242,11 @@ export function haversineDistanceServer(lat1: number, lon1: number, lat2: number
 
 (async function fixBarePG2Ratings() {
   try {
-    const sites = await db.prepare("SELECT id, pgRating FROM sites WHERE pgRating IS NOT NULL").all() as any[];
+    const sites = await query<{ id: string; pgRating: string }>('SELECT id, "pgRating" FROM sites WHERE "pgRating" IS NOT NULL');
     for (const site of sites) {
       const fixed = normalisePgRating(site.pgRating);
       if (fixed !== site.pgRating) {
-        await db.prepare("UPDATE sites SET pgRating = ? WHERE id = ?").run(fixed, site.id);
+        await execute('UPDATE sites SET "pgRating" = $1 WHERE id = $2', [fixed, site.id]);
         console.log(`[PG2 fix] ${site.id}: "${site.pgRating}" → "${fixed}"`);
       }
     }
@@ -256,11 +257,11 @@ export function haversineDistanceServer(lat1: number, lon1: number, lat2: number
 
 (async function fixWindSpeedFormat() {
   try {
-    const sites = await db.prepare("SELECT id, windSpeed FROM sites WHERE windSpeed IS NOT NULL AND windSpeed != ''").all() as any[];
+    const sites = await query<{ id: string; windSpeed: string }>('SELECT id, "windSpeed" FROM sites WHERE "windSpeed" IS NOT NULL AND "windSpeed" != \'\'');
     for (const site of sites) {
       const fixed = normaliseWindSpeed(site.windSpeed);
       if (fixed !== site.windSpeed) {
-        await db.prepare("UPDATE sites SET windSpeed = ? WHERE id = ?").run(fixed, site.id);
+        await execute('UPDATE sites SET "windSpeed" = $1 WHERE id = $2', [fixed, site.id]);
         console.log(`[windSpeed fix] ${site.id}: "${site.windSpeed}" → "${fixed}"`);
       }
     }
@@ -271,11 +272,11 @@ export function haversineDistanceServer(lat1: number, lon1: number, lat2: number
 
 (async function fixWindDirFormat() {
   try {
-    const sites = await db.prepare("SELECT id, windDir FROM sites WHERE windDir IS NOT NULL AND windDir != ''").all() as any[];
+    const sites = await query<{ id: string; windDir: string }>('SELECT id, "windDir" FROM sites WHERE "windDir" IS NOT NULL AND "windDir" != \'\'');
     for (const site of sites) {
       const fixed = normaliseWindDir(site.windDir);
       if (fixed !== site.windDir) {
-        await db.prepare("UPDATE sites SET windDir = ? WHERE id = ?").run(fixed, site.id);
+        await execute('UPDATE sites SET "windDir" = $1 WHERE id = $2', [fixed, site.id]);
         console.log(`[windDir fix] ${site.id}: "${site.windDir}" → "${fixed}"`);
       }
     }
