@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import db from "../db.js";
+import { query, queryOne, execute } from "../pg.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth, isDevBypassActive } from "../middleware/auth.js";
@@ -11,11 +11,48 @@ import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
 const log = createLogger("pilot-auth");
 const router = Router();
 
+interface PilotRow {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  garminMapshare: string | null;
+  spotFeedId: string | null;
+  zoleoImei: string | null;
+}
+
+interface SessionRow {
+  token: string;
+  createdAt: string;
+  pilotId: string;
+  id: string;
+  email: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  garminMapshare: string | null;
+  spotFeedId: string | null;
+  zoleoImei: string | null;
+  sessionCreatedAt: string;
+}
+
 const PILOT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 const pilotRateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const PILOT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const PILOT_RATE_LIMIT_MAX = 10;
+
+// Clean up expired entries every 30 seconds
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of pilotRateLimitMap.entries()) {
+    if (now > entry.resetAt) {
+      pilotRateLimitMap.delete(key);
+    }
+  }
+}, 30 * 1000);
 
 function checkPilotRateLimit(key: string): boolean {
   const now = Date.now();
@@ -45,11 +82,19 @@ router.post(
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    if (password.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+    }
+    
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ error: "Password must contain at least 8 characters including uppercase, lowercase, number and special character" });
     }
 
-    const existing = await db.prepare("SELECT id FROM pilots WHERE email = ?").get(email.toLowerCase().trim());
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM pilots WHERE email = $1`,
+      [email.toLowerCase().trim()]
+    );
     if (existing) {
       return res.status(409).json({ error: "An account with this email already exists" });
     }
@@ -65,20 +110,16 @@ router.post(
     const spotFi = (req.body.spotFeedId || "").trim() || null;
     const zoleoIm = (req.body.zoleoImei || "").trim() || null;
 
-    await db.prepare("INSERT INTO pilots (id, email, passwordHash, name, firstName, lastName, garminMapshare, spotFeedId, zoleoImei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
-      id,
-      email.toLowerCase().trim(),
-      passwordHash,
-      fullName,
-      fName,
-      lName,
-      garminMs,
-      spotFi,
-      zoleoIm
+    await execute(
+      `INSERT INTO pilots (id, email, "passwordHash", name, "firstName", "lastName", "garminMapshare", "spotFeedId", "zoleoImei") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [id, email.toLowerCase().trim(), passwordHash, fullName, fName, lName, garminMs, spotFi, zoleoIm]
     );
 
     const token = crypto.randomBytes(32).toString("hex");
-    await db.prepare("INSERT INTO pilot_sessions (token, pilotId) VALUES (?, ?)").run(token, id);
+    await execute(
+      `INSERT INTO pilot_sessions (token, "pilotId") VALUES ($1, $2)`,
+      [token, id]
+    );
 
     log.info(`Pilot registered: ${email}`);
     res.json({ token, pilot: { id, email: email.toLowerCase().trim(), name: fullName, firstName: fName, lastName: lName, garminMapshare: garminMs, spotFeedId: spotFi, zoleoImei: zoleoIm } });
@@ -98,18 +139,26 @@ router.post(
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const pilot = await db.prepare("SELECT * FROM pilots WHERE email = ?").get(email.toLowerCase().trim()) as any;
-    if (!pilot) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
-    const valid = await bcrypt.compare(password, pilot.passwordHash);
+    const pilot = await queryOne<PilotRow>(
+      `SELECT * FROM pilots WHERE email = $1`,
+      [email.toLowerCase().trim()]
+    );
+    
+    // To prevent timing attacks, always execute bcrypt.compare
+    // If pilot doesn't exist, compare against a dummy hash
+    const valid = pilot 
+      ? await bcrypt.compare(password, pilot.passwordHash) 
+      : await bcrypt.compare(password, "$2a$10$NQzLK6bd4dMebI7JWyG8.ebg5WI6lu4GlFQq2Ha/ZkIZb0yxnYRVu");
+      
     if (!valid) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const token = crypto.randomBytes(32).toString("hex");
-    await db.prepare("INSERT INTO pilot_sessions (token, pilotId) VALUES (?, ?)").run(token, pilot.id);
+    await execute(
+      `INSERT INTO pilot_sessions (token, "pilotId") VALUES ($1, $2)`,
+      [token, pilot.id]
+    );
 
     log.info(`Pilot logged in: ${email}`);
     res.json({ token, pilot: { id: pilot.id, email: pilot.email, name: pilot.name, firstName: pilot.firstName, lastName: pilot.lastName, garminMapshare: pilot.garminMapshare || null, spotFeedId: pilot.spotFeedId || null, zoleoImei: pilot.zoleoImei || null } });
@@ -133,16 +182,15 @@ router.get(
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const session = await db
-      .prepare(
-        `SELECT pilot_sessions.token, pilot_sessions.createdAt as sessionCreatedAt,
-                pilots.id, pilots.email, pilots.name, pilots.firstName, pilots.lastName,
-                pilots.garminMapshare, pilots.spotFeedId, pilots.zoleoImei
-         FROM pilot_sessions
-         JOIN pilots ON pilot_sessions.pilotId = pilots.id
-         WHERE pilot_sessions.token = ?`
-      )
-      .get(token) as any;
+    const session = await queryOne<SessionRow>(
+      `SELECT pilot_sessions.token, pilot_sessions."createdAt" as "sessionCreatedAt",
+              pilots.id, pilots.email, pilots.name, pilots."firstName", pilots."lastName",
+              pilots."garminMapshare", pilots."spotFeedId", pilots."zoleoImei"
+       FROM pilot_sessions
+       JOIN pilots ON pilot_sessions."pilotId" = pilots.id
+       WHERE pilot_sessions.token = $1`,
+      [token]
+    );
 
     if (!session) {
       return res.status(401).json({ error: "Invalid session" });
@@ -150,7 +198,7 @@ router.get(
 
     const sessionAge = Date.now() - new Date(session.sessionCreatedAt).getTime();
     if (sessionAge > PILOT_SESSION_TTL_MS) {
-      await db.prepare("DELETE FROM pilot_sessions WHERE token = ?").run(token);
+      await execute(`DELETE FROM pilot_sessions WHERE token = $1`, [token]);
       return res.status(401).json({ error: "Session expired" });
     }
 
@@ -163,7 +211,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (token) {
-      await db.prepare("DELETE FROM pilot_sessions WHERE token = ?").run(token);
+      await execute(`DELETE FROM pilot_sessions WHERE token = $1`, [token]);
     }
     res.json({ ok: true });
   })
@@ -175,21 +223,20 @@ export async function requirePilotAuth(req: any, res: any, next: any) {
     return next();
   }
 
-  const token = req.headers["x-pilot-token"] || req.headers.authorization?.replace("Bearer ", "") || req.query?.pilotToken;
+  const token = req.headers["x-pilot-token"] || req.headers.authorization?.replace("Bearer ", ""); // Only accept from headers, not query
   if (!token) {
     return res.status(401).json({ error: "Pilot not authenticated" });
   }
 
-  const session = await db
-      .prepare(
-      `SELECT pilot_sessions.token, pilot_sessions.createdAt as sessionCreatedAt,
-              pilots.id, pilots.email, pilots.name, pilots.firstName, pilots.lastName,
-              pilots.garminMapshare, pilots.spotFeedId, pilots.zoleoImei
-       FROM pilot_sessions
-       JOIN pilots ON pilot_sessions.pilotId = pilots.id
-       WHERE pilot_sessions.token = ?`
-    )
-    .get(token) as any;
+  const session = await queryOne<SessionRow>(
+    `SELECT pilot_sessions.token, pilot_sessions."createdAt" as "sessionCreatedAt",
+            pilots.id, pilots.email, pilots.name, pilots."firstName", pilots."lastName",
+            pilots."garminMapshare", pilots."spotFeedId", pilots."zoleoImei"
+     FROM pilot_sessions
+     JOIN pilots ON pilot_sessions."pilotId" = pilots.id
+     WHERE pilot_sessions.token = $1`,
+    [token]
+  );
 
   if (!session) {
     return res.status(401).json({ error: "Invalid pilot session" });
@@ -197,7 +244,7 @@ export async function requirePilotAuth(req: any, res: any, next: any) {
 
   const sessionAge = Date.now() - new Date(session.sessionCreatedAt).getTime();
   if (sessionAge > PILOT_SESSION_TTL_MS) {
-    await db.prepare("DELETE FROM pilot_sessions WHERE token = ?").run(token);
+    await execute(`DELETE FROM pilot_sessions WHERE token = $1`, [token]);
     return res.status(401).json({ error: "Pilot session expired" });
   }
 
@@ -212,16 +259,15 @@ export async function optionalPilotAuth(req: any, _res: any, next: any) {
     return next();
   }
 
-  const session = await db
-      .prepare(
-      `SELECT pilot_sessions.token, pilot_sessions.createdAt as sessionCreatedAt,
-              pilots.id, pilots.email, pilots.name, pilots.firstName, pilots.lastName,
-              pilots.garminMapshare, pilots.spotFeedId, pilots.zoleoImei
-       FROM pilot_sessions
-       JOIN pilots ON pilot_sessions.pilotId = pilots.id
-       WHERE pilot_sessions.token = ?`
-    )
-    .get(token) as any;
+  const session = await queryOne<SessionRow>(
+    `SELECT pilot_sessions.token, pilot_sessions."createdAt" as "sessionCreatedAt",
+            pilots.id, pilots.email, pilots.name, pilots."firstName", pilots."lastName",
+            pilots."garminMapshare", pilots."spotFeedId", pilots."zoleoImei"
+     FROM pilot_sessions
+     JOIN pilots ON pilot_sessions."pilotId" = pilots.id
+     WHERE pilot_sessions.token = $1`,
+    [token]
+  );
 
   if (session) {
     const sessionAge = Date.now() - new Date(session.sessionCreatedAt).getTime();
@@ -244,12 +290,11 @@ router.put(
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const session = await db
-      .prepare(
-        `SELECT pilot_sessions.pilotId, pilot_sessions.createdAt as sessionCreatedAt
-         FROM pilot_sessions WHERE token = ?`
-      )
-      .get(token) as any;
+    const session = await queryOne<{ pilotId: string; sessionCreatedAt: string }>(
+      `SELECT pilot_sessions."pilotId", pilot_sessions."createdAt" as "sessionCreatedAt"
+       FROM pilot_sessions WHERE token = $1`,
+      [token]
+    );
 
     if (!session) {
       return res.status(401).json({ error: "Invalid session" });
@@ -274,10 +319,13 @@ router.put(
       const allowedColumns = ["garminMapshare", "spotFeedId", "zoleoImei"];
       const { sql, params } = buildSafeUpdateClauses(updateClauses, allowedColumns);
       params.push(session.pilotId);
-      await db.prepare(`UPDATE pilots SET ${sql} WHERE id = ?`).run(...params);
+      await execute(`UPDATE pilots SET ${sql} WHERE id = $${params.length}`, params);
     }
 
-    const pilot = await db.prepare("SELECT id, email, name, firstName, lastName, garminMapshare, spotFeedId, zoleoImei FROM pilots WHERE id = ?").get(session.pilotId) as any;
+    const pilot = await queryOne<PilotRow>(
+      `SELECT id, email, name, "firstName", "lastName", "garminMapshare", "spotFeedId", "zoleoImei" FROM pilots WHERE id = $1`,
+      [session.pilotId]
+    );
 
     log.info(`Pilot ${session.pilotId} updated satellite tracker settings`);
     res.json({ pilot: { ...pilot, garminMapshare: pilot.garminMapshare || null, spotFeedId: pilot.spotFeedId || null, zoleoImei: pilot.zoleoImei || null } });
@@ -288,8 +336,14 @@ router.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const pilots = (await db.prepare("SELECT COUNT(*) as count FROM pilots").get() as any).count;
-    const flights = (await db.prepare("SELECT COUNT(*) as count FROM flights").get() as any).count;
+    const pilotsResult = await queryOne<{ count: number }>(
+      `SELECT COUNT(*) as count FROM pilots`
+    );
+    const flightsResult = await queryOne<{ count: number }>(
+      `SELECT COUNT(*) as count FROM flights`
+    );
+    const pilots = pilotsResult?.count ?? 0;
+    const flights = flightsResult?.count ?? 0;
     res.json({ pilots, flights });
   })
 );
