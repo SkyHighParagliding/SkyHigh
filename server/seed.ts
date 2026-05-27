@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
-import db from "./db.js";
+import { query, queryOne, execute, transaction } from "./pg.js";
 import createLogger from "./utils/logger.js";
 
 const log = createLogger("seed");
@@ -92,19 +92,19 @@ Type constraints:
 - status: "open", "restricted", or "closed".
 - All other fields: strings (empty string if not found).`;
 
-await db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)").run('aiSystemPrompt', defaultAiPrompt);
+await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT DO NOTHING", ['aiSystemPrompt', defaultAiPrompt]);
 
-const existingPrompt = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string } | undefined;
+const existingPrompt = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiSystemPrompt'");
 if (existingPrompt?.value && existingPrompt.value.includes('Rewrite the following sections in a positive')) {
-  await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(defaultAiPrompt);
+  await execute("UPDATE settings SET value = $1 WHERE key = 'aiSystemPrompt'", [defaultAiPrompt]);
 }
 if (existingPrompt?.value && (existingPrompt.value.includes('windDirectionsIdeal') || existingPrompt.value.includes('windSpeedMin'))) {
-  await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(defaultAiPrompt);
+  await execute("UPDATE settings SET value = $1 WHERE key = 'aiSystemPrompt'", [defaultAiPrompt]);
 }
 // Upgrade: add "restricted" status support if the prompt only knows "open" or "closed"
-const rePromptRow = await db.prepare("SELECT value FROM settings WHERE key = 'aiSystemPrompt'").get() as { value: string } | undefined;
+const rePromptRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'aiSystemPrompt'");
 if (rePromptRow?.value && !rePromptRow.value.includes('"restricted"')) {
-  await db.prepare("UPDATE settings SET value = ? WHERE key = 'aiSystemPrompt'").run(defaultAiPrompt);
+  await execute("UPDATE settings SET value = $1 WHERE key = 'aiSystemPrompt'", [defaultAiPrompt]);
   log.info('Upgraded aiSystemPrompt: added "restricted" status support');
 }
 
@@ -154,20 +154,14 @@ try {
   log.error("Failed to load seed_settings.json", e);
 }
 
-const insertSetting = await db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
-await db.transaction(async () => {
+await transaction(async (client) => {
   for (const [key, value] of seedSettings) {
-    await insertSetting.run(key, value);
+    await client.query("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT DO NOTHING", [key, value]);
   }
-})();
+});
 
-const count = await db.prepare("SELECT COUNT(*) as count FROM sites").get() as { count: number | string };
-if (Number(count.count) === 0) {
-  const insertSite = await db.prepare(`
-    INSERT INTO sites (id, name, type, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId)
-    VALUES (@id, @name, @type, @windDir, @windSpeed, @status, @hazardLevel, @lat, @lon, @description, @launch, @landing, @hazards, @rules, @image, @useLiveWeather, @liveStationId)
-  `);
-  
+const count = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM sites");
+if (Number(count?.count) === 0) {
   let seedSites: any[] = [];
   try {
     const scrapedData = fs.readFileSync(path.join(seedsDir, 'scraped_sites.json'), 'utf8');
@@ -197,8 +191,8 @@ if (Number(count.count) === 0) {
     ];
   }
 
-  const insertManySites = await db.transaction(async (sites) => {
-    for (const site of sites) {
+  await transaction(async (client) => {
+    for (const site of seedSites) {
       const processedSite = {
         id: null, name: null, type: null, windDir: null, windSpeed: null,
         status: 'open', hazardLevel: 'low', lat: null, lon: null,
@@ -214,10 +208,20 @@ if (Number(count.count) === 0) {
         processedSite.rules = JSON.stringify(processedSite.rules);
       }
 
-      await insertSite.run(processedSite);
+      await client.query(`
+        INSERT INTO sites (id, name, type, "windDir", "windSpeed", status, "hazardLevel", lat, lon, description, launch, landing, hazards, rules, image, "useLiveWeather", "liveStationId")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ON CONFLICT DO NOTHING
+      `, [
+        processedSite.id, processedSite.name, processedSite.type,
+        processedSite.windDir, processedSite.windSpeed, processedSite.status,
+        processedSite.hazardLevel, processedSite.lat, processedSite.lon,
+        processedSite.description, processedSite.launch, processedSite.landing,
+        processedSite.hazards, processedSite.rules, processedSite.image,
+        processedSite.useLiveWeather, processedSite.liveStationId
+      ]);
     }
   });
-  await insertManySites(seedSites);
 }
 
 const coreSeedPages = [
@@ -238,13 +242,8 @@ const coreSeedPages = [
   }
 ];
 
-const pagesCount = await db.prepare("SELECT COUNT(*) as count FROM pages").get() as { count: number | string };
-if (Number(pagesCount.count) === 0) {
-  const insertPage = await db.prepare(`
-    INSERT INTO pages (slug, title, content, lastUpdated)
-    VALUES (@slug, @title, @content, CURRENT_TIMESTAMP)
-  `);
-
+const pagesCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM pages");
+if (Number(pagesCount?.count) === 0) {
   let seedPages = [...coreSeedPages];
 
   try {
@@ -256,32 +255,37 @@ if (Number(pagesCount.count) === 0) {
     log.error("Failed to load seed_pages.json", e);
   }
 
-  const insertManyPages = await db.transaction(async (pages) => {
-    for (const page of pages) await insertPage.run(page);
+  await transaction(async (client) => {
+    for (const page of seedPages) {
+      await client.query(`
+        INSERT INTO pages (slug, title, content, "lastUpdated")
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        ON CONFLICT DO NOTHING
+      `, [page.slug, page.title, page.content]);
+    }
   });
-  await insertManyPages(seedPages);
 } else {
   for (const page of coreSeedPages) {
-    const exists = await db.prepare("SELECT slug FROM pages WHERE slug = @slug").get({ slug: page.slug });
+    const exists = await queryOne("SELECT slug FROM pages WHERE slug = $1", [page.slug]);
     if (!exists) {
-      await db.prepare(`
+      await execute(`
         INSERT INTO pages (slug, title, content, "lastUpdated")
-        VALUES (@slug, @title, @content, CURRENT_TIMESTAMP)
-      `).run(page);
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      `, [page.slug, page.title, page.content]);
     }
   }
 }
 
-const airspaceExists = await db.prepare("SELECT slug FROM pages WHERE slug = 'airspace'").get();
+const airspaceExists = await queryOne("SELECT slug FROM pages WHERE slug = 'airspace'");
 if (!airspaceExists) {
-  await db.prepare(`
-    INSERT INTO pages (slug, title, content, lastUpdated)
+  await execute(`
+    INSERT INTO pages (slug, title, content, "lastUpdated")
     VALUES ('airspace', 'Airspace Resources', 'Essential airspace information for cross-country pilots flying in Victoria. Use the tools and downloads on this page to check airspace restrictions, plan routes, and stay safe.', CURRENT_TIMESTAMP)
-  `).run();
+  `);
 }
 
-const contactsCount = await db.prepare("SELECT COUNT(*) as count FROM contacts").get() as { count: number | string };
-if (Number(contactsCount.count) === 0) {
+const contactsCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM contacts");
+if (Number(contactsCount?.count) === 0) {
   let seedContacts: any[] = [];
   try {
     const contactsPath = path.join(seedsDir, 'seed_contacts.json');
@@ -306,27 +310,38 @@ if (Number(contactsCount.count) === 0) {
 
   if (seedContacts.length > 0) {
     const cols = Object.keys(seedContacts[0]);
-    const placeholders = cols.map(c => `@${c}`).join(', ');
-    const insertContact = await db.prepare(`INSERT OR IGNORE INTO contacts (${cols.join(', ')}) VALUES (${placeholders})`);
-    await db.transaction(async () => {
-      for (const contact of seedContacts) await insertContact.run(contact);
-    })();
+    const quotedCols = cols.map(c => `"${c}"`).join(', ');
+    await transaction(async (client) => {
+      for (const contact of seedContacts) {
+        const values = cols.map(c => c === 'isSafetyCommittee' ? Boolean(contact[c]) : contact[c]);
+        const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+        await client.query(
+          `INSERT INTO contacts (${quotedCols}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`,
+          values
+        );
+      }
+    });
   }
 }
 
-const projectsCount = await db.prepare("SELECT COUNT(*) as count FROM projects").get() as { count: number | string };
-if (Number(projectsCount.count) === 0) {
+const projectsCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM projects");
+if (Number(projectsCount?.count) === 0) {
   try {
     const projectsPath = path.join(seedsDir, 'seed_projects.json');
     if (fs.existsSync(projectsPath)) {
       const seedProjects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
       if (seedProjects.length > 0) {
         const cols = Object.keys(seedProjects[0]);
-        const placeholders = cols.map(c => `@${c}`).join(', ');
-        const insertProject = await db.prepare(`INSERT OR IGNORE INTO projects (${cols.join(', ')}) VALUES (${placeholders})`);
-        await db.transaction(async () => {
-          for (const project of seedProjects) await insertProject.run(project);
-        })();
+        const quotedCols = cols.map(c => `"${c}"`).join(', ');
+        const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+        await transaction(async (client) => {
+          for (const project of seedProjects) {
+            await client.query(
+              `INSERT INTO projects (${quotedCols}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`,
+              cols.map(c => project[c])
+            );
+          }
+        });
       }
     }
   } catch (e) {
@@ -338,10 +353,14 @@ if (Number(projectsCount.count) === 0) {
     if (fs.existsSync(pcPath)) {
       const seedPC = JSON.parse(fs.readFileSync(pcPath, 'utf8'));
       if (seedPC.length > 0) {
-        const insertPC = await db.prepare(`INSERT OR IGNORE INTO project_contacts (projectId, contactId, role) VALUES (@projectId, @contactId, @role)`);
-        await db.transaction(async () => {
-          for (const pc of seedPC) await insertPC.run(pc);
-        })();
+        await transaction(async (client) => {
+          for (const pc of seedPC) {
+            await client.query(
+              `INSERT INTO project_contacts ("projectId", "contactId", role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+              [pc.projectId, pc.contactId, pc.role]
+            );
+          }
+        });
       }
     }
   } catch (e) {
@@ -349,17 +368,21 @@ if (Number(projectsCount.count) === 0) {
   }
 }
 
-const eslCount = await db.prepare("SELECT COUNT(*) as count FROM external_site_listings").get() as { count: number | string };
-if (Number(eslCount.count) === 0) {
+const eslCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM external_site_listings");
+if (Number(eslCount?.count) === 0) {
   try {
     const eslPath = path.join(seedsDir, 'seed_external_listings.json');
     if (fs.existsSync(eslPath)) {
       const seedESL = JSON.parse(fs.readFileSync(eslPath, 'utf8'));
       if (seedESL.length > 0) {
-        const insertESL = await db.prepare(`INSERT OR IGNORE INTO external_site_listings (id, name, url, state, region, lastScraped) VALUES (@id, @name, @url, @state, @region, @lastScraped)`);
-        await db.transaction(async () => {
-          for (const esl of seedESL) await insertESL.run(esl);
-        })();
+        await transaction(async (client) => {
+          for (const esl of seedESL) {
+            await client.query(
+              `INSERT INTO external_site_listings (id, name, url, state, region, "lastScraped") VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+              [esl.id, esl.name, esl.url, esl.state, esl.region, esl.lastScraped]
+            );
+          }
+        });
       }
     }
   } catch (e) {
@@ -367,13 +390,8 @@ if (Number(eslCount.count) === 0) {
   }
 }
 
-const proceduresCount = await db.prepare("SELECT COUNT(*) as count FROM procedures").get() as { count: number | string };
-if (Number(proceduresCount.count) === 0) {
-  const insertProcedure = await db.prepare(`
-    INSERT OR IGNORE INTO procedures (id, title, icon, iconColor, description, steps, sortOrder)
-    VALUES (@id, @title, @icon, @iconColor, @description, @steps, @sortOrder)
-  `);
-
+const proceduresCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM procedures");
+if (Number(proceduresCount?.count) === 0) {
   let seedProcedures: any[] = [];
   try {
     const proceduresPath = path.join(seedsDir, 'seed_procedures.json');
@@ -392,24 +410,22 @@ if (Number(proceduresCount.count) === 0) {
     return [];
   }
 
-  const insertManyProcedures = await db.transaction(async (items: any[]) => {
-    for (const item of items) {
-      await insertProcedure.run({
-        ...item,
-        steps: JSON.stringify(parseStepsToArray(item.steps))
-      });
+  await transaction(async (client) => {
+    for (const item of seedProcedures) {
+      await client.query(`
+        INSERT INTO procedures (id, title, icon, "iconColor", description, steps, "sortOrder")
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT DO NOTHING
+      `, [
+        item.id, item.title, item.icon, item.iconColor,
+        item.description, JSON.stringify(parseStepsToArray(item.steps)), item.sortOrder
+      ]);
     }
   });
-  await insertManyProcedures(seedProcedures);
 }
 
-const newsCount = await db.prepare("SELECT COUNT(*) as count FROM news").get() as { count: number | string };
-if (Number(newsCount.count) === 0) {
-  const insertNews = await db.prepare(`
-    INSERT INTO news (id, title, content, date, author)
-    VALUES (@id, @title, @content, @date, @author)
-  `);
-
+const newsCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM news");
+if (Number(newsCount?.count) === 0) {
   let seedNews: any[] = [];
   try {
     const newsPath = path.join(seedsDir, 'seed_news.json');
@@ -420,19 +436,18 @@ if (Number(newsCount.count) === 0) {
     log.error("Failed to load seed_news.json", e);
   }
 
-  const insertManyNews = await db.transaction(async (items) => {
-    for (const item of items) await insertNews.run(item);
+  await transaction(async (client) => {
+    for (const item of seedNews) {
+      await client.query(
+        `INSERT INTO news (id, title, content, date, author) VALUES ($1, $2, $3, $4, $5)`,
+        [item.id, item.title, item.content, item.date, item.author]
+      );
+    }
   });
-  await insertManyNews(seedNews);
 }
 
-const ghCount = await db.prepare("SELECT COUNT(*) as count FROM ground_handling_sites").get() as { count: number | string };
-if (Number(ghCount.count) === 0) {
-  const insertGH = await db.prepare(`
-    INSERT INTO ground_handling_sites (id, name, lat, lon, windDirections, description, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-
+const ghCount = await queryOne<{ count: number | string }>("SELECT COUNT(*) as count FROM ground_handling_sites");
+if (Number(ghCount?.count) === 0) {
   const ghSites = [
     {
       id: "gh-albert-park",
@@ -481,21 +496,18 @@ if (Number(ghCount.count) === 0) {
     },
   ];
 
-  await db.transaction(async () => {
+  await transaction(async (client) => {
     for (const site of ghSites) {
-      await insertGH.run(site.id, site.name, site.lat, site.lon, site.windDirections, site.description, site.notes);
+      await client.query(
+        `INSERT INTO ground_handling_sites (id, name, lat, lon, "windDirections", description, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [site.id, site.name, site.lat, site.lon, site.windDirections, site.description, site.notes]
+      );
     }
-  })();
+  });
   log.info(`Seeded ${ghSites.length} ground handling sites`);
 }
 
 {
-  const insertSafety = await db.prepare(`
-    INSERT INTO safety_sections (id, title, content, "sortOrder", "sectionType", enabled)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT (id) DO NOTHING
-  `);
-
   const safetySections = [
     {
       id: "emergency",
@@ -503,7 +515,7 @@ if (Number(ghCount.count) === 0) {
       content: `### In Case of an Accident:\n\n1. **Ensure your own safety first.**\n2. **Assess the injured pilot.** Do not move them unless they are in immediate danger.\n3. **Call 000** immediately for emergency services.\n4. **Provide exact location details** (use coordinates if possible).\n5. **Contact a Club Safety Officer** as soon as practical.\n\n### Incident Reporting\n\nAll incidents, accidents, and near-misses must be reported to SAFA and the Club Committee within 24 hours.\n\n[Submit Incident Report Form →](https://safa.asn.au/safety/reporting-an-accident/)`,
       sortOrder: 1,
       sectionType: "emergency",
-      enabled: 1,
+      enabled: true,
     },
     {
       id: "rules",
@@ -511,13 +523,17 @@ if (Number(ghCount.count) === 0) {
       content: `1. **SAFA Membership** — All pilots flying at club sites must be current financial members of the Sports Aviation Federation of Australia (SAFA).\n2. **Club Membership** — Visiting pilots must join as temporary members. Local pilots must hold full annual club membership.\n3. **Mandatory Check-in** — All pilots must use the online check-in system before launching at any club site. Failure to do so may result in disciplinary action.\n4. **Helmets & Reserves** — Approved helmets must be worn at all times while connected to a glider. A recently repacked reserve parachute is mandatory for all flights.`,
       sortOrder: 3,
       sectionType: "rules",
-      enabled: 1,
+      enabled: true,
     },
   ];
 
-  await db.transaction(async () => {
+  await transaction(async (client) => {
     for (const s of safetySections) {
-      await insertSafety.run(s.id, s.title, s.content, s.sortOrder, s.sectionType, s.enabled);
+      await client.query(`
+        INSERT INTO safety_sections (id, title, content, "sortOrder", "sectionType", enabled)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (id) DO NOTHING
+      `, [s.id, s.title, s.content, s.sortOrder, s.sectionType, s.enabled]);
     }
-  })();
+  });
 }
