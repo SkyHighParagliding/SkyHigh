@@ -147,12 +147,20 @@ export async function fetchWeatherData(isManual = false): Promise<WeatherScrapeR
         const wmoid = stationId.replace('livewind-', '');
         const stationData = liveWindData?.find((d: any) => d.wmoid === wmoid);
         if (stationData) {
-          const windSpeed = typeof stationData.speed_kt === 'number' ? stationData.speed_kt : 0;
-          const windGust = typeof stationData.gust_kt === 'number' ? stationData.gust_kt : 0;
+          const windSpeed = typeof stationData.speed_kt === 'number'
+            ? stationData.speed_kt
+            : (stationData.speed_kt ? parseInt(String(stationData.speed_kt), 10) || 0 : 0);
+          const windGust = typeof stationData.gust_kt === 'number'
+            ? stationData.gust_kt
+            : (stationData.gust_kt ? parseInt(String(stationData.gust_kt), 10) || 0 : 0);
           const direction = stationData.direction ?? 'N';
           const siteName = stationData.site_name || 'Unknown';
-          const lat = typeof stationData.lat === 'number' ? stationData.lat : null;
-          const lon = typeof stationData.lon === 'number' ? stationData.lon : null;
+          const lat = typeof stationData.lat === 'number'
+            ? stationData.lat
+            : (stationData.lat ? parseFloat(String(stationData.lat)) || null : null);
+          const lon = typeof stationData.lon === 'number'
+            ? stationData.lon
+            : (stationData.lon ? parseFloat(String(stationData.lon)) || null : null);
           await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
           const timestamp = new Date().toISOString();
           await execute(
