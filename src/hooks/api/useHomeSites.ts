@@ -66,7 +66,7 @@ export function useHomeSites(): HomeSitesResult {
     setIsLoading(false);
 
     const maxFetch = 20;
-    const data = allSites as Record<string, unknown>[];
+    const data = allSites as any[];
 
     const recentIds = getRecentSites();
     if (recentIds.length > 0) {
