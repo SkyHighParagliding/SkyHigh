@@ -302,6 +302,7 @@ router.put(
 
     const sessionAge = Date.now() - new Date(session.sessionCreatedAt).getTime();
     if (sessionAge > PILOT_SESSION_TTL_MS) {
+      await execute(`DELETE FROM pilot_sessions WHERE token = $1`, [token]);
       return res.status(401).json({ error: "Session expired" });
     }
 

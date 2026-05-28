@@ -2,23 +2,28 @@ import * as cheerio from 'cheerio';
 import crypto from "crypto";
 import { query, queryOne, execute } from "../../pg.js";
 
-let publicSitesCache: { data: any[] | null; updatedAt: number } = { data: null, updatedAt: 0 };
+interface SitesCacheEntry {
+  response: Record<string, any> | null;
+  updatedAt: number;
+}
+
+let publicSitesCache: SitesCacheEntry = { response: null, updatedAt: 0 };
 const PUBLIC_SITES_CACHE_TTL = 60 * 1000;
 
 export function invalidateSitesCache() {
-  publicSitesCache = { data: null, updatedAt: 0 };
+  publicSitesCache = { response: null, updatedAt: 0 };
 }
 
-export function getPublicSitesCache() {
-  return publicSitesCache;
+export function getPublicSitesCache(): Record<string, any> | null {
+  return publicSitesCache.response;
 }
 
-export function setPublicSitesCache(data: any[]) {
-  publicSitesCache = { data, updatedAt: Date.now() };
+export function setPublicSitesCache(response: Record<string, any>) {
+  publicSitesCache = { response, updatedAt: Date.now() };
 }
 
 export function isCacheValid() {
-  return publicSitesCache.data && (Date.now() - publicSitesCache.updatedAt) < PUBLIC_SITES_CACHE_TTL;
+  return publicSitesCache.response && (Date.now() - publicSitesCache.updatedAt) < PUBLIC_SITES_CACHE_TTL;
 }
 
 export const COMPASS_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];

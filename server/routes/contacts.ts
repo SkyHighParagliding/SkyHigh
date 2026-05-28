@@ -477,7 +477,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
-  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, password } = req.body;
+  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, photoAuthorised, showTelegram, showPhone, showEmail, showAdminEmail, password } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
   if (isCommittee) isAdmin = true;
@@ -518,14 +518,14 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
                            "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee",
                            "isSocialMedia", "soAuthorised", "displayCommittee", "displaySafety",
                            "showTelegram", "showPhone", "showEmail", "showAdminEmail",
-                           "fullNameDisplay", password)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+                           "fullNameDisplay", "photoAuthorised", password)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
     [id, organisation || "", name, surname || "", phone || "", email || "", notes || "",
       isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
       isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
       displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
       showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0,
-      fullNameDisplay !== false ? 1 : 0, hashedPassword]
+      fullNameDisplay !== false ? 1 : 0, photoAuthorised ? 1 : 0, hashedPassword]
   );
 
   const contact = await queryOne<ContactRow>(

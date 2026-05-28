@@ -36,8 +36,8 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const { limit, offset } = getPaginationParams(req.query);
   const rows = await query<any>("SELECT * FROM page_views ORDER BY views DESC LIMIT $1 OFFSET $2", [limit, offset]);
   const countResult = await queryOne<{ count: string }>("SELECT COUNT(*) as count FROM page_views");
-  res.set('X-Total-Count', String(Number(countResult!.count)));
-  res.json(createPaginatedResponse(rows, Number(countResult!.count), limit, offset));
+  res.set('X-Total-Count', String(Number(countResult?.count ?? 0)));
+  res.json(createPaginatedResponse(rows, Number(countResult?.count ?? 0), limit, offset));
 }));
 
 router.post("/reset/:path", requireAuth, asyncHandler(async (req, res) => {

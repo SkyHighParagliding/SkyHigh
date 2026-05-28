@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth, requireSOOrAdmin, isDevBypassActive } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -577,43 +577,52 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 6 characters" });
   }
 
-  const now = new Date().toISOString();
-  const claimed = await execute(
-    `UPDATE password_reset_tokens SET "usedAt" = $1 WHERE token = $2 AND "usedAt" IS NULL AND "expiresAt" > $3`,
-    [now, token, now]
-  );
-
-  if (claimed.rowCount === 0) {
-    return res.status(400).json({ error: "This reset link is invalid, already used, or expired" });
-  }
-
-  const record = await queryOne<any>(
-    `SELECT "contactId", "accountType" FROM password_reset_tokens WHERE token = $1`,
-    [token]
-  );
-
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-  if (record?.accountType === "pilot") {
-    await execute(
-      `UPDATE pilots SET "passwordHash" = $1 WHERE id = $2`,
-      [hashed, record.contactId]
+  let tokenInvalid = false;
+  await transaction(async (client) => {
+    const now = new Date().toISOString();
+    const claimedResult = await client.query(
+      `UPDATE password_reset_tokens SET "usedAt" = $1 WHERE token = $2 AND "usedAt" IS NULL AND "expiresAt" > $3 RETURNING "contactId", "accountType"`,
+      [now, token, now]
     );
-    await execute(
-      `DELETE FROM pilot_sessions WHERE "pilotId" = $1`,
-      [record.contactId]
-    );
-    log.info(`Password reset completed for pilot: ${record.contactId}`);
-  } else {
-    await execute(
-      `UPDATE contacts SET password = $1 WHERE id = $2`,
-      [hashed, record?.contactId]
-    );
-    await execute(
-      `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
-      [record?.contactId]
-    );
-    log.info(`Password reset completed for contact: ${record?.contactId}`);
+
+    if ((claimedResult.rowCount ?? 0) === 0) {
+      tokenInvalid = true;
+      return; // transaction fn returns; transaction() will COMMIT the no-op then we check the flag below
+    }
+
+    const record = claimedResult.rows[0] as { contactId: string; accountType: string };
+
+    if (!record?.contactId) {
+      throw new Error("Token record missing contact reference");
+    }
+
+    if (record.accountType === "pilot") {
+      await client.query(
+        `UPDATE pilots SET "passwordHash" = $1 WHERE id = $2`,
+        [hashed, record.contactId]
+      );
+      await client.query(
+        `DELETE FROM pilot_sessions WHERE "pilotId" = $1`,
+        [record.contactId]
+      );
+      log.info(`Password reset completed for pilot: ${record.contactId}`);
+    } else {
+      await client.query(
+        `UPDATE contacts SET password = $1 WHERE id = $2`,
+        [hashed, record.contactId]
+      );
+      await client.query(
+        `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
+        [record.contactId]
+      );
+      log.info(`Password reset completed for contact: ${record.contactId}`);
+    }
+  });
+
+  if (tokenInvalid) {
+    return res.status(400).json({ error: "This reset link is invalid, already used, or expired" });
   }
 
   res.json({ success: true });

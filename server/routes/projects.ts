@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import {
@@ -47,8 +47,8 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       s.name as "relatedSiteName",
       c.name as "coordinatorName",
       c.organisation as "coordinatorOrg",
-      (SELECT COUNT(*) FROM project_documents pd WHERE pd."projectId" = p.id) as "documentCount",
-      (SELECT COUNT(*) FROM project_contacts pc WHERE pc."projectId" = p.id) as "contactCount"
+      (SELECT COUNT(*)::int FROM project_documents pd WHERE pd."projectId" = p.id) as "documentCount",
+      (SELECT COUNT(*)::int FROM project_contacts pc WHERE pc."projectId" = p.id) as "contactCount"
     FROM projects p
     LEFT JOIN sites s ON s.id = p."relatedSiteId"
     LEFT JOIN contacts c ON c.id = p."coordinatorContactId"
@@ -167,19 +167,19 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
       const data = await response.json() as any;
       if (data.success && data.file) {
         const docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-        await execute(
-          "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-          [docId, data.file.id, data.file.name, data.file.mimeType, data.file.size || req.file.size, "08", null, data.file.url, (req as any).user?.name || "admin"]
-        );
-
-        await execute(
-          "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
-          [req.params.id, docId]
-        );
-
-        if (!project.driveFolderName) {
-          await execute("UPDATE projects SET \"driveFolderName\" = $1 WHERE id = $2", [safeName, req.params.id]);
-        }
+        await transaction(async (client) => {
+          await client.query(
+            "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            [docId, data.file.id, data.file.name, data.file.mimeType, data.file.size || req.file!.size, "08", null, data.file.url, (req as any).user?.name || "admin"]
+          );
+          await client.query(
+            "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
+            [req.params.id, docId]
+          );
+          if (!project.driveFolderName) {
+            await client.query("UPDATE projects SET \"driveFolderName\" = $1 WHERE id = $2", [safeName, req.params.id]);
+          }
+        });
 
         const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [docId]);
         return res.status(201).json(doc);
@@ -216,15 +216,16 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
   }
 
   const docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-  await execute(
-    "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-    [docId, result.id, result.name, req.file.mimetype, req.file.size, "08", folderId, result.webViewLink, (req as any).user?.name || "admin"]
-  );
-
-  await execute(
-    "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
-    [req.params.id, docId]
-  );
+  await transaction(async (client) => {
+    await client.query(
+      "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+      [docId, result.id, result.name, req.file!.mimetype, req.file!.size, "08", folderId, result.webViewLink, (req as any).user?.name || "admin"]
+    );
+    await client.query(
+      "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
+      [req.params.id, docId]
+    );
+  });
 
   const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [docId]);
   res.status(201).json(doc);
@@ -270,16 +271,14 @@ router.post("/:id/documents/link", requireAuth, asyncHandler(async (req, res) =>
 
   let docId = documentId;
 
+  let needsDocumentInsert = false;
   if (!docId && driveFileId) {
     const existing = await queryOne<any>("SELECT id FROM documents WHERE \"driveFileId\" = $1", [driveFileId]);
     if (existing) {
       docId = existing.id;
     } else {
       docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-      await execute(
-        "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", category, \"webViewLink\") VALUES ($1, $2, $3, $4, $5, $6)",
-        [docId, driveFileId, name || "Linked Document", mimeType || "", "08", webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`]
-      );
+      needsDocumentInsert = true;
     }
   }
 
@@ -288,10 +287,19 @@ router.post("/:id/documents/link", requireAuth, asyncHandler(async (req, res) =>
   const existingLink = await queryOne<any>("SELECT * FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, docId]);
   if (existingLink) return res.status(409).json({ error: "Document already linked to this project" });
 
-  await execute(
-    "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 1)",
-    [req.params.id, docId]
-  );
+  // Create the document record (if new) and link atomically so no orphaned documents
+  await transaction(async (client) => {
+    if (needsDocumentInsert) {
+      await client.query(
+        "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", category, \"webViewLink\") VALUES ($1, $2, $3, $4, $5, $6)",
+        [docId, driveFileId, name || "Linked Document", mimeType || "", "08", webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`]
+      );
+    }
+    await client.query(
+      "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 1)",
+      [req.params.id, docId]
+    );
+  });
 
   res.status(201).json({ success: true, documentId: docId });
 }));

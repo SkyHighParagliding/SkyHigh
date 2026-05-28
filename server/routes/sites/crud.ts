@@ -28,7 +28,7 @@ router.get("/", asyncHandler(async (req, res) => {
 
     if (isPublic && !hasCustomPagination && isCacheValid()) {
       res.set('Cache-Control', 'public, max-age=30');
-      return res.json(getPublicSitesCache());
+      return res.json(getPublicSitesCache()!);
     }
     let sites = await query<any>("SELECT * FROM sites ORDER BY name ASC LIMIT $1 OFFSET $2", [limit, offset]);
 
@@ -74,14 +74,16 @@ router.get("/", asyncHandler(async (req, res) => {
       mapped = [];
     }
 
+    const totalCount = Number(countResult!.count);
+    const paginatedResponse = createPaginatedResponse(mapped, totalCount, limit, offset);
+
     if (isPublic && !hasCustomPagination) {
-      setPublicSitesCache(mapped);
+      setPublicSitesCache(paginatedResponse);
       res.set('Cache-Control', 'public, max-age=30');
     }
 
-    const totalCount = Number(countResult!.count);
     res.set('X-Total-Count', String(totalCount));
-    res.json(createPaginatedResponse(mapped, totalCount, limit, offset));
+    res.json(paginatedResponse);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
