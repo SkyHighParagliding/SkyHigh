@@ -802,7 +802,9 @@ export function AdminContacts() {
                             onChange={e => {
                               const checked = e.target.checked;
                               if (key === "isCommittee") {
-                                setForm(prev => ({ ...prev, isCommittee: checked, ...(checked ? { isAdmin: true } : {}) }));
+                                setForm(prev => ({ ...prev, isCommittee: checked, ...(checked ? { isAdmin: true, photoAuthorised: true } : {}) }));
+                              } else if (key === "isSafetyCommittee") {
+                                setForm(prev => ({ ...prev, isSafetyCommittee: checked, ...(checked ? { photoAuthorised: true } : {}) }));
                               } else {
                                 setForm(prev => ({ ...prev, [key]: checked }));
                               }
