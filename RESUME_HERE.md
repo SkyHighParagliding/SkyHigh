@@ -1,17 +1,18 @@
-# RESUME_HERE — Last updated: 2026-05-28 23:55
+# RESUME_HERE — Last updated: 2026-05-29
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅ on Railway — fully deployed, all changes pushed
 
 ## Where I left off
 
-Session 31: Fixed a production-breaking wind map bug. The canvas buffer was set to `width * devicePixelRatio` but all drawing code used CSS pixel coordinates — on Windows with display scaling (DPR > 1, e.g. 125–200% scale) this caused only the left `1/dpr` fraction of the canvas to render, with the rest appearing as a black strip. Root cause traced to a Cycle 5 code review refactor (commit 8e18ab4, fix P-008) that correctly extracted canvas sizing into a separate useEffect but silently dropped the `ctx.scale(dpr, dpr)` call that was tightly coupled to the DPR buffer scaling. Fixed by removing DPR multiplication from canvas buffer dimensions entirely (no retina quality needed for wind map). Verified locally, pushed, Railway deploying.
+Session 32: Fixed the calendar closure badge not displaying on site guide pages (Flowerdale showing Open when it should show Closed). Root cause: `getClosureStatus`, inline date logic in `SiteDetail.tsx`, and `siteMarkerRenderer.ts` all used `toISOString().split('T')[0]` (UTC date). Melbourne is UTC+10, so before 10am Melbourne time UTC is still the previous calendar date — `isClosedToday` returned false even when today was a closure date. Fixed all three locations to use `toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' })`, consistent with what the server already uses.
 
-## Last completed task
-- **fix(wind-map): canvas buffer DPR mismatch** — commit `31c16d1`
-  - 1 file changed: `src/components/windmap/WindCanvas.tsx`
-  - Removed `* dpr` from canvas.width/height in two places (sizeKey effect + render loop inline check)
-  - Root cause: P-008 refactor (8e18ab4) dropped `ctx.scale(dpr, dpr)` while keeping DPR buffer scaling
+## Last completed tasks
+- **fix(closure): Melbourne timezone for date comparison** — commit `a6d9b85`
+  - `src/utils/closureStatus.ts` — added `toMelbourneDate()` helper, replaced 3 UTC calls
+  - `src/pages/SiteDetail.tsx` — replaced inline UTC todayStr
+- **fix(wind-map): Melbourne timezone for closure marker colour** — commit `ca27f0d`
+  - `src/components/windmap/siteMarkerRenderer.ts` — same UTC bug, independent copy; also moved todayStr outside per-marker loop
 
 ## Currently in progress
 - None
@@ -25,4 +26,4 @@ Session 31: Fixed a production-breaking wind map bug. The canvas buffer was set 
 
 ## Quick context refresher
 
-Production wind map was broken (black area on right side). Fixed and deployed this session. The root cause was a paired invariant (`canvas.width = w*dpr` must always be accompanied by `ctx.scale(dpr, dpr)`) being broken by a refactor that moved canvas sizing without preserving the coordinate normalisation. The codebase is otherwise in the same state as end of Session 30 — Sites system clean, 94 tsc errors remain in other areas.
+Two sessions of bug fixes this sprint. Session 31 fixed the wind map DPR canvas issue. Session 32 fixed a UTC timezone bug in closure badge logic that caused calendar-closed sites to appear Open before 10am Melbourne time. All three independent date-comparison locations in the frontend now use Melbourne timezone consistently with the server. Codebase is in good shape; 94 pre-existing tsc errors remain in areas outside the Sites system.
