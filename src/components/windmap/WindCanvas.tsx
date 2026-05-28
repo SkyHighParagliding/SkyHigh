@@ -181,6 +181,17 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
 
     const render = () => {
       const currentTransform = transformRef.current;
+      // Read fresh dimensions from container in case of resize
+      if (containerRef.current && canvasRef.current) {
+        const width = containerRef.current.clientWidth;
+        const height = containerRef.current.clientHeight;
+        if (width !== canvasSizeRef.current.width || height !== canvasSizeRef.current.height) {
+          canvasSizeRef.current = { width, height };
+          const dpr = window.devicePixelRatio || 1;
+          canvasRef.current.width = width * dpr;
+          canvasRef.current.height = height * dpr;
+        }
+      }
       const { width: w, height: h } = canvasSizeRef.current;
       if (w === 0 || h === 0) return;
 
@@ -232,7 +243,7 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
     };
-  }, [windGrid, siteLat, siteLon, onZoomChange, savedCenterLat, savedCenterLon, savedZoom]);
+  }, [windGrid, siteLat, siteLon, onZoomChange, savedCenterLat, savedCenterLon, savedZoom, sizeKey]);
 
   const handlePointer = (e: React.PointerEvent) => {
     if (!containerRef.current) return;
