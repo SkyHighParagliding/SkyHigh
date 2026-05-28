@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import crypto from "crypto";
@@ -79,7 +79,6 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
 router.put("/reorder/batch", requireAuth, asyncHandler(async (req, res) => {
   const { items } = req.body;
   if (!Array.isArray(items)) return res.status(400).json({ error: "items array required" });
-  const { transaction } = await import("../pg.js");
   await transaction(async (client: any) => {
     for (const item of items) {
       await client.query(

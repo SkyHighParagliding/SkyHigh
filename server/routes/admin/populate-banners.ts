@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { queryOne, query, execute } from "../../pg.js";
+import { queryOne, query, execute, transaction } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import createLogger from "../../utils/logger.js";
@@ -36,30 +36,37 @@ router.post("/populate-banners", requireAuth, asyncHandler(async (req, res) => {
     let errors = 0;
     const results = [];
 
-    // Update each site with a random banner image
+    // Determine banner assignment for each site before opening the transaction
+    const assignments: Array<{ site: (typeof sites)[0]; image: string } | { site: (typeof sites)[0]; skipped: true; reason: string }> = [];
     for (const site of sites) {
-      try {
-        const typeStr = (site.type || '').toLowerCase();
-        const isInland = typeStr.includes('inland') || typeStr.includes('mountain') || typeStr.includes('ridge') || typeStr.includes('tow');
-        const pool = isInland ? inland : coastal;
+      const typeStr = (site.type || '').toLowerCase();
+      const isInland = typeStr.includes('inland') || typeStr.includes('mountain') || typeStr.includes('ridge') || typeStr.includes('tow');
+      const imagePool = isInland ? inland : coastal;
 
-        if (pool.length === 0) {
-          const msg = `⚠️ No ${isInland ? 'inland' : 'coastal'} images for ${site.name}`;
-          log.warn(msg);
-          results.push({ site: site.name, status: "skipped", reason: "no images for category" });
-          continue;
-        }
+      if (imagePool.length === 0) {
+        log.warn(`No ${isInland ? 'inland' : 'coastal'} images for ${site.name}`);
+        assignments.push({ site, skipped: true, reason: "no images for category" });
+      } else {
+        const randomImage = imagePool[Math.floor(Math.random() * imagePool.length)];
+        assignments.push({ site, image: randomImage.banner });
+      }
+    }
 
-        const randomImage = pool[Math.floor(Math.random() * pool.length)];
-        await execute("UPDATE sites SET image = $1 WHERE id = $2", [randomImage.banner, site.id]);
+    // Apply all banner updates in a single transaction — all-or-nothing
+    await transaction(async (client) => {
+      for (const assignment of assignments) {
+        if ('skipped' in assignment) continue;
+        await client.query("UPDATE sites SET image = $1 WHERE id = $2", [assignment.image, assignment.site.id]);
+      }
+    });
+
+    for (const assignment of assignments) {
+      if ('skipped' in assignment) {
+        results.push({ site: assignment.site.name, status: "skipped", reason: assignment.reason });
+      } else {
         updated++;
-        results.push({ site: site.name, status: "updated", image: randomImage.banner });
-        log.info(`✓ ${site.name}: set banner`);
-      } catch (err: any) {
-        errors++;
-        const msg = `✗ Error updating ${site.name}: ${err.message}`;
-        log.error(msg);
-        results.push({ site: site.name, status: "error", error: err.message });
+        results.push({ site: assignment.site.name, status: "updated", image: assignment.image });
+        log.info(`✓ ${assignment.site.name}: set banner`);
       }
     }
 

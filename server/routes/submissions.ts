@@ -253,8 +253,8 @@ function resolveSubmissionPath(filePath: string): string {
   // Ensure the resolved path is within the expected directory
   const resolvedFinal = path.resolve(finalPath);
   const allowedRoot = path.resolve(process.cwd());
-  
-  if (!resolvedFinal.startsWith(allowedRoot)) {
+
+  if (!resolvedFinal.startsWith(allowedRoot + path.sep) && resolvedFinal !== allowedRoot) {
     throw new Error("Invalid file path - outside allowed directory");
   }
   
@@ -284,7 +284,7 @@ router.post("/banned-ips", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/banned-ips/:id", requireAuth, asyncHandler(async (req, res) => {
-  const result = await execute("DELETE FROM banned_ips WHERE id = $1", [req.params.id]);
+  const result = await execute("DELETE FROM banned_ips WHERE id = $1::int", [req.params.id]);
   if (result.rowCount === 0) return res.status(404).json({ error: "Banned IP not found" });
   res.json({ success: true });
 }));
