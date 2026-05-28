@@ -32,6 +32,20 @@ router.get("/all", requireAuth, asyncHandler(async (_req, res) => {
   res.json(sections);
 }));
 
+router.put("/reorder/batch", requireAuth, asyncHandler(async (req, res) => {
+  const { items } = req.body;
+  if (!Array.isArray(items)) return res.status(400).json({ error: "items array required" });
+  await transaction(async (client: any) => {
+    for (const item of items) {
+      await client.query(
+        `UPDATE safety_sections SET "sortOrder" = $1 WHERE id = $2`,
+        [item.sortOrder, item.id]
+      );
+    }
+  });
+  res.json({ success: true });
+}));
+
 router.get("/:id", asyncHandler(async (req, res) => {
   const section = await queryOne<SafetySection>(
     "SELECT * FROM safety_sections WHERE id = $1",
@@ -73,20 +87,6 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
     [req.params.id]
   );
   if (result.rowCount === 0) return res.status(404).json({ error: "Section not found" });
-  res.json({ success: true });
-}));
-
-router.put("/reorder/batch", requireAuth, asyncHandler(async (req, res) => {
-  const { items } = req.body;
-  if (!Array.isArray(items)) return res.status(400).json({ error: "items array required" });
-  await transaction(async (client: any) => {
-    for (const item of items) {
-      await client.query(
-        `UPDATE safety_sections SET "sortOrder" = $1 WHERE id = $2`,
-        [item.sortOrder, item.id]
-      );
-    }
-  });
   res.json({ success: true });
 }));
 

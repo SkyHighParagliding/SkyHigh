@@ -76,7 +76,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
   `, [req.params.id]);
 
   const documents = await query<any>(`
-    SELECT d.*, CASE WHEN d."driveFileId" IS NOT NULL THEN 1 ELSE 0 END as linked FROM project_documents pd
+    SELECT d.*, pd.linked FROM project_documents pd
     JOIN documents d ON d.id = pd."documentId"
     WHERE pd."projectId" = $1
     ORDER BY d."createdAt" DESC
@@ -94,7 +94,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
-  const { name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate } = req.body;
+  const { name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, projectCoordinator, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate } = req.body;
   if (!name) return res.status(400).json({ error: "Project name is required" });
 
   let finalPvExpectations = pvExpectations;
@@ -105,16 +105,16 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 
   const id = generateId();
   await execute(`
-    INSERT INTO projects (id, name, description, status, "relatedSiteId", "parksVic", "pvContactId", "pvExpectations", "worksRequired", "contractorNotes", "landownerNotes", "stakeholderNotes", "coordinatorContactId", "estimatedBudget", "fundingSource", "insuranceRequirements", "supplierQuotes", "complianceNotes", "approvedBy", "approvalDate")
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-  `, [id, name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, finalPvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || ""]);
+    INSERT INTO projects (id, name, description, status, "relatedSiteId", "parksVic", "pvContactId", "pvExpectations", "worksRequired", "contractorNotes", "landownerNotes", "stakeholderNotes", "projectCoordinator", "coordinatorContactId", "estimatedBudget", "fundingSource", "insuranceRequirements", "supplierQuotes", "complianceNotes", "approvedBy", "approvalDate")
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+  `, [id, name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, finalPvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", projectCoordinator || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || ""]);
 
   const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [id]);
   res.status(201).json(project);
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const { name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate } = req.body;
+  const { name, description, status, relatedSiteId, parksVic, pvContactId, pvExpectations, worksRequired, contractorNotes, landownerNotes, stakeholderNotes, projectCoordinator, coordinatorContactId, estimatedBudget, fundingSource, insuranceRequirements, supplierQuotes, complianceNotes, approvedBy, approvalDate } = req.body;
   if (!name) return res.status(400).json({ error: "Project name is required" });
 
   const result = await execute(`
@@ -122,12 +122,12 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
       name = $1, description = $2, status = $3, "relatedSiteId" = $4,
       "parksVic" = $5, "pvContactId" = $6, "pvExpectations" = $7,
       "worksRequired" = $8, "contractorNotes" = $9, "landownerNotes" = $10, "stakeholderNotes" = $11,
-      "coordinatorContactId" = $12,
-      "estimatedBudget" = $13, "fundingSource" = $14, "insuranceRequirements" = $15,
-      "supplierQuotes" = $16, "complianceNotes" = $17, "approvedBy" = $18, "approvalDate" = $19,
+      "projectCoordinator" = $12, "coordinatorContactId" = $13,
+      "estimatedBudget" = $14, "fundingSource" = $15, "insuranceRequirements" = $16,
+      "supplierQuotes" = $17, "complianceNotes" = $18, "approvedBy" = $19, "approvalDate" = $20,
       "updatedAt" = NOW()
-    WHERE id = $20
-  `, [name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, pvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || "", req.params.id]);
+    WHERE id = $21
+  `, [name, description || "", status || "active", relatedSiteId || null, parksVic ? 1 : 0, pvContactId || null, pvExpectations || "", worksRequired || "", contractorNotes || "", landownerNotes || "", stakeholderNotes || "", projectCoordinator || "", coordinatorContactId || null, estimatedBudget || "", fundingSource || "", insuranceRequirements || "", supplierQuotes || "", complianceNotes || "", approvedBy || "", approvalDate || "", req.params.id]);
 
   if (result.rowCount === 0) return res.status(404).json({ error: "Project not found" });
   const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
