@@ -384,19 +384,16 @@ router.post("/bulk", asyncHandler(async (req, res) => {
           icon: forecast?.forecast_icon || 'CloudSun'
         };
 
-        if (site.liveStationIdAlt) {
-          const altObservation = siteGroup?.find((item) => item.observation_siteId === `${siteId}:alt`);
-          if (altObservation) {
-            result.altObservation = {
-              windSpeed: altObservation.alt_windSpeed,
-              windGust: altObservation.alt_windGust,
-              direction: altObservation.alt_direction,
-              stationName: altObservation.alt_stationName,
-              stationLat: altObservation.alt_stationLat,
-              stationLon: altObservation.alt_stationLon,
-              timestamp: altObservation.alt_timestamp,
-            };
-          }
+        if (site.liveStationIdAlt && site.alt_windSpeed != null) {
+          result.altObservation = {
+            windSpeed: site.alt_windSpeed,
+            windGust: site.alt_windGust,
+            direction: site.alt_direction,
+            stationName: site.alt_stationName,
+            stationLat: site.alt_stationLat,
+            stationLon: site.alt_stationLon,
+            timestamp: site.alt_timestamp,
+          };
         }
 
         results[siteId] = result;
