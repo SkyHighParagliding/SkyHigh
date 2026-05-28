@@ -684,7 +684,6 @@ function FlyingSitesWidget() {
           className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20 hover:bg-sky/20 transition-colors"
         >
           {site.name}
-          {site.pgRating && <span className="text-white/70 font-normal">· {site.pgRating}</span>}
         </Link>
       ))}
     </div>
