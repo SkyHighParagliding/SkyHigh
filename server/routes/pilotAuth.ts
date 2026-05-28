@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { query, queryOne, execute } from "../pg.js";
+import { queryOne, execute } from "../pg.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth, isDevBypassActive } from "../middleware/auth.js";
