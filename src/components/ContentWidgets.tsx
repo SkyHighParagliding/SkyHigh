@@ -210,7 +210,7 @@ function extractRole(member: CommitteeMember): string {
 }
 
 function getSortOrder(member: CommitteeMember): number {
-  const role = extractRole(member).split("\n")[0].toLowerCase() || "";
+  const role = extractRole(member).split(" · ")[0].toLowerCase() || "";
   const roleMap: Record<string, number> = {
     "president": 0,
     "vice president": 1,
