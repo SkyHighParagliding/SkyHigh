@@ -49,7 +49,7 @@ function SafetyOfficerCard({ officer, displayName }: { officer: SafetyOfficer; d
           />
         )}
         <h3 className="font-bold text-lg text-navy">{displayName}</h3>
-        <p className="text-sm text-sky font-medium mb-2">{officer.safetyOfficerType === 'SSO' ? 'Senior Safety Officer' : 'Safety Officer'}</p>
+        <p className="text-sm text-sky font-medium mb-2">{officer.safetyOfficerType === 'SSO' ? 'SSO' : 'SO'}</p>
         
         <div className="mt-4 pt-4 border-t border-border-faint min-h-[60px] flex flex-col justify-center">
           {!revealed ? (

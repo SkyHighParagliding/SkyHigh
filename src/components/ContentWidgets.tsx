@@ -200,10 +200,10 @@ function extractRole(member: CommitteeMember): string {
     displayRole = "Committee";
   }
 
-  // Append SO/SSO below the position/committee label
+  // Append SO/SSO inline after the position/committee label
   if (member.safetyOfficerType) {
-    const soLabel = member.safetyOfficerType === "SSO" ? "Senior Safety Officer" : "Safety Officer";
-    displayRole += "\n" + soLabel;
+    const soLabel = member.safetyOfficerType === "SSO" ? "SSO" : "SO";
+    displayRole += " · " + soLabel;
   }
 
   return displayRole;
@@ -245,7 +245,7 @@ function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember;
           />
         )}
         <h3 className="font-bold text-lg text-navy">{displayName}</h3>
-        <p className="text-sm text-sky font-medium whitespace-pre-line">{extractRole(member)}</p>
+        <p className="text-sm text-sky font-medium">{extractRole(member)}</p>
         {member.organisation && (
           <p className="text-sm text-sky font-medium mb-2">{member.organisation}</p>
         )}
