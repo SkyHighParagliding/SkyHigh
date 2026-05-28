@@ -94,7 +94,6 @@ export function PhotoUploadDialog({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="user"
                 onChange={handleFileSelect}
                 disabled={isLoading}
                 className="hidden"
