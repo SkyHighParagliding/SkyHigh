@@ -9,7 +9,7 @@ export function WonderfulHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const { settings, lightLogos, darkLogos } = useSettings();
-  const { user, isSoSession } = useAuth();
+  const { isSoSession } = useAuth();
   const location = useLocation();
   const clubName = settings.clubName || "SkyHigh";
 
@@ -185,16 +185,6 @@ export function WonderfulHeader() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Online Check-in
-              </Link>
-            )}
-            {user && !isSoSession && (
-              <Link
-                to="/admin"
-                className="block px-3 py-2 rounded-lg text-[15px] font-medium transition-colors"
-                style={{ color: textColor }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Admin
               </Link>
             )}
           </div>
