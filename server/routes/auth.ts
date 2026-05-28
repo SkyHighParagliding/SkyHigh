@@ -171,8 +171,8 @@ router.post("/login", asyncHandler(async (req, res) => {
   }
 
   await execute(
-    `INSERT INTO "admin_sessions" (token, "userId", "createdAt", "soSiteId") VALUES ($1, $2, $3, $4)`,
-    [token, user.id, new Date().toISOString(), boundSiteId]
+    `INSERT INTO "admin_sessions" (token, "userId", "soSiteId") VALUES ($1, $2, $3)`,
+    [token, user.id, boundSiteId]
   );
 
   log.info(`User logged in: email_hash:${Buffer.from(email).toString('base64').substring(0, 10)}${boundSiteId ? ` (SO session for site: ${boundSiteId})` : ''}`);
@@ -610,50 +610,55 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
 
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-  let tokenInvalid = false;
-  await transaction(async (client) => {
-    const now = new Date().toISOString();
-    const claimedResult = await client.query(
-      `UPDATE password_reset_tokens SET "usedAt" = $1 WHERE token = $2 AND "usedAt" IS NULL AND "expiresAt" > $3 RETURNING "contactId", "accountType"`,
-      [now, token, now]
-    );
+  // Sentinel error to signal an invalid/expired token without a try/catch at the route level.
+  // Throwing inside transaction() triggers ROLLBACK (cleaner than committing a no-op).
+  class TokenInvalidError extends Error {}
 
-    if ((claimedResult.rowCount ?? 0) === 0) {
-      tokenInvalid = true;
-      return; // transaction fn returns; transaction() will COMMIT the no-op then we check the flag below
+  try {
+    await transaction(async (client) => {
+      const now = new Date().toISOString();
+      const claimedResult = await client.query(
+        `UPDATE password_reset_tokens SET "usedAt" = $1 WHERE token = $2 AND "usedAt" IS NULL AND "expiresAt" > $3 RETURNING "contactId", "accountType"`,
+        [now, token, now]
+      );
+
+      if ((claimedResult.rowCount ?? 0) === 0) {
+        throw new TokenInvalidError();
+      }
+
+      const record = claimedResult.rows[0] as { contactId: string; accountType: string };
+
+      if (!record?.contactId) {
+        throw new Error("Token record missing contact reference");
+      }
+
+      if (record.accountType === "pilot") {
+        await client.query(
+          `UPDATE pilots SET "passwordHash" = $1 WHERE id = $2`,
+          [hashed, record.contactId]
+        );
+        await client.query(
+          `DELETE FROM pilot_sessions WHERE "pilotId" = $1`,
+          [record.contactId]
+        );
+        log.info(`Password reset completed for pilot: ${record.contactId}`);
+      } else {
+        await client.query(
+          `UPDATE contacts SET password = $1 WHERE id = $2`,
+          [hashed, record.contactId]
+        );
+        await client.query(
+          `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
+          [record.contactId]
+        );
+        log.info(`Password reset completed for contact: ${record.contactId}`);
+      }
+    });
+  } catch (err) {
+    if (err instanceof TokenInvalidError) {
+      return res.status(400).json({ error: "This reset link is invalid, already used, or expired" });
     }
-
-    const record = claimedResult.rows[0] as { contactId: string; accountType: string };
-
-    if (!record?.contactId) {
-      throw new Error("Token record missing contact reference");
-    }
-
-    if (record.accountType === "pilot") {
-      await client.query(
-        `UPDATE pilots SET "passwordHash" = $1 WHERE id = $2`,
-        [hashed, record.contactId]
-      );
-      await client.query(
-        `DELETE FROM pilot_sessions WHERE "pilotId" = $1`,
-        [record.contactId]
-      );
-      log.info(`Password reset completed for pilot: ${record.contactId}`);
-    } else {
-      await client.query(
-        `UPDATE contacts SET password = $1 WHERE id = $2`,
-        [hashed, record.contactId]
-      );
-      await client.query(
-        `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
-        [record.contactId]
-      );
-      log.info(`Password reset completed for contact: ${record.contactId}`);
-    }
-  });
-
-  if (tokenInvalid) {
-    return res.status(400).json({ error: "This reset link is invalid, already used, or expired" });
+    throw err;
   }
 
   res.json({ success: true });

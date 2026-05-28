@@ -117,6 +117,7 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   await transaction(async (client) => {
     await client.query("DELETE FROM password_reset_tokens WHERE \"contactId\" = $1 AND \"accountType\" = 'pilot'", [pilotId]);
     await client.query("DELETE FROM pilot_sessions WHERE \"pilotId\" = $1", [pilotId]);
+    await client.query("DELETE FROM retrievals WHERE \"pilotId\" = $1", [pilotId]);
     await client.query("DELETE FROM breadcrumbs WHERE \"flightId\" IN (SELECT id FROM flights WHERE \"pilotId\" = $1)", [pilotId]);
     await client.query("DELETE FROM flights WHERE \"pilotId\" = $1", [pilotId]);
     await client.query("DELETE FROM pilots WHERE id = $1", [pilotId]);

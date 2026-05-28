@@ -51,7 +51,15 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: "Session expired" });
   }
 
-  (req as any).user = { id: session.id, name: session.name, email: session.email };
+  (req as any).user = {
+    id: session.id,
+    name: session.name,
+    email: session.email,
+    isAdmin: !!session.isAdmin,
+    isSafetyCommittee: !!session.isSafetyCommittee,
+    soAuthorised: !!session.soAuthorised,
+    soSiteId: session.soSiteId || null,
+  };
   next();
 }
 

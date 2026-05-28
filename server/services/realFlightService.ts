@@ -212,6 +212,7 @@ export class RealFlightService implements FlightService {
     if (!verifyFlightOwnership(flight, pilot, sessionToken)) return { ok: false, error: "Not authorized for this flight", status: 403 };
 
     await transaction(async (client) => {
+      await client.query(`UPDATE retrievals SET "flightId" = NULL WHERE "flightId" = $1`, [flightId]);
       await client.query(`DELETE FROM breadcrumbs WHERE "flightId" = $1`, [flightId]);
       await client.query("DELETE FROM flights WHERE id = $1", [flightId]);
     });

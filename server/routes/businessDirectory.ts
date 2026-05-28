@@ -2,6 +2,9 @@ import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import createLogger from "../utils/logger.js";
+
+const log = createLogger("business-directory");
 
 const router = Router();
 
@@ -45,11 +48,32 @@ async function isAuthenticated(req: any): Promise<boolean> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
   const token = authHeader.split(" ")[1];
   if (!token) return false;
-  const session = await queryOne<{ userId: string }>(
-    "SELECT \"userId\" FROM admin_sessions WHERE token = $1 AND \"createdAt\" > NOW() - INTERVAL '24 hours'",
+
+  const session = await queryOne<{ userId: string; createdAt: string }>(
+    `SELECT admin_sessions."userId", admin_sessions."createdAt"
+     FROM admin_sessions
+     JOIN contacts ON admin_sessions."userId" = contacts.id
+     WHERE admin_sessions.token = $1 AND contacts."isAdmin" = 1`,
     [token]
   );
-  return !!session;
+  if (!session) return false;
+
+  // Use the same configurable TTL as the auth middleware
+  const ttlRow = await queryOne<{ value: string }>(
+    "SELECT value FROM settings WHERE key = $1",
+    ["cacheAdminSessionTtl"]
+  );
+  const ttlMs = parseInt(ttlRow?.value || "24", 10) * 60 * 60 * 1000;
+  const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+  if (sessionAge > ttlMs) {
+    // Delete the expired session so it doesn't accumulate; fire-and-forget is fine here
+    execute(`DELETE FROM admin_sessions WHERE token = $1`, [token]).catch((e) =>
+      log.error(`Failed to delete expired session in businessDirectory: ${e.message}`)
+    );
+    return false;
+  }
+
+  return true;
 }
 
 router.get("/", asyncHandler(async (req, res) => {

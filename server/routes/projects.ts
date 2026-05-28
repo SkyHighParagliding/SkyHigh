@@ -311,39 +311,51 @@ router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res
   const link = await queryOne<any>("SELECT * FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, req.params.docId]);
   if (!link) return res.status(404).json({ error: "Document not linked to this project" });
 
-  await execute("DELETE FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, req.params.docId]);
-
+  // Determine whether the document record itself should be deleted:
+  // only for uploaded (not externally-linked) docs with no remaining project links.
+  let shouldDeleteDocRecord = false;
+  let docToDelete: any = null;
   if (link.linked === 0) {
-    const otherLinks = await queryOne<any>("SELECT COUNT(*) as c FROM project_documents WHERE \"documentId\" = $1", [req.params.docId]);
+    const otherLinks = await queryOne<any>("SELECT COUNT(*) as c FROM project_documents WHERE \"documentId\" = $1 AND \"projectId\" != $2", [req.params.docId, req.params.id]);
     if (!Number(otherLinks?.c)) {
-      const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [req.params.docId]);
-      if (doc?.driveFileId) {
-        let driveDeleted = false;
-        const appScriptUrl = await getAppScriptUrl();
-        if (appScriptUrl) {
-          try {
-            const delRes = await fetch(`${appScriptUrl}?action=delete&fileId=${encodeURIComponent(doc.driveFileId)}`, { method: "POST" });
-            const delData = await delRes.json() as any;
-            driveDeleted = !!delData.success;
-            if (!driveDeleted) log.error("Apps Script delete returned error:", delData.error);
-          } catch (err: any) {
-            log.error("Apps Script delete failed:", err.message);
-          }
-        } else {
-          const connected = await isDriveConnected();
-          if (connected) {
-            driveDeleted = await deleteFile(doc.driveFileId);
-          } else {
-            driveDeleted = true;
-          }
-        }
-        if (!driveDeleted) {
-          log.warn(`Drive file ${doc.driveFileId} may not have been deleted — removing local record anyway`);
-        }
-      }
-      await execute("DELETE FROM documents WHERE id = $1", [req.params.docId]);
+      docToDelete = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [req.params.docId]);
+      shouldDeleteDocRecord = true;
     }
   }
+
+  // Delete from Drive before touching the DB (external call outside transaction).
+  if (shouldDeleteDocRecord && docToDelete?.driveFileId) {
+    let driveDeleted = false;
+    const appScriptUrl = await getAppScriptUrl();
+    if (appScriptUrl) {
+      try {
+        const delRes = await fetch(`${appScriptUrl}?action=delete&fileId=${encodeURIComponent(docToDelete.driveFileId)}`, { method: "POST" });
+        const delData = await delRes.json() as any;
+        driveDeleted = !!delData.success;
+        if (!driveDeleted) log.error("Apps Script delete returned error:", delData.error);
+      } catch (err: any) {
+        log.error("Apps Script delete failed:", err.message);
+      }
+    } else {
+      const connected = await isDriveConnected();
+      if (connected) {
+        driveDeleted = await deleteFile(docToDelete.driveFileId);
+      } else {
+        driveDeleted = true;
+      }
+    }
+    if (!driveDeleted) {
+      log.warn(`Drive file ${docToDelete.driveFileId} may not have been deleted — removing local record anyway`);
+    }
+  }
+
+  // Atomically remove the project_documents link and, if applicable, the documents record.
+  await transaction(async (client) => {
+    await client.query("DELETE FROM project_documents WHERE \"projectId\" = $1 AND \"documentId\" = $2", [req.params.id, req.params.docId]);
+    if (shouldDeleteDocRecord) {
+      await client.query("DELETE FROM documents WHERE id = $1", [req.params.docId]);
+    }
+  });
 
   res.json({ success: true });
 }));
