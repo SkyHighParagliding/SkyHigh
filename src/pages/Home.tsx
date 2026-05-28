@@ -8,7 +8,7 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { PublicSearchBox } from "@/components/PublicSearchBox";
 import { PhotoSlider } from "@/components/PhotoSlider";
 import { YouTubeCarousel } from "@/components/YouTubeCarousel";
-import { MarkdownWithWidgets, SafetyOfficerWidget } from "@/components/ContentWidgets";
+import { MarkdownWithWidgets, SafetyOfficerWidget, FlyingSitesWidget } from "@/components/ContentWidgets";
 import { useUpcomingEvents, useSponsors, useSite, useHomeSites, useClosureBanners } from "@/hooks/api";
 
 export function Home() {
@@ -149,7 +149,12 @@ export function Home() {
       icon: <MapPin className="h-8 w-8 text-sky" />,
       iconBg: 'bg-sky/10',
       title: settings.homeCardSitesTitle || 'Flying Sites',
-      desc: settings.homeBox1Desc || "Detailed information on all our coastal and inland flying sites, including weather requirements and hazards.",
+      desc: (
+        <>
+          <span className="block mb-1">{settings.homeBox1Desc || "Detailed information on all our coastal and inland flying sites, including weather requirements and hazards."}</span>
+          <FlyingSitesWidget />
+        </>
+      ),
       link: settings.homeCardSitesLink || '/sites',
       linkText: settings.homeCardSitesLinkText || 'View Sites',
       linkColor: 'text-sky'
