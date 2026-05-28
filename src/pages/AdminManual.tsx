@@ -594,11 +594,80 @@ export function AdminManual() {
           </div>
         </div>
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-navy mb-4">Administrator User Manual</h1>
           <p className="text-lg text-foreground-secondary max-w-3xl mx-auto">
             Quick reference for managing the {clubName} website. Each section links directly to the relevant admin page.
           </p>
+        </div>
+
+        {/* Index */}
+        <div className="mb-12 bg-card border border-border-subtle rounded-xl p-6 shadow-sm">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-foreground-faint mb-4">Contents</h2>
+          {[
+            {
+              label: "Content Management",
+              entries: [
+                ["Manage Sites Page", "manage-sites-page"],
+                ["Site Editor", "site-editor"],
+                ["Home Page Management", "home-page-management"],
+                ["Dynamic Pages", "dynamic-pages"],
+                ["News & Events", "news-&-events"],
+                ["Safety & Rules", "safety-&-rules"],
+                ["Online Check-ins", "online-check-ins"],
+                ["Business Directory", "business-directory"],
+                ["Competitions", "competitions"],
+                ["Join Page Settings", "join-page-settings"],
+                ["Image Processing", "image-processing"],
+              ],
+            },
+            {
+              label: "Dashboard Settings",
+              entries: [
+                ["Admin Search", "admin-search"],
+                ["Site Features", "site-features"],
+                ["XC Maps & Flight Tracker", "xc-maps-&-flight-tracker"],
+                ["Pilot Retrieval", "pilot-retrieval-(outlanding-pickup)"],
+                ["Weather Management", "weather-management"],
+                ["AI Model Configuration", "ai-model-configuration"],
+                ["Public Smart Assistant", "public-smart-assistant"],
+                ["Branding & Templates", "branding-&-templates"],
+                ["Page View Analytics", "page-view-analytics"],
+                ["Admin Authentication", "admin-authentication"],
+              ],
+            },
+            {
+              label: "Management",
+              entries: [
+                ["Document Management", "document-management"],
+                ["Project Management", "project-management"],
+                ["Admin Contacts", "admin-contacts"],
+                ["Public Contacts", "public-contacts"],
+                ["Sponsors", "sponsors"],
+                ["Scheduled Tasks", "scheduled-tasks"],
+                ["API Settings", "api-settings"],
+              ],
+            },
+            {
+              label: "Reference",
+              entries: [
+                ["Troubleshooting", "troubleshooting"],
+                ["Markdown Formatting Guide", "markdown-formatting-guide"],
+                ["Build Blueprint", "build-blueprint"],
+                ["Product Requirements", "product-spec"],
+              ],
+            },
+          ].map((group) => (
+            <div key={group.label} className="mb-3 last:mb-0">
+              <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wide">{group.label} — </span>
+              {group.entries.map(([label, id], i) => (
+                <span key={id}>
+                  <a href={`#${id}`} className="text-sm text-sky hover:text-sky-light hover:underline">{label}</a>
+                  {i < group.entries.length - 1 && <span className="text-foreground-faint mx-1">·</span>}
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
 
         <div className="space-y-12">
