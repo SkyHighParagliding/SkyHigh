@@ -1,23 +1,23 @@
-# RESUME_HERE — Last updated: 2026-05-28
+# RESUME_HERE — Last updated: 2026-05-28 23:55
 
 ## Project: SkyHigh
 ## Status: **LIVE** ✅ on Railway — fully deployed, all changes pushed
 
 ## Where I left off
 
-Session 30 completed Phase 5 — **Sites system zero-error cleanup**. All 15 issues (13 tsc + 1 runtime stale-closure + 1 XSS in print popup) fixed across 6 files. The 11-file Sites system now has 0 tsc errors. Session ended clean, no dev server running.
+Session 31: Fixed a production-breaking wind map bug. The canvas buffer was set to `width * devicePixelRatio` but all drawing code used CSS pixel coordinates — on Windows with display scaling (DPR > 1, e.g. 125–200% scale) this caused only the left `1/dpr` fraction of the canvas to render, with the rest appearing as a black strip. Root cause traced to a Cycle 5 code review refactor (commit 8e18ab4, fix P-008) that correctly extracted canvas sizing into a separate useEffect but silently dropped the `ctx.scale(dpr, dpr)` call that was tightly coupled to the DPR buffer scaling. Fixed by removing DPR multiplication from canvas buffer dimensions entirely (no retina quality needed for wind map). Verified locally, pushed, Railway deploying.
 
 ## Last completed task
-- **[PHASE-5] Sites system: zero-error cleanup** — commit `4d1c151`
-  - 6 files changed, 95 insertions(+), 44 deletions(-)
-  - 15 issues → 0 (100% reduction)
-  - 11 files verified clean: AdminSites, AdminSiteEdit, AdminSiteOptions, SiteDetail, SiteFieldView, Sites, SitesWindMap, useSiteForm, useSites, useHomeSites, recentSites
+- **fix(wind-map): canvas buffer DPR mismatch** — commit `31c16d1`
+  - 1 file changed: `src/components/windmap/WindCanvas.tsx`
+  - Removed `* dpr` from canvas.width/height in two places (sizeKey effect + render loop inline check)
+  - Root cause: P-008 refactor (8e18ab4) dropped `ctx.scale(dpr, dpr)` while keeping DPR buffer scaling
 
 ## Currently in progress
 - None
 
 ## Next task to start
-- Continue Phase 5 on another code area (audit remaining 94 tsc errors across codebase)
+- Continue Phase 5 tsc audit on another code area (94 pre-existing errors outside Sites system)
 - Or feature backlog: TASK-031 (XC Flight History Export)
 
 ## Open questions / blockers
@@ -25,4 +25,4 @@ Session 30 completed Phase 5 — **Sites system zero-error cleanup**. All 15 iss
 
 ## Quick context refresher
 
-Phase 5 uses a new methodology: Review → count → fix → re-review → measure reduction → loop until <5% of original baseline. Phase 5.1 (Sites system) completed with 100% reduction. 94 pre-existing tsc errors remain outside the Sites system (~80% type-definition drift, ~16% discriminated union complexity, ~4% catch-block `unknown` safety). Next area of focus TBD.
+Production wind map was broken (black area on right side). Fixed and deployed this session. The root cause was a paired invariant (`canvas.width = w*dpr` must always be accompanied by `ctx.scale(dpr, dpr)`) being broken by a refactor that moved canvas sizing without preserving the coordinate normalisation. The codebase is otherwise in the same state as end of Session 30 — Sites system clean, 94 tsc errors remain in other areas.
