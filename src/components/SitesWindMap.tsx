@@ -85,7 +85,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     const handleResize = () => {
       if (isFullscreen) {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => setCanvasSizeKey(k => k + 1), 100);
+        resizeTimer = setTimeout(() => {
+          requestAnimationFrame(() => setCanvasSizeKey(k => k + 1));
+        }, 150);
       }
     };
 
@@ -106,7 +108,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       window.addEventListener('keydown', handleKey);
       window.addEventListener('resize', handleResize);
       window.addEventListener('popstate', handlePopState);
-      resizeTimer = setTimeout(() => setCanvasSizeKey(k => k + 1), 50);
+      resizeTimer = setTimeout(() => {
+        requestAnimationFrame(() => setCanvasSizeKey(k => k + 1));
+      }, 150);
       return () => {
         document.body.style.overflow = '';
         window.removeEventListener('keydown', handleKey);
@@ -116,7 +120,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       };
     } else {
       document.body.style.overflow = '';
-      resizeTimer = setTimeout(() => setCanvasSizeKey(k => k + 1), 50);
+      resizeTimer = setTimeout(() => {
+        requestAnimationFrame(() => setCanvasSizeKey(k => k + 1));
+      }, 150);
       return () => clearTimeout(resizeTimer);
     }
   }, [isFullscreen, exitFullscreen]);
