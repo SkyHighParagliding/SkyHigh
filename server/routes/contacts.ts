@@ -569,19 +569,21 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 
   const needsPassword = isAdmin || (isSafetyCommittee && soAuthorised);
 
-  let passwordUpdate = "";
   const params: any[] = [
     organisation || "", name, surname || "", phone || "", email || "", notes || "",
     isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
     isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
     displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
     showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0,
+    fullNameDisplay !== false ? 1 : 0,  // $20
+    photoAuthorised ? 1 : 0,            // $21
   ];
 
+  let passwordUpdate = "";
   if (password && needsPassword) {
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    passwordUpdate = ", password = $21";
     params.push(hashed);
+    passwordUpdate = `, password = $${params.length}`;
   } else if (needsPassword && !password) {
     const current = await queryOne<{ password: string }>(
       `SELECT password FROM contacts WHERE id = $1`,
@@ -590,8 +592,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
     if (!current?.password) {
       const tempPassword = crypto.randomUUID();
       const hashed = await bcrypt.hash(tempPassword, SALT_ROUNDS);
-      passwordUpdate = ", password = $21";
       params.push(hashed);
+      passwordUpdate = `, password = $${params.length}`;
     }
   } else if (!isAdmin && !(isSafetyCommittee && soAuthorised)) {
     passwordUpdate = ", password = ''";
@@ -605,7 +607,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
             "isAdmin" = $7, "isCommittee" = $8, "isContractor" = $9, "isParksVic" = $10,
             "isSafetyCommittee" = $11, "isSocialMedia" = $12, "soAuthorised" = $13,
             "displayCommittee" = $14, "displaySafety" = $15, "showTelegram" = $16,
-            "showPhone" = $17, "showEmail" = $18, "showAdminEmail" = $19${passwordUpdate},
+            "showPhone" = $17, "showEmail" = $18, "showAdminEmail" = $19,
+            "fullNameDisplay" = $20, "photoAuthorised" = $21${passwordUpdate},
             "updatedAt" = NOW()
       WHERE id = $${params.length}`,
     params
