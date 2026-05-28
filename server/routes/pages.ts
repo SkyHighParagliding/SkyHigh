@@ -82,9 +82,9 @@ router.delete("/:slug", requireAuth, asyncHandler(async (req, res) => {
     deleted = true;
   });
   if (!deleted) return res.status(404).json({ error: "Page not found" });
+  // Delete backing files via storage helper — handles both local and R2 paths.
   for (const att of attachments) {
-    const filePath = path.join(attachmentsDir, att.filename);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    await deleteFile(att.filename);
   }
   invalidateSearchCaches();
   res.json({ success: true });

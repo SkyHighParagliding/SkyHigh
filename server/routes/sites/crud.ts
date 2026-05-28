@@ -116,19 +116,20 @@ router.get("/:id", asyncHandler(async (req, res) => {
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
-  const { id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite } = req.body;
+  const { id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, weatherGaugeUrl, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, heroImages, displayOnMap, displayInList } = req.body;
   try {
-      // $1...$47 matching column order:
+      // $1...$51 matching column order:
       // id, name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon,
       // description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId,
       // liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight,
       // launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive,
       // emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight,
       // overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion,
-      // siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax
+      // siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax,
+      // weatherGaugeUrl, heroImages, displayOnMap, displayInList
       await execute(`
-        INSERT INTO sites (id, name, type, "pgRating", "hgRating", "windDir", "windSpeed", status, "hazardLevel", lat, lon, description, launch, landing, hazards, rules, image, "useLiveWeather", "liveStationId", "liveStationIdAlt", "siteguideUrl", "siteContact", "siteContactPhone", "navigateTo", "launchHeight", "launchHeightHigh", "launchHeight2", "landingHeight2", "hoodedPloversLink", "hoodedPloversActive", "emergencyMarker", "what3words", "weatherStationLink", "isSkyHighSite", "crossLeft", "crossRight", "overrideHideClosed", "essentialInfoImages", "essentialInfoText", "unassignedText", "siteguideVersion", "siteguideScrapedAt", "isTidal", "tideStationId", "skipBulkImport", "isXCSite", "closurePillsMax")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47)
+        INSERT INTO sites (id, name, type, "pgRating", "hgRating", "windDir", "windSpeed", status, "hazardLevel", lat, lon, description, launch, landing, hazards, rules, image, "useLiveWeather", "liveStationId", "liveStationIdAlt", "siteguideUrl", "siteContact", "siteContactPhone", "navigateTo", "launchHeight", "launchHeightHigh", "launchHeight2", "landingHeight2", "hoodedPloversLink", "hoodedPloversActive", "emergencyMarker", "what3words", "weatherStationLink", "isSkyHighSite", "crossLeft", "crossRight", "overrideHideClosed", "essentialInfoImages", "essentialInfoText", "unassignedText", "siteguideVersion", "siteguideScrapedAt", "isTidal", "tideStationId", "skipBulkImport", "isXCSite", "closurePillsMax", "weatherGaugeUrl", "heroImages", "displayOnMap", "displayInList")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51)
       `, [
           id,                                                          // $1  id
           name,                                                        // $2  name
@@ -177,6 +178,10 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
           skipBulkImport || 'false',                                   // $45 skipBulkImport
           isXCSite || 'false',                                         // $46 isXCSite
           7,                                                           // $47 closurePillsMax
+          weatherGaugeUrl || null,                                     // $48 weatherGaugeUrl
+          heroImages ? (typeof heroImages === 'string' ? heroImages : JSON.stringify(heroImages)) : '[]', // $49 heroImages
+          displayOnMap != null ? Number(displayOnMap) : 1,            // $50 displayOnMap
+          displayInList != null ? Number(displayInList) : 1,          // $51 displayInList
       ]);
       invalidateSearchCaches();
       invalidateSitesCache();
@@ -187,7 +192,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax } = req.body;
+  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, weatherGaugeUrl, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax, heroImages, displayOnMap, displayInList } = req.body;
   try {
       // Parameter order for UPDATE:
       // $1=name, $2=type, $3=pgRating, $4=hgRating, $5=windDir, $6=windSpeed,
@@ -200,7 +205,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
       // $34=crossLeft, $35=crossRight, $36=overrideHideClosed, $37=essentialInfoImages,
       // $38=essentialInfoText, $39=unassignedText, $40=siteguideVersion, $41=siteguideScrapedAt,
       // $42=isTidal, $43=tideStationId, $44=skipBulkImport, $45=isXCSite,
-      // $46=closurePillsMax, $47=id (WHERE clause)
+      // $46=closurePillsMax, $47=weatherGaugeUrl, $48=heroImages,
+      // $49=displayOnMap, $50=displayInList, $51=id (WHERE clause)
       const updateResult = await execute(`
         UPDATE sites SET
           name = $1, type = $2,
@@ -232,8 +238,12 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           "siteguideScrapedAt" = CASE WHEN $41::text != '' THEN $41 ELSE "siteguideScrapedAt" END,
           "isTidal" = $42, "tideStationId" = $43,
           "skipBulkImport" = $44, "isXCSite" = $45,
-          "closurePillsMax" = $46
-        WHERE id = $47
+          "closurePillsMax" = $46,
+          "weatherGaugeUrl" = CASE WHEN $47::text != '' THEN $47 ELSE "weatherGaugeUrl" END,
+          "heroImages" = CASE WHEN $48::text != '' AND $48::text != '[]' THEN $48 ELSE "heroImages" END,
+          "displayOnMap" = $49,
+          "displayInList" = $50
+        WHERE id = $51
       `, [
           name,                                                        // $1  name
           type,                                                        // $2  type
@@ -281,7 +291,11 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           skipBulkImport || 'false',                                   // $44 skipBulkImport
           isXCSite || 'false',                                         // $45 isXCSite
           (closurePillsMax != null && !isNaN(Number(closurePillsMax))) ? Math.min(10, Math.max(1, Number(closurePillsMax))) : 7, // $46 closurePillsMax
-          req.params.id,                                               // $47 id (WHERE)
+          weatherGaugeUrl || null,                                     // $47 weatherGaugeUrl
+          heroImages ? (typeof heroImages === 'string' ? heroImages : JSON.stringify(heroImages)) : null, // $48 heroImages
+          displayOnMap != null ? Number(displayOnMap) : 1,            // $49 displayOnMap
+          displayInList != null ? Number(displayInList) : 1,          // $50 displayInList
+          req.params.id,                                               // $51 id (WHERE)
       ]);
       if (updateResult.rowCount === 0) {
         return res.status(404).json({ error: "Site not found" });

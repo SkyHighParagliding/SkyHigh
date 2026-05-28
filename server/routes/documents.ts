@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
@@ -379,14 +379,16 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
     }
   }
 
-  await execute(
-    `DELETE FROM project_documents WHERE "documentId" = $1`,
-    [req.params.id]
-  );
-  await execute(
-    `DELETE FROM documents WHERE id = $1`,
-    [req.params.id]
-  );
+  await transaction(async (client) => {
+    await client.query(
+      `DELETE FROM project_documents WHERE "documentId" = $1`,
+      [req.params.id]
+    );
+    await client.query(
+      `DELETE FROM documents WHERE id = $1`,
+      [req.params.id]
+    );
+  });
   res.json({ success: true });
 }));
 

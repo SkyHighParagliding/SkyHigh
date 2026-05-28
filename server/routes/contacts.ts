@@ -464,7 +464,7 @@ router.get("/tidyhq-search", requireAuth, asyncHandler(async (req, res) => {
 
 router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
   const contact = await queryOne<ContactRow>(
-    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+    `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
             "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
             "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
@@ -478,7 +478,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
-  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, photoAuthorised, showTelegram, showPhone, showEmail, showAdminEmail, password } = req.body;
+  let { organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, photoAuthorised, showTelegram, showPhone, showEmail, showAdminEmail, password } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
   if (isCommittee) isAdmin = true;
@@ -515,13 +515,14 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   }
 
   await execute(
-    `INSERT INTO contacts (id, organisation, name, surname, phone, email, notes, "isAdmin",
+    `INSERT INTO contacts (id, organisation, name, surname, phone, email, notes, position, "isAdmin",
                            "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee",
                            "isSocialMedia", "soAuthorised", "displayCommittee", "displaySafety",
                            "showTelegram", "showPhone", "showEmail", "showAdminEmail",
                            "fullNameDisplay", "photoAuthorised", password)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
     [id, organisation || "", name, surname || "", phone || "", email || "", notes || "",
+      position || null,
       isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
       isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
       displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
@@ -530,7 +531,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   );
 
   const contact = await queryOne<ContactRow>(
-    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+    `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
             "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
             "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
@@ -543,7 +544,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoAuthorised, safetyOfficerType, password } = req.body;
+  let { organisation, name, surname, phone, email, notes, position, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoAuthorised, safetyOfficerType, password } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
   if (isCommittee) isAdmin = true;
@@ -581,6 +582,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
     fullNameDisplay !== false ? 1 : 0,  // $20
     photoAuthorised ? 1 : 0,            // $21
     safetyOfficerType || null,          // $22
+    position || null,                   // $23
   ];
 
   let passwordUpdate = "";
@@ -612,7 +614,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
             "isSafetyCommittee" = $11, "isSocialMedia" = $12, "soAuthorised" = $13,
             "displayCommittee" = $14, "displaySafety" = $15, "showTelegram" = $16,
             "showPhone" = $17, "showEmail" = $18, "showAdminEmail" = $19,
-            "fullNameDisplay" = $20, "photoAuthorised" = $21, "safetyOfficerType" = $22${passwordUpdate},
+            "fullNameDisplay" = $20, "photoAuthorised" = $21, "safetyOfficerType" = $22,
+            position = $23${passwordUpdate},
             "updatedAt" = NOW()
       WHERE id = $${params.length}`,
     params
@@ -620,7 +623,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 
   if (result.rowCount === 0) return res.status(404).json({ error: "Contact not found" });
   const contact = await queryOne<ContactRow>(
-    `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
+    `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
             "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
             "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
@@ -709,16 +712,18 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  if (contact.isAdmin) {
-    await execute(`DELETE FROM admin_sessions WHERE "userId" = $1`, [req.params.id]);
-  }
-
-  if (force) {
-    await execute(`DELETE FROM project_contacts WHERE "contactId" = $1`, [req.params.id]);
-  }
-
-  const result = await execute(`DELETE FROM contacts WHERE id = $1`, [req.params.id]);
-  if (result.rowCount === 0) return res.status(404).json({ error: "Contact not found" });
+  let rowCount = 0;
+  await transaction(async (client) => {
+    if (contact.isAdmin) {
+      await client.query(`DELETE FROM admin_sessions WHERE "userId" = $1`, [req.params.id]);
+    }
+    if (force) {
+      await client.query(`DELETE FROM project_contacts WHERE "contactId" = $1`, [req.params.id]);
+    }
+    const result = await client.query(`DELETE FROM contacts WHERE id = $1`, [req.params.id]);
+    rowCount = result.rowCount ?? 0;
+  });
+  if (rowCount === 0) return res.status(404).json({ error: "Contact not found" });
   res.json({ success: true });
 }));
 

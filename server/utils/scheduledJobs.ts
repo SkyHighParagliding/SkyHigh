@@ -3,6 +3,7 @@ import createLogger from "./logger.js";
 import { runVersionCheck } from "./siteguideVersionCheck.js";
 import { sendEmail } from "./email.js";
 import { query, queryOne, execute } from "../pg.js";
+import { cleanExpiredSessions } from "../middleware/auth.js";
 
 const log = createLogger("scheduled-jobs");
 
@@ -264,6 +265,19 @@ export async function startScheduledJobs() {
   }, {
     timezone: "Australia/Melbourne",
   });
+
+  // Expired admin session cleanup: runs daily at 3:00am Melbourne time.
+  // This sweeps rows that were never explicitly logged out and whose TTL has
+  // elapsed, preventing unbounded table growth.
+  cron.schedule("0 3 * * *", async () => {
+    try {
+      await cleanExpiredSessions();
+      log.info("Expired admin session cleanup completed");
+    } catch (e: any) {
+      log.error(`Expired admin session cleanup failed: ${e.message}`);
+    }
+  }, { timezone: "Australia/Melbourne" });
+  log.info("Admin session cleanup scheduled: 3:00am Melbourne time");
 
   log.info("Scheduled jobs started: hourly cron checks all configurable task times (Melbourne time)");
 }
