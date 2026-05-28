@@ -215,6 +215,7 @@ export const SITES_COLUMNS = [
   "liveStationIdAlt", "siteguideVersion", "siteguideScrapedAt", "unassignedText",
   "temporarilyClosed", "preClosureOverrideHideClosed", "isTidal", "tideStationId",
   "contentHash", "skipBulkImport", "isXCSite", "closurePillsMax",
+  "heroImages", "displayOnMap", "displayInList",
 ] as const;
 
 export const SITES_UPDATE_COLS = SITES_COLUMNS.filter(c => c !== "id");

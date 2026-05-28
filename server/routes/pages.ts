@@ -3,7 +3,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { invalidateSearchCaches } from "./search.js";
@@ -73,14 +73,19 @@ router.put("/:slug", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:slug", requireAuth, asyncHandler(async (req, res) => {
-  const result = await execute(`DELETE FROM pages WHERE slug = $1`, [req.params.slug]);
-  if (result.rowCount === 0) return res.status(404).json({ error: "Page not found" });
   const attachments = await query<PageAttachmentRow>(`SELECT * FROM page_attachments WHERE "pageSlug" = $1`, [req.params.slug]);
+  let deleted = false;
+  await transaction(async (client) => {
+    const result = await client.query(`DELETE FROM pages WHERE slug = $1`, [req.params.slug]);
+    if (result.rowCount === 0) return;
+    await client.query(`DELETE FROM page_attachments WHERE "pageSlug" = $1`, [req.params.slug]);
+    deleted = true;
+  });
+  if (!deleted) return res.status(404).json({ error: "Page not found" });
   for (const att of attachments) {
     const filePath = path.join(attachmentsDir, att.filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
-  await execute(`DELETE FROM page_attachments WHERE "pageSlug" = $1`, [req.params.slug]);
   invalidateSearchCaches();
   res.json({ success: true });
 }));

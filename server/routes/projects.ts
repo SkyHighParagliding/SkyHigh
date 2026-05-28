@@ -138,9 +138,11 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   const project = await queryOne<any>("SELECT * FROM projects WHERE id = $1", [req.params.id]);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  await execute("DELETE FROM project_contacts WHERE \"projectId\" = $1", [req.params.id]);
-  await execute("DELETE FROM project_documents WHERE \"projectId\" = $1", [req.params.id]);
-  await execute("DELETE FROM projects WHERE id = $1", [req.params.id]);
+  await transaction(async (client) => {
+    await client.query("DELETE FROM project_contacts WHERE \"projectId\" = $1", [req.params.id]);
+    await client.query("DELETE FROM project_documents WHERE \"projectId\" = $1", [req.params.id]);
+    await client.query("DELETE FROM projects WHERE id = $1", [req.params.id]);
+  });
   res.json({ success: true });
 }));
 
