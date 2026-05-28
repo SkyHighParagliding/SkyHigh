@@ -5,15 +5,18 @@ export interface ClosureStatus {
   upcomingDates: string[];
 }
 
+const toMelbourneDate = (d: Date): string =>
+  d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+
 export function getClosureStatus(site: Site, today: Date = new Date()): ClosureStatus {
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = toMelbourneDate(today);
   const dates = site.upcomingClosureDates ?? [];
 
   const isClosedToday = dates.includes(todayStr);
 
   const sevenDaysFromNow = new Date(today);
   sevenDaysFromNow.setDate(today.getDate() + 7);
-  const sevenDaysStr = sevenDaysFromNow.toISOString().split('T')[0];
+  const sevenDaysStr = toMelbourneDate(sevenDaysFromNow);
 
   const upcoming = dates.filter(d => d > todayStr && d <= sevenDaysStr);
 
@@ -48,5 +51,5 @@ export function getBannerWindowStart(closureDates: string[]): string | null {
   const sorted = [...closureDates].sort();
   const first = new Date(sorted[0] + 'T12:00:00');
   first.setDate(first.getDate() - 7);
-  return first.toISOString().split('T')[0];
+  return toMelbourneDate(first);
 }
