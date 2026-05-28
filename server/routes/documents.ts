@@ -56,14 +56,14 @@ router.get("/categories", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const categories = await Promise.all(CATEGORY_FOLDERS.map(async cat => {
-    const count = await queryOne<{ count: number }>(
+    const count = await queryOne<{ count: string }>(
       `SELECT COUNT(*) as count FROM documents WHERE category = $1`,
       [cat.code]
     );
     return {
       code: cat.code,
       name: cat.name,
-      documentCount: count?.count || 0,
+      documentCount: Number(count?.count) || 0,
     };
   }));
   res.json({ connected, categories });
@@ -484,10 +484,10 @@ router.get("/download/:fileId", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.get("/index/status", requireAuth, asyncHandler(async (_req, res) => {
-  const total = await queryOne<{ count: number }>(
+  const total = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM document_index`
   );
-  const readable = await queryOne<{ count: number }>(
+  const readable = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM document_index WHERE readable = 1`
   );
   const lastIndexed = await queryOne<{ ts: string | null }>(
@@ -499,8 +499,8 @@ router.get("/index/status", requireAuth, asyncHandler(async (_req, res) => {
      ORDER BY name`
   );
   res.json({
-    totalDocuments: total?.count || 0,
-    readableDocuments: readable?.count || 0,
+    totalDocuments: Number(total?.count) || 0,
+    readableDocuments: Number(readable?.count) || 0,
     lastIndexedAt: lastIndexed?.ts || null,
     documents: docs,
   });

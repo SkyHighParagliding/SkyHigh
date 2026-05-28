@@ -157,16 +157,18 @@ async function runPostgresMigrations() {
         try {
           log.info(`Running PostgreSQL migration v${version}: ${description}`);
 
+          await client.query("BEGIN");
           for (const stmt of splitSqlStatements(sql)) {
             await client.query(stmt);
           }
-
           await client.query(
             "INSERT INTO schema_migrations (version, description) VALUES ($1, $2)",
             [version, description]
           );
+          await client.query("COMMIT");
           log.info(`PostgreSQL migration v${version} completed`);
         } catch (err: any) {
+          try { await client.query("ROLLBACK"); } catch { /* ignore rollback failure */ }
           log.error(`PostgreSQL migration v${version} failed: ${err.message}`);
           throw err;
         }

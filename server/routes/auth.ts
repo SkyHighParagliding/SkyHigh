@@ -295,7 +295,7 @@ router.post("/users", requireAuth, asyncHandler(async (req, res) => {
 
 router.delete("/users/:id", requireAuth, asyncHandler(async (req, res) => {
   const adminCount = await queryOne<{ count: number }>(
-    `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+    `SELECT COUNT(*)::int as count FROM contacts WHERE "isAdmin" = 1`
   );
   if ((adminCount?.count ?? 0) <= 1) {
     return res.status(400).json({ error: "Cannot delete the last admin user" });

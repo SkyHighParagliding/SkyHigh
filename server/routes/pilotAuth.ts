@@ -150,7 +150,7 @@ router.post(
       ? await bcrypt.compare(password, pilot.passwordHash) 
       : await bcrypt.compare(password, "$2a$10$NQzLK6bd4dMebI7JWyG8.ebg5WI6lu4GlFQq2Ha/ZkIZb0yxnYRVu");
       
-    if (!valid) {
+    if (!valid || !pilot) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -327,6 +327,10 @@ router.put(
       [session.pilotId]
     );
 
+    if (!pilot) {
+      return res.status(404).json({ error: "Pilot not found" });
+    }
+
     log.info(`Pilot ${session.pilotId} updated satellite tracker settings`);
     res.json({ pilot: { ...pilot, garminMapshare: pilot.garminMapshare || null, spotFeedId: pilot.spotFeedId || null, zoleoImei: pilot.zoleoImei || null } });
   })
@@ -337,10 +341,10 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const pilotsResult = await queryOne<{ count: number }>(
-      `SELECT COUNT(*) as count FROM pilots`
+      `SELECT COUNT(*)::int as count FROM pilots`
     );
     const flightsResult = await queryOne<{ count: number }>(
-      `SELECT COUNT(*) as count FROM flights`
+      `SELECT COUNT(*)::int as count FROM flights`
     );
     const pilots = pilotsResult?.count ?? 0;
     const flights = flightsResult?.count ?? 0;

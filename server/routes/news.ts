@@ -22,10 +22,10 @@ router.get("/", asyncHandler(async (req, res) => {
     `SELECT * FROM news ORDER BY date DESC LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
-  const countResult = await queryOne<{ count: number }>(
+  const countResult = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM news`
   );
-  const total = countResult?.count || 0;
+  const total = Number(countResult?.count ?? 0);
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(data, total, limit, offset));
 }));

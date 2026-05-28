@@ -164,7 +164,7 @@ router.get("/prompt", asyncHandler(async (req, res) => {
 
 router.put("/prompt", requireAuth, asyncHandler(async (req, res) => {
   const { prompt } = req.body;
-  await execute("UPDATE settings SET value = $1 WHERE key = 'aiSystemPrompt'", [prompt]);
+  await execute("INSERT INTO settings (key, value) VALUES ('aiSystemPrompt', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [prompt]);
   res.json({ success: true });
 }));
 

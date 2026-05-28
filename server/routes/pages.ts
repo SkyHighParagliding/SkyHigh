@@ -63,10 +63,11 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 
 router.put("/:slug", requireAuth, asyncHandler(async (req, res) => {
   const { title, content, heroImage } = req.body;
-  await execute(
+  const result = await execute(
     `UPDATE pages SET title = $1, content = $2, "heroImage" = $3, "lastUpdated" = NOW() WHERE slug = $4`,
     [title, content, heroImage || null, req.params.slug]
   );
+  if (result.rowCount === 0) return res.status(404).json({ error: "Page not found" });
   invalidateSearchCaches();
   res.json({ success: true });
 }));

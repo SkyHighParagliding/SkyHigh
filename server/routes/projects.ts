@@ -305,7 +305,7 @@ router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res
 
   if (link.linked === 0) {
     const otherLinks = await queryOne<any>("SELECT COUNT(*) as c FROM project_documents WHERE \"documentId\" = $1", [req.params.docId]);
-    if (!otherLinks?.c) {
+    if (!Number(otherLinks?.c)) {
       const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [req.params.docId]);
       if (doc?.driveFileId) {
         let driveDeleted = false;

@@ -98,10 +98,10 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
-  const countResult = await queryOne<{ count: number }>(
-    "SELECT COUNT(*) as count FROM contacts"
+  const countResult = await queryOne<{ count: string }>(
+    "SELECT COUNT(*)::int AS count FROM contacts"
   );
-  const total = countResult?.count || 0;
+  const total = Number(countResult?.count ?? 0);
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
@@ -126,12 +126,12 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
       LIMIT $4 OFFSET $5`,
     [term, term, term, limit, offset]
   );
-  const countResult = await queryOne<{ count: number }>(
-    `SELECT COUNT(*) as count FROM contacts
+  const countResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::int AS count FROM contacts
       WHERE name ILIKE $1 OR surname ILIKE $2 OR organisation ILIKE $3`,
     [term, term, term]
   );
-  const total = countResult?.count || 0;
+  const total = Number(countResult?.count ?? 0);
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(contacts, total, limit, offset));
 }));
@@ -517,13 +517,15 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
     `INSERT INTO contacts (id, organisation, name, surname, phone, email, notes, "isAdmin",
                            "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee",
                            "isSocialMedia", "soAuthorised", "displayCommittee", "displaySafety",
-                           "showTelegram", "showPhone", "showEmail", "showAdminEmail", password)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+                           "showTelegram", "showPhone", "showEmail", "showAdminEmail",
+                           "fullNameDisplay", password)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
     [id, organisation || "", name, surname || "", phone || "", email || "", notes || "",
       isAdmin ? 1 : 0, isCommittee ? 1 : 0, isContractor ? 1 : 0, isParksVic ? 1 : 0,
       isSafetyCommittee ? 1 : 0, isSocialMedia ? 1 : 0, soAuthorised ? 1 : 0,
       displayCommittee !== false ? 1 : 0, displaySafety !== false ? 1 : 0,
-      showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0, hashedPassword]
+      showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0,
+      fullNameDisplay !== false ? 1 : 0, hashedPassword]
   );
 
   const contact = await queryOne<ContactRow>(
@@ -634,10 +636,10 @@ router.post("/bulk-delete", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "No contact IDs provided" });
   }
 
-  const adminCountResult = await queryOne<{ count: number }>(
-    `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+  const adminCountResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::int AS count FROM contacts WHERE "isAdmin" = 1`
   );
-  const adminCount = adminCountResult?.count || 0;
+  const adminCount = Number(adminCountResult?.count ?? 0);
 
   const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
   const adminIdsToDelete = await query<{ id: string }>(
@@ -684,10 +686,10 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   }
 
   if (contact.isAdmin) {
-    const adminCount = await queryOne<{ count: number }>(
-      `SELECT COUNT(*) as count FROM contacts WHERE "isAdmin" = 1`
+    const adminCount = await queryOne<{ count: string }>(
+      `SELECT COUNT(*)::int AS count FROM contacts WHERE "isAdmin" = 1`
     );
-    if ((adminCount?.count || 0) <= 1) {
+    if (Number(adminCount?.count ?? 0) <= 1) {
       return res.status(400).json({ error: "Cannot delete the last admin contact" });
     }
   }

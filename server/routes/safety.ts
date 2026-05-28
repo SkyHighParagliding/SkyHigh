@@ -47,7 +47,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   await execute(
     `INSERT INTO safety_sections (id, title, content, "sortOrder", "sectionType", enabled, "linkUrl", "linkLabel", "lastUpdated")
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-    [id, title, content || "", sortOrder ?? 99, sectionType || "custom", enabled ?? 1, linkUrl || null, linkLabel || null]
+    [id, title, content || "", sortOrder ?? 99, sectionType || "custom", enabled != null ? (enabled ? 1 : 0) : 1, linkUrl || null, linkLabel || null]
   );
   res.status(201).json({ id, success: true });
 }));
@@ -62,7 +62,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   await execute(
     `UPDATE safety_sections SET title = $1, content = $2, "sortOrder" = $3, "sectionType" = $4, enabled = $5, "linkUrl" = $6, "linkLabel" = $7, "lastUpdated" = NOW()
      WHERE id = $8`,
-    [title, content || "", sortOrder ?? 0, sectionType || "custom", enabled ?? 1, linkUrl || null, linkLabel || null, req.params.id]
+    [title, content || "", sortOrder ?? 0, sectionType || "custom", enabled != null ? (enabled ? 1 : 0) : 1, linkUrl || null, linkLabel || null, req.params.id]
   );
   res.json({ success: true });
 }));

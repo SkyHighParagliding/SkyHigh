@@ -100,7 +100,7 @@ async function isAdminRequest(req: any): Promise<boolean> {
   if (!token) return false;
   const session = await queryOne<AdminSessionRow>(`
     SELECT admin_sessions.token FROM admin_sessions
-    JOIN contacts ON admin_sessions.userId = contacts.id
+    JOIN contacts ON admin_sessions."userId" = contacts.id
     WHERE admin_sessions.token = $1 AND contacts."isAdmin" = 1
   `, [token]);
   return !!session;
