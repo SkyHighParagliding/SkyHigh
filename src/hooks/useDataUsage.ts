@@ -23,6 +23,7 @@ const globalTracker = {
   history: [] as { ts: number; up: number; down: number }[],
   installed: false,
   broadcasting: false,
+  broadcastInterval: undefined as ReturnType<typeof setInterval> | undefined,
 };
 
 function notifyListeners() {
@@ -109,7 +110,7 @@ function startBroadcasting() {
 
   globalTracker.broadcasting = true;
 
-  setInterval(() => {
+  globalTracker.broadcastInterval = setInterval(() => {
     const rate = computeRate(globalTracker.history, 30);
     try {
       window.parent.postMessage({
@@ -122,6 +123,14 @@ function startBroadcasting() {
       }, '*');
     } catch {}
   }, 2000);
+}
+
+export function stopBroadcasting() {
+  if (globalTracker.broadcastInterval) {
+    clearInterval(globalTracker.broadcastInterval);
+    globalTracker.broadcastInterval = undefined;
+  }
+  globalTracker.broadcasting = false;
 }
 
 export function formatBytes(bytes: number): string {

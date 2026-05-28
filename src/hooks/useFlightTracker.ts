@@ -154,6 +154,7 @@ export function useFlightTracker() {
   const currentPositionRef = useRef<{ lat: number; lon: number; altitude: number; speed: number; heading: number; verticalSpeed?: number } | null>(null);
 
   const addBreadcrumbRef = useRef<(pos: GeolocationPosition) => void>(() => {});
+  const stopTrackingRef = useRef<() => Promise<void>>(async () => {});
   const pendingCrumbsRef = useRef<Breadcrumb[]>([]);
   const crumbFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fullTrailRef = useRef<Breadcrumb[]>([]);
@@ -459,7 +460,7 @@ export function useFlightTracker() {
         if (isStationary) {
           autoStopCounterRef.current += gpsInterval;
           if (autoStopCounterRef.current >= autoStopDuration) {
-            stopTracking();
+            stopTrackingRef.current();
           }
         } else {
           autoStopCounterRef.current = 0;
@@ -771,6 +772,7 @@ export function useFlightTracker() {
 
     setState("retrieving");
   }, [pilotToken, syncToServer, isDemo, apiBase, demoHeaders]);
+  stopTrackingRef.current = stopTracking;
 
   const finishRetrieval = useCallback(() => {
     if (retrievalWatchRef.current !== null) {

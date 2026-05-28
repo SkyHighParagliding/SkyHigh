@@ -371,6 +371,7 @@ export function useXCMapState() {
     if (liveSites.length === 0) return;
 
     function fetchWindData() {
+      if (document.hidden) return;
       liveSites.forEach((site) => {
         api.get<Record<string, unknown>>(`/api/weather/${site.id}`)
           .then((data) => {

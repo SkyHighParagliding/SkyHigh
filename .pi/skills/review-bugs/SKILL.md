@@ -15,6 +15,18 @@ You are a **senior bug hunter** assigned to find real, demonstrable bugs in the 
 - **Focus:** Bugs and logic errors. This is the #1 priority for the project.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all fixes carefully before pushing.
 
+## Critical: Regression Check Before Scanning
+
+**BEFORE you start finding new bugs, you MUST:**
+
+1. Read `.pi/reviews/cycle-{N-1}-fix-report.md` (the previous cycle's fix report).
+2. For each fix applied in the previous cycle, open the cited files and verify:
+   - The fix is still present in the code (wasn't clobbered by subsequent work)
+   - The fix didn't introduce a compilation error or test failure
+   - The fix didn't introduce a new bug (check the surrounding context)
+3. If you find a regression from a previous fix, report it as a REGRESSION finding with reference to the previous cycle's fix ID.
+4. If no previous cycle exists (this is Cycle 1), skip this step.
+
 ## How to Find Bugs (Evidence-Only Protocol)
 
 ### You MUST do this for every finding:
@@ -84,6 +96,25 @@ You are a **senior bug hunter** assigned to find real, demonstrable bugs in the 
 - Multi-launch site eligibility evaluated incorrectly (North/South tiers)
 - Role-based access control checks missing or bypassed
 - Pagination edge cases (offset beyond available data, limit=0)
+
+### Category 7: React Component Bugs
+- **useEffect dependency arrays missing deps or including stale values** — check every `useEffect` for closure variables that should be in the dep array but aren't, and stale values that trigger unnecessary re-runs
+- **State not resetting on route change** — component mounts with stale state from previous route (check if `useEffect` resets state when route params change)
+- **Async operations continuing after unmount** — fetch/timer/socket calls that set state after the component has unmounted (check for `useEffect` cleanup functions, AbortController, or mounted refs)
+- **Missing cleanup in useEffect returns** — `setInterval`, `addEventListener`, `requestAnimationFrame` without corresponding `clearInterval`, `removeEventListener`, `cancelAnimationFrame` in the cleanup function
+- **Stale closures in callbacks** — event handlers or timeout callbacks that close over stale state values (check `setTimeout`/`setInterval` callbacks and event listeners in effects)
+- **React.memo / useMemo / useCallback misuses** — components wrapped in `React.memo` but passed inline functions/objects as props (defeats memoization); `useMemo` with deps that change every render; `useCallback` without proper deps
+- **Large context causing re-render storms** — React Context values that change frequently causing all consumers to re-render unnecessarily
+- **Missing `key` props in mapped lists** — causing React to re-mount all list items on any reorder
+- **Direct DOM manipulation outside effects** — DOM reads/writes in render body without being wrapped in `useEffect` or `useLayoutEffect`
+
+### Category 8: Integration & Configuration Bugs
+- **Missing environment variables causing silent failures** — code that accesses `process.env.XXX` without a fallback or check, where the variable may be absent in production (check all `.env` references, Railway config, and whether the app logs or errors when a required var is missing)
+- **Dev vs production configuration drift** — settings/hardcoded values that work in development but not in Railway production (check CORS origins, API URLs, file storage paths, session TTLs, rate limits)
+- **External API error handling gaps** — TidyHQ, Gemini, Open-Meteo, or R2 calls that don't handle HTTP errors, timeouts, rate limits, or response format changes gracefully (check error handling paths, retry logic, fallback behavior)
+- **Seed data inconsistent with current schema** — seed.ts data that references columns that have been renamed, dropped, or retyped in recent migrations
+- **Logging sensitive data** — connection strings, tokens, or PII logged in error handling or debug paths
+- **Route registration order bugs** — generic routes (`/:id`) registered before specific routes (`/search`, `/reorder/batch`), causing the specific route to never match
 
 ## Scoping: First Review Only
 

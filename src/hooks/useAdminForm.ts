@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useUnsavedChanges } from "./useUnsavedChanges";
 
@@ -12,6 +12,11 @@ export function useAdminForm(options: UseAdminFormOptions = {}) {
   const activePromise = useRef<Promise<void> | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const justSavedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    return () => clearTimeout(justSavedTimer.current);
+  }, []);
 
   const save = useCallback(
     async (fn: () => Promise<void>) => {
@@ -26,7 +31,8 @@ export function useAdminForm(options: UseAdminFormOptions = {}) {
           markClean();
           setJustSaved(true);
           toast.success(options.successMessage ?? "Saved successfully");
-          setTimeout(() => setJustSaved(false), 2000);
+          clearTimeout(justSavedTimer.current);
+          justSavedTimer.current = setTimeout(() => setJustSaved(false), 2000);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Save failed";
           setSaveError(msg);

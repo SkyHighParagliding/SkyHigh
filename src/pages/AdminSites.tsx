@@ -200,6 +200,15 @@ interface WtfApplyResult {
   results?: Array<{ siteId: string; name: string; oldSpeed: string; newSpeed: string }>;
 }
 
+interface BulkImportProgress {
+  running?: boolean;
+  done?: boolean;
+  remaining: number;
+  total: number;
+  currentSite?: string;
+  summary?: BulkImportResult;
+}
+
 export function AdminSites() {
   const { token } = useAuth();
   const [sites, setSites] = useState<Site[]>([]);
@@ -237,8 +246,8 @@ export function AdminSites() {
   const [wtfShowAll, setWtfShowAll] = useState(false);
 
   useEffect(() => {
-    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites?limit=500')
-      .then(response => setSites(response.data as unknown as Site[]))
+    api.get<{ data: Site[] }>('/api/sites?limit=500')
+      .then(response => setSites(response.data))
       .catch(() => {});
     api.get<Record<string, string>>('/api/settings')
       .then(data => {
@@ -248,15 +257,15 @@ export function AdminSites() {
         }
       })
       .catch(() => {});
-    api.get<Array<Record<string, unknown>>>('/api/external-sites')
-      .then(data => setExternalSites(data as {name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]))
+    api.get<{name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]>('/api/external-sites')
+      .then(data => setExternalSites(data))
       .catch(err => console.error("Failed to fetch external sites", err));
   }, []);
 
   useEffect(() => {
     if (token) {
-      api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-        .then(data => setArchives(data as unknown as ArchiveEntry[]))
+      api.get<ArchiveEntry[]>("/api/sites/archives", token)
+        .then(data => setArchives(data))
         .catch(() => {});
     }
   }, [token]);
@@ -280,7 +289,7 @@ export function AdminSites() {
     let consecutiveErrors = 0;
     pollRef.current = setInterval(async () => {
       try {
-        const data = await api.get<Record<string, unknown>>("/api/sites/bulk-import/progress");
+        const data = await api.get<BulkImportProgress>("/api/sites/bulk-import/progress");
         consecutiveErrors = 0;
         if (!data.running && !data.done) {
           stopPolling();
@@ -294,11 +303,11 @@ export function AdminSites() {
         if (data.done) {
           stopPolling();
           setBulkImporting(false);
-          setBulkImportResult(data.summary as unknown as BulkImportResult);
-          api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
+          setBulkImportResult(data.summary as BulkImportResult);
+          api.get<{ data: Site[] }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
           if (token) {
-            api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-              .then(data => setArchives(data as unknown as ArchiveEntry[]))
+            api.get<ArchiveEntry[]>("/api/sites/archives", token)
+              .then(data => setArchives(data))
               .catch(() => {});
           }
         }
@@ -322,8 +331,8 @@ export function AdminSites() {
       const data = await api.post<{ success?: boolean; count?: number; error?: string }>("/api/sites/scrape-urls", {}, token);
       if (data.success) {
         setRefreshMessage({ type: "success", text: `Successfully refreshed site list. Found ${data.count} sites.` });
-        api.get<Array<Record<string, unknown>>>('/api/external-sites')
-          .then(data => setExternalSites(data as unknown as {name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]))
+        api.get<{name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]>('/api/external-sites')
+          .then(data => setExternalSites(data))
           .catch(() => {});
       } else {
         setRefreshMessage({ type: "error", text: `Failed to refresh sites: ${data.error}` });
@@ -345,7 +354,7 @@ export function AdminSites() {
     try {
       const data = await api.post<Record<string, unknown>>("/api/sites/bulk-import", { state: selectedState }, token);
       if (data.message) {
-        setBulkImportResult(data as unknown as BulkImportResult);
+        setBulkImportResult(data);
         setBulkImporting(false);
         return;
       }
@@ -368,9 +377,9 @@ export function AdminSites() {
     try {
       const data = await api.post<{ restored: number; version: string }>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/restore`, {}, token);
       setRestoreMessage({ type: "success", text: `Restored ${data.restored} sites from archive version ${data.version}.` });
-      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
-      api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
-        .then(data => setArchives(data as unknown as ArchiveEntry[]))
+      api.get<{ data: Site[] }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
+      api.get<ArchiveEntry[]>("/api/sites/archives", token)
+        .then(data => setArchives(data))
         .catch(() => {});
     } catch (e: unknown) {
       setRestoreMessage({ type: "error", text: e instanceof Error ? e.message : "Restore failed" });
@@ -384,8 +393,8 @@ export function AdminSites() {
     setDiffLoading(true);
     setDiffData(null);
     try {
-      const data = await api.get<Record<string, unknown>>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/diff`, token);
-      setDiffData(data as unknown as DiffData);
+      const data = await api.get<DiffData>(`/api/sites/archives/${encodeURIComponent(selectedArchive)}/diff`, token);
+      setDiffData(data);
       setExpandedDiffs(new Set());
       setShowDiffModal(true);
     } catch (e: unknown) {
@@ -410,10 +419,10 @@ export function AdminSites() {
     setWtfApplyResult(null);
     setWtfSelectedIds(new Set());
     try {
-      const data = await api.post<Record<string, unknown>>("/api/sites/wtf-compare", {}, token);
+      const data = await api.post<WtfData>("/api/sites/wtf-compare", {}, token);
       if (!data.success) throw new Error((data.error as string) || "Failed to fetch WTF data");
-      setWtfData(data as unknown as WtfData);
-      const comparisons = data.comparisons as unknown as WtfComparison[];
+      setWtfData(data);
+      const comparisons = data.comparisons;
       const changedIds = new Set<string>(comparisons.filter(c => c.changed).map(c => c.siteId));
       setWtfSelectedIds(changedIds);
     } catch (e: unknown) {
@@ -432,8 +441,8 @@ export function AdminSites() {
       if (!data.success) throw new Error((data.error as string) || "Failed to apply WTF data");
       setWtfApplyResult(data);
       toast.success("WTF data applied");
-      api.get<{ data: Array<Record<string, unknown>> }>('/api/sites').then(response => setSites(response.data as unknown as Site[])).catch(() => {});
-      setWtfApplyResult(data as unknown as WtfApplyResult);
+      api.get<{ data: Site[] }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
+      setWtfApplyResult(data);
     } catch (e: unknown) {
       setWtfApplyResult({ error: e instanceof Error ? e.message : "Failed" });
     } finally {
