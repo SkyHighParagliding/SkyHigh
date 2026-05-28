@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { useSafetyOfficers } from "@/hooks/api";
+import { Link } from "react-router-dom";
+import { useSafetyOfficers, useSites } from "@/hooks/api";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GraduationCap, Mail, MessageCircle, Phone, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -663,4 +664,31 @@ function SafetyOfficerWidget() {
   );
 }
 
-export { SchoolsWidget, TelegramWidget, CommitteeWidget, SafetyOfficerWidget };
+function FlyingSitesWidget() {
+  const { data: sites = [], isLoading } = useSites(true);
+
+  const selected = useMemo(() => {
+    const skyhigh = sites.filter(s => s.isSkyHighSite === 'true');
+    return [...skyhigh].sort(() => Math.random() - 0.5).slice(0, 5);
+  }, [sites]);
+
+  if (isLoading) return <div className="my-2 flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky-400"></div></div>;
+  if (selected.length === 0) return null;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 mt-2">
+      {selected.map(site => (
+        <Link
+          key={site.id}
+          to={`/sites/${site.id}`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20 hover:bg-sky/20 transition-colors"
+        >
+          {site.name}
+          {site.pgRating && <span className="text-white/70 font-normal">· {site.pgRating}</span>}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export { SchoolsWidget, TelegramWidget, CommitteeWidget, SafetyOfficerWidget, FlyingSitesWidget };
