@@ -57,9 +57,8 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
     canvasSizeRef.current = { width, height };
-    const dpr = window.devicePixelRatio || 1;
-    canvasRef.current.width = width * dpr;
-    canvasRef.current.height = height * dpr;
+    canvasRef.current.width = width;
+    canvasRef.current.height = height;
     initialTransformApplied.current = false;
     transformRef.current = zoomIdentity;
   }, [sizeKey]);
@@ -187,9 +186,8 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
         const height = containerRef.current.clientHeight;
         if (width !== canvasSizeRef.current.width || height !== canvasSizeRef.current.height) {
           canvasSizeRef.current = { width, height };
-          const dpr = window.devicePixelRatio || 1;
-          canvasRef.current.width = width * dpr;
-          canvasRef.current.height = height * dpr;
+          canvasRef.current.width = width;
+          canvasRef.current.height = height;
         }
       }
       const { width: w, height: h } = canvasSizeRef.current;
