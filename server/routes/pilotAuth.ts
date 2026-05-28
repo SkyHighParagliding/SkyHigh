@@ -274,6 +274,8 @@ export async function optionalPilotAuth(req: any, _res: any, next: any) {
     if (sessionAge <= PILOT_SESSION_TTL_MS) {
       req.pilot = { id: session.id, email: session.email, name: session.name, firstName: session.firstName, lastName: session.lastName, garminMapshare: session.garminMapshare || null, spotFeedId: session.spotFeedId || null, zoleoImei: session.zoleoImei || null };
     } else {
+      // Delete expired session so they don't accumulate — fire-and-forget is fine here
+      execute(`DELETE FROM pilot_sessions WHERE token = $1`, [token]).catch(() => {});
       req.pilot = null;
     }
   } else {

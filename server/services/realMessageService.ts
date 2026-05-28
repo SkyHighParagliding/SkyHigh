@@ -87,35 +87,35 @@ export class RealMessageService implements MessageService {
 
   async thumbsUp(msgId: string | number, pilotId: string) {
     const msg = await queryOne<{ id: number; recipientPilotId: string }>(
-      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1`,
+      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1::int`,
       [msgId]
     );
 
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
     if (msg.recipientPilotId !== pilotId) return { ok: false, error: "Not your message", status: 403 };
 
-    await execute(`UPDATE map_messages SET "thumbsUp" = 1 WHERE id = $1`, [msgId]);
+    await execute(`UPDATE map_messages SET "thumbsUp" = 1 WHERE id = $1::int`, [msgId]);
     log.info(`Thumbs-up on message ${msgId}`);
     return { ok: true };
   }
 
   async thumbsDown(msgId: string | number, pilotId: string) {
     const msg = await queryOne<{ id: number; recipientPilotId: string }>(
-      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1`,
+      `SELECT id, "recipientPilotId" FROM map_messages WHERE id = $1::int`,
       [msgId]
     );
 
     if (!msg) return { ok: false, error: "Message not found", status: 404 };
     if (msg.recipientPilotId !== pilotId) return { ok: false, error: "Not your message", status: 403 };
 
-    await execute(`UPDATE map_messages SET "thumbsUp" = 2 WHERE id = $1`, [msgId]);
+    await execute(`UPDATE map_messages SET "thumbsUp" = 2 WHERE id = $1::int`, [msgId]);
     log.info(`Thumbs-down on message ${msgId}`);
     return { ok: true };
   }
 
   async markDelivered(msgId: string | number, pilotId: string) {
     const msg = await queryOne<{ id: number; recipientPilotId: string; senderPilotId: string; thumbsUp: number | null }>(
-      `SELECT id, "recipientPilotId", "senderPilotId", "thumbsUp" FROM map_messages WHERE id = $1`,
+      `SELECT id, "recipientPilotId", "senderPilotId", "thumbsUp" FROM map_messages WHERE id = $1::int`,
       [msgId]
     );
 
@@ -128,7 +128,7 @@ export class RealMessageService implements MessageService {
       return { ok: false, error: "Not your message", status: 403 };
     }
 
-    await execute(`UPDATE map_messages SET "deliveredAt" = CURRENT_TIMESTAMP WHERE id = $1`, [msgId]);
+    await execute(`UPDATE map_messages SET "deliveredAt" = CURRENT_TIMESTAMP WHERE id = $1::int`, [msgId]);
     return { ok: true };
   }
 }

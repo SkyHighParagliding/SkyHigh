@@ -294,46 +294,75 @@ router.post("/users", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/users/:id", requireAuth, asyncHandler(async (req, res) => {
-  const adminCount = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::int as count FROM contacts WHERE "isAdmin" = 1`
-  );
-  if ((adminCount?.count ?? 0) <= 1) {
+  let notFound = false;
+  let lastAdmin = false;
+
+  await transaction(async (client) => {
+    // Lock all admin rows first to prevent concurrent deletes bypassing the last-admin check
+    const countResult = await client.query<{ count: number }>(
+      `SELECT COUNT(*)::int as count FROM contacts WHERE "isAdmin" = 1 FOR UPDATE`
+    );
+    if ((countResult.rows[0]?.count ?? 0) <= 1) {
+      lastAdmin = true;
+      return;
+    }
+
+    const updateResult = await client.query(
+      `UPDATE contacts SET "isAdmin" = 0, password = '' WHERE id = $1 AND "isAdmin" = 1`,
+      [req.params.id]
+    );
+    if ((updateResult.rowCount ?? 0) === 0) {
+      notFound = true;
+      return;
+    }
+
+    await client.query(
+      `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
+      [req.params.id]
+    );
+  });
+
+  if (lastAdmin) {
     return res.status(400).json({ error: "Cannot delete the last admin user" });
   }
-
-  const result = await execute(
-    `UPDATE contacts SET "isAdmin" = 0, password = '' WHERE id = $1 AND "isAdmin" = 1`,
-    [req.params.id]
-  );
-  if (result.rowCount === 0) {
+  if (notFound) {
     return res.status(404).json({ error: "User not found" });
   }
-
-  await execute(
-    `DELETE FROM "admin_sessions" WHERE "userId" = $1`,
-    [req.params.id]
-  );
   res.json({ success: true });
 }));
 
-async function sendPasswordResetEmail(contact: { id: string; name: string; surname?: string; email: string }, accountType: string = "contact") {
-  await execute(
-    `DELETE FROM password_reset_tokens WHERE "contactId" = $1 AND "accountType" = $2 AND "usedAt" IS NULL`,
-    [contact.id, accountType]
-  );
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
+async function sendPasswordResetEmail(contact: { id: string; name: string; surname?: string; email: string }, accountType: string = "contact") {
   const token = crypto.randomBytes(32).toString("hex");
   const id = `prt-${Math.random().toString(36).substr(2, 9)}`;
   const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
 
-  await execute(
-    `INSERT INTO password_reset_tokens (id, "contactId", token, "expiresAt", "accountType") VALUES ($1, $2, $3, $4, $5)`,
-    [id, contact.id, token, expiresAt, accountType]
-  );
+  // Atomically revoke any existing unused tokens and insert the new one.
+  // Without a transaction, a crash between the DELETE and INSERT leaves the
+  // user with no valid token; two concurrent requests can also delete each
+  // other's newly inserted tokens.
+  await transaction(async (client) => {
+    await client.query(
+      `DELETE FROM password_reset_tokens WHERE "contactId" = $1 AND "accountType" = $2 AND "usedAt" IS NULL`,
+      [contact.id, accountType]
+    );
+    await client.query(
+      `INSERT INTO password_reset_tokens (id, "contactId", token, "expiresAt", "accountType") VALUES ($1, $2, $3, $4, $5)`,
+      [id, contact.id, token, expiresAt, accountType]
+    );
+  });
 
   const baseUrl = process.env.APP_URL || "http://localhost:5173";
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-  const displayName = [contact.name, contact.surname].filter(Boolean).join(" ");
+  const displayName = escapeHtml([contact.name, contact.surname].filter(Boolean).join(" "));
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -361,6 +390,8 @@ async function sendPasswordResetEmail(contact: { id: string; name: string; surna
   });
 
   if (!result.success) {
+    // Best-effort cleanup — token is in DB but email was never delivered.
+    // The token will expire naturally; delete it now to keep the table clean.
     await execute(`DELETE FROM password_reset_tokens WHERE id = $1`, [id]);
     log.error(`Password reset email failed for user: email_hash:${Buffer.from(contact.email).toString('base64').substring(0, 10)}: ${result.error}`);
     return { success: false, error: result.error || "Failed to send email" };

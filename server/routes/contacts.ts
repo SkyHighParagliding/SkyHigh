@@ -32,6 +32,7 @@ interface ContactRow {
   isSafetyCommittee: number;
   isSocialMedia: number;
   soAuthorised: number;
+  safetyOfficerType: string | null;
   displayCommittee: number;
   displaySafety: number;
   showTelegram: number;
@@ -90,9 +91,9 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const contacts = await query<ContactRow>(
     `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin",
             "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia",
-            "soAuthorised", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
-            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
-            "createdAt", "updatedAt"
+            "soAuthorised", "safetyOfficerType", "displayCommittee", "displaySafety",
+            "showTelegram", "showPhone", "showEmail", "showAdminEmail", "photoUrl",
+            "photoAuthorised", "fullNameDisplay", "createdAt", "updatedAt"
        FROM contacts
       ORDER BY organisation ASC, name ASC
       LIMIT $1 OFFSET $2`,
@@ -117,9 +118,9 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   const contacts = await query<ContactRow>(
     `SELECT id, organisation, name, surname, phone, email, notes, position, "isAdmin",
             "isCommittee", "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia",
-            "soAuthorised", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
-            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
-            "createdAt", "updatedAt"
+            "soAuthorised", "safetyOfficerType", "displayCommittee", "displaySafety",
+            "showTelegram", "showPhone", "showEmail", "showAdminEmail", "photoUrl",
+            "photoAuthorised", "fullNameDisplay", "createdAt", "updatedAt"
        FROM contacts
       WHERE name ILIKE $1 OR surname ILIKE $2 OR organisation ILIKE $3
       ORDER BY organisation ASC, name ASC
@@ -465,9 +466,9 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
   const contact = await queryOne<ContactRow>(
     `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
-            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
-            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
-            "updatedAt"
+            "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
+            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
+            "createdAt", "updatedAt"
        FROM contacts
       WHERE id = $1`,
     [req.params.id]
@@ -531,9 +532,9 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   const contact = await queryOne<ContactRow>(
     `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
-            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
-            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
-            "updatedAt"
+            "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
+            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
+            "createdAt", "updatedAt"
        FROM contacts
       WHERE id = $1`,
     [id]
@@ -542,7 +543,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoAuthorised, password } = req.body;
+  let { organisation, name, surname, phone, email, notes, isAdmin, isCommittee, isContractor, isParksVic, isSafetyCommittee, isSocialMedia, soAuthorised, displayCommittee, displaySafety, fullNameDisplay, showTelegram, showPhone, showEmail, showAdminEmail, photoAuthorised, safetyOfficerType, password } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
 
   if (isCommittee) isAdmin = true;
@@ -579,6 +580,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
     showTelegram ? 1 : 0, showPhone ? 1 : 0, showEmail ? 1 : 0, showAdminEmail ? 1 : 0,
     fullNameDisplay !== false ? 1 : 0,  // $20
     photoAuthorised ? 1 : 0,            // $21
+    safetyOfficerType || null,          // $22
   ];
 
   let passwordUpdate = "";
@@ -610,7 +612,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
             "isSafetyCommittee" = $11, "isSocialMedia" = $12, "soAuthorised" = $13,
             "displayCommittee" = $14, "displaySafety" = $15, "showTelegram" = $16,
             "showPhone" = $17, "showEmail" = $18, "showAdminEmail" = $19,
-            "fullNameDisplay" = $20, "photoAuthorised" = $21${passwordUpdate},
+            "fullNameDisplay" = $20, "photoAuthorised" = $21, "safetyOfficerType" = $22${passwordUpdate},
             "updatedAt" = NOW()
       WHERE id = $${params.length}`,
     params
@@ -620,9 +622,9 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   const contact = await queryOne<ContactRow>(
     `SELECT id, organisation, name, surname, phone, email, notes, "isAdmin", "isCommittee",
             "isContractor", "isParksVic", "isSafetyCommittee", "isSocialMedia", "soAuthorised",
-            "displayCommittee", "displaySafety", "showTelegram", "showPhone", "showEmail",
-            "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay", "createdAt",
-            "updatedAt"
+            "safetyOfficerType", "displayCommittee", "displaySafety", "showTelegram", "showPhone",
+            "showEmail", "showAdminEmail", "photoUrl", "photoAuthorised", "fullNameDisplay",
+            "createdAt", "updatedAt"
        FROM contacts
       WHERE id = $1`,
     [req.params.id]

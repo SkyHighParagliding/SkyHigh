@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import createLogger from "../utils/logger.js";
 import { calculateSequentialETAs } from "../utils/osrm.js";
 import { fetchGarminPosition } from "../utils/garminMapshare.js";
@@ -219,35 +219,43 @@ export class RealRetrievalService implements RetrievalService {
   }
 
   async requestRetrieval(pilot: Pilot, lat: number | null, lon: number | null, flightId?: string | null) {
-    const existing = await queryOne(
-      `SELECT id FROM retrievals WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" >= date_trunc('day', NOW())`,
-      [pilot.id]
-    );
+    const result = await transaction(async (client) => {
+      const existing = await client.query(
+        `SELECT id FROM retrievals WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" >= date_trunc('day', NOW())`,
+        [pilot.id]
+      );
 
-    if (existing) {
+      if (existing.rows.length > 0) {
+        return { alreadyExists: true };
+      }
+
+      await client.query(
+        `UPDATE retrievals SET status = 'completed', "completedAt" = NOW()
+         WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" < date_trunc('day', NOW())`,
+        [pilot.id]
+      );
+
+      const retrievalId = crypto.randomUUID();
+      await client.query(
+        `INSERT INTO retrievals (id, "pilotId", "pilotName", "pilotLat", "pilotLon", "pilotUpdatedAt", status, "flightId")
+         VALUES ($1, $2, $3, $4, $5, $6, 'awaiting', $7)`,
+        [
+          retrievalId,
+          pilot.id,
+          pilot.firstName || pilot.name || "Pilot",
+          typeof lat === "number" && isFinite(lat) ? lat : null,
+          typeof lon === "number" && isFinite(lon) ? lon : null,
+          Date.now(),
+          flightId || null,
+        ]
+      );
+
+      return { alreadyExists: false };
+    });
+
+    if (result.alreadyExists) {
       return { ok: true, alreadyExists: true };
     }
-
-    await execute(
-      `UPDATE retrievals SET status = 'completed', "completedAt" = NOW()
-       WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" < date_trunc('day', NOW())`,
-      [pilot.id]
-    );
-
-    const retrievalId = crypto.randomUUID();
-    await execute(
-      `INSERT INTO retrievals (id, "pilotId", "pilotName", "pilotLat", "pilotLon", "pilotUpdatedAt", status, "flightId")
-       VALUES ($1, $2, $3, $4, $5, $6, 'awaiting', $7)`,
-      [
-        retrievalId,
-        pilot.id,
-        pilot.firstName || pilot.name || "Pilot",
-        typeof lat === "number" && isFinite(lat) ? lat : null,
-        typeof lon === "number" && isFinite(lon) ? lon : null,
-        Date.now(),
-        flightId || null,
-      ]
-    );
 
     log.info(`Retrieval requested by pilot ${pilot.id} (in-flight)`);
     this.broadcastUpdate();
@@ -523,24 +531,26 @@ export class RealRetrievalService implements RetrievalService {
   }
 
   async createRetrievalForPilot(pilotId: string, pilotName: string, pilotLat: number | null, pilotLon: number | null, flightId: string) {
-    const existing = await queryOne(
-      `SELECT id FROM retrievals WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" >= date_trunc('day', NOW())`,
-      [pilotId]
-    );
-    if (existing) return;
+    await transaction(async (client) => {
+      const existing = await client.query(
+        `SELECT id FROM retrievals WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" >= date_trunc('day', NOW())`,
+        [pilotId]
+      );
+      if (existing.rows.length > 0) return;
 
-    await execute(
-      `UPDATE retrievals SET status = 'completed', "completedAt" = NOW()
-       WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" < date_trunc('day', NOW())`,
-      [pilotId]
-    );
+      await client.query(
+        `UPDATE retrievals SET status = 'completed', "completedAt" = NOW()
+         WHERE "pilotId" = $1 AND status IN ('awaiting', 'claimed') AND "createdAt" < date_trunc('day', NOW())`,
+        [pilotId]
+      );
 
-    const retrievalId = crypto.randomUUID();
-    await execute(
-      `INSERT INTO retrievals (id, "pilotId", "pilotName", "pilotLat", "pilotLon", "pilotUpdatedAt", status, "flightId")
-       VALUES ($1, $2, $3, $4, $5, $6, 'awaiting', $7)`,
-      [retrievalId, pilotId, pilotName, pilotLat, pilotLon, Date.now(), flightId]
-    );
+      const retrievalId = crypto.randomUUID();
+      await client.query(
+        `INSERT INTO retrievals (id, "pilotId", "pilotName", "pilotLat", "pilotLon", "pilotUpdatedAt", status, "flightId")
+         VALUES ($1, $2, $3, $4, $5, $6, 'awaiting', $7)`,
+        [retrievalId, pilotId, pilotName, pilotLat, pilotLon, Date.now(), flightId]
+      );
+    });
 
     log.info(`Retrieval created for pilot ${pilotId} after flight ${flightId}`);
   }

@@ -46,9 +46,9 @@ router.get("/", asyncHandler(async (req, res) => {
 
     if (sites.length > 0) {
       const siteIds = sites.map((s: any) => s.id);
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
       const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
-      const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
+      const sixtyDaysStr = sixtyDaysOut.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
 
       // Build PG positional placeholders for site IDs
       const placeholders = siteIds.map((_: any, i: number) => `$${i + 1}`).join(',');
@@ -93,9 +93,9 @@ router.get("/:id", asyncHandler(async (req, res) => {
   try {
     const site = await queryOne<any>("SELECT * FROM sites WHERE id = $1", [req.params.id]);
     if (site) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
       const sixtyDaysOut = new Date(); sixtyDaysOut.setDate(sixtyDaysOut.getDate() + 60);
-      const sixtyDaysStr = sixtyDaysOut.toISOString().split('T')[0];
+      const sixtyDaysStr = sixtyDaysOut.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
       const closureRows = await query<{ closure_date: string }>(
         "SELECT closure_date FROM site_closure_dates WHERE site_id = $1 AND closure_date >= $2 AND closure_date <= $3 ORDER BY closure_date ASC",
         [req.params.id, today, sixtyDaysStr]

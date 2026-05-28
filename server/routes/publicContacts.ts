@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import { query, queryOne, execute } from "../pg.js";
+import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
@@ -110,13 +110,18 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  await execute("DELETE FROM password_reset_tokens WHERE \"contactId\" = $1 AND \"accountType\" = 'pilot'", [req.params.id]);
-  await execute("DELETE FROM pilot_sessions WHERE \"pilotId\" = $1", [req.params.id]);
-  await execute("DELETE FROM breadcrumbs WHERE \"flightId\" IN (SELECT id FROM flights WHERE \"pilotId\" = $1)", [req.params.id]);
-  await execute("DELETE FROM flights WHERE \"pilotId\" = $1", [req.params.id]);
+  const pilotId = req.params.id;
+  const pilot = await queryOne<{ id: string }>("SELECT id FROM pilots WHERE id = $1", [pilotId]);
+  if (!pilot) return res.status(404).json({ error: "Pilot not found" });
 
-  const result = await execute("DELETE FROM pilots WHERE id = $1", [req.params.id]);
-  if (result.rowCount === 0) return res.status(404).json({ error: "Pilot not found" });
+  await transaction(async (client) => {
+    await client.query("DELETE FROM password_reset_tokens WHERE \"contactId\" = $1 AND \"accountType\" = 'pilot'", [pilotId]);
+    await client.query("DELETE FROM pilot_sessions WHERE \"pilotId\" = $1", [pilotId]);
+    await client.query("DELETE FROM breadcrumbs WHERE \"flightId\" IN (SELECT id FROM flights WHERE \"pilotId\" = $1)", [pilotId]);
+    await client.query("DELETE FROM flights WHERE \"pilotId\" = $1", [pilotId]);
+    await client.query("DELETE FROM pilots WHERE id = $1", [pilotId]);
+  });
+
   res.json({ success: true });
 }));
 

@@ -46,7 +46,7 @@ router.get("/closure-banners", async (_req, res) => {
 // Public: get all current+future closure dates for a site (next 60 days)
 router.get("/:id/closure-dates", async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
     const rows = await query<{ closure_date: string }>(
       "SELECT closure_date FROM site_closure_dates WHERE site_id = $1 AND closure_date >= $2 ORDER BY closure_date ASC",
       [req.params.id, today]
