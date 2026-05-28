@@ -635,10 +635,9 @@ function SafetyOfficerWidget() {
     if (officers.length === 0) return [];
     const ssos = officers.filter(o => o.safetyOfficerType === 'SSO');
     const sos  = officers.filter(o => o.safetyOfficerType === 'SO');
-    const pickedSSO = ssos.length > 0
-      ? [ssos[Math.floor(Math.random() * ssos.length)]]
-      : [];
-    const shuffledSOs = [...sos].sort(() => Math.random() - 0.5).slice(0, 4);
+    const shuffledSSOs = [...ssos].sort(() => Math.random() - 0.5).slice(0, 2);
+    const pickedSSO = shuffledSSOs;
+    const shuffledSOs = [...sos].sort(() => Math.random() - 0.5).slice(0, 5);
     return [...pickedSSO, ...shuffledSOs];
   }, [officers]);
 
@@ -669,7 +668,7 @@ function FlyingSitesWidget() {
 
   const selected = useMemo(() => {
     const skyhigh = sites.filter(s => s.isSkyHighSite === 'true');
-    return [...skyhigh].sort(() => Math.random() - 0.5).slice(0, 5);
+    return [...skyhigh].sort(() => Math.random() - 0.5).slice(0, 6);
   }, [sites]);
 
   if (isLoading) return <div className="my-2 flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky-400"></div></div>;
