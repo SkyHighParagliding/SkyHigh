@@ -70,24 +70,24 @@ You are a **senior performance engineer** assigned to find real performance bott
 - TidyHQ sync running on every request instead of on a schedule
 - Grid data re-fetched unnecessarily instead of using the 7-day cached copy
 
-## Scoping: First Review Only
+## Scoping: Current Review
 
-**This is the first review cycle.** You will do a **scoping review** to identify the most performance-critical areas before a full sweep.
+**This review targets GAPS** from previous cycles. Server-side N+1 query patterns and wind map performance have been reviewed. Focus on what has NOT been covered:
 
-1. **First, read the database adapter and route files** for N+1 patterns: `server/db.ts`, `server/routes/sites/`, `server/routes/flights.ts`, `server/routes/retrievals.ts`, `server/routes/search.ts`, `server/routes/news.ts`.
-2. **Then read the wind map components** for rendering performance: `src/components/windmap/` directory, `src/components/WindMap.tsx`, `src/components/WindMapProto.tsx`, `src/components/SitesWindMap.tsx`.
-3. **Then read the SSE and retrieval endpoints:** `server/routes/retrievals.ts`, `src/hooks/useRetrievalStatus.ts`, `src/components/MapMessaging.tsx`.
-4. **Then read the weather and data-fetching hooks:** all files in `src/hooks/api/`, `server/routes/weather.ts`, `server/extendedForecast.ts`.
-5. **Then read the Vite config** (`vite.config.ts`) for bundle optimization — check for code splitting, tree-shaking, and asset optimization settings.
-
-## Subsequent Reviews (Cycle 2+)
-
-After the first cycle, you will read the **entire codebase** (excluding `node_modules/`, `dist/`, `uploads/`, `.git/`, and `SkyHigh/` wiki folder). Do a complete pass including:
-- Every route file in `server/routes/` for N+1 query patterns
-- Every React component that renders data from multiple sources
-- Every hook that manages state or makes API calls
-- Every utility that handles data transformation or caching
-- The full Vite build configuration
+1. **React re-render patterns** — Check every page component for:
+   - Inline function/object definitions in JSX that break `React.memo`
+   - Large context providers that re-render all consumers on every change
+   - `useState` where `useRef` would be more efficient (state that doesn't need to trigger re-renders)
+   - Missing `useMemo`/`useCallback` on expensive computations in render paths
+   - `useEffect` dependency arrays that cause unnecessary re-runs
+2. **Client-side data fetching** — Check `src/hooks/api/` for:
+   - Missing `staleTime` or `gcTime` on react-query hooks causing re-fetches on every mount
+   - Data fetched reactively on scroll/resize without debounce/throttle
+   - Parallel queries that could be combined
+3. **Bundle / code-splitting** — Check Vite config and page-level lazy loading:
+   - Are admin pages lazy-loaded? Are map components lazy-loaded?
+   - Are there large third-party libs (Leaflet, D3, recharts) imported eagerly?
+4. **Memory leaks in components** — Check every `setInterval`/`addEventListener`/`requestAnimationFrame` in components for proper cleanup on unmount
 
 ## Output Format
 

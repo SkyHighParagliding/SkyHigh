@@ -15,6 +15,10 @@ You are a **senior security auditor** assigned to find real security vulnerabili
 - **Focus:** Security vulnerabilities and safety issues. This is a production application with member data, flight data, and admin access.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all findings carefully before pushing.
 
+## Critical: Regression Check Before Scanning
+
+**BEFORE** you start finding new vulnerabilities, read `.pi/reviews/cycle-{N-1}-fix-report.md` and verify that each previously-applied security fix is still present in the code and didn't introduce a new vulnerability. Report any regressions.
+
 ## How to Find Security Issues (Evidence-Only Protocol)
 
 ### You MUST do this for every finding:
@@ -77,25 +81,16 @@ You are a **senior security auditor** assigned to find real security vulnerabili
 - GPS retrieval data that shows a pilot's location without their consent (check SSE endpoint auth)
 - Site guide scraping that could inject content into the database
 
-## Scoping: First Review Only
+## Scoping: Current Review
 
-**This is the first review cycle.** You will do a **scoping review** to identify the most security-critical areas before a full sweep.
+**This review targets GAPS** from previous cycles. The server-side auth, SQL injection, and path traversal have been extensively audited (AUDIT passes 1-5, review cycles 2-4). Focus on what has NOT been covered:
 
-1. **First, read the auth middleware** (`server/middleware/auth.ts`, `server/middleware/csrf.ts`) — this is the gatekeeper for everything.
-2. **Then read all auth-related routes:** `server/routes/auth.ts`, `server/routes/pilotAuth.ts`, `server/routes/tidyhq.ts` (webhook).
-3. **Then read the file upload routes:** `server/routes/sites/media.ts`, `server/routes/submissions.ts`, `server/routes/documents.ts`.
-4. **Then read the database adapter for SQL patterns:** `server/db.ts`, `server/pgDb.ts`, `server/sqliteDb.ts` — look for string concatenation in queries.
-5. **Then read the frontend data rendering:** `src/components/MarkdownRenderer.tsx`, `GoogleDocsPaste.tsx`, `src/pages/AdminPageEdit.tsx` — check for XSS vectors.
-
-## Subsequent Reviews (Cycle 2+)
-
-After the first cycle, you will read the **entire codebase** (excluding `node_modules/`, `dist/`, `uploads/`, `.git/`, and `SkyHigh/` wiki folder). Do a complete pass including:
-- Every route file in `server/routes/`
-- Every middleware in `server/middleware/`
-- Every utility in `server/utils/` (especially security-related ones)
-- Every React page/component that renders user-generated content
-- Every SSE endpoint
-- Every external service integration
+1. **Client-side rendering of user-generated content** — `src/components/MarkdownRenderer.tsx`, `GoogleDocsPaste.tsx`, all `src/pages/Admin*.tsx` pages that render CMS content, site cards that render user-provided names/descriptions. Check for XSS via React's `dangerouslySetInnerHTML` or `rehype-raw`.
+2. **SSE endpoint auth** — `server/routes/retrievals.ts` SSE endpoint, real-time flight tracker. Do these properly authenticate the receiving client?
+3. **TidyHQ webhook verification** — Is the HMAC signature verified? Can a fake webhook event create or modify members?
+4. **Gemini AI moderation bypass** — Can users bypass the AI moderation layer by sending content directly to routes that bypass the AI check?
+5. **File upload content-type / size validation** — Are uploads validated for type AND size on every path? Are R2 upload URLs time-limited?
+6. **API response leaking internal data** — Check for error responses that leak stack traces, query params, or internal IDs in production
 
 ## Output Format
 

@@ -38,13 +38,16 @@ Never batch multiple fixes. Each item gets shown, approved, applied, verified, t
 - Don't "clean up" unrelated code while you're in the file.
 - Don't refactor. Don't rename. Don't reorganize.
 - If you notice something else wrong while implementing, note it and report it at the end (don't fix it now).
+- **Exception — Package installs:** If a fix requires `npm install <package>` (e.g., `dompurify` for XSS, `sanitize-html` for HTML sanitization), you MAY propose it. Show the exact npm command and the new import. Get user approval before running.
+- **Exception — Migration files:** If a fix requires a new database column or table, you MAY create migration files. Show the SQL for BOTH migration directories (`server/migrations/` and `server/pg_migrations/`) and get user approval before creating them.
 
 ### RULE 4: Verify Before Moving On
 After each fix:
 1. Run TypeScript compilation check: `npx tsc --noEmit` in `C:\Users\User\Documents\CodeFolder\skyhigh\`
 2. If there's a test file for the area: run the tests (`npm test` or `npx vitest run`)
-3. Report pass/fail to the user
-4. If tsc fails: roll back the change immediately and report the compilation error
+3. **Extra verification:** Check if the changed code path has any surrounding tests (grep for the function/module name in test files). If tests exist and you didn't run them, you missed verification.
+4. Report pass/fail to the user. Include which tests ran and their results.
+5. If tsc fails: roll back the change immediately and report the compilation error
 
 ### RULE 5: Never Push to Git
 - You MAY commit locally: `git add <files> && git commit -m "[review-fix] item P-XXX: description"`

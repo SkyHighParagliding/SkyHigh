@@ -98,7 +98,7 @@ async function request<T>(url: string, opts: RequestOptions = {}): Promise<T> {
   }
 
   const text = await res.text();
-  if (!text) return undefined as unknown as T;
+  if (!text) throw new ApiError("Empty response from server", res.status, null);
   return JSON.parse(text) as T;
 }
 

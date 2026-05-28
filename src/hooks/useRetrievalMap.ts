@@ -175,6 +175,13 @@ export function useRetrievalMap() {
     };
   }, []);
 
+  interface NavTargetResponse {
+    available: boolean;
+    lat: number;
+    lon: number;
+    name: string;
+  }
+
   const mapHeaders = useCallback(() => {
     const h: Record<string, string> = {};
     if (token) h['x-pilot-token'] = token;
@@ -201,7 +208,7 @@ export function useRetrievalMap() {
   const fetchLivePilots = useCallback(async () => {
     if (!token) return;
     try {
-      const data = await api.get<Record<string, unknown>>(`${apiBase}/flights/live-pilots`, null, apiOpts());
+      const data = await api.get<LivePilotData[]>(`${apiBase}/flights/live-pilots`, null, apiOpts());
       setLivePilots(data);
     } catch {}
   }, [token, apiOpts, apiBase]);
@@ -214,12 +221,13 @@ export function useRetrievalMap() {
     let eventSource: EventSource | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 
-    const sseUrl = isDemo
-      ? `/api/retrievals/events?demo=true&demoSession=${demoSession}&pilotToken=${token}`
-      : `/api/retrievals/events?role=driver&pilotToken=${token}`;
-
-    try {
-      eventSource = new EventSource(sseUrl);
+    const setupSSE = async () => {
+      try {
+        const roleQ = isDemo ? '' : '?role=driver';
+        const resp = await api.get<{ticket: string}>(`/api/retrievals/sse-ticket${roleQ}`, null, apiOpts());
+        if (!token) return;
+        const sseUrl = `/api/retrievals/events?ticket=${resp.ticket}`;
+        eventSource = new EventSource(sseUrl);
       eventSource.onopen = () => {
         fetchRetrievals();
         if (!isDemo && fallbackInterval) { clearInterval(fallbackInterval); fallbackInterval = null; }
@@ -234,9 +242,11 @@ export function useRetrievalMap() {
       eventSource.onerror = () => {
         if (!fallbackInterval) fallbackInterval = setInterval(() => { fetchRetrievals(); }, 5000);
       };
-    } catch {
-      fallbackInterval = setInterval(() => { fetchRetrievals(); }, 5000);
-    }
+      } catch {
+        if (!fallbackInterval) fallbackInterval = setInterval(() => { fetchRetrievals(); }, 5000);
+      }
+    };
+    setupSSE();
     if (isDemo && !fallbackInterval) {
       fallbackInterval = setInterval(() => { fetchRetrievals(); }, 3000);
     }
@@ -246,8 +256,8 @@ export function useRetrievalMap() {
     const fetchNavTargets = async () => {
       try {
         const [dp, ls] = await Promise.all([
-          api.get<Record<string, unknown>>(`${apiBase}/retrievals/duty-pilot-position`, null, apiOpts()),
-          api.get<Record<string, unknown>>(`${apiBase}/retrievals/launch-site`, null, apiOpts()),
+          api.get<NavTargetResponse>(`${apiBase}/retrievals/duty-pilot-position`, null, apiOpts()),
+          api.get<NavTargetResponse>(`${apiBase}/retrievals/launch-site`, null, apiOpts()),
         ]);
         setDutyPilotPos(dp?.available ? { lat: dp.lat, lon: dp.lon, name: dp.name } : null);
         setLaunchSite(ls?.available ? { lat: ls.lat, lon: ls.lon, name: ls.name } : null);

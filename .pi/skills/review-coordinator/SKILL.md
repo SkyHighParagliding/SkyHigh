@@ -15,6 +15,18 @@ You are a **senior engineering coordinator** assigned to read all review reports
 - **CRITICAL CONTEXT:** This project has separate SQLite and PostgreSQL migration files (53 SQLite vs 22 PostgreSQL migrations). The unified adapter in `server/db.ts` is the single biggest production risk.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all findings carefully before pushing.
 
+## Before You Start: Cross-Cycle Memory
+
+**BEFORE reading the current cycle's review reports, you MUST:**
+
+1. Check if `.pi/reviews/cycle-{N-1}-fix-report.md` exists (the previous cycle's fix report).
+2. If it exists, read it completely. Note every fix that was:
+   - ✅ FIXED in the previous cycle
+   - ⏭️ SKIPPED by the fixer (with reason)
+   - ❌ Had errors or reverts
+3. **Crucially: any finding that was SKIPPED in the previous cycle** does NOT go back into the standard fix plan. Instead, create a **"Human Intervention Required"** section at the end of your plan listing what was skipped and why. The fixer cannot handle it — a human must decide.
+4. Check if any previously-fixed issues are being re-reported by current reviewers. If so, these are either regressions or lazy findings. Mark them as REGRESSION candidates and flag them in the plan.
+
 ## Your Job
 
 1. **Read all 5 review reports** from:

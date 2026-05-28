@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -153,7 +153,10 @@ export function useConnectionsConfig() {
       .catch(() => {});
   };
 
+  const hashScrollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   useEffect(() => {
+    clearTimeout(hashScrollTimer.current);
     if (location.hash) {
       const id = location.hash.replace("#", "");
       setExpandedCards((prev) => new Set(prev).add(id));
@@ -162,10 +165,11 @@ export function useConnectionsConfig() {
         fetchGroupMappings();
         fetchWebhookLogs();
       }
-      setTimeout(() => {
+      hashScrollTimer.current = setTimeout(() => {
         document.getElementById(`conn-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     }
+    return () => clearTimeout(hashScrollTimer.current);
   }, [location.hash]);
 
   const toggleExpanded = useCallback((id: string) => {

@@ -31,6 +31,8 @@ export function useRetrievalStatus({
   demoRole,
 }: UseRetrievalStatusOptions) {
   const [retrievalStatus, setRetrievalStatus] = useState<RetrievalStatusData | null>(null);
+  const trackerStateRef = useRef(trackerState);
+  trackerStateRef.current = trackerState;
   const [showDriverOnMap, setShowDriverOnMap] = useState(true);
   const [retrievalDrawerOpen, setRetrievalDrawerOpen] = useState(false);
   const drawerDragRef = useRef<{ startY: number; startOpen: boolean } | null>(null);
@@ -103,7 +105,7 @@ export function useRetrievalStatus({
         const data = await api.get<any>(`/api/retrievals/status/${pilotId}`, null, mergedOpts({ 'x-pilot-token': pilotToken! }));
         if (!active) return;
         setRetrievalStatus(data);
-        if (!data.active && trackerState === 'retrieving') {
+        if (!data.active && trackerStateRef.current === 'retrieving') {
           finishRetrieval();
         }
       } catch {}
@@ -112,11 +114,13 @@ export function useRetrievalStatus({
     fetchStatus();
 
     if (isDemo) {
-      const demoSession = new URLSearchParams(window.location.search).get('demoSession');
-      const demoToken = `demo-token-${(demoRole || '').replace(/(\d+)/, '-$1')}`;
-      const sseUrl = `/api/retrievals/events?demo=true&demoSession=${encodeURIComponent(demoSession || '')}&pilotToken=${encodeURIComponent(demoToken)}`;
-      try {
-        eventSource = new EventSource(sseUrl);
+      (async () => {
+        try {
+          const demoToken = `demo-token-${(demoRole || '').replace(/(\d+)/, '-$1')}`;
+          const resp = await api.get<{ticket: string}>('/api/retrievals/sse-ticket?role=pilot', null, mergedOpts({ 'x-pilot-token': demoToken }));
+          if (!active) return;
+          const sseUrl = `/api/retrievals/events?ticket=${resp.ticket}`;
+          eventSource = new EventSource(sseUrl);
         eventSource.onopen = () => {
           if (!active) return;
           if (fallbackInterval) {
@@ -142,7 +146,7 @@ export function useRetrievalStatus({
                 });
               } else {
                 setRetrievalStatus((prev) => {
-                  if (prev?.active && trackerState === 'retrieving') {
+                  if (prev?.active && trackerStateRef.current === 'retrieving') {
                     finishRetrieval();
                   }
                   return { active: false };
@@ -158,13 +162,18 @@ export function useRetrievalStatus({
             fallbackInterval = setInterval(fetchStatus, 3000);
           }
         };
-      } catch {
-        fallbackInterval = setInterval(fetchStatus, 3000);
-      }
+        } catch {
+          if (!active) return;
+          if (!fallbackInterval) fallbackInterval = setInterval(fetchStatus, 3000);
+        }
+      })();
     } else {
-      const sseUrl = `/api/retrievals/events?role=pilot&pilotToken=${encodeURIComponent(pilotToken)}`;
-      try {
-        eventSource = new EventSource(sseUrl);
+      (async () => {
+        try {
+          const resp = await api.get<{ticket: string}>('/api/retrievals/sse-ticket?role=pilot', null, mergedOpts({ 'x-pilot-token': pilotToken! }));
+          if (!active) return;
+          const sseUrl = `/api/retrievals/events?ticket=${resp.ticket}`;
+          eventSource = new EventSource(sseUrl);
         eventSource.onopen = () => {
           if (!active) return;
           if (fallbackInterval) {
@@ -178,7 +187,7 @@ export function useRetrievalStatus({
             const msg = JSON.parse(event.data);
             if (msg.type === 'retrieval-status' && msg.data) {
               setRetrievalStatus(msg.data);
-              if (!msg.data.active && trackerState === 'retrieving') {
+              if (!msg.data.active && trackerStateRef.current === 'retrieving') {
                 finishRetrieval();
               }
             }
@@ -191,9 +200,11 @@ export function useRetrievalStatus({
             fallbackInterval = setInterval(fetchStatus, 5000);
           }
         };
-      } catch {
-        fallbackInterval = setInterval(fetchStatus, 5000);
-      }
+        } catch {
+          if (!active) return;
+          if (!fallbackInterval) fallbackInterval = setInterval(fetchStatus, 5000);
+        }
+      })();
     }
 
     return () => {
@@ -201,7 +212,7 @@ export function useRetrievalStatus({
       if (eventSource) { eventSource.close(); eventSource = null; }
       if (fallbackInterval) { clearInterval(fallbackInterval); fallbackInterval = null; }
     };
-  }, [pilotId, pilotToken, trackerState, isDemo, demoRole, inFlightRetrievalRequested, finishRetrieval, demoApiOpts]);
+  }, [pilotId, pilotToken, isDemo, demoRole, inFlightRetrievalRequested, finishRetrieval, demoApiOpts]);
 
   useEffect(() => {
     if (!pilotId || !pilotToken) return;

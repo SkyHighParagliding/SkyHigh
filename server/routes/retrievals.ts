@@ -1,4 +1,5 @@
 import { Router } from "express";
+import crypto from "crypto";
 import asyncHandler from "../utils/asyncHandler.js";
 import { requirePilotAuth } from "./pilotAuth.js";
 import { requireDemoAuth, requireDemoSession } from "./demo/state.js";
@@ -14,13 +15,87 @@ function requireAuth(req: any, res: any, next: any) {
   return requirePilotAuth(req, res, next);
 }
 
+// ── SSE Ticket Exchange ──────────────────────────────────────────────
+// Short-lived tickets let EventSource connections authenticate without
+// putting bearer tokens in URL query parameters.
+
+interface SseTicket {
+  token: string;
+  role: string;
+  isDemo: boolean;
+  demoSession?: string;
+  expiresAt: number;
+}
+
+const sseTickets = new Map<string, SseTicket>();
+const TICKET_TTL_MS = 30_000;
+
+// Clean up expired tickets every 15 seconds
+const ticketCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [id, t] of sseTickets) {
+    if (t.expiresAt < now) sseTickets.delete(id);
+  }
+}, 15_000);
+
+// Allow the cleanup interval to be cleared for testing / graceful shutdown
+if (typeof process !== "undefined" && process?.on) {
+  process.on("exit", () => clearInterval(ticketCleanup));
+}
+
+router.get(
+  "/sse-ticket",
+  requireAuth,
+  (req: any, res) => {
+    const token = req.headers["x-pilot-token"] || req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const isDemo = isDemoRequest(req);
+    const ticket = crypto.randomBytes(16).toString("hex");
+    sseTickets.set(ticket, {
+      token,
+      role: (req.query.role as string) || (isDemo ? req.pilot?.id : "pilot"),
+      isDemo,
+      demoSession: isDemo ? (req.headers["x-demo-session"] as string) : undefined,
+      expiresAt: Date.now() + TICKET_TTL_MS,
+    });
+    res.json({ ticket });
+  }
+);
+
+// ── SSE Events with ticket support ────────────────────────────────
+
 router.get(
   "/events",
+  // Ticket middleware runs BEFORE requireAuth — restores auth headers
+  (req: any, _res: any, next: any) => {
+    const ticketId = req.query.ticket as string | undefined;
+    if (ticketId) {
+      const data = sseTickets.get(ticketId);
+      if (!data || data.expiresAt < Date.now()) {
+        if (data) sseTickets.delete(ticketId);
+        // Fall through to requireAuth which will return 401
+        return next();
+      }
+      sseTickets.delete(ticketId); // Single-use
+      // Restore auth context so the normal middleware can validate
+      req.headers["x-pilot-token"] = data.token;
+      if (data.isDemo) {
+        req.headers["x-demo"] = "true";
+        if (data.demoSession) req.headers["x-demo-session"] = data.demoSession;
+      }
+      // Save role so the handler doesn't need query.role
+      req.sseTicketRole = data.role;
+    }
+    next();
+  },
   requireAuth,
   (req: any, res) => {
     const svc = (req.services as Services).retrievals;
     const isDemo = isDemoRequest(req);
-    const role = isDemo ? req.pilot.id : (req.query.role === 'pilot' ? 'pilot' : 'driver');
+    // Use ticket-stored role if available (avoids requiring query.role in ticket mode)
+    const role = req.sseTicketRole || (isDemo ? req.pilot.id : (req.query.role === 'pilot' ? 'pilot' : 'driver'));
     const pilotId = (!isDemo && role === 'pilot') ? req.pilot.id : undefined;
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',

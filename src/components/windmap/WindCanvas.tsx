@@ -46,12 +46,20 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
   const transformRef = useRef(zoomIdentity);
   const initialTransformApplied = useRef(false);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
     currentTimeRef.current = currentTime;
   }, [currentTime]);
 
   useEffect(() => {
+    if (!containerRef.current || !canvasRef.current) return;
+    const width = containerRef.current.clientWidth;
+    const height = containerRef.current.clientHeight;
+    canvasSizeRef.current = { width, height };
+    const dpr = window.devicePixelRatio || 1;
+    canvasRef.current.width = width * dpr;
+    canvasRef.current.height = height * dpr;
     initialTransformApplied.current = false;
     transformRef.current = zoomIdentity;
   }, [sizeKey]);
@@ -59,8 +67,8 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
   useEffect(() => {
     if (!containerRef.current || !svgRef.current || !canvasRef.current || !windGrid) return;
 
-    const width = containerRef.current.clientWidth;
-    const height = containerRef.current.clientHeight;
+    const { width, height } = canvasSizeRef.current;
+    if (width === 0 || height === 0) return;
 
     const svg = select(svgRef.current);
     svg.selectAll('*').remove();
@@ -127,12 +135,8 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     };
 
     const canvas = canvasRef.current;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.scale(dpr, dpr);
 
     const overlay = createSpeedOverlay(width, height);
     const particles = createParticlePool(width, height);
@@ -160,7 +164,8 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
         onZoomChange(t.k);
 
         if (onTransformChange) {
-          const inverted = projection.invert([(width/2 - t.x) / t.k, (height/2 - t.y) / t.k]);
+          const { width: cw, height: ch } = canvasSizeRef.current;
+          const inverted = projection.invert([(cw/2 - t.x) / t.k, (ch/2 - t.y) / t.k]);
           if (inverted) {
             const [lon, lat] = inverted;
             onTransformChange(lat, lon, Math.log2(t.k / 256));
@@ -176,16 +181,19 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
 
     const render = () => {
       const currentTransform = transformRef.current;
+      const { width: w, height: h } = canvasSizeRef.current;
+      if (w === 0 || h === 0) return;
 
       const tile = d3tile()
-        .size([width, height])
+        .size([w, h])
         .scale(currentTransform.k)
         .translate([currentTransform.x, currentTransform.y]);
       const tiles = tile();
 
       ctx.fillStyle = '#e8e8e8';
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, w, h);
 
+      const dpr = window.devicePixelRatio || 1;
       for (const d of tiles) {
         const tileKey = `${d[2]}/${d[0]}/${d[1]}`;
         const url = `https://a.basemaps.cartocdn.com/light_nolabels/${tileKey}${dpr > 1 ? '@2x' : ''}.png`;
@@ -203,10 +211,10 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       ctx.globalAlpha = 0.5;
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(overlay.canvas, 0, 0, width, height);
+      ctx.drawImage(overlay.canvas, 0, 0, w, h);
       ctx.restore();
 
-      updateAndDrawParticles(ctx, particles, width, height, currentTransform, projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
+      updateAndDrawParticles(ctx, particles, w, h, currentTransform, projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
 
       const markersLocal = siteMarkersRef.current;
       if (markersLocal && markersLocal.length > 0) {
@@ -224,7 +232,7 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
     };
-  }, [windGrid, siteLat, siteLon, onZoomChange, sizeKey, savedCenterLat, savedCenterLon, savedZoom]);
+  }, [windGrid, siteLat, siteLon, onZoomChange, savedCenterLat, savedCenterLon, savedZoom]);
 
   const handlePointer = (e: React.PointerEvent) => {
     if (!containerRef.current) return;

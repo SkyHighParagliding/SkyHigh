@@ -292,12 +292,13 @@ export function DutyPilotMap() {
     let eventSource: EventSource | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 
-    const sseUrl = isDemo
-      ? `/api/retrievals/events?demo=true&demoSession=${demoSession}&pilotToken=${token}`
-      : `/api/retrievals/events?role=duty&pilotToken=${token}`;
-
-    try {
-      eventSource = new EventSource(sseUrl);
+    const setupSSE = async () => {
+      try {
+        const roleQ = isDemo ? '' : '?role=duty';
+        const resp = await api.get<{ticket: string}>(`/api/retrievals/sse-ticket${roleQ}`, null, apiOpts());
+        if (!token) return;
+        const sseUrl = `/api/retrievals/events?ticket=${resp.ticket}`;
+        eventSource = new EventSource(sseUrl);
       eventSource.onopen = () => {
         fetchRetrievals();
         if (!isDemo && fallbackInterval) { clearInterval(fallbackInterval); fallbackInterval = null; }
@@ -312,9 +313,11 @@ export function DutyPilotMap() {
       eventSource.onerror = () => {
         if (!fallbackInterval) fallbackInterval = setInterval(fetchRetrievals, 5000);
       };
-    } catch {
-      fallbackInterval = setInterval(fetchRetrievals, 5000);
-    }
+      } catch {
+        if (!fallbackInterval) fallbackInterval = setInterval(fetchRetrievals, 5000);
+      }
+    };
+    setupSSE();
     if (isDemo && !fallbackInterval) {
       fallbackInterval = setInterval(fetchRetrievals, 3000);
     }
