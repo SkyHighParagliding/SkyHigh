@@ -199,7 +199,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
       // $38=essentialInfoText, $39=unassignedText, $40=siteguideVersion, $41=siteguideScrapedAt,
       // $42=isTidal, $43=tideStationId, $44=skipBulkImport, $45=isXCSite,
       // $46=closurePillsMax, $47=id (WHERE clause)
-      await execute(`
+      const updateResult = await execute(`
         UPDATE sites SET
           name = $1, type = $2,
           "pgRating" = CASE WHEN $3::text != '' THEN $3 ELSE "pgRating" END,
@@ -281,6 +281,9 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           (closurePillsMax != null && !isNaN(Number(closurePillsMax))) ? Math.min(10, Math.max(1, Number(closurePillsMax))) : 7, // $46 closurePillsMax
           req.params.id,                                               // $47 id (WHERE)
       ]);
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ error: "Site not found" });
+      }
       invalidateSearchCaches();
       invalidateSitesCache();
       res.json({ success: true });

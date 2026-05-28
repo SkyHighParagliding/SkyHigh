@@ -14,7 +14,7 @@ async function getCacheTtl(): Promise<number> {
     "SELECT value FROM settings WHERE key = $1",
     ["cacheTidyHqEventsTtl"]
   );
-  const minutes = parseInt(row?.value || "5", 10);
+  const minutes = parseInt(row?.value ?? "5", 10);
   return minutes * 60 * 1000;
 }
 

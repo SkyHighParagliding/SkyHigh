@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../../pg.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { requireAuth } from "../../middleware/auth.js";
 import { getZoneData, getAirspaceData, downloadAndParseZones, downloadAndParseAirspace, downloadAllZoneData, invalidateCache, getZoneDataVersion } from "../../utils/siteguideZoneData.js";
 
 interface XCSiteRow {
@@ -147,7 +148,7 @@ router.get("/xc/zones", asyncHandler(async (req, res) => {
   }
 }));
 
-router.post("/xc/zones/refresh", asyncHandler(async (req, res) => {
+router.post("/xc/zones/refresh", requireAuth, asyncHandler(async (req, res) => {
   try {
     invalidateCache();
     const result = await downloadAllZoneData();

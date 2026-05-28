@@ -15,15 +15,15 @@ router.get("/", asyncHandler(async (req, res) => {
     result[s.key] = s.value;
   }
 
-  const fineRow = await query<{ ts: string | null }>(
+  const fineRow = await query<{ ts: Date | string | null }>(
     `SELECT MAX("updatedAt") as ts FROM wind_grid_data WHERE "siteId" LIKE 'fine_grid_%'`
   );
-  if (fineRow?.[0]?.ts) result.fineGridLastRun = new Date(fineRow[0].ts + 'Z').toISOString();
+  if (fineRow?.[0]?.ts) result.fineGridLastRun = new Date(fineRow[0].ts).toISOString();
 
-  const coarseRow = await query<{ ts: string | null }>(
+  const coarseRow = await query<{ ts: Date | string | null }>(
     `SELECT MAX("updatedAt") as ts FROM wind_grid_data WHERE "siteId" LIKE 'coarse_grid_%'`
   );
-  if (coarseRow?.[0]?.ts) result.coarseGridLastRun = new Date(coarseRow[0].ts + 'Z').toISOString();
+  if (coarseRow?.[0]?.ts) result.coarseGridLastRun = new Date(coarseRow[0].ts).toISOString();
 
   const extRow = await query<{ ts: string | null }>(
     `SELECT MAX("computedAt") as ts FROM extended_wind_grids`

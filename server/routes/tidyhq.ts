@@ -411,7 +411,7 @@ router.post("/group-mappings", requireAuth, asyncHandler(async (req, res) => {
 
 router.delete("/group-mappings/:id", requireAuth, asyncHandler(async (req, res) => {
   const result = await execute(
-    `DELETE FROM tidyhq_group_mappings WHERE id = $1`,
+    `DELETE FROM tidyhq_group_mappings WHERE id = $1::int`,
     [req.params.id]
   );
   if (result.rowCount === 0) return res.status(404).json({ error: "Mapping not found" });

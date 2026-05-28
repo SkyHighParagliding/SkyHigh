@@ -203,14 +203,13 @@ export const SITES_COLUMNS = [
   "id", "name", "type", "windDir", "windSpeed", "status", "hazardLevel",
   "lat", "lon", "description", "launch", "landing", "hazards", "rules", "image",
   "useLiveWeather", "liveStationId", "siteguideUrl", "siteContact", "siteContactPhone",
-  "navigateTo", "launchHeight", "hoodedPloversLink", "hoodedPloversActive",
+  "navigateTo", "launchHeight", "launchHeight2", "landingHeight2", "hoodedPloversLink", "hoodedPloversActive",
   "emergencyMarker", "what3words", "weatherStationLink", "crossLeft", "crossRight",
   "isSkyHighSite", "pgRating", "hgRating", "overrideHideClosed",
-  "windSpeedMinIdeal", "windSpeedMaxIdeal", "windDirectionsIdeal",
   "essentialInfoImages", "essentialInfoText", "launchHeightHigh", "weatherGaugeUrl",
   "liveStationIdAlt", "siteguideVersion", "siteguideScrapedAt", "unassignedText",
   "temporarilyClosed", "preClosureOverrideHideClosed", "isTidal", "tideStationId",
-  "contentHash", "skipBulkImport", "isXCSite",
+  "contentHash", "skipBulkImport", "isXCSite", "closurePillsMax",
 ] as const;
 
 export const SITES_UPDATE_COLS = SITES_COLUMNS.filter(c => c !== "id");

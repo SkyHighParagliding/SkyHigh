@@ -16,7 +16,7 @@ router.get("/", asyncHandler(async (req, res) => {
     try { const s = JSON.parse(p.steps || '[]'); steps = Array.isArray(s) ? s : []; } catch { steps = []; }
     return { ...p, steps };
   });
-  const total = Number(countResult!.count);
+  const total = Number(countResult?.count ?? 0);
   res.set('X-Total-Count', String(total));
   res.json(createPaginatedResponse(parsed, total, limit, offset));
 }));
@@ -33,7 +33,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
   if (!id || !title) return res.status(400).json({ error: "ID and title are required" });
   await execute(
     `INSERT INTO procedures (id, title, icon, "iconColor", description, steps, "sortOrder") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, title, icon || 'ClipboardList', iconColor || 'text-navy', description || '', JSON.stringify(steps || []), sortOrder || 0]
+    [id, title, icon || 'ClipboardList', iconColor || 'text-navy', description || '', JSON.stringify(steps || []), sortOrder ?? 0]
   );
   invalidateSearchCaches();
   res.status(201).json({ success: true });
@@ -45,7 +45,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
   if (!existing) return res.status(404).json({ error: "Procedure not found" });
   await execute(
     `UPDATE procedures SET title = $1, icon = $2, "iconColor" = $3, description = $4, steps = $5, "sortOrder" = $6, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $7`,
-    [title, icon, iconColor, description, JSON.stringify(steps || []), sortOrder ?? 0, req.params.id]
+    [title, icon || 'ClipboardList', iconColor || 'text-navy', description ?? '', JSON.stringify(steps || []), sortOrder ?? 0, req.params.id]
   );
   invalidateSearchCaches();
   res.json({ success: true });

@@ -66,10 +66,13 @@ router.put("/:id/closure-dates", requireAuth, async (req, res) => {
 
     await transaction(async (client) => {
       await client.query("DELETE FROM site_closure_dates WHERE site_id = $1", [req.params.id]);
-      for (const date of dates) {
+      if (dates.length > 0) {
+        // Bulk insert all dates in a single query using unnest to avoid N+1
         await client.query(
-          "INSERT INTO site_closure_dates (site_id, closure_date) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-          [req.params.id, date]
+          `INSERT INTO site_closure_dates (site_id, closure_date)
+           SELECT $1, unnest($2::text[])
+           ON CONFLICT DO NOTHING`,
+          [req.params.id, dates]
         );
       }
     });

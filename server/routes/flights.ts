@@ -116,8 +116,8 @@ router.put(
       await rSvc.createRetrievalForPilot(
         result.pilotId,
         result.pilotName || "Pilot",
-        pilotPos?.lat || null,
-        pilotPos?.lon || null,
+        pilotPos?.lat ?? null,
+        pilotPos?.lon ?? null,
         req.params.id
       );
     }
