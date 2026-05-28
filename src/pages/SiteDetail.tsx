@@ -177,7 +177,7 @@ export function SiteDetail() {
                   {(() => {
                     const { isClosedToday, upcomingDates } = getClosureStatus(site);
                     const isPermanentlyClosed = site.status === 'closed';
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
                     const futureDates = isPermanentlyClosed ? [] :
                       (site.upcomingClosureDates ?? [])
                         .filter(d => d > todayStr)
