@@ -8,15 +8,40 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 
 /** Safely coerce an unknown value to string, returning fallback on null/undefined. */
+/** Safely coerce an unknown value to string, returning fallback on null/undefined. */
 function safeStr(val: unknown, fallback = ""): string {
   if (val == null) return fallback;
   return String(val);
+}
+
+/** Escape HTML special characters in a string to prevent XSS. */
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 /** Safely coerce an unknown value to string[], returning [] if not an array. */
 function safeStrArr(val: unknown): string[] {
   if (Array.isArray(val)) return val.map(v => safeStr(v));
   return [];
+}
+
+interface ExternalSite {
+  name: string;
+  url: string;
+  state?: string;
+  stateAbbr?: string;
+  region?: string;
+}
+
+interface SiteDiffField {
+  field: string;
+  archived: string | null;
+  current: string | null;
+}
+
+interface SiteDiffData {
+  version: string;
+  diffs: Array<{ status?: string; fields?: SiteDiffField[] }>;
 }
 
 export function useSiteForm() {
@@ -146,10 +171,11 @@ export function useSiteForm() {
   useEffect(() => {
     if (formData.useLiveWeather === "true" && formData.lat && formData.lon) {
       setLoadingStations(true);
-      api.get<Array<{id: string, name: string, distanceKm: number, lat: number, lon: number, source: string}>>(`/api/weather/stations/nearby?lat=${formData.lat}&lon=${formData.lon}&radius=${searchRadius}${formData.liveStationId ? `&currentStationId=${encodeURIComponent(formData.liveStationId)}` : ''}`)
+      const currentStationId = formData.liveStationId;
+      api.get<Array<{id: string, name: string, distanceKm: number, lat: number, lon: number, source: string}>>(`/api/weather/stations/nearby?lat=${formData.lat}&lon=${formData.lon}&radius=${searchRadius}${currentStationId ? `&currentStationId=${encodeURIComponent(currentStationId)}` : ''}`)
         .then(data => {
           setNearbyStations(data);
-          if (data.length > 0 && !formData.liveStationId) {
+          if (data.length > 0 && !currentStationId) {
             setFormData(prev => ({ ...prev, liveStationId: data[0].id }));
           }
         })
@@ -158,9 +184,9 @@ export function useSiteForm() {
     } else {
       setNearbyStations([]);
     }
-  }, [formData.useLiveWeather, formData.lat, formData.lon, searchRadius]);
+  }, [formData.useLiveWeather, formData.lat, formData.lon, searchRadius, formData.liveStationId]);
 
-  const [externalSites, setExternalSites] = useState<{name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]>([]);
+  const [externalSites, setExternalSites] = useState<ExternalSite[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [allDbSites, setAllDbSites] = useState<{id: string, siteguideUrl: string}[]>([]);
 
@@ -171,11 +197,11 @@ export function useSiteForm() {
   }, []);
 
   useEffect(() => {
-    api.get<Array<Record<string, string>>>('/api/external-sites')
+    api.get<ExternalSite[]>('/api/external-sites')
       .then(data => {
         setExternalSites(data);
         if (!isNew && formData.siteguideUrl && !selectedState) {
-          const match = data.find((s: Record<string, string>) => s.url === formData.siteguideUrl);
+          const match = data.find(s => s.url === formData.siteguideUrl);
           if (match?.stateAbbr) setSelectedState(match.stateAbbr);
         }
       })
@@ -192,11 +218,12 @@ export function useSiteForm() {
   const [showSitePromptEditor, setShowSitePromptEditor] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [liveSiteguideVersion, setLiveSiteguideVersion] = useState<string | null>(null);
-  const [archives, setArchives] = useState<{id: number, siteguideVersion: string, archivedAt: string, siteCount: number}[]>([]);
+  interface ArchiveEntry { id: number; siteguideVersion: string; archivedAt: string; siteCount: number; }
+  const [archives, setArchives] = useState<ArchiveEntry[]>([]);
   const [selectedRestoreVersion, setSelectedRestoreVersion] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [siteDiffData, setSiteDiffData] = useState<Record<string, unknown> | null>(null);
+  const [siteDiffData, setSiteDiffData] = useState<SiteDiffData | null>(null);
   const [siteDiffLoading, setSiteDiffLoading] = useState(false);
   const [showSiteDiffModal, setShowSiteDiffModal] = useState(false);
 
@@ -211,7 +238,7 @@ export function useSiteForm() {
 
   useEffect(() => {
     if (!isNew && token) {
-      api.get<Array<Record<string, unknown>>>("/api/sites/archives", token)
+      api.get<ArchiveEntry[]>("/api/sites/archives", token)
         .then(setArchives)
         .catch(() => {});
     }
@@ -237,7 +264,7 @@ export function useSiteForm() {
     setSiteDiffLoading(true);
     setSiteDiffData(null);
     try {
-      const data = await api.get<Record<string, unknown>>(`/api/sites/archives/${encodeURIComponent(selectedRestoreVersion)}/diff?siteId=${id}`, token);
+      const data = await api.get<SiteDiffData>(`/api/sites/archives/${encodeURIComponent(selectedRestoreVersion)}/diff?siteId=${id}`, token);
       setSiteDiffData(data);
       setShowSiteDiffModal(true);
     } catch (e: unknown) {
@@ -265,7 +292,7 @@ export function useSiteForm() {
       const data = await api.post<{ success?: boolean; count?: number; error?: string }>("/api/sites/scrape-urls", {}, token);
       if (data.success) {
         setRefreshMessage({ type: "success", text: `Successfully refreshed site list. Found ${data.count} sites.` });
-        api.get<Array<Record<string, string>>>('/api/external-sites')
+        api.get<ExternalSite[]>('/api/external-sites')
           .then(extData => setExternalSites(extData))
           .catch(() => {});
       } else {
@@ -288,18 +315,53 @@ export function useSiteForm() {
   };
 
   const applyScrapedData = (newData: Record<string, unknown>) => {
-    const essentialImgs = newData._essentialImages || [];
-    const essentialTxt = newData._essentialText || "";
-    const unassigned = newData._unassignedText || "";
-    const { _essentialImages, _essentialText, _unassignedText, ...formFields } = newData;
+    const essentialImgs = safeStrArr(newData._essentialImages);
+    const essentialTxt = safeStr(newData._essentialText);
+    const unassigned = safeStr(newData._unassignedText);
     setFormData(prev => ({
       ...prev,
-      ...formFields,
-      hazards: Array.isArray(formFields.hazards) ? formFields.hazards.join('\n') : (formFields.hazards || ""),
-      rules: Array.isArray(formFields.rules) ? formFields.rules.join('\n') : (formFields.rules || ""),
-      essentialInfoImages: JSON.stringify(essentialImgs),
-      essentialInfoText: essentialTxt,
-      unassignedText: unassigned
+      name: safeStr(newData.name, prev.name),
+      type: safeStr(newData.type, prev.type),
+      pgRating: safeStr(newData.pgRating, prev.pgRating),
+      hgRating: safeStr(newData.hgRating, prev.hgRating),
+      windDir: safeStr(newData.windDir, prev.windDir),
+      windSpeed: safeStr(newData.windSpeed, prev.windSpeed),
+      status: safeStr(newData.status, prev.status),
+      hazardLevel: safeStr(newData.hazardLevel, prev.hazardLevel),
+      lat: safeStr(newData.lat, prev.lat),
+      lon: safeStr(newData.lon, prev.lon),
+      useLiveWeather: safeStr(newData.useLiveWeather, prev.useLiveWeather),
+      liveStationId: safeStr(newData.liveStationId, prev.liveStationId),
+      liveStationIdAlt: safeStr(newData.liveStationIdAlt, prev.liveStationIdAlt),
+      description: safeStr(newData.description, prev.description),
+      launch: safeStr(newData.launch, prev.launch),
+      landing: safeStr(newData.landing, prev.landing),
+      hazards: safeStrArr(newData.hazards).join('\n') || safeStr(newData.hazards, prev.hazards),
+      rules: safeStrArr(newData.rules).join('\n') || safeStr(newData.rules, prev.rules),
+      image: safeStr(newData.image, prev.image),
+      siteguideUrl: safeStr(newData.siteguideUrl, prev.siteguideUrl),
+      siteContact: safeStr(newData.siteContact, prev.siteContact),
+      siteContactPhone: safeStr(newData.siteContactPhone, prev.siteContactPhone),
+      navigateTo: safeStr(newData.navigateTo, prev.navigateTo),
+      launchHeight: safeStr(newData.launchHeight, prev.launchHeight),
+      launchHeightHigh: safeStr(newData.launchHeightHigh, prev.launchHeightHigh),
+      launchHeight2: safeStr(newData.launchHeight2, prev.launchHeight2),
+      landingHeight2: safeStr(newData.landingHeight2, prev.landingHeight2),
+      hoodedPloversLink: safeStr(newData.hoodedPloversLink, prev.hoodedPloversLink),
+      hoodedPloversActive: safeStr(newData.hoodedPloversActive, prev.hoodedPloversActive),
+      emergencyMarker: safeStr(newData.emergencyMarker, prev.emergencyMarker),
+      what3words: safeStr(newData.what3words, prev.what3words),
+      isSkyHighSite: safeStr(newData.isSkyHighSite, prev.isSkyHighSite),
+      crossLeft: safeStr(newData.crossLeft, prev.crossLeft),
+      crossRight: safeStr(newData.crossRight, prev.crossRight),
+      overrideHideClosed: safeStr(newData.overrideHideClosed, prev.overrideHideClosed),
+      unassignedText: unassigned || prev.unassignedText,
+      siteguideVersion: safeStr(newData.siteguideVersion, prev.siteguideVersion),
+      siteguideScrapedAt: safeStr(newData.siteguideScrapedAt, prev.siteguideScrapedAt),
+      isTidal: safeStr(newData.isTidal, prev.isTidal),
+      tideStationId: safeStr(newData.tideStationId, prev.tideStationId),
+      skipBulkImport: safeStr(newData.skipBulkImport, prev.skipBulkImport),
+      isXCSite: safeStr(newData.isXCSite, prev.isXCSite),
     }));
     setEssentialImages(essentialImgs);
     if (id && !isNew) {
@@ -326,8 +388,8 @@ export function useSiteForm() {
       const payload = {
         ...currentFormData,
         id: siteId,
-        hazards: currentFormData.hazards.split('\n').filter((h: string) => h.trim()),
-        rules: currentFormData.rules.split('\n').filter((r: string) => r.trim()),
+        hazards: safeStr(currentFormData.hazards).split('\n').filter(h => h.trim()),
+        rules: safeStr(currentFormData.rules).split('\n').filter(r => r.trim()),
         lat: currentFormData.lat ? parseFloat(currentFormData.lat as string) : null,
         lon: currentFormData.lon ? parseFloat(currentFormData.lon as string) : null,
         isTidal: isCoastal ? "true" : "false",
@@ -358,7 +420,7 @@ export function useSiteForm() {
   const handlePrintFieldQR = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<html><head><title>Field QR - ${formData.name}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${formData.name}</h1><p>Scan for Site Information</p><div class="qr" id="qr-container"></div><p class="url">${fieldViewUrl}</p></div><script>const svg=window.opener.document.getElementById('field-qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
+      printWindow.document.write(`<html><head><title>Field QR - ${escapeHtml(formData.name)}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${escapeHtml(formData.name)}</h1><p>Scan for Site Information</p><div class="qr" id="qr-container"></div><p class="url">${fieldViewUrl}</p></div><script>const svg=window.opener.document.getElementById('field-qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
       printWindow.document.close();
     }
   };
@@ -366,7 +428,7 @@ export function useSiteForm() {
   const handlePrintXCMapsQR = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<html><head><title>XC Maps QR - ${formData.name}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${formData.name}</h1><p>Scan for XC Map</p><div class="qr" id="qr-container"></div><p class="url">${xcMapsUrl}</p></div><script>const svg=window.opener.document.getElementById('xcmaps-qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
+      printWindow.document.write(`<html><head><title>XC Maps QR - ${escapeHtml(formData.name)}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${escapeHtml(formData.name)}</h1><p>Scan for XC Map</p><div class="qr" id="qr-container"></div><p class="url">${xcMapsUrl}</p></div><script>const svg=window.opener.document.getElementById('xcmaps-qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
       printWindow.document.close();
     }
   };
@@ -374,7 +436,7 @@ export function useSiteForm() {
   const handlePrintQR = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<html><head><title>Print QR Code - ${formData.name}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${formData.name}</h1><p>Scan to Check-in</p><div class="qr" id="qr-container"></div><p class="url">${checkInUrl}</p></div><script>const svg=window.opener.document.getElementById('qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
+      printWindow.document.write(`<html><head><title>Print QR Code - ${escapeHtml(formData.name)}</title><style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0}.container{text-align:center;border:2px solid #000;padding:40px;border-radius:20px}h1{margin-bottom:10px;font-size:32px}p{margin-bottom:30px;font-size:18px;color:#555}.qr{margin-bottom:20px}.url{font-family:monospace;font-size:14px;color:#888}</style></head><body><div class="container"><h1>${escapeHtml(formData.name)}</h1><p>Scan to Check-in</p><div class="qr" id="qr-container"></div><p class="url">${checkInUrl}</p></div><script>const svg=window.opener.document.getElementById('qr-svg').outerHTML;document.getElementById('qr-container').innerHTML=svg;setTimeout(()=>window.print(),500)</script></body></html>`);
       printWindow.document.close();
     }
   };

@@ -1143,9 +1143,7 @@ export function AdminSiteEdit() {
             )}
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" asChild>
-                <Link to="/admin/sites">Cancel</Link>
-              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate("/admin/sites")}>Cancel</Button>
               <Button
                 type="submit"
                 className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
@@ -1360,7 +1358,7 @@ export function AdminSiteEdit() {
                     </tr>
                   </thead>
                   <tbody>
-                    {siteDiffData.diffs[0]?.fields?.map((f: any) => (
+                    {siteDiffData.diffs[0]?.fields?.map((f) => (
                       <tr key={f.field} className="border-b border-border last:border-0">
                         <td className="p-2 font-mono text-foreground-secondary align-top">{f.field}</td>
                         <td className="p-2 bg-red-50/50 align-top break-all">

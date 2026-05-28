@@ -10,16 +10,7 @@ import { formatWindMapTime } from '@/lib/dateUtils';
 
 const WindCanvas = lazy(() => import('./WindMapProto').then(m => ({ default: m.WindCanvas })));
 
-interface WindGrid {
-  lonMin: number;
-  lonMax: number;
-  latMin: number;
-  latMax: number;
-  ni: number;
-  nj: number;
-  times: string[];
-  data: { u: number[]; v: number[] }[];
-}
+import type { WindGrid } from './windmap/windInterpolation';
 
 interface SitesWindMapProps {
   sites: SiteMarker[];

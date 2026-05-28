@@ -35,7 +35,7 @@ export function SiteDetail() {
   }, [weatherRaw]);
   const distance = useMemo(() => {
     if (!weather || weather.error || !weather.stationLat || !weather.stationLon || !site?.lat || !site?.lon) return null;
-    return haversineDistance(site.lat, site.lon, weather.stationLat, weather.stationLon).toFixed(1);
+    return parseFloat(haversineDistance(site.lat, site.lon, weather.stationLat, weather.stationLon).toFixed(1));
   }, [weather, site]);
   const error = siteError ? (siteError as Error).message : "";
   const [essentialInfoOpen, setEssentialInfoOpen] = useState(false);
