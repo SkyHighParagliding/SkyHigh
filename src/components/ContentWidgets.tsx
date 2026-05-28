@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSafetyOfficers } from "@/hooks/api";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GraduationCap, Mail, MessageCircle, Phone, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -626,4 +627,40 @@ export function MarkdownWithWidgets({ content, className, compact }: MarkdownWit
   );
 }
 
-export { SchoolsWidget, TelegramWidget, CommitteeWidget };
+function SafetyOfficerWidget() {
+  const { data: officers = [], isLoading } = useSafetyOfficers();
+
+  const selected = useMemo(() => {
+    if (officers.length === 0) return [];
+    const ssos = officers.filter(o => o.safetyOfficerType === 'SSO');
+    const sos  = officers.filter(o => o.safetyOfficerType === 'SO');
+    const pickedSSO = ssos.length > 0
+      ? [ssos[Math.floor(Math.random() * ssos.length)]]
+      : [];
+    const shuffledSOs = [...sos].sort(() => Math.random() - 0.5).slice(0, 4);
+    return [...pickedSSO, ...shuffledSOs];
+  }, [officers]);
+
+  if (isLoading) return <div className="my-2 flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-400"></div></div>;
+  if (selected.length === 0) return null;
+
+  return (
+    <div className="flex flex-col items-center gap-1.5 mt-2">
+      {selected.map(officer => {
+        const displayName = [officer.name, officer.surname].filter(Boolean).join(' ');
+        const role = officer.safetyOfficerType || 'SO';
+        return (
+          <span
+            key={officer.id}
+            className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange/10 text-white rounded-full text-xs font-medium border border-orange/20"
+          >
+            {displayName}
+            <span className="text-white/70 font-normal">· {role}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+export { SchoolsWidget, TelegramWidget, CommitteeWidget, SafetyOfficerWidget };

@@ -8,7 +8,7 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { PublicSearchBox } from "@/components/PublicSearchBox";
 import { PhotoSlider } from "@/components/PhotoSlider";
 import { YouTubeCarousel } from "@/components/YouTubeCarousel";
-import { MarkdownWithWidgets } from "@/components/ContentWidgets";
+import { MarkdownWithWidgets, SafetyOfficerWidget } from "@/components/ContentWidgets";
 import { useUpcomingEvents, useSponsors, useSite, useHomeSites, useClosureBanners } from "@/hooks/api";
 
 export function Home() {
@@ -162,7 +162,8 @@ export function Home() {
       desc: (
         <>
           {settings.onlineCheckInEnabled && <span className="font-semibold text-orange block mb-1">Mandatory online check-in for all pilots.</span>}
-          {settings.homeBox2Desc || "Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely."}
+          <span className="block mb-1">{settings.homeBox2Desc || "Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely."}</span>
+          <SafetyOfficerWidget />
         </>
       ),
       link: settings.homeCardSafetyLink || '/safety',
