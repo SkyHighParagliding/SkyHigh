@@ -2,6 +2,18 @@ import type { SiteMarker } from '../windMapTypes';
 import type { GeoProjection } from 'd3-geo';
 import type { ZoomTransform } from 'd3-zoom';
 
+function pinColor(
+  status: string | undefined,
+  upcomingClosureDates: string[] | undefined,
+  todayStr: string,
+  isSkyHighSite?: string,
+): string {
+  if (status === 'closed' || (upcomingClosureDates?.includes(todayStr) ?? false)) return '#ef4444';
+  if (status === 'restricted') return '#f59e0b';
+  if (isSkyHighSite === 'true') return '#22c55e';
+  return '#0ea5e9';
+}
+
 export function drawSiteMarkers(
   ctx: CanvasRenderingContext2D,
   markers: SiteMarker[],
@@ -25,11 +37,7 @@ export function drawSiteMarkers(
     const r = 6;
     ctx.beginPath();
     ctx.arc(sp[0], sp[1], r, 0, 2 * Math.PI);
-    const isClosedToday = site.status === 'closed' || (site.upcomingClosureDates?.includes(todayStr) ?? false);
-    ctx.fillStyle = isClosedToday ? '#ef4444'
-      : site.status === 'restricted' ? '#f59e0b'
-      : site.isSkyHighSite === 'true' ? '#22c55e'
-      : '#0ea5e9';
+    ctx.fillStyle = pinColor(site.status, site.upcomingClosureDates, todayStr, site.isSkyHighSite);
     ctx.fill();
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
@@ -82,10 +90,7 @@ export function drawSingleSiteMarker(
   const r = 5;
   ctx.beginPath();
   ctx.arc(siteScreen[0], siteScreen[1], r, 0, 2 * Math.PI);
-  const isClosedToday = siteStatus === 'closed' || (siteUpcomingClosureDates?.includes(todayStr) ?? false);
-  ctx.fillStyle = isClosedToday ? '#ef4444'
-    : siteStatus === 'restricted' ? '#f59e0b'
-    : '#0ea5e9';
+  ctx.fillStyle = pinColor(siteStatus, siteUpcomingClosureDates, todayStr);
   ctx.fill();
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 2;

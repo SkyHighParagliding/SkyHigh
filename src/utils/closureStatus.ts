@@ -5,7 +5,7 @@ export interface ClosureStatus {
   upcomingDates: string[];
 }
 
-const toMelbourneDate = (d: Date): string =>
+export const toMelbourneDate = (d: Date): string =>
   d.toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
 
 export function getClosureStatus(site: Site, today: Date = new Date()): ClosureStatus {
