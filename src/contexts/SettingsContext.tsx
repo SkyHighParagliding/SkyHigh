@@ -50,6 +50,10 @@ interface Settings {
   homeCardEventsTitle?: string;
   homeCardEventsLink?: string;
   homeCardEventsLinkText?: string;
+  homeCardCommitteeTitle?: string;
+  homeCardCommitteeLink?: string;
+  homeCardCommitteeLinkText?: string;
+  homeCardCommitteeDesc?: string;
   homeCustomCards?: string;
   homeWeatherCardCount?: string;
   socialFacebook?: string;
@@ -67,6 +71,8 @@ interface Settings {
   instagramEmbeds?: string;
   publicSearchCommitteeLink?: string;
   publicSearchPrompt?: string;
+  publicSearchDisclaimer?: string;
+  publicSearchEligibilityRules?: string;
   publicSearchCtaMessage?: string;
   publicSearchCtaFrequency?: string;
   qrCodeMode?: string;
@@ -87,6 +93,7 @@ interface Settings {
   clubLogoDarkSplash?: string;
   pwaIcon192?: string;
   pwaIcon512?: string;
+  customWidgetTags?: string;
   activeTemplate?: string;
   joinPageEnabled?: boolean;
   joinTidyhqUrl?: string;
@@ -274,6 +281,10 @@ function buildSettings(data: Record<string, any>): Settings {
     homeCardEventsTitle: cleanString(data.homeCardEventsTitle),
     homeCardEventsLink: cleanString(data.homeCardEventsLink),
     homeCardEventsLinkText: cleanString(data.homeCardEventsLinkText),
+    homeCardCommitteeTitle: cleanString(data.homeCardCommitteeTitle),
+    homeCardCommitteeLink: cleanString(data.homeCardCommitteeLink),
+    homeCardCommitteeLinkText: cleanString(data.homeCardCommitteeLinkText),
+    homeCardCommitteeDesc: cleanString(data.homeCardCommitteeDesc),
     homeCustomCards: data.homeCustomCards || "",
     socialFacebook: cleanString(data.socialFacebook),
     socialInstagram: cleanString(data.socialInstagram),
@@ -290,6 +301,8 @@ function buildSettings(data: Record<string, any>): Settings {
     instagramEmbeds: data.instagramEmbeds || "",
     publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
     publicSearchPrompt: data.publicSearchPrompt || "",
+    publicSearchDisclaimer: cleanString(data.publicSearchDisclaimer),
+    publicSearchEligibilityRules: cleanString(data.publicSearchEligibilityRules),
     publicSearchCtaMessage: data.publicSearchCtaMessage || "",
     publicSearchCtaFrequency: data.publicSearchCtaFrequency || "2",
     qrCodeMode: data.qrCodeMode || "off",
@@ -310,6 +323,7 @@ function buildSettings(data: Record<string, any>): Settings {
     clubLogoDarkSplash: cleanString(data.clubLogoDarkSplash) || "",
     pwaIcon192: cleanString(data.pwaIcon192) || "",
     pwaIcon512: cleanString(data.pwaIcon512) || "",
+    customWidgetTags: data.customWidgetTags || "",
     activeTemplate: data.activeTemplate || "classic",
     groundHandlingEnabled: data.groundHandlingEnabled === "true",
     xcMapsEnabled: data.xcMapsEnabled === "true",

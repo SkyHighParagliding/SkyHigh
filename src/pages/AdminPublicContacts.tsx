@@ -4,15 +4,7 @@ import { ArrowLeft, Plus, Pencil, Trash2, X, Search, KeyRound } from "lucide-rea
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { usePublicContacts, useSaveContactMutation, useDeleteContactMutation, useSendResetMutation } from "@/hooks/api";
-
-interface PublicContact {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  name: string;
-  createdAt: string;
-}
+import type { PublicContact } from "@/types/api";
 
 export function AdminPublicContacts() {
   const { token } = useAuth();
@@ -142,17 +134,17 @@ export function AdminPublicContacts() {
                 {contacts.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      {c.firstName || <span className="text-gray-400 italic">-</span>}
+                      {(c.firstName as string) || <span className="text-gray-400 italic">-</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {c.lastName || <span className="text-gray-400 italic">-</span>}
+                      {(c.lastName as string) || <span className="text-gray-400 italic">-</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{c.email}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs font-mono hidden lg:table-cell" title={c.id}>
                       {c.id.slice(0, 8)}...
                     </td>
                     <td className="px-4 py-3 text-gray-500">
-                      {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}
+                      {c.createdAt ? new Date(c.createdAt as string).toLocaleDateString() : "-"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

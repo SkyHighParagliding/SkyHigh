@@ -39,9 +39,8 @@ Part 2 — `/code-review high` on the above changes, then applied all 10 finding
 
 ## Next task to start
 - Feature backlog: TASK-031 (XC Flight History Export — S effort)
-- Or: TASK-029 (Harden DEFAULT_ADMINS for Production — S effort)
 - Or: TASK-030 (Siteguide Version Change Email Notification — M effort)
-- Or: Continue Phase 5 tsc audit (94 pre-existing errors in non-wind-map areas)
+- Completed: Phase 5 tsc audit (0 errors remaining — resolved all 94 pre-existing errors)
 
 ## Open questions / blockers
 - None

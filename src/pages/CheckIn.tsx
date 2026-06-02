@@ -32,7 +32,7 @@ export function CheckIn() {
     try {
       const data = await checkinMutation.mutateAsync({ siteId: selectedSite });
       if (data.success) {
-        setCheckinResult(data.checkin as CheckinResult);
+        setCheckinResult(data.checkin as any);
         setStep(3);
       } else {
         alert("Failed to check in: " + (data.error || "Unknown error"));

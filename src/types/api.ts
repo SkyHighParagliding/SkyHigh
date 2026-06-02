@@ -71,15 +71,21 @@ export interface BulkWeatherResponse {
 export interface EventItem {
   id: string;
   title: string;
+  name?: string;
   date: string;
+  start_at?: string;
+  start_at_iso?: string;
   endDate?: string;
   location?: string;
   description?: string;
   slug?: string;
   type?: string;
+  public_url?: string;
+  image_url?: string;
 }
 
 export interface Sponsor {
+  id: string;
   name: string;
   logo?: string;
   url?: string;
@@ -120,6 +126,7 @@ export interface NewsItem {
   category: string;
   published: boolean;
   publishedAt: string;
+  date?: string;
   image: string;
 }
 
@@ -131,6 +138,7 @@ export interface PageData {
   published: boolean;
   createdAt: string;
   updatedAt: string;
+  lastUpdated?: string;
 }
 
 export interface PageAttachment {
@@ -184,6 +192,8 @@ export interface Competition {
   rulesSummary: string;
   registrationUrl: string;
   status: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BusinessListing {
@@ -216,11 +226,14 @@ export interface SafetyOfficer {
 export interface PublicContact {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
   role: string;
   isDriver: boolean;
   displayName: string;
+  createdAt?: string;
   [key: string]: unknown;
 }
 

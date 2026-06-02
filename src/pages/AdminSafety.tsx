@@ -226,7 +226,7 @@ export function AdminSafety() {
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-sm font-medium text-foreground-secondary">Content (Markdown)</label>
                       <div className="flex items-center gap-2">
-                        <ContentImageToolbar onInsert={(md) => handleInsertMarkdown(section.id, md)} />
+                        <ContentImageToolbar onInsertMarkdown={(md) => handleInsertMarkdown(section.id, md)} />
                         <GoogleDocsPaste onInsert={(md) => handleInsertMarkdown(section.id, md)} />
                         <MarkdownHelpLink />
                       </div>
@@ -380,7 +380,10 @@ export function AdminSafety() {
           </div>
         )}
 
-        <UnsavedChangesModal blocker={blocker} />
+        <UnsavedChangesModal blocker={blocker} onSave={async () => {
+          const first = sections[0];
+          if (first) await saveSection(first);
+        }} />
       </div>
     </div>
   );

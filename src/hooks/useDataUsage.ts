@@ -155,7 +155,7 @@ export function useDataUsage(): DataUsageStats {
     rateDown: 0,
   });
 
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const update = useCallback(() => {
     const rate = computeRate(globalTracker.history, 30);

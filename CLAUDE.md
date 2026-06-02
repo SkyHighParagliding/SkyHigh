@@ -15,7 +15,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** Site scheduled closure calendar feature completed (2026-05-21). New table `site_closure_dates`, admin calendar picker UI replacing Status dropdown, automated home-page banners, badge logic on Sites/SiteDetail, 7-day outlook closure flags. Next: production deployment tasks (TASK-029) or Feature Backlog (TASK-031).  
+**Current Focus:** Phase 5 tsc audit completed (2026-06-02) — resolved all 94 pre-existing errors across admin, news, and layout areas. Next: Feature Backlog (TASK-031).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**

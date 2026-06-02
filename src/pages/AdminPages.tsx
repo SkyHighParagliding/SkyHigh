@@ -100,7 +100,7 @@ export function AdminPages() {
                           <td className="p-4 font-medium text-navy">{page.title}</td>
                           <td className="p-4 text-foreground-secondary">/{page.slug}</td>
                           <td className="p-4 text-muted-foreground text-sm">
-                            {new Date(page.lastUpdated).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {new Date(page.lastUpdated || page.updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </td>
                           <td className="p-4 text-right space-x-2">
                             <Button variant="outline" size="sm" onClick={() => navigate(`/admin/pages/${page.slug}/edit`)}>
@@ -150,7 +150,7 @@ export function AdminPages() {
                       {news.map((item) => (
                         <tr key={item.id} className="border-b border-border-faint hover:bg-background">
                           <td className="p-4 font-medium text-navy">{item.title}</td>
-                          <td className="p-4 text-foreground-secondary">{new Date(item.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                          <td className="p-4 text-foreground-secondary">{new Date(item.date || item.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                           <td className="p-4 text-foreground-secondary">{item.author}</td>
                           <td className="p-4 text-right space-x-2">
                             <Button variant="outline" size="sm" onClick={() => navigate(`/admin/news/${item.id}/edit`)}>

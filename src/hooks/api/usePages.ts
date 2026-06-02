@@ -12,6 +12,7 @@ export interface PageData {
   published: boolean;
   createdAt: string;
   updatedAt: string;
+  lastUpdated?: string;
 }
 
 // Type also defined in src/types/api.ts — keep in sync

@@ -44,7 +44,8 @@ export function News() {
                 <Card className="h-full hover:shadow-xl transition-all duration-300 border-t-4 border-t-emerald-500 hover:-translate-y-1">
                   <CardHeader>
                     <div className="flex items-center text-xs text-muted-foreground mb-2 space-x-4">
-                      <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" /> {new Date(item.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span className="flex items-center"><Calendar className="w-3 h-3 mr-1" /> {new Date(item.date || item.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+
                       <span className="flex items-center"><User className="w-3 h-3 mr-1" /> {item.author}</span>
                     </div>
                     <CardTitle className="text-xl text-navy group-hover:text-sky transition-colors line-clamp-2">

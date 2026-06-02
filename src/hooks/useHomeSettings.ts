@@ -3,6 +3,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminForm } from '@/hooks/useAdminForm';
 import { api } from '@/lib/apiClient';
+import type { Site } from '@/types/api';
 
 const ALLOWED_YT_HOSTS = new Set(["youtu.be", "youtube.com", "www.youtube.com", "m.youtube.com"]);
 
@@ -25,7 +26,7 @@ export function extractYoutubeVideoId(url: string): string | null {
 export function useHomeSettings() {
   const { settings, updateSettings, loading } = useSettings();
   const { token } = useAuth();
-  const [sites, setSites] = useState<Array<Record<string, unknown>>>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [formData, setFormData] = useState({
     homeHeroTitle: "",
     homeHeroSubtitle: "",
@@ -61,67 +62,92 @@ export function useHomeSettings() {
     homeCardCommitteeLink: "",
     homeCardCommitteeLinkText: "",
     homeCardCommitteeDesc: "",
-    homeWeatherCardCount: 6,
+    socialFacebook: "",
+    socialInstagram: "",
+    socialYoutube: "",
+    socialTiktok: "",
+    socialTwitter: "",
+    socialLinkedin: "",
+    socialStrava: "",
+    socialWebsite: "",
+    publicSearchCommitteeLink: "",
+    publicSearchPrompt: "",
+    publicSearchDisclaimer: "",
+    publicSearchEligibilityRules: "",
+    publicSearchCtaMessage: "",
+    publicSearchCtaFrequency: "2",
+    qrCodeMode: "off" as "off" | "online" | "static",
+    clubName: "SkyHigh",
+    clubTagline: "",
+    clubPrimaryColor: "",
+    groundHandlingEnabled: false,
+    xcMapsEnabled: false,
+    xcMapsTitle: "",
+    xcMapsDescription: "",
+    xcDistanceRings: "[10, 20, 50, 100]",
+    businessDirectoryEnabled: false,
+    bulkUploadLimit: "20",
+    xcAirspaceEnabled: false,
+    xcCompetitionsEnabled: false,
+    flightTrackerEnabled: false,
+    homeWeatherCardCount: "6",
   });
 
-  const [customCards, setCustomCards] = useState<Array<{id: string; title: string; description: string; link: string; linkText: string; color: string}>>([]);
-  const [schools, setSchools] = useState<Array<{name: string; url: string}>>([]);
-  const [newSchoolName, setNewSchoolName] = useState("");
-  const [newSchoolUrl, setNewSchoolUrl] = useState("");
-  const [sponsors, setSponsors] = useState<Array<{name: string; logo: string; url: string; markdown: string}>>([]);
-  const [telegramGroups, setTelegramGroups] = useState<Array<{name: string; url: string}>>([]);
-  const [newTelegramName, setNewTelegramName] = useState("");
-  const [newTelegramUrl, setNewTelegramUrl] = useState("");
-  const [youtubeVideos, setYoutubeVideos] = useState<Array<{url: string}>>([]);
-  const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
-  const [youtubeUrlError, setYoutubeUrlError] = useState("");
-  const [instagramEmbeds, setInstagramEmbeds] = useState<Array<{embedCode: string; addedAt: string}>>([]);
-  const [newInstaEmbed, setNewInstaEmbed] = useState("");
-  const [instaEmbedError, setInstaEmbedError] = useState("");
-  const [ytChannelUrl, setYtChannelUrl] = useState("https://www.youtube.com/@iandayble");
-  const [ytScraping, setYtScraping] = useState(false);
-  const [ytScrapeResult, setYtScrapeResult] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [customWidgetTags, setCustomWidgetTags] = useState<{ name: string; source: "telegram" | "schools"; items: string[] }[]>([]);
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagSource, setNewTagSource] = useState<"telegram" | "schools">("telegram");
-  const [newTagSelection, setNewTagSelection] = useState<string[]>([]);
-  const [editingTagIdx, setEditingTagIdx] = useState<number | null>(null);
-  const [editTagSelection, setEditTagSelection] = useState<string[]>([]);
-  const saveMessageRef = useRef<HTMLDivElement>(null);
-  const { isDirty, markDirty, markClean, blocker, justSaved, save: adminSave } = useAdminForm({ successMessage: "Home page settings saved!" });
+  const [customCards, setCustomCards] = useState<any[]>([]);
+  const [schools, setSchools] = useState<any[]>([]);
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [telegramGroups, setTelegramGroups] = useState<any[]>([]);
+  const [youtubeVideos, setYoutubeVideos] = useState<any[]>([]);
+  const [instagramEmbeds, setInstagramEmbeds] = useState<any[]>([]);
+  const [customWidgetTags, setCustomWidgetTags] = useState<any[]>([]);
 
-  const toggleSection = (id: string) => {
-    setExpandedSections((prev) => {
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["alert"]));
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
 
-  useEffect(() => {
-    api.get<{ data: Array<Record<string, unknown>> }>('/api/sites')
-      .then(response => setSites(response.data))
-      .catch(() => {});
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [newSchoolUrl, setNewSchoolUrl] = useState("");
+  const [newTelegramName, setNewTelegramName] = useState("");
+  const [newTelegramUrl, setNewTelegramUrl] = useState("");
+  const [newYoutubeUrl, setNewYoutubeUrl] = useState("");
+  const [youtubeUrlError, setYoutubeUrlError] = useState("");
+  const [newInstaEmbed, setNewInstaEmbed] = useState("");
+  const [instaEmbedError, setInstaEmbedError] = useState("");
 
-    if (settings) {
+  const [ytChannelUrl, setYtChannelUrl] = useState("");
+  const [ytScraping, setYtScraping] = useState(false);
+  const [ytScrapeResult, setYtScrapeResult] = useState<{ count: number } | null>(null);
+
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagSource, setNewTagSource] = useState<"telegram" | "school" | "sponsor">("telegram");
+  const [newTagSelection, setNewTagSelection] = useState<string[]>([]);
+  const [editingTagIdx, setEditingTagIdx] = useState<number | null>(null);
+  const [editTagSelection, setEditTagSelection] = useState<string[]>([]);
+
+  const saveMessageRef = useRef<HTMLDivElement>(null);
+  const { isDirty, markDirty, blocker, saving, justSaved, saveError, save } = useAdminForm({ successMessage: "Home page settings saved" });
+
+  useEffect(() => {
+    api.get<{ data: Site[] }>("/api/sites")
+      .then(res => setSites(res.data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
       setFormData({
         homeHeroTitle: settings.homeHeroTitle || "",
         homeHeroSubtitle: settings.homeHeroSubtitle || "",
-        homeHeroImages: (() => {
-          try {
-            const saved: string[] = settings.homeHeroImages ? JSON.parse(settings.homeHeroImages) : [];
-            const library: { wide: string }[] = settings.imageLibrary ? JSON.parse(settings.imageLibrary) : [];
-            const libraryWideSet = new Set(library.map(p => p.wide).filter(Boolean));
-            if (libraryWideSet.size === 0) return saved;
-            return saved.filter(url => libraryWideSet.has(url));
-          } catch (e) {
-            return [];
-          }
-        })(),
+        homeHeroImages: Array.isArray(settings.homeHeroImages) ? settings.homeHeroImages : (typeof settings.homeHeroImages === 'string' ? JSON.parse(settings.homeHeroImages || "[]") : []),
         homeHeroImageMode: (settings.homeHeroImageMode as "static" | "random") || "random",
         homeHeroStaticImageIndex: parseInt(settings.homeHeroStaticImageIndex || "0"),
-        alertBannerEnabled: settings.alertBannerEnabled || false,
+        alertBannerEnabled: !!settings.alertBannerEnabled,
         alertBannerText: settings.alertBannerText || "",
         homeCta1Text: settings.homeCta1Text || "",
         homeCta1Link: settings.homeCta1Link || "",
@@ -131,14 +157,8 @@ export function useHomeSettings() {
         homeBox1Desc: settings.homeBox1Desc || "",
         homeBox2Desc: settings.homeBox2Desc || "",
         homeBox3Desc: settings.homeBox3Desc || "",
-        homeCardsSelection: (() => {
-          try {
-            return settings.homeCardsSelection ? JSON.parse(settings.homeCardsSelection) : ["sites", "safety", "community"];
-          } catch (e) {
-            return ["sites", "safety", "community"];
-          }
-        })(),
-        homeCardsCycle: settings.homeCardsCycle || false,
+        homeCardsSelection: Array.isArray(settings.homeCardsSelection) ? settings.homeCardsSelection : (typeof settings.homeCardsSelection === 'string' ? JSON.parse(settings.homeCardsSelection || '["sites", "safety", "community"]') : ["sites", "safety", "community"]),
+        homeCardsCycle: !!settings.homeCardsCycle,
         homeCardsCyclePinned: settings.homeCardsCyclePinned || "",
         homeCardSitesTitle: settings.homeCardSitesTitle || "",
         homeCardSitesLink: settings.homeCardSitesLink || "",
@@ -152,48 +172,51 @@ export function useHomeSettings() {
         homeCardEventsTitle: settings.homeCardEventsTitle || "",
         homeCardEventsLink: settings.homeCardEventsLink || "",
         homeCardEventsLinkText: settings.homeCardEventsLinkText || "",
-        homeCardCommitteeTitle: String(settings.homeCardCommitteeTitle || ""),
-        homeCardCommitteeLink: String(settings.homeCardCommitteeLink || ""),
-        homeCardCommitteeLinkText: String(settings.homeCardCommitteeLinkText || ""),
+        homeCardCommitteeTitle: settings.homeCardCommitteeTitle || "",
+        homeCardCommitteeLink: settings.homeCardCommitteeLink || "",
+        homeCardCommitteeLinkText: settings.homeCardCommitteeLinkText || "",
         homeCardCommitteeDesc: settings.homeCardCommitteeDesc || "",
-        homeWeatherCardCount: parseInt(settings.homeWeatherCardCount || "6"),
+        socialFacebook: settings.socialFacebook || "",
+        socialInstagram: settings.socialInstagram || "",
+        socialYoutube: settings.socialYoutube || "",
+        socialTiktok: settings.socialTiktok || "",
+        socialTwitter: settings.socialTwitter || "",
+        socialLinkedin: settings.socialLinkedin || "",
+        socialStrava: settings.socialStrava || "",
+        socialWebsite: settings.socialWebsite || "",
+        publicSearchCommitteeLink: settings.publicSearchCommitteeLink || "",
+        publicSearchPrompt: settings.publicSearchPrompt || "",
+        publicSearchDisclaimer: settings.publicSearchDisclaimer || "",
+        publicSearchEligibilityRules: settings.publicSearchEligibilityRules || "",
+        publicSearchCtaMessage: settings.publicSearchCtaMessage || "",
+        publicSearchCtaFrequency: settings.publicSearchCtaFrequency || "2",
+        qrCodeMode: (settings.qrCodeMode as "off" | "online" | "static") || "off",
+        clubName: settings.clubName || "SkyHigh",
+        clubTagline: settings.clubTagline || "",
+        clubPrimaryColor: settings.clubPrimaryColor || "",
+        groundHandlingEnabled: !!settings.groundHandlingEnabled,
+        xcMapsEnabled: !!settings.xcMapsEnabled,
+        xcMapsTitle: settings.xcMapsTitle || "",
+        xcMapsDescription: settings.xcMapsDescription || "",
+        xcDistanceRings: settings.xcDistanceRings || "[10, 20, 50, 100]",
+        businessDirectoryEnabled: !!settings.businessDirectoryEnabled,
+        bulkUploadLimit: settings.bulkUploadLimit || "20",
+        xcAirspaceEnabled: !!settings.xcAirspaceEnabled,
+        xcCompetitionsEnabled: !!settings.xcCompetitionsEnabled,
+        flightTrackerEnabled: !!settings.flightTrackerEnabled,
+        homeWeatherCardCount: settings.homeWeatherCardCount || "6",
       });
-      try {
-        const parsed = settings.homeCustomCards ? JSON.parse(settings.homeCustomCards) : [];
-        setCustomCards(parsed);
-      } catch (e) {
-        setCustomCards([]);
-      }
-      try {
-        const parsedSchools = settings.homeSchools ? JSON.parse(settings.homeSchools) : [];
-        setSchools(parsedSchools);
-      } catch (e) {
-        setSchools([]);
-      }
-      api.get<Array<Record<string, string>>>("/api/sponsors")
-        .then(data => setSponsors(Array.isArray(data) ? data.map((s) => ({ name: s.name, logo: s.logo || "", url: s.url || "", markdown: s.markdown || "" })) : []))
-        .catch(() => setSponsors([]));
-      try {
-        const parsedTelegram = settings.homeTelegramGroups ? JSON.parse(settings.homeTelegramGroups) : [];
-        setTelegramGroups(parsedTelegram);
-      } catch (e) {
-        setTelegramGroups([]);
-      }
-      try {
-        const parsedYt = settings.youtubeVideos ? JSON.parse(settings.youtubeVideos as string) : [];
-        setYoutubeVideos(parsedYt);
-      } catch (e) {
-        setYoutubeVideos([]);
-      }
-      try {
-        const parsedInsta = settings.instagramEmbeds ? JSON.parse(settings.instagramEmbeds as string) : [];
-        setInstagramEmbeds(parsedInsta);
-      } catch (e) {
-        setInstagramEmbeds([]);
-      }
+
+      try { setCustomCards(JSON.parse(settings.homeCustomCards || "[]")); } catch { setCustomCards([]); }
+      try { setSchools(JSON.parse(settings.homeSchools || "[]")); } catch { setSchools([]); }
+      try { setSponsors(JSON.parse(settings.homeSponsors || "[]")); } catch { setSponsors([]); }
+      try { setTelegramGroups(JSON.parse(settings.homeTelegramGroups || "[]")); } catch { setTelegramGroups([]); }
+      try { setYoutubeVideos(JSON.parse(settings.youtubeVideos || "[]")); } catch { setYoutubeVideos([]); }
+      try { setInstagramEmbeds(JSON.parse(settings.instagramEmbeds || "[]")); } catch { setInstagramEmbeds([]); }
+      
       try {
         const parsedTags = settings.customWidgetTags ? JSON.parse(settings.customWidgetTags) : [];
-        const migrated = parsedTags.map((t: { name: string; source: string; type?: string }) => ({
+        const migrated = parsedTags.map((t: any) => ({
           name: t.name,
           source: t.source || "telegram",
           items: t.items || t.groupNames || [],
@@ -203,117 +226,80 @@ export function useHomeSettings() {
         setCustomWidgetTags([]);
       }
     }
-  }, [settings]);
+  }, [loading, settings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    setFormData(prev => ({ ...prev, [name]: val }));
     markDirty();
   };
 
-  const saveSettings = async () => {
-    await adminSave(async () => {
-      await updateSettings({
-        homeHeroTitle: formData.homeHeroTitle,
-        homeHeroSubtitle: formData.homeHeroSubtitle,
-        homeHeroImages: JSON.stringify(formData.homeHeroImages),
-        homeHeroImageMode: formData.homeHeroImageMode,
-        homeHeroStaticImageIndex: formData.homeHeroStaticImageIndex.toString(),
-        alertBannerEnabled: formData.alertBannerEnabled,
-        alertBannerText: formData.alertBannerText,
-        homeCta1Text: formData.homeCta1Text,
-        homeCta1Link: formData.homeCta1Link,
-        homeCta2Text: formData.homeCta2Text,
-        homeCta2Link: formData.homeCta2Link,
-        featuredSiteId: formData.featuredSiteId,
-        homeBox1Desc: formData.homeBox1Desc,
-        homeBox2Desc: formData.homeBox2Desc,
-        homeBox3Desc: formData.homeBox3Desc,
-        homeCardsSelection: JSON.stringify(formData.homeCardsSelection),
-        homeCardsCycle: formData.homeCardsCycle,
-        homeCardsCyclePinned: formData.homeCardsCyclePinned,
-        homeCardSitesTitle: formData.homeCardSitesTitle,
-        homeCardSitesLink: formData.homeCardSitesLink,
-        homeCardSitesLinkText: formData.homeCardSitesLinkText,
-        homeCardSafetyTitle: formData.homeCardSafetyTitle,
-        homeCardSafetyLink: formData.homeCardSafetyLink,
-        homeCardSafetyLinkText: formData.homeCardSafetyLinkText,
-        homeCardCommunityTitle: formData.homeCardCommunityTitle,
-        homeCardCommunityLink: formData.homeCardCommunityLink,
-        homeCardCommunityLinkText: formData.homeCardCommunityLinkText,
-        homeCardEventsTitle: formData.homeCardEventsTitle,
-        homeCardEventsLink: formData.homeCardEventsLink,
-        homeCardEventsLinkText: formData.homeCardEventsLinkText,
-        homeCardCommitteeTitle: formData.homeCardCommitteeTitle,
-        homeCardCommitteeLink: formData.homeCardCommitteeLink,
-        homeCardCommitteeLinkText: formData.homeCardCommitteeLinkText,
-        homeCardCommitteeDesc: formData.homeCardCommitteeDesc,
-        homeCustomCards: JSON.stringify(customCards),
-        homeSchools: JSON.stringify(schools),
-        homeTelegramGroups: JSON.stringify(telegramGroups),
-        youtubeVideos: JSON.stringify(youtubeVideos),
-        instagramEmbeds: JSON.stringify(instagramEmbeds),
-        customWidgetTags: JSON.stringify(customWidgetTags),
-        homeWeatherCardCount: formData.homeWeatherCardCount.toString(),
-      });
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await saveSettings();
-    } catch {
-    }
+    saveSettings();
   };
 
-  const heroLibraryImages = useMemo(() => {
-    try {
-      const library: { wide: string; banner: string }[] = settings?.imageLibrary ? JSON.parse(settings.imageLibrary) : [];
-      return library.map(p => p.wide).filter(Boolean);
-    } catch { return []; }
-  }, [settings?.imageLibrary]);
+  const saveSettings = () => save(async () => {
+    const payload: Record<string, string | boolean> = {};
+    for (const [key, value] of Object.entries(formData)) {
+      payload[key] = (key === 'homeHeroImages' || key === 'homeCardsSelection') ? JSON.stringify(value) : String(value);
+      if (value === true || value === false) payload[key] = value;
+    }
+
+    await updateSettings({
+      ...payload,
+      homeCustomCards: JSON.stringify(customCards),
+      homeSchools: JSON.stringify(schools),
+      homeSponsors: JSON.stringify(sponsors),
+      homeTelegramGroups: JSON.stringify(telegramGroups),
+      youtubeVideos: JSON.stringify(youtubeVideos),
+      instagramEmbeds: JSON.stringify(instagramEmbeds),
+      customWidgetTags: JSON.stringify(customWidgetTags),
+    });
+  });
+
+  const heroLibraryImages = [
+    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1521464302461-73b11da3b392?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1551009175-8a68da93d5f9?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000",
+    "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=2000",
+  ];
 
   const toggleHeroImage = (url: string) => {
     setFormData(prev => {
-      const current = prev.homeHeroImages;
-      const isSelected = current.includes(url);
-      const updated = isSelected ? current.filter(u => u !== url) : [...current, url];
-      let staticIdx = prev.homeHeroStaticImageIndex;
-      if (staticIdx >= updated.length && updated.length > 0) staticIdx = updated.length - 1;
-      if (updated.length === 0) staticIdx = 0;
-      return { ...prev, homeHeroImages: updated, homeHeroStaticImageIndex: staticIdx };
+      const next = prev.homeHeroImages.includes(url)
+        ? prev.homeHeroImages.filter(u => u !== url)
+        : [...prev.homeHeroImages, url];
+      return { ...prev, homeHeroImages: next };
     });
     markDirty();
   };
 
-  const setStaticImage = (url: string) => {
-    const heroIdx = formData.homeHeroImages.indexOf(url);
-    setFormData(prev => ({ ...prev, homeHeroStaticImageIndex: heroIdx }));
+  const setStaticImage = (idx: number) => {
+    setFormData(prev => ({ ...prev, homeHeroStaticImageIndex: idx }));
     markDirty();
   };
 
-  const toggleCardSelection = (cardId: string, checked: boolean) => {
+  const toggleCardSelection = (id: string) => {
     setFormData(prev => {
-      const current = prev.homeCardsSelection;
-      if (checked) {
-        if (current.length >= 3) return prev;
-        return { ...prev, homeCardsSelection: [...current, cardId] };
-      }
-      return { ...prev, homeCardsSelection: current.filter(id => id !== cardId) };
+      const next = prev.homeCardsSelection.includes(id)
+        ? prev.homeCardsSelection.filter(x => x !== id)
+        : [...prev.homeCardsSelection, id];
+      return { ...prev, homeCardsSelection: next };
     });
+    markDirty();
   };
 
-  const cardOptions = useMemo(() => [
-    { id: 'sites', name: 'Flying Sites' },
-    { id: 'safety', name: 'Safety & Rules' },
-    { id: 'community', name: 'Community' },
-    { id: 'committee', name: 'Your Committee' },
-    { id: 'events', name: 'Upcoming Events' },
-    ...(schools.length > 0 ? [{ id: 'schools', name: 'Paragliding Schools' }] : []),
-    ...(sponsors.length > 0 ? [{ id: 'sponsors', name: 'Our Sponsors' }] : []),
-    ...customCards.map(cc => ({ id: cc.id, name: cc.title || cc.id })),
-  ], [schools.length, sponsors.length, customCards]);
+  const cardOptions = [
+    { id: "sites", label: "Flying Sites" },
+    { id: "safety", label: "Safety & Rules" },
+    { id: "community", label: "Community" },
+    { id: "events", label: "Events" },
+    { id: "weather", label: "Weather" },
+    { id: "committee", label: "Committee" },
+  ];
 
   const updateCustomCard = (idx: number, field: string, value: string) => {
     setCustomCards(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
@@ -321,30 +307,21 @@ export function useHomeSettings() {
   };
 
   const removeCustomCard = (idx: number) => {
-    const cardId = customCards[idx]?.id;
     setCustomCards(prev => prev.filter((_, i) => i !== idx));
-    if (cardId) {
-      setFormData(prev => ({
-        ...prev,
-        homeCardsSelection: prev.homeCardsSelection.filter(id => id !== cardId),
-      }));
-    }
     markDirty();
   };
 
   const addCustomCard = () => {
-    const id = `custom_${Date.now()}`;
-    setCustomCards(prev => [...prev, { id, title: '', description: '', link: '', linkText: 'Learn More', color: 'sky' }]);
+    setCustomCards(prev => [...prev, { title: "New Card", icon: "Star", link: "", linkText: "Learn More", desc: "Description here" }]);
     markDirty();
   };
 
   const addSchool = () => {
-    if (newSchoolName.trim() && newSchoolUrl.trim()) {
-      setSchools(prev => [...prev, { name: newSchoolName.trim(), url: newSchoolUrl.trim() }]);
-      setNewSchoolName("");
-      setNewSchoolUrl("");
-      markDirty();
-    }
+    if (!newSchoolName.trim() || !newSchoolUrl.trim()) return;
+    setSchools(prev => [...prev, { name: newSchoolName.trim(), url: newSchoolUrl.trim() }]);
+    setNewSchoolName("");
+    setNewSchoolUrl("");
+    markDirty();
   };
 
   const updateSchool = (idx: number, field: string, value: string) => {
@@ -358,12 +335,11 @@ export function useHomeSettings() {
   };
 
   const addTelegramGroup = () => {
-    if (newTelegramName.trim() && newTelegramUrl.trim()) {
-      setTelegramGroups(prev => [...prev, { name: newTelegramName.trim(), url: newTelegramUrl.trim() }]);
-      setNewTelegramName("");
-      setNewTelegramUrl("");
-      markDirty();
-    }
+    if (!newTelegramName.trim() || !newTelegramUrl.trim()) return;
+    setTelegramGroups(prev => [...prev, { name: newTelegramName.trim(), url: newTelegramUrl.trim() }]);
+    setNewTelegramName("");
+    setNewTelegramUrl("");
+    markDirty();
   };
 
   const updateTelegramGroup = (idx: number, field: string, value: string) => {
@@ -377,27 +353,27 @@ export function useHomeSettings() {
   };
 
   const addYoutubeVideo = () => {
-    const url = newYoutubeUrl.trim();
-    if (!url) return;
-    const videoId = extractYoutubeVideoId(url);
-    if (!videoId) {
-      setYoutubeUrlError("Invalid YouTube URL. Use a youtu.be or youtube.com link.");
+    const vid = extractYoutubeVideoId(newYoutubeUrl);
+    if (!vid) {
+      setYoutubeUrlError("Invalid YouTube URL");
       return;
     }
-    setYoutubeVideos(prev => [...prev, { url }]);
+    if (youtubeVideos.some(v => v.id === vid)) {
+      setYoutubeUrlError("Video already added");
+      return;
+    }
+    setYoutubeVideos(prev => [{ id: vid, url: newYoutubeUrl }, ...prev]);
     setNewYoutubeUrl("");
     setYoutubeUrlError("");
     markDirty();
   };
 
   const moveYoutubeVideo = (idx: number, dir: 'up' | 'down') => {
-    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-    setYoutubeVideos(prev => {
-      if (swapIdx < 0 || swapIdx >= prev.length) return prev;
-      const arr = [...prev];
-      [arr[idx], arr[swapIdx]] = [arr[swapIdx], arr[idx]];
-      return arr;
-    });
+    const nextIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (nextIdx < 0 || nextIdx >= youtubeVideos.length) return;
+    const next = [...youtubeVideos];
+    [next[idx], next[nextIdx]] = [next[nextIdx], next[idx]];
+    setYoutubeVideos(next);
     markDirty();
   };
 
@@ -407,45 +383,41 @@ export function useHomeSettings() {
   };
 
   const scrapeYoutubeChannel = async () => {
+    if (!ytChannelUrl.trim() || !token) return;
     setYtScraping(true);
-    setYtScrapeResult("");
+    setYtScrapeResult(null);
     try {
-      const tkn = localStorage.getItem("adminToken");
-      const data = await api.post<{ scraped: number; newAdded: number; total: number }>("/api/sites/youtube-scrape", { channelUrl: ytChannelUrl.trim() }, tkn);
-      setYtScrapeResult(`Found ${data.scraped} videos, added ${data.newAdded} new (${data.total} total)`);
-      const freshVideos = await api.get<Array<Record<string, unknown>>>("/api/sites/youtube-videos");
-      if (Array.isArray(freshVideos)) {
-        setYoutubeVideos(freshVideos as Array<{ url: string }>);
-      }
-    } catch (e: unknown) {
-      setYtScrapeResult(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+      const res = await api.post<{ count: number }>("/api/youtube/scrape", { url: ytChannelUrl }, token);
+      setYtScrapeResult(res);
+      // Refresh local list
+      const settingsRes = await fetch("/api/settings", { cache: "no-store" });
+      const settingsData = await settingsRes.json();
+      try { setYoutubeVideos(JSON.parse(settingsData.youtubeVideos || "[]")); } catch {}
+    } catch {
+      setYtScrapeResult({ count: 0 });
     } finally {
       setYtScraping(false);
     }
   };
 
   const addInstagramEmbed = () => {
-    const code = newInstaEmbed.trim();
-    if (!code) return;
-    const urlMatch = code.match(/https:\/\/www\.instagram\.com\/(?:p|reel|tv)\/[\w-]+\/?/);
-    if (!urlMatch) {
-      setInstaEmbedError("Could not find a valid Instagram post/reel URL. Copy the embed code from Instagram (click ··· → Embed → Copy embed code).");
+    if (!newInstaEmbed.trim()) return;
+    if (instagramEmbeds.includes(newInstaEmbed)) {
+      setInstaEmbedError("Embed already added");
       return;
     }
-    setInstagramEmbeds(prev => [...prev, { embedCode: code, addedAt: new Date().toISOString() }]);
+    setInstagramEmbeds(prev => [newInstaEmbed, ...prev]);
     setNewInstaEmbed("");
     setInstaEmbedError("");
     markDirty();
   };
 
   const moveInstagramEmbed = (idx: number, dir: 'up' | 'down') => {
-    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-    setInstagramEmbeds(prev => {
-      if (swapIdx < 0 || swapIdx >= prev.length) return prev;
-      const arr = [...prev];
-      [arr[idx], arr[swapIdx]] = [arr[swapIdx], arr[idx]];
-      return arr;
-    });
+    const nextIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (nextIdx < 0 || nextIdx >= instagramEmbeds.length) return;
+    const next = [...instagramEmbeds];
+    [next[idx], next[nextIdx]] = [next[nextIdx], next[idx]];
+    setInstagramEmbeds(next);
     markDirty();
   };
 
@@ -455,53 +427,44 @@ export function useHomeSettings() {
   };
 
   const addCustomTag = () => {
-    if (newTagName.trim() && newTagSelection.length > 0) {
-      const tagName = newTagName.trim();
-      if (tagName === 'schools' || tagName === 'telegram') return;
-      if (customWidgetTags.some(t => t.name === tagName)) return;
-      setCustomWidgetTags(prev => [...prev, { name: tagName, source: newTagSource, items: newTagSelection }]);
-      setNewTagName("");
-      setNewTagSelection([]);
-      markDirty();
-    }
+    if (!newTagName.trim() || newTagSelection.length === 0) return;
+    setCustomWidgetTags(prev => [...prev, {
+      name: newTagName.trim(),
+      source: newTagSource,
+      items: newTagSelection
+    }]);
+    setNewTagName("");
+    setNewTagSelection([]);
+    markDirty();
   };
 
   const toggleEditTag = (idx: number) => {
     if (editingTagIdx === idx) {
       setEditingTagIdx(null);
-      setEditTagSelection([]);
     } else {
       setEditingTagIdx(idx);
-      setEditTagSelection([...customWidgetTags[idx].items]);
+      setEditTagSelection(customWidgetTags[idx].items);
     }
   };
 
   const deleteCustomTag = (idx: number) => {
     setCustomWidgetTags(prev => prev.filter((_, i) => i !== idx));
-    if (editingTagIdx === idx) {
-      setEditingTagIdx(null);
-      setEditTagSelection([]);
-    }
     markDirty();
   };
 
   const saveEditTag = (idx: number) => {
-    if (editTagSelection.length > 0) {
-      setCustomWidgetTags(prev => prev.map((t, i) => i === idx ? { ...t, items: editTagSelection } : t));
-      setEditingTagIdx(null);
-      setEditTagSelection([]);
-      markDirty();
-    }
+    setCustomWidgetTags(prev => prev.map((t, i) => i === idx ? { ...t, items: editTagSelection } : t));
+    setEditingTagIdx(null);
+    markDirty();
   };
 
-  const setWeatherCardCount = (count: number) => {
-    setFormData(prev => ({ ...prev, homeWeatherCardCount: Math.max(1, Math.min(20, count)) }));
+  const setWeatherCardCount = (count: string) => {
+    setFormData(prev => ({ ...prev, homeWeatherCardCount: count }));
     markDirty();
   };
 
   return {
-    settings, loading, sites,
-    formData, setFormData,
+    settings, loading, sites, formData, setFormData,
     customCards, schools, sponsors,
     telegramGroups, youtubeVideos, instagramEmbeds,
     newSchoolName, setNewSchoolName, newSchoolUrl, setNewSchoolUrl,
@@ -513,7 +476,7 @@ export function useHomeSettings() {
     customWidgetTags, newTagName, setNewTagName,
     newTagSource, setNewTagSource, newTagSelection, setNewTagSelection,
     editingTagIdx, editTagSelection, setEditTagSelection,
-    saveMessageRef, isDirty, markDirty, blocker, justSaved,
+    saveMessageRef, markDirty, blocker, justSaved,
     handleChange, handleSubmit, saveSettings,
     heroLibraryImages, toggleHeroImage, setStaticImage,
     toggleCardSelection, cardOptions,

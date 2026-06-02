@@ -472,7 +472,7 @@ export function Home() {
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                          {React.cloneElement(card.icon as React.ReactElement, { className: 'h-5 w-5 text-white' })}
+                          {React.cloneElement(card.icon as React.ReactElement<any>, { className: 'h-5 w-5 text-white' })}
                         </div>
                       </div>
                       <h3 className="text-[15px] font-semibold text-white mb-1.5">{card.title}</h3>

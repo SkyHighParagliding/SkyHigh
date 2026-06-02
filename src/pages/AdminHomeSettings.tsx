@@ -258,7 +258,7 @@ export function AdminHomeSettings() {
                           <img src={url} alt={`Library ${index + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                           {isSelected && <div className="absolute top-1 left-1 bg-sky text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Selected</div>}
                           {formData.homeHeroImageMode === 'static' && isSelected && (
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setStaticImage(url); }} className={`absolute top-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "bg-orange text-white" : "bg-white/90 text-foreground-secondary hover:bg-orange/20"}`}>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setStaticImage(formData.homeHeroImages.indexOf(url)); }} className={`absolute top-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "bg-orange text-white" : "bg-white/90 text-foreground-secondary hover:bg-orange/20"}`}>
                               {formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "Active" : "Set Active"}
                             </button>
                           )}
@@ -367,7 +367,7 @@ export function AdminHomeSettings() {
                     >
                       <option value="">None (all cards rotate)</option>
                       {cardOptions.map(card => (
-                        <option key={card.id} value={card.id}>{card.name}</option>
+                        <option key={card.id} value={card.id}>{card.label}</option>
                       ))}
                     </select>
                     <p className="text-xs text-muted-foreground italic">The pinned card is always shown. The remaining slots rotate randomly on each page refresh.</p>
@@ -382,11 +382,11 @@ export function AdminHomeSettings() {
                         <input
                           type="checkbox"
                           checked={formData.homeCardsSelection.includes(card.id)}
-                          onChange={(e) => toggleCardSelection(card.id, e.target.checked)}
+                          onChange={() => toggleCardSelection(card.id)}
                           disabled={!formData.homeCardsSelection.includes(card.id) && formData.homeCardsSelection.length >= 3}
                           className="rounded text-orange focus:ring-orange"
                         />
-                        <span className="text-sm font-medium text-foreground-label">{card.name}</span>
+                        <span className="text-sm font-medium text-foreground-label">{card.label}</span>
                       </label>
                     ))}
                   </div>
@@ -553,8 +553,8 @@ export function AdminHomeSettings() {
                 </div>
 
                 {customCards.map((cc, idx) => (
-                  <div key={cc.id} className="border rounded-lg bg-background">
-                    <button type="button" onClick={() => toggleSection(`card_custom_${cc.id}`)} className="w-full text-left px-4 py-3 flex items-center justify-between">
+                  <div key={idx} className="border rounded-lg bg-background">
+                    <button type="button" onClick={() => toggleSection(`card_custom_${idx}`)} className="w-full text-left px-4 py-3 flex items-center justify-between">
                       <h4 className="font-bold text-navy flex items-center gap-2">
                         <Star className={`w-4 h-4 ${{sky:'text-sky',orange:'text-orange',navy:'text-navy',emerald:'text-emerald-600',purple:'text-purple-600',pink:'text-pink-600',red:'text-red-600',indigo:'text-indigo-600'}[cc.color] || 'text-sky'}`} />
                         {cc.title || 'Custom Card'}
@@ -567,10 +567,10 @@ export function AdminHomeSettings() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        {expandedSections.has(`card_custom_${cc.id}`) ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        {expandedSections.has(`card_custom_${idx}`) ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                       </div>
                     </button>
-                    {expandedSections.has(`card_custom_${cc.id}`) && <div className="px-4 pb-4 space-y-4 border-t border-border/50">
+                    {expandedSections.has(`card_custom_${idx}`) && <div className="px-4 pb-4 space-y-4 border-t border-border/50">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-3">
                         <div className="space-y-1">
                           <label className="text-xs font-medium text-muted-foreground">Card Title</label>
@@ -842,8 +842,8 @@ export function AdminHomeSettings() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => { setNewTagSource("schools"); setNewTagSelection([]); }}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${newTagSource === "schools" ? "bg-purple-100 border-purple-400 text-purple-700" : "bg-card border-border text-muted-foreground hover:border-gray-400"}`}
+                              onClick={() => { setNewTagSource("school"); setNewTagSelection([]); }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${newTagSource === "school" ? "bg-purple-100 border-purple-400 text-purple-700" : "bg-card border-border text-muted-foreground hover:border-gray-400"}`}
                             >
                               <GraduationCap className="w-3.5 h-3.5" /> Schools
                             </button>
@@ -886,8 +886,8 @@ export function AdminHomeSettings() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <code className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-sm font-mono border border-amber-200">{`{{${tag.name}}}`}</code>
-                                  <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${tag.source === "schools" ? "bg-purple-50 text-purple-600 border border-purple-200" : "bg-sky/10 text-sky border border-sky/20"}`}>
-                                    {tag.source === "schools" ? <><GraduationCap className="w-3 h-3" /> Schools</> : <><MessageCircle className="w-3 h-3" /> Telegram</>}
+                                  <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${tag.source === "school" ? "bg-purple-50 text-purple-600 border border-purple-200" : "bg-sky/10 text-sky border border-sky/20"}`}>
+                                    {tag.source === "school" ? <><GraduationCap className="w-3 h-3" /> Schools</> : <><MessageCircle className="w-3 h-3" /> Telegram</>}
                                   </span>
                                   <button
                                     type="button"
@@ -909,7 +909,7 @@ export function AdminHomeSettings() {
                               </div>
                               {editingTagIdx === idx ? (
                                 <div className="space-y-2 border-t pt-2 mt-1">
-                                  {(tag.source === "schools" ? schools : telegramGroups).map((item, gIdx) => (
+                                  {(tag.source === "school" ? schools : telegramGroups).map((item, gIdx) => (
                                     <label key={gIdx} className="flex items-center gap-2 p-1 rounded hover:bg-background cursor-pointer">
                                       <input
                                         type="checkbox"
@@ -933,8 +933,8 @@ export function AdminHomeSettings() {
                                 </div>
                               ) : (
                                 <div className="flex flex-wrap gap-1">
-                                  {tag.items.map((name, i) => (
-                                    <span key={i} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${tag.source === "schools" ? "bg-purple-50 text-purple-700 border border-purple-200" : "bg-sky/5 text-navy border border-navy/10"}`}>
+                                  {tag.items.map((name: string, i: number) => (
+                                    <span key={i} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${tag.source === "school" ? "bg-purple-50 text-purple-700 border border-purple-200" : "bg-sky/5 text-navy border border-navy/10"}`}>
                                       {name}
                                     </span>
                                   ))}
@@ -1077,7 +1077,7 @@ export function AdminHomeSettings() {
                       </Button>
                     </div>
                     {ytScrapeResult && (
-                      <p className={`text-sm whitespace-pre-line ${ytScrapeResult.startsWith("Error") ? "text-red-500" : "text-green-600"}`}>{ytScrapeResult}</p>
+                      <p className="text-sm text-green-600">Successfully scraped {ytScrapeResult.count} videos.</p>
                     )}
                   </div>
 
@@ -1178,7 +1178,7 @@ export function AdminHomeSettings() {
                   min={1}
                   max={20}
                   value={formData.homeWeatherCardCount}
-                  onChange={e => setWeatherCardCount(parseInt(e.target.value) || 6)}
+                  onChange={e => setWeatherCardCount(e.target.value)}
                   className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>

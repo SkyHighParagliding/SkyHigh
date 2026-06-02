@@ -14,7 +14,7 @@ const WEATHER_ICON_MAP: Record<string, LucideIcon> = {
   Sun, CloudSun, Cloud, Cloudy: Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Snowflake, Wind, Thermometer,
 };
 
-export function WeatherCard({ weather, site, distance, variant = 'classic' }: { weather: any; site: any; distance?: number; variant?: 'classic' | 'apple' }) {
+export function WeatherCard({ weather, site, distance, variant = 'classic' }: { weather: any; site: any; distance?: number | string; variant?: 'classic' | 'apple' }) {
   const [showWindMap, setShowWindMap] = useState(false);
   const [showAlt, setShowAlt] = useState(false);
   const [extendedForecast, setExtendedForecast] = useState<any>(null);
