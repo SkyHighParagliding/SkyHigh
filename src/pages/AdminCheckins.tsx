@@ -97,7 +97,7 @@ export function AdminCheckins() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(Array.isArray(recentCheckins) ? recentCheckins : []).map((checkin) => (
+                      {(recentCheckins || []).map((checkin) => (
                         <tr key={checkin.id} className="border-b hover:bg-background">
                           <td className="px-4 py-3 font-mono font-medium text-navy">{checkin.id}</td>
                           <td className="px-4 py-3 text-foreground-label">{checkin.siteName}</td>

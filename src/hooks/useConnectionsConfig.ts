@@ -262,7 +262,7 @@ export function useConnectionsConfig() {
       } else {
         setDriveTestResult({ ok: false, message: `Apps Script returned status ${res.status}` });
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setDriveTestResult({
         ok: false,
         message: e.name === "AbortError" ? "Connection timed out (10s)" : `Connection failed: ${e.message}`,
@@ -337,7 +337,7 @@ export function useConnectionsConfig() {
       } else {
         setSheetTestResult({ ok: false, message: `Script returned status ${res.status}` });
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setSheetTestResult({
         ok: false,
         message: e.name === "AbortError" ? "Connection timed out (10s)" : `Connection failed: ${e.message}`,
@@ -372,7 +372,7 @@ export function useConnectionsConfig() {
       } else {
         setSyncResult({ ok: false, message: data.error || "Sync failed" });
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setSyncResult({ ok: false, message: e instanceof Error ? e.message : "Sync failed" });
     }
     setSyncing(false);
@@ -391,7 +391,7 @@ export function useConnectionsConfig() {
       } else {
         setSyncResult({ ok: false, message: "Failed to clear document index." });
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setSyncResult({ ok: false, message: e instanceof Error ? e.message : "Failed to clear index" });
     }
   };
@@ -412,7 +412,7 @@ export function useConnectionsConfig() {
       } else {
         setFolderSetupResult({ ok: false, message: data.error || "Setup failed" });
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setFolderSetupResult({ ok: false, message: e instanceof Error ? e.message : "Setup failed" });
     }
     setSettingUpFolders(false);
@@ -441,7 +441,7 @@ export function useConnectionsConfig() {
       setFolderSetupResult(null);
       setFolderSetupRootUrl(null);
       setEditingDriveScript(false);
-    } catch (e: unknown) {
+    } catch (e: any) {
       alert("Disconnect failed: " + (e instanceof Error ? e.message : "Unknown error"));
     }
   };
@@ -519,7 +519,7 @@ export function useConnectionsConfig() {
           .then(d => setTidyhqStatus(d))
           .catch(() => {});
       }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setTidyhqTestResult({ ok: false, message: e instanceof Error ? e.message : "Connection test failed" });
     }
     setTestingTidyhq(false);
@@ -589,7 +589,7 @@ export function useConnectionsConfig() {
         .then(r => r.json())
         .then(d => setTidyhqStatus(d))
         .catch(() => {});
-    } catch (e: unknown) {
+    } catch (e: any) {
       setAddMappingError(e instanceof Error ? e.message : "Error");
     } finally {
       setSavingMapping(false);

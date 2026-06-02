@@ -102,6 +102,10 @@
           {
             "type": "command",
             "command": "pwsh -NoProfile -Command \"Write-Host '💾 END OF SESSION' -ForegroundColor Magenta; Write-Host ''; Write-Host 'Before you close:' -ForegroundColor Magenta; Write-Host '1. Update RESUME_HERE.md with current state' -ForegroundColor Magenta; Write-Host '2. Update memory/feedback.md if there were corrections' -ForegroundColor Magenta; Write-Host '3. Update memory/project.md if scope changed' -ForegroundColor Magenta; Write-Host '4. Git commit if significant changes were made' -ForegroundColor Magenta\""
+          },
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"C:\\Users\\User\\Documents\\CodeFolder\\scripts\\wipe-env.ps1\" -Path (Get-Item .).FullName"
           }
         ]
       }

@@ -12,6 +12,7 @@ export interface NewsItem {
   category: string;
   published: boolean;
   publishedAt: string;
+  date?: string;
   image: string;
 }
 

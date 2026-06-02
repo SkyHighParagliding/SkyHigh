@@ -375,8 +375,8 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 7 | UX Refinements | 1 | ✅ Complete | 2026-05-07 |
 | 9 | Closure Calendar | 1 | ✅ Complete | 2026-05-21 |
 | 10 | Postgres Dev + SQLite Removal | 3 | ✅ Complete | 2026-05-27 |
-| 4 | Production Deployment | 4 | 🔄 Partial | — |
-| 5 | Feature Backlog | 3 | ⬜ TODO | — |
+| 4 | Production Deployment | 4 | ✅ Complete | 2026-05-30 |
+| 5 | Hardening & Audit | 1 | ✅ Complete | 2026-06-02 |
 | 8 | Future / Low Priority | 1 | ⬜ DEFERRED | — |
 | Code Review | Sonnet Review | 7 | 6✅ / 1⬜ | — |
 

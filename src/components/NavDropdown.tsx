@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 export interface NavItem {
   name: string;
   path?: string;
-  children?: { name: string; path: string }[];
+  children?: NavItem[];
 }
 
 interface NavDropdownProps {
@@ -21,11 +21,11 @@ interface NavDropdownProps {
 
 export function NavDropdown({ item, className, style, dropdownBg, dropdownBorder, dropdownTextColor, dropdownHoverBg, glass }: NavDropdownProps) {
   const [open, setOpen] = useState(false);
-  const timeout = useRef<ReturnType<typeof setTimeout>>();
+  const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const ref = useRef<HTMLDivElement>(null);
 
   function handleEnter() {
-    clearTimeout(timeout.current);
+    if (timeout.current) clearTimeout(timeout.current);
     setOpen(true);
   }
 
@@ -34,7 +34,9 @@ export function NavDropdown({ item, className, style, dropdownBg, dropdownBorder
   }
 
   useEffect(() => {
-    return () => clearTimeout(timeout.current);
+    return () => {
+      if (timeout.current) clearTimeout(timeout.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -87,8 +89,8 @@ export function NavDropdown({ item, className, style, dropdownBg, dropdownBorder
         >
           {item.children.map((child) => (
             <Link
-              key={child.path}
-              to={child.path}
+              key={child.path || child.name}
+              to={child.path || "#"}
               className="block px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap"
               style={{ color: dropdownTextColor || "#fff" }}
               onMouseEnter={(e) => {
@@ -150,8 +152,8 @@ export function MobileNavGroup({ item, textColor, onNavigate, className, style }
         <div className="pl-4">
           {item.children.map((child) => (
             <Link
-              key={child.path}
-              to={child.path}
+              key={child.path || child.name}
+              to={child.path || "#"}
               className={className}
               style={{ ...style, opacity: 0.85 }}
               onClick={onNavigate}

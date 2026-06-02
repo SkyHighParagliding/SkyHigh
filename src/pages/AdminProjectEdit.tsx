@@ -396,8 +396,8 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
 
   const fetchSites = useCallback(async () => {
     try {
-      const response = await api.get<{ data: Array<Record<string, unknown>> }>("/api/sites");
-      setSites(response.data);
+      const response = await api.get<{ data: any[] }>("/api/sites");
+      setSites(response.data as any[]);
     } catch {}
   }, []);
 

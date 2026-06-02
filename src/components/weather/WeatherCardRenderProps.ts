@@ -6,7 +6,7 @@ export interface WeatherCardRenderProps {
   site: any;
   activeWeather: any;
   weather: any;
-  distance?: number;
+  distance?: number | string;
   hasAlt: boolean;
   showAlt: boolean;
   setShowAlt: (v: boolean) => void;

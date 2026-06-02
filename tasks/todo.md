@@ -37,19 +37,6 @@
 
 ## 🟡 Medium Priority
 
-### TASK-029 — Harden DEFAULT_ADMINS for Production
-- **Effort:** S (1 hour)
-- **Done:** `DEFAULT_ADMINS` loaded from env var JSON; passwords hashed with bcrypt on startup; `server/routes/auth.ts` line ~79–90
-- **Missing:**
-  1. No guided one-time setup script (`scripts/create-admin.ts`) — operator must manually craft JSON env var
-  2. No documentation in `.env.template` about expected format
-  3. `ensureDefaultAdmin()` runs on every startup with no feedback about existing admin
-- **Needs:**
-  1. Write `scripts/create-admin.ts` — prompts for email + password, hashes, inserts, confirms
-  2. Document `DEFAULT_ADMINS` format in `.env.template` with note it's dev-only
-  3. Add note in admin docs about running setup script on first production deploy
-- **Files:** `server/routes/auth.ts`, `.env.template`, new `scripts/create-admin.ts`
-
 ### TASK-030 — Siteguide Version Change Email Notification
 - **Effort:** M (3–5 hours)
 - **What:** Daily cron checks siteguide.org.au for version changes on linked guides; emails site contacts on update

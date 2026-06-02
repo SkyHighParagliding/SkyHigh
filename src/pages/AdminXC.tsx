@@ -21,8 +21,8 @@ interface Competition {
   rulesSummary: string;
   registrationUrl: string;
   status: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const emptyCompForm = {

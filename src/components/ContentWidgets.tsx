@@ -87,7 +87,7 @@ function CustomTagWidget({ tagName }: { tagName: string }) {
     allSchools = settings.homeSchools ? JSON.parse(settings.homeSchools) : [];
   } catch (e) {}
   try {
-    customTags = settings.customWidgetTags ? JSON.parse(settings.customWidgetTags) : [];
+    customTags = settings.customWidgetTags && typeof settings.customWidgetTags === 'string' ? JSON.parse(settings.customWidgetTags) : [];
   } catch (e) {}
 
   const tag = customTags.find(t => t.name === tagName);

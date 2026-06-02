@@ -56,7 +56,12 @@ export function useXCMapState() {
   const [searchParams] = useSearchParams();
   const demoRole = useMemo(() => getDemoRole(), []);
   const isDemo = !!demoRole;
-  const { data: sites = [], isLoading: loading } = useXCSites(!settingsLoading && settings.xcMapsEnabled);
+  const { data: rawSites = [], isLoading: loading } = useXCSites(!settingsLoading && settings.xcMapsEnabled);
+  const sites = useMemo(() => rawSites.map(s => ({
+    ...(s as any),
+    lat: typeof s.lat === 'string' ? parseFloat(s.lat) : s.lat,
+    lon: typeof s.lon === 'string' ? parseFloat(s.lon) : s.lon,
+  })) as XCSite[], [rawSites]);
   const [selectedSite, setSelectedSite] = useState<XCSite | null>(null);
   const [showAirspace, setShowAirspace] = useState(false);
   const [showZones, setShowZones] = useState(false);
