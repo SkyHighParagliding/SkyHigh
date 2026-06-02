@@ -4,6 +4,7 @@ import { geoMercator } from 'd3-geo';
 import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
 import { tile as d3tile } from 'd3-tile';
 import { DEFAULT_ZOOM_SETPOINTS } from '../windMapTypes';
+import { toMelbourneDate } from '@/utils/closureStatus';
 import type { ZoomSetpoints, SiteMarker } from '../windMapTypes';
 import { getWindAt } from './windInterpolation';
 import type { WindGrid } from './windInterpolation';
@@ -55,6 +56,12 @@ export const WindCanvas = memo(function WindCanvas({
   pinnedCrosshairRef.current = pinnedCrosshair;
   const onWindInfoChangeRef = useRef(onWindInfoChange);
   onWindInfoChangeRef.current = onWindInfoChange;
+  // Refs keep siteStatus/siteUpcomingClosureDates live inside the render loop without
+  // adding them to the useEffect dependency array (#1).
+  const siteStatusRef = useRef(siteStatus);
+  siteStatusRef.current = siteStatus;
+  const siteUpcomingClosureDatesRef = useRef(siteUpcomingClosureDates);
+  siteUpcomingClosureDatesRef.current = siteUpcomingClosureDates;
 
   const currentTimeRef = useRef(currentTime);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
@@ -131,6 +138,7 @@ export const WindCanvas = memo(function WindCanvas({
       if (tileCache.has(key)) return tileCache.get(key)!;
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      img.onerror = () => tileCache.delete(key);
       img.src = url;
       if (tileCache.size >= TILE_CACHE_MAX) {
         tileCache.delete(tileCache.keys().next().value!);
@@ -143,8 +151,8 @@ export const WindCanvas = memo(function WindCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const overlay = createSpeedOverlay(width, height);
-    const particles = createParticlePool(width, height);
+    let overlay = createSpeedOverlay(width, height);
+    let particles = createParticlePool(width, height);
 
     const extentGrid = windGrid.wideGrid ?? windGrid;
     const gridTL = projection([extentGrid.lonMin, extentGrid.latMax])!;
@@ -179,9 +187,9 @@ export const WindCanvas = memo(function WindCanvas({
     d3Container.call((zoom as Parameters<typeof d3Container.call>[0]).transform, transformRef.current);
 
     // todayStr refreshed every minute — computed once outside the render loop
-    let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    let todayStr = toMelbourneDate(new Date());
     const todayInterval = setInterval(() => {
-      todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+      todayStr = toMelbourneDate(new Date());
     }, 60_000);
 
     // d3tile result cached until transform or canvas size changes
@@ -195,9 +203,16 @@ export const WindCanvas = memo(function WindCanvas({
       for (const entry of entries) {
         const { width: w, height: h } = entry.contentRect;
         if (w > 0 && h > 0 && canvasRef.current) {
-          canvasSizeRef.current = { width: w, height: h };
-          canvasRef.current.width = w;
-          canvasRef.current.height = h;
+          // Guard: only reset canvas (which clears context state) when dimensions actually change (#3).
+          if (w !== canvasSizeRef.current.width || h !== canvasSizeRef.current.height) {
+            canvasSizeRef.current = { width: w, height: h };
+            canvasRef.current.width = w;
+            canvasRef.current.height = h;
+            // Rebuild overlay and particles for new dimensions; clear any pending rebuild timeout (#2).
+            if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
+            overlay = createSpeedOverlay(w, h);
+            particles = createParticlePool(w, h);
+          }
         }
       }
     });
@@ -213,7 +228,7 @@ export const WindCanvas = memo(function WindCanvas({
         return;
       }
 
-      const tileKey = `${w}|${h}|${currentTransform.k.toFixed(1)}|${currentTransform.x.toFixed(0)}|${currentTransform.y.toFixed(0)}`;
+      const tileKey = `${w}|${h}|${currentTransform.k.toFixed(1)}|${currentTransform.x.toFixed(1)}|${currentTransform.y.toFixed(1)}`;
       if (tileKey !== lastTileKey || !lastTiles) {
         const tileLayout = d3tile()
           .size([w, h])
@@ -255,7 +270,7 @@ export const WindCanvas = memo(function WindCanvas({
       if (markersLocal && markersLocal.length > 0) {
         drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr);
       } else {
-        drawSingleSiteMarker(ctx, currentTransform, projection, siteLon, siteLat, todayStr, siteName, siteStatus, siteUpcomingClosureDates);
+        drawSingleSiteMarker(ctx, currentTransform, projection, siteLon, siteLat, todayStr, siteName, siteStatusRef.current, siteUpcomingClosureDatesRef.current);
       }
 
       // Wind info for pinned crosshair — throttled to 10fps

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { nextSpeed } from '@/components/windMapTypes';
 import type { PlaySpeed } from '@/components/windMapTypes';
 import { formatWindMapTime } from '@/lib/dateUtils';
@@ -22,6 +22,8 @@ export interface UseWindPlaybackResult {
   cycleSpeed: () => void;
 }
 
+// todayFetcher MUST be wrapped in useCallback with correct deps by the caller.
+// An unstable reference (new function every render) will cause a refetch loop.
 export function useWindPlayback(
   mapMode: 'today' | '7day',
   todayFetcher: () => Promise<WindGrid>,
@@ -35,25 +37,39 @@ export function useWindPlayback(
   const [playSpeed, setPlaySpeed] = useState<PlaySpeed>(5000);
   const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Ref always holds the latest fetcher; effect body calls through it so a stale
+  // closure never invokes the wrong fetcher even if deps fire from a previous render.
+  const todayFetcherRef = useRef(todayFetcher);
+  todayFetcherRef.current = todayFetcher;
+
+  // Pre-computed bounds cached when grid loads — avoids string parsing inside the
+  // setInterval callback on every playback tick (#8).
+  const gridBoundsRef = useRef({ start: 0, end: 0 });
+
   useEffect(() => {
     setLoading(true);
     setError(null);
     setIsPlaying(false);
 
+    // Surfaces JSON error body from the server rather than a bare HTTP status (#9).
     const fetchPromise: Promise<WindGrid> = mapMode === '7day'
-      ? fetch('/api/weather/extended-grid/wind-overlay').then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      ? fetch('/api/weather/extended-grid/wind-overlay').then(async res => {
+          if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            throw new Error((body as { error?: string })?.error || `HTTP ${res.status}`);
+          }
           return res.json();
         })
-      : todayFetcher();
+      : todayFetcherRef.current();
 
     fetchPromise
       .then(data => {
         if (data?.times?.length && data?.data?.length && data.ni && data.nj) {
-          setWindGrid(data);
-          const now = Date.now();
           const start = new Date(data.times[0]).getTime();
           const end = new Date(data.times[data.times.length - 1]).getTime();
+          gridBoundsRef.current = { start, end };
+          setWindGrid(data);
+          const now = Date.now();
           setCurrentTime(now >= start && now <= end ? now : start);
         } else {
           setError('Invalid wind data');
@@ -71,10 +87,9 @@ export function useWindPlayback(
   useEffect(() => {
     if (isPlaying && windGrid) {
       playIntervalRef.current = setInterval(() => {
+        const { start, end } = gridBoundsRef.current;
         setCurrentTime(prev => {
           const next = prev + timeStep;
-          const end = new Date(windGrid.times[windGrid.times.length - 1]).getTime();
-          const start = new Date(windGrid.times[0]).getTime();
           return next > end ? start : next;
         });
       }, playSpeed);
@@ -100,8 +115,15 @@ export function useWindPlayback(
 
   const toggleTray = useCallback(() => setTrayOpen(o => !o), []);
 
-  const forecastStart = windGrid ? new Date(windGrid.times[0]).getTime() : 0;
-  const forecastEnd = windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0;
+  // Memoized — derived from windGrid, not re-derived on every render (#8).
+  const forecastStart = useMemo(
+    () => windGrid ? new Date(windGrid.times[0]).getTime() : 0,
+    [windGrid],
+  );
+  const forecastEnd = useMemo(
+    () => windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0,
+    [windGrid],
+  );
   const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
 
   return {
