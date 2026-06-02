@@ -7,6 +7,7 @@ export function drawSiteMarkers(
   markers: SiteMarker[],
   currentTransform: ZoomTransform,
   projection: GeoProjection,
+  todayStr: string,
 ) {
   const labelFont = '600 10px system-ui, sans-serif';
   ctx.font = labelFont;
@@ -20,8 +21,6 @@ export function drawSiteMarkers(
     if (!proj) continue;
     markerScreenPositions.push({ site, sp: currentTransform.apply(proj) });
   }
-
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
   for (const { site, sp } of markerScreenPositions) {
     const r = 6;
     ctx.beginPath();
@@ -72,7 +71,10 @@ export function drawSingleSiteMarker(
   projection: GeoProjection,
   siteLon: number,
   siteLat: number,
+  todayStr: string,
   siteName?: string,
+  siteStatus?: string,
+  siteUpcomingClosureDates?: string[],
 ) {
   const proj = projection([siteLon, siteLat]);
   if (!proj) return;
@@ -80,7 +82,10 @@ export function drawSingleSiteMarker(
   const r = 5;
   ctx.beginPath();
   ctx.arc(siteScreen[0], siteScreen[1], r, 0, 2 * Math.PI);
-  ctx.fillStyle = '#0ea5e9';
+  const isClosedToday = siteStatus === 'closed' || (siteUpcomingClosureDates?.includes(todayStr) ?? false);
+  ctx.fillStyle = isClosedToday ? '#ef4444'
+    : siteStatus === 'restricted' ? '#f59e0b'
+    : '#0ea5e9';
   ctx.fill();
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 2;

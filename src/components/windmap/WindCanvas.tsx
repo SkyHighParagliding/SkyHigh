@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { select } from 'd3-selection';
 import { geoMercator } from 'd3-geo';
-import { zoom as d3Zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom';
+import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
 import { tile as d3tile } from 'd3-tile';
 import { DEFAULT_ZOOM_SETPOINTS } from '../windMapTypes';
 import type { ZoomSetpoints, SiteMarker } from '../windMapTypes';
@@ -9,6 +9,10 @@ import { getWindAt } from './windInterpolation';
 import type { WindGrid } from './windInterpolation';
 import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay } from './particleRenderer';
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
+
+const TILE_CACHE_MAX = 200;
+
+type TileResult = ReturnType<ReturnType<typeof d3tile>>;
 
 interface WindCanvasProps {
   windGrid: WindGrid;
@@ -20,7 +24,6 @@ interface WindCanvasProps {
   zoomSetpoints?: ZoomSetpoints;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  hideWindInfo?: boolean;
   onWindInfoChange?: (info: { speed: number; direction: number } | null) => void;
   sizeKey?: number;
   initialZoomK?: number;
@@ -28,19 +31,30 @@ interface WindCanvasProps {
   savedCenterLon?: number;
   savedZoom?: number;
   onTransformChange?: (lat: number, lon: number, zoomLevel: number) => void;
+  siteStatus?: string;
+  siteUpcomingClosureDates?: string[];
 }
 
-export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, siteLat, siteLon, siteName, onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS, siteMarkers, onSiteClick, hideWindInfo, onWindInfoChange, sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom, onTransformChange }: WindCanvasProps) {
+export const WindCanvas = memo(function WindCanvas({
+  windGrid, currentTime, siteLat, siteLon, siteName,
+  onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
+  siteMarkers, onSiteClick, onWindInfoChange,
+  sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
+  onTransformChange, siteStatus, siteUpcomingClosureDates,
+}: WindCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [crosshair, setCrosshair] = useState<{ x: number, y: number } | null>(null);
   const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number, y: number } | null>(null);
-  const [transform, setTransform] = useState(zoomIdentity);
+
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
   const zoomSetpointsRef = useRef(zoomSetpoints);
   zoomSetpointsRef.current = zoomSetpoints;
+  const pinnedCrosshairRef = useRef(pinnedCrosshair);
+  pinnedCrosshairRef.current = pinnedCrosshair;
+  const onWindInfoChangeRef = useRef(onWindInfoChange);
+  onWindInfoChangeRef.current = onWindInfoChange;
 
   const currentTimeRef = useRef(currentTime);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
@@ -64,41 +78,31 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
   }, [sizeKey]);
 
   useEffect(() => {
-    if (!containerRef.current || !svgRef.current || !canvasRef.current || !windGrid) return;
+    if (!containerRef.current || !canvasRef.current || !windGrid) return;
 
     const { width, height } = canvasSizeRef.current;
     if (width === 0 || height === 0) return;
-
-    const svg = select(svgRef.current);
-    svg.selectAll('*').remove();
 
     const projection = geoMercator()
       .scale(1 / (2 * Math.PI))
       .translate([0, 0]);
     projectionRef.current = projection;
 
-    let initialTransform: ZoomTransform;
+    let initialTransform: ReturnType<typeof zoomIdentity.translate>;
     const markers = siteMarkersRef.current;
     if (markers && markers.length > 1) {
-      // Use saved settings if available, otherwise fall back to initialZoomK or computed fit
       let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : initialZoomK;
       const centerGrid = windGrid.wideGrid ?? windGrid;
-      let useCenterLon = savedCenterLon ?? (centerGrid.lonMin + centerGrid.lonMax) / 2;
-      let useCenterLat = savedCenterLat ?? (centerGrid.latMin + centerGrid.latMax) / 2;
+      const useCenterLon = savedCenterLon ?? (centerGrid.lonMin + centerGrid.lonMax) / 2;
+      const useCenterLat = savedCenterLat ?? (centerGrid.latMin + centerGrid.latMax) / 2;
 
       if (!useK) {
-        // Use coarse grid bounds for initial fit when available
         const focusGrid = windGrid.wideGrid ?? windGrid;
-        const minLat = focusGrid.latMin;
-        const maxLat = focusGrid.latMax;
-        const minLon = focusGrid.lonMin;
-        const maxLon = focusGrid.lonMax;
         const padding = 0;
-        const latRange = (maxLat - minLat) * (1 + padding * 2);
-        const lonRange = (maxLon - minLon) * (1 + padding * 2);
-        const centerPt = projection([(minLon + maxLon) / 2, (minLat + maxLat) / 2])!;
-        const topLeft = projection([minLon - lonRange * padding, maxLat + latRange * padding])!;
-        const bottomRight = projection([maxLon + lonRange * padding, minLat - latRange * padding])!;
+        const latRange = (focusGrid.latMax - focusGrid.latMin) * (1 + padding * 2);
+        const lonRange = (focusGrid.lonMax - focusGrid.lonMin) * (1 + padding * 2);
+        const topLeft = projection([focusGrid.lonMin - lonRange * padding, focusGrid.latMax + latRange * padding])!;
+        const bottomRight = projection([focusGrid.lonMax + lonRange * padding, focusGrid.latMin - latRange * padding])!;
         const geoW = Math.abs(bottomRight[0] - topLeft[0]);
         const geoH = Math.abs(bottomRight[1] - topLeft[1]);
         const fitK = Math.min(width / geoW, height / geoH) * 0.95;
@@ -128,7 +132,9 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = url;
-      img.onload = () => { tileCache.set(key, img); };
+      if (tileCache.size >= TILE_CACHE_MAX) {
+        tileCache.delete(tileCache.keys().next().value!);
+      }
       tileCache.set(key, img);
       return null;
     };
@@ -140,8 +146,6 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     const overlay = createSpeedOverlay(width, height);
     const particles = createParticlePool(width, height);
 
-    // Use coarse grid (wideGrid) bounds for pan/zoom limits when available,
-    // so the user can zoom out to see the full coarse coverage area.
     const extentGrid = windGrid.wideGrid ?? windGrid;
     const gridTL = projection([extentGrid.lonMin, extentGrid.latMax])!;
     const gridBR = projection([extentGrid.lonMax, extentGrid.latMin])!;
@@ -159,54 +163,76 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
       .on('zoom', (event) => {
         const t = event.transform;
         transformRef.current = t;
-        setTransform(t);
         onZoomChange(t.k);
 
         if (onTransformChange) {
           const { width: cw, height: ch } = canvasSizeRef.current;
-          const inverted = projection.invert([(cw/2 - t.x) / t.k, (ch/2 - t.y) / t.k]);
+          const inverted = projection.invert([(cw / 2 - t.x) / t.k, (ch / 2 - t.y) / t.k]);
           if (inverted) {
-            const [lon, lat] = inverted;
-            onTransformChange(lat, lon, Math.log2(t.k / 256));
+            onTransformChange(inverted[1], inverted[0], Math.log2(t.k / 256));
           }
         }
       });
 
     const d3Container = select(containerRef.current);
-    d3Container.call(zoom as any);
-    d3Container.call((zoom as any).transform, transformRef.current);
+    d3Container.call(zoom as Parameters<typeof d3Container.call>[0]);
+    d3Container.call((zoom as Parameters<typeof d3Container.call>[0]).transform, transformRef.current);
+
+    // todayStr refreshed every minute — computed once outside the render loop
+    let todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    const todayInterval = setInterval(() => {
+      todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    }, 60_000);
+
+    // d3tile result cached until transform or canvas size changes
+    let lastTileKey = '';
+    let lastTiles: TileResult | null = null;
+
+    // Wind info throttle: update at most 10fps to avoid flooding parent state
+    let lastWindInfoUpdate = 0;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        if (w > 0 && h > 0 && canvasRef.current) {
+          canvasSizeRef.current = { width: w, height: h };
+          canvasRef.current.width = w;
+          canvasRef.current.height = h;
+        }
+      }
+    });
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     let animationFrameId: number;
 
     const render = () => {
       const currentTransform = transformRef.current;
-      // Read fresh dimensions from container in case of resize
-      if (containerRef.current && canvasRef.current) {
-        const width = containerRef.current.clientWidth;
-        const height = containerRef.current.clientHeight;
-        if (width !== canvasSizeRef.current.width || height !== canvasSizeRef.current.height) {
-          canvasSizeRef.current = { width, height };
-          canvasRef.current.width = width;
-          canvasRef.current.height = height;
-        }
-      }
       const { width: w, height: h } = canvasSizeRef.current;
-      if (w === 0 || h === 0) return;
+      if (w === 0 || h === 0) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
 
-      const tile = d3tile()
-        .size([w, h])
-        .scale(currentTransform.k)
-        .translate([currentTransform.x, currentTransform.y]);
-      const tiles = tile();
+      const tileKey = `${w}|${h}|${currentTransform.k.toFixed(1)}|${currentTransform.x.toFixed(0)}|${currentTransform.y.toFixed(0)}`;
+      if (tileKey !== lastTileKey || !lastTiles) {
+        const tileLayout = d3tile()
+          .size([w, h])
+          .scale(currentTransform.k)
+          .translate([currentTransform.x, currentTransform.y]);
+        lastTiles = tileLayout();
+        lastTileKey = tileKey;
+      }
+      const tiles = lastTiles;
+
+      const dpr = window.devicePixelRatio || 1;
 
       ctx.fillStyle = '#e8e8e8';
       ctx.fillRect(0, 0, w, h);
 
-      const dpr = window.devicePixelRatio || 1;
       for (const d of tiles) {
-        const tileKey = `${d[2]}/${d[0]}/${d[1]}`;
-        const url = `https://a.basemaps.cartocdn.com/light_nolabels/${tileKey}${dpr > 1 ? '@2x' : ''}.png`;
-        const img = loadTile(tileKey, url);
+        const tileKey2 = `${d[2]}/${d[0]}/${d[1]}`;
+        const url = `https://a.basemaps.cartocdn.com/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png`;
+        const img = loadTile(tileKey2, url);
         if (img && img.complete && img.naturalWidth > 0) {
           const x = (d[0] + tiles.translate[0]) * tiles.scale;
           const y = (d[1] + tiles.translate[1]) * tiles.scale;
@@ -227,9 +253,29 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
 
       const markersLocal = siteMarkersRef.current;
       if (markersLocal && markersLocal.length > 0) {
-        drawSiteMarkers(ctx, markersLocal, currentTransform, projection);
+        drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr);
       } else {
-        drawSingleSiteMarker(ctx, currentTransform, projection, siteLon, siteLat, siteName);
+        drawSingleSiteMarker(ctx, currentTransform, projection, siteLon, siteLat, todayStr, siteName, siteStatus, siteUpcomingClosureDates);
+      }
+
+      // Wind info for pinned crosshair — throttled to 10fps
+      const now = performance.now();
+      if (pinnedCrosshairRef.current && now - lastWindInfoUpdate > 100) {
+        lastWindInfoUpdate = now;
+        const crosshair = pinnedCrosshairRef.current;
+        const inverted = currentTransform.invert([crosshair.x, crosshair.y]);
+        const geo = projection.invert!(inverted);
+        if (geo) {
+          const wind = getWindAt(geo[0], geo[1], currentTimeRef.current, windGrid);
+          if (wind) {
+            const speedMs = Math.sqrt(wind[0] ** 2 + wind[1] ** 2);
+            let dir = (Math.atan2(-wind[0], -wind[1]) * 180) / Math.PI;
+            if (dir < 0) dir += 360;
+            onWindInfoChangeRef.current?.({ speed: speedMs * 1.94384, direction: dir });
+          } else {
+            onWindInfoChangeRef.current?.(null);
+          }
+        }
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -240,23 +286,23 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
+      clearInterval(todayInterval);
+      resizeObserver.disconnect();
     };
-  }, [windGrid, siteLat, siteLon, onZoomChange, savedCenterLat, savedCenterLon, savedZoom, sizeKey]);
+  }, [windGrid, siteLat, siteLon, siteName, onZoomChange, savedCenterLat, savedCenterLon, savedZoom, sizeKey, onTransformChange, initialZoomK]);
 
   const handlePointer = (e: React.PointerEvent) => {
     if (!containerRef.current) return;
-    if (e.pointerType === "touch") return;
+    if (e.pointerType === 'touch') return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setCrosshair({ x, y });
+    setCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
   const handlePointerLeave = () => {
     setCrosshair(null);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -265,10 +311,9 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
     setPinnedCrosshair({ x, y });
 
     if (projectionRef.current && siteMarkersRef.current && onSiteClick) {
-      const projection = projectionRef.current;
       const currentTransform = transformRef.current;
       for (const site of siteMarkersRef.current) {
-        const proj = projection([site.lon, site.lat]);
+        const proj = projectionRef.current([site.lon, site.lat]);
         if (!proj) continue;
         const sp = currentTransform.apply(proj);
         const dist = Math.sqrt((sp[0] - x) ** 2 + (sp[1] - y) ** 2);
@@ -278,31 +323,7 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
         }
       }
     }
-  };
-
-  useEffect(() => {
-    if (!pinnedCrosshair || !projectionRef.current || !windGrid) return;
-
-    const [ux, uy] = transform.invert([pinnedCrosshair.x, pinnedCrosshair.y]);
-    const geo = projectionRef.current.invert!([ux, uy]);
-
-    if (geo) {
-      const wind = getWindAt(geo[0], geo[1], currentTime, windGrid);
-      if (wind) {
-        const [u, v] = wind;
-        const speedMs = Math.sqrt(u * u + v * v);
-        const speedKnots = speedMs * 1.94384;
-
-        let dir = (Math.atan2(-u, -v) * 180) / Math.PI;
-        if (dir < 0) dir += 360;
-
-        const info = { speed: speedKnots, direction: dir };
-        onWindInfoChange?.(info);
-      } else {
-        onWindInfoChange?.(null);
-      }
-    }
-  }, [currentTime, pinnedCrosshair, transform, windGrid, onWindInfoChange]);
+  }, [onSiteClick]);
 
   return (
     <div
@@ -317,7 +338,6 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
       />
-      <svg ref={svgRef} className="absolute inset-0 w-full h-full pointer-events-none hidden" />
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]" />
 
       {crosshair && (
@@ -339,7 +359,6 @@ export const WindCanvas = memo(function WindCanvas({ windGrid, currentTime, site
           <div className="absolute h-3 w-px bg-sky-400/80 left-0 -top-1.5" />
         </div>
       )}
-
     </div>
   );
 });

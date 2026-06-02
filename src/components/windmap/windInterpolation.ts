@@ -127,7 +127,7 @@ function lerpColor(c1: [number,number,number], c2: [number,number,number], t: nu
   ];
 }
 
-const SPEED_COLOR_STOPS: { kts: number; color: [number,number,number] }[] = [
+export const SPEED_COLOR_STOPS: { kts: number; color: [number,number,number] }[] = [
   { kts: 0,  color: [58, 40, 130] },
   { kts: 3,  color: [48, 80, 180] },
   { kts: 6,  color: [30, 140, 200] },

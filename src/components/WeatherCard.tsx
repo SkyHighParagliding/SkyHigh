@@ -191,7 +191,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
       </div>
       <div className="flex-1 min-h-0">
         <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky"></div></div>}>
-          <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} fullscreen />
+          <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} siteStatus={site.status} siteUpcomingClosureDates={site.upcomingClosureDates} fullscreen />
         </Suspense>
       </div>
     </div>,

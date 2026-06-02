@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { SPEED_COLOR_STOPS } from './windmap/windInterpolation';
 
 interface WindObservation {
   lat: number;
@@ -61,31 +62,14 @@ export function parseWindDirection(dir: string | number | null): number | null {
   return isNaN(n) ? null : n;
 }
 
-const SPEED_COLOR_STOPS: { kts: number; color: [number, number, number] }[] = [
-  { kts: 0, color: [58, 40, 130] },
-  { kts: 3, color: [48, 80, 180] },
-  { kts: 6, color: [30, 140, 200] },
-  { kts: 9, color: [40, 180, 100] },
-  { kts: 12, color: [120, 200, 50] },
-  { kts: 14, color: [220, 200, 30] },
-  { kts: 16, color: [230, 140, 20] },
-  { kts: 18, color: [210, 60, 30] },
-  { kts: 20, color: [180, 30, 60] },
-  { kts: 30, color: [140, 20, 80] },
-];
-
 function speedToColor(kts: number): [number, number, number] {
   if (kts <= SPEED_COLOR_STOPS[0].kts) return SPEED_COLOR_STOPS[0].color;
   for (let i = 0; i < SPEED_COLOR_STOPS.length - 1; i++) {
     if (kts >= SPEED_COLOR_STOPS[i].kts && kts <= SPEED_COLOR_STOPS[i + 1].kts) {
       const t = (kts - SPEED_COLOR_STOPS[i].kts) / (SPEED_COLOR_STOPS[i + 1].kts - SPEED_COLOR_STOPS[i].kts);
-      const c1 = SPEED_COLOR_STOPS[i].color;
-      const c2 = SPEED_COLOR_STOPS[i + 1].color;
-      return [
-        Math.round(c1[0] + (c2[0] - c1[0]) * t),
-        Math.round(c1[1] + (c2[1] - c1[1]) * t),
-        Math.round(c1[2] + (c2[2] - c1[2]) * t),
-      ];
+      const [r1, g1, b1] = SPEED_COLOR_STOPS[i].color;
+      const [r2, g2, b2] = SPEED_COLOR_STOPS[i + 1].color;
+      return [Math.round(r1 + (r2 - r1) * t), Math.round(g1 + (g2 - g1) * t), Math.round(b1 + (b2 - b1) * t)];
     }
   }
   return SPEED_COLOR_STOPS[SPEED_COLOR_STOPS.length - 1].color;

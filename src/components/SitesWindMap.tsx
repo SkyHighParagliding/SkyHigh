@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Loader2, Layers, Maximize2, Minimize2, Crosshair } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, nextSpeed } from './windMapTypes';
-import type { SiteMarker, ZoomSetpoints, PlaySpeed } from './windMapTypes';
-import { formatWindMapTime } from '@/lib/dateUtils';
-
-const WindCanvas = lazy(() => import('./WindMapProto').then(m => ({ default: m.WindCanvas })));
-
+import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes';
+import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 import type { WindGrid } from './windmap/windInterpolation';
+import { useWindPlayback } from '@/hooks/useWindPlayback';
+
+const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 
 interface SitesWindMapProps {
   sites: SiteMarker[];
@@ -24,13 +23,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const clubName = settings.clubName || 'SkyHigh';
   const isAdmin = !!user?.isAdmin;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [windGrid, setWindGrid] = useState<WindGrid | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [trayOpen, setTrayOpen] = useState(false);
-  const [playSpeed, setPlaySpeed] = useState(5000);
+
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
@@ -40,14 +33,28 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
   const [liveView, setLiveView] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
-  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const didPushHistoryRef = useRef(false);
   const closingViaPopRef = useRef(false);
 
-  // Read saved map view settings
   const savedLat = settings.windMapDefaultLat ? parseFloat(String(settings.windMapDefaultLat)) : undefined;
   const savedLon = settings.windMapDefaultLon ? parseFloat(String(settings.windMapDefaultLon)) : undefined;
   const savedZoom = settings.windMapDefaultZoom ? parseFloat(String(settings.windMapDefaultZoom)) : undefined;
+
+  const todayFetcher = useCallback(async (): Promise<WindGrid> => {
+    const res = await fetch('/api/weather/wind-overlay/full');
+    if (!res.ok) {
+      if (res.status === 503) throw new Error('Wind data temporarily unavailable, please try again in a moment');
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return res.json();
+  }, []);
+
+  const {
+    windGrid, loading, error,
+    currentTime, isPlaying, trayOpen, toggleTray,
+    playSpeed, timeStep, forecastStart, forecastEnd,
+    formattedTime, handleSliderChange, togglePlay, cycleSpeed,
+  } = useWindPlayback(mapMode, todayFetcher);
 
   const handleSaveView = useCallback(async () => {
     if (!liveView) return;
@@ -93,9 +100,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
     if (isFullscreen) {
       document.body.style.overflow = 'hidden';
-      const handleKey = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') exitFullscreen();
-      };
+      const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') exitFullscreen(); };
       const handlePopState = () => {
         didPushHistoryRef.current = false;
         closingViaPopRef.current = true;
@@ -127,74 +132,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     }
   }, [isFullscreen, exitFullscreen]);
 
-  const centerLat = sites.length > 0 ? sites.reduce((s, site) => s + site.lat, 0) / sites.length : -37.8;
-  const centerLon = sites.length > 0 ? sites.reduce((s, site) => s + site.lon, 0) / sites.length : 145.0;
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setIsPlaying(false);
-
-    const url = mapMode === '7day'
-      ? '/api/weather/extended-grid/wind-overlay'
-      : '/api/weather/wind-overlay/full';
-
-    fetch(url)
-      .then(res => {
-        if (!res.ok) {
-          if (res.status === 503) {
-            throw new Error('Wind data temporarily unavailable, please try again in a moment');
-          }
-          throw new Error(`HTTP ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data?.times?.length && data?.data?.length && data.ni && data.nj) {
-          setWindGrid(data);
-          const now = Date.now();
-          const start = new Date(data.times[0]).getTime();
-          const end = new Date(data.times[data.times.length - 1]).getTime();
-          setCurrentTime(now >= start && now <= end ? now : start);
-        } else {
-          setError('Invalid wind data');
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || 'Failed to load wind data');
-        setLoading(false);
-      });
-  }, [mapMode]);
-
-  const cycleSpeed = useCallback(() => {
-    setIsPlaying(true);
-    setPlaySpeed(prev => nextSpeed(prev as PlaySpeed));
-  }, []);
-
-  const sitesTimeStep = mapMode === '7day' ? 4 * 60 * 60 * 1000 : 15 * 60 * 1000;
-
-  useEffect(() => {
-    if (isPlaying && windGrid) {
-      playIntervalRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const next = prev + sitesTimeStep;
-          const end = new Date(windGrid.times[windGrid.times.length - 1]).getTime();
-          const start = new Date(windGrid.times[0]).getTime();
-          return next > end ? start : next;
-        });
-      }, playSpeed);
-    } else {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
-    }
-    return () => { if (playIntervalRef.current) clearInterval(playIntervalRef.current); };
-  }, [isPlaying, windGrid, playSpeed, sitesTimeStep]);
-
-  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsPlaying(false);
-    setCurrentTime(parseInt(e.target.value));
-  }, []);
-  const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
+  const centerLat = useMemo(
+    () => sites.length > 0 ? sites.reduce((s, site) => s + site.lat, 0) / sites.length : -37.8,
+    [sites],
+  );
+  const centerLon = useMemo(
+    () => sites.length > 0 ? sites.reduce((s, site) => s + site.lon, 0) / sites.length : 145.0,
+    [sites],
+  );
 
   const handleTransformChange = useCallback((lat: number, lon: number, zoom: number) => {
     setLiveView({ lat, lon, zoom });
@@ -208,11 +153,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setZoomK(k);
     setSelectedSite(null);
   }, []);
-
-  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
-
-  const forecastStart = windGrid ? new Date(windGrid.times[0]).getTime() : 0;
-  const forecastEnd = windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0;
 
   const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
@@ -258,7 +198,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             zoomSetpoints={zoomSetpoints}
             siteMarkers={sites}
             onSiteClick={handleSiteClick}
-            hideWindInfo
             onWindInfoChange={setSitesWindInfo}
             sizeKey={canvasSizeKey}
             initialZoomK={INITIAL_K}
@@ -314,15 +253,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
         <WindMapScrubberTray
           trayOpen={trayOpen}
-          onToggle={() => setTrayOpen(o => !o)}
+          onToggle={toggleTray}
           isPlaying={isPlaying}
           onPlayToggle={togglePlay}
           currentTime={currentTime}
           forecastStart={forecastStart}
           forecastEnd={forecastEnd}
-          timeStep={sitesTimeStep}
+          timeStep={timeStep}
           onTimeChange={handleSliderChange}
-          playSpeed={playSpeed as PlaySpeed}
+          playSpeed={playSpeed}
           onSpeedCycle={cycleSpeed}
           formattedTime={formattedTime}
           mapMode={mapMode}
@@ -340,7 +279,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       {isAdmin && (
         <button
           onClick={() => isSettingView ? handleSaveView() : setIsSettingView(true)}
-          title={isSettingView ? "Save this view as default" : "Set default map view"}
+          title={isSettingView ? 'Save this view as default' : 'Set default map view'}
           className={`absolute top-3 right-12 z-40 p-1.5 rounded-full transition-colors shadow-lg ${
             isSettingView
               ? 'bg-orange-500 text-white ring-2 ring-orange-300 animate-pulse'
@@ -362,30 +301,30 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       <div className={`absolute top-14 left-3 z-30 flex-col gap-1.5 ${showOverlay ? 'flex' : 'hidden'} lg:flex`}>
         {sitesModeToggle}
         <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[9px] font-mono">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50"></span>
-            <span className="text-white/70">{clubName}</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5"></span>
-            <span className="text-white/70">Other</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5"></span>
-            <span className="text-white/70">Restricted</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5"></span>
-            <span className="text-white/70">Closed</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
+          <span className="text-white/70">{clubName}</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5" />
+          <span className="text-white/70">Other</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5" />
+          <span className="text-white/70">Restricted</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5" />
+          <span className="text-white/70">Closed</span>
+        </div>
+        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
+          <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Forecast Data</div>
+          <div className="relative">
+            <div className="h-2 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
+            {sitesWindInfo && (
+              <div
+                className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
+                style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }}
+              />
+            )}
           </div>
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
-            <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Forecast Data</div>
-            <div className="relative">
-              <div className="h-2 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
-              {sitesWindInfo && (
-                <div
-                  className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
-                  style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }}
-                />
-              )}
-            </div>
-            <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
-              <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
-            </div>
+          <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
+            <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
           </div>
+        </div>
         <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap pointer-events-none">
           <div className="flex items-center gap-2">
             {sitesWindInfo ? (

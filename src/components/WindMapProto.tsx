@@ -1,123 +1,40 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { fetchWindGridCached } from '@/lib/windGridCache';
-import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS, nextSpeed } from './windMapTypes';
-import type { PlaySpeed } from './windMapTypes';
-import { formatWindMapTime } from '@/lib/dateUtils';
+import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
+import { WindCanvas } from './windmap/WindCanvas';
+import { useWindPlayback } from '@/hooks/useWindPlayback';
+
 export type { ZoomSetpoint, ZoomSetpoints, SiteMarker } from './windMapTypes';
 export { DEFAULT_ZOOM_SETPOINTS, INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
-
 export type { WindGrid } from './windmap/windInterpolation';
 export { WindCanvas } from './windmap/WindCanvas';
-
-import { WindCanvas } from './windmap/WindCanvas';
-import type { WindGrid } from './windmap/windInterpolation';
 
 interface WindMapProps {
   siteId: string;
   siteLat: number;
   siteLon: number;
   siteName?: string;
+  siteStatus?: string;
+  siteUpcomingClosureDates?: string[];
   fullscreen?: boolean;
 }
 
-const fetchWindGrid = fetchWindGridCached;
-
-export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fullscreen = false }: WindMapProps) {
-  const [windGrid, setWindGrid] = useState<WindGrid | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [trayOpen, setTrayOpen] = useState(false);
-  const [playSpeed, setPlaySpeed] = useState(5000);
+export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteStatus, siteUpcomingClosureDates, fullscreen = false }: WindMapProps) {
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [singleWindInfo, setSingleWindInfo] = useState<{ speed: number; direction: number } | null>(null);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
-  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const cycleSpeed = useCallback(() => {
-    setIsPlaying(true);
-    setPlaySpeed(prev => nextSpeed(prev as PlaySpeed));
-  }, []);
+  const todayFetcher = useCallback(() => fetchWindGridCached(siteId), [siteId]);
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setIsPlaying(false);
-
-    if (mapMode === '7day') {
-      fetch('/api/weather/extended-grid/wind-overlay')
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (data?.times?.length && data?.data?.length && data.ni && data.nj) {
-            setWindGrid(data);
-            const now = Date.now();
-            const start = new Date(data.times[0]).getTime();
-            const end = new Date(data.times[data.times.length - 1]).getTime();
-            setCurrentTime(now >= start && now <= end ? now : start);
-          } else {
-            setError('Invalid extended wind data');
-          }
-          setLoading(false);
-        })
-        .catch(err => {
-          setError(err.message || 'Failed to load 7-day wind data');
-          setLoading(false);
-        });
-    } else {
-      fetchWindGrid(siteId)
-        .then(grid => {
-          setWindGrid(grid);
-          const now = Date.now();
-          const start = new Date(grid.times[0]).getTime();
-          const end = new Date(grid.times[grid.times.length - 1]).getTime();
-          setCurrentTime(now >= start && now <= end ? now : start);
-          setLoading(false);
-        })
-        .catch(err => {
-          setError(err.message || 'Failed to load wind data');
-          setLoading(false);
-        });
-    }
-  }, [siteId, mapMode]);
-
-  const timeStep = mapMode === '7day' ? 4 * 60 * 60 * 1000 : 15 * 60 * 1000;
-
-  useEffect(() => {
-    if (isPlaying && windGrid) {
-      playIntervalRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const next = prev + timeStep;
-          const end = new Date(windGrid.times[windGrid.times.length - 1]).getTime();
-          const start = new Date(windGrid.times[0]).getTime();
-          return next > end ? start : next;
-        });
-      }, playSpeed);
-    } else {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
-    }
-    return () => {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
-    };
-  }, [isPlaying, windGrid, playSpeed, timeStep]);
-
-  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsPlaying(false);
-    setCurrentTime(parseInt(e.target.value));
-  }, []);
-
-  const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
-
-  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
-
-  const forecastStart = windGrid ? new Date(windGrid.times[0]).getTime() : 0;
-  const forecastEnd = windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0;
+  const {
+    windGrid, loading, error,
+    currentTime, isPlaying, trayOpen, toggleTray,
+    playSpeed, timeStep, forecastStart, forecastEnd,
+    formattedTime, handleSliderChange, togglePlay, cycleSpeed,
+  } = useWindPlayback(mapMode, todayFetcher);
 
   const modeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
@@ -143,8 +60,11 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
   }
 
   return (
-    <div className={fullscreen ? "w-full h-full flex flex-col" : "w-full"}>
-      <div className={`relative overflow-hidden ${fullscreen ? 'flex-1 min-h-0' : 'rounded-xl border border-gray-700'}`} style={fullscreen ? undefined : { height: '320px' }}>
+    <div className={fullscreen ? 'w-full h-full flex flex-col' : 'w-full'}>
+      <div
+        className={`relative overflow-hidden ${fullscreen ? 'flex-1 min-h-0' : 'rounded-xl border border-gray-700'}`}
+        style={fullscreen ? undefined : { height: '320px' }}
+      >
         <WindCanvas
           windGrid={windGrid}
           currentTime={currentTime}
@@ -152,8 +72,9 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
           siteLon={siteLon}
           siteName={siteName}
           onZoomChange={setZoomK}
-          hideWindInfo
           onWindInfoChange={setSingleWindInfo}
+          siteStatus={siteStatus}
+          siteUpcomingClosureDates={siteUpcomingClosureDates}
         />
 
         <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5">
@@ -206,7 +127,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
 
         <WindMapScrubberTray
           trayOpen={trayOpen}
-          onToggle={() => setTrayOpen(o => !o)}
+          onToggle={toggleTray}
           isPlaying={isPlaying}
           onPlayToggle={togglePlay}
           currentTime={currentTime}
@@ -214,7 +135,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, fulls
           forecastEnd={forecastEnd}
           timeStep={timeStep}
           onTimeChange={handleSliderChange}
-          playSpeed={playSpeed as PlaySpeed}
+          playSpeed={playSpeed}
           onSpeedCycle={cycleSpeed}
           formattedTime={formattedTime}
           mapMode={mapMode}
