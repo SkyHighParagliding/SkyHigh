@@ -63,6 +63,8 @@ export interface FlightService {
   endFlight(flightId: string, stats: FlightStats | undefined, pilot: Pilot | null, sessionToken?: string): Promise<{ ok: boolean; error?: string; status?: number; pilotId?: string | null; pilotName?: string; flightId?: string }>;
   getFlightWithBreadcrumbs(flightId: string, pilot: Pilot | null, sessionToken?: string): Promise<{ flight: any; breadcrumbs: any[] } | { error: string; status: number } | null>;
   listFlights(pilotId: string | null, sessionToken?: string): Promise<Flight[]>;
+  listFlightsWithLanding(pilotId: string | null, sessionToken?: string): Promise<(Flight & { landingZone?: string | null })[]>;
+  getBreadcrumbsForFlights(flightIds: string[]): Promise<Breadcrumb[]>;
   deleteFlight(flightId: string, pilot: Pilot | null, sessionToken?: string): Promise<{ ok: boolean; error?: string; status?: number }>;
   getFlight(flightId: string): Promise<Flight | null>;
   verifyOwnership(flight: Flight, pilot: Pilot | null, sessionToken?: string): boolean;
