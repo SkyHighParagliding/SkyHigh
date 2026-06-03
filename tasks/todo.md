@@ -5,6 +5,10 @@
 
 ## ✅ Done
 
+### TASK-031 — Pilot XC Flight History Export (CSV/GPX)
+- **Completed:** 2026-06-03
+- **What changed:** Added `GET /api/flights/export?format=csv|gpx` endpoint in `server/routes/flights.ts`. Implemented database queries to resolve sites landing zones and bulk flight breadcrumbs. Added "Export All" dropdown menu to `src/pages/FlightHistory.tsx` list view. Download logic uses secure fetch with authorization headers.
+
 ### TASK-SQLITE-REMOVAL — Complete SQLite → PostgreSQL migration
 - **Completed:** 2026-05-27
 - **What changed:** Removed `better-sqlite3` entirely. Converted all server code to use
@@ -20,18 +24,6 @@
 ---
 
 ## 🔴 Quick Wins (start here)
-
-### TASK-031 — Pilot XC Flight History Export (CSV/GPX)
-- **Effort:** S (1–2 hours)
-- **What:** Pilots can download their submitted flights from FlightHistory page
-- **Data exists:** `GET /api/flights` + `GET /api/flights/:id` with `breadcrumbs[]` (lat/lon track)
-- **Needs:**
-  1. New endpoint: `GET /api/flights/export?format=csv|gpx` in `server/routes/flights.ts`
-  2. CSV: flatten flight metadata (date, site, distance, landing zone) into rows
-  3. GPX: convert `breadcrumbs` array into GPX XML track with timestamps
-  4. Frontend: download button on `src/pages/FlightHistory.tsx` with format selector
-  5. Set `Content-Disposition: attachment` header for file download
-- **Files:** `server/routes/flights.ts`, `src/pages/FlightHistory.tsx`
 
 ---
 
