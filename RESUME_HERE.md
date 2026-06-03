@@ -1,50 +1,36 @@
-# RESUME_HERE — Last updated: 2026-06-02
+# RESUME_HERE — Last updated: 2026-06-03
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — all changes pushed, deploying
+## Status: **LIVE** ✅ on Railway — TASK-031 completed, build verified, changes committed
 
 ## Where I left off
 
-Session 33: Full wind map optimisation and hardening sprint.
+Session 34: Pilot XC Flight History Export (CSV/GPX) (TASK-031).
 
-Part 1 — Optimisation refactor (commit `e0fabf1`):
-- Extracted shared `useWindPlayback` hook (~150 lines deduplicated from WindMapProto + SitesWindMap)
-- Removed `transform` React state from WindCanvas (was causing 60fps re-renders during pan/zoom)
-- Wind info computation moved into render loop, throttled to 10fps
-- Added ResizeObserver replacing per-frame DOM clientWidth/clientHeight reads
-- Added d3tile result caching keyed by transform+size; FIFO tile cache capped at 200
-- Hoisted `todayStr` outside animation loop with 60s setInterval refresh
-- Removed dead `hideWindInfo` prop
-- Consolidated `SPEED_COLOR_STOPS` to single export from `windInterpolation.ts`
-- Fixed closed-site pin rendering blue instead of red on single-site wind map
+Part 1 — Backend implementation:
+- Added endpoint `GET /api/flights/export?format=csv|gpx` in [flights.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/routes/flights.ts).
+- Added `listFlightsWithLanding` and `getBreadcrumbsForFlights` methods to the `FlightService` interface and implemented them in [realFlightService.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/services/realFlightService.ts) and [demoFlightService.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/services/demoFlightService.ts).
+- Left-joined `sites` table on `siteId` to retrieve `landing` text to fill the "Landing Zone" column in CSV export.
+- Optimized breadcrumbs retrieval for GPX export by fetching breadcrumbs for all flights in a single query.
+- Aggregated all flights with GPS points into a single multi-track GPX file when bulk exporting.
 
-Part 2 — `/code-review high` on the above changes, then applied all 10 findings (commit `fe9bbcd`):
-1. siteStatus/siteUpcomingClosureDates now in refs — marker colour live after mount
-2. ResizeObserver rebuilds overlay canvas and particle pool on true dimension change
-3. ResizeObserver guards canvas.width/height with equality check (no-op reset prevention)
-4. loadTile adds img.onerror to evict failed/broken tile cache entries
-5. todayFetcherRef pattern + JSDoc warning for stable useCallback requirement
-6. toMelbourneDate exported from closureStatus.ts; WindCanvas uses it (single source)
-7. pinColor() helper extracted in siteMarkerRenderer — one owner for colour decision
-8. forecastStart/forecastEnd memoized; gridBoundsRef avoids string parsing per tick
-9. 7-day fetch parses JSON error body for human-readable messages
-10. tileKey uses .toFixed(1) consistently for x/y/k
+Part 2 — Frontend implementation:
+- Added an "Export All" dropdown menu to the header of the [FlightHistory.tsx](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/src/pages/FlightHistory.tsx) list view.
+- Handled downloading of the exported files securely using `fetch` with the `Authorization` and `x-pilot-token` headers, reading the response as a blob, and using a local object URL to trigger the browser download (rather than exposing the session token in standard link URLs).
+
+Part 3 — Verification:
+- Ran a full project build `npm run build` which compiled successfully with 0 TypeScript errors.
+- Staged and committed changes.
 
 ## Last completed tasks
-- Wind map optimisation + 10 code review fixes — commits `e0fabf1`, `fe9bbcd`
-- Visually verified in Chrome: multi-site map loads, Arthur's Seat shows red pin in single-site modal
+- TASK-031 (XC Flight History Export) — commit `a365290`
 
 ## Currently in progress
 - None
 
 ## Next task to start
-- Feature backlog: TASK-031 (XC Flight History Export — S effort)
-- Or: TASK-030 (Siteguide Version Change Email Notification — M effort)
-- Completed: Phase 5 tsc audit (0 errors remaining — resolved all 94 pre-existing errors)
+- Feature backlog: TASK-030 (Siteguide Version Change Email Notification — M effort)
+- Or: TASK-032 (Multi-Club White-Label Test — L effort)
 
 ## Open questions / blockers
 - None
-
-## Quick context refresher
-
-Session 33 was a wind map code quality sprint — optimisation + a high-effort code review + applying all 10 findings. Wind map codebase is now substantially cleaner and more correct. The ResizeObserver, tile cache, and stale closure bugs were the highest-severity fixes. Codebase has 94 pre-existing tsc errors in unrelated files (Admin pages, XC maps, Layout) — none in wind map area.
