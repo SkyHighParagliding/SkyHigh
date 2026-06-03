@@ -123,6 +123,20 @@ export class DemoFlightService implements FlightService {
     return Array.from(this.flights.values()).filter(f => f.pilotId === pilotId);
   }
 
+  async listFlightsWithLanding(pilotId: string | null, sessionToken?: string): Promise<(Flight & { landingZone?: string | null })[]> {
+    const list = await this.listFlights(pilotId, sessionToken);
+    return list.map(f => ({ ...f, landingZone: "Beach or top land (Demo)" }));
+  }
+
+  async getBreadcrumbsForFlights(flightIds: string[]): Promise<Breadcrumb[]> {
+    const all: Breadcrumb[] = [];
+    for (const fid of flightIds) {
+      const crumbs = this.breadcrumbs.get(fid) || [];
+      all.push(...crumbs);
+    }
+    return all;
+  }
+
   async deleteFlight(flightId: string, pilot: Pilot | null, _sessionToken?: string): Promise<{ ok: boolean; error?: string; status?: number }> {
     const flight = this.flights.get(flightId);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };

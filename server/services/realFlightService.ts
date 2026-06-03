@@ -206,6 +206,38 @@ export class RealFlightService implements FlightService {
     return [];
   }
 
+  async listFlightsWithLanding(pilotId: string | null, sessionToken?: string) {
+    if (pilotId) {
+      return await query<Flight & { landingZone?: string | null }>(
+        `SELECT f.*, s.landing AS "landingZone"
+         FROM flights f
+         LEFT JOIN sites s ON f."siteId" = s.id
+         WHERE f."pilotId" = $1
+         ORDER BY f."startedAt" DESC LIMIT 500`,
+        [pilotId]
+      );
+    }
+    if (sessionToken) {
+      return await query<Flight & { landingZone?: string | null }>(
+        `SELECT f.*, s.landing AS "landingZone"
+         FROM flights f
+         LEFT JOIN sites s ON f."siteId" = s.id
+         WHERE f."sessionToken" = $1
+         ORDER BY f."startedAt" DESC LIMIT 500`,
+        [sessionToken]
+      );
+    }
+    return [];
+  }
+
+  async getBreadcrumbsForFlights(flightIds: string[]) {
+    if (flightIds.length === 0) return [];
+    return await query<Breadcrumb>(
+      `SELECT * FROM breadcrumbs WHERE "flightId" = ANY($1) ORDER BY timestamp ASC`,
+      [flightIds]
+    );
+  }
+
   async deleteFlight(flightId: string, pilot: Pilot | null, sessionToken?: string) {
     const flight = await queryOne("SELECT * FROM flights WHERE id = $1", [flightId]);
     if (!flight) return { ok: false, error: "Flight not found", status: 404 };

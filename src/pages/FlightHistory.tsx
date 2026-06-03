@@ -866,6 +866,53 @@ export function FlightHistory() {
   const [deleteError, setDeleteError] = useState(false);
   const [mapFlight, setMapFlight] = useState<FlightDetail | null>(null);
   const [loadingMap, setLoadingMap] = useState<string | null>(null);
+  const [showBulkExport, setShowBulkExport] = useState(false);
+  const [exportingBulk, setExportingBulk] = useState<"csv" | "gpx" | null>(null);
+
+  const handleBulkExport = async (format: "csv" | "gpx") => {
+    if (!token) return;
+    setShowBulkExport(false);
+    setExportingBulk(format);
+    try {
+      const url = `/api/flights/export?format=${format}`;
+      const response = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "x-pilot-token": token,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export flights");
+      }
+
+      const blob = await response.blob();
+      
+      const disposition = response.headers.get("Content-Disposition");
+      let filename = `flights_export_${new Date().toISOString().slice(0, 10)}.${format}`;
+      if (disposition && disposition.indexOf("attachment") !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) { 
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export flights. Please try again.");
+    } finally {
+      setExportingBulk(null);
+    }
+  };
 
   const handleDeleteFlight = (id: string) => {
     qc.setQueryData<Flight[]>(flightKeys.all, (old) => old?.filter((f) => f.id !== id) ?? []);
@@ -940,6 +987,35 @@ export function FlightHistory() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-400">{flights.length} flight{flights.length !== 1 ? "s" : ""}</span>
+            {flights.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkExport(!showBulkExport)}
+                  disabled={!!exportingBulk}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white text-sky-600 border border-sky-200 hover:bg-sky-50 transition-colors disabled:opacity-50 shadow-sm"
+                  title="Export all flights"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {exportingBulk ? "Exporting..." : "Export All"}
+                </button>
+                {showBulkExport && (
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border z-50 min-w-[160px] py-1">
+                    <button
+                      onClick={() => handleBulkExport("csv")}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4 text-blue-500" /> CSV Format
+                    </button>
+                    <button
+                      onClick={() => handleBulkExport("gpx")}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4 text-green-500" /> GPX Format
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={logout}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-colors"
