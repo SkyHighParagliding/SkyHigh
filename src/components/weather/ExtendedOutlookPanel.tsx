@@ -155,7 +155,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               gridTemplateRows: selectedDay ? '1fr' : '0fr',
               transition: 'grid-template-rows 0.28s ease',
             }}>
-              <div style={{ overflow: 'clip', minHeight: 0 }}>
+              <div style={{ overflow: 'clip', minHeight: 0, minWidth: 0, width: '100%' }}>
                 {stripData && (
                   <SlotStrip
                     day={stripData}
@@ -297,6 +297,8 @@ function SlotStrip({ day, site, iconMap, variant }: {
   variant: 'apple' | 'classic';
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragOrigin = useRef({ x: 0, scrollLeft: 0 });
   const isApple = variant === 'apple';
   const slots: any[] = day.slots ?? [];
   const useScroll = slots.length > 6;
@@ -324,6 +326,20 @@ function SlotStrip({ day, site, iconMap, variant }: {
     ? "mt-2 pt-2 border-t border-black/10"
     : "mt-3 pt-3 border-t border-navy/10";
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    dragOrigin.current = { x: e.clientX, scrollLeft: scrollRef.current.scrollLeft };
+    e.preventDefault(); // prevents text selection while dragging
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    scrollRef.current.scrollLeft = dragOrigin.current.scrollLeft - (e.clientX - dragOrigin.current.x);
+  };
+
+  const stopDrag = () => { isDragging.current = false; };
+
   return (
     <div className={divider}>
       <div
@@ -334,7 +350,13 @@ function SlotStrip({ day, site, iconMap, variant }: {
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
+          cursor: 'grab',
+          userSelect: 'none',
         } as React.CSSProperties : undefined}
+        onMouseDown={useScroll ? handleMouseDown : undefined}
+        onMouseMove={useScroll ? handleMouseMove : undefined}
+        onMouseUp={useScroll ? stopDrag : undefined}
+        onMouseLeave={useScroll ? stopDrag : undefined}
       >
         {slots.map((slot: any, idx: number) => {
           const status = getWindStatus(slot.windSpeed, slot.windDirection, site);
