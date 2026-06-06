@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react';
 import { CloudSun, Waves, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getWindStatus } from '@/lib/utils';
 import { TideChart } from './TideChart';
 import { DayOutlookStatus } from './WindCompass';
 import type { TideData } from './types';
@@ -35,10 +36,64 @@ const TOGGLE_HIDE_STYLE = {
   width: "100%",
 };
 
+// Maps getWindStatus label → hex color for both apple and classic variants
+const STATUS_COLOR: Record<string, string> = {
+  Good: '#10b981',
+  Light: '#eab308',
+  Cross: '#f97316',
+  'Blown Out': '#ef4444',
+  'Not Flyable': '#ef4444',
+};
+const MUTED_COLOR = '#9ca3af';
+
+function formatSlotTime(timeStr: string): string {
+  let hour: number;
+  if (timeStr.length > 19 || timeStr.includes('Z') || timeStr.includes('+')) {
+    // UTC ISO string from weather_forecasts — convert to Melbourne local hour
+    hour = parseInt(
+      new Date(timeStr).toLocaleTimeString('en-AU', {
+        hour: '2-digit', hour12: false, timeZone: 'Australia/Melbourne',
+      })
+    );
+  } else {
+    // Melbourne local time string "YYYY-MM-DDTHH:MM"
+    hour = parseInt(timeStr.split('T')[1]?.slice(0, 2) ?? '0');
+  }
+  const ampm = hour < 12 ? 'am' : 'pm';
+  const h12 = hour % 12 || 12;
+  return `${h12}${ampm}`;
+}
+
+function getSlotHour(timeStr: string): number {
+  if (timeStr.length > 19 || timeStr.includes('Z') || timeStr.includes('+')) {
+    return parseInt(
+      new Date(timeStr).toLocaleTimeString('en-AU', {
+        hour: '2-digit', hour12: false, timeZone: 'Australia/Melbourne',
+      })
+    );
+  }
+  return parseInt(timeStr.split('T')[1]?.slice(0, 2) ?? '0');
+}
+
 export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  // Keep last selected data so content stays visible during collapse animation
+  const lastDayDataRef = useRef<any>(null);
+
   if (!hasExtended && !tideData) return null;
 
   const isApple = variant === 'apple';
+
+  const selectedDayData = selectedDay
+    ? extendedForecast?.days?.find((d: any) => d.date === selectedDay) ?? null
+    : null;
+
+  if (selectedDayData) lastDayDataRef.current = selectedDayData;
+  const stripData = selectedDayData ?? lastDayDataRef.current;
+
+  const handleSelectDay = (date: string) => {
+    setSelectedDay(prev => prev === date ? null : date);
+  };
 
   const outlookHideTransform = "translateY(-8px)";
   const tideHideTransform = "translateY(8px)";
@@ -84,12 +139,33 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 </button>
               )}
             </div>
+
             <DayGrid
               days={extendedForecast.days}
               site={site}
               iconMap={iconMap}
               variant={variant}
+              selectedDay={selectedDay}
+              onSelectDay={handleSelectDay}
             />
+
+            {/* Slot strip — expands below the day grid when a day is selected */}
+            <div style={{
+              display: 'grid',
+              gridTemplateRows: selectedDay ? '1fr' : '0fr',
+              transition: 'grid-template-rows 0.28s ease',
+            }}>
+              <div style={{ overflow: 'hidden', minHeight: 0 }}>
+                {stripData && (
+                  <SlotStrip
+                    day={stripData}
+                    site={site}
+                    iconMap={iconMap}
+                    variant={variant}
+                  />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -122,7 +198,16 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
   );
 }
 
-function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; iconMap: Record<string, LucideIcon>; variant: 'apple' | 'classic' }) {
+// ─── DayGrid ────────────────────────────────────────────────────────────────
+
+function DayGrid({ days, site, iconMap, variant, selectedDay, onSelectDay }: {
+  days: any[];
+  site: any;
+  iconMap: Record<string, LucideIcon>;
+  variant: 'apple' | 'classic';
+  selectedDay: string | null;
+  onSelectDay: (date: string) => void;
+}) {
   const isApple = variant === 'apple';
 
   return (
@@ -130,16 +215,22 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
       {days.map((day: any, idx: number) => {
         const IconComp = iconMap[day.bestWeatherIcon] || CloudSun;
         const isToday = idx === 0;
+        const isSelected = selectedDay === day.date;
 
         const closureDates: string[] = site?.upcomingClosureDates ?? [];
         const isClosureDay = closureDates.includes(day.date);
 
         if (isApple) {
           return (
-            <div key={day.date} className={cn(
-              "flex flex-col items-center gap-0.5 py-1 rounded-lg flex-1 min-w-0",
-              isToday ? "bg-white/80" : ""
-            )}>
+            <button
+              key={day.date}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSelectDay(day.date); }}
+              className={cn(
+                "flex flex-col items-center gap-0.5 py-1 rounded-lg flex-1 min-w-0 transition-all",
+                isToday ? "bg-white/80" : "",
+                isSelected ? "ring-2 ring-sky/60" : ""
+              )}
+            >
               <span className={cn(
                 "text-[12px] font-bold uppercase",
                 isToday ? "text-sky" : ""
@@ -157,15 +248,20 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
               {isClosureDay && (
                 <span className="text-[9px] font-bold text-red-500 uppercase tracking-wide">Closed</span>
               )}
-            </div>
+            </button>
           );
         }
 
         return (
-          <div key={day.date} className={cn(
-            "flex flex-col items-center gap-0.5 sm:gap-1 py-1 sm:py-1.5 rounded-lg",
-            isToday ? "bg-sky/10" : ""
-          )}>
+          <button
+            key={day.date}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSelectDay(day.date); }}
+            className={cn(
+              "flex flex-col items-center gap-0.5 sm:gap-1 py-1 sm:py-1.5 rounded-lg transition-all w-full",
+              isToday ? "bg-sky/10" : "",
+              isSelected ? "ring-2 ring-sky/50 bg-sky/5" : ""
+            )}
+          >
             <span className={cn(
               "text-[8px] sm:text-[10px] font-bold uppercase",
               isToday ? "text-sky" : "text-muted-foreground"
@@ -183,9 +279,124 @@ function DayGrid({ days, site, iconMap, variant }: { days: any[]; site: any; ico
             {isClosureDay && (
               <span className="text-[7px] font-bold text-red-500 uppercase tracking-wide">Closed</span>
             )}
-          </div>
+          </button>
         );
       })}
+    </div>
+  );
+}
+
+// ─── SlotStrip ───────────────────────────────────────────────────────────────
+
+const SLOT_WIDTH = 52;
+
+function SlotStrip({ day, site, iconMap, variant }: {
+  day: any;
+  site: any;
+  iconMap: Record<string, LucideIcon>;
+  variant: 'apple' | 'classic';
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isApple = variant === 'apple';
+  const slots: any[] = day.slots ?? [];
+  const useScroll = slots.length > 6;
+
+  // Auto-scroll to current hour when today is selected; reset to start for other days
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !slots.length) return;
+
+    const todayMelb = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+    if (day.date !== todayMelb || !useScroll) {
+      el.scrollLeft = 0;
+      return;
+    }
+
+    const nowHour = parseInt(
+      new Date().toLocaleTimeString('en-AU', { hour: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' })
+    );
+    const targetIdx = slots.findIndex((s: any) => getSlotHour(s.time) >= nowHour);
+    const scrollIdx = Math.max(0, targetIdx - 1);
+    el.scrollLeft = scrollIdx * SLOT_WIDTH;
+  }, [day.date]);
+
+  const divider = isApple
+    ? "mt-2 pt-2 border-t border-black/10"
+    : "mt-3 pt-3 border-t border-navy/10";
+
+  return (
+    <div className={divider}>
+      <div
+        ref={scrollRef}
+        className={cn("flex", useScroll ? "overflow-x-auto" : "w-full")}
+        style={useScroll ? {
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties : undefined}
+      >
+        {slots.map((slot: any, idx: number) => {
+          const status = getWindStatus(slot.windSpeed, slot.windDirection, site);
+          const IconComp = iconMap[slot.weatherIcon] || CloudSun;
+          const dirColor = STATUS_COLOR[status.directionStatus.label] ?? MUTED_COLOR;
+          const spdColor = STATUS_COLOR[status.speedStatus.label] ?? MUTED_COLOR;
+          const timeLabel = formatSlotTime(slot.time);
+          const hasGust = slot.windGust > 0;
+
+          const slotStyle: React.CSSProperties = useScroll
+            ? { minWidth: SLOT_WIDTH, maxWidth: SLOT_WIDTH, scrollSnapAlign: 'start', flexShrink: 0 }
+            : { flex: 1, minWidth: 0 };
+
+          if (isApple) {
+            return (
+              <div key={idx} style={slotStyle} className="flex flex-col items-center py-1 gap-[2px]">
+                <span style={{ color: MUTED_COLOR, fontSize: 10, fontWeight: 600, lineHeight: 1.2 }}>
+                  {timeLabel}
+                </span>
+                <IconComp style={{ color: MUTED_COLOR, width: 13, height: 13 }} />
+                <span style={{ color: dirColor, fontSize: 11, fontWeight: 700, lineHeight: 1.2 }}>
+                  {slot.windDirection}
+                </span>
+                <span style={{ color: spdColor, fontSize: 12, fontWeight: 800, lineHeight: 1.2 }}>
+                  {slot.windSpeed}kt
+                </span>
+                {hasGust && (
+                  <span style={{ color: MUTED_COLOR, fontSize: 10, lineHeight: 1.2 }}>
+                    G{slot.windGust}
+                  </span>
+                )}
+                <span style={{ color: MUTED_COLOR, fontSize: 10, lineHeight: 1.2 }}>
+                  {Math.round(slot.temperature)}°
+                </span>
+              </div>
+            );
+          }
+
+          return (
+            <div key={idx} style={slotStyle} className="flex flex-col items-center py-1 gap-[2px]">
+              <span className="text-[9px] font-bold text-muted-foreground leading-tight">
+                {timeLabel}
+              </span>
+              <IconComp className="w-3.5 h-3.5 text-navy/50" />
+              <span className="text-[10px] font-bold leading-tight" style={{ color: dirColor }}>
+                {slot.windDirection}
+              </span>
+              <span className="text-[11px] font-black leading-tight" style={{ color: spdColor }}>
+                {slot.windSpeed}kt
+              </span>
+              {hasGust && (
+                <span className="text-[9px] text-muted-foreground leading-tight">
+                  G{slot.windGust}
+                </span>
+              )}
+              <span className="text-[9px] text-muted-foreground leading-tight">
+                {Math.round(slot.temperature)}°
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
