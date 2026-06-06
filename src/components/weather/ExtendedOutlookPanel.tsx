@@ -117,7 +117,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
   const tideLabelStyle = isApple ? { color: '#86868b' } : undefined;
 
   return (
-    <div className="w-full mt-3 relative" style={{ overflow: "hidden" }}>
+    <div className="w-full mt-3 relative" style={{ overflow: "clip" }}>
       {hasExtended && (
         <div style={effectiveShowTides
           ? { ...TOGGLE_HIDE_STYLE, transform: outlookHideTransform }
@@ -155,7 +155,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               gridTemplateRows: selectedDay ? '1fr' : '0fr',
               transition: 'grid-template-rows 0.28s ease',
             }}>
-              <div style={{ overflow: 'hidden', minHeight: 0 }}>
+              <div style={{ overflow: 'clip', minHeight: 0 }}>
                 {stripData && (
                   <SlotStrip
                     day={stripData}
