@@ -8,18 +8,9 @@ import { MapMessaging } from '@/components/MapMessaging';
 import 'leaflet/dist/leaflet.css';
 import { useRetrievalMap } from '@/hooks/useRetrievalMap';
 import type { LivePilotData, RouteInfo, RetrievalRecord } from '@/hooks/useRetrievalMap';
-import { BASEMAPS } from '@/lib/xcMapUtils';
+import { BASEMAPS, escapeHtml } from '@/lib/xcMapUtils';
 import type { MapOrientation } from '@/lib/xcMapUtils';
 import { DriverFollower, requestCompassPermission } from '@/components/xcmap/MapHelpers';
-
-function escapeHtml(str: string): string {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
 
 function pilotIcon(name: string, driverName?: string | null, positionSource?: 'phone' | 'satellite') {
   const safeName = escapeHtml(name);

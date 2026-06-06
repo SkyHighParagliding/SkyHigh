@@ -6,13 +6,13 @@ import { requireAuth, requireSOOrAdmin, isDevBypassActive } from "../middleware/
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { sendEmail } from "../utils/email.js";
+import { RATE_LIMIT_WINDOW_MS } from "../constants.js";
 
 const log = createLogger("auth");
 
 const RESET_TOKEN_EXPIRY_HOURS = 24;
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
 
 function checkRateLimit(key: string): boolean {

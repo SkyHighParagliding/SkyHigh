@@ -2,6 +2,7 @@ import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid, getTimeWindow, getGridBounds, type GridFetchStatus } from "./victoriaGrid.js";
+import { WIND_GRID_TTL_MS } from "./constants.js";
 
 const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
 const OPEN_METEO_URL = OPEN_METEO_API_KEY
@@ -613,7 +614,6 @@ async function computeExtendedWindGrid(grid: ExtendedGrid): Promise<any> {
 
 let cachedWindGrid: any = null;
 let cachedWindGridTime: number = 0;
-const WIND_GRID_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export async function getExtendedWindGrid(): Promise<any | null> {
   const now = Date.now();

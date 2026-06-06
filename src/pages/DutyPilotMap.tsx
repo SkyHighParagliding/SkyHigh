@@ -10,16 +10,7 @@ import { getDemoRole } from '@/lib/demoConfig';
 import { useDataUsage, trackSSEMessage } from '@/hooks/useDataUsage';
 import { api } from '@/lib/apiClient';
 import 'leaflet/dist/leaflet.css';
-import { BASEMAPS } from '@/lib/xcMapUtils';
-
-function escapeHtml(str: string): string {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
+import { BASEMAPS, escapeHtml } from '@/lib/xcMapUtils';
 
 interface RetrievalRecord {
   id: string;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSafetyOfficers, useSites } from "@/hooks/api";
+import { escapeHtml } from "@/lib/xcMapUtils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GraduationCap, Mail, MessageCircle, Phone, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -350,15 +351,6 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
       </div>
     </div>
   );
-}
-
-function escapeHtml(str: string): string {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
 }
 
 function processStyleSyntax(text: string): string {

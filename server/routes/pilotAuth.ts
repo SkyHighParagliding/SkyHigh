@@ -7,6 +7,7 @@ import createLogger from "../utils/logger.js";
 import { requireAuth, isDevBypassActive } from "../middleware/auth.js";
 import { DEMO_TOKENS, requireDemoSession } from "./demo/state.js";
 import { buildSafeUpdateClauses } from "../utils/sqlBuilder.js";
+import { PILOT_SESSION_TTL_MS, PILOT_RATE_LIMIT_WINDOW_MS } from "../constants.js";
 
 const log = createLogger("pilot-auth");
 const router = Router();
@@ -38,10 +39,7 @@ interface SessionRow {
   sessionCreatedAt: string;
 }
 
-const PILOT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
 const pilotRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const PILOT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const PILOT_RATE_LIMIT_MAX = 10;
 
 // Clean up expired entries every 30 seconds

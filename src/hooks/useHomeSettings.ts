@@ -4,24 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminForm } from '@/hooks/useAdminForm';
 import { api } from '@/lib/apiClient';
 import type { Site } from '@/types/api';
-
-const ALLOWED_YT_HOSTS = new Set(["youtu.be", "youtube.com", "www.youtube.com", "m.youtube.com"]);
-
-export function extractYoutubeVideoId(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (!ALLOWED_YT_HOSTS.has(u.hostname)) return null;
-    if (u.hostname === "youtu.be") return u.pathname.slice(1).split("/")[0] || null;
-    const v = u.searchParams.get("v");
-    if (v) return v;
-    const segments = u.pathname.split("/");
-    for (const key of ["shorts", "embed", "v"]) {
-      const idx = segments.indexOf(key);
-      if (idx !== -1 && segments[idx + 1]) return segments[idx + 1];
-    }
-  } catch {}
-  return null;
-}
+import { extractVideoId } from '@/lib/youtube';
 
 export function useHomeSettings() {
   const { settings, updateSettings, loading } = useSettings();
@@ -353,7 +336,7 @@ export function useHomeSettings() {
   };
 
   const addYoutubeVideo = () => {
-    const vid = extractYoutubeVideoId(newYoutubeUrl);
+    const vid = extractVideoId(newYoutubeUrl);
     if (!vid) {
       setYoutubeUrlError("Invalid YouTube URL");
       return;

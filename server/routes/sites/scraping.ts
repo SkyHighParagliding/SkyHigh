@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as cheerio from 'cheerio';
 import { query, queryOne, execute, transaction } from "../../pg.js";
+import { SITEGUIDE_VERSION_CHECK_TTL_MS } from "../../constants.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { extractEssentialInfo, isAllowedScrapeUrl } from "../../utils/essentialInfo.js";
@@ -139,10 +140,9 @@ router.put("/:id/essential-info", requireAuth, asyncHandler(async (req, res) => 
 }));
 
 let cachedSiteguideVersion: { version: string; fetchedAt: number } | null = null;
-const SITEGUIDE_VERSION_TTL = 5 * 60 * 1000;
 
 router.get("/siteguide-version", requireAuth, asyncHandler(async (_req, res) => {
-  if (cachedSiteguideVersion && Date.now() - cachedSiteguideVersion.fetchedAt < SITEGUIDE_VERSION_TTL) {
+  if (cachedSiteguideVersion && Date.now() - cachedSiteguideVersion.fetchedAt < SITEGUIDE_VERSION_CHECK_TTL_MS) {
     return res.json({ version: cachedSiteguideVersion.version });
   }
   try {

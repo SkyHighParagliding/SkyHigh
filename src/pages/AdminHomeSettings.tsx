@@ -8,7 +8,8 @@ import { MarkdownHelpLink } from "@/components/MarkdownHelpLink";
 import { HomePageMapContent, HomePageMapIcon } from "@/components/HomePageMapPopup";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useSettings } from "@/contexts/SettingsContext";
-import { useHomeSettings, extractYoutubeVideoId } from "@/hooks/useHomeSettings";
+import { useHomeSettings } from "@/hooks/useHomeSettings";
+import { extractVideoId as extractYoutubeVideoId } from "@/lib/youtube";
 
 export function AdminHomeSettings() {
   const {

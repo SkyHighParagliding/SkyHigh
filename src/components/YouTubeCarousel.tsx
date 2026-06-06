@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { extractVideoId } from "@/lib/youtube";
 
 interface YouTubeVideo {
   id: string;
@@ -14,24 +15,6 @@ const SM_H = 300;
 const GAP = 12;
 const MAX_H = 400;
 const SCROLL_SPEED = 0.4;
-
-const ALLOWED_YT_HOSTS = new Set(["youtu.be", "youtube.com", "www.youtube.com", "m.youtube.com"]);
-
-function extractVideoId(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (!ALLOWED_YT_HOSTS.has(u.hostname)) return null;
-    if (u.hostname === "youtu.be") return u.pathname.slice(1).split("/")[0] || null;
-    const v = u.searchParams.get("v");
-    if (v) return v;
-    const segments = u.pathname.split("/");
-    for (const key of ["shorts", "embed", "v"]) {
-      const idx = segments.indexOf(key);
-      if (idx !== -1 && segments[idx + 1]) return segments[idx + 1];
-    }
-  } catch {}
-  return null;
-}
 
 interface YouTubeCarouselProps {
   reverse?: boolean;
@@ -181,4 +164,4 @@ export function YouTubeCarousel({ reverse = false, autoScroll = true }: YouTubeC
   );
 }
 
-export { extractVideoId };
+
