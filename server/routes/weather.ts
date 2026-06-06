@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
-import { fetchWeatherData, fetchWithRetry, degreesToDirection, LIVE_WIND_VIC_URL } from "../weather.js";
+import { fetchWeatherData, LIVE_WIND_VIC_URL } from "../weather.js";
+import { fetchWithRetry, degreesToDirection } from "../weather-utils.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
 import asyncHandler from "../utils/asyncHandler.js";

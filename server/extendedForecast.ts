@@ -1,5 +1,5 @@
 import { query, queryOne, execute } from "./pg.js";
-import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather.js";
+import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid, getTimeWindow, getGridBounds, type GridFetchStatus } from "./victoriaGrid.js";
 
