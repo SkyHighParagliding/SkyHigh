@@ -1,5 +1,5 @@
 import { fromZonedTime } from "date-fns-tz";
-import { fetchWithRetry } from "./weather.js";
+import { fetchWithRetry } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
 
 const log = createLogger("bom-weather");
