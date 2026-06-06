@@ -1,9 +1,8 @@
 import createLogger from "../utils/logger.js";
 import type { MessageService, Pilot, MapMessage } from "./types.js";
+import { MAX_MESSAGE_LENGTH } from "../constants.js";
 
 const log = createLogger("demo-messages");
-
-const MAX_MESSAGE_LENGTH = 500;
 
 interface DemoMapMessage {
   id: number;

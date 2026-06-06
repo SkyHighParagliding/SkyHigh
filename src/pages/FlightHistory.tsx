@@ -9,36 +9,7 @@ import "leaflet/dist/leaflet.css";
 import { useFlights, useDeleteFlightMutation, flightKeys } from "@/hooks/api";
 import { api } from "@/lib/apiClient";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface Flight {
-  id: string;
-  pilotId: string;
-  siteId: string;
-  siteName: string;
-  startedAt: string;
-  endedAt: string | null;
-  status: string;
-  maxAltitude: number;
-  maxSpeed: number;
-  totalDistance: number;
-  altitudeGain: number;
-  altitudeLoss: number;
-}
-
-interface Breadcrumb {
-  id: number;
-  flightId: string;
-  timestamp: number;
-  lat: number;
-  lon: number;
-  altitude: number;
-  speed: number;
-  heading: number;
-}
-
-interface FlightDetail extends Flight {
-  breadcrumbs: Breadcrumb[];
-}
+import type { Flight, FlightDetail, Breadcrumb } from "@/types/api";
 
 interface PointOfInterest {
   label: string;

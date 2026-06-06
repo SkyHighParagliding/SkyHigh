@@ -6,17 +6,13 @@ import { toast } from "sonner";
 import { convertToDirectImageUrl } from "@/lib/urlHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
+import { escapeHtml } from "@/lib/xcMapUtils";
 
 /** Safely coerce an unknown value to string, returning fallback on null/undefined. */
 /** Safely coerce an unknown value to string, returning fallback on null/undefined. */
 function safeStr(val: unknown, fallback = ""): string {
   if (val == null) return fallback;
   return String(val);
-}
-
-/** Escape HTML special characters in a string to prevent XSS. */
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 /** Safely coerce an unknown value to string[], returning [] if not an array. */

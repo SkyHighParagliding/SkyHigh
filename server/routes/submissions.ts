@@ -2,6 +2,7 @@ import { Router } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { query, queryOne, execute } from "../pg.js";
 import multer from "multer";
+import { MAX_IMAGE_BYTES } from "../constants.js";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -68,8 +69,6 @@ function detectImageType(buffer: Buffer): string | null {
   }
   return null;
 }
-
-const MAX_IMAGE_BYTES = 1024 * 1024;
 
 async function compressImage(buffer: Buffer, mimeType: string): Promise<{ buffer: Buffer; ext: string }> {
   const metadata = await sharp(buffer).metadata();

@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import crypto from "crypto";
 import { query, queryOne, execute } from "../../pg.js";
+import { PUBLIC_SITES_CACHE_TTL } from "../../constants.js";
 
 interface SitesCacheEntry {
   response: Record<string, any> | null;
@@ -8,7 +9,6 @@ interface SitesCacheEntry {
 }
 
 let publicSitesCache: SitesCacheEntry = { response: null, updatedAt: 0 };
-const PUBLIC_SITES_CACHE_TTL = 60 * 1000;
 
 export function invalidateSitesCache() {
   publicSitesCache = { response: null, updatedAt: 0 };

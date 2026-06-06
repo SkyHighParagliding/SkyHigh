@@ -1,10 +1,9 @@
 import { query, queryOne, execute } from "../pg.js";
 import createLogger from "../utils/logger.js";
 import type { MessageService, Pilot, MapMessage } from "./types.js";
+import { MAX_MESSAGE_LENGTH } from "../constants.js";
 
 const log = createLogger("map-messages");
-
-const MAX_MESSAGE_LENGTH = 500;
 
 async function purgeOldMessages() {
   try {

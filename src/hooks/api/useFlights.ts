@@ -2,38 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 import { toast } from 'sonner';
 
-// Type also defined in src/types/api.ts — keep in sync
-export interface Flight {
-  id: string;
-  pilotId: string;
-  siteId: string;
-  siteName: string;
-  startedAt: string;
-  endedAt: string | null;
-  status: string;
-  maxAltitude: number;
-  maxSpeed: number;
-  totalDistance: number;
-  altitudeGain: number;
-  altitudeLoss: number;
-}
-
-// Type also defined in src/types/api.ts — keep in sync
-export interface Breadcrumb {
-  id: number;
-  flightId: string;
-  timestamp: number;
-  lat: number;
-  lon: number;
-  altitude: number;
-  speed: number;
-  heading: number;
-}
-
-// Type also defined in src/types/api.ts — keep in sync
-export interface FlightDetail extends Flight {
-  breadcrumbs: Breadcrumb[];
-}
+import type { Flight, FlightDetail } from '@/types/api';
+export type { Flight, Breadcrumb, FlightDetail } from '@/types/api';
 
 export const flightKeys = {
   all: ['flights'] as const,
