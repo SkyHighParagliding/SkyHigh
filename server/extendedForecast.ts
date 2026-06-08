@@ -660,7 +660,52 @@ export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
 export async function getSiteExtendedForecast(siteId: string): Promise<SiteExtendedForecast | null> {
   try {
     const row = await queryOne<{ forecastData: string }>(`SELECT "forecastData" FROM site_extended_forecasts WHERE "siteId" = $1`, [siteId]);
-    if (row) return JSON.parse(row.forecastData);
+    if (!row) return null;
+
+    const forecast: SiteExtendedForecast = JSON.parse(row.forecastData);
+    const todayMelb = getMelbourneDate(0);
+
+    // Replace today's slots with live data from weather_forecasts so the slot
+    // strip always matches the ECMWF Forecast strip above it.
+    if (forecast.days.length > 0 && forecast.days[0].date === todayMelb) {
+      try {
+        const liveRow = await queryOne<{ forecasts: string }>(
+          `SELECT forecasts FROM weather_forecasts WHERE "siteId" = $1`,
+          [siteId]
+        );
+        if (liveRow?.forecasts) {
+          const hourly: any[] = JSON.parse(liveRow.forecasts);
+          const todaySlots = hourly
+            .filter(h => new Date(h.timestamp).toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }) === todayMelb)
+            .map(h => ({
+              time: h.timestamp,
+              windSpeed: Math.round(h.windSpeed || 0),
+              windGust: Math.round(h.windGust || 0),
+              windDirection: h.windDirection || 'N',
+              windDirectionDeg: 0,
+              temperature: h.temperature || 0,
+              weatherCode: 0,
+              weatherSummary: h.summary || '',
+              weatherIcon: h.icon || 'CloudSun',
+            }));
+          if (todaySlots.length >= 3) {
+            const bestIdx = pickBestSlotIdx(todaySlots);
+            forecast.days[0] = {
+              ...forecast.days[0],
+              slots: todaySlots,
+              bestSpeed: todaySlots[bestIdx]?.windSpeed ?? 0,
+              bestDirection: todaySlots[bestIdx]?.windDirection ?? 'N',
+              bestWeatherIcon: todaySlots[bestIdx]?.weatherIcon ?? 'CloudSun',
+              bestWeatherSummary: todaySlots[bestIdx]?.weatherSummary ?? '',
+            };
+          }
+        }
+      } catch (e) {
+        // non-fatal: baked today data remains
+      }
+    }
+
+    return forecast;
   } catch (e) {
     console.error(`Extended forecast: Read error for ${siteId}`, e);
   }
