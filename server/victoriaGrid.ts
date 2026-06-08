@@ -12,6 +12,10 @@ const COARSE_GRID_CACHE_KEY = "coarse_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 const COARSE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 
+function melbourneToday(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+}
+
 /** Escape underscores in a LIKE pattern to prevent SQL wildcard collisions. */
 function escapeLike(key: string): string {
   return key.replace(/_/g, '\\_');
@@ -159,7 +163,7 @@ let inflightFetch: Promise<VictoriaGrid> | null = null;
 export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = melbourneToday();
       const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
@@ -257,7 +261,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   if (completeness < 0.8) {
     console.warn(`Fine grid: Only ${allPoints.length}/${expectedPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
       const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
@@ -288,7 +292,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
 
   try {
     const jsonStr = JSON.stringify(grid);
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     const cacheKey = `${FINE_GRID_CACHE_KEY}_${today}`;
     await execute(
       `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
@@ -343,7 +347,7 @@ let inflightCoarseFetch: Promise<VictoriaGrid> | null = null;
 export async function fetchCoarseGrid(force = false): Promise<VictoriaGrid> {
   if (!force) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = melbourneToday();
       const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
       if (cached) {
         const age = Date.now() - new Date(cached.updatedAt).getTime();
@@ -441,7 +445,7 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
   if (completeness < 0.8) {
     console.warn(`Coarse grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
     if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
       const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
@@ -472,7 +476,7 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
 
   try {
     const jsonStr = JSON.stringify(grid);
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     const cacheKey = `${COARSE_GRID_CACHE_KEY}_${today}`;
     await execute(
       `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
@@ -494,7 +498,7 @@ export async function getCachedFineGrid(): Promise<VictoriaGrid | null> {
     return memFineGrid;
   }
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
 
     if (!cached) {
@@ -519,7 +523,7 @@ export async function getCachedCoarseGrid(): Promise<VictoriaGrid | null> {
     return memCoarseGrid;
   }
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
 
     if (!cached) {
@@ -815,7 +819,7 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
 export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
       const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
@@ -879,7 +883,7 @@ export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
 export async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
-    const today = new Date().toISOString().split('T')[0];
+    const today = melbourneToday();
     let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
       const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
