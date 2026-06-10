@@ -1,26 +1,32 @@
-# RESUME_HERE — Last updated: 2026-06-03
+# RESUME_HERE — Last updated: 2026-06-10
 
 ## Project: SkyHigh
-## Status: **LIVE** ✅ on Railway — TASK-031 completed, build verified, changes committed
+## Status: **LIVE** ✅ on Railway — knowledge graph integration complete
 
 ## Where I left off
 
-Session 34: Pilot XC Flight History Export (CSV/GPX) (TASK-031).
+Session 35: Set up Graphify + Obsidian knowledge graph for SkyHigh codebase.
 
-Part 1 — Backend implementation:
-- Added endpoint `GET /api/flights/export?format=csv|gpx` in [flights.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/routes/flights.ts).
-- Added `listFlightsWithLanding` and `getBreadcrumbsForFlights` methods to the `FlightService` interface and implemented them in [realFlightService.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/services/realFlightService.ts) and [demoFlightService.ts](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/server/services/demoFlightService.ts).
-- Left-joined `sites` table on `siteId` to retrieve `landing` text to fill the "Landing Zone" column in CSV export.
-- Optimized breadcrumbs retrieval for GPX export by fetching breadcrumbs for all flights in a single query.
-- Aggregated all flights with GPS points into a single multi-track GPX file when bulk exporting.
+**What was done:**
+- Installed graphifyy (v0.8.36) globally from safishamsi/graphify
+- Registered `/graphify` Claude Code skill
+- Built knowledge graph from SkyHigh: 384 code files + 128 docs + 1 paper + 68 images
+- Generated: 2,339 nodes · 5,287 edges · 128 communities · 0 import cycles
+- Created interactive `graph.html` visualization
+- Generated `GRAPH_REPORT.md` with god nodes, surprising connections, architecture analysis
+- Integrated with `wiki/graphify-knowledge-graph/` for Obsidian vault
+- Committed to git (commit 5e6949f)
 
-Part 2 — Frontend implementation:
-- Added an "Export All" dropdown menu to the header of the [FlightHistory.tsx](file:///C:/Users/User/Documents/CodeFolder/SkyHigh/src/pages/FlightHistory.tsx) list view.
-- Handled downloading of the exported files securely using `fetch` with the `Authorization` and `x-pilot-token` headers, reading the response as a blob, and using a local object URL to trigger the browser download (rather than exposing the session token in standard link URLs).
+**Key insights from graph:**
+- God nodes: useSettings() [102], execute() [96], useAuth() [88], queryOne() [59], api [59]
+- No circular dependencies (clean architecture)
+- Bug review docs auto-linked to affected routes/pages
 
-Part 3 — Verification:
-- Ran a full project build `npm run build` which compiled successfully with 0 TypeScript errors.
-- Staged and committed changes.
+**Setup complete:**
+- Can now use `/graphify query` in Claude Code to ask about codebase structure
+- Knowledge graph persisted in graph.json for future queries
+- Obsidian integration ready (open wiki/graphify-knowledge-graph in Obsidian)
+- Cache in graphify-out/ allows fast updates with `--update` flag
 
 ## Last completed tasks
 - TASK-031 (XC Flight History Export) — commit `a365290`
