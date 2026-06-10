@@ -15,7 +15,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, PostgreSQL (dev + prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** TASK-031 (Pilot XC Flight History Export) completed. Next: TASK-030 (Siteguide Version Change Email Notification).  
+**Current Focus:** Professional code review pass 2 (sessions 36–37) completed — dead code removed, shared utilities extracted, boot-time DB-write bug fixed. Next: TASK-030 (Siteguide Version Change Email Notification).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
