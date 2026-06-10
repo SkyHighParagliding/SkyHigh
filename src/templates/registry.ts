@@ -109,7 +109,7 @@ const wonderfulWhiteTemplate: TemplateDefinition = {
   },
 };
 
-export const templates: Record<string, TemplateDefinition> = {
+const templates: Record<string, TemplateDefinition> = {
   classic: classicTemplate,
   'wonderful-white': wonderfulWhiteTemplate,
 };

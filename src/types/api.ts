@@ -97,15 +97,6 @@ export interface TideStation {
   name: string;
 }
 
-export interface NearbyStation {
-  id: string;
-  name: string;
-  distanceKm: number;
-  lat: number;
-  lon: number;
-  source: string;
-}
-
 export interface ExternalSite {
   name: string;
   url: string;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, LogIn, UserPlus, KeyRound } from "lucide-react";
 import { usePilotAuth } from "@/contexts/PilotAuthContext";

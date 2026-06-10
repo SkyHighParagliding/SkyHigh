@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useToggleSelection } from "@/hooks/useToggleSelection";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronUp, Map, Wind, Trophy, Plus, Pencil, Trash2, X, Search, ExternalLink, Eye, Save, Check, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,7 +42,7 @@ export function AdminXC() {
   const { token } = useAuth();
   const { settings, updateSettings, loading: settingsLoading } = useSettings();
   const { isDirty, markDirty, blocker, saving, justSaved, saveError, save } = useAdminForm({ successMessage: "XC settings saved" });
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["maps"]));
+  const { selectedIds: expandedSections, toggleId: toggleSection } = useToggleSelection<string>(["maps"]);
 
   const { data: competitions = [] } = useCompetitions();
   const { data: xcSites = [] } = useXCSites();
@@ -162,15 +163,6 @@ export function AdminXC() {
     markDirty();
   };
 
-
-  const toggleSection = (id: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const filteredComps = competitions.filter(c => {
     if (!compSearch) return true;

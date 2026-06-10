@@ -28,7 +28,7 @@ const SENSITIVE_KEYWORDS = [
 /**
  * Sanitize error message to prevent information leakage
  */
-export function sanitizeErrorMessage(message: string, isDevelopment = false): string {
+function sanitizeErrorMessage(message: string, isDevelopment = false): string {
   if (isDevelopment) {
     return message; // Return full details in development
   }
@@ -52,7 +52,7 @@ export function sanitizeErrorMessage(message: string, isDevelopment = false): st
 /**
  * Create API error response
  */
-export function createErrorResponse(
+function createErrorResponse(
   error: Error | string,
   statusCode: number = 500,
   options: {
@@ -73,59 +73,6 @@ export function createErrorResponse(
     timestamp: new Date().toISOString(),
     path: options.path,
     requestId: options.requestId,
-  };
-}
-
-/**
- * Handle and log errors
- */
-export function handleError(
-  error: Error | string,
-  context: string,
-  options: {
-    statusCode?: number;
-    isDevelopment?: boolean;
-    throwable?: boolean;
-  } = {}
-): ApiError {
-  const isDevelopment = options.isDevelopment || process.env.NODE_ENV === 'development';
-  const statusCode = options.statusCode || 500;
-  const message = typeof error === 'string' ? error : error.message;
-
-  // Log full error internally
-  if (typeof error === 'string') {
-    log.error(`[${context}] ${message}`);
-  } else {
-    log.error(`[${context}] ${message}`, error.stack);
-  }
-
-  const response = createErrorResponse(error, statusCode, {
-    code: `${context.toUpperCase()}_ERROR`,
-    isDevelopment,
-  });
-
-  if (options.throwable) {
-    const err = new Error(JSON.stringify(response));
-    (err as any).status = statusCode;
-    (err as any).apiError = response;
-    throw err;
-  }
-
-  return response;
-}
-
-/**
- * Create validation error response
- */
-export function createValidationError(
-  fields: Record<string, string>,
-  statusCode: number = 400
-): ApiError {
-  return {
-    error: 'Validation failed',
-    code: 'VALIDATION_ERROR',
-    status: statusCode,
-    timestamp: new Date().toISOString(),
   };
 }
 

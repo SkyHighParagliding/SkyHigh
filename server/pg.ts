@@ -12,7 +12,7 @@ const log = createLogger("pg");
 const poolMax = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 20;
 const stmtTimeoutMs = parseInt(process.env.DB_STATEMENT_TIMEOUT ?? "", 10);
 
-export const pool = new Pool({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes("localhost") ? false : { rejectUnauthorized: false },
   max: poolMax,

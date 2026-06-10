@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToggleSelection } from "@/hooks/useToggleSelection";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare, Camera } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -102,7 +103,7 @@ export function AdminContacts() {
   const [deleteWarning, setDeleteWarning] = useState<{ projects: string[] } | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<string>>(new Set());
+  const { selectedIds: bulkSelectedIds, setSelectedIds: setBulkSelectedIds, toggleId: toggleBulkSelect, toggleSelectAll: _toggleBulkSelectAll } = useToggleSelection<string>();
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [resetStatus, setResetStatus] = useState<{ sending: boolean; message: string; error: boolean }>({ sending: false, message: "", error: false });
@@ -123,7 +124,7 @@ export function AdminContacts() {
   const [loadingGroupContacts, setLoadingGroupContacts] = useState(false);
   const [contactsLoaded, setContactsLoaded] = useState(false);
   const [contactGroupMap, setContactGroupMap] = useState<Record<string, string[]>>({});
-  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
+  const { selectedIds: selectedContactIds, setSelectedIds: setSelectedContactIds, toggleId: toggleContactSelection, toggleSelectAll: _toggleContactSelectAll } = useToggleSelection<string>();
   const [importRoles, setImportRoles] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; total: number } | null>(null);
@@ -425,22 +426,7 @@ export function AdminContacts() {
     }
   };
 
-  const toggleContactSelection = (id: string) => {
-    setSelectedContactIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedContactIds.size === groupContacts.length) {
-      setSelectedContactIds(new Set());
-    } else {
-      setSelectedContactIds(new Set(groupContacts.map(c => c.tidyhqId)));
-    }
-  };
+  const toggleSelectAll = () => _toggleContactSelectAll(groupContacts.map(c => c.tidyhqId));
 
   const handleGroupImport = async () => {
     const selected = groupContacts.filter(c => selectedContactIds.has(c.tidyhqId));
@@ -486,22 +472,7 @@ export function AdminContacts() {
     }
   };
 
-  const toggleBulkSelect = (id: string) => {
-    setBulkSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleBulkSelectAll = () => {
-    if (bulkSelectedIds.size === filtered.length) {
-      setBulkSelectedIds(new Set());
-    } else {
-      setBulkSelectedIds(new Set(filtered.map(c => c.id)));
-    }
-  };
+  const toggleBulkSelectAll = () => _toggleBulkSelectAll(filtered.map(c => c.id));
 
   const handleBulkDelete = async () => {
     if (bulkSelectedIds.size === 0) return;

@@ -50,7 +50,7 @@ export interface WindObservation {
   v: number;
 }
 
-export const CARDINAL_TO_DEGREES: Record<string, number> = {
+const CARDINAL_TO_DEGREES: Record<string, number> = {
   N: 0, NNE: 22.5, NE: 45, ENE: 67.5,
   E: 90, ESE: 112.5, SE: 135, SSE: 157.5,
   S: 180, SSW: 202.5, SW: 225, WSW: 247.5,
@@ -130,7 +130,7 @@ export const BEARINGS = [
   { angle: 315, label: 'NW (315°)' },
 ];
 
-export const AIRSPACE_COLORS: Record<string, { fill: string; stroke: string }> = {
+const AIRSPACE_COLORS: Record<string, { fill: string; stroke: string }> = {
   CTR: { fill: '#0050c8', stroke: '#0050c8' },
   CTA: { fill: '#0050c8', stroke: '#0050c8' },
   TMA: { fill: '#0050c8', stroke: '#0050c8' },

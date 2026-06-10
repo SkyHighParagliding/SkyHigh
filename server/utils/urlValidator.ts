@@ -90,37 +90,3 @@ export function validateURLSafety(urlString: string): { valid: boolean; error?: 
 
   return { valid: true };
 }
-
-/**
- * Fetch a URL with SSRF validation and timeout
- * @param url The URL to fetch
- * @param timeoutMs Timeout in milliseconds (default 10000)
- */
-export async function fetchWithValidation(
-  url: string,
-  timeoutMs: number = 10000
-): Promise<Response> {
-  // Validate the URL first
-  const validation = validateURLSafety(url);
-  if (!validation.valid) {
-    throw new Error(`URL validation failed: ${validation.error}`);
-  }
-
-  // Fetch with timeout
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return response;
-  } catch (error) {
-    clearTimeout(timeout);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout (${timeoutMs}ms) fetching ${url}`);
-    }
-    throw error;
-  }
-}

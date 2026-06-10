@@ -18,7 +18,7 @@ const tokenStore = new Map<string, CSRFToken>();
 /**
  * Generate a new CSRF token for a user (identified by sessionId or userId)
  */
-export function generateCSRFToken(userId: string): string {
+function generateCSRFToken(userId: string): string {
   const token = crypto.randomBytes(32).toString("hex");
   tokenStore.set(userId, {
     token,

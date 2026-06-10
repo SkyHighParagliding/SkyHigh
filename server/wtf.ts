@@ -88,7 +88,7 @@ export function matchWtfSite(siteguideUrl: string | null, siteName: string, wtfD
   return null;
 }
 
-export function expandDirectionRange(minDir: string, maxDir: string): string[] {
+function expandDirectionRange(minDir: string, maxDir: string): string[] {
   if (!minDir || !maxDir) return [];
   
   const minIdx = COMPASS_POINTS.indexOf(minDir);

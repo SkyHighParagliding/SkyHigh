@@ -29,7 +29,7 @@ function pruneCache() {
   }
 }
 
-export async function fetchOSRMDrivingETA(
+async function fetchOSRMDrivingETA(
   from: { lat: number; lon: number },
   to: { lat: number; lon: number }
 ): Promise<OSRMRouteResult | null> {

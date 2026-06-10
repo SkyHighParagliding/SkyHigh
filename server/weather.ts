@@ -258,4 +258,4 @@ function scheduleNextFetch(min: number, max: number) {
   scraperTimeout = setTimeout(() => fetchWeatherData(), ms);
 }
 
-export { LIVE_WIND_VIC_URL, fetchWithRetry };
+export { LIVE_WIND_VIC_URL };

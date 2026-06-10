@@ -4,6 +4,7 @@ import { usePilotAuth } from "@/contexts/PilotAuthContext";
 import { useDataUsage, trackSSEMessage } from "@/hooks/useDataUsage";
 import { api } from "@/lib/apiClient";
 import { getDemoRole } from "@/lib/demoConfig";
+import { haversineMeters } from "@/lib/geomath";
 
 interface LivePilotData {
   pilotId: string;
@@ -60,18 +61,10 @@ function decodePolyline(encoded: string): [number, number][] {
   return coords;
 }
 
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 function computeSegmentDistances(coords: [number, number][]): number[] {
   const distances: number[] = [];
   for (let i = 0; i < coords.length - 1; i++) {
-    distances.push(haversineDistance(coords[i][0], coords[i][1], coords[i + 1][0], coords[i + 1][1]));
+    distances.push(haversineMeters(coords[i][0], coords[i][1], coords[i + 1][0], coords[i + 1][1]));
   }
   return distances;
 }

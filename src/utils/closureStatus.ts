@@ -46,10 +46,3 @@ function formatShortDate(dateStr: string): string {
   return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-export function getBannerWindowStart(closureDates: string[]): string | null {
-  if (closureDates.length === 0) return null;
-  const sorted = [...closureDates].sort();
-  const first = new Date(sorted[0] + 'T12:00:00');
-  first.setDate(first.getDate() - 7);
-  return toMelbourneDate(first);
-}

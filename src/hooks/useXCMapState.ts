@@ -5,6 +5,7 @@ import { usePilotAuth } from '@/contexts/PilotAuthContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useXCSites } from '@/hooks/api';
 import { getDemoRole, DEMO_LAUNCH } from '@/lib/demoConfig';
+import { haversineKm } from '@/lib/geomath';
 import { useFlightTracker } from '@/hooks/useFlightTracker';
 import { useProximityAlerts } from '@/hooks/useProximityAlerts';
 import { useRetrievalStatus } from '@/hooks/useRetrievalStatus';
@@ -34,19 +35,13 @@ export interface WindData {
   stale?: boolean;
 }
 
-export const DEFAULT_DISABLED_AIRSPACE = new Set([
+const DEFAULT_DISABLED_AIRSPACE = new Set([
   'RESTRICTED', 'DANGER', 'PROHIBITED', 'OTHER',
   'ALERT', 'WARNING', 'GLIDING_SECTOR', 'WAVE_WINDOW',
   'FIR', 'OCA', 'PROTECTED', 'TIZ',
 ]);
 
-export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+export { haversineKm } from '@/lib/geomath';
 
 export function useXCMapState() {
   const { settings, loading: settingsLoading } = useSettings();
