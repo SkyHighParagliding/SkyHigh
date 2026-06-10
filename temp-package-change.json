@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "dev:api": "op run -- tsx server.ts",
-    "dev:client": "op run -- vite",
-    "dev": "cross-env NODE_ENV=development concurrently --names api,vite --prefix-colors blue,green \"npm:dev:api\" \"npm:dev:client\""
-  }
-}
