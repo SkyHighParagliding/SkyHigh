@@ -95,6 +95,20 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 - **Webhook configuration:** Event-driven role sync when TidyHQ group membership changes
 - **Secrets management:** How to store tokens securely in Railway
 
+### [codegraph.md](codegraph.md)
+**CodeGraph MCP tool server for Claude Code:**
+- Installation reference (already done — `@colbymchenry/codegraph` v0.9.9 global)
+- Current status: 326 files indexed, `.codegraph/codegraph.db` + `.mcp.json` in place
+- How to re-index after large refactors (`codegraph init`)
+- What the MCP server gives Claude (symbol lookup, cross-references, reduced tool calls)
+
+### [skillsmp.md](skillsmp.md)
+**SkillsMP MCP server — agent skills marketplace:**
+- Installed 2026-06-06; wired into `.mcp.json` with API key
+- How to search 1.5M pre-built agent skills directly from Claude Code
+- Search parameters (keywords, category, occupation, sort by stars/recent)
+- Quota: 500 req/day authenticated, 30 req/min
+
 ---
 
 ## Session Workflow
