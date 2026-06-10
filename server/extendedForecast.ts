@@ -219,7 +219,7 @@ export async function fetchExtendedForecast(): Promise<void> {
     };
 
     const gridJson = JSON.stringify(grid);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getMelbourneDate(0);
     await execute(
       `INSERT INTO extended_forecasts (id, "gridData", "fetchedAt") VALUES ($1, $2, CURRENT_TIMESTAMP) ON CONFLICT (id) DO UPDATE SET "gridData" = EXCLUDED."gridData", "fetchedAt" = EXCLUDED."fetchedAt"`,
       [`extended_grid_${today}`, gridJson]
@@ -637,7 +637,7 @@ function cacheWindGrid(windGrid: any): void {
 
 export async function getCachedExtendedGrid(): Promise<ExtendedGrid | null> {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getMelbourneDate(0);
     let row = await queryOne<{ id?: string; gridData: string }>(`SELECT "gridData" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
 
     if (!row) {
@@ -774,7 +774,7 @@ export async function scheduleExtendedForecast(): Promise<void> {
     scheduleExtendedForecast();
   }, Math.max(msUntilNext, 60000));
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getMelbourneDate(0);
   let cached = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
   if (!cached) {
     const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);

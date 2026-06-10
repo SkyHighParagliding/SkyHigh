@@ -209,12 +209,15 @@ function DayGrid({ days, site, iconMap, variant, selectedDay, onSelectDay }: {
   onSelectDay: (date: string) => void;
 }) {
   const isApple = variant === 'apple';
+  // Compare against the real Melbourne date — stale/fallback forecast data can
+  // start on an earlier day, which must not be presented as "Today".
+  const todayMelb = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
 
   return (
     <div className={isApple ? "flex w-full" : "grid grid-cols-7 gap-1 sm:gap-1.5"}>
-      {days.map((day: any, idx: number) => {
+      {days.map((day: any) => {
         const IconComp = iconMap[day.bestWeatherIcon] || CloudSun;
-        const isToday = idx === 0;
+        const isToday = day.date === todayMelb;
         const isSelected = selectedDay === day.date;
 
         const closureDates: string[] = site?.upcomingClosureDates ?? [];
