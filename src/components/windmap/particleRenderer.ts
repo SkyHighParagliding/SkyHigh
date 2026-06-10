@@ -14,11 +14,11 @@ export interface Particle {
   trail: number[][];
 }
 
-export const POOL_PARTICLES = 2400;
-export const POOL_TRAIL = 60;
+const POOL_PARTICLES = 2400;
+const POOL_TRAIL = 60;
 const MARGIN = 80;
 
-export function spawnRandom(width: number, height: number) {
+function spawnRandom(width: number, height: number) {
   return {
     x: -MARGIN + Math.random() * (width + MARGIN * 2),
     y: -MARGIN + Math.random() * (height + MARGIN * 2),
@@ -176,7 +176,7 @@ export function createSpeedOverlay(width: number, height: number): SpeedOverlayS
   };
 }
 
-export function rebuildSpeedOverlay(
+function rebuildSpeedOverlay(
   overlay: SpeedOverlayState,
   currentTransform: ZoomTransform,
   projection: GeoProjection,

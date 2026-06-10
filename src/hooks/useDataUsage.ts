@@ -125,7 +125,7 @@ function startBroadcasting() {
   }, 2000);
 }
 
-export function stopBroadcasting() {
+function stopBroadcasting() {
   if (globalTracker.broadcastInterval) {
     clearInterval(globalTracker.broadcastInterval);
     globalTracker.broadcastInterval = undefined;

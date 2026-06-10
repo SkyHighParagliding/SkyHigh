@@ -8,7 +8,7 @@ import { WindFieldLayer } from './WindFieldLayer';
 import { useDataUsage } from '@/hooks/useDataUsage';
 import type { XCMapProps } from '@/lib/xcMapUtils';
 import { destinationPoint, buildRings, parseDistanceRings, BEARINGS, BASEMAPS } from '@/lib/xcMapUtils';
-export type { MapOrientation, LivePilotData } from '@/lib/xcMapUtils';
+export type { MapOrientation } from '@/lib/xcMapUtils';
 
 import { BearingLabels } from './xcmap/BearingLabels';
 import { AirspaceLayer } from './xcmap/AirspaceLayer';
@@ -131,7 +131,6 @@ export function XCMap({ site, showAirspace, altitudeFt, disabledTypes, windData,
           breadcrumbs={fullTrailBreadcrumbs || breadcrumbs || []}
           trailColor={trailColor}
           trailWidth={trailWidth}
-          splineTension={splineTension}
           isRecording={isRecording}
         />
       )}

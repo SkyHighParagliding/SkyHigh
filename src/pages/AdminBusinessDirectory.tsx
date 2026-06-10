@@ -56,7 +56,6 @@ export function AdminBusinessDirectory() {
       const listing = listings.find(l => l.id === id);
       if (listing) {
         openEdit(listing);
-        // Scroll to the editing item
         setTimeout(() => {
           document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);

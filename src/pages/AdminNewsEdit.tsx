@@ -21,7 +21,7 @@ export function AdminNewsEdit() {
   const navigate = useNavigate();
   const isNew = !id || id === "new";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isDirty, markDirty, blocker, justSaved, save } = useAdminForm({ successMessage: "News item saved" });
+  const { markDirty, blocker, justSaved, save } = useAdminForm({ successMessage: "News item saved" });
 
   const [formData, setFormData] = useState({
     title: "",

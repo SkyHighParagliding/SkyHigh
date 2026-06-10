@@ -22,19 +22,19 @@ const validationRules: Record<string, (value: any) => boolean> = {
   positiveNumber: (val) => typeof val === 'number' && val > 0,
 };
 
-export function validateEmail(email: string): boolean {
+function validateEmail(email: string): boolean {
   return validationRules.email(email);
 }
 
-export function validateUrl(url: string): boolean {
+function validateUrl(url: string): boolean {
   return validationRules.url(url);
 }
 
-export function validatePhoneNumber(phone: string): boolean {
+function validatePhoneNumber(phone: string): boolean {
   return validationRules.phoneNumber(phone);
 }
 
-export function sanitizeString(str: string | undefined): string {
+function sanitizeString(str: string | undefined): string {
   if (!str) return '';
   return str
     .replace(/[<>]/g, '') // Remove angle brackets
@@ -42,7 +42,7 @@ export function sanitizeString(str: string | undefined): string {
     .substring(0, 1000); // Cap at 1000 chars
 }
 
-export function validateInput(data: Record<string, any>, schema: Record<string, string[]>): { valid: boolean; errors: Record<string, string> } {
+function validateInput(data: Record<string, any>, schema: Record<string, string[]>): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
   for (const [field, rules] of Object.entries(schema)) {
@@ -93,11 +93,3 @@ export function validationMiddleware(req: Request, res: Response, next: NextFunc
   next();
 }
 
-export default {
-  validateEmail,
-  validateUrl,
-  validatePhoneNumber,
-  sanitizeString,
-  validateInput,
-  validationMiddleware,
-};

@@ -12,14 +12,14 @@
 This section is filled in ONCE when the project starts, then remains stable. Every session, you read this first.
 
 **Project Name:** SkyHigh  
-**Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
+**Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, PostgreSQL (dev + prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
 **Current Focus:** TASK-031 (Pilot XC Flight History Export) completed. Next: TASK-030 (Siteguide Version Change Email Notification).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
-- SQLite in dev, PostgreSQL in prod via unified adapter (`server/db.ts`) — see DECISION-001 in wiki/03-decisions-log.md
+- Pure PostgreSQL (dev + prod) via pg driver (`server/pg.ts`) — SQLite removed session 23; see DECISION-001 in wiki/03-decisions-log.md for historical context
 - ECMWF wind grids cached in the database as 7-day rolling data, fetched daily at 5:00am/5:13am Melbourne time — see DECISION-003
 - Cloudflare R2 for all media in production, local `/uploads/` in dev — see DECISION-002
 - Gemini (not OpenAI) for all AI: site guide scraping, image enhancement, AI moderation — see DECISION-005
@@ -38,7 +38,7 @@ SkyHigh is an Australian paragliding/hang gliding club management platform — a
 - **Smart image processing** with AI enhancement, watermarking, and auto-variant generation
 - **White-label ready** for other clubs with customizable branding and PWA support
 
-Recently hardened (7 critical security fixes) and optimized (wind map: 10x faster via caching, database: indexed for production). Uses dual-database abstraction (SQLite dev / PostgreSQL prod) for maximum compatibility.
+Recently hardened (7 critical security fixes) and optimized (wind map: 10x faster via caching, database: indexed for production). Uses pure PostgreSQL everywhere (dev via Docker, prod via Railway).
 
 ---
 
@@ -120,15 +120,17 @@ SkyHigh/
 │
 ├── server/                      # Backend code (Express 4 + TypeScript)
 │   ├── index.ts                 # Express server entry point
-│   ├── db.ts                    # Unified database adapter (SQLite dev / PostgreSQL prod)
+│   ├── db.ts                    # PostgreSQL migration runner
+│   ├── pg.ts                    # PostgreSQL query helper (query/queryOne/execute/transaction)
+│   ├── pg_migrations/           # PostgreSQL migration files (*.sql)
 │   ├── routes/                  # API endpoint handlers
 │   ├── middleware/              # Express middleware (auth, CORS, etc.)
 │   ├── services/                # Business logic (TidyHQ, Gemini AI, Open-Meteo, etc.)
 │   └── types/                   # TypeScript types (shared with client)
 │
-├── database/                    # Database setup & migrations
-│   ├── schema.sql               # SQLite/PostgreSQL schema
-│   └── migrations/              # Migration files (if using a tool)
+├── database/                    # (Legacy) SQLite files — not in use
+│   ├── db.sqlite                # Archived SQLite database (dev only, retained for reference)
+│   └── db.sqlite.backup.*.      # SQLite backups (archived)
 │
 ├── public/                      # Static assets (served as-is)
 │   ├── index.html               # HTML shell
@@ -136,9 +138,7 @@ SkyHigh/
 │   └── images/                  # Logo, branding
 │
 ├── scripts/                     # Utility scripts
-│   ├── dev.ts                   # Run dev server (Vite + Express concurrently)
-│   ├── build.ts                 # Build for production
-│   └── seed.ts                  # (optional) Seed dev database
+│   └── lint-migrations.mjs       # Lint pg_migrations/ for unquoted camelCase + duplicate versions
 │
 ├── wiki/                        # Project brain (intra-session)
 │   ├── README.md                # Wiki navigation guide

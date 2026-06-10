@@ -1,5 +1,4 @@
 import createLogger from "../../utils/logger.js";
-import { requireAuth } from "../../middleware/auth.js";
 
 export const log = createLogger("demo");
 
@@ -13,7 +12,7 @@ export interface DemoPilot {
 
 export const DEMO_TOKENS: Record<string, DemoPilot> = {};
 
-export const PILOT_FIRST_NAMES = [
+const PILOT_FIRST_NAMES = [
   'Alex', 'Sam', 'Jordan', 'Casey', 'Riley', 'Morgan',
   'Quinn', 'Avery', 'Blake', 'Drew', 'Emery', 'Finley',
   'Lane', 'Micah', 'Nico', 'Parker',
@@ -93,16 +92,6 @@ export function setSessionState(s: { session: string | null; expiry: number; pil
   demoSessionExpiry = s.expiry;
   demoPilotCount = s.pilots;
   demoDriverCount = s.drivers;
-}
-
-export function requireAdminAuth(req: any, res: any, next: any) {
-  requireAuth(req, res, (err?: any) => {
-    if (err) return next(err);
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    next();
-  });
 }
 
 export function requireDemoSession(req: any, res: any, next: any) {

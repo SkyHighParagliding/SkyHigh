@@ -1,7 +1,7 @@
 import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { getCachedFineGrid, getTimeWindow, getGridBounds, type GridFetchStatus } from "./victoriaGrid.js";
+import { getCachedFineGrid, getTimeWindow, getGridBounds } from "./victoriaGrid.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
 
 const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
@@ -712,21 +712,6 @@ export async function getSiteExtendedForecast(siteId: string): Promise<SiteExten
   return null;
 }
 
-export async function getAllSiteExtendedForecasts(): Promise<Map<string, SiteExtendedForecast>> {
-  const map = new Map<string, SiteExtendedForecast>();
-  try {
-    const rows = await query<{ siteId: string; forecastData: string }>(`SELECT "siteId", "forecastData" FROM site_extended_forecasts`);
-    for (const row of rows) {
-      try {
-        map.set(row.siteId, JSON.parse(row.forecastData));
-      } catch {}
-    }
-  } catch (e) {
-    console.error("Extended forecast: Bulk read error", e);
-  }
-  return map;
-}
-
 async function cleanupOldExtendedForecasts(): Promise<void> {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -806,63 +791,6 @@ export async function scheduleExtendedForecast(): Promise<void> {
       console.log("Extended forecast: Cached data is stale (>24h), triggering fetch in 60s...");
       setTimeout(() => fetchExtendedForecast(), 60000);
     }
-  }
-}
-
-export async function fetchExtendedForecastWithStatus(): Promise<GridFetchStatus> {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    let cached = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
-    if (!cached) {
-      const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
-      if (rows.length > 0) cached = rows[0];
-    }
-    const cacheAgeMs = cached ? Date.now() - new Date(cached.fetchedAt).getTime() : null;
-    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
-
-    if (extendedFetchInProgress) {
-      return {
-        success: true,
-        message: "Fetch already in progress — using existing cache",
-        cacheAgeMinutes
-      };
-    }
-
-    await fetchExtendedForecast();
-
-    let updated = await queryOne<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id = $1`, [`extended_grid_${today}`]);
-    if (!updated) {
-      const rows = await query<{ fetchedAt: string }>(`SELECT "fetchedAt" FROM extended_forecasts WHERE id LIKE 'extended_grid_%' ORDER BY id DESC LIMIT 1`);
-      if (rows.length > 0) updated = rows[0];
-    }
-    const newCacheAgeMs = updated ? Date.now() - new Date(updated.fetchedAt).getTime() : null;
-
-    if (newCacheAgeMs && newCacheAgeMs < 60000) {
-      return {
-        success: true,
-        message: "Downloaded fresh extended forecast data",
-        cacheAgeMinutes: 0
-      };
-    }
-
-    if (cacheAgeMinutes && cacheAgeMinutes < 24 * 60) {
-      return {
-        success: true,
-        message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
-        cacheAgeMinutes
-      };
-    }
-
-    return {
-      success: false,
-      message: "Extended forecast unavailable — no cached data"
-    };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      message: `Error fetching extended forecast: ${errorMsg}`
-    };
   }
 }
 

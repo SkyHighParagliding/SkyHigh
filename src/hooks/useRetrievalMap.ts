@@ -94,7 +94,6 @@ async function fetchOSRMRoute(
 }
 
 export type { LivePilotData, RouteInfo, RetrievalRecord };
-export { fetchOSRMRoute, computeSegmentDistances, decodePolyline, haversineDistance, getDemoRole };
 
 interface DemoRouteAnim {
   pilotId: string;

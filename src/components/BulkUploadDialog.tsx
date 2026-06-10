@@ -131,7 +131,6 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* File Input */}
           {!isComplete && (
             <>
               <div className="space-y-2">
@@ -161,7 +160,6 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
                 )}
               </div>
 
-              {/* Photographer Name */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Photographer Name <span className="text-muted-foreground font-normal">(optional)</span></label>
                 <input
@@ -173,7 +171,6 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
                 />
               </div>
 
-              {/* Upload Button */}
               <Button
                 onClick={handleUpload}
                 disabled={!selectedFiles.length || uploading}
@@ -194,7 +191,6 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
             </>
           )}
 
-          {/* Progress */}
           {results.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium">
@@ -223,7 +219,6 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex gap-2 justify-end pt-2">
             {!isComplete && (
               <Button variant="outline" onClick={handleCancel} disabled={uploading}>

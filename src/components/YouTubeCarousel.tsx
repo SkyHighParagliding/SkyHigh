@@ -163,5 +163,3 @@ export function YouTubeCarousel({ reverse = false, autoScroll = true }: YouTubeC
     </div>
   );
 }
-
-
