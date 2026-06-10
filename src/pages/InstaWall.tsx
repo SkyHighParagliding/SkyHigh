@@ -1,12 +1,10 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useMemo } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 
 interface InstaEmbed {
   embedCode: string;
   addedAt: string;
 }
-
-const GAP = 10;
 
 function extractInstagramUrl(embedCode: string): string | null {
   const match = embedCode.match(/https:\/\/www\.instagram\.com\/(?:p|reel|tv)\/[\w-]+\/?/);

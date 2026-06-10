@@ -7,11 +7,6 @@ import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes
 import { WindCanvas } from './windmap/WindCanvas';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 
-export type { ZoomSetpoint, ZoomSetpoints, SiteMarker } from './windMapTypes';
-export { DEFAULT_ZOOM_SETPOINTS, INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
-export type { WindGrid } from './windmap/windInterpolation';
-export { WindCanvas } from './windmap/WindCanvas';
-
 interface WindMapProps {
   siteId: string;
   siteLat: number;

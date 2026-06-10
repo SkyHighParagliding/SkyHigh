@@ -61,7 +61,7 @@ export async function saveFlight(flight: LocalFlight): Promise<void> {
   });
 }
 
-export async function getFlight(id: string): Promise<LocalFlight | undefined> {
+async function getFlight(id: string): Promise<LocalFlight | undefined> {
   let db: IDBDatabase;
   try {
     db = await openDb();
@@ -76,7 +76,7 @@ export async function getFlight(id: string): Promise<LocalFlight | undefined> {
   });
 }
 
-export async function getAllFlights(): Promise<LocalFlight[]> {
+async function getAllFlights(): Promise<LocalFlight[]> {
   let db: IDBDatabase;
   try {
     db = await openDb();
@@ -155,7 +155,7 @@ export async function getUnsyncedBreadcrumbs(flightId: string, lastSyncedTimesta
   return all.filter((c) => c.timestamp > lastSyncedTimestamp);
 }
 
-export async function deleteOldFlights(maxAgeHours: number): Promise<void> {
+async function deleteOldFlights(maxAgeHours: number): Promise<void> {
   let flights: LocalFlight[];
   try {
     flights = await getAllFlights();

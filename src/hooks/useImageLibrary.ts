@@ -30,7 +30,7 @@ export interface ScreenshotEntry {
   dateAdded: string;
 }
 
-export interface Submission {
+interface Submission {
   id: string;
   originalFilename: string;
   storedFilename: string;
@@ -46,7 +46,7 @@ export interface Submission {
   photographerCredit: string | null;
 }
 
-export interface BannedIp {
+interface BannedIp {
   id: number;
   ip: string;
   reason: string | null;

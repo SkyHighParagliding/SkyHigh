@@ -3,7 +3,7 @@ import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { escapeHtml } from '@/lib/xcMapUtils';
 
-export const ZONE_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+const ZONE_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   LZ: { label: 'Landing Zones', color: '#22c55e' },
   NoLZ: { label: 'No Landing', color: '#ef4444' },
   EmgyLZ: { label: 'Emergency LZ', color: '#f97316' },

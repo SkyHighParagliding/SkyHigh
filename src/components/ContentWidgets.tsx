@@ -628,9 +628,8 @@ function SafetyOfficerWidget() {
     const ssos = officers.filter(o => o.safetyOfficerType === 'SSO');
     const sos  = officers.filter(o => o.safetyOfficerType === 'SO');
     const shuffledSSOs = [...ssos].sort(() => Math.random() - 0.5).slice(0, 2);
-    const pickedSSO = shuffledSSOs;
     const shuffledSOs = [...sos].sort(() => Math.random() - 0.5).slice(0, 5);
-    return [...pickedSSO, ...shuffledSOs];
+    return [...shuffledSSOs, ...shuffledSOs];
   }, [officers]);
 
   if (isLoading) return <div className="my-2 flex justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-400"></div></div>;
@@ -681,4 +680,4 @@ function FlyingSitesWidget() {
   );
 }
 
-export { SchoolsWidget, TelegramWidget, CommitteeWidget, SafetyOfficerWidget, FlyingSitesWidget };
+export { SafetyOfficerWidget, FlyingSitesWidget };

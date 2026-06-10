@@ -26,7 +26,7 @@ export function isCacheValid() {
   return publicSitesCache.response && (Date.now() - publicSitesCache.updatedAt) < PUBLIC_SITES_CACHE_TTL;
 }
 
-export const COMPASS_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const COMPASS_DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
 export const STATE_ABBREVIATIONS: Record<string, string> = {
   "New South Wales": "NSW",
@@ -108,7 +108,7 @@ export function computeContentHash(html: string): string {
   return crypto.createHash('sha256').update(text).digest('hex');
 }
 
-export function extractMetersFromHeight(val: string | null | undefined): number | null {
+function extractMetersFromHeight(val: string | null | undefined): number | null {
   if (!val || !val.trim()) return null;
   const trimmed = val.trim();
   const ftMatch = trimmed.match(/(\d+)\s*(?:'|ft|feet)/i);
@@ -120,7 +120,7 @@ export function extractMetersFromHeight(val: string | null | undefined): number 
   return null;
 }
 
-export function formatHeightValue(meters: number): string {
+function formatHeightValue(meters: number): string {
   const ft = Math.round(meters * 3.28084);
   return `${meters}m / ${ft}'`;
 }
@@ -179,7 +179,7 @@ export async function getDefaultSiteImage(siteType: string): Promise<string> {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export const MAX_ARCHIVES = 10;
+const MAX_ARCHIVES = 10;
 
 export async function archiveSitesBeforeImport(siteguideVersion: string): Promise<boolean> {
   const existing = await queryOne('SELECT id FROM site_archives WHERE "siteguideVersion" = $1', [siteguideVersion]);
@@ -226,11 +226,6 @@ export function pickSiteColumns(row: Record<string, any>): Record<string, any> {
     picked[col] = row[col] ?? null;
   }
   return picked;
-}
-
-export function extractStateAbbr(raw: string): string {
-  const firstPart = raw.split('>')[0].split('-')[0].trim();
-  return STATE_ABBREVIATIONS[firstPart] || firstPart;
 }
 
 export function haversineDistanceServer(lat1: number, lon1: number, lat2: number, lon2: number): number {

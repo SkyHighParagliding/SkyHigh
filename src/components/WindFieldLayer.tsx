@@ -25,7 +25,7 @@ export interface WindFieldSettings {
   particleMaxAge: number;
 }
 
-export const WIND_FIELD_DEFAULTS: WindFieldSettings = {
+const WIND_FIELD_DEFAULTS: WindFieldSettings = {
   particleCount: 1200,
   trailLength: 12,
   maxInfluenceKm: 120,
@@ -51,7 +51,7 @@ const CARDINAL_TO_DEGREES: Record<string, number> = {
   W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
 };
 
-export function parseWindDirection(dir: string | number | null): number | null {
+function parseWindDirection(dir: string | number | null): number | null {
   if (dir === null || dir === undefined) return null;
   if (typeof dir === 'number') return dir;
   const upper = String(dir).toUpperCase().trim();

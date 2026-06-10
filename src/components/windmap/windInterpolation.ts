@@ -185,11 +185,6 @@ export function interpolateSetpoint(setpoints: import('../windMapTypes').ZoomSet
   };
 }
 
-export function zoomKToDisplay(k: number): number {
-  const level = Math.log2(k / 256);
-  return Math.max(0, Math.min(10, Math.round((level - 6) * (10 / 7))));
-}
-
 export function zoomKToDisplaySmooth(k: number): number {
   const level = Math.log2(k / 256);
   return Math.max(0, Math.min(10, (level - 6) * (10 / 7)));

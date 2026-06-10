@@ -97,7 +97,7 @@ export async function createFolder(name: string, parentId?: string): Promise<str
   }, `createFolder(${name})`);
 }
 
-export async function findFolder(name: string, parentId?: string): Promise<string | null> {
+async function findFolder(name: string, parentId?: string): Promise<string | null> {
   const drive = await getClient();
   if (!drive) return null;
   return withRetry(async () => {
@@ -229,11 +229,3 @@ export async function searchFiles(query: string): Promise<any[]> {
   }, `searchFiles(${query})`)) ?? [];
 }
 
-export async function getFileWebViewLink(driveFileId: string): Promise<string | null> {
-  const drive = await getClient();
-  if (!drive) return null;
-  return withRetry(async () => {
-    const res = await drive.files.get({ fileId: driveFileId, fields: "webViewLink" });
-    return res.data.webViewLink || `https://drive.google.com/file/d/${driveFileId}/view`;
-  }, `getFileWebViewLink(${driveFileId})`);
-}

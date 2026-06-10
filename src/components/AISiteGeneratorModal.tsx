@@ -60,7 +60,6 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
       setAiResult(data);
       addLog("Generation complete!");
     } catch (e: any) {
-      console.error(e);
       addLog(`ERROR: ${e.message}`);
       setError(e.message || "Generation failed");
     } finally {

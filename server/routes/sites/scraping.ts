@@ -43,21 +43,10 @@ router.post("/scrape-urls", requireAuth, asyncHandler(async (req, res) => {
   const html = await response.text();
   const $ = cheerio.load(html);
 
-  const stateAbbreviations: Record<string, string> = {
-    "New South Wales": "NSW",
-    "Victoria": "VIC",
-    "Queensland": "QLD",
-    "South Australia": "SA",
-    "Western Australia": "WA",
-    "Tasmania": "TAS",
-    "Northern Territory": "NT",
-    "Australian Capital Territory": "ACT",
-  };
-
   function normalizeState(raw: string): { state: string, region: string } {
     const region = raw;
     const firstPart = raw.split('>')[0].split('-')[0].trim();
-    const state = stateAbbreviations[firstPart] || firstPart;
+    const state = STATE_ABBREVIATIONS[firstPart] || firstPart;
     return { state, region };
   }
 

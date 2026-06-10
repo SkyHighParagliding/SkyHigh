@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, UserPlus, Save, Loader2, CheckCircle2, AlertCircle, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { ArrowLeft, UserPlus, Save, Loader2, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -22,7 +21,6 @@ interface FaqData {
 }
 
 export function AdminJoinSettings() {
-  const { token } = useAuth();
   const { settings, updateSettings } = useSettings();
   const { markDirty, markClean, blocker, saving, justSaved, save } = useAdminForm({ successMessage: "Join page settings saved" });
 

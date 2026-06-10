@@ -37,7 +37,7 @@ export function AdminPageEdit() {
   const navigate = useNavigate();
   const isNew = !slug;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isDirty, markDirty, blocker, justSaved, save } = useAdminForm({ successMessage: "Page saved" });
+  const { markDirty, blocker, justSaved, save } = useAdminForm({ successMessage: "Page saved" });
 
   const [formData, setFormData] = useState({
     title: "",

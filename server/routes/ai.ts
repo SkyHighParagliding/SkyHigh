@@ -58,8 +58,6 @@ async function rotateAndCrop(buffer: Buffer, angleDeg: number): Promise<Buffer> 
   const left = Math.floor((rW - finalW) / 2);
   const top = Math.floor((rH - finalH) / 2);
 
-  console.log(`>>> rotateAndCrop: ${W}x${H} → rotate ${angleDeg}° → ${rW}x${rH} → crop ${finalW}x${finalH} at (${left},${top})`);
-
   return sharp(rotated)
     .extract({ left, top, width: finalW, height: finalH })
     .jpeg({ quality: 95 })
@@ -240,8 +238,7 @@ router.post("/parse-rating", requireAuth, asyncHandler(async (req, res) => {
   res.json({ pgRating: parsed.pgRating || "", hgRating: parsed.hgRating || "" });
 }));
 
-router.get("/test", asyncHandler(async (req, res) => {
-  console.log("AI Test endpoint hit - SUCCESS");
+router.get("/test", asyncHandler(async (_req, res) => {
   res.setHeader('X-AI-API', 'true');
   res.status(200).send("AI API is reachable");
 }));
@@ -340,7 +337,6 @@ router.post("/generate", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.post("/enhance-image", requireAuth, upload.single("image"), asyncHandler(async (req, res) => {
-  console.log(">>> AI IMAGE ENHANCE START");
   const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "API Key not configured. Please add USER_GEMINI_API_KEY to secrets." });
@@ -359,12 +355,8 @@ router.post("/enhance-image", requireAuth, upload.single("image"), asyncHandler(
   let imageBuffer = req.file.buffer;
   let mimeType = req.file.mimetype || "image/jpeg";
   if (rotationAngle !== 0) {
-    const origMeta = await sharp(req.file.buffer).metadata();
-    console.log(`>>> Pre-rotating image by ${rotationAngle}° — original: ${origMeta.width}x${origMeta.height}`);
     imageBuffer = await rotateAndCrop(imageBuffer, rotationAngle);
     mimeType = "image/jpeg";
-    const newMeta = await sharp(imageBuffer).metadata();
-    console.log(`>>> After rotate+crop: ${newMeta.width}x${newMeta.height}`);
   }
   if (cropRegionStr) {
     imageBuffer = await applyCropRegion(imageBuffer, cropRegionStr);
@@ -450,7 +442,6 @@ async function applyCropRegion(imageBuffer: Buffer, cropRegion: any): Promise<Bu
   const width = Math.min(Math.round(cr.w * imgW), imgW - left);
   const height = Math.min(Math.round(cr.h * imgH), imgH - top);
   if (width > 10 && height > 10) {
-    console.log(`>>> Applying crop region: left=${left}, top=${top}, width=${width}, height=${height} (from ${imgW}x${imgH})`);
     return sharp(imageBuffer).extract({ left, top, width, height }).toBuffer();
   }
   return imageBuffer;
@@ -506,7 +497,6 @@ async function generateSliderImages(
 }
 
 router.post("/process-image", requireAuth, asyncHandler(async (req, res) => {
-  console.log(">>> AI IMAGE PROCESS (resize/save) START");
   const { image, mimeType, rotation, cropRegion, name, photographerCredit } = req.body;
   if (!image) {
     return res.status(400).json({ error: "No image data provided" });
@@ -514,7 +504,6 @@ router.post("/process-image", requireAuth, asyncHandler(async (req, res) => {
 
   let imageBuffer = Buffer.from(image, "base64");
   if (rotation && parseFloat(rotation) !== 0) {
-    console.log(`>>> Pre-rotating image by ${rotation}° and auto-cropping`);
     imageBuffer = await rotateAndCrop(imageBuffer, parseFloat(rotation));
   }
   imageBuffer = await applyCropRegion(imageBuffer, cropRegion);
@@ -827,13 +816,11 @@ router.post("/upload-hero-image", requireAuth, upload.single("image"), asyncHand
 }));
 
 router.post("/bulk-upload-hero/:name", requireAuth, upload.array("images", 999), asyncHandler(async (req, res) => {
-  console.log("[BULK UPLOAD] Route matched! Params:", req.params, "Query:", req.query);
   if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
     return res.status(400).json({ error: "No image files provided" });
   }
   const rawName = decodeURIComponent(req.params.name || "").trim();
   const photographerName = rawName === "_" ? "" : rawName;
-  console.log("[BULK UPLOAD] Photographer name:", photographerName || "(none)");
 
   const limitRow = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'bulkUploadLimit'");
   const uploadLimit = Math.min(999, Math.max(1, parseInt(limitRow?.value || "20") || 20));

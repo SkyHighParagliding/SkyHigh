@@ -44,7 +44,6 @@ interface FlightTrailProps {
   breadcrumbs: Breadcrumb[];
   trailColor?: string;
   trailWidth?: number;
-  splineTension?: number;
   colorByAltitude?: boolean;
   isRecording?: boolean;
 }

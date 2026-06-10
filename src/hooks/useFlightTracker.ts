@@ -86,7 +86,7 @@ export interface LiveStats {
   barometerActive: boolean;
 }
 
-export interface LivePilot {
+interface LivePilot {
   pilotId: string;
   firstName: string;
   lat: number;
