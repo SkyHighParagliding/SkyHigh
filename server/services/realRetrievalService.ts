@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { query, queryOne, execute, transaction } from "../pg.js";
 import createLogger from "../utils/logger.js";
+import { getSettingNum } from "../utils/settings.js";
 import { calculateSequentialETAs } from "../utils/osrm.js";
 import { fetchGarminPosition } from "../utils/garminMapshare.js";
 import { fetchSpotPosition } from "../utils/spotTracker.js";
@@ -17,16 +18,6 @@ const DRIVER_POS_TTL_MS = 8 * 60 * 60 * 1000;
 
 const liveDriverPositions = new Map<string, DriverPosition>();
 let liveDutyPilotPosition: DutyPilotPosition | null = null;
-
-async function getSettingNum(key: string, fallback: number): Promise<number> {
-  const row = await queryOne<{ value: string }>(
-    "SELECT value FROM settings WHERE key = $1",
-    [key]
-  );
-  if (!row?.value) return fallback;
-  const n = Number(row.value);
-  return isNaN(n) ? fallback : n;
-}
 
 async function recalcProductionDriverETAs(driverId: string, driverLat: number, driverLon: number) {
   if (activeRecalcs.has(driverId)) return;

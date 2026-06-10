@@ -1,21 +1,13 @@
 import crypto from "crypto";
 import { query, queryOne, execute, transaction } from "../pg.js";
 import createLogger from "../utils/logger.js";
+import { getSettingNum } from "../utils/settings.js";
 import type { FlightService, Flight, Breadcrumb, Pilot, LivePilotPosition, FlightStats } from "./types.js";
 
 const log = createLogger("flights");
 
 const livePilots = new Map<string, LivePilotPosition>();
 
-async function getSettingNum(key: string, fallback: number): Promise<number> {
-  const row = await queryOne<{ value: string }>(
-    "SELECT value FROM settings WHERE key = $1",
-    [key]
-  );
-  if (!row?.value) return fallback;
-  const n = Number(row.value);
-  return isNaN(n) ? fallback : n;
-}
 
 async function pruneStalePositions() {
   const activeTtl = await getSettingNum("ftActiveTtl", 60) * 1000;

@@ -69,16 +69,6 @@ function ensureDir(dir: string) {
 //   submissions/          social media image submissions
 
 /**
- * Normalise a storage key to ensure it sits in the expected folder hierarchy.
- *
- * Existing flat keys (legacy) are returned unchanged so nothing breaks.
- * New keys should always be passed with their folder prefix already included.
- */
-export function normaliseKey(key: string): string {
-  return key; // pass-through — callers supply correctly-prefixed keys
-}
-
-/**
  * Save a file buffer to R2 (if configured) or local filesystem.
  *
  * @param buffer       File data

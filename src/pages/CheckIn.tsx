@@ -5,12 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ShieldCheck, AlertTriangle, CheckCircle2, MapPin, Info } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useSites, useCreateCheckin } from "@/hooks/api";
-
-interface CheckinResult {
-  id: string;
-  timestamp: string;
-  [key: string]: unknown;
-}
+import type { Checkin } from "@/hooks/api/useCheckins";
 
 export function CheckIn() {
   const [searchParams] = useSearchParams();
@@ -25,14 +20,14 @@ export function CheckIn() {
 
   const { data: sites = [], isLoading: loading } = useSites();
   const checkinMutation = useCreateCheckin();
-  const [checkinResult, setCheckinResult] = useState<CheckinResult | null>(null);
+  const [checkinResult, setCheckinResult] = useState<Checkin | null>(null);
 
   const handleCheckIn = async () => {
     setIsSubmitting(true);
     try {
       const data = await checkinMutation.mutateAsync({ siteId: selectedSite });
       if (data.success) {
-        setCheckinResult(data.checkin as any);
+        setCheckinResult(data.checkin);
         setStep(3);
       } else {
         alert("Failed to check in: " + (data.error || "Unknown error"));

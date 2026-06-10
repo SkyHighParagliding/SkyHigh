@@ -40,6 +40,48 @@ const CROP_STEPS: CropStep[] = [
   { key: "portrait",  label: "Portrait (267×400)",        targetW: 267,  targetH: 400, prefix: "slider-portrait",  resultKey: "sliderPortrait",  buttonLabel: "Save Portrait",        hasZoom: true },
 ];
 
+interface DragStartState {
+  mouseX: number;
+  mouseY: number;
+  startX: number;
+  startY: number;
+  maxDragX: number;
+  maxDragY: number;
+}
+
+/**
+ * Attaches mousemove/mouseup/touchmove/touchend listeners to window for
+ * drag-based crop positioning, then cleans up on mouseup/touchend.
+ * Used by both the main crop and the wizard crop drag handlers.
+ */
+function attachDragListeners(
+  startState: DragStartState,
+  setPos: (pos: { x: number; y: number }) => void
+) {
+  const handleMove = (ev: MouseEvent | TouchEvent) => {
+    ev.preventDefault();
+    const cx = 'touches' in ev ? (ev as TouchEvent).touches[0].clientX : (ev as MouseEvent).clientX;
+    const cy = 'touches' in ev ? (ev as TouchEvent).touches[0].clientY : (ev as MouseEvent).clientY;
+    const newX = startState.maxDragX > 0
+      ? Math.max(0, Math.min(1, startState.startX + (cx - startState.mouseX) / startState.maxDragX))
+      : 0.5;
+    const newY = startState.maxDragY > 0
+      ? Math.max(0, Math.min(1, startState.startY + (cy - startState.mouseY) / startState.maxDragY))
+      : 0.5;
+    setPos({ x: newX, y: newY });
+  };
+  const handleEnd = () => {
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
+  };
+  window.addEventListener('mousemove', handleMove);
+  window.addEventListener('mouseup', handleEnd);
+  window.addEventListener('touchmove', handleMove, { passive: false });
+  window.addEventListener('touchend', handleEnd);
+}
+
 export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroImages = [], imageName, onImageNameChange, preloadedImage, initialPhotographerCredit, onPhotographerCreditChange, initialHeroImage }: AIImageEnhancerModalProps) {
   const { token } = useAuth();
   const [step, setStep] = useState<"upload" | "generating" | "preview" | "crop-wizard">("upload");
@@ -219,33 +261,10 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
     if (!layout || !layout.canDrag) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const startState = {
-      mouseX: clientX, mouseY: clientY,
-      startX: cropPos.x, startY: cropPos.y,
-      maxDragX: layout.maxDragX, maxDragY: layout.maxDragY,
-    };
-    const handleMove = (ev: MouseEvent | TouchEvent) => {
-      ev.preventDefault();
-      const cx = 'touches' in ev ? (ev as TouchEvent).touches[0].clientX : (ev as MouseEvent).clientX;
-      const cy = 'touches' in ev ? (ev as TouchEvent).touches[0].clientY : (ev as MouseEvent).clientY;
-      const newX = startState.maxDragX > 0
-        ? Math.max(0, Math.min(1, startState.startX + (cx - startState.mouseX) / startState.maxDragX))
-        : 0.5;
-      const newY = startState.maxDragY > 0
-        ? Math.max(0, Math.min(1, startState.startY + (cy - startState.mouseY) / startState.maxDragY))
-        : 0.5;
-      setCropPos({ x: newX, y: newY });
-    };
-    const handleEnd = () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('touchend', handleEnd);
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleEnd);
+    attachDragListeners(
+      { mouseX: clientX, mouseY: clientY, startX: cropPos.x, startY: cropPos.y, maxDragX: layout.maxDragX, maxDragY: layout.maxDragY },
+      setCropPos
+    );
   };
 
   const handleGenerate = async () => {
@@ -422,33 +441,10 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
     if (!layout || !layout.canDrag) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const startState = {
-      mouseX: clientX, mouseY: clientY,
-      startX: wizardCropPos.x, startY: wizardCropPos.y,
-      maxDragX: layout.maxDragX, maxDragY: layout.maxDragY,
-    };
-    const handleMove = (ev: MouseEvent | TouchEvent) => {
-      ev.preventDefault();
-      const cx = 'touches' in ev ? (ev as TouchEvent).touches[0].clientX : (ev as MouseEvent).clientX;
-      const cy = 'touches' in ev ? (ev as TouchEvent).touches[0].clientY : (ev as MouseEvent).clientY;
-      const newX = startState.maxDragX > 0
-        ? Math.max(0, Math.min(1, startState.startX + (cx - startState.mouseX) / startState.maxDragX))
-        : 0.5;
-      const newY = startState.maxDragY > 0
-        ? Math.max(0, Math.min(1, startState.startY + (cy - startState.mouseY) / startState.maxDragY))
-        : 0.5;
-      setWizardCropPos({ x: newX, y: newY });
-    };
-    const handleEnd = () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('touchend', handleEnd);
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleEnd);
+    attachDragListeners(
+      { mouseX: clientX, mouseY: clientY, startX: wizardCropPos.x, startY: wizardCropPos.y, maxDragX: layout.maxDragX, maxDragY: layout.maxDragY },
+      setWizardCropPos
+    );
   };
 
   const handleWizardImageLoad = () => {

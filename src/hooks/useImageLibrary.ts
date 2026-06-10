@@ -64,6 +64,11 @@ export function useImageLibrary() {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [processingUrl, setProcessingUrl] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const showSaveMessage = (type: "success" | "error", text: string, timeout = 3000) => {
+    setSaveMessage({ type, text });
+    setTimeout(() => setSaveMessage(null), timeout);
+  };
   const { isDirty: hasUnsavedChanges, markDirty, markClean, blocker, justSaved, save: adminSave } = useAdminForm({ successMessage: "Images saved" });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
@@ -269,9 +274,7 @@ export function useImageLibrary() {
       setNewBanReason("");
       fetchBannedIps();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to ban IP";
-      setSaveMessage({ type: "error", text: msg });
-      setTimeout(() => setSaveMessage(null), 3000);
+      showSaveMessage("error", e instanceof Error ? e.message : "Failed to ban IP");
     }
   };
 
@@ -288,12 +291,9 @@ export function useImageLibrary() {
     try {
       const result = await api.post<{ bannedIp?: string }>(`/api/submissions/${id}/ban-ip`, {}, token);
       setSubmissions(prev => prev.filter(s => s.id !== id));
-      setSaveMessage({ type: "success", text: `IP ${result.bannedIp || 'unknown'} banned and submission rejected` });
-      setTimeout(() => setSaveMessage(null), 3000);
+      showSaveMessage("success", `IP ${result.bannedIp || 'unknown'} banned and submission rejected`);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to ban IP";
-      setSaveMessage({ type: "error", text: msg });
-      setTimeout(() => setSaveMessage(null), 3000);
+      showSaveMessage("error", e instanceof Error ? e.message : "Failed to ban IP");
     }
   };
 
@@ -319,11 +319,9 @@ export function useImageLibrary() {
       setImages(updated);
       setSavedImages(updated);
       setSubmissions(prev => prev.filter(s => s.id !== submissionId));
-      setSaveMessage({ type: "success", text: "Submission processed and added to library" });
-      setTimeout(() => setSaveMessage(null), 3000);
+      showSaveMessage("success", "Submission processed and added to library");
     } catch (e: unknown) {
-      setSaveMessage({ type: "error", text: (e instanceof Error ? e.message : "") || "Failed to process submission" });
-      setTimeout(() => setSaveMessage(null), 5000);
+      showSaveMessage("error", (e instanceof Error ? e.message : "") || "Failed to process submission", 5000);
     }
     setSubmissionForEnhancer(null);
   };

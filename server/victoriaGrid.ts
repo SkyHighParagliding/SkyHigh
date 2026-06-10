@@ -1,6 +1,7 @@
 import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
+import { buildOpenMeteoParams } from "./utils/openMeteo.js";
 
 const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
 const OPEN_METEO_URL = OPEN_METEO_API_KEY
@@ -35,13 +36,13 @@ const FINE_LAT_MIN = -39.2;
 const FINE_LAT_MAX = -34.0;
 const FINE_LON_MIN = 141.0;
 const FINE_LON_MAX = 150.0;
-export const FINE_DELTA = 0.35;
+const FINE_DELTA = 0.35;
 
 const COARSE_LAT_MIN = -50;
 const COARSE_LAT_MAX = -5;
 const COARSE_LON_MIN = 105;
 const COARSE_LON_MAX = 165;
-export const COARSE_DELTA = 2.0;
+const COARSE_DELTA = 2.0;
 
 export interface GridBounds {
   fineLatMin: number; fineLatMax: number; fineLonMin: number; fineLonMax: number;
@@ -204,16 +205,13 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
 
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
-    const params = new URLSearchParams({
-      latitude: tile.lats.join(','),
-      longitude: tile.lons.join(','),
-      hourly: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
-      models: 'ecmwf_ifs025',
-      wind_speed_unit: 'kn',
-      timezone: 'Australia/Melbourne',
-      forecast_days: '2'
+    const params = buildOpenMeteoParams({
+      lats: tile.lats,
+      lons: tile.lons,
+      hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
+      forecastDays: 2,
+      apiKey: OPEN_METEO_API_KEY || undefined,
     });
-    if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
     const url = `${OPEN_METEO_URL}?${params.toString()}`;
 
@@ -389,16 +387,13 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
 
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
-    const params = new URLSearchParams({
-      latitude: tile.lats.join(','),
-      longitude: tile.lons.join(','),
-      hourly: 'wind_speed_10m,wind_direction_10m',
-      models: 'ecmwf_ifs025',
-      wind_speed_unit: 'kn',
-      timezone: 'Australia/Melbourne',
-      forecast_days: '2'
+    const params = buildOpenMeteoParams({
+      lats: tile.lats,
+      lons: tile.lons,
+      hourlyFields: 'wind_speed_10m,wind_direction_10m',
+      forecastDays: 2,
+      apiKey: OPEN_METEO_API_KEY || undefined,
     });
-    if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
     const url = `${OPEN_METEO_URL}?${params.toString()}`;
 
@@ -816,7 +811,7 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   return result;
 }
 
-export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
+async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
     const today = melbourneToday();
@@ -880,7 +875,7 @@ export async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
   }
 }
 
-export async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
+async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
   try {
     const bounds = await getGridBounds();
     const today = melbourneToday();
@@ -944,6 +939,3 @@ export async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
   }
 }
 
-// Legacy aliases — kept so weather.ts routes referencing old names still compile
-export { fetchFineGrid as fetchVictoriaGrid, fetchCoarseGrid as fetchWideGrid,
-         getCachedFineGrid as getCachedVictoriaGrid, getCachedCoarseGrid as getCachedWideGrid };

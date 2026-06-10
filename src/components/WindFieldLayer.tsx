@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { SPEED_COLOR_STOPS } from './windmap/windInterpolation';
+import { haversineKm } from '@/lib/geomath';
 
 interface WindObservation {
   lat: number;
@@ -75,14 +76,6 @@ function speedToColor(kts: number): [number, number, number] {
   return SPEED_COLOR_STOPS[SPEED_COLOR_STOPS.length - 1].color;
 }
 
-
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 function idwInterpolate(lat: number, lon: number, obs: WindObservation[], maxInfluenceKm: number, fadeStartKm: number, idwPower: number): { u: number; v: number; speed: number; confidence: number } | null {
   if (obs.length === 0) return null;

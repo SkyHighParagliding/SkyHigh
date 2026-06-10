@@ -68,8 +68,3 @@ export async function filterByCurrentMembers<T extends { email?: string }>(
     return currentEmails.has(email);
   });
 }
-
-export function invalidateMemberCache() {
-  cachedEmails = null;
-  cacheTimestamp = 0;
-}

@@ -3,6 +3,7 @@ import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./wea
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid, getTimeWindow, getGridBounds } from "./victoriaGrid.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
+import { buildOpenMeteoParams } from "./utils/openMeteo.js";
 
 const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
 const OPEN_METEO_URL = OPEN_METEO_API_KEY
@@ -153,16 +154,13 @@ export async function fetchExtendedForecast(): Promise<void> {
 
     for (let i = 0; i < tiles.length; i++) {
       const tile = tiles[i];
-      const params = new URLSearchParams({
-        latitude: tile.lats.join(','),
-        longitude: tile.lons.join(','),
-        hourly: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
-        models: 'ecmwf_ifs025',
-        wind_speed_unit: 'kn',
-        timezone: 'Australia/Melbourne',
-        forecast_days: '8'
+      const params = buildOpenMeteoParams({
+        lats: tile.lats,
+        lons: tile.lons,
+        hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
+        forecastDays: 8,
+        apiKey: OPEN_METEO_API_KEY || undefined,
       });
-      if (OPEN_METEO_API_KEY) params.set('apikey', OPEN_METEO_API_KEY);
 
       const url = `${OPEN_METEO_URL}?${params.toString()}`;
 

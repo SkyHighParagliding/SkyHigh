@@ -4,7 +4,7 @@ import { RealRetrievalService } from "./realRetrievalService.js";
 import { DemoRetrievalService } from "./demoRetrievalService.js";
 import { RealMessageService } from "./realMessageService.js";
 import { DemoMessageService } from "./demoMessageService.js";
-import type { Services, Pilot } from "./types.js";
+import type { Services } from "./types.js";
 
 const realFlightService = new RealFlightService();
 const realRetrievalService = new RealRetrievalService();
@@ -16,20 +16,17 @@ const demoMessageService = new DemoMessageService();
 
 demoRetrievalService.flightService = demoFlightService;
 
-export const realServices: Services = {
+const realServices: Services = {
   flights: realFlightService,
   retrievals: realRetrievalService,
   messages: realMessageService,
 };
 
-export const demoServices: Services = {
+const demoServices: Services = {
   flights: demoFlightService,
   retrievals: demoRetrievalService,
   messages: demoMessageService,
 };
-
-export { demoFlightService, demoRetrievalService, demoMessageService };
-export { realFlightService, realRetrievalService, realMessageService };
 
 export function clearDemoState() {
   demoFlightService.clear();
@@ -41,7 +38,7 @@ export function isDemoRequest(req: any): boolean {
   return req.headers['x-demo'] === 'true' || req.query?.demo === 'true';
 }
 
-export function getServicesForRequest(req: any): Services {
+function getServicesForRequest(req: any): Services {
   return isDemoRequest(req) ? demoServices : realServices;
 }
 
@@ -52,5 +49,3 @@ export function injectServices(req: any, _res: any, next: any) {
   req.services = getServicesForRequest(req);
   next();
 }
-
-export type { Services, Pilot };

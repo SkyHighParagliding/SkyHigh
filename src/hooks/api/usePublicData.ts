@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
+import type { BusinessListing, SafetyOfficer } from '@/types/api';
 
-// Type also defined in src/types/api.ts — keep in sync
+export type { BusinessListing, SafetyOfficer };
+
+// Local Competition type (slightly narrower than src/types/api.ts — leave separate)
 export interface Competition {
   id: string;
   name: string;
@@ -13,35 +16,6 @@ export interface Competition {
   rulesSummary: string;
   registrationUrl: string;
   status: string;
-}
-
-// Type also defined in src/types/api.ts — keep in sync
-export interface BusinessListing {
-  id: string;
-  businessName: string;
-  memberName: string;
-  category: string;
-  description: string;
-  phone: string;
-  email: string;
-  websiteUrl: string;
-  imagePath: string;
-}
-
-// Type also defined in src/types/api.ts — keep in sync
-export interface SafetyOfficer {
-  id: string;
-  safetyOfficerType?: 'SO' | 'SSO';
-  name: string;
-  surname?: string;
-  phone?: string;
-  email?: string;
-  fullNameDisplay?: number;
-  showTelegram?: number;
-  showPhone?: number;
-  showEmail?: number;
-  showAdminEmail?: number;
-  photoUrl?: string;
 }
 
 export const publicKeys = {
