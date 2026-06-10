@@ -5,7 +5,7 @@
 
 ## Where I left off
 
-Session 37: Finished the multi-agent professional code review started in session 36. All remaining chunks completed and verified (`npx tsc --noEmit` = 0 errors, `npm run build` succeeds). Committed as `refactor: code review pass 2` on main. **Still NOT pushed** (now 10+ commits ahead of origin — push auto-deploys to Railway, do it deliberately).
+Session 37: Finished the multi-agent professional code review started in session 36. All remaining chunks completed and verified (`npx tsc --noEmit` = 0 errors, `npm run build` succeeds). Also fixed the extended-forecast "today" bug (UTC vs Melbourne date keys + frontend labelling days[0] as Today by position). **PUSHED 2026-06-11** (`a11bf39..1cb80f7`) — Railway deploy verified live (prod extended-forecast serves correct dates).
 
 **Completed this session:**
 - Server services/core chunk finished: dead helpers deleted (validation, errorHandler, urlValidator, tidyhqMemberFilter), victoriaGrid legacy aliases removed, services/index.ts DI seam trimmed safely.
@@ -26,7 +26,6 @@ Session 37: Finished the multi-agent professional code review started in session
 - TASK-030: Siteguide Version Change Email Notification (see tasks/todo.md)
 
 ## Open questions / blockers
-- **Unpushed commits on main** (10+, includes both review passes). Push when ready to deploy to Railway.
 - `wiki/Cloudflare Keys.png` is still in git history — consider BFG scrub before any repo visibility change.
 - wiki/05-file-map.md has broader pre-existing drift (describes `server/services/real|demo/` folders, `src/components/sites/`, `src/utils/apiClient.ts` — none exist as described). Worth a wiki audit pass (Section 11) some session.
 - Known deferred type-duplication: hook-local copies of NewsItem/PageData/PageAttachment/Competition/XCSite/ClosureBanner still shadow src/types/api.ts ("keep in sync" comments); also XCSite/WindData defined in both useXCMapState and xcMapUtils.
