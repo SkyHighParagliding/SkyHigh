@@ -26,7 +26,12 @@ const DEMO_API_PREFIXES = [
 ];
 
 function shouldInterceptUrl(url: string): boolean {
-  return DEMO_API_PREFIXES.some(prefix => url.startsWith(prefix));
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return DEMO_API_PREFIXES.some(prefix => parsed.pathname.startsWith(prefix));
+  } catch {
+    return DEMO_API_PREFIXES.some(prefix => url.startsWith(prefix));
+  }
 }
 
 function getDemoSessionFromUrl(): string | null {
