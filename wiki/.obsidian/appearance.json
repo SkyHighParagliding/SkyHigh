@@ -1,1 +1,8 @@
-{}
+{
+  "theme": "obsidian",
+  "baseFontSize": 16,
+  "baseFontFamily": "Fira Code, 'Courier New', monospace",
+  "accentColor": "#5e5ce6",
+  "cssTheme": "",
+  "monospaceFontFamily": "Fira Code, 'Courier New', monospace"
+}
