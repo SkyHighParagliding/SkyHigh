@@ -29,3 +29,12 @@ credential-recovery.html
 SkyHigh-Credential-Recovery.pdf
 credential-recovery-preview.png
 graphify-out/
+
+# Local tooling artifacts & sensitive files
+.playwright-mcp/
+.codegraph/
+.pi/
+.mcp.json
+*.lnk
+z_RESUME_SESSION/
+wiki/Cloudflare Keys.png
