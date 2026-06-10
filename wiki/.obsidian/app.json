@@ -1,1 +1,13 @@
-{}
+{
+  "baseFontSize": 16,
+  "autoSave": true,
+  "autoSaveInterval": 10000,
+  "accentColor": "",
+  "cssTheme": "",
+  "showLineNumber": true,
+  "promptDelete": true,
+  "showFrontmatter": false,
+  "showFileTree": true,
+  "useTab": true,
+  "useFileOpen": true
+}
