@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "index.md",
+                "file": "graphify-knowledge-graph/GRAPH_REPORT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "GRAPH_REPORT"
             }
           }
         ]
@@ -185,6 +185,17 @@
   },
   "active": "bdaf3b05448e13e7",
   "lastOpenFiles": [
-    "README.md"
+    "graphify-knowledge-graph/GRAPH_REPORT.md",
+    "README.md",
+    "index.md",
+    "fallow.md",
+    "codegraph.md",
+    "graphify-knowledge-graph/UNDERSTANDING_COMMUNITIES.md",
+    "graphify-knowledge-graph/README.md",
+    "graphify-knowledge-graph/COMMUNITY_INDEX.md",
+    "00-overview.md",
+    "_COMMUNITY_Community 82.md",
+    "Untitled.canvas",
+    "graphify-knowledge-graph/UNDERSTANDING_COMMUNITIES.md.tmp.79556.a55ee0a13640"
   ]
 }

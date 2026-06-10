@@ -1,9 +1,7 @@
 {
-  "baseFontSize": 16,
+  "baseFontFamily": "Fira Code, 'Courier New', monospace",
   "autoSave": true,
   "autoSaveInterval": 10000,
-  "accentColor": "",
-  "cssTheme": "",
   "showLineNumber": true,
   "promptDelete": true,
   "showFrontmatter": false,
