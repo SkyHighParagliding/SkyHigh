@@ -37,12 +37,10 @@ Documentation of all environment variables needed. Rename to `.env` and fill in 
 ## Server Core (`server/`)
 
 ### `server/db.ts`
-**Unified database adapter.** Routes queries to SQLite (dev) or PostgreSQL (prod) based on `DATABASE_URL` env var. All backend database access goes through here. **Read this to understand DECISION-001.**
+**PostgreSQL migration runner.** Applies pending SQL files from `server/pg_migrations/` on startup. SQLite support was removed in session 23 (DECISION-001 history).
 
-Exports: `query()`, `transaction()`, `pool` (for direct access if needed).
-
-### `server/pgDb.ts`
-PostgreSQL driver and pooling. Handles connection creation, pool config, and query execution for Postgres. Called by `db.ts` if `DATABASE_URL` set.
+### `server/pg.ts`
+**PostgreSQL query helper.** All backend database access goes through its exports: `query()`, `queryOne()`, `execute()`, `transaction()`. The pg pool is module-internal.
 
 ### `server/victoriaGrid.ts`
 **ECMWF grid caching core.** Fetches Victoria (0.35°) and Wide (2.0°) grid data, stores to database, handles 7-day cleanup, and implements bilinear interpolation. **Read this to understand wind map data flow and DECISION-003.**
@@ -252,7 +250,28 @@ Client-side form validation (email format, required fields, etc.). Used in forms
 Shared closure logic used by Sites.tsx, SiteDetail.tsx, and ExtendedOutlookPanel.tsx:
 - `getClosureStatus(site, today?)` — returns `{ isClosedToday, upcomingDates }` (upcomingDates = closure dates within next 7 days, not including today)
 - `formatClosureDateRange(dates)` — formats date array as human string: single day "Fri 29 May", consecutive "Fri 29 – Sun 31 May", non-consecutive "Fri 29 May, Sun 31 May"
-- `getBannerWindowStart(closureDates)` — returns the start of the 7-day banner window (first closure date − 7 days)
+
+---
+
+## Shared Utilities (extracted in code review, session 37)
+
+### `src/lib/geomath.ts`
+Canonical haversine distance: `haversineKm()` (R=6371) and `haversineMeters()` (R=6371000). Used by `lib/utils.ts` (`haversineDistance` delegates to km), `useFlightTracker`, `useXCMapState`, `useRetrievalMap`, `WindFieldLayer`.
+
+### `src/lib/leafletIcons.ts`
+`driverIcon()` and `livePilotIcon()` Leaflet divIcon factories shared by `DutyPilotMap.tsx` and `RetrievalMap.tsx`.
+
+### `src/components/map/leafletHelpers.tsx`
+`MapResizer` and `MapControlBridge` react-leaflet helper components shared by `DutyPilotMap.tsx` and `RetrievalMap.tsx`.
+
+### `src/hooks/useToggleSelection.ts`
+Generic Set-based selection hook: `{ selectedIds, setSelectedIds, toggleId, toggleSelectAll }`. Used by `AdminContacts.tsx` (×2) and `AdminXC.tsx`.
+
+### `server/utils/settings.ts`
+`getSettingNum()` — read a numeric value from the `settings` table. Used by `realFlightService` and `realRetrievalService`.
+
+### `server/utils/openMeteo.ts`
+`buildOpenMeteoParams()` — Open-Meteo request param builder (lat/lon arrays, hourly fields, forecast days). Used by `extendedForecast.ts` and both grid fetches in `victoriaGrid.ts`.
 
 ---
 
