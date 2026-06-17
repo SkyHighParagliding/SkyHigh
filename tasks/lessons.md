@@ -1,0 +1,6 @@
+
+## 2026-06-17 — Safe Git History Sanitization for Sensitive Assets
+Wiped sensitive files and local database backups from the entire Git commit history. Simply adding files to `.gitignore` and running `git rm --cached` leaves files accessible in past commits. Used `uvx git-filter-repo` to securely purge `SH Primary Officer Toolkit.docx - Google Docs.pdf`, `.playwright-mcp/` screenshots, old root-level debugging `.png`s, `.env`, and all historic SQLite database backups (`*.db`, `*.sqlite`, and specific `.backup` files). Re-added the safety-removed `origin` remote, updated `.gitignore` with `SH Primary Officer Toolkit*` blocklist, and successfully force-pushed the clean history to GitHub.
+
+## 2026-06-11 — "Today" must be the Melbourne date, never the UTC date
+Extended forecast cache keys used `new Date().toISOString().split('T')[0]` (UTC). Melbourne is UTC+10, so between 00:00 and 10:00 local the UTC date is *yesterday* — grids were saved/looked up under the wrong day and the UI showed a stale week starting at "TODAY". Rule: any "today" string in this codebase must come from `getMelbourneDate()` (server) or `toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' })` (client). Also: never label `days[0]` as "Today" by array position — compare dates.

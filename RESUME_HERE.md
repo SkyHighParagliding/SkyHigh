@@ -1,9 +1,13 @@
-# RESUME_HERE — Last updated: 2026-06-11 (session 37)
+# RESUME_HERE — Last updated: 2026-06-17 (session 39)
 
 ## Project: SkyHigh
 ## Status: Active — professional code review/cleanup COMPLETE
 
 ## Where I left off
+
+Session 39: Programmatically purged all historically committed sensitive files, local database backups, test screenshots, and credential images from the entire Git commit history. Force-pushed clean history to GitHub.
+
+Session 38 was a short diagnostic session — no code changes. Investigated why Jon Pamment showed as "Committee" instead of "Vice President" on the production committee cards. Root cause: his "Vice President" TidyHQ group was not mapped in `tidyhq_group_mappings` as `localRoleFlag = 'isPosition'`, so smart import defaulted `position` to "Committee". Jon fixed it via TidyHQ; production now shows correctly.
 
 Session 37: Finished the multi-agent professional code review started in session 36. All remaining chunks completed and verified (`npx tsc --noEmit` = 0 errors, `npm run build` succeeds). Also fixed the extended-forecast "today" bug (UTC vs Melbourne date keys + frontend labelling days[0] as Today by position). **PUSHED 2026-06-11** (`a11bf39..1cb80f7`) — Railway deploy verified live (prod extended-forecast serves correct dates).
 
@@ -18,6 +22,7 @@ Session 37: Finished the multi-agent professional code review started in session
 
 ## Last completed task
 - Code review pass 2 (sessions 36–37) — completed 2026-06-11
+- Git history purge of sensitive assets (session 39) — completed 2026-06-17
 
 ## Currently in progress
 - None
@@ -26,9 +31,10 @@ Session 37: Finished the multi-agent professional code review started in session
 - TASK-030: Siteguide Version Change Email Notification (see tasks/todo.md)
 
 ## Open questions / blockers
-- `wiki/Cloudflare Keys.png` is still in git history — consider BFG scrub before any repo visibility change.
 - wiki/05-file-map.md has broader pre-existing drift (describes `server/services/real|demo/` folders, `src/components/sites/`, `src/utils/apiClient.ts` — none exist as described). Worth a wiki audit pass (Section 11) some session.
 - Known deferred type-duplication: hook-local copies of NewsItem/PageData/PageAttachment/Competition/XCSite/ClosureBanner still shadow src/types/api.ts ("keep in sync" comments); also XCSite/WindData defined in both useXCMapState and xcMapUtils.
 
 ## Quick context refresher
 Two-session multi-agent review is done: repo hygiene, per-area dead-code/export trims, debug-log purge, dedup utility extractions, and one real bug fix (boot-time DB writes). Zero behavior changes intended; verified via tsc + production build. Wind-map DPR-sensitive canvas code was deliberately left conservative.
+
+Session 38 was a short diagnostic session — no code changes. Investigated why Jon Pamment showed as "Committee" instead of "Vice President" on the production committee cards. Root cause: his "Vice President" TidyHQ group was not mapped in `tidyhq_group_mappings` as `localRoleFlag = 'isPosition'`, so smart import defaulted `position` to "Committee". Jon fixed it via TidyHQ; production now shows correctly.
