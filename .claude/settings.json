@@ -113,7 +113,7 @@
           },
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"C:\\Users\\User\\Documents\\CodeFolder\\scripts\\wipe-env.ps1\" -Path (Get-Item .).FullName"
+            "command": "pwsh -NoProfile -File \"C:\\Users\\User\\Documents\\CodeFolder\\Ai System Projects\\scripts\\wipe-env.ps1\" -Path (Get-Item .).FullName"
           }
         ]
       }

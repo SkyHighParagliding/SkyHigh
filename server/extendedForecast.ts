@@ -663,6 +663,9 @@ export async function getSiteExtendedForecast(siteId: string): Promise<SiteExten
     const forecast: SiteExtendedForecast = JSON.parse(row.forecastData);
     const todayMelb = getMelbourneDate(0);
 
+    // Stale cache may include days from the past — strip them before serving
+    forecast.days = forecast.days.filter(d => d.date >= todayMelb);
+
     // Replace today's slots with live data from weather_forecasts so the slot
     // strip always matches the ECMWF Forecast strip above it.
     if (forecast.days.length > 0 && forecast.days[0].date === todayMelb) {
