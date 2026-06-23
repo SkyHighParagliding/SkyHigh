@@ -89,7 +89,7 @@ export async function runVersionCheck(): Promise<VersionCheckResult> {
     `INSERT INTO siteguide_version_checks ("checkedAt", "detectedVersion", "previousVersion", changed, error)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING id`,
-    [checkedAt, detectedVersion, previousVersion, changed, error]
+    [checkedAt, detectedVersion, previousVersion, changed ? 1 : 0, error]
   );
 
   const newId = rows[0]?.id;
