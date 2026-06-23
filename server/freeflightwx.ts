@@ -204,9 +204,25 @@ export async function fetchFreeFlightWxData(gaugeUrl: string): Promise<FreeFligh
     }
 
     const history = rawData.map(mapRecord);
-    const current = history.length > 0
-      ? history.reduce((latest, r) => r.timestamp > latest.timestamp ? r : latest, history[0])
-      : null;
+
+    let current: FreeFlightWxReading | null = null;
+    if (history.length > 0) {
+      // Sort ascending by timestamp so the last entry is the most recent
+      const sorted = [...history].sort((a, b) => a.timestamp - b.timestamp);
+      const latest = sorted[sorted.length - 1];
+      // Average the last 10 records (~2 minutes) for speed/gust/lull to smooth
+      // out momentary calm spikes that would otherwise produce misleading 0kt readings
+      const window = sorted.slice(-10);
+      const avgSpeed = window.reduce((s, r) => s + r.windSpeedKts, 0) / window.length;
+      const peakGust = Math.max(...window.map(r => r.windGustKts));
+      const minLull = Math.min(...window.map(r => r.windLullKts));
+      current = {
+        ...latest,
+        windSpeedKts: Math.round(avgSpeed * 10) / 10,
+        windGustKts: peakGust,
+        windLullKts: minLull,
+      };
+    }
 
     const result: FreeFlightWxData = {
       stationUrl: gaugeUrl,
