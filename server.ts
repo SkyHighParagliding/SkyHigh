@@ -8,7 +8,7 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import "./server/db.js";
 import "./server/seed.js";
 import { queryOne } from "./server/pg.js";
-import { fetchWeatherData } from "./server/weather.js";
+import { startWeatherScrapers } from "./server/weather.js";
 import { cleanExpiredSessions } from "./server/middleware/auth.js";
 import { csrfTokenProvider, csrfTokenValidator, getCSRFTokenRoute } from "./server/middleware/csrf.js";
 import createLogger from "./server/utils/logger.js";
@@ -340,7 +340,7 @@ async function startServer() {
   const server = app.listen(Number(PORT), "0.0.0.0", () => {
     log.info(`API server listening on http://0.0.0.0:${PORT}`);
     try {
-      fetchWeatherData();
+      startWeatherScrapers();
     } catch (e: any) {
       log.error("Fetch weather data error", e?.message);
     }

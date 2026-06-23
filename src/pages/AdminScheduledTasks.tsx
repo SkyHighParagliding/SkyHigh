@@ -17,10 +17,16 @@ interface ScheduleSettings {
   schedExtendedForecastMinute: string;
   submissionNotifyHour: string;
   submissionNotifyEnabled: string;
-  weatherScraperMinInterval: string;
-  weatherScraperMaxInterval: string;
   weatherScraperStartHour: string;
   weatherScraperEndHour: string;
+  weatherScraper_ffwx_min: string;
+  weatherScraper_ffwx_max: string;
+  weatherScraper_wu_min: string;
+  weatherScraper_wu_max: string;
+  weatherScraper_livewind_min: string;
+  weatherScraper_livewind_max: string;
+  weatherScraper_bom_min: string;
+  weatherScraper_bom_max: string;
   schedDriveSyncHour: string;
   schedDriveSyncMinute: string;
   driveSyncEnabled: string;
@@ -42,10 +48,16 @@ const DEFAULTS: ScheduleSettings = {
   schedExtendedForecastMinute: "30",
   submissionNotifyHour: "19",
   submissionNotifyEnabled: "true",
-  weatherScraperMinInterval: "15",
-  weatherScraperMaxInterval: "30",
   weatherScraperStartHour: "7",
   weatherScraperEndHour: "20",
+  weatherScraper_ffwx_min: "2",
+  weatherScraper_ffwx_max: "3",
+  weatherScraper_wu_min: "14",
+  weatherScraper_wu_max: "15",
+  weatherScraper_livewind_min: "5",
+  weatherScraper_livewind_max: "10",
+  weatherScraper_bom_min: "10",
+  weatherScraper_bom_max: "20",
   schedDriveSyncHour: "4",
   schedDriveSyncMinute: "0",
   driveSyncEnabled: "false",
@@ -285,18 +297,48 @@ export function AdminScheduledTasks() {
           <Card className="border-t-4 border-t-emerald-500">
             <CardHeader>
               <CardTitle className="text-navy">Live Weather Scraper</CardTitle>
-              <p className="text-sm text-muted-foreground">Fetches live wind data from Live-Wind and Open-Meteo for sites with live weather enabled. Runs at random intervals within the configured range during operating hours.</p>
+              <p className="text-sm text-muted-foreground">Each data source runs on its own independent schedule. Intervals are randomised between min and max to spread load. All sources sleep outside operating hours.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground-label block mb-1">Min interval (minutes)</label>
-                  <Input type="number" min="5" max="120" className="w-full" value={settings.weatherScraperMinInterval} onChange={(e) => updateField("weatherScraperMinInterval", e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground-label block mb-1">Max interval (minutes)</label>
-                  <Input type="number" min="5" max="120" className="w-full" value={settings.weatherScraperMaxInterval} onChange={(e) => updateField("weatherScraperMaxInterval", e.target.value)} />
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 pr-4 font-medium text-foreground-label">Source</th>
+                      <th className="text-center py-2 px-3 font-medium text-foreground-label">Min (min)</th>
+                      <th className="text-center py-2 px-3 font-medium text-foreground-label">Max (min)</th>
+                      <th className="text-left py-2 pl-3 font-medium text-foreground-label text-xs">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    <tr>
+                      <td className="py-2 pr-4 font-medium">FreeFlightWx</td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_ffwx_min} onChange={(e) => updateField("weatherScraper_ffwx_min", e.target.value)} /></td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_ffwx_max} onChange={(e) => updateField("weatherScraper_ffwx_max", e.target.value)} /></td>
+                      <td className="py-2 pl-3 text-xs text-muted-foreground">No API rate limit</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 font-medium">Weather Underground</td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_wu_min} onChange={(e) => updateField("weatherScraper_wu_min", e.target.value)} /></td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_wu_max} onChange={(e) => updateField("weatherScraper_wu_max", e.target.value)} /></td>
+                      <td className="py-2 pl-3 text-xs text-muted-foreground">~1,500 calls/day free tier</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 font-medium">Live-Wind</td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_livewind_min} onChange={(e) => updateField("weatherScraper_livewind_min", e.target.value)} /></td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_livewind_max} onChange={(e) => updateField("weatherScraper_livewind_max", e.target.value)} /></td>
+                      <td className="py-2 pl-3 text-xs text-muted-foreground"></td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 font-medium">BOM</td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_bom_min} onChange={(e) => updateField("weatherScraper_bom_min", e.target.value)} /></td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_bom_max} onChange={(e) => updateField("weatherScraper_bom_max", e.target.value)} /></td>
+                      <td className="py-2 pl-3 text-xs text-muted-foreground"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
                 <div>
                   <label className="text-sm font-medium text-foreground-label block mb-1">Operating start hour</label>
                   <div className="flex items-center gap-2">
@@ -312,7 +354,7 @@ export function AdminScheduledTasks() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Scraper sleeps outside operating hours. Random interval between min and max prevents API rate-limiting.</p>
+              <p className="text-xs text-muted-foreground">All scrapers sleep outside operating hours (Melbourne time). Random interval between min and max prevents predictable API patterns.</p>
             </CardContent>
           </Card>
 
