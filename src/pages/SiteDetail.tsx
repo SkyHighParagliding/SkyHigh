@@ -371,8 +371,8 @@ export function SiteDetail() {
                         'acthpa-corryong': 'acthpa/corryong',
                       };
                       const slug = subpathMap[raw] || raw;
-                      const gaugeUrl = `https://www.freeflightwx.com/${slug}/gauge.php`;
-                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Gauge" href={gaugeUrl} />;
+                      const stationUrl = `https://www.freeflightwx.com/${slug}/index.php`;
+                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Station" href={stationUrl} />;
                     })()}
                     {site.hoodedPloversActive === "true" && isValidField(site.hoodedPloversLink) && (
                       <InfoCard icon={<AlertTriangle className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-orange/10" />
