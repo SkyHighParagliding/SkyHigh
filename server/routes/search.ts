@@ -8,6 +8,11 @@ import { getIndexedDocumentsContext, getPublicDocumentsContext } from "./documen
 import { filterByCurrentMembers } from "../utils/tidyhqMemberFilter.js";
 import { registerSearchCacheInvalidator } from "../utils/searchCacheInvalidation.js";
 import { sendEmail } from "../utils/email.js";
+import { checkEmergency, EMERGENCY_RESPONSE } from "../utils/safetyGate.js";
+import { buildQualificationTag, type QualSlot } from "../utils/conditionQualifications.js";
+import { parseRatingString, computeEligibility, extractPilotRating, renderVerdictBlock, validateAllRatings, type Verdict } from "../utils/eligibility.js";
+import { resolveSiteNames, buildFuzzyDirective, validateSiteLinks } from "../utils/siteResolver.js";
+import { extractQualificationsBySite, enforceQualifications, enforceVerdicts } from "../utils/responseEnforcement.js";
 
 const router = Router();
 
@@ -222,6 +227,19 @@ async function getCachedAssetData(): Promise<string> {
 // Background asset refresh — fire-and-forget on startup
 (async () => { try { await getCachedAssetData(); } catch {} })();
 
+// Boot-time rating-string audit: log any pgRating/hgRating the deterministic
+// eligibility parser cannot fully understand so admins can clean the data.
+(async () => {
+  try {
+    const auditSites = await query<any>(`SELECT id, name, "pgRating", "hgRating" FROM sites`);
+    const problems = validateAllRatings(auditSites);
+    for (const p of problems) {
+      console.warn(`[eligibility] Site "${p.siteId}" ${p.field} "${p.raw}" — ${p.warnings.join("; ")}`);
+    }
+    if (problems.length === 0) console.log(`[eligibility] All ${auditSites.length} site rating strings parsed cleanly`);
+  } catch {}
+})();
+
 // ─── Build public context (with weather) ───
 async function buildPublicContext(): Promise<CachedContext> {
   const contextTtl = await getContextTtl();
@@ -230,7 +248,7 @@ async function buildPublicContext(): Promise<CachedContext> {
   }
 
   const sites = await query<any>(
-    `SELECT id, name, description, "pgRating", "hgRating", "windDir", "windSpeed", launch, landing, hazards, rules, type, "navigateTo", "isSkyHighSite", status, "crossLeft", "crossRight" FROM sites ORDER BY name`
+    `SELECT id, name, description, "pgRating", "hgRating", "windDir", "windSpeed", launch, landing, hazards, rules, type, "navigateTo", "isSkyHighSite", status, "crossLeft", "crossRight", aliases FROM sites ORDER BY name`
   );
   const weatherObs = await query<any>(
     `SELECT "siteId", "windSpeed", "windGust", direction, "stationName", timestamp FROM weather_observations`
@@ -309,7 +327,7 @@ async function buildPublicContext(): Promise<CachedContext> {
         if (liveStatus.direction === 'Not Flyable') advisory = " [WRONG DIRECTION — do not recommend]";
         else if (liveStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
         else if (liveStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
-        else if (obs.windGust != null && siteRange && Math.round(obs.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
+        else if (obs.windGust != null && siteRange && Math.round(obs.windGust) > siteRange.max) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
         else advisory = " [No gust concern]";
         ctx += ` [Dir:${liveStatus.direction} Spd:${liveStatus.speed}${liveStatus.gustWarning ? ` ⚠ ${liveStatus.gustWarning}` : ""}]${advisory}`;
       }
@@ -325,9 +343,37 @@ async function buildPublicContext(): Promise<CachedContext> {
         if (fcStatus.direction === 'Not Flyable') advisory = " [WRONG DIRECTION — do not recommend]";
         else if (fcStatus.speed === 'Light') advisory = " [LIGHT WINDS — do not recommend]";
         else if (fcStatus.speed === 'Blown Out') advisory = " [BLOWN OUT — do not recommend]";
-        else if (forecast.windGust != null && siteRange && Math.round(forecast.windGust) > siteRange.max + 2) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
+        else if (forecast.windGust != null && siteRange && Math.round(forecast.windGust) > siteRange.max) advisory = " [GUST THRESHOLD EXCEEDED — do not recommend]";
         else advisory = " [No gust concern]";
         ctx += ` [Dir:${fcStatus.direction} Spd:${fcStatus.speed}${fcStatus.gustWarning ? ` ⚠ ${fcStatus.gustWarning}` : ""}]${advisory}`;
+        // Deterministic conditions qualification for today's forecast: hazards
+        // (precipitation, fog, strong gusts) detected from the hourly slots when
+        // available, else from the day-level forecast row itself.
+        if (fcStatus.direction !== 'Not Flyable' && fcStatus.speed === 'Good') {
+          let fcQualSlots: QualSlot[] = [];
+          if (forecast.forecasts) {
+            try {
+              const hourlySlots = JSON.parse(forecast.forecasts);
+              if (Array.isArray(hourlySlots)) {
+                fcQualSlots = hourlySlots.map((h: any) => {
+                  const hFly = computeFlyability(h.windSpeed, h.windGust ?? null, h.windDirection, site);
+                  const hGustOk = !(h.windGust != null && siteRange && Math.round(h.windGust) > siteRange.max);
+                  return {
+                    windSpeed: h.windSpeed ?? 0,
+                    windGust: h.windGust ?? 0,
+                    weatherSummary: h.summary,
+                    flyable: hFly ? (hFly.direction !== 'Not Flyable' && hFly.speed === 'Good' && hGustOk) : undefined,
+                  };
+                });
+              }
+            } catch {}
+          }
+          if (fcQualSlots.length === 0) {
+            fcQualSlots = [{ windSpeed: forecast.windSpeed ?? 0, windGust: forecast.windGust ?? 0, weatherSummary: forecast.summary }];
+          }
+          const fcQualTag = buildQualificationTag(fcQualSlots);
+          if (fcQualTag) ctx += ` ${fcQualTag}`;
+        }
       }
       ctx += "\n";
       if (forecast.forecasts) {
@@ -342,7 +388,7 @@ async function buildPublicContext(): Promise<CachedContext> {
               if (hStatus.direction === 'Not Flyable') advisory = "[WRONG DIR]";
               else if (hStatus.speed === 'Light') advisory = "[LIGHT]";
               else if (hStatus.speed === 'Blown Out') advisory = "[BLOWN OUT]";
-              else if (h.windGust != null && siteRange && Math.round(h.windGust) > siteRange.max + 2) advisory = "[GUSTS EXCEED LIMIT]";
+              else if (h.windGust != null && siteRange && Math.round(h.windGust) > siteRange.max) advisory = "[GUSTS EXCEED LIMIT]";
               else advisory = "[OK]";
               const tag = `[${hStatus.direction}/${hStatus.speed}${hStatus.gustWarning ? ` ⚠ ${hStatus.gustWarning}` : ""}]${advisory}`;
               return `${h.time || ""}:${h.windSpeed || 0}G${h.windGust || 0}${h.windDirection || ""}${tag}`;
@@ -397,17 +443,33 @@ async function buildPublicContext(): Promise<CachedContext> {
             // Include unflyable days with [NOT FLYABLE: reason] instead of dropping them.
             // Prevents the AI from confabulating today's FCST numbers for a future day
             // that has no flyable conditions — it can now cite the actual forecast data.
-            if (fly.direction === 'Not Flyable') {
-              const reason = `wrong direction${site.windDirection ? `, requires ${site.windDirection}` : ''}`;
-              return `${dayLabel} ${speedBase} [NOT FLYABLE: ${reason}]`;
+            // Gusts are checked FIRST and independently of mean speed: a 4kt mean with a
+            // 30kt gust must report the gust, never just "wind too light".
+            const gustExceeds = gust != null && siteRange && Math.round(gust) > siteRange.max;
+            const reasons: string[] = [];
+            if (gustExceeds) reasons.push(`gusts of ${Math.round(gust)}kts exceed the ${siteRange!.max}kts site limit`);
+            if (fly.direction === 'Not Flyable') reasons.push(`wrong direction${site.windDir ? `, requires ${site.windDir}` : ''}`);
+            if (fly.speed === 'Blown Out') reasons.push('wind too strong');
+            if (fly.speed === 'Light') reasons.push('wind too light');
+            if (reasons.length > 0) {
+              return `${dayLabel} ${speedBase} [NOT FLYABLE: ${reasons.join('; ')}]`;
             }
-            if (fly.speed === 'Blown Out') return `${dayLabel} ${speedBase} [NOT FLYABLE: wind too strong]`;
-            if (fly.speed === 'Light') return `${dayLabel} ${speedBase} [NOT FLYABLE: wind too light]`;
-            if (gust != null && siteRange && Math.round(gust) > siteRange.max + 2) {
-              return `${dayLabel} ${speedBase} [NOT FLYABLE: gusts exceed site limit]`;
-            }
+            // Flyable day — attach a deterministic conditions-qualification tag when any
+            // hazard (precipitation, fog, strong gusts, etc.) is present in the day's slots.
+            const qualSlots: QualSlot[] = (d.slots || []).map((s: any) => {
+              const sFly = computeFlyability(s.windSpeed, s.windGust ?? null, s.windDirection, site);
+              const sGustOk = !(s.windGust != null && siteRange && Math.round(s.windGust) > siteRange.max);
+              return {
+                windSpeed: s.windSpeed ?? 0,
+                windGust: s.windGust ?? 0,
+                weatherCode: s.weatherCode,
+                weatherSummary: s.weatherSummary,
+                flyable: sFly ? (sFly.direction !== 'Not Flyable' && sFly.speed === 'Good' && sGustOk) : undefined,
+              };
+            });
+            const qualTag = buildQualificationTag(qualSlots);
             const flyTag = ` [Dir:${fly.direction} Spd:${fly.speed}${fly.gustWarning ? ` ⚠ ${fly.gustWarning}` : ''}]`;
-            return `${dayLabel} ${speedBase} ${d.bestWeatherSummary || ''}${flyTag}`;
+            return `${dayLabel} ${speedBase} ${d.bestWeatherSummary || ''}${flyTag}${qualTag ? ` ${qualTag}` : ''}`;
           })
           .filter(Boolean);
         if (dayStrs.length > 0) {
@@ -779,6 +841,12 @@ CRITICAL — RATING-FIRST RULE:
 - Only AFTER they provide their rating should you list the sites they can fly.
 - This is a SAFETY rule — listing sites before knowing their rating could lead a pilot to assume they can fly somewhere dangerous for their level.
 
+COMPUTED ELIGIBILITY VERDICT — HIGHEST AUTHORITY:
+- When the data contains a "=== COMPUTED ELIGIBILITY VERDICT — AUTHORITATIVE ===" block, it was computed deterministically from the club's rating database. It OVERRIDES your own reasoning about ratings and tiers. Restate its verdict faithfully as the eligibility part of your answer. You may NOT contradict, soften, or revise it — including when the pilot pushes back or claims you said something different earlier. If the pilot disputes it, direct them to a club safety officer.
+
+CONDITIONS QUALIFICATIONS — MANDATORY OPENING:
+- Some sites/days in the data carry a [QUALIFICATIONS — ...] tag containing a statement in quotes. When your answer discusses that site or day, you MUST present that statement VERBATIM before any "Good/Good" verdict, wind numbers, or eligibility detail for it. Do not paraphrase it, do not shorten it, do not move it after the good news. The statement covers hazards like drizzle, rain, mist, fog, and strong gusts that come with otherwise-good wind readings.
+
 WEATHER & FLYABILITY — IMPORTANT:
 - You have LIVE weather observations and ECMWF forecasts for most sites.
 - Each site has pre-computed FLYABILITY STATUS labels in the data. Direction can be "Good", "Cross", or "Not Flyable". Speed can be "Good", "Light", or "Blown Out". ALWAYS use these pre-computed labels — DO NOT compute your own flyability from raw wind numbers.
@@ -811,7 +879,7 @@ HARD EXCLUSION — CRITICAL: Any site that fails any rule below must be complete
 - SCHEDULED CLOSURES (LISTING QUERY): If a site has a "SCHEDULED CLOSURES" line and the requested date appears in that list, omit that site for that date only. It may be recommended on other dates.
 - SCHEDULED CLOSURES (DIRECT QUERY): If a pilot asks specifically about a named site and that site's SCHEDULED CLOSURES list includes the queried date, tell them the site is closed on that date. If the closure dates are consecutive, indicate when the site reopens — e.g. "Three Sisters (Flowerdale) is currently closed until 31 May." Do NOT say "I don't have that site in my database."
 - WEATHER PRE-FILTERING: The server has already removed sites where current LIVE and FCST conditions are unflyable (wrong direction, light winds, blown out, or gust threshold exceeded). Do not second-guess this — if a site is not in the data, conditions are not suitable. If a site has a FCST line containing "Conditions expected to improve", current conditions are poor but a later time today may be suitable — surface the improving time to the pilot as a late-day option and let them decide. Sites with no weather data at all are excluded from conditions queries.
-- GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), do not recommend that site for a PG2 or PG3 pilot. For PG4+ you may mention it with the gust note, but only if no advisory tag is also present.
+- GUST WARNING: If a site's LIVE or FCST line shows a ⚠ gust warning (gusts exceeding site maximum), the site's conditions are not suitable — state the gust warning verbatim. Where a [QUALIFICATIONS] tag is present instead (gusts within site limits but 3kts or more above the average wind, or precipitation/fog/mist forecast), present the quoted qualification statement verbatim BEFORE any positive assessment of the site — the fly / no fly judgment belongs to the pilot.
 
 PG2 UNIVERSAL SUPERVISION RULE — MANDATORY: PG2 pilots require supervision at EVERY site without exception. There is no site a PG2 can fly unsupervised. When responding to a PG2 pilot, state this clearly at the start of your response before listing any sites. Every site you include must carry a supervision requirement.
 
@@ -885,6 +953,7 @@ interface SiteRow {
   navigateTo: string;
   isSkyHighSite: string | boolean;
   status: string;
+  aliases?: string | null;
 }
 
 interface ProcedureRow {
@@ -1486,12 +1555,82 @@ router.post("/public", asyncHandler(async (req, res) => {
     return res.status(403).json({ error: "Smart Search is currently disabled" });
   }
 
+  // Sanitize history: malformed entries (non-string text, nulls) must never
+  // crash safety-critical code paths.
+  const fullHistory: { role: string; text: string }[] = (Array.isArray(history) ? history : [])
+    .filter((m: any) => m && typeof m === "object")
+    .map((m: any) => ({
+      role: typeof m.role === "string" ? m.role : "",
+      text: typeof m.text === "string" ? m.text : "",
+    }));
+  const conversationHistory = fullHistory.slice(-6);
+
+  // ─── EMERGENCY CIRCUIT-BREAKER ───
+  // Runs BEFORE any AI involvement. If the query (or this conversation's history)
+  // indicates an active emergency, return a fixed hard-stop response directing the
+  // user to 000. Once triggered, every subsequent turn in the conversation is gated.
+  // The FULL history is scanned (not the 6-turn LLM window) so long emergency
+  // conversations cannot age the trigger out of view.
+  const gate = checkEmergency(queryStr, fullHistory);
+  if (gate.triggered) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+    res.write(`data: ${JSON.stringify({ token: EMERGENCY_RESPONSE })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+    logPublicSearch(queryStr, `[EMERGENCY GATE TRIGGERED — ${gate.reason}] ${EMERGENCY_RESPONSE}`).catch(() => {});
+    return;
+  }
+
   const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Smart assistant is not configured" });
   }
 
   const { data: sitesContext, sites, closureMap } = await buildPublicContext();
+
+  // ─── Deterministic site resolution + eligibility verdicts ───
+  // Closed/restricted sites are excluded from the context, so never compute or
+  // inject verdicts for them either.
+  const liveSites = sites.filter((s: any) =>
+    s.status !== 'closed' && s.status !== 'permanently closed' && s.status !== 'restricted'
+  );
+  const pilot = extractPilotRating(queryStr, conversationHistory);
+  let resolution = resolveSiteNames(queryStr, liveSites);
+  let fuzzyDirective = "";
+  if (resolution.exact.length === 0 && conversationHistory.length > 0) {
+    // Follow-up queries ("can I fly there?") name the site only in earlier turns —
+    // fall back to resolving against the conversation history (newest first).
+    const historyText = conversationHistory.map((m) => m.text).reverse().join("\n");
+    const historyResolution = resolveSiteNames(historyText, liveSites);
+    if (historyResolution.exact.length > 0) {
+      resolution = { exact: historyResolution.exact, fuzzy: [] };
+    }
+  }
+  if (resolution.exact.length === 0) {
+    // Only ask "did you mean…?" when neither the query nor the history resolved a site.
+    fuzzyDirective = buildFuzzyDirective(resolution.fuzzy);
+  }
+
+  const computedVerdicts: { siteName: string; verdicts: Verdict[] }[] = [];
+  let verdictBlock = "";
+  if (pilot && resolution.exact.length > 0) {
+    for (const matched of resolution.exact) {
+      const siteRow = liveSites.find((s: any) => s.id === matched.id);
+      if (!siteRow) continue;
+      const ratingRaw = pilot.discipline === 'HG' ? siteRow.hgRating : siteRow.pgRating;
+      const parsed = parseRatingString(ratingRaw, pilot.discipline);
+      const verdicts = computeEligibility(parsed, pilot);
+      computedVerdicts.push({ siteName: siteRow.name, verdicts });
+    }
+    if (computedVerdicts.length > 0) {
+      const lines = computedVerdicts.map(cv => renderVerdictBlock(cv.siteName, pilot, cv.verdicts));
+      verdictBlock = lines.join("\n") + "\n\n";
+    }
+  }
 
   const allOfficers = await query<OfficerRow>(
     `SELECT name, 'Safety Committee' as type, phone, email FROM contacts WHERE "isSafetyCommittee" = 1 AND "displaySafety" = 1 ORDER BY name ASC`
@@ -1520,7 +1659,6 @@ router.post("/public", asyncHandler(async (req, res) => {
     officersContext += `${o.name} (${o.type})${o.phone ? ` — ${o.phone}` : ""}${o.email ? ` — ${o.email}` : ""}\n`;
   }
 
-  const conversationHistory = Array.isArray(history) ? history.slice(-6) : [];
   let historyText = "";
   if (conversationHistory.length > 0) {
     historyText = "\n\n--- CONVERSATION HISTORY ---\n";
@@ -1596,7 +1734,18 @@ Do NOT wrap your response in JSON or code blocks.`;
   const nowMelb = new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
   const tomorrowMelb = new Date(Date.now() + 86400000).toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Australia/Melbourne' });
   const dateContext = `CURRENT DATE (Melbourne time): ${nowMelb}\nTomorrow is: ${tomorrowMelb}\n\n`;
-  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${dateContext}${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${queryStr}`;
+
+  // Today-scoping directive: when the pilot asked about today only, forbid presenting
+  // other days' forecasts as current conditions (log incident #86-88).
+  let todayDirective = "";
+  const queriedDates = extractQueryDates(queryStr);
+  const todayMelbDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+  if (/\btoday\b|\btonight\b|\bright now\b|\bnow\b/i.test(queryStr) && queriedDates.every(d => d === todayMelbDate)) {
+    todayDirective = `=== DATE SCOPE — TODAY ONLY ===\nThe pilot asked about TODAY (${todayMelbDate}). Use ONLY the LIVE and FCST lines and 7-day entries labelled "TODAY". Do NOT present any other day's forecast as current conditions. If nothing is flyable today, say so plainly.\n=== END DATE SCOPE ===\n\n`;
+  }
+
+  const directives = `${verdictBlock}${fuzzyDirective ? fuzzyDirective + "\n\n" : ""}${todayDirective}`;
+  const promptText = `${systemPrompt}\n\n--- CLUB DATA ---\n${dateContext}${directives}${fullContext}${historyText}\n\n--- PILOT'S QUESTION ---\n${queryStr}`;
 
   let clientDisconnected = false;
   req.on("close", () => { clientDisconnected = true; });
@@ -1637,6 +1786,13 @@ Do NOT wrap your response in JSON or code blocks.`;
       cleanedText = cleanedText.replace(/\*\*\[([^\]]+)\]\(([^)]+)\)\*\*/g, '[$1]($2)');
       cleanedText = cleanedText.replace(/\[\*\*([^\]]*?)\*\*\]\(([^)]+)\)/g, '[$1]($2)');
       cleanedText = cleanedText.replace(/\*\*\[([^\]]+)\]\*\*\(([^)]+)\)/g, '[$1]($2)');
+      // Deterministic post-generation enforcement:
+      // 1. Fix mismatched or broken /sites/ links (wrong site linked, unknown ids).
+      cleanedText = validateSiteLinks(cleanedText, sites);
+      // 2. Ensure conditions-qualification statements reach the pilot.
+      cleanedText = enforceQualifications(cleanedText, extractQualificationsBySite(filteredSitesContext));
+      // 3. Ensure restrictive eligibility verdicts were not dropped or softened.
+      cleanedText = enforceVerdicts(cleanedText, computedVerdicts);
 
       if (cleanedText !== fullText) {
         res.write(`data: ${JSON.stringify({ replace: cleanedText })}\n\n`);
@@ -1674,10 +1830,11 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!promptRow.value) {
     await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchPrompt'`, [prompt]);
     console.log("[search] Populated empty publicSearchPrompt in settings");
-  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURE] IS AN OPERATIONAL TAG")) {
-    // Old embedded eligibility rules or missing NOT FLYABLE / future-date / weather-tag / closure-tag rules — upgrade
+  } else if (promptRow.value.includes("HARD EXCLUSION RULES") || promptRow.value.includes("SITE ELIGIBILITY — apply these rules") || !promptRow.value.includes("FUTURE DATE WITH NO FORECAST") || !promptRow.value.includes("do NOT substitute numbers from another day") || !promptRow.value.includes("NOT FLYABLE] IS A WEATHER TAG") || !promptRow.value.includes("SCHEDULED CLOSURE] IS AN OPERATIONAL TAG") || !promptRow.value.includes("COMPUTED ELIGIBILITY VERDICT — HIGHEST AUTHORITY") || !promptRow.value.includes("CONDITIONS QUALIFICATIONS — MANDATORY OPENING")) {
+    // Old embedded eligibility rules or missing rule sections — upgrade
+    console.warn(`[search] Replacing publicSearchPrompt (${promptRow.value.length} chars) with current default — a required rule marker was missing. If this prompt was customized, re-apply customizations on top of the new default.`);
     await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchPrompt'`, [prompt]);
-    console.log("[search] Upgraded publicSearchPrompt: added SCHEDULED CLOSURE tag rule");
+    console.log("[search] Upgraded publicSearchPrompt: added computed-verdict + conditions-qualifications rules");
   }
 
   // ── Eligibility rules (separate setting) ──
@@ -1689,10 +1846,11 @@ export async function seedPublicPrompt(): Promise<void> {
   } else if (!eligibilityRow.value) {
     await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchEligibilityRules'`, [rules]);
     console.log("[search] Populated empty publicSearchEligibilityRules in settings");
-  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION") || !eligibilityRow.value.includes("NO supervision required")) {
+  } else if (!eligibilityRow.value.includes("STEP 1 — SITE-SPECIFIC RATING CHECK") || !eligibilityRow.value.includes("STEP 2 — GENERAL SUPERVISION MATRIX") || !eligibilityRow.value.includes("PG3 AND ABOVE — DO NOT GENERALISE") || !eligibilityRow.value.includes("cannot use this supervised slot") || !eligibilityRow.value.includes("WEATHER PRE-FILTERING") || !eligibilityRow.value.includes("HG ONLY [ABSOLUTE]") || !eligibilityRow.value.includes("ECHO THE PILOT'S EXACT RATING") || !eligibilityRow.value.includes("FORBIDDEN OPENING") || !eligibilityRow.value.includes("SCHEDULED CLOSURES (DIRECT QUERY)") || !eligibilityRow.value.includes("MULTI-LAUNCH EXCEPTION") || !eligibilityRow.value.includes("NO supervision required") || !eligibilityRow.value.includes("QUALIFICATIONS")) {
     // Missing one or more required rule sections — upgrade to current default
+    console.warn(`[search] Replacing publicSearchEligibilityRules (${eligibilityRow.value.length} chars) with current default — a required rule marker was missing. If these rules were customized, re-apply customizations on top of the new default.`);
     await execute(`UPDATE settings SET value = $1 WHERE key = 'publicSearchEligibilityRules'`, [rules]);
-    console.log("[search] Upgraded publicSearchEligibilityRules: self-contained multi-launch North launch rules");
+    console.log("[search] Upgraded publicSearchEligibilityRules: qualification-first gust/precipitation rule");
   }
   // Otherwise: admin has customized the rules — leave them alone
 }

@@ -76,3 +76,14 @@
   5. Verify no data leakage between deployments
 - **Risk:** May be hardcoded "SkyHigh" references that should pull from settings
 - **Files:** Multiple — full codebase audit for hardcoded strings
+
+---
+
+## 🔔 Reminder (added 2026-07-03)
+
+### Smart Search — "Report bad answer" button
+- **Effort:** S
+- **What:** Add a "Report bad answer" button to the public Smart Search chat UI (`src/components/PublicSearchBox.tsx`) so pilots can flag wrong/unsafe responses.
+- **Why:** The July 2026 query-log audit found serious errors only because an admin manually reviewed 135 logged entries. A report button surfaces bad answers immediately.
+- **Sketch:** Button on each assistant message → POST flags the matching `search_logs` row (add `flagged` column or reuse the log insert) → admin log view (Admin → API Settings → Smart Assistant → Search Query Logging) filters/shows flagged entries; optional email notify like the existing log-size warning.
+- **Pairs with:** the new safety layer shipped 2026-07-03 (safetyGate / eligibility / responseEnforcement) — flagged entries become new eval cases in `scripts/eval-smart-search-units.ts`.
