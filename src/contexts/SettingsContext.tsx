@@ -69,6 +69,7 @@ interface Settings {
   homeSponsors?: string;
   youtubeVideos?: string;
   instagramEmbeds?: string;
+  publicSearchEnabled?: string;
   publicSearchCommitteeLink?: string;
   publicSearchPrompt?: string;
   publicSearchDisclaimer?: string;
@@ -299,6 +300,7 @@ function buildSettings(data: Record<string, any>): Settings {
     homeSponsors: data.homeSponsors || "",
     youtubeVideos: data.youtubeVideos || "",
     instagramEmbeds: data.instagramEmbeds || "",
+    publicSearchEnabled: data.publicSearchEnabled || "true",
     publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
     publicSearchPrompt: data.publicSearchPrompt || "",
     publicSearchDisclaimer: cleanString(data.publicSearchDisclaimer),

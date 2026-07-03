@@ -1481,6 +1481,11 @@ router.post("/public", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Please enter a question" });
   }
 
+  const enabledRow = await queryOne<SettingRow>(`SELECT value FROM settings WHERE key = 'publicSearchEnabled'`);
+  if (enabledRow?.value === "false") {
+    return res.status(403).json({ error: "Smart Search is currently disabled" });
+  }
+
   const apiKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Smart assistant is not configured" });

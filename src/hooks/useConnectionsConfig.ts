@@ -73,6 +73,7 @@ export function useConnectionsConfig() {
   const [savingBulkLimit, setSavingBulkLimit] = useState(false);
   const [bulkLimitSaved, setBulkLimitSaved] = useState(false);
 
+  const [saEnabled, setSaEnabled] = useState(true);
   const [saDisclaimer, setSaDisclaimer] = useState("General information only. Consult SAFA/CASA docs and Site Rules.");
   const [saCommitteeLink, setSaCommitteeLink] = useState("");
   const [saCtaMessage, setSaCtaMessage] = useState("");
@@ -109,6 +110,7 @@ export function useConnectionsConfig() {
         const validLimit = isNaN(parsedLimit) ? 20 : Math.min(999, Math.max(1, parsedLimit));
         setBulkUploadLimit(validLimit);
         setBulkUploadLimitDraft(validLimit);
+        setSaEnabled(data.publicSearchEnabled !== "false");
         setSaDisclaimer(data.publicSearchDisclaimer ?? "General information only. Consult SAFA/CASA docs and Site Rules.");
         setSaCommitteeLink(data.publicSearchCommitteeLink || "");
         setSaCtaMessage(data.publicSearchCtaMessage || "");
@@ -192,6 +194,7 @@ export function useConnectionsConfig() {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
+          publicSearchEnabled: saEnabled ? "true" : "false",
           publicSearchDisclaimer: saDisclaimer,
           publicSearchCommitteeLink: saCommitteeLink,
           publicSearchPrompt: saPrompt,
@@ -201,6 +204,7 @@ export function useConnectionsConfig() {
         }),
       });
       if (!res.ok) throw new Error("Failed to save");
+      refreshSettings();
     });
   };
 
@@ -705,6 +709,7 @@ export function useConnectionsConfig() {
     addMappingError, savingMapping,
     bulkUploadLimit, bulkUploadLimitDraft, setBulkUploadLimitDraft,
     savingBulkLimit, bulkLimitSaved, saveBulkUploadLimit,
+    saEnabled, setSaEnabled,
     saDisclaimer, setSaDisclaimer,
     saCommitteeLink, setSaCommitteeLink,
     saCtaMessage, setSaCtaMessage,

@@ -82,6 +82,7 @@ export function AdminConnections() {
     savingBulkLimit, bulkLimitSaved, saveBulkUploadLimit,
     saDisclaimer, setSaDisclaimer,
     saCommitteeLink, setSaCommitteeLink,
+    saEnabled, setSaEnabled,
     saCtaMessage, setSaCtaMessage,
     saCtaFrequency, setSaCtaFrequency,
     saPrompt, setSaPrompt,
@@ -999,6 +1000,19 @@ export function AdminConnections() {
 
           {expandedCards.has("smart-assistant") && (
             <CardContent className="border-t border-border-subtle pt-4 space-y-5">
+              <div className="flex items-center gap-4 flex-wrap">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={saEnabled}
+                    onChange={(e) => { setSaEnabled(e.target.checked); markDirty(); }}
+                    className="w-4 h-4 accent-sky"
+                  />
+                  <span className="text-sm font-medium text-foreground-label">Enable public Smart Search</span>
+                </label>
+                {!saEnabled && <span className="text-xs text-amber-600">Smart Search is hidden from the home page and the public API is disabled</span>}
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground-label">Search Disclaimer</label>
                 <p className="text-xs text-muted-foreground">Appended in bold to every Smart Search reply (public and admin). Leave blank to disable.</p>

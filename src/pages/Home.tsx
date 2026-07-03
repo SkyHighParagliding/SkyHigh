@@ -443,7 +443,7 @@ export function Home() {
               </Button>
             </Link>
           </div>
-          <PublicSearchBox />
+          {settings.publicSearchEnabled !== "false" && <PublicSearchBox />}
         </div>
 
         {/* Glass cards inside hero (Wonderful White) */}
