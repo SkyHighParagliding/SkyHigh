@@ -97,6 +97,7 @@ export function useConnectionsConfig() {
   const [searchLogType, setSearchLogType] = useState<"all" | "public" | "admin">("all");
   const [loadingSearchLogs, setLoadingSearchLogs] = useState(false);
   const [clearingSearchLogs, setClearingSearchLogs] = useState(false);
+  const [printingSearchLogs, setPrintingSearchLogs] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -661,6 +662,60 @@ export function useConnectionsConfig() {
     } catch {}
   };
 
+  const printSearchLogs = async () => {
+    // Open synchronously within the click handler so popup blockers allow it
+    const win = window.open("", "_blank");
+    if (!win) return;
+    setPrintingSearchLogs(true);
+    try {
+      const entries: { id: number; search_type: string; query: string; response: string; created_at: string }[] = [];
+      let page = 1;
+      let pages = 1;
+      do {
+        const res = await fetch(`/api/search-logs?type=all&page=${page}&limit=100`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error("Failed to load logs");
+        const data = await res.json();
+        entries.push(...(data.entries || []));
+        pages = data.pages || 1;
+        page++;
+      } while (page <= pages);
+
+      const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const fmtDate = (d: string) => new Date(d).toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+      const blocks = entries.map((e, i) => `
+        <div class="entry">
+          <div class="meta">#${entries.length - i} — <span class="type ${e.search_type === "public" ? "public" : "admin"}">${esc(e.search_type)}</span> — ${fmtDate(e.created_at)}</div>
+          <div class="query">Q: ${esc(e.query)}</div>
+          <div class="response">${esc(e.response)}</div>
+        </div>`).join("");
+      win.document.write(`<!doctype html>
+<html><head><title>${esc(clubName)} — Smart Search Log</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 24px; color: #1a1a2e; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+  .entry { border-top: 1px solid #ddd; padding: 12px 0; page-break-inside: avoid; }
+  .meta { font-size: 12px; color: #666; margin-bottom: 6px; }
+  .type { text-transform: uppercase; font-weight: 600; font-size: 11px; }
+  .type.public { color: #0369a1; }
+  .type.admin { color: #b45309; }
+  .query { font-weight: 600; margin-bottom: 6px; white-space: pre-wrap; }
+  .response { font-size: 13px; white-space: pre-wrap; }
+</style></head>
+<body>
+  <h1>${esc(clubName)} — Smart Search Query Log</h1>
+  <div class="subtitle">${entries.length} ${entries.length === 1 ? "entry" : "entries"} (newest first) — printed ${fmtDate(new Date().toISOString())}</div>
+  ${blocks}
+</body></html>`);
+      win.document.close();
+      win.focus();
+      win.print();
+    } catch {
+      win.close();
+    }
+    setPrintingSearchLogs(false);
+  };
+
   const clearSearchLogs = async () => {
     setClearingSearchLogs(true);
     try {
@@ -730,8 +785,8 @@ export function useConnectionsConfig() {
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
     searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,
     searchLogEntries, searchLogPage, searchLogTotal, searchLogPages,
-    searchLogType, loadingSearchLogs, clearingSearchLogs,
+    searchLogType, loadingSearchLogs, clearingSearchLogs, printingSearchLogs,
     expandedLogId, setExpandedLogId,
-    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs,
+    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs, printSearchLogs,
   };
 }

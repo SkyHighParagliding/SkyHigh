@@ -32,6 +32,7 @@ import {
   Plus,
   Image as ImageIcon,
   FileText,
+  Printer,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -101,9 +102,9 @@ export function AdminConnections() {
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
     searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,
     searchLogEntries, searchLogPage, searchLogTotal, searchLogPages,
-    searchLogType, loadingSearchLogs, clearingSearchLogs,
+    searchLogType, loadingSearchLogs, clearingSearchLogs, printingSearchLogs,
     expandedLogId, setExpandedLogId,
-    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs,
+    loadSearchLogStats, fetchSearchLogs, toggleSearchLogging, clearSearchLogs, printSearchLogs,
   } = config;
 
   const connections: ConnectionCard[] = [
@@ -1176,6 +1177,16 @@ export function AdminConnections() {
                     {searchLogStats && searchLogStats.total > 0 && (
                       <span className="ml-1 bg-sky/10 text-sky px-1.5 py-0.5 rounded text-xs font-medium">{searchLogStats.total}</span>
                     )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={printSearchLogs}
+                    disabled={printingSearchLogs || !searchLogStats || searchLogStats.total === 0}
+                    className="gap-1.5"
+                  >
+                    {printingSearchLogs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                    Print Now
                   </Button>
                   {searchLogStats && searchLogStats.total > 0 && (
                     <Button
