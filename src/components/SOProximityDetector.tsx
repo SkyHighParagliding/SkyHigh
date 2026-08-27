@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { Shield, LogIn, X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCachedLocation } from "@/lib/cachedLocation";
@@ -30,6 +31,7 @@ interface SiteLocation {
 
 export function SOProximityDetector() {
   const { isAuthenticated, user, token, login, setSoSession, isSoSession } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -161,6 +163,8 @@ export function SOProximityDetector() {
     setShowLoginPrompt(false);
     setShowBindPrompt(false);
   };
+
+  if (settings.soProximityPromptEnabled === "false") return null;
 
   return (
     <>

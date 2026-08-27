@@ -246,7 +246,7 @@ export const WindCanvas = memo(function WindCanvas({
 
       for (const d of tiles) {
         const tileKey2 = `${d[2]}/${d[0]}/${d[1]}`;
-        const url = `https://a.basemaps.cartocdn.com/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png`;
+        const url = `https://basemaps.cartocdn.com/rastertiles/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png?key=${import.meta.env.VITE_CARTO_API_KEY}`;
         const img = loadTile(tileKey2, url);
         if (img && img.complete && img.naturalWidth > 0) {
           const x = (d[0] + tiles.translate[0]) * tiles.scale;

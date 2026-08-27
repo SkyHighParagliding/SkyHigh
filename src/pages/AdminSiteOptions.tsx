@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, QrCode, Star, Flag, Store, UserPlus, Palette, ExternalLink } from "lucide-react";
+import { ArrowLeft, QrCode, Star, Flag, Store, UserPlus, Palette, ExternalLink, Shield } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 
 export function AdminSiteOptions() {
@@ -62,6 +62,36 @@ export function AdminSiteOptions() {
                   {settings.qrCodeMode === "informative"
                     ? "Pilots can scan QR codes at sites to view key info on their phone."
                     : "Enable to generate printable QR codes for each site."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-amber-500">
+            <CardHeader>
+              <CardTitle className="flex items-center text-navy">
+                <Shield className="w-6 h-6 mr-2" />
+                Safety Officer Login Prompt
+              </CardTitle>
+              <CardDescription>Controls the automatic on-site SO login popup.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label htmlFor="so-proximity-prompt-toggle" className="flex items-center cursor-pointer">
+                  <input
+                    id="so-proximity-prompt-toggle"
+                    type="checkbox"
+                    className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                    checked={settings.soProximityPromptEnabled !== "false"}
+                    onChange={(e) => updateSettings({ soProximityPromptEnabled: e.target.checked ? "true" : "false" }).catch(() => {})}
+                    disabled={loading}
+                  />
+                  <span className="ml-2 text-sm font-medium text-foreground-label">
+                    Auto-prompt: {settings.soProximityPromptEnabled !== "false" ? "On" : "Off"}
+                  </span>
+                </label>
+                <p className="mt-1 ml-7 text-xs text-muted-foreground">
+                  When on, anyone within 500m of a flying site is automatically shown an SO login prompt. Turn this off if you want SO and committee members to log in manually via the admin menu link instead.
                 </p>
               </div>
             </CardContent>

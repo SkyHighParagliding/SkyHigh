@@ -70,6 +70,7 @@ interface Settings {
   youtubeVideos?: string;
   instagramEmbeds?: string;
   publicSearchEnabled?: string;
+  soProximityPromptEnabled?: string;
   publicSearchCommitteeLink?: string;
   publicSearchPrompt?: string;
   publicSearchDisclaimer?: string;
@@ -301,6 +302,7 @@ function buildSettings(data: Record<string, any>): Settings {
     youtubeVideos: data.youtubeVideos || "",
     instagramEmbeds: data.instagramEmbeds || "",
     publicSearchEnabled: data.publicSearchEnabled || "true",
+    soProximityPromptEnabled: data.soProximityPromptEnabled || "true",
     publicSearchCommitteeLink: cleanString(data.publicSearchCommitteeLink),
     publicSearchPrompt: data.publicSearchPrompt || "",
     publicSearchDisclaimer: cleanString(data.publicSearchDisclaimer),
