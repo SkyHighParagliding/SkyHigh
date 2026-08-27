@@ -14,14 +14,18 @@ self.addEventListener('fetch', (event) => {
   if (!event.request.url.includes('basemaps.cartocdn.com')) return;
 
   event.respondWith(
-    caches.open(CACHE_NAME).then(cache =>
-      cache.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response.ok) cache.put(event.request, response.clone());
-          return response;
-        });
-      })
-    )
+    caches.open(CACHE_NAME).then(async cache => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) cache.put(event.request, response.clone());
+        return response;
+      } catch {
+        // Network failed — let the browser display a blank tile rather than
+        // breaking the entire canvas render with an opaque network error.
+        return new Response('', { status: 503, statusText: 'Tile unavailable' });
+      }
+    })
   );
 });
