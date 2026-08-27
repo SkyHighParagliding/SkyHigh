@@ -9,11 +9,8 @@ installDemoInterceptor();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(async () => {
-      await navigator.serviceWorker.ready;
-      const { prefetchVictoriaTiles } = await import('./lib/tilePrefetch');
-      prefetchVictoriaTiles();
-    }).catch(err => console.warn('SW registration failed:', err));
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
   });
 }
 
