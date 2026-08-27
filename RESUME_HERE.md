@@ -1,41 +1,31 @@
-# RESUME_HERE — Last updated: 2026-07-03 (session 40)
+# RESUME_HERE — Last updated: 2026-08-27 (session 42)
 
 ## Project: SkyHigh
-## Status: Active — Smart Search safety layer SHIPPED (commit 1455482)
+## Status: Active
 
 ## Where I left off
 
-Session 40: Built and shipped the **deterministic Smart Search safety layer** in response to the July 2026 public query-log audit (135 entries; serious errors found: wrong eligibility verdicts, drizzle days presented as Good/Good, 20-turn emergency roleplay coaching, silent site substitution).
+Session 42 was a pure research session — no code written. Investigated two external weather data sources for potential integration into SkyHigh site weather panels:
 
-**What shipped (commit `1455482`):**
-- `server/utils/eligibility.ts` — rating-string parser + supervision matrix; eligibility verdicts computed in code, injected as an authoritative prompt block, enforced post-generation. Boot-time audit logs unparseable rating strings.
-- `server/utils/safetyGate.ts` — pre-LLM emergency circuit-breaker (fixed 000 response, full-history persistence, hypothetical guard).
-- `server/utils/conditionQualifications.ts` — WMO-code + summary-text hazard detection; club-mandated verbatim qualification statement (drizzle/rain/fog/mist/strong gusts = gust ≥ mean+3kt) must lead any Good/Good verdict.
-- `server/utils/siteResolver.ts` + migration 039 (sites.aliases column + seeds) — alias/fuzzy resolution, "did you mean?" instead of silent substitution, post-generation /sites/ link correction.
-- `server/utils/responseEnforcement.ts` — site-scoped backstop: appends dropped restrictive verdicts, prepends corrections for contradicted permissive verdicts, appends missing qualification statements.
-- `server/routes/search.ts` — integration: gate → resolution (with history fallback for "can I fly there?") → verdict/fuzzy/today-scope directives → post-gen enforcement. Gust checks now precede light-wind checks with compound reasons; unified gust threshold (removed +2 grace); fixed latent `site.windDirection` bug in 7-day NOT-FLYABLE reasons.
-- `scripts/eval-smart-search.mjs` + `scripts/eval-smart-search-units.ts` — regression harness: **63 unit + 9 live cases, all passing** (`npm run eval:search`; `--live` needs dev API + Gemini key).
+1. **WeatherWatcher.com.au** — no-auth BOM JSON API. Identified clean endpoints for current conditions (wind, temp, humidity, pressure) and 72h wind history at 30-min intervals. Key station: Wallan (Kilmore Gap) STN 88162 at 527.8m ridge height. All research saved to `memory/weatherwatcher-api.md`.
 
-Two independent code reviews (both initially REQUEST-CHANGES); all 12 findings fixed and verified APPROVE by a third pass. Key review catches: pilot-rating negation ("I'm not a PG4 yet, just PG3" must extract PG3), site-scoped enforcement for multi-site answers, malformed-history crash in the safety gate.
-
-**Not committed:** `SkyHigh — Smart Search Log.pdf` and `smart-search-log-extracted.txt` (source audit data, kept untracked in repo root).
+2. **bryc.floatingfloors.com.au** (Black Rock Yacht Club) — Weather Display Live + modern FreshWDL HTML5 interface. Relevant to **Red Bluff site only**. `/BRYC/clientraw.txt` gives live wind/temp/humidity/pressure in knots, updated every few seconds. `/BRYC/clientrawextra.txt` gives last 20 minutes at 1-min resolution (wind + temp). All research saved to `memory/bryc-weather-api.md`.
 
 ## Last completed task
-- Smart Search safety layer (session 40) — code complete 2026-07-03, committed locally as `1455482`
+- Session 41 features (2026-08-27) — commits `8a8b153`, `3c2a142`, `dbe534e` — all pushed and verified in production
 
 ## Currently in progress
-- **Jon completed the manual test pass (2026-07-03 session end) and FOUND ISSUES.** Details not yet captured — ask Jon for his findings first thing next session before touching anything else. **DO NOT PUSH TO GITHUB until these are fixed** (Jon's explicit instruction).
+- Nothing
 
 ## Next task to start
-- Fix the issues Jon found during manual testing of the Smart Search safety layer (get the list from Jon; add failing cases to `scripts/eval-smart-search-units.ts` first, then fix)
-- Then: "Report bad answer" button for Smart Search (reminder in tasks/todo.md)
-- Then: TASK-030: Siteguide Version Change Email Notification (see tasks/todo.md)
-- Only after fixes verified: push to GitHub → Railway deploy; watch boot log for `[eligibility]` rating-string warnings against PROD data (prod has richer pgRating strings than dev)
+- **Fix Smart Search manual-test issues** (Jon found issues at end of session 40 — ask Jon for his findings; commit `1455482` is local-only and must NOT be pushed until fixed)
+- After Smart Search fixed: "Report bad answer" button for Smart Search chat
+- Then: TASK-030 Siteguide Version Change Email Notification
+- Future: Weather panel upgrades using WeatherWatcher API (history trend tab) + BRYC data (Red Bluff panel)
 
 ## Open questions / blockers
-- **BLOCKER: manual-test issues found by Jon, not yet described** — do not push/deploy commit `1455482` until fixed
-- Dev DB has ratings only on The Paps / Flinders Golf Club / Three Sisters — full verdict behaviour needs prod-like data to exercise every rating-string format
-- (carried) wiki/05-file-map.md has pre-existing drift — worth a wiki audit pass (Section 11) some session; new server/utils/* files also need adding to the file map
+- **BLOCKER (carried from session 40):** Jon's manual test of Smart Search safety layer found issues — do not push/deploy commit `1455482` until he describes them and they're fixed
+- wiki/05-file-map.md has pre-existing drift (new `server/utils/*`, `src/lib/tilePrefetch.ts`, `public/sw.js` not listed)
 
 ## Quick context refresher
-SkyHigh is the paragliding club platform on Railway. The Smart Search public assistant now computes all safety-critical decisions (eligibility, weather hazards, emergencies, site matching) deterministically in TypeScript — the LLM only phrases them, and a post-generation enforcement layer corrects it when it strays. Regression suite: `npm run eval:search`.
+SkyHigh is the paragliding club platform on Railway. Two weather data sources researched this session: WeatherWatcher.com.au (BOM network, good for Kilmore Gap + other sites, 72h history) and BRYC Black Rock Yacht Club (private station, Red Bluff only, near real-time with 20-min trend data). Both saved to memory ready for future weather panel upgrades. Smart Search safety layer (session 40, commit `1455482`) remains local-only pending Jon's manual-test issue list.
