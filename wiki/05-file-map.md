@@ -55,6 +55,22 @@ Key functions:
 
 Key: On startup, checks `victoriaGridLastRun` and `wideGridLastRun` settings. If > 12 hours ago, triggers fresh fetch after delay.
 
+### Live weather source modules
+Each live observation source is a self-contained module exposing a station registry plus a
+fetch-and-normalise function; `server/weather.ts` dispatches to them by station-ID prefix.
+
+| File | Source | Station ID prefix |
+|---|---|---|
+| `server/freeflightwx.ts` | FreeFlightWx | `freeflightwx-` |
+| `server/bomWeather.ts` | BOM AWS | `bom-` |
+| `server/davisWeather.ts` | Davis / WeatherLink | `davis-` |
+| (inline in `weather.ts`) | Live-Wind | `livewind-` |
+| (inline in `weather.ts`) | Weather Underground | *(catch-all — no prefix)* |
+
+Because Weather Underground is the **catch-all**, adding a source means registering its prefix in
+`NON_WU_STATION_PREFIXES` (`server/weather-utils.ts`) or WU will try to fetch its IDs.
+**Read this to understand DECISION-010.**
+
 ### `server/storage.ts`
 **Media storage abstraction.** Routes file uploads to local `/uploads/` (dev) or Cloudflare R2 (prod). **Read this to understand DECISION-002.**
 

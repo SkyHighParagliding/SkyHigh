@@ -2,20 +2,22 @@ import { fromZonedTime } from 'date-fns-tz';
 import { query, execute } from "./pg.js";
 import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
 import { parseBomStationId, fetchBomObservation } from "./bomWeather.js";
-import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
+import { parseDavisStationId, fetchDavisObservation } from "./davisWeather.js";
+import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
 
 const log = createLogger("weather");
 
 const LIVE_WIND_VIC_URL = "https://live-wind.com.au/windobs/v3/query_newest_obs_smart_v2.php?state=vic";
 
-type SourceType = 'freeflightwx' | 'wu' | 'livewind' | 'bom';
+type SourceType = 'freeflightwx' | 'wu' | 'livewind' | 'bom' | 'davis';
 
 const SOURCE_DEFAULTS: Record<SourceType, { min: number; max: number }> = {
   freeflightwx: { min: 2,  max: 3  },
   wu:           { min: 14, max: 15 },
   livewind:     { min: 5,  max: 10 },
   bom:          { min: 10, max: 20 },
+  davis:        { min: 5,  max: 10 },
 };
 
 const SOURCE_KEY: Record<SourceType, string> = {
@@ -23,7 +25,10 @@ const SOURCE_KEY: Record<SourceType, string> = {
   wu:           'wu',
   livewind:     'livewind',
   bom:          'bom',
+  davis:        'davis',
 };
+
+const ALL_SOURCE_TYPES: SourceType[] = ['freeflightwx', 'wu', 'livewind', 'bom', 'davis'];
 
 const scraperTimeouts: Partial<Record<SourceType, NodeJS.Timeout>> = {};
 
@@ -135,7 +140,8 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
         case 'freeflightwx': return id.startsWith('freeflightwx-');
         case 'livewind':     return id.startsWith('livewind-');
         case 'bom':          return id.startsWith('bom-');
-        case 'wu':           return !id.startsWith('freeflightwx-') && !id.startsWith('livewind-') && !id.startsWith('bom-');
+        case 'davis':        return id.startsWith('davis-');
+        case 'wu':           return isWuStationId(id);
       }
     };
 
@@ -213,6 +219,22 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
           );
           console.log(`Weather scraper [bom]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${bomObs.windSpeed}kt (Gust ${bomObs.windGust}kt) ${bomObs.direction} from ${bomObs.stationName}`);
         }
+      } else if (stationId.startsWith('davis-')) {
+        const parsed = parseDavisStationId(stationId);
+        if (!parsed) {
+          log.error(`Weather scraper [davis]: Invalid station ID format: ${stationId}`);
+          return;
+        }
+        console.log(`Weather scraper [davis]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
+        const davisObs = await fetchDavisObservation(parsed.token);
+        if (davisObs) {
+          await execute("DELETE FROM weather_observations WHERE \"siteId\" = $1", [dbKey]);
+          await execute(
+            "INSERT INTO weather_observations (\"siteId\", \"windSpeed\", \"windGust\", direction, \"stationName\", \"stationLat\", \"stationLon\", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [dbKey, davisObs.windSpeed, davisObs.windGust, davisObs.direction, davisObs.stationName, davisObs.stationLat, davisObs.stationLon, davisObs.timestamp]
+          );
+          console.log(`Weather scraper [davis]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${davisObs.windSpeed}kt (Gust ${davisObs.windGust}kt) ${davisObs.direction} from ${davisObs.stationName}`);
+        }
       } else {
         console.log(`Weather scraper [wu]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
         const wuApiKey = process.env.WU_API_KEY;
@@ -275,18 +297,17 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
   return updated;
 }
 
-/** Start all four independent scraper loops. Called once at server startup. */
+/** Start every independent scraper loop. Called once at server startup. */
 export function startWeatherScrapers() {
-  const types: SourceType[] = ['freeflightwx', 'wu', 'livewind', 'bom'];
-  for (const type of types) {
+  for (const type of ALL_SOURCE_TYPES) {
     runSourceScrape(type);
   }
 }
 
-/** Manual trigger: runs all four source scrapers in parallel. Kept for /scrape-now and bulk-import. */
+/** Manual trigger: runs all source scrapers in parallel. Kept for /scrape-now and bulk-import. */
 export async function fetchWeatherData(isManual = false): Promise<WeatherScrapeResult> {
   const counts = await Promise.all(
-    (['freeflightwx', 'wu', 'livewind', 'bom'] as SourceType[]).map(t => runSourceScrape(t, isManual))
+    ALL_SOURCE_TYPES.map(t => runSourceScrape(t, isManual))
   );
   await execute(
     "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",

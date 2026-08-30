@@ -40,7 +40,31 @@
 - **Integration**: Server-side parser in server/freeflightwx.ts
 - **Notes**: Specialized for paragliding community data
 
-### 5. WhereToFly (wheretofly.info)
+### 5. BOM (Bureau of Meteorology)
+- **Purpose**: Official AWS observations across Victoria
+- **Data Type**: Wind speed/gust (kt), cardinal direction, station name + coords
+- **Integration**: Static station registry + fetcher in `server/bomWeather.ts`
+- **Station ID format**: `bom-{productCode}-{stationNum}` (e.g. `bom-IDV60801-94846`)
+- **Auth**: No API key required; JSON from `reg.bom.gov.au/fwo/`
+- **Notes**: Station numbers listed at bom.gov.au/vic/observations/vicall.shtml
+
+### 6. Davis / WeatherLink
+- **Purpose**: Live data from club-owned Davis stations (normally viewed via the WeatherLink app)
+- **Data Type**: Wind speed/gust, direction (degrees), temperature, humidity, barometer
+- **Integration**: Station registry + fetcher in `server/davisWeather.ts`
+- **Station ID format**: `davis-{token}` — the 32-char hex token from the station's public
+  WeatherLink embeddable page URL (`weatherlink.com/embeddablePage/show/{token}/slim`)
+- **Endpoint**: `GET weatherlink.com/embeddablePage/getData/{token}` — **no API key required**
+- **Current stations**: Mount Martha Yacht Club
+- **Adding a station**: append to `DAVIS_STATIONS` in `server/davisWeather.ts` with name + coords
+- **Notes**:
+  - The payload's `windUnits` is a per-station display setting — always convert off that field,
+    never assume knots.
+  - A truthy `noAccess` field means the owner made the page private; treated as a fetch failure.
+  - Current conditions only — no history series. See DECISION-010 for why the official
+    WeatherLink v2 API was not used.
+
+### 7. WhereToFly (wheretofly.info)
 - **Purpose**: Wind direction and speed reference data
 - **Data Type**: Site-specific wind characteristics and etiquette
 - **Integration**: Manual-only utility functions (NOT automatic scraping)
@@ -52,7 +76,7 @@
 
 ## Secondary Data Sources
 
-### 6. Astronomical Tide Predictions
+### 8. Astronomical Tide Predictions
 - **Purpose**: Coastal site tide forecasting (integrated into WeatherCard)
 - **Auto-detection**: Nearest tide station determined from site coordinates
 - **Cache TTL**: 30 minutes
@@ -65,8 +89,11 @@
 
 **Scrape Interval**: Configurable 15-30 minutes during flying hours (7am-8pm)
 
+Each source runs its own independent loop with its own randomised min/max interval, configurable
+in Admin → Scheduled Tasks (`weatherScraper_{ffwx,wu,livewind,bom,davis}_{min,max}` settings).
+
 **Data Pipeline**:
-1. Live-Wind + Weather Underground + FreeFlightWx scrape concurrently
+1. Live-Wind + Weather Underground + FreeFlightWx + BOM + Davis scrape concurrently
 2. Results stored in weather_observations table
 3. Dual station support: primary (liveStationId) + optional alternate (liveStationIdAlt)
 4. Alternate observations stored with ':alt' suffix key in database

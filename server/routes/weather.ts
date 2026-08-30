@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
 import { fetchWeatherData, LIVE_WIND_VIC_URL } from "../weather.js";
-import { fetchWithRetry, degreesToDirection } from "../weather-utils.js";
+import { fetchWithRetry, degreesToDirection, isWuStationId } from "../weather-utils.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
+import { getDavisStations, getDavisStationId, parseDavisStationId } from "../davisWeather.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -186,7 +187,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
   if (currentStationId && typeof currentStationId === 'string' && !stations.find(s => s.id === currentStationId)) {
     try {
       const wuApiKey = process.env.WU_API_KEY;
-      if (wuApiKey && !currentStationId.startsWith('livewind-') && !currentStationId.startsWith('freeflightwx-')) {
+      if (wuApiKey && isWuStationId(currentStationId)) {
         const obsUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${currentStationId}&format=json&units=m&apiKey=${wuApiKey}`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -263,6 +264,22 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
             });
           }
         }
+      } else if (currentStationId.startsWith('davis-')) {
+        const parsed = parseDavisStationId(currentStationId);
+        if (parsed) {
+          const davis = getDavisStations().find(s => s.token.toLowerCase() === parsed.token);
+          if (davis) {
+            const distance = getDistance(targetLat, targetLon, davis.lat, davis.lon);
+            stations.push({
+              id: currentStationId,
+              name: `${davis.name} (Davis)`,
+              distanceKm: distance,
+              lat: davis.lat,
+              lon: davis.lon,
+              source: 'davis'
+            });
+          }
+        }
       }
     } catch (e) {
       log.error("Error looking up current station:", e);
@@ -300,6 +317,22 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
         lat: bom.lat,
         lon: bom.lon,
         source: 'bom'
+      });
+    }
+  }
+
+  for (const davis of getDavisStations()) {
+    const stationId = getDavisStationId(davis);
+    if (stations.find(s => s.id === stationId)) continue;
+    const distance = getDistance(targetLat, targetLon, davis.lat, davis.lon);
+    if (distance <= radiusKm) {
+      stations.push({
+        id: stationId,
+        name: `${davis.name} (Davis)`,
+        distanceKm: distance,
+        lat: davis.lat,
+        lon: davis.lon,
+        source: 'davis'
       });
     }
   }

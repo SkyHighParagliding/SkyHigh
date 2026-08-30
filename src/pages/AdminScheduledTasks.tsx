@@ -27,6 +27,8 @@ interface ScheduleSettings {
   weatherScraper_livewind_max: string;
   weatherScraper_bom_min: string;
   weatherScraper_bom_max: string;
+  weatherScraper_davis_min: string;
+  weatherScraper_davis_max: string;
   schedDriveSyncHour: string;
   schedDriveSyncMinute: string;
   driveSyncEnabled: string;
@@ -58,6 +60,8 @@ const DEFAULTS: ScheduleSettings = {
   weatherScraper_livewind_max: "10",
   weatherScraper_bom_min: "10",
   weatherScraper_bom_max: "20",
+  weatherScraper_davis_min: "5",
+  weatherScraper_davis_max: "10",
   schedDriveSyncHour: "4",
   schedDriveSyncMinute: "0",
   driveSyncEnabled: "false",
@@ -334,6 +338,12 @@ export function AdminScheduledTasks() {
                       <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_bom_min} onChange={(e) => updateField("weatherScraper_bom_min", e.target.value)} /></td>
                       <td className="py-2 px-3"><Input type="number" min="1" max="120" className="w-20 mx-auto" value={settings.weatherScraper_bom_max} onChange={(e) => updateField("weatherScraper_bom_max", e.target.value)} /></td>
                       <td className="py-2 pl-3 text-xs text-muted-foreground"></td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4 font-medium">Davis (WeatherLink)</td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_davis_min} onChange={(e) => updateField("weatherScraper_davis_min", e.target.value)} /></td>
+                      <td className="py-2 px-3"><Input type="number" min="1" max="60" className="w-20 mx-auto" value={settings.weatherScraper_davis_max} onChange={(e) => updateField("weatherScraper_davis_max", e.target.value)} /></td>
+                      <td className="py-2 pl-3 text-xs text-muted-foreground">Public embeddable page, no API key</td>
                     </tr>
                   </tbody>
                 </table>

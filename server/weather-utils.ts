@@ -64,6 +64,17 @@ export function getWeatherCodeSummary(code: number): { text: string, icon: strin
   return map[code] || { text: "Unknown", icon: "CloudSun" };
 }
 
+/**
+ * Station-ID prefixes for the explicitly-handled live weather sources.
+ * Weather Underground is the catch-all — any ID *without* one of these prefixes is a WU
+ * station ID. Adding a new source means adding its prefix here, or WU will try to fetch it.
+ */
+export const NON_WU_STATION_PREFIXES = ['livewind-', 'freeflightwx-', 'bom-', 'davis-'];
+
+export function isWuStationId(stationId: string): boolean {
+  return !NON_WU_STATION_PREFIXES.some(prefix => stationId.startsWith(prefix));
+}
+
 export function degreesToDirection(degrees: number): string {
   const val = Math.floor((degrees / 22.5) + 0.5);
   const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];

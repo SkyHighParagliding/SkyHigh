@@ -1,10 +1,10 @@
 ---
-name: Decisions Log — 7 Architectural Decisions
+name: Decisions Log — 10 Architectural Decisions
 description: Documented architectural choices with context, options considered, rationale, and reversibility
 type: wiki
 ---
 
-# Decisions Log — 7 Architectural Decisions
+# Decisions Log — 10 Architectural Decisions
 
 All major architectural decisions documented using the Context → Options → Chosen → Rationale → Reversibility template.
 
@@ -371,6 +371,67 @@ Committing raw API keys and passwords to version control is a major security ris
 
 ---
 
+## DECISION-010: Davis/WeatherLink via Public Embeddable Page (not the v2 API)
+
+**Date:** 2026-08-30  
+**Owner:** Jon Pamment  
+**Status:** Locked (implemented)
+
+### Context
+Mount Martha Yacht Club runs a Davis weather station, normally viewed through the WeatherLink
+app. It sits ~3.3 km from the **Craigie Rd, Mt Martha** flying site, which was relying on
+`livewind-94871` (Frankston Beach) ~14.5 km away across the bay. Measured side by side, the two
+disagree materially — Frankston reported NW gust 9kt while MMYC reported W gust 14kt at the same
+moment — so the closer station is meaningfully better data for that site and for Arthurs Seat.
+
+### Options Considered
+1. **WeatherLink v2 API** — Official, documented, stable, and offers historic series. But the
+   API key and secret are issued per **WeatherLink account**, so using it would require Mount
+   Martha Yacht Club to generate and hand over credentials for their own account. Blocks the
+   work on third-party cooperation and creates an ongoing credential-custody obligation.
+2. **Public embeddable page endpoint** (chosen) — The club already publishes a public WeatherLink
+   page. Its backing endpoint `weatherlink.com/embeddablePage/getData/{token}` returns JSON with
+   no authentication at all.
+
+### Chosen
+**Public embeddable page endpoint.** Verified live before committing to the approach: returns
+HTTP 200 with `Content-Type: application/json` and no auth headers sent, carrying wind, gust,
+direction (degrees), temperature, humidity, barometer, and a `lastReceived` epoch-ms timestamp.
+
+### Rationale
+- **No credential dependency.** Nothing to request from the club, nothing to store or rotate.
+- **Already public.** We consume exactly the data the club has chosen to publish openly.
+- **Zero marginal cost** and no rate-limit tier to manage.
+
+### Trade-offs accepted
+- **Undocumented endpoint** — could change without notice. Mitigated by isolating all parsing in
+  `server/davisWeather.ts`; a failure degrades to "no observation", it does not break the page.
+- **Current conditions only** — no history series (the v2 API would have provided this).
+- **No coordinates in the payload** — station lat/lon are held in the local registry.
+
+### Implementation
+- `server/davisWeather.ts` — station registry, ID/URL parsing, fetch + normalisation.
+- Registered as a peer source `davis` in `server/weather.ts` and `server/routes/weather.ts`.
+- Station ID format `davis-{32-char-hex-token}`.
+- **`windUnits` is honoured, not assumed** — it is a per-station display preference, so another
+  club's station may report mph/km/h/m/s. An unrecognised unit is treated as a failure rather
+  than guessed.
+- A truthy `noAccess` field (owner made the page private) is treated as a fetch failure.
+
+### Related fix
+Adding a fifth source exposed a latent bug: Weather Underground is the **catch-all** branch in
+two separate places, and both hardcoded their own list of "not WU" prefixes. The copy in
+`routes/weather.ts` had never been updated for BOM, so an assigned-but-out-of-radius `bom-`
+station silently failed to resolve in the admin picker. Both sites now share
+`isWuStationId()` / `NON_WU_STATION_PREFIXES` in `server/weather-utils.ts`, so a future source
+only has to be added in one place.
+
+### Reversibility
+**High.** Switching to the v2 API later means rewriting only `fetchDavisObservation` and adding
+credentials; the station ID format and all wiring stay as-is.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -383,7 +444,8 @@ Committing raw API keys and passwords to version control is a major security ris
 | 006 | Railway hosting | Managed PostgreSQL, auto-deploy, better prod infrastructure | 2026-04-08 (updated 2026-05-13) | ✅ Complete |
 | 007 | Cache pagination bypass | Bypass cache if non-default limit param present | 2026-05-04 | ✅ Locked |
 | 009 | 1Password Draw/Wipe | Automated .env draw on startup/cd, and wipe on exit | 2026-05-27 | ✅ Locked |
+| 010 | Davis via embeddable page | Public WeatherLink endpoint, no API key; v2 API needs club's credentials | 2026-08-30 | ✅ Locked |
 
 ---
 
-Last updated: 2026-05-27
+Last updated: 2026-08-30

@@ -133,6 +133,8 @@ let seedSettings: [string, string][] = [
   ['weatherScraper_livewind_max', '10'],
   ['weatherScraper_bom_min', '10'],
   ['weatherScraper_bom_max', '20'],
+  ['weatherScraper_davis_min', '5'],
+  ['weatherScraper_davis_max', '10'],
   ['schedSiteguideHour', '5'],
   ['schedSiteguideMinute', '0'],
   ['schedExtendedForecastHour', '4'],

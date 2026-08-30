@@ -374,6 +374,14 @@ export function SiteDetail() {
                       const stationUrl = `https://www.freeflightwx.com/${slug}/index.php`;
                       return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Station" href={stationUrl} />;
                     })()}
+                    {(() => {
+                      const davisId = [site.liveStationId, site.liveStationIdAlt].find((id: string) => id?.startsWith('davis-'));
+                      if (!davisId) return null;
+                      const token = davisId.replace('davis-', '');
+                      if (!/^[a-f0-9]{32}$/i.test(token)) return null;
+                      const stationUrl = `https://www.weatherlink.com/embeddablePage/show/${token}/slim`;
+                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Station" href={stationUrl} />;
+                    })()}
                     {site.hoodedPloversActive === "true" && isValidField(site.hoodedPloversLink) && (
                       <InfoCard icon={<AlertTriangle className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-orange/10" />
                     )}
