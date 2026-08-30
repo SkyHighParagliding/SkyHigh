@@ -41,14 +41,21 @@ was reverted. No WU errors on `davis-` IDs.
   to `davis-82c002b05de74cc5ab177b0ba2b73c80`. Deliberately NOT done — it's a live data change
   and needs Jon's call. It's a one-click change in Admin → Site Edit. Arthurs Seat may benefit too.
 - **Fix Smart Search manual-test issues** (Jon found issues at end of session 40 — ask Jon for his
-  findings; commit `1455482` is local-only and must NOT be pushed until fixed)
+  findings). Note: the "local-only, do not push" note on commit `1455482` was wrong — see the
+  correction under Open questions. The code is already deployed.
 - After Smart Search fixed: "Report bad answer" button for Smart Search chat
 - Then: TASK-030 Siteguide Version Change Email Notification
 - Future: Weather panel upgrades using WeatherWatcher API (history trend tab) + BRYC data (Red Bluff panel)
 
 ## Open questions / blockers
-- **BLOCKER (carried from session 40):** Jon's manual test of Smart Search safety layer found
-  issues — do not push/deploy commit `1455482` until he describes them and they're fixed
+- **⚠️ CORRECTION (session 44): the Smart Search "do not push" blocker was based on a false
+  premise.** Sessions 40–43 recorded commit `1455482` (Smart Search safety layer) as LOCAL ONLY
+  and blocked from pushing. It is not — `git branch -r --contains 1455482` shows it on
+  `origin/main`, pushed 2026-07-03, with **8 further commits shipped on top of it**. Since
+  Railway auto-deploys `main`, that code has almost certainly been live in production the whole
+  time. **Jon's manual-test issues are therefore live-site issues, not pre-release ones.** They
+  still need his findings and a fix, but the urgency is different from what was recorded.
+  Verify against production before planning the fix.
 - **Confirm MMYC coordinates.** Registry uses `-38.2758, 145.0055` (Esplanade clubhouse), derived
   by hand — the WeatherLink payload carries no lat/lon. Worth eyeballing on the map; it only
   affects distance ranking in the picker, not the readings.
@@ -56,5 +63,5 @@ was reverted. No WU errors on `davis-` IDs.
 ## Quick context refresher
 SkyHigh is the paragliding club platform on Railway. Live weather now comes from five sources,
 each on its own randomised scrape interval configurable in Admin → Scheduled Tasks. Davis is the
-newest and needs no API key. Smart Search safety layer (session 40, commit `1455482`) remains
-local-only pending Jon's manual-test issue list.
+newest and needs no API key. The Smart Search safety layer is already deployed (contrary to
+earlier notes) and Jon's manual-test issues are outstanding against the live site.
