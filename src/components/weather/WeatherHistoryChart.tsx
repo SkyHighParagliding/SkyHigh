@@ -28,11 +28,11 @@ const RIGHT_AXIS = [
 ];
 
 const SVG_W  = 480;
-const SVG_H  = 140;
-const PAD_L  = 26;   // left: knot labels
-const PAD_R  = 30;   // right: compass labels ("NNE" fits in ~24px at 8px font)
-const PAD_T  = 14;
-const PAD_B  = 30;
+const SVG_H  = 210;
+const PAD_L  = 34;   // left: knot labels
+const PAD_R  = 36;   // right: compass labels
+const PAD_T  = 18;
+const PAD_B  = 36;
 const PLOT_W = SVG_W - PAD_L - PAD_R;
 const PLOT_H = SVG_H - PAD_T - PAD_B;
 
@@ -66,7 +66,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
 
   if (points.length < 2) {
     return (
-      <div className="flex items-center justify-center h-24 text-[11px] text-muted-foreground italic">
+      <div className="flex items-center justify-center h-36 text-sm text-muted-foreground italic">
         Not enough data yet — check back once observations accumulate
       </div>
     );
@@ -122,9 +122,9 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
       {knotLines.map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={toYWind(v)} x2={PAD_L + PLOT_W} y2={toYWind(v)}
-            stroke="#e5e7eb" strokeWidth={0.5} />
-          <text x={PAD_L - 3} y={toYWind(v) + 3}
-            textAnchor="end" fontSize={7.5} fill="#9ca3af" fontFamily="system-ui,sans-serif">
+            stroke="#e5e7eb" strokeWidth={0.6} />
+          <text x={PAD_L - 4} y={toYWind(v) + 4}
+            textAnchor="end" fontSize={11} fill="#9ca3af" fontFamily="system-ui,sans-serif">
             {v}
           </text>
         </g>
@@ -135,10 +135,10 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
         const y = toYDir(deg);
         return (
           <g key={label}>
-            <line x1={PAD_L + PLOT_W} y1={y} x2={PAD_L + PLOT_W + 4} y2={y}
-              stroke="#c4b5fd" strokeWidth={0.6} />
-            <text x={PAD_L + PLOT_W + 6} y={y + 3}
-              textAnchor="start" fontSize={7.5} fill="#8b5cf6" fontFamily="system-ui,sans-serif">
+            <line x1={PAD_L + PLOT_W} y1={y} x2={PAD_L + PLOT_W + 5} y2={y}
+              stroke="#c4b5fd" strokeWidth={0.8} />
+            <text x={PAD_L + PLOT_W + 8} y={y + 4}
+              textAnchor="start" fontSize={11} fill="#8b5cf6" fontFamily="system-ui,sans-serif">
               {label}
             </text>
           </g>
@@ -151,7 +151,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
 
       {/* Left axis border */}
       <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={PAD_T + PLOT_H}
-        stroke="#e5e7eb" strokeWidth={0.5} />
+        stroke="#e5e7eb" strokeWidth={0.6} />
 
       {/* Bottom axis */}
       <line x1={PAD_L} y1={PAD_T + PLOT_H} x2={PAD_L + PLOT_W} y2={PAD_T + PLOT_H}
@@ -165,10 +165,10 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
           .replace(' ', '').toLowerCase();
         return (
           <g key={ms}>
-            <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 4}
+            <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 5}
               stroke="#d1d5db" strokeWidth={0.8} />
-            <text x={x} y={PAD_T + PLOT_H + 13}
-              textAnchor="middle" fontSize={8} fill="#9ca3af" fontFamily="system-ui,sans-serif">
+            <text x={x} y={PAD_T + PLOT_H + 16}
+              textAnchor="middle" fontSize={11} fill="#9ca3af" fontFamily="system-ui,sans-serif">
               {label}
             </text>
           </g>
@@ -179,16 +179,16 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
       <path d={areaPath} fill="#0ea5e9" opacity={0.12} />
 
       {/* ── Wind speed line ──────────────────────────────────────────── */}
-      <path d={speedPath} fill="none" stroke="#0ea5e9" strokeWidth={1.8}
+      <path d={speedPath} fill="none" stroke="#0ea5e9" strokeWidth={2}
         strokeLinejoin="round" strokeLinecap="round" />
 
       {/* ── Gust dashed line ─────────────────────────────────────────── */}
-      <path d={gustPath} fill="none" stroke="#f97316" strokeWidth={1.2}
-        strokeDasharray="3,2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={gustPath} fill="none" stroke="#f97316" strokeWidth={1.5}
+        strokeDasharray="4,3" strokeLinejoin="round" strokeLinecap="round" />
 
       {/* ── Direction line (split at wrap) ───────────────────────────── */}
       {dirPaths.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke="#8b5cf6" strokeWidth={1.5}
+        <path key={i} d={d} fill="none" stroke="#8b5cf6" strokeWidth={1.8}
           strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
       ))}
 
@@ -200,7 +200,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
           <circle key={i}
             cx={toX(new Date(p.timestamp).getTime())}
             cy={toYDir(deg)}
-            r={2.5} fill="#8b5cf6" opacity={0.85}
+            r={3} fill="#8b5cf6" opacity={0.85}
           >
             <title>{p.direction}</title>
           </circle>
@@ -209,8 +209,8 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
 
       {/* ── NOW marker ───────────────────────────────────────────────── */}
       <line x1={nowX} y1={PAD_T} x2={nowX} y2={PAD_T + PLOT_H}
-        stroke="#94a3b8" strokeWidth={0.8} strokeDasharray="2,2" />
-      <text x={nowX} y={PAD_T - 2} textAnchor="middle" fontSize={7} fill="#94a3b8"
+        stroke="#94a3b8" strokeWidth={1} strokeDasharray="3,3" />
+      <text x={nowX} y={PAD_T - 4} textAnchor="middle" fontSize={10} fill="#94a3b8"
         fontFamily="system-ui,sans-serif">NOW</text>
 
     </svg>
