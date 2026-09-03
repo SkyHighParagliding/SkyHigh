@@ -24,6 +24,10 @@ export interface WeatherCardRenderProps {
   showTides: boolean;
   setShowTides: (v: boolean) => void;
   effectiveShowTides: boolean;
+  hasLiveWeather: boolean;
+  showHistory: boolean;
+  setShowHistory: (v: boolean) => void;
+  historyData: { points: any[]; buckets: any[] } | null;
   setShowWindMap: (v: boolean) => void;
   windMapPortal: ReactNode;
   IconComponent?: LucideIcon;

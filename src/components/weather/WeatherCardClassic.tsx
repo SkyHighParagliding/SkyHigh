@@ -8,7 +8,7 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
-export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   return (
     <div className="border rounded-3xl p-5 sm:p-8 flex flex-col items-center hover:shadow-xl transition-all bg-card border-sky/10 h-full">
       <div className="flex items-center justify-between w-full mb-5 px-1 gap-2">
@@ -115,6 +115,10 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
         showTides={showTides}
         setShowTides={setShowTides}
         effectiveShowTides={effectiveShowTides}
+        hasLiveWeather={hasLiveWeather}
+        showHistory={showHistory}
+        setShowHistory={setShowHistory}
+        historyData={historyData}
         forecastWindowStartMs={forecastWindowStartMs}
         forecastWindowEndMs={forecastWindowEndMs}
         variant="classic"

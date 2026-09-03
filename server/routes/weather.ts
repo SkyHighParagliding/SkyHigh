@@ -790,6 +790,45 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+router.get("/:siteId/history", asyncHandler(async (req, res) => {
+  const siteId = req.params.siteId;
+  const windowMs = 6 * 60 * 60 * 1000;
+
+  const rows = await query<{ timestamp: string; windSpeed: number | null; windGust: number | null; direction: string | null }>(
+    `SELECT timestamp, "windSpeed", "windGust", direction
+     FROM weather_history
+     WHERE "siteId" = $1 AND timestamp >= NOW() - INTERVAL '6 hours'
+     ORDER BY timestamp ASC`,
+    [siteId]
+  );
+
+  const now = Date.now();
+
+  function modeDir(pts: typeof rows): string | null {
+    if (!pts.length) return null;
+    const counts: Record<string, number> = {};
+    for (const p of pts) { if (p.direction) counts[p.direction] = (counts[p.direction] ?? 0) + 1; }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  }
+
+  function aggregate(pts: typeof rows) {
+    if (!pts.length) return null;
+    const maxGust = Math.max(...pts.map(p => p.windGust ?? 0));
+    const avgWind = Math.round(pts.reduce((s, p) => s + (p.windSpeed ?? 0), 0) / pts.length);
+    return { maxGust, avgWind, avgDir: modeDir(pts) };
+  }
+
+  const buckets = [
+    { label: 'Last 10m',  pts: rows.filter(r => now - new Date(r.timestamp).getTime() <= 10 * 60 * 1000) },
+    { label: '15–30m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
+    { label: '30–60m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
+    { label: '60–120m',   pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
+  ].map(b => ({ label: b.label, ...aggregate(b.pts) }));
+
+  res.setHeader('Cache-Control', 'no-cache');
+  res.json({ points: rows, buckets });
+}));
+
 router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
   const forecast = await getSiteExtendedForecast(req.params.siteId);
   if (!forecast) {

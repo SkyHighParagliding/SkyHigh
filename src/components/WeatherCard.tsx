@@ -21,6 +21,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
   const [hourTick, setHourTick] = useState(0);
   const [showTides, setShowTides] = useState(false);
   const [tideData, setTideData] = useState<TideData | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const isTidal = site && !(site.type || "").toLowerCase().includes("inland");
 
@@ -63,8 +64,20 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     else { setTideData(null); setShowTides(false); }
   }, [tideQueryData]);
 
+  const isLive = weather?.type === 'live';
+
+  const { data: historyData = null } = useQuery({
+    queryKey: ['weather', site?.id, 'history'],
+    queryFn: () => api.get<{ points: any[]; buckets: any[] }>(`/api/weather/${site!.id}/history`).catch(() => null),
+    enabled: !!site?.id && isLive && showHistory,
+    refetchInterval: 2 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+  });
+
   const hasExtended = extendedForecast?.days?.length > 0;
   const effectiveShowTides = tideData ? (showTides || !hasExtended) : false;
+
+  const hasLiveHistory = isLive;
 
   const hasAlt = weather?.altObservation && weather.type === 'live';
   const activeWeather = hasAlt && showAlt ? {
@@ -198,10 +211,14 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     document.body
   );
 
+  const handleSetShowTides = (v: boolean) => { setShowTides(v); if (v) setShowHistory(false); };
+  const handleSetShowHistory = (v: boolean) => { setShowHistory(v); if (v) setShowTides(false); };
+
   const renderProps = {
     site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal,
     windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs,
-    hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides,
+    hasExtended, extendedForecast, tideData, showTides, setShowTides: handleSetShowTides, effectiveShowTides,
+    hasLiveWeather: hasLiveHistory, showHistory, setShowHistory: handleSetShowHistory, historyData: hasLiveHistory ? (historyData ?? null) : null,
     setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP,
   };
 

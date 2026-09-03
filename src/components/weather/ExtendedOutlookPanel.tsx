@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { CloudSun, Waves, type LucideIcon } from 'lucide-react';
+import { CloudSun, Waves, ChartLine, type LucideIcon } from 'lucide-react';
 import { cn, getWindStatus } from '@/lib/utils';
 import { TideChart } from './TideChart';
+import { WeatherHistoryChart } from './WeatherHistoryChart';
+import { WeatherHistoryMatrix } from './WeatherHistoryMatrix';
 import { DayOutlookStatus } from './WindCompass';
 import type { TideData } from './types';
 
@@ -13,6 +15,10 @@ interface ExtendedOutlookPanelProps {
   showTides: boolean;
   setShowTides: (v: boolean) => void;
   effectiveShowTides: boolean;
+  hasLiveWeather: boolean;
+  showHistory: boolean;
+  setShowHistory: (v: boolean) => void;
+  historyData: { points: any[]; buckets: any[] } | null;
   forecastWindowStartMs?: number;
   forecastWindowEndMs?: number;
   variant: 'apple' | 'classic';
@@ -75,12 +81,12 @@ function getSlotHour(timeStr: string): number {
   return parseInt(timeStr.split('T')[1]?.slice(0, 2) ?? '0');
 }
 
-export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
+export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   // Keep last selected data so content stays visible during collapse animation
   const lastDayDataRef = useRef<any>(null);
 
-  if (!hasExtended && !tideData) return null;
+  if (!hasExtended && !tideData && !hasLiveWeather) return null;
 
   const isApple = variant === 'apple';
 
@@ -97,6 +103,9 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
 
   const outlookHideTransform = "translateY(-8px)";
   const tideHideTransform = "translateY(8px)";
+  const historyHideTransform = "translateY(8px)";
+
+  const showOutlook = !effectiveShowTides && !showHistory;
 
   const panelClass = isApple ? "rounded-xl p-3" : "bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10";
   const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
@@ -118,26 +127,36 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
 
   return (
     <div className="w-full mt-3 relative" style={{ overflow: "clip" }}>
+      {/* ── 7-Day Outlook panel ─────────────────────────────────────── */}
       {hasExtended && (
-        <div style={effectiveShowTides
-          ? { ...TOGGLE_HIDE_STYLE, transform: outlookHideTransform }
-          : TOGGLE_SHOW_STYLE
-        }>
+        <div style={showOutlook ? TOGGLE_SHOW_STYLE : { ...TOGGLE_HIDE_STYLE, transform: outlookHideTransform }}>
           <div className={panelClass} style={panelStyle}>
             <div className={cn("flex items-center justify-between", isApple ? "mb-2" : "mb-2 sm:mb-3")}>
               <span className={headerClass} style={headerStyle}>
                 7-Day Outlook
               </span>
-              {tideData && (
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTides(true); }}
-                  className={tidesBtnClass}
-                  style={tidesBtnStyle}
-                >
-                  <Waves className="w-3 h-3" />
-                  <span>Tides</span>
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                {hasLiveWeather && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(true); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <ChartLine className="w-3 h-3" />
+                    <span>History</span>
+                  </button>
+                )}
+                {tideData && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTides(true); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <Waves className="w-3 h-3" />
+                    <span>Tides</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <DayGrid
@@ -170,6 +189,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
         </div>
       )}
 
+      {/* ── Tides panel ─────────────────────────────────────────────── */}
       {tideData && (
         <div style={effectiveShowTides
           ? TOGGLE_SHOW_STYLE
@@ -191,6 +211,60 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               )}
             </div>
             <TideChart tideData={tideData} forecastStartMs={forecastWindowStartMs} forecastEndMs={forecastWindowEndMs} />
+          </div>
+        </div>
+      )}
+
+      {/* ── History panel ────────────────────────────────────────────── */}
+      {hasLiveWeather && (
+        <div style={showHistory
+          ? TOGGLE_SHOW_STYLE
+          : { ...TOGGLE_HIDE_STYLE, transform: historyHideTransform, top: 0 }
+        }>
+          <div className={panelClass} style={panelStyle}>
+            <div className={cn("flex items-center justify-between", isApple ? "mb-2" : "mb-2 sm:mb-3")}>
+              <span className={headerClass} style={headerStyle}>
+                Wind History — last 6h
+              </span>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); }}
+                className={tidesBtnClass}
+                style={tidesBtnStyle}
+              >
+                <span>7-Day</span>
+              </button>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-0.5 bg-sky-400 rounded" />
+                <span className="text-[9px] text-muted-foreground font-medium">Avg Wind</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-0.5 rounded" style={{ background: '#f97316', borderTop: '1px dashed #f97316' }} />
+                <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="flex gap-0.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 opacity-70" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 opacity-70" />
+                  <div className="w-2 h-2 rounded-full bg-amber-400 opacity-70" />
+                </div>
+                <span className="text-[9px] text-muted-foreground font-medium">Direction</span>
+              </div>
+            </div>
+
+            {historyData ? (
+              <>
+                <WeatherHistoryChart points={historyData.points} />
+                <WeatherHistoryMatrix buckets={historyData.buckets} />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-24">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky" />
+              </div>
+            )}
           </div>
         </div>
       )}
