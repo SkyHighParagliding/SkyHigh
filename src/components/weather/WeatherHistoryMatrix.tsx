@@ -13,12 +13,12 @@ export const WeatherHistoryMatrix = memo(function WeatherHistoryMatrix({ buckets
 
   return (
     <div className="mt-3 w-full overflow-x-auto">
-      <table className="w-full text-center border-collapse text-[10px] sm:text-[11px]">
+      <table className="w-full text-center border-collapse">
         <thead>
           <tr>
-            <td className="text-left text-[8px] sm:text-[9px] font-bold text-foreground-faint uppercase tracking-widest pr-2 pb-1 whitespace-nowrap" />
+            <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 pb-1 whitespace-nowrap" />
             {buckets.map(b => (
-              <th key={b.label} className="font-bold text-foreground-faint uppercase tracking-wide pb-1 px-1 whitespace-nowrap">
+              <th key={b.label} className="text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pb-1 px-1 whitespace-nowrap">
                 {b.label}
               </th>
             ))}
@@ -26,25 +26,25 @@ export const WeatherHistoryMatrix = memo(function WeatherHistoryMatrix({ buckets
         </thead>
         <tbody>
           <tr className="border-t border-navy/10">
-            <td className="text-left text-[8px] sm:text-[9px] font-bold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Max Gust</td>
+            <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Max Gust</td>
             {buckets.map(b => (
-              <td key={b.label} className="font-black text-navy py-1.5 px-1">
+              <td key={b.label} className="text-[14px] font-bold text-navy py-1.5 px-1">
                 {val(b.maxGust)}
               </td>
             ))}
           </tr>
           <tr className="border-t border-navy/10">
-            <td className="text-left text-[8px] sm:text-[9px] font-bold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Wind</td>
+            <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Wind</td>
             {buckets.map(b => (
-              <td key={b.label} className="font-black text-navy py-1.5 px-1">
+              <td key={b.label} className="text-[14px] font-bold text-navy py-1.5 px-1">
                 {val(b.avgWind)}
               </td>
             ))}
           </tr>
           <tr className="border-t border-navy/10">
-            <td className="text-left text-[8px] sm:text-[9px] font-bold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Dir</td>
+            <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Dir</td>
             {buckets.map(b => (
-              <td key={b.label} className="font-black text-sky py-1.5 px-1">
+              <td key={b.label} className="text-[14px] font-bold text-sky py-1.5 px-1">
                 {b.avgDir ?? <span className="text-muted-foreground/50">—</span>}
               </td>
             ))}

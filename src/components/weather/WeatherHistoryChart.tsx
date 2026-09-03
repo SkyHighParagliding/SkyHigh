@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useRef, useState, useEffect } from 'react';
 
 interface HistoryPoint {
   timestamp: string;
@@ -7,7 +7,6 @@ interface HistoryPoint {
   direction: string | null;
 }
 
-// 16-point compass → degrees. N=0 at top, clockwise to NNW=337.5 near bottom.
 const COMPASS_DEG: Record<string, number> = {
   N: 0, NNE: 22.5, NE: 45, ENE: 67.5,
   E: 90, ESE: 112.5, SE: 135, SSE: 157.5,
@@ -15,7 +14,6 @@ const COMPASS_DEG: Record<string, number> = {
   W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
 };
 
-// 8 major compass points shown as right-axis tick labels
 const RIGHT_AXIS = [
   { label: 'N',  deg: 0   },
   { label: 'NE', deg: 45  },
@@ -27,33 +25,41 @@ const RIGHT_AXIS = [
   { label: 'NW', deg: 315 },
 ];
 
-const SVG_W  = 480;
-const SVG_H  = 210;
-const PAD_L  = 34;   // left: knot labels
-const PAD_R  = 36;   // right: compass labels
-const PAD_T  = 18;
-const PAD_B  = 36;
-const PLOT_W = SVG_W - PAD_L - PAD_R;
-const PLOT_H = SVG_H - PAD_T - PAD_B;
+// All padding in real CSS pixels — no viewBox, so 1 SVG unit = 1 CSS px.
+const PAD_L = 36;
+const PAD_R = 38;
+const PAD_T = 20;
+const PAD_B = 28;
+const SVG_H = 180;
 
 export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }: { points: HistoryPoint[] }) {
-  const now    = Date.now();
-  const sixH   = 6 * 60 * 60 * 1000;
+  const [svgW, setSvgW] = useState(480);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => setSvgW(entries[0].contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const PLOT_W = svgW - PAD_L - PAD_R;
+  const PLOT_H = SVG_H - PAD_T - PAD_B;
+
+  const now     = Date.now();
+  const sixH    = 6 * 60 * 60 * 1000;
   const startMs = now - sixH;
 
-  const toX = (ms: number) => PAD_L + ((ms - startMs) / sixH) * PLOT_W;
-  const nowX = toX(now);
+  const toX     = (ms: number) => PAD_L + ((ms - startMs) / sixH) * PLOT_W;
+  const nowX    = toX(now);
 
-  // Left Y: wind knots
   const allSpeeds = points.flatMap(p => [p.windSpeed ?? 0, p.windGust ?? 0]);
-  const rawMax = allSpeeds.length ? Math.max(...allSpeeds) : 20;
-  const yMax   = Math.max(Math.ceil(rawMax * 1.25 / 5) * 5, 10);
+  const rawMax  = allSpeeds.length ? Math.max(...allSpeeds) : 20;
+  const yMax    = Math.max(Math.ceil(rawMax * 1.25 / 5) * 5, 10);
   const toYWind = (v: number) => PAD_T + PLOT_H - (v / yMax) * PLOT_H;
+  const toYDir  = (deg: number) => PAD_T + (deg / 360) * PLOT_H;
 
-  // Right Y: compass (0° N = top, 360° = bottom)
-  const toYDir = (deg: number) => PAD_T + (deg / 360) * PLOT_H;
-
-  // Hour tick marks for X axis
   const hourMarks = useMemo(() => {
     const marks: number[] = [];
     const h = new Date(startMs);
@@ -72,12 +78,10 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
     );
   }
 
-  // Left-axis knot grid lines
   const gridStep = yMax <= 20 ? 5 : yMax <= 40 ? 10 : 15;
   const knotLines: number[] = [];
   for (let v = 0; v <= yMax; v += gridStep) knotLines.push(v);
 
-  // Wind speed path + area
   const speedPts = points.map((p, i) => {
     const x = toX(new Date(p.timestamp).getTime());
     const y = toYWind(p.windSpeed ?? 0);
@@ -88,14 +92,16 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
   const lastX  = toX(new Date(points[points.length - 1].timestamp).getTime());
   const areaPath = `${speedPath} L${lastX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} L${firstX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} Z`;
 
-  // Gust path
   const gustPath = points.map((p, i) => {
     const x = toX(new Date(p.timestamp).getTime());
     const y = toYWind(p.windGust ?? 0);
     return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
 
-  // Direction line — break path at wrap-around (>270° jump between consecutive points)
+  // Vertical gap between adjacent compass labels (N→NE = 45°/360° of PLOT_H).
+  // Used to position NOW the same distance above N as N sits above NE.
+  const dirSpacing = (45 / 360) * PLOT_H;
+
   const dirSegments: string[][] = [[]];
   let prevDeg: number | null = null;
   points.forEach(p => {
@@ -115,84 +121,92 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
   });
   const dirPaths = dirSegments.filter(s => s.length > 0).map(s => s.join(' '));
 
-  return (
-    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full" style={{ display: 'block' }}>
+  // Shared text style constants — CSS px, genuinely absolute (no viewBox to scale them).
+  const axisStyle  = { fontSize: '10px', fontWeight: 600, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
+  const compassStyle = { fontSize: '10px', fontWeight: 600, fontFamily: 'system-ui,sans-serif', fill: '#8b5cf6' } as const;
+  const hourStyle  = { fontSize: '12px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
+  const nowStyle   = { fontSize: '10px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#94a3b8' } as const;
 
-      {/* ── Left-axis knot grid lines + labels ──────────────────────── */}
+  return (
+    <svg ref={svgRef} width="100%" height={SVG_H} style={{ display: 'block', overflow: 'visible' }}>
+
+      {/* ── Left-axis knot grid lines + labels ── */}
       {knotLines.map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={toYWind(v)} x2={PAD_L + PLOT_W} y2={toYWind(v)}
             stroke="#e5e7eb" strokeWidth={0.6} />
-          <text x={PAD_L - 4} y={toYWind(v) + 4}
-            textAnchor="end" fontSize={11} fill="#9ca3af" fontFamily="system-ui,sans-serif">
+          <text x={PAD_L - 5} y={toYWind(v)}
+            textAnchor="end" dominantBaseline="middle" style={axisStyle}>
             {v}
           </text>
         </g>
       ))}
 
-      {/* ── Right-axis compass labels + tick marks ───────────────────── */}
+      {/* ── Right-axis compass labels + ticks ── */}
       {RIGHT_AXIS.map(({ label, deg }) => {
         const y = toYDir(deg);
         return (
           <g key={label}>
-            <line x1={PAD_L + PLOT_W} y1={y} x2={PAD_L + PLOT_W + 5} y2={y}
+            <line x1={PAD_L + PLOT_W} y1={y} x2={PAD_L + PLOT_W + 4} y2={y}
               stroke="#c4b5fd" strokeWidth={0.8} />
-            <text x={PAD_L + PLOT_W + 8} y={y + 4}
-              textAnchor="start" fontSize={11} fill="#8b5cf6" fontFamily="system-ui,sans-serif">
+            <text x={PAD_L + PLOT_W + 7} y={y}
+              textAnchor="start" dominantBaseline="middle" style={compassStyle}>
               {label}
             </text>
           </g>
         );
       })}
 
-      {/* Right axis border */}
+      {/* ── Left axis KTS label (rotated) ── */}
+      <text
+        x={8}
+        y={PAD_T + PLOT_H / 2}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        transform={`rotate(-90, 8, ${PAD_T + PLOT_H / 2})`}
+        style={axisStyle}
+      >
+        KTS
+      </text>
+
+      {/* Axis borders */}
       <line x1={PAD_L + PLOT_W} y1={PAD_T} x2={PAD_L + PLOT_W} y2={PAD_T + PLOT_H}
         stroke="#ddd6fe" strokeWidth={0.8} />
-
-      {/* Left axis border */}
       <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={PAD_T + PLOT_H}
         stroke="#e5e7eb" strokeWidth={0.6} />
-
-      {/* Bottom axis */}
       <line x1={PAD_L} y1={PAD_T + PLOT_H} x2={PAD_L + PLOT_W} y2={PAD_T + PLOT_H}
         stroke="#e5e7eb" strokeWidth={0.8} />
 
-      {/* ── Hour tick marks + labels ─────────────────────────────────── */}
+      {/* ── Hour tick marks + labels ── */}
       {hourMarks.map(ms => {
         const x = toX(ms);
         const label = new Date(ms)
           .toLocaleTimeString([], { hour: 'numeric', hour12: true })
-          .replace(' ', '').toLowerCase();
+          .replace(' ', '').toUpperCase();
         return (
           <g key={ms}>
-            <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 5}
+            <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 4}
               stroke="#d1d5db" strokeWidth={0.8} />
-            <text x={x} y={PAD_T + PLOT_H + 16}
-              textAnchor="middle" fontSize={11} fill="#9ca3af" fontFamily="system-ui,sans-serif">
+            <text x={x} y={PAD_T + PLOT_H + 7}
+              textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
               {label}
             </text>
           </g>
         );
       })}
 
-      {/* ── Wind area fill ───────────────────────────────────────────── */}
+      {/* ── Wind area + lines ── */}
       <path d={areaPath} fill="#0ea5e9" opacity={0.12} />
-
-      {/* ── Wind speed line ──────────────────────────────────────────── */}
       <path d={speedPath} fill="none" stroke="#0ea5e9" strokeWidth={2}
         strokeLinejoin="round" strokeLinecap="round" />
-
-      {/* ── Gust dashed line ─────────────────────────────────────────── */}
       <path d={gustPath} fill="none" stroke="#f97316" strokeWidth={1.5}
         strokeDasharray="4,3" strokeLinejoin="round" strokeLinecap="round" />
 
-      {/* ── Direction line (split at wrap) ───────────────────────────── */}
+      {/* ── Direction line + dots ── */}
       {dirPaths.map((d, i) => (
         <path key={i} d={d} fill="none" stroke="#8b5cf6" strokeWidth={1.8}
           strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
       ))}
-
-      {/* ── Direction dots (one per data point) ──────────────────────── */}
       {points.map((p, i) => {
         const deg = p.direction != null ? COMPASS_DEG[p.direction] : undefined;
         if (deg === undefined) return null;
@@ -200,18 +214,19 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
           <circle key={i}
             cx={toX(new Date(p.timestamp).getTime())}
             cy={toYDir(deg)}
-            r={3} fill="#8b5cf6" opacity={0.85}
-          >
+            r={3} fill="#8b5cf6" opacity={0.85}>
             <title>{p.direction}</title>
           </circle>
         );
       })}
 
-      {/* ── NOW marker ───────────────────────────────────────────────── */}
+      {/* ── NOW marker ── */}
       <line x1={nowX} y1={PAD_T} x2={nowX} y2={PAD_T + PLOT_H}
         stroke="#94a3b8" strokeWidth={1} strokeDasharray="3,3" />
-      <text x={nowX} y={PAD_T - 4} textAnchor="middle" fontSize={10} fill="#94a3b8"
-        fontFamily="system-ui,sans-serif">NOW</text>
+      <text x={nowX} y={PAD_T - dirSpacing}
+        textAnchor="middle" dominantBaseline="middle" style={nowStyle}>
+        NOW
+      </text>
 
     </svg>
   );

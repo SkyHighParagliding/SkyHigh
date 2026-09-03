@@ -110,7 +110,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
   const panelClass = isApple ? "rounded-xl p-3" : "bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10";
   const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
   const headerClass = isApple
-    ? "text-[9px] font-semibold uppercase tracking-widest"
+    ? "text-[10px] font-semibold uppercase tracking-widest"
     : "text-[8px] sm:text-[10px] font-bold text-foreground-faint uppercase tracking-widest";
   const headerStyle = isApple ? { color: '#86868b' } : undefined;
   const tidesBtnClass = isApple

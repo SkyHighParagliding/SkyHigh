@@ -798,7 +798,7 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
     station
       ? `SELECT timestamp, "windSpeed", "windGust", direction
          FROM weather_history
-         WHERE "siteId" = $1 AND "stationName" = $2 AND timestamp >= NOW() - INTERVAL '6 hours'
+         WHERE "siteId" = $1 AND ("stationName" = $2 OR "stationName" = '') AND timestamp >= NOW() - INTERVAL '6 hours'
          ORDER BY timestamp ASC`
       : `SELECT timestamp, "windSpeed", "windGust", direction
          FROM weather_history
@@ -824,7 +824,7 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
   }
 
   const buckets = [
-    { label: 'Last 10m',  pts: rows.filter(r => now - new Date(r.timestamp).getTime() <= 10 * 60 * 1000) },
+    { label: 'Last 15m',  pts: rows.filter(r => now - new Date(r.timestamp).getTime() < 15 * 60 * 1000) },
     { label: '15–30m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
     { label: '30–60m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
     { label: '60–120m',   pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
