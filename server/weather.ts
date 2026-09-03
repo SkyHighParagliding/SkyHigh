@@ -19,7 +19,8 @@ async function saveObservation(
   stationName: string,
   lat: number | null,
   lon: number | null,
-  timestamp: string
+  timestamp: string,
+  historySiteId = dbKey  // real site id for history; dbKey may be 'site:alt' for alt sources
 ) {
   await execute('DELETE FROM weather_observations WHERE "siteId" = $1', [dbKey]);
   await execute(
@@ -29,16 +30,16 @@ async function saveObservation(
 
   const last = await queryOne<{ timestamp: string }>(
     'SELECT timestamp FROM weather_history WHERE "siteId" = $1 AND "stationName" = $2 ORDER BY timestamp DESC LIMIT 1',
-    [dbKey, stationName]
+    [historySiteId, stationName]
   );
   if (!last || Date.now() - new Date(last.timestamp).getTime() >= TWO_MIN_MS) {
     await execute(
       'INSERT INTO weather_history ("siteId", "stationName", "windSpeed", "windGust", direction, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
-      [dbKey, stationName, windSpeed, windGust, direction, timestamp]
+      [historySiteId, stationName, windSpeed, windGust, direction, timestamp]
     );
     await execute(
       `DELETE FROM weather_history WHERE "siteId" = $1 AND "stationName" = $2 AND timestamp < NOW() - INTERVAL '${HISTORY_RETENTION_HOURS} hours'`,
-      [dbKey, stationName]
+      [historySiteId, stationName]
     );
   }
 }
@@ -214,7 +215,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
           const lon = typeof stationData.lon === 'number'
             ? stationData.lon
             : (stationData.lon ? parseFloat(String(stationData.lon)) || null : null);
-          await saveObservation(dbKey, windSpeed, windGust, direction, siteName, lat, lon, new Date().toISOString());
+          await saveObservation(dbKey, windSpeed, windGust, direction, siteName, lat, lon, new Date().toISOString(), siteId);
           console.log(`Weather scraper [livewind]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${siteName}`);
         }
       } else if (stationId.startsWith('freeflightwx-')) {
@@ -227,7 +228,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
           const windGust = Math.round(wxData.current.windGustKts);
           const direction = wxData.current.windDirectionCardinal;
           const stationName = stationSlug.charAt(0).toUpperCase() + stationSlug.slice(1) + ' (FreeFlightWx)';
-          await saveObservation(dbKey, windSpeed, windGust, direction, stationName, null, null, new Date(wxData.current.timestamp).toISOString());
+          await saveObservation(dbKey, windSpeed, windGust, direction, stationName, null, null, new Date(wxData.current.timestamp).toISOString(), siteId);
           console.log(`Weather scraper [freeflightwx]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${stationName}`);
         }
       } else if (stationId.startsWith('bom-')) {
@@ -239,7 +240,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
         console.log(`Weather scraper [bom]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
         const bomObs = await fetchBomObservation(parsed.productCode, parsed.stationNum);
         if (bomObs) {
-          await saveObservation(dbKey, bomObs.windSpeed, bomObs.windGust, bomObs.direction, bomObs.stationName, bomObs.stationLat, bomObs.stationLon, bomObs.timestamp);
+          await saveObservation(dbKey, bomObs.windSpeed, bomObs.windGust, bomObs.direction, bomObs.stationName, bomObs.stationLat, bomObs.stationLon, bomObs.timestamp, siteId);
           console.log(`Weather scraper [bom]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${bomObs.windSpeed}kt (Gust ${bomObs.windGust}kt) ${bomObs.direction} from ${bomObs.stationName}`);
         }
       } else if (stationId.startsWith('davis-')) {
@@ -251,7 +252,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
         console.log(`Weather scraper [davis]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
         const davisObs = await fetchDavisObservation(parsed.token);
         if (davisObs) {
-          await saveObservation(dbKey, davisObs.windSpeed, davisObs.windGust, davisObs.direction, davisObs.stationName, davisObs.stationLat, davisObs.stationLon, davisObs.timestamp);
+          await saveObservation(dbKey, davisObs.windSpeed, davisObs.windGust, davisObs.direction, davisObs.stationName, davisObs.stationLat, davisObs.stationLon, davisObs.timestamp, siteId);
           console.log(`Weather scraper [davis]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${davisObs.windSpeed}kt (Gust ${davisObs.windGust}kt) ${davisObs.direction} from ${davisObs.stationName}`);
         }
       } else {
@@ -274,7 +275,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
           const windGust  = Math.round((latest.metric?.windGust  ?? 0) * 0.539957);
           const direction = degreesToDirection(latest.winddir ?? 0);
           const stationName = latest.neighborhood || stationId;
-          await saveObservation(dbKey, windSpeed, windGust, direction, stationName, latest.lat, latest.lon, new Date(latest.obsTimeUtc).toISOString());
+          await saveObservation(dbKey, windSpeed, windGust, direction, stationName, latest.lat, latest.lon, new Date(latest.obsTimeUtc).toISOString(), siteId);
           console.log(`Weather scraper [wu]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${stationName}`);
         }
       }
