@@ -82,44 +82,55 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points }:
   const knotLines: number[] = [];
   for (let v = 0; v <= yMax; v += gridStep) knotLines.push(v);
 
-  const speedPts = points.map((p, i) => {
-    const x = toX(new Date(p.timestamp).getTime());
-    const y = toYWind(p.windSpeed ?? 0);
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const speedPath = speedPts.join(' ');
-  const firstX = toX(new Date(points[0].timestamp).getTime());
-  const lastX  = toX(new Date(points[points.length - 1].timestamp).getTime());
-  const areaPath = `${speedPath} L${lastX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} L${firstX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} Z`;
+  // Catmull-Rom → cubic bezier smooth path
+  function smooth(pts: [number, number][], tension = 0.3): string {
+    if (pts.length < 2) return '';
+    if (pts.length === 2)
+      return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const cp1x = p1[0] + (p2[0] - p0[0]) * tension;
+      const cp1y = p1[1] + (p2[1] - p0[1]) * tension;
+      const cp2x = p2[0] - (p3[0] - p1[0]) * tension;
+      const cp2y = p2[1] - (p3[1] - p1[1]) * tension;
+      d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
+  }
 
-  const gustPath = points.map((p, i) => {
-    const x = toX(new Date(p.timestamp).getTime());
-    const y = toYWind(p.windGust ?? 0);
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
+  const speedXY = points.map(p => [toX(new Date(p.timestamp).getTime()), toYWind(p.windSpeed ?? 0)] as [number, number]);
+  const gustXY  = points.map(p => [toX(new Date(p.timestamp).getTime()), toYWind(p.windGust  ?? 0)] as [number, number]);
+
+  const speedPath = smooth(speedXY);
+  const firstX = speedXY[0][0];
+  const lastX  = speedXY[speedXY.length - 1][0];
+  const areaPath = `${speedPath} L${lastX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} L${firstX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} Z`;
+  const gustPath  = smooth(gustXY);
 
   // Vertical gap between adjacent compass labels (N→NE = 45°/360° of PLOT_H).
   // Used to position NOW the same distance above N as N sits above NE.
   const dirSpacing = (45 / 360) * PLOT_H;
 
-  const dirSegments: string[][] = [[]];
+  const dirSegmentPts: [number, number][][] = [[]];
   let prevDeg: number | null = null;
   points.forEach(p => {
     const deg = p.direction != null ? COMPASS_DEG[p.direction] : undefined;
     if (deg === undefined) return;
     const x = toX(new Date(p.timestamp).getTime());
     const y = toYDir(deg);
-    const seg = dirSegments[dirSegments.length - 1];
+    const seg = dirSegmentPts[dirSegmentPts.length - 1];
     if (prevDeg !== null && Math.abs(deg - prevDeg) > 270) {
-      dirSegments.push([`M${x.toFixed(1)},${y.toFixed(1)}`]);
-    } else if (seg.length === 0) {
-      seg.push(`M${x.toFixed(1)},${y.toFixed(1)}`);
+      dirSegmentPts.push([[x, y]]);
     } else {
-      seg.push(`L${x.toFixed(1)},${y.toFixed(1)}`);
+      seg.push([x, y]);
     }
     prevDeg = deg;
   });
-  const dirPaths = dirSegments.filter(s => s.length > 0).map(s => s.join(' '));
+  const dirPaths = dirSegmentPts.filter(s => s.length > 0).map(s => smooth(s, 0.2));
 
   // Shared text style constants — CSS px, genuinely absolute (no viewBox to scale them).
   const axisStyle  = { fontSize: '10px', fontWeight: 600, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
