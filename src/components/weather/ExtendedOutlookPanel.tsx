@@ -105,7 +105,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
   const tideHideTransform = "translateY(8px)";
   const historyHideTransform = "translateY(8px)";
 
-  const showOutlook = !effectiveShowTides && !showHistory;
+  const showOutlook = !effectiveShowTides && (!showHistory || !hasLiveWeather);
 
   const panelClass = isApple ? "rounded-xl p-3" : "bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10";
   const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
@@ -285,7 +285,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
             {historyData ? (
               <>
                 <WeatherHistoryChart points={historyData.points} />
-                <WeatherHistoryMatrix buckets={historyData.buckets} />
+                <WeatherHistoryMatrix buckets={historyData.buckets} site={site} />
               </>
             ) : (
               <div className="flex items-center justify-center h-24">

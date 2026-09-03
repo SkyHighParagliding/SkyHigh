@@ -21,7 +21,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
   const [hourTick, setHourTick] = useState(0);
   const [showTides, setShowTides] = useState(false);
   const [tideData, setTideData] = useState<TideData | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
 
   const isTidal = site && !(site.type || "").toLowerCase().includes("inland");
 
