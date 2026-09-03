@@ -200,15 +200,27 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <span className={tideLabelClass} style={tideLabelStyle}>
                 Tides — {tideData.stationName}
               </span>
-              {hasExtended && (
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTides(false); }}
-                  className={tidesBtnClass}
-                  style={tidesBtnStyle}
-                >
-                  <span>7-Day</span>
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                {hasLiveWeather && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(true); setShowTides(false); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <ChartLine className="w-3 h-3" />
+                    <span>History</span>
+                  </button>
+                )}
+                {hasExtended && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTides(false); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <span>7-Day</span>
+                  </button>
+                )}
+              </div>
             </div>
             <TideChart tideData={tideData} forecastStartMs={forecastWindowStartMs} forecastEndMs={forecastWindowEndMs} />
           </div>
@@ -226,13 +238,27 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <span className={headerClass} style={headerStyle}>
                 Wind History — last 6h
               </span>
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); }}
-                className={tidesBtnClass}
-                style={tidesBtnStyle}
-              >
-                <span>7-Day</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                {tideData && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); setShowTides(true); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <Waves className="w-3 h-3" />
+                    <span>Tides</span>
+                  </button>
+                )}
+                {hasExtended && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <span>7-Day</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Legend */}
