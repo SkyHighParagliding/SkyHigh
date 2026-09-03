@@ -66,9 +66,19 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
 
   const isLive = weather?.type === 'live';
 
+  const hasAlt = weather?.altObservation && weather.type === 'live';
+  const activeStationName: string | null = hasAlt && showAlt
+    ? (weather.altObservation.stationName ?? null)
+    : (weather?.stationName ?? null);
+
   const { data: historyData = null } = useQuery({
-    queryKey: ['weather', site?.id, 'history'],
-    queryFn: () => api.get<{ points: any[]; buckets: any[] }>(`/api/weather/${site!.id}/history`).catch(() => null),
+    queryKey: ['weather', site?.id, 'history', activeStationName],
+    queryFn: () => {
+      const url = activeStationName
+        ? `/api/weather/${site!.id}/history?station=${encodeURIComponent(activeStationName)}`
+        : `/api/weather/${site!.id}/history`;
+      return api.get<{ points: any[]; buckets: any[] }>(url).catch(() => null);
+    },
     enabled: !!site?.id && isLive && showHistory,
     refetchInterval: 2 * 60 * 1000,
     staleTime: 2 * 60 * 1000,
@@ -79,7 +89,6 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
 
   const hasLiveHistory = isLive;
 
-  const hasAlt = weather?.altObservation && weather.type === 'live';
   const activeWeather = hasAlt && showAlt ? {
     ...weather,
     windSpeed: weather.altObservation.windSpeed,

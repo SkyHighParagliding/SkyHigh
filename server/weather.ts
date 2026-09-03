@@ -28,17 +28,17 @@ async function saveObservation(
   );
 
   const last = await queryOne<{ timestamp: string }>(
-    'SELECT timestamp FROM weather_history WHERE "siteId" = $1 ORDER BY timestamp DESC LIMIT 1',
-    [dbKey]
+    'SELECT timestamp FROM weather_history WHERE "siteId" = $1 AND "stationName" = $2 ORDER BY timestamp DESC LIMIT 1',
+    [dbKey, stationName]
   );
   if (!last || Date.now() - new Date(last.timestamp).getTime() >= TWO_MIN_MS) {
     await execute(
-      'INSERT INTO weather_history ("siteId", "windSpeed", "windGust", direction, timestamp) VALUES ($1, $2, $3, $4, $5)',
-      [dbKey, windSpeed, windGust, direction, timestamp]
+      'INSERT INTO weather_history ("siteId", "stationName", "windSpeed", "windGust", direction, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+      [dbKey, stationName, windSpeed, windGust, direction, timestamp]
     );
     await execute(
-      `DELETE FROM weather_history WHERE "siteId" = $1 AND timestamp < NOW() - INTERVAL '${HISTORY_RETENTION_HOURS} hours'`,
-      [dbKey]
+      `DELETE FROM weather_history WHERE "siteId" = $1 AND "stationName" = $2 AND timestamp < NOW() - INTERVAL '${HISTORY_RETENTION_HOURS} hours'`,
+      [dbKey, stationName]
     );
   }
 }

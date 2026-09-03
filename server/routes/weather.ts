@@ -792,14 +792,19 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
 
 router.get("/:siteId/history", asyncHandler(async (req, res) => {
   const siteId = req.params.siteId;
-  const windowMs = 6 * 60 * 60 * 1000;
+  const station = typeof req.query.station === 'string' ? req.query.station : null;
 
   const rows = await query<{ timestamp: string; windSpeed: number | null; windGust: number | null; direction: string | null }>(
-    `SELECT timestamp, "windSpeed", "windGust", direction
-     FROM weather_history
-     WHERE "siteId" = $1 AND timestamp >= NOW() - INTERVAL '6 hours'
-     ORDER BY timestamp ASC`,
-    [siteId]
+    station
+      ? `SELECT timestamp, "windSpeed", "windGust", direction
+         FROM weather_history
+         WHERE "siteId" = $1 AND "stationName" = $2 AND timestamp >= NOW() - INTERVAL '6 hours'
+         ORDER BY timestamp ASC`
+      : `SELECT timestamp, "windSpeed", "windGust", direction
+         FROM weather_history
+         WHERE "siteId" = $1 AND timestamp >= NOW() - INTERVAL '6 hours'
+         ORDER BY timestamp ASC`,
+    station ? [siteId, station] : [siteId]
   );
 
   const now = Date.now();
