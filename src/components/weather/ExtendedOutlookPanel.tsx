@@ -264,20 +264,21 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
             {/* Legend */}
             <div className="flex items-center gap-3 mb-2">
               <div className="flex items-center gap-1">
-                <div className="w-6 h-0.5 bg-sky-400 rounded" />
-                <span className="text-[9px] text-muted-foreground font-medium">Avg Wind</span>
+                <div className="w-5 h-0.5 bg-sky-400 rounded" />
+                <span className="text-[9px] text-muted-foreground font-medium">Wind</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-6 h-0.5 rounded" style={{ background: '#f97316', borderTop: '1px dashed #f97316' }} />
+                <svg width="20" height="6" style={{ display: 'block' }}>
+                  <line x1="0" y1="3" x2="20" y2="3" stroke="#f97316" strokeWidth="1.5" strokeDasharray="3,2" />
+                </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="flex gap-0.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 opacity-70" />
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 opacity-70" />
-                  <div className="w-2 h-2 rounded-full bg-amber-400 opacity-70" />
-                </div>
-                <span className="text-[9px] text-muted-foreground font-medium">Direction</span>
+                <svg width="20" height="6" style={{ display: 'block' }}>
+                  <line x1="0" y1="3" x2="20" y2="3" stroke="#8b5cf6" strokeWidth="1.5" />
+                  <circle cx="10" cy="3" r="2" fill="#8b5cf6" />
+                </svg>
+                <span className="text-[9px] text-muted-foreground font-medium">Dir (right axis)</span>
               </div>
             </div>
 
