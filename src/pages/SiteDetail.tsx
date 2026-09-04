@@ -112,7 +112,7 @@ export function SiteDetail() {
       )}
 
       {/* Hero Header */}
-      <div data-hero className="relative h-[40vh] min-h-[300px] w-full bg-gradient-to-br from-slate-300 to-slate-400">
+      <div data-hero className="relative w-full overflow-hidden bg-gradient-to-br from-slate-300 to-slate-400 aspect-video max-h-[60vh]">
         {site.image && site.image.trim() ? (
           <img
             src={site.image}
