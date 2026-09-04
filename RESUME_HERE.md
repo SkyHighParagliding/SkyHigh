@@ -1,11 +1,33 @@
-# RESUME_HERE — Last updated: 2026-09-03 (session 45)
+# RESUME_HERE — Last updated: 2026-09-05 (session 46)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 45 was a polish pass on the **Wind History panel** (introduced last session):
+Session 46 investigated two things:
+
+- **3 Sisters Flowerdale showing forecast instead of live weather** — diagnosed: FreeFlightWx
+  station was offline. Code is correct; graceful fallback to forecast is intended behaviour.
+  Station came back online during the session and resumed updating automatically.
+
+- **Hero/banner image scaling on mobile** — site detail hero fixed: now uses `aspect-video
+  max-h-[60vh]` instead of `h-[40vh] min-h-[300px]`. Since all hero images are 1920×1080
+  (confirmed in `server/routes/ai.ts`), the 16:9 container shows the full image with zero
+  cropping on any viewport. Committed d5483e1.
+
+  **Home hero is NOT fixed** — it's `min-h-[100vh]` (full-screen glass hero) and there is a
+  fundamental tension: landscape image + portrait phone = you can't show the full image AND
+  fill the screen. Two options being considered (Jon to decide):
+    - **Option A**: `aspect-video` on mobile → shorter hero, full image visible, CTAs below
+    - **Option C**: Use `sliderPortrait` image variant for the mobile hero src
+
+## Last completed task
+- Session 46 (2026-09-05): Site detail hero aspect-video fix (commit d5483e1)
+- Session 45 (2026-09-03): Wind History panel polish
+
+## Currently in progress
+- Nothing
 
 - **Multi-source history**: Sites with two live sources (e.g. Flinders Golf Club) now track
   each source independently. History query passes `?station=<name>` and switches automatically
