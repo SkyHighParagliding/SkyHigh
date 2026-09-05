@@ -102,8 +102,8 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
       </div>
       
       {twilight && (
-        <div className="flex items-center gap-3 mb-4 text-[11px] font-medium text-muted-foreground">
-          <span className="font-bold uppercase tracking-widest text-[9px]">Daylight</span>
+        <div className="flex items-center gap-3 mb-4 text-[9px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <span>Daylight</span>
           <span className="flex items-center gap-1">
             <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
               <ArrowUp className="w-2.5 h-2.5" />
