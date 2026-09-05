@@ -289,7 +289,7 @@ export function SiteDetail() {
                       <span className="font-medium">Blown Out / Not Flyable</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500/50 shadow-sm shrink-0"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0"></span>
                       <span className="font-medium">Ideal Wind Dir</span>
                     </div>
                   </div>

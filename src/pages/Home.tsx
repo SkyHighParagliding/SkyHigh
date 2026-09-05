@@ -734,7 +734,7 @@ export function Home() {
               </div>
               {!isGlass && (
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-sky-500/50 shadow-sm"></span>
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></span>
                   <span className="font-medium">Ideal Wind Dir</span>
                 </div>
               )}
