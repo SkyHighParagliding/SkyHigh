@@ -284,14 +284,25 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Dir</span>
               </div>
-              {nextReadingMs != null && (() => {
-                const minsLeft = Math.max(0, Math.ceil((nextReadingMs - Date.now()) / 60000));
-                return (
-                  <span className="text-[9px] text-muted-foreground font-medium ml-auto">
-                    Next reading {minsLeft <= 0 ? '< 1m' : `${minsLeft}m`}
-                  </span>
-                );
-              })()}
+              <div className="flex flex-col items-end ml-auto gap-0.5">
+                {nextReadingMs != null && (() => {
+                  const minsLeft = Math.max(0, Math.ceil((nextReadingMs - Date.now()) / 60000));
+                  return (
+                    <span className="text-[9px] text-muted-foreground font-medium">
+                      Next reading {minsLeft <= 0 ? '< 1m' : `${minsLeft}m`}
+                    </span>
+                  );
+                })()}
+                {historyData && historyData.points.length > 0 && (() => {
+                  const last = historyData.points[historyData.points.length - 1];
+                  const t = new Date(last.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+                  return (
+                    <span className="text-[9px] text-muted-foreground font-medium">
+                      Last reading {t}
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
 
             {historyData ? (
