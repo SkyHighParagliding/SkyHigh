@@ -1,41 +1,29 @@
-# RESUME_HERE — Last updated: 2026-09-05 (session 48)
+# RESUME_HERE — Last updated: 2026-09-05 (session 49)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 48 — extensive Wind History chart polish + weather card UI refinements. All pushed to production.
+Session 49 — bug fixes across weather scraper and wind history chart, plus two new features.
 
-**Wind History chart (WeatherHistoryChart.tsx):**
-- Speed/gust lines: smooth Catmull-Rom bezier via SVG `clipPath` zones (red/green/yellow) — restores smoothing lost by the earlier splitSegment approach
-- Left colour bar overlaid on Y-axis line showing blown-out/good/light zones
-- Green dashed horizontal lines at min and max ideal speed with green labels; regular grid line suppressed at those values
-- 16-point compass right axis with direction dots coloured ideal/cross/not-flyable (green/orange/red)
-- Last reading time (HH:MM) shown below the NOW dashed line, in hour-label style
-- Hour tick labels suppressed when within 36px of the last-reading label to prevent overlap
-- "NOW" text removed from above compass labels
+**Completed this session:**
+1. **Davis/WeatherLink gust fix** — switched from `getData` (returns daily-max gust, stuck all day) to `summaryData` endpoint (sensorDataTypeId 85 = current 10-min high wind). `server/davisWeather.ts` fully rewritten with fallback.
+2. **Configurable scraper schedule** — Admin Weather Management page now has start time, end time, and "Run continuously (24 hours)" controls. Saved to `settings` table, honoured by backend scheduler without restart. `server/weather.ts`, `server/seed.ts`, `src/contexts/SettingsContext.tsx`, `src/pages/AdminWeather.tsx`.
+3. **`weatherScraperLastRun` fix** — was only written by manual "Fetch Now". Now also written by every automatic scraper cycle, so admin panel timestamp reflects true last run.
+4. **SQL param count hotfix** — added `$5` missing placeholder in `getSourceSettings` query (caused Railway crash on deployment).
 
-**ExtendedOutlookPanel.tsx (Wind History legend):**
-- Wind legend: solid green line; Gust: dashed green line; Dir: three green dots
-- "Last reading HH:MM" above "Next reading in Xm" (tight gap, right-aligned)
-- "(right axis)" dropped from Dir label
+**Commits this session:**
+- `3a567eb` — fix: Davis station gust now uses current 10-min high, not daily max
+- `c1dcb3b` — feat: configurable live weather scraper schedule in admin
+- `da9e01a` — fix: add missing $5 placeholder in scraper settings query
+- `3ad053f` — fix: update weatherScraperLastRun on every automatic scraper cycle
 
-**Legend bars (Home + SiteDetail):**
-- Ideal Wind Dir dot: green (was sky-blue, was being overridden by template)
-- Cross dot: bg-orange-500 (was bg-orange CSS variable, overridden by template to blue)
-
-**WeatherCardApple.tsx:**
-- Wind speed number coloured by speed status (green/yellow/red)
-- Live station line: `text-[10px] font-semibold uppercase tracking-widest` matching DAYLIGHT style
-- Station line order: FRANKSTON BEACH · LIVE · 13.9KM · 12:56PM
-- Navigation icon removed from station line
-- DAYLIGHT row font matches ECMWF Forecast label size
-- Gap between station line and DAYLIGHT row tightened (mb-5 → mb-1)
+All pushed and deployed to Railway.
 
 ## Last completed task
-- Session 48 (2026-09-05): Wind history chart polish + weather card UI refinements (commits c3793f4–4d88eaa)
-- Session 47 (2026-09-05): Cleared Smart Search fixes, TASK-030, Craigie Rd repoint
+- Session 49 (2026-09-05): Davis gust fix + scraper schedule UI + last-run timestamp fix
+- Session 48 (2026-09-05): Wind history chart polish + weather card UI refinements
 
 ## Currently in progress
 - Nothing
@@ -51,6 +39,7 @@ Session 48 — extensive Wind History chart polish + weather card UI refinements
 - **MMYC coordinates** — registry uses `-38.2758, 145.0055` (derived by hand). Worth eyeballing on a map.
 
 ## Quick context refresher
-SkyHigh is the paragliding club platform on Railway. Session 48 was a major UI polish pass on the
-Wind History chart and Apple-style weather cards. All changes are live in production. Next quick win
-is the "Report bad answer" button in Smart Search.
+SkyHigh is the paragliding club platform on Railway. Session 49 fixed the Davis WeatherLink gust
+(was showing daily max all day instead of current reading), added admin-configurable scraper
+schedule with a "run continuously" option, and fixed a crash caused by a SQL parameter count
+mismatch. All live. Next quick win is the "Report bad answer" button in Smart Search.
