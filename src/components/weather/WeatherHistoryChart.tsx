@@ -12,7 +12,7 @@ const ALL_DIRS_16 = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','W
 
 const IDEAL_COLOR   = '#10b981';
 const CROSS_COLOR   = '#f97316';
-const NEUTRAL_COLOR = '#9ca3af';
+const NEUTRAL_COLOR = '#ef4444';
 
 function buildDirSets(site: any) {
   const idealDirs = getIdealDirections(site ?? {});
