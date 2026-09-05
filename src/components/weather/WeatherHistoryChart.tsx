@@ -44,6 +44,19 @@ function spdColor(speed: number, min: number | null, max: number | null): string
   return '#10b981';                   // good
 }
 
+function circularMean(degrees: number[]): number {
+  if (degrees.length === 0) return 180;
+  const sinSum = degrees.reduce((s, d) => s + Math.sin(d * Math.PI / 180), 0);
+  const cosSum = degrees.reduce((s, d) => s + Math.cos(d * Math.PI / 180), 0);
+  return ((Math.atan2(sinSum, cosSum) * 180 / Math.PI) + 360) % 360;
+}
+
+function normDiff(diff: number): number {
+  while (diff > 180)  diff -= 360;
+  while (diff <= -180) diff += 360;
+  return diff;
+}
+
 
 const COMPASS_DEG: Record<string, number> = {
   N: 0, NNE: 22.5, NE: 45, ENE: 67.5,
@@ -110,7 +123,19 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const rawMax  = allSpeeds.length ? Math.max(...allSpeeds) : 20;
   const yMax    = Math.max(Math.ceil(rawMax * 1.25 / 5) * 5, 10);
   const toYWind = (v: number) => PAD_T + PLOT_H - (v / yMax) * PLOT_H;
-  const toYDir  = (deg: number) => PAD_T + (deg / 360) * PLOT_H;
+
+  // Dynamic direction axis: anchor the circular mean of ideal directions
+  // to the midpoint of the ideal speed zone so green aligns with green.
+  const idealDegs = Array.from(idealSet)
+    .map(d => COMPASS_DEG[d])
+    .filter((d): d is number => d !== undefined);
+  const hasDynDir = idealDegs.length > 0 && minSpeed !== null && maxSpeed !== null;
+  const dirCenterY   = hasDynDir
+    ? (toYWind(minSpeed!) + toYWind(maxSpeed!)) / 2
+    : PAD_T + PLOT_H / 2;
+  const dirCenterDeg = hasDynDir ? circularMean(idealDegs) : 180;
+  const toYDir = (deg: number) =>
+    dirCenterY + normDiff(deg - dirCenterDeg) * (PLOT_H / 360);
 
   const hourMarks = useMemo(() => {
     const marks: number[] = [];
