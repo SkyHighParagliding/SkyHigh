@@ -76,7 +76,7 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
         </div>
       </div>
 
-      <div className="w-full flex items-center justify-between text-[11px] sm:text-sm text-muted-foreground mb-5 px-3 sm:px-4 py-2 sm:py-3 bg-background rounded-2xl border border-border-faint">
+      <div className="w-full flex items-center justify-between text-[11px] sm:text-sm text-muted-foreground mb-2.5 px-3 sm:px-4 py-2 sm:py-3 bg-background rounded-2xl border border-border-faint">
         <div className="flex items-center gap-2 sm:gap-3 truncate">
           <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg font-black text-[9px] sm:text-xs text-white uppercase shrink-0 shadow-sm ${activeWeather.type === 'live' ? 'bg-sky' : 'bg-gray-400'}`}>
             {activeWeather.type === 'live' ? 'LIVE' : 'FCST'}
