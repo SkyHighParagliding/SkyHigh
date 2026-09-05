@@ -88,7 +88,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#86868b' }}>Wind</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-5xl font-bold leading-none" style={{ color: '#1d1d1f' }}>{Math.round(activeWeather.windSpeed)}</span>
+              <span className="text-5xl font-bold leading-none" style={{ color: spdBadgeColor }}>{Math.round(activeWeather.windSpeed)}</span>
               <span className="text-lg font-medium" style={{ color: '#86868b' }}>kt</span>
               {activeWeather.windGust > 0 && (
                 <span className="text-2xl font-bold leading-none ml-1" style={{ color: gustColor }}>G{Math.round(activeWeather.windGust)}</span>
