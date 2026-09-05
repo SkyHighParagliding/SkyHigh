@@ -290,7 +290,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                   const t = new Date(last.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
                   return (
                     <span className="text-[9px] text-muted-foreground font-medium">
-                      Last read {t}
+                      Last reading {t}
                     </span>
                   );
                 })()}
