@@ -35,7 +35,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 text-[12px] mb-2.5" style={{ color: '#86868b' }}>
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#86868b' }}>
         <Navigation className="w-3 h-3" />
         <span>{activeWeather.type === 'live' ? 'Live' : 'Forecast'} - {activeWeather.stationName || site.name}</span>
         {distance && <span>· {distance}km</span>}
