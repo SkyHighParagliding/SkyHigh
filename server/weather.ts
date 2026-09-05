@@ -308,9 +308,14 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
 
     await updateForecasts(isManual);
 
+    const now = new Date().toISOString();
     await execute(
       "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
-      [`weatherScraper_${SOURCE_KEY[type]}_lastRun`, new Date().toISOString()]
+      [`weatherScraper_${SOURCE_KEY[type]}_lastRun`, now]
+    );
+    await execute(
+      "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      ['weatherScraperLastRun', now]
     );
   } catch (err) {
     log.error(`Weather scraper [${type}]: CRITICAL ERROR:`, err);
