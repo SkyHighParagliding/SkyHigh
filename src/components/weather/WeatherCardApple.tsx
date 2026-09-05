@@ -37,9 +37,10 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
 
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#86868b' }}>
         <Navigation className="w-3 h-3" />
-        <span>{activeWeather.type === 'live' ? 'Live' : 'Forecast'} - {activeWeather.stationName || site.name}</span>
+        <span>{activeWeather.stationName || site.name}</span>
+        <span>· {activeWeather.type === 'live' ? 'Live' : 'Forecast'}</span>
         {distance && <span>· {distance}km</span>}
-        <span>· {formatDisplayTime(activeWeather.timestamp)}</span>
+        <span>· {new Date(activeWeather.timestamp).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s/g, '')}</span>
         {hasAlt && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowAlt(!showAlt); }}
