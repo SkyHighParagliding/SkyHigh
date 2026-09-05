@@ -165,15 +165,14 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const areaPath = `${speedPath} L${lastX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} L${firstX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} Z`;
   const gustPath  = smooth(gustXY);
 
-  // Vertical gap between adjacent compass labels (N→NE = 45°/360° of PLOT_H).
-  // Used to position NOW the same distance above N as N sits above NE.
-  const dirSpacing = (45 / 360) * PLOT_H;
-
+  const lastPoint = points[points.length - 1];
+  const lastReadingLabel = new Date(lastPoint.timestamp).toLocaleTimeString('en-AU', {
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
 
   // Shared text style constants — CSS px, genuinely absolute (no viewBox to scale them).
   const axisStyle  = { fontSize: '10px', fontWeight: 600, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
   const hourStyle  = { fontSize: '12px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
-  const nowStyle   = { fontSize: '10px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#94a3b8' } as const;
 
   return (
     <svg ref={svgRef} width="100%" height={SVG_H} style={{ display: 'block', overflow: 'visible' }}>
@@ -336,12 +335,12 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
         );
       })}
 
-      {/* ── NOW marker ── */}
+      {/* ── NOW marker + last reading time label ── */}
       <line x1={nowX} y1={PAD_T} x2={nowX} y2={PAD_T + PLOT_H}
         stroke="#94a3b8" strokeWidth={1} strokeDasharray="3,3" />
-      <text x={nowX} y={PAD_T - dirSpacing}
-        textAnchor="middle" dominantBaseline="middle" style={nowStyle}>
-        NOW
+      <text x={nowX} y={PAD_T + PLOT_H + 7}
+        textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
+        {lastReadingLabel}
       </text>
 
     </svg>
