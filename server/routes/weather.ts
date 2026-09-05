@@ -827,11 +827,27 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
     return { maxGust, avgWind, avgDir: modeDir(pts) };
   }
 
+  const dayRows = await query<{ timestamp: string; windSpeed: number | null; windGust: number | null; direction: string | null }>(
+    station
+      ? `SELECT timestamp, "windSpeed", "windGust", direction
+         FROM weather_history
+         WHERE "siteId" = $1 AND ("stationName" = $2 OR "stationName" = '')
+         AND timestamp >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Australia/Melbourne') AT TIME ZONE 'Australia/Melbourne'
+         ORDER BY timestamp ASC`
+      : `SELECT timestamp, "windSpeed", "windGust", direction
+         FROM weather_history
+         WHERE "siteId" = $1
+         AND timestamp >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Australia/Melbourne') AT TIME ZONE 'Australia/Melbourne'
+         ORDER BY timestamp ASC`,
+    station ? [siteId, station] : [siteId]
+  );
+
   const buckets = [
-    { label: 'Last 15m',  pts: rows.filter(r => now - new Date(r.timestamp).getTime() < 15 * 60 * 1000) },
-    { label: '15–30m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
-    { label: '30–60m',    pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
-    { label: '60–120m',   pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
+    { label: '0–15m',   pts: rows.filter(r => now - new Date(r.timestamp).getTime() < 15 * 60 * 1000) },
+    { label: '15–30m',  pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
+    { label: '30–60m',  pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
+    { label: '60–120m', pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
+    { label: 'Day',     pts: dayRows },
   ].map(b => ({ label: b.label, ...aggregate(b.pts) }));
 
   res.setHeader('Cache-Control', 'no-cache');

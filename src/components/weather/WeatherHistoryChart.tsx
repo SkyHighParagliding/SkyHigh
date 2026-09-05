@@ -1,5 +1,6 @@
-import { memo, useMemo, useRef, useState, useEffect } from 'react';
+import React, { memo, useMemo, useRef, useState, useEffect } from 'react';
 import { getIdealDirections, parseWindSpeed } from '@/lib/utils';
+import type { TideData } from './types';
 
 interface HistoryPoint {
   timestamp: string;
@@ -85,13 +86,15 @@ const RIGHT_AXIS = [
 ];
 
 // All padding in real CSS pixels — no viewBox, so 1 SVG unit = 1 CSS px.
-const PAD_L = 36;
-const PAD_R = 38;
+const PAD_L = 40;
+const PAD_R = 56;
 const PAD_T = 20;
 const PAD_B = 28;
 const SVG_H = 280;
+const TIDE_H = 32;   // height of the tide strip
+const TIDE_PAD = 6;  // gap between wind plot bottom and tide strip top
 
-export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, site }: { points: HistoryPoint[]; site?: any }) {
+export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, site, tideData }: { points: HistoryPoint[]; site?: any; tideData?: TideData | null }) {
   const { idealSet, crossSet } = useMemo(() => buildDirSets(site), [site]);
 
   const { minSpeed, maxSpeed } = useMemo(() => {
@@ -130,12 +133,18 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     .map(d => COMPASS_DEG[d])
     .filter((d): d is number => d !== undefined);
   const hasDynDir = idealDegs.length > 0 && minSpeed !== null && maxSpeed !== null;
+  // Anchor ideal-direction centre exactly to the ideal speed zone midpoint.
+  // Compass labels / dots outside the plot bounds are hidden rather than clamping.
   const dirCenterY   = hasDynDir
     ? (toYWind(minSpeed!) + toYWind(maxSpeed!)) / 2
     : PAD_T + PLOT_H / 2;
   const dirCenterDeg = hasDynDir ? circularMean(idealDegs) : 180;
-  const toYDir = (deg: number) =>
+  const rawYDir = (deg: number) =>
     dirCenterY + normDiff(deg - dirCenterDeg) * (PLOT_H / 360);
+  const toYDir = (deg: number) => {
+    const rel = rawYDir(deg) - PAD_T;
+    return PAD_T + ((rel % PLOT_H) + PLOT_H) % PLOT_H;
+  };
 
   const hourMarks = useMemo(() => {
     const marks: number[] = [];
@@ -190,6 +199,128 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const areaPath = `${speedPath} L${lastX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} L${firstX.toFixed(1)},${(PAD_T + PLOT_H).toFixed(1)} Z`;
   const gustPath  = smooth(gustXY);
 
+  // ── Direction colour zones + wrap-aware path (for clipPath rendering) ──
+  const BOT_D = PAD_T + PLOT_H;
+  const halfBandRaw = PLOT_H / 32; // half a compass step (11.25°) in raw pixels
+  const dirZoneRects: Record<string, { y: number; h: number }[]> = {
+    [IDEAL_COLOR]: [], [CROSS_COLOR]: [], [NEUTRAL_COLOR]: [],
+  };
+  for (const dir of ALL_DIRS_16) {
+    const c = dirColor(dir, idealSet, crossSet);
+    const rawCenter = rawYDir(COMPASS_DEG[dir]);
+    const r0 = rawCenter - halfBandRaw;
+    const r1 = rawCenter + halfBandRaw;
+    const addR = (v0: number, v1: number) => {
+      const top = Math.max(PAD_T, Math.min(BOT_D, Math.min(v0, v1)));
+      const bot = Math.max(PAD_T, Math.min(BOT_D, Math.max(v0, v1)));
+      if (bot > top) dirZoneRects[c].push({ y: top, h: bot - top });
+    };
+    if      (r0 >= PAD_T && r1 <= BOT_D)    addR(r0, r1);
+    else if (r0 >= BOT_D)                    addR(r0 - PLOT_H, r1 - PLOT_H);
+    else if (r1 <= PAD_T)                    addR(r0 + PLOT_H, r1 + PLOT_H);
+    else if (r0 < BOT_D && r1 > BOT_D)    { addR(r0, BOT_D); addR(PAD_T, r1 - PLOT_H); }
+    else if (r0 < PAD_T && r1 > PAD_T)    { addR(r0 + PLOT_H, BOT_D); addR(PAD_T, r1); }
+  }
+  const dirSegPts: [number, number][][] = [];
+  {
+    let seg: [number, number][] = [];
+    let prevRaw: number | null = null;
+    let prevX: number | null = null;
+    for (const p of points) {
+      const deg = p.direction != null ? COMPASS_DEG[p.direction] : undefined;
+      if (deg === undefined) {
+        if (seg.length >= 2) dirSegPts.push(seg);
+        seg = []; prevRaw = null; prevX = null; continue;
+      }
+      const x = toX(new Date(p.timestamp).getTime());
+      const y = toYDir(deg);
+      const raw = rawYDir(deg);
+      if (prevRaw !== null && prevX !== null) {
+        const lo = Math.min(prevRaw, raw), hi = Math.max(prevRaw, raw);
+        const cBot = lo < BOT_D && hi > BOT_D;
+        const cTop = lo < PAD_T && hi > PAD_T;
+        if (cBot || cTop) {
+          const br = cBot ? BOT_D : PAD_T;
+          const t = (br - prevRaw) / (raw - prevRaw);
+          const xC = prevX + t * (x - prevX);
+          let exitY: number, enterY: number;
+          if (cBot) { if (prevRaw < raw) { exitY = BOT_D; enterY = PAD_T; } else { exitY = PAD_T; enterY = BOT_D; } }
+          else       { if (prevRaw > raw) { exitY = PAD_T; enterY = BOT_D; } else { exitY = BOT_D; enterY = PAD_T; } }
+          seg.push([xC, exitY]);
+          dirSegPts.push(seg);
+          seg = [[xC, enterY], [x, y]];
+        } else {
+          seg.push([x, y]);
+        }
+      } else {
+        seg.push([x, y]);
+      }
+      prevRaw = raw; prevX = x;
+    }
+    if (seg.length >= 2) dirSegPts.push(seg);
+  }
+  const dirPathD = dirSegPts.map(s => smooth(s)).join(' ');
+
+  // ── Tide strip (coastal sites only) ─────────────────────────────────────
+  const tidePreds = useMemo(() => {
+    if (!tideData || tideData.predictions.length < 2) return null;
+    return [...tideData.predictions]
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  }, [tideData]);
+
+  const hasTide = !!tidePreds;
+  const tideOffset = hasTide ? TIDE_PAD + TIDE_H : 0;
+  const totalSvgH = SVG_H + tideOffset;
+  const bottomY = PAD_T + PLOT_H + tideOffset; // Y where ticks and labels sit
+
+  const TIDE_TOP = PAD_T + PLOT_H + TIDE_PAD;
+  const TIDE_BOT = TIDE_TOP + TIDE_H;
+
+  const tideScale = useMemo(() => {
+    if (!tidePreds) return null;
+    const allH = tidePreds.map(p => p.height);
+    const tMinH = Math.min(...allH);
+    const tMaxH = Math.max(...allH);
+    const tRange = tMaxH - tMinH || 1;
+    return { tMinH, tRange, toYT: (h: number) => TIDE_BOT - ((h - tMinH) / tRange) * TIDE_H };
+  }, [tidePreds, TIDE_BOT]);
+
+  const tidePath = useMemo(() => {
+    if (!tidePreds || !tideScale) return '';
+    const { toYT } = tideScale;
+    const interp = (ms: number): number => {
+      for (let i = 0; i < tidePreds.length - 1; i++) {
+        const t0 = new Date(tidePreds[i].time).getTime();
+        const t1 = new Date(tidePreds[i + 1].time).getTime();
+        if (ms >= t0 && ms <= t1) {
+          const p = (ms - t0) / (t1 - t0);
+          return tidePreds[i].height + (tidePreds[i + 1].height - tidePreds[i].height) * ((1 - Math.cos(p * Math.PI)) / 2);
+        }
+      }
+      return ms < new Date(tidePreds[0].time).getTime() ? tidePreds[0].height : tidePreds[tidePreds.length - 1].height;
+    };
+    const pts: string[] = [];
+    for (let i = 0; i <= 200; i++) {
+      const ms = startMs + (i / 200) * sixH;
+      pts.push(`${i === 0 ? 'M' : 'L'}${toX(ms).toFixed(1)},${toYT(interp(ms)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tidePreds, tideScale, startMs, sixH, PLOT_W]);
+
+  const tideMarkers = useMemo(() => {
+    if (!tidePreds || !tideScale) return [];
+    const endMs = startMs + sixH;
+    return tidePreds
+      .filter(p => { const t = new Date(p.time).getTime(); return t >= startMs && t <= endMs; })
+      .map(p => ({
+        x: PAD_L + ((new Date(p.time).getTime() - startMs) / sixH) * PLOT_W,
+        y: tideScale.toYT(p.height),
+        type: p.type,
+      }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tidePreds, tideScale, startMs, sixH, PLOT_W]);
+
   const lastPoint = points[points.length - 1];
   const lastReadingLabel = new Date(lastPoint.timestamp).toLocaleTimeString('en-AU', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -200,8 +331,11 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const hourStyle  = { fontSize: '12px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
 
   return (
-    <svg ref={svgRef} width="100%" height={SVG_H} style={{ display: 'block', overflow: 'visible' }}>
+    <svg ref={svgRef} width="100%" height={totalSvgH} style={{ display: 'block', overflow: 'visible' }}>
       <defs>
+        <clipPath id={`${chartId}-plot`}>
+          <rect x={PAD_L} y={PAD_T} width={PLOT_W} height={PLOT_H} />
+        </clipPath>
         {minSpeed !== null && maxSpeed !== null && <>
           <clipPath id={`${chartId}-zone-high`}>
             <rect x={PAD_L} y={PAD_T} width={PLOT_W} height={Math.max(0, toYWind(maxSpeed) - PAD_T)} />
@@ -213,6 +347,15 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
             <rect x={PAD_L} y={toYWind(minSpeed)} width={PLOT_W} height={Math.max(0, PAD_T + PLOT_H - toYWind(minSpeed))} />
           </clipPath>
         </>}
+        <clipPath id={`${chartId}-dir-ideal`}>
+          {dirZoneRects[IDEAL_COLOR].map((r, i) => <rect key={i} x={PAD_L} y={r.y} width={PLOT_W} height={r.h} />)}
+        </clipPath>
+        <clipPath id={`${chartId}-dir-cross`}>
+          {dirZoneRects[CROSS_COLOR].map((r, i) => <rect key={i} x={PAD_L} y={r.y} width={PLOT_W} height={r.h} />)}
+        </clipPath>
+        <clipPath id={`${chartId}-dir-neutral`}>
+          {dirZoneRects[NEUTRAL_COLOR].map((r, i) => <rect key={i} x={PAD_L} y={r.y} width={PLOT_W} height={r.h} />)}
+        </clipPath>
       </defs>
 
       {/* ── Left-axis knot grid lines + labels (skip ideal zone boundaries) ── */}
@@ -230,7 +373,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       {/* ── Ideal zone boundary lines + green labels ── */}
       {minSpeed !== null && <>
         <line x1={PAD_L} y1={toYWind(minSpeed)} x2={PAD_L + PLOT_W} y2={toYWind(minSpeed)}
-          stroke="#10b981" strokeWidth={0.8} strokeDasharray="4,3" opacity={0.7} />
+          stroke="#10b981" strokeWidth={0.8} strokeDasharray="8,4" opacity={0.7} />
         <text x={PAD_L - 5} y={toYWind(minSpeed)} textAnchor="end" dominantBaseline="middle"
           style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'system-ui,sans-serif', fill: '#10b981' }}>
           {minSpeed}
@@ -238,7 +381,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       </>}
       {maxSpeed !== null && <>
         <line x1={PAD_L} y1={toYWind(maxSpeed)} x2={PAD_L + PLOT_W} y2={toYWind(maxSpeed)}
-          stroke="#10b981" strokeWidth={0.8} strokeDasharray="4,3" opacity={0.7} />
+          stroke="#10b981" strokeWidth={0.8} strokeDasharray="8,4" opacity={0.7} />
         <text x={PAD_L - 5} y={toYWind(maxSpeed)} textAnchor="end" dominantBaseline="middle"
           style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'system-ui,sans-serif', fill: '#10b981' }}>
           {maxSpeed}
@@ -300,15 +443,14 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       {hourMarks.map(ms => {
         const x = toX(ms);
         const label = new Date(ms)
-          .toLocaleTimeString([], { hour: 'numeric', hour12: true })
-          .replace(' ', '').toUpperCase();
+          .toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
         const tooClose = Math.abs(x - nowX) < 36;
         return (
           <g key={ms}>
-            <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 4}
+            <line x1={x} y1={bottomY} x2={x} y2={bottomY + 4}
               stroke="#d1d5db" strokeWidth={0.8} />
             {!tooClose && (
-              <text x={x} y={PAD_T + PLOT_H + 7}
+              <text x={x} y={bottomY + 7}
                 textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
                 {label}
               </text>
@@ -322,17 +464,12 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
 
       {/* ── Gust line (smooth bezier, clipped per zone) + dots ── */}
       {minSpeed !== null && maxSpeed !== null ? (<>
-        <path d={gustPath} fill="none" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-high)`} />
-        <path d={gustPath} fill="none" stroke="#10b981" strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-good)`} />
-        <path d={gustPath} fill="none" stroke="#eab308" strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-low)`} />
+        <path d={gustPath} fill="none" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="8,4" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-high)`} />
+        <path d={gustPath} fill="none" stroke="#10b981" strokeWidth={1.5} strokeDasharray="8,4" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-good)`} />
+        <path d={gustPath} fill="none" stroke="#eab308" strokeWidth={1.5} strokeDasharray="8,4" strokeLinecap="round" opacity={0.85} clipPath={`url(#${chartId}-zone-low)`} />
       </>) : (
-        <path d={gustPath} fill="none" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" opacity={0.85} />
+        <path d={gustPath} fill="none" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="8,4" strokeLinecap="round" opacity={0.85} />
       )}
-      {points.map((p, i) => (
-        <circle key={`gd${i}`}
-          cx={toX(new Date(p.timestamp).getTime())} cy={toYWind(p.windGust ?? 0)}
-          r={2} fill={spdColor(p.windGust ?? 0, minSpeed, maxSpeed)} opacity={0.85} />
-      ))}
 
       {/* ── Speed line (smooth bezier, clipped per zone) + dots ── */}
       {minSpeed !== null && maxSpeed !== null ? (<>
@@ -342,34 +479,75 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       </>) : (
         <path d={speedPath} fill="none" stroke="#0ea5e9" strokeWidth={2} strokeLinecap="round" />
       )}
-      {points.map((p, i) => (
-        <circle key={`sd${i}`}
-          cx={toX(new Date(p.timestamp).getTime())} cy={toYWind(p.windSpeed ?? 0)}
-          r={2.5} fill={spdColor(p.windSpeed ?? 0, minSpeed, maxSpeed)} />
-      ))}
 
-      {/* ── Direction dots (no connecting line) ── */}
-      {points.map((p, i) => {
-        const deg = p.direction != null ? COMPASS_DEG[p.direction] : undefined;
-        if (deg === undefined) return null;
-        const c = dirColor(p.direction!, idealSet, crossSet);
-        return (
-          <circle key={i}
-            cx={toX(new Date(p.timestamp).getTime())}
-            cy={toYDir(deg)}
-            r={3} fill={c} opacity={0.9}>
-            <title>{p.direction}</title>
-          </circle>
-        );
-      })}
+      {/* ── Direction connecting line (smooth bezier, colour zones via clipPath) ── */}
+      {dirPathD && <>
+        <path d={dirPathD} fill="none" stroke={NEUTRAL_COLOR} strokeWidth={2} strokeLinecap="round" strokeDasharray="1,4" opacity={0.6} clipPath={`url(#${chartId}-dir-neutral)`} />
+        <path d={dirPathD} fill="none" stroke={CROSS_COLOR}   strokeWidth={2} strokeLinecap="round" strokeDasharray="1,4" opacity={0.6} clipPath={`url(#${chartId}-dir-cross)`} />
+        <path d={dirPathD} fill="none" stroke={IDEAL_COLOR}   strokeWidth={2} strokeLinecap="round" strokeDasharray="1,4" opacity={0.6} clipPath={`url(#${chartId}-dir-ideal)`} />
+      </>}
+
 
       {/* ── NOW marker + last reading time label ── */}
-      <line x1={nowX} y1={PAD_T} x2={nowX} y2={PAD_T + PLOT_H}
+      <line x1={nowX} y1={PAD_T} x2={nowX} y2={bottomY}
         stroke="#94a3b8" strokeWidth={1} strokeDasharray="3,3" />
-      <text x={nowX} y={PAD_T + PLOT_H + 7}
+      <text x={nowX} y={bottomY + 7}
         textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
         {lastReadingLabel}
       </text>
+
+      {/* ── Tide strip ── */}
+      {hasTide && tidePath && (() => {
+        const fmtT = (t: string) => new Date(t).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const tideAxisStyle = { fontSize: '10px', fontWeight: 700, fontFamily: 'system-ui,sans-serif', fill: '#0071e3' } as const;
+        return <>
+          <line x1={PAD_L} y1={TIDE_TOP} x2={PAD_L + PLOT_W} y2={TIDE_TOP}
+            stroke="#e5e7eb" strokeWidth={0.6} />
+          <path
+            d={`${tidePath} L${toX(startMs + sixH).toFixed(1)},${TIDE_BOT} L${toX(startMs).toFixed(1)},${TIDE_BOT} Z`}
+            fill="#0071e3" opacity={0.08} />
+          <path d={tidePath} fill="none" stroke="#0071e3" strokeWidth={1.5} strokeLinecap="round" />
+
+          {/* Hi/Lo markers on the tide curve */}
+          {tideMarkers.map((m, i) => {
+            const s = 4;
+            return m.type === 'high'
+              ? <polygon key={i} points={`${m.x},${m.y - s} ${m.x - s},${m.y + s * 0.5} ${m.x + s},${m.y + s * 0.5}`} fill="#0071e3" />
+              : <polygon key={i} points={`${m.x},${m.y + s} ${m.x - s},${m.y - s * 0.5} ${m.x + s},${m.y - s * 0.5}`} fill="#0071e3" />;
+          })}
+
+          <line x1={PAD_L} y1={TIDE_BOT} x2={PAD_L + PLOT_W} y2={TIDE_BOT}
+            stroke="#e5e7eb" strokeWidth={0.6} />
+
+          {/* TIDE rotated label — left axis, aligned with KTS */}
+          <text x={8} y={TIDE_TOP + TIDE_H / 2} textAnchor="middle" dominantBaseline="middle"
+            transform={`rotate(-90, 8, ${TIDE_TOP + TIDE_H / 2})`} style={axisStyle}>
+            TIDE
+          </text>
+
+          {/* Next High / Next Low — right axis, aligned with compass labels */}
+          {tideData?.nextHigh && (() => {
+            const rx = PAD_L + PLOT_W + 7; const ry = TIDE_TOP + 9;
+            return <g>
+              {/* right triangle */}
+              <polygon points={`${rx},${ry - 3} ${rx},${ry + 3} ${rx + 5},${ry}`} fill="#0071e3" />
+              {/* up triangle — centroid at ry */}
+              <polygon points={`${rx + 9},${ry + 2} ${rx + 14},${ry + 2} ${rx + 11.5},${ry - 3}`} fill="#0071e3" />
+              <text x={rx + 17} y={ry} dominantBaseline="middle" style={tideAxisStyle}>{fmtT(tideData!.nextHigh!.time)}</text>
+            </g>;
+          })()}
+          {tideData?.nextLow && (() => {
+            const rx = PAD_L + PLOT_W + 7; const ry = TIDE_BOT - 9;
+            return <g>
+              {/* right triangle */}
+              <polygon points={`${rx},${ry - 3} ${rx},${ry + 3} ${rx + 5},${ry}`} fill="#0071e3" />
+              {/* down triangle — centroid at ry */}
+              <polygon points={`${rx + 9},${ry - 2} ${rx + 14},${ry - 2} ${rx + 11.5},${ry + 3}`} fill="#0071e3" />
+              <text x={rx + 17} y={ry} dominantBaseline="middle" style={tideAxisStyle}>{fmtT(tideData!.nextLow!.time)}</text>
+            </g>;
+          })()}
+        </>;
+      })()}
 
     </svg>
   );

@@ -272,18 +272,24 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               </div>
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4,3" strokeLinecap="round" />
+                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="8,4" strokeLinecap="round" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
-                  <circle cx="4"  cy="3" r="2.5" fill="#10b981" />
-                  <circle cx="14" cy="3" r="2.5" fill="#10b981" />
-                  <circle cx="24" cy="3" r="2.5" fill="#10b981" />
+                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeDasharray="1,4" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Dir</span>
               </div>
+              {tideData && (
+                <div className="flex items-center gap-1">
+                  <svg width="28" height="6" style={{ display: 'block' }}>
+                    <line x1="0" y1="3" x2="28" y2="3" stroke="#0071e3" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  <span className="text-[9px] text-muted-foreground font-medium">Tide</span>
+                </div>
+              )}
               <div className="flex flex-col items-end ml-auto" style={{ gap: '1px' }}>
                 {historyData && historyData.points.length > 0 && (() => {
                   const last = historyData.points[historyData.points.length - 1];
@@ -307,7 +313,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
 
             {historyData ? (
               <>
-                <WeatherHistoryChart points={historyData.points} site={site} />
+                <WeatherHistoryChart points={historyData.points} site={site} tideData={tideData} />
                 <WeatherHistoryMatrix buckets={historyData.buckets} site={site} />
               </>
             ) : (
