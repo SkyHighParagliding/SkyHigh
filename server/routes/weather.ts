@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
-import { fetchWeatherData, LIVE_WIND_VIC_URL } from "../weather.js";
+import { fetchWeatherData, LIVE_WIND_VIC_URL, getScraperNextRun } from "../weather.js";
 import { fetchWithRetry, degreesToDirection, isWuStationId } from "../weather-utils.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
@@ -83,6 +83,10 @@ interface BulkWeatherRow {
   alt_stationLon: number | null;
   alt_timestamp: string | null;
 }
+
+router.get("/scraper-schedule", (_req, res) => {
+  res.json(getScraperNextRun());
+});
 
 router.get("/stations/nearby", asyncHandler(async (req, res) => {
   const _radius = Array.isArray(req.query.radius) ? req.query.radius[0] : (req.query.radius || '20');

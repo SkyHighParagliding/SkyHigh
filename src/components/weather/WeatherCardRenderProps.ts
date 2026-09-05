@@ -28,6 +28,7 @@ export interface WeatherCardRenderProps {
   showHistory: boolean;
   setShowHistory: (v: boolean) => void;
   historyData: { points: any[]; buckets: any[] } | null;
+  nextReadingMs: number | null;
   setShowWindMap: (v: boolean) => void;
   windMapPortal: ReactNode;
   IconComponent?: LucideIcon;

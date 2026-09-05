@@ -19,6 +19,7 @@ interface ExtendedOutlookPanelProps {
   showHistory: boolean;
   setShowHistory: (v: boolean) => void;
   historyData: { points: any[]; buckets: any[] } | null;
+  nextReadingMs?: number | null;
   forecastWindowStartMs?: number;
   forecastWindowEndMs?: number;
   variant: 'apple' | 'classic';
@@ -81,7 +82,7 @@ function getSlotHour(timeStr: string): number {
   return parseInt(timeStr.split('T')[1]?.slice(0, 2) ?? '0');
 }
 
-export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
+export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   // Keep last selected data so content stays visible during collapse animation
   const lastDayDataRef = useRef<any>(null);
@@ -264,27 +265,42 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
             {/* Legend */}
             <div className="flex items-center gap-3 mb-2">
               <div className="flex items-center gap-1">
-                <div className="w-5 h-0.5 bg-sky-400 rounded" />
+                <svg width="28" height="6" style={{ display: 'block' }}>
+                  <line x1="0" y1="3" x2="8"  y2="3" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="9" y1="3" x2="19" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="20" y1="3" x2="28" y2="3" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Wind</span>
               </div>
               <div className="flex items-center gap-1">
-                <svg width="20" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="20" y2="3" stroke="#f97316" strokeWidth="1.5" strokeDasharray="3,2" />
+                <svg width="28" height="6" style={{ display: 'block' }}>
+                  <line x1="0" y1="3" x2="8"  y2="3" stroke="#eab308" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
+                  <line x1="9" y1="3" x2="19" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
+                  <line x1="20" y1="3" x2="28" y2="3" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
               </div>
               <div className="flex items-center gap-1">
-                <svg width="20" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="20" y2="3" stroke="#8b5cf6" strokeWidth="1.5" />
-                  <circle cx="10" cy="3" r="2" fill="#8b5cf6" />
+                <svg width="28" height="6" style={{ display: 'block' }}>
+                  <circle cx="4"  cy="3" r="2.5" fill="#10b981" />
+                  <circle cx="14" cy="3" r="2.5" fill="#f97316" />
+                  <circle cx="24" cy="3" r="2.5" fill="#9ca3af" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Dir (right axis)</span>
               </div>
+              {nextReadingMs != null && (() => {
+                const minsLeft = Math.max(0, Math.ceil((nextReadingMs - Date.now()) / 60000));
+                return (
+                  <span className="text-[9px] text-muted-foreground font-medium ml-auto">
+                    Next reading {minsLeft <= 0 ? '< 1m' : `${minsLeft}m`}
+                  </span>
+                );
+              })()}
             </div>
 
             {historyData ? (
               <>
-                <WeatherHistoryChart points={historyData.points} />
+                <WeatherHistoryChart points={historyData.points} site={site} />
                 <WeatherHistoryMatrix buckets={historyData.buckets} site={site} />
               </>
             ) : (

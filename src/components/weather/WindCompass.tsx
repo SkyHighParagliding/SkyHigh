@@ -42,7 +42,7 @@ export const WindCompass = memo(function WindCompass({ currentDir, idealDirs, di
     'Good': '#10b981',
     'Light': '#eab308',
     'Blown Out': '#ef4444',
-    'Cross': '#ff6b35',
+    'Cross': '#f97316',
     'Not Flyable': '#ef4444',
     'N/A': '#9ca3af'
   };
@@ -67,7 +67,7 @@ export const WindCompass = memo(function WindCompass({ currentDir, idealDirs, di
       <path
         key={dir}
         d={`M 25 25 L ${x1} ${y1} A 20 20 0 0 1 ${x2} ${y2} Z`}
-        fill="rgba(14, 165, 233, 0.5)"
+        fill="rgba(16, 185, 129, 0.5)"
         stroke="none"
       />
     );
@@ -99,7 +99,7 @@ export const WindCompass = memo(function WindCompass({ currentDir, idealDirs, di
         <path
           key={`cross-${dir}-${side}-${idx}`}
           d={`M 25 25 L ${x1} ${y1} A 20 20 0 0 1 ${x2} ${y2} Z`}
-          fill="rgba(255, 107, 53, 0.5)"
+          fill="rgba(249, 115, 22, 0.5)"
           stroke="none"
         />
       );

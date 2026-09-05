@@ -12,7 +12,6 @@ interface CSRFToken {
 }
 
 // In-memory store: userId -> { token, expiresAt }
-// In production, consider using Redis or database
 const tokenStore = new Map<string, CSRFToken>();
 
 /**

@@ -71,6 +71,26 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     ? (weather.altObservation.stationName ?? null)
     : (weather?.stationName ?? null);
 
+  const activeStationId: string | undefined = showAlt ? site?.liveStationIdAlt : site?.liveStationId;
+  const sourceType: string | null = (() => {
+    if (!activeStationId) return null;
+    if (activeStationId.startsWith('freeflightwx-')) return 'freeflightwx';
+    if (activeStationId.startsWith('livewind-')) return 'livewind';
+    if (activeStationId.startsWith('bom-')) return 'bom';
+    if (activeStationId.startsWith('davis-')) return 'davis';
+    return 'wu';
+  })();
+
+  const { data: scraperSchedule = null } = useQuery({
+    queryKey: ['scraper-schedule'],
+    queryFn: () => api.get<Record<string, number>>('/api/weather/scraper-schedule').catch(() => null),
+    enabled: !!site?.id && isLive,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+
+  const nextReadingMs: number | null = (scraperSchedule && sourceType) ? (scraperSchedule[sourceType] ?? null) : null;
+
   const { data: historyData = null } = useQuery({
     queryKey: ['weather', site?.id, 'history', activeStationName],
     queryFn: () => {
@@ -228,6 +248,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs,
     hasExtended, extendedForecast, tideData, showTides, setShowTides: handleSetShowTides, effectiveShowTides,
     hasLiveWeather: hasLiveHistory, showHistory, setShowHistory: handleSetShowHistory, historyData: hasLiveHistory ? (historyData ?? null) : null,
+    nextReadingMs: hasLiveHistory ? nextReadingMs : null,
     setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP,
   };
 

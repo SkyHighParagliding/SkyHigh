@@ -1,4 +1,5 @@
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { getCivilTwilight } from '@/lib/twilight';
 import { cn } from '@/lib/utils';
 import { formatDisplayTime } from '@/lib/dateUtils';
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,8 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
-export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+  const twilight = getCivilTwilight(Number(site.lat), Number(site.lon));
   return (
     <div className="border rounded-3xl p-5 sm:p-8 flex flex-col items-center hover:shadow-xl transition-all bg-card border-sky/10 h-full">
       <div className="flex items-center justify-between w-full mb-5 px-1 gap-2">
@@ -99,6 +101,24 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
         </span>
       </div>
       
+      {twilight && (
+        <div className="flex items-center gap-3 mb-4 text-[11px] font-medium text-muted-foreground">
+          <span className="font-bold uppercase tracking-widest text-[9px]">Daylight</span>
+          <span className="flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+              <ArrowUp className="w-2.5 h-2.5" />
+            </span>
+            {twilight.dawn}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+              <ArrowDown className="w-2.5 h-2.5" />
+            </span>
+            {twilight.dusk}
+          </span>
+        </div>
+      )}
+
       <HourlyForecastStrip
         windowedForecasts={windowedForecasts}
         site={site}
@@ -119,6 +139,7 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
         showHistory={showHistory}
         setShowHistory={setShowHistory}
         historyData={historyData}
+        nextReadingMs={nextReadingMs}
         forecastWindowStartMs={forecastWindowStartMs}
         forecastWindowEndMs={forecastWindowEndMs}
         variant="classic"

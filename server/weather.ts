@@ -67,6 +67,11 @@ const SOURCE_KEY: Record<SourceType, string> = {
 const ALL_SOURCE_TYPES: SourceType[] = ['freeflightwx', 'wu', 'livewind', 'bom', 'davis'];
 
 const scraperTimeouts: Partial<Record<SourceType, NodeJS.Timeout>> = {};
+const scraperNextRun: Partial<Record<SourceType, number>> = {};
+
+export function getScraperNextRun(): Partial<Record<SourceType, number>> {
+  return { ...scraperNextRun };
+}
 
 export interface WeatherScrapeResult {
   liveStationsUpdated: number;
@@ -106,6 +111,7 @@ function scheduleSourceFetch(type: SourceType, min: number, max: number) {
   const existing = scraperTimeouts[type];
   if (existing) clearTimeout(existing);
   const minutes = Math.floor(Math.random() * (max - min + 1)) + min;
+  scraperNextRun[type] = Date.now() + minutes * 60 * 1000;
   console.log(`Weather scraper [${type}]: Next fetch in ${minutes} minutes.`);
   scraperTimeouts[type] = setTimeout(() => runSourceScrape(type), minutes * 60 * 1000);
 }

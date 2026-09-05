@@ -1,4 +1,5 @@
-import { Navigation, ArrowLeftRight, type LucideIcon } from 'lucide-react';
+import { Navigation, ArrowLeftRight, ArrowUp, ArrowDown, type LucideIcon } from 'lucide-react';
+import { getCivilTwilight } from '@/lib/twilight';
 import { parseWindSpeed } from '@/lib/utils';
 import { formatDisplayTime } from '@/lib/dateUtils';
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +9,15 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
-export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
-  const dirTextColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#ff6b35' : windStatus.directionStatus.label === 'Blown Out' || windStatus.directionStatus.label === 'Not Flyable' ? '#ef4444' : '#1d1d1f';
+export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+  const dirTextColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#f97316' : windStatus.directionStatus.label === 'Blown Out' || windStatus.directionStatus.label === 'Not Flyable' ? '#ef4444' : '#1d1d1f';
   const parsedSpeed = parseWindSpeed(site.windSpeed) || parseWindSpeed(site.windDir);
   const maxIdealSpeed = parsedSpeed?.max ?? null;
   const gustBlownOut = maxIdealSpeed != null && activeWeather.windGust > maxIdealSpeed;
   const gustColor = gustBlownOut ? '#ef4444' : '#1d1d1f';
 
-  const dirBadgeColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#ff6b35' : '#ef4444';
+  const twilight = getCivilTwilight(Number(site.lat), Number(site.lon));
+  const dirBadgeColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#f97316' : '#ef4444';
   const spdBadgeColor = windStatus.speedStatus.label === 'Good' ? '#10b981' : windStatus.speedStatus.label === 'Light' ? '#eab308' : windStatus.speedStatus.label === 'Blown Out' || windStatus.speedStatus.label === 'Not Flyable' ? '#ef4444' : windStatus.speedStatus.label === 'Strong' ? '#ef4444' : '#9ca3af';
 
   return (
@@ -49,6 +51,24 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
           </button>
         )}
       </div>
+
+      {twilight && (
+        <div className="flex items-center gap-3 mb-4 text-[11px] font-medium" style={{ color: '#86868b' }}>
+          <span className="font-semibold uppercase tracking-widest text-[9px]">Daylight</span>
+          <span className="flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+              <ArrowUp className="w-2.5 h-2.5" />
+            </span>
+            {twilight.dawn}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-4 h-4 rounded-full border border-current flex items-center justify-center shrink-0">
+              <ArrowDown className="w-2.5 h-2.5" />
+            </span>
+            {twilight.dusk}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center gap-6 sm:gap-8 mb-6">
         <div className="shrink-0">
@@ -111,6 +131,7 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         showHistory={showHistory}
         setShowHistory={setShowHistory}
         historyData={historyData}
+        nextReadingMs={nextReadingMs}
         forecastWindowStartMs={forecastWindowStartMs}
         forecastWindowEndMs={forecastWindowEndMs}
         variant="apple"

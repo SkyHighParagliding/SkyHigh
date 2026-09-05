@@ -41,7 +41,7 @@ export function HourlyForecastStrip({ windowedForecasts, site, forecastSubtitle,
             const hourStr = date.toLocaleTimeString([], { hour: 'numeric', hour12: true }).toUpperCase();
             const now = new Date();
             const isCurrentHour = date.getHours() === now.getHours() && date.toDateString() === now.toDateString();
-            const fDirColor = fStatus.directionStatus.label === 'Good' ? '#10b981' : fStatus.directionStatus.label === 'Cross' ? '#ff6b35' : fStatus.directionStatus.label === 'Light' ? '#eab308' : '#ef4444';
+            const fDirColor = fStatus.directionStatus.label === 'Good' ? '#10b981' : fStatus.directionStatus.label === 'Cross' ? '#f97316' : fStatus.directionStatus.label === 'Light' ? '#eab308' : '#ef4444';
             const fSpdColor = fStatus.speedStatus.label === 'Good' ? '#10b981' : fStatus.speedStatus.label === 'Light' ? '#eab308' : '#ef4444';
             return (
               <div key={idx} className="flex flex-col items-center flex-1">

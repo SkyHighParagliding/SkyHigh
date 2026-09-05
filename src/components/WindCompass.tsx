@@ -185,7 +185,7 @@ export function WindCompass({ value, onChange, crossLeft = false, crossRight = f
               {hasCrossLeft && (
                 <path
                   d={halfPieSegmentPath(cx, cy, 56, angleDeg, "left")}
-                  fill="#ff6b35"
+                  fill="#f97316"
                   opacity={0.2}
                 />
               )}
@@ -193,7 +193,7 @@ export function WindCompass({ value, onChange, crossLeft = false, crossRight = f
               {hasCrossRight && (
                 <path
                   d={halfPieSegmentPath(cx, cy, 56, angleDeg, "right")}
-                  fill="#ff6b35"
+                  fill="#f97316"
                   opacity={0.2}
                 />
               )}
