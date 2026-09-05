@@ -811,6 +811,15 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
     station ? [siteId, station] : [siteId]
   );
 
+  // Deduplicate by timestamp — duplicate rows create zero-width bezier segments
+  // which render as vertical stubs (or loops in unpatched Catmull-Rom)
+  const seen = new Set<string>();
+  const dedupedRows = rows.filter(r => {
+    if (seen.has(r.timestamp)) return false;
+    seen.add(r.timestamp);
+    return true;
+  });
+
   const now = Date.now();
 
   const DIR_DEG: Record<string, number> = {
@@ -858,15 +867,15 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
   );
 
   const buckets = [
-    { label: '0–15m',   pts: rows.filter(r => now - new Date(r.timestamp).getTime() < 15 * 60 * 1000) },
-    { label: '15–30m',  pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
-    { label: '30–60m',  pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
-    { label: '60–120m', pts: rows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
+    { label: '0–15m',   pts: dedupedRows.filter(r => now - new Date(r.timestamp).getTime() < 15 * 60 * 1000) },
+    { label: '15–30m',  pts: dedupedRows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 15 * 60 * 1000 && age < 30 * 60 * 1000; }) },
+    { label: '30–60m',  pts: dedupedRows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 30 * 60 * 1000 && age < 60 * 60 * 1000; }) },
+    { label: '60–120m', pts: dedupedRows.filter(r => { const age = now - new Date(r.timestamp).getTime(); return age >= 60 * 60 * 1000 && age < 120 * 60 * 1000; }) },
     { label: 'Day',     pts: dayRows },
   ].map(b => ({ label: b.label, ...aggregate(b.pts) }));
 
   res.setHeader('Cache-Control', 'no-cache');
-  res.json({ points: rows, buckets });
+  res.json({ points: dedupedRows, buckets });
 }));
 
 router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
