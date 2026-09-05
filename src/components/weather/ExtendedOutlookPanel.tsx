@@ -268,19 +268,13 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 <svg width="28" height="6" style={{ display: 'block' }}>
                   <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                <span className="text-[9px] text-muted-foreground font-medium">Wind</span>
+                <span className="text-[9px] text-muted-foreground font-medium">Good Spd / Good Dir</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
                   <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="8,4" strokeLinecap="round" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <svg width="28" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeDasharray="1,4" />
-                </svg>
-                <span className="text-[9px] text-muted-foreground font-medium">Dir</span>
               </div>
               {tideData && (
                 <div className="flex items-center gap-1">
