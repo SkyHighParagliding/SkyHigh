@@ -266,17 +266,13 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
             <div className="flex items-center gap-3 mb-2">
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="8"  y2="3" stroke="#eab308" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="9" y1="3" x2="19" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="20" y1="3" x2="28" y2="3" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Wind</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
-                  <line x1="0" y1="3" x2="8"  y2="3" stroke="#eab308" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
-                  <line x1="9" y1="3" x2="19" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
-                  <line x1="20" y1="3" x2="28" y2="3" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,2" strokeLinecap="round" />
+                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4,3" strokeLinecap="round" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
               </div>
@@ -286,7 +282,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                   <circle cx="14" cy="3" r="2.5" fill="#f97316" />
                   <circle cx="24" cy="3" r="2.5" fill="#ef4444" />
                 </svg>
-                <span className="text-[9px] text-muted-foreground font-medium">Dir (right axis)</span>
+                <span className="text-[9px] text-muted-foreground font-medium">Dir</span>
               </div>
               {nextReadingMs != null && (() => {
                 const minsLeft = Math.max(0, Math.ceil((nextReadingMs - Date.now()) / 60000));
