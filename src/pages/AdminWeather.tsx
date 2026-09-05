@@ -8,6 +8,7 @@ import { GridBoundsSelector } from "@/components/GridBoundsSelector";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
@@ -82,15 +83,46 @@ function WindMapPreviewCard() {
   );
 }
 
+function hourLabel(h: number) {
+  if (h === 0) return "12:00 am (midnight)";
+  if (h === 12) return "12:00 pm (noon)";
+  return h < 12 ? `${h}:00 am` : `${h - 12}:00 pm`;
+}
+
 export function AdminWeather() {
-  const { settings, refreshSettings } = useSettings();
+  const { settings, refreshSettings, updateSettings } = useSettings();
   const { token } = useAuth();
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapeMessage, setScrapeMessage] = useState("");
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [showGridSelector, setShowGridSelector] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [schedStartHour, setSchedStartHour] = useState<number>(7);
+  const [schedEndHour, setSchedEndHour] = useState<number>(20);
+  const [schedContinuous, setSchedContinuous] = useState(false);
+  const [schedSaving, setSchedSaving] = useState(false);
+
+  useEffect(() => {
+    setSchedStartHour(parseInt(settings.weatherScraperStartHour ?? "7", 10));
+    setSchedEndHour(parseInt(settings.weatherScraperEndHour ?? "20", 10));
+    setSchedContinuous(settings.weatherScraperRunContinuously === "true");
+  }, [settings.weatherScraperStartHour, settings.weatherScraperEndHour, settings.weatherScraperRunContinuously]);
+
+  const handleSaveSchedule = async () => {
+    setSchedSaving(true);
+    try {
+      await updateSettings({
+        weatherScraperStartHour: String(schedStartHour),
+        weatherScraperEndHour: String(schedEndHour),
+        weatherScraperRunContinuously: schedContinuous ? "true" : "false",
+      });
+      toast.success("Scraper schedule saved");
+    } catch {
+      toast.error("Failed to save schedule");
+    } finally {
+      setSchedSaving(false);
+    }
+  };
 
   const startStatusPolling = () => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -155,7 +187,10 @@ export function AdminWeather() {
                     Live Weather Data
                   </CardTitle>
                   <CardDescription>
-                    Live weather observations fetched automatically every 15–30 minutes during daylight hours (7am–8pm Melbourne time).
+                    {schedContinuous
+                      ? "Live weather observations fetched automatically every 15–30 minutes, continuously (no time restriction)."
+                      : `Live weather observations fetched automatically every 15–30 minutes between ${hourLabel(schedStartHour)} and ${hourLabel(schedEndHour)} Melbourne time.`
+                    }
                     {settings.weatherScraperLastRun && (
                       <span className="block mt-1 text-emerald-600 font-medium">
                         Last Update: {new Date(settings.weatherScraperLastRun).toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' })} (Melbourne Time)
@@ -183,6 +218,58 @@ export function AdminWeather() {
                       {messages.liveWeather}
                     </span>
                   )}
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-sm font-medium text-navy mb-3">Scraper Schedule</p>
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="sched-start" className="text-xs text-muted-foreground">Start time</Label>
+                    <select
+                      id="sched-start"
+                      value={schedStartHour}
+                      onChange={e => setSchedStartHour(Number(e.target.value))}
+                      disabled={schedContinuous}
+                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-sky"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <option key={i} value={i}>{hourLabel(i)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="sched-end" className="text-xs text-muted-foreground">End time</Label>
+                    <select
+                      id="sched-end"
+                      value={schedEndHour}
+                      onChange={e => setSchedEndHour(Number(e.target.value))}
+                      disabled={schedContinuous}
+                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-sky"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <option key={i} value={i}>{hourLabel(i)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2 pb-1.5">
+                    <input
+                      type="checkbox"
+                      id="sched-continuous"
+                      checked={schedContinuous}
+                      onChange={e => setSchedContinuous(e.target.checked)}
+                      className="w-4 h-4 accent-sky cursor-pointer"
+                    />
+                    <Label htmlFor="sched-continuous" className="text-sm cursor-pointer">Run continuously (24 hours)</Label>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveSchedule}
+                    disabled={schedSaving}
+                    className="pb-1.5"
+                  >
+                    {schedSaving ? "Saving..." : "Save Schedule"}
+                  </Button>
                 </div>
               </div>
             </CardHeader>

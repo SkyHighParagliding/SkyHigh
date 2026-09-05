@@ -25,6 +25,7 @@ interface Settings {
   weatherScraperMaxInterval?: string;
   weatherScraperStartHour?: string;
   weatherScraperEndHour?: string;
+  weatherScraperRunContinuously?: string;
   homeBox1Desc?: string;
   homeBox2Desc?: string;
   homeBox3Desc?: string;
@@ -258,6 +259,7 @@ function buildSettings(data: Record<string, any>): Settings {
     weatherScraperMaxInterval: data.weatherScraperMaxInterval,
     weatherScraperStartHour: data.weatherScraperStartHour,
     weatherScraperEndHour: data.weatherScraperEndHour,
+    weatherScraperRunContinuously: data.weatherScraperRunContinuously,
     homeBox1Desc: cleanString(data.homeBox1Desc),
     homeBox2Desc: cleanString(data.homeBox2Desc),
     homeBox3Desc: cleanString(data.homeBox3Desc),

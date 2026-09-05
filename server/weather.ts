@@ -96,14 +96,15 @@ async function getSourceSettings(type: SourceType) {
   const def = SOURCE_DEFAULTS[type];
   const rows = await query<{ key: string; value: string }>(
     `SELECT key, value FROM settings WHERE key IN ($1, $2, $3, $4)`,
-    [`weatherScraper_${key}_min`, `weatherScraper_${key}_max`, 'weatherScraperStartHour', 'weatherScraperEndHour']
+    [`weatherScraper_${key}_min`, `weatherScraper_${key}_max`, 'weatherScraperStartHour', 'weatherScraperEndHour', 'weatherScraperRunContinuously']
   );
   const cfg = Object.fromEntries(rows.map(r => [r.key, r.value]));
   return {
-    min:       parseInt(cfg[`weatherScraper_${key}_min`] || String(def.min)),
-    max:       parseInt(cfg[`weatherScraper_${key}_max`] || String(def.max)),
-    startHour: parseInt(cfg['weatherScraperStartHour'] || '7'),
-    endHour:   parseInt(cfg['weatherScraperEndHour']   || '20'),
+    min:             parseInt(cfg[`weatherScraper_${key}_min`] || String(def.min)),
+    max:             parseInt(cfg[`weatherScraper_${key}_max`] || String(def.max)),
+    startHour:       parseInt(cfg['weatherScraperStartHour'] || '7'),
+    endHour:         parseInt(cfg['weatherScraperEndHour']   || '20'),
+    runContinuously: cfg['weatherScraperRunContinuously'] === 'true',
   };
 }
 
@@ -162,10 +163,10 @@ async function updateForecasts(isManual: boolean): Promise<{ forecastsUpdated: n
 }
 
 async function runSourceScrape(type: SourceType, isManual = false): Promise<number> {
-  const { min, max, startHour, endHour } = await getSourceSettings(type);
+  const { min, max, startHour, endHour, runContinuously } = await getSourceSettings(type);
   const hour = getMelbourneHour();
 
-  if (!isManual && (hour < startHour || hour >= endHour)) {
+  if (!isManual && !runContinuously && (hour < startHour || hour >= endHour)) {
     console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour % 24}pm). Melbourne hour: ${hour}`);
     scheduleSourceFetch(type, min, max);
     return 0;
