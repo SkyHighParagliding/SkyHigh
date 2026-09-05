@@ -274,7 +274,7 @@ export function SiteDetail() {
                   <div className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-wrap justify-center gap-x-6 gap-y-2">
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0"></span>
-                      <span className="font-medium">Good</span>
+                      <span className="font-medium">Good Spd / Good Dir</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
                       <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-sm shrink-0"></span>
@@ -287,10 +287,6 @@ export function SiteDetail() {
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shrink-0"></span>
                       <span className="font-medium">Blown Out / Not Flyable</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0"></span>
-                      <span className="font-medium">Ideal Wind Dir</span>
                     </div>
                   </div>
 

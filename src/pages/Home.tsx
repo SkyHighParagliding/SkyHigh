@@ -718,7 +718,7 @@ export function Home() {
             } style={isGlass ? { color: '#86868b' } : undefined}>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span className="font-medium">Good</span>
+                <span className="font-medium">Good Spd / Good Dir</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
@@ -732,12 +732,6 @@ export function Home() {
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                 <span className="font-medium">Blown Out</span>
               </div>
-              {!isGlass && (
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></span>
-                  <span className="font-medium">Ideal Wind Dir</span>
-                </div>
-              )}
             </div>
           </div>
 
