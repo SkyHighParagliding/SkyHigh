@@ -298,7 +298,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                   const minsLeft = Math.max(0, Math.ceil((nextReadingMs - Date.now()) / 60000));
                   return (
                     <span className="text-[9px] text-muted-foreground font-medium">
-                      Next reading {minsLeft <= 0 ? '< 1m' : `${minsLeft}m`}
+                      Next reading in {minsLeft <= 0 ? '< 1m' : `${minsLeft}m`}
                     </span>
                   );
                 })()}
