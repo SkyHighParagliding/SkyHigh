@@ -725,7 +725,7 @@ export function Home() {
                 <span className="font-medium">Light</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
                 <span className="font-medium">Cross</span>
               </div>
               <div className="flex items-center gap-2">

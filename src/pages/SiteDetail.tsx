@@ -281,7 +281,7 @@ export function SiteDetail() {
                       <span className="font-medium">Light</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
-                      <span className="w-2.5 h-2.5 rounded-full bg-orange shadow-sm shrink-0"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shrink-0"></span>
                       <span className="font-medium">Cross</span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
