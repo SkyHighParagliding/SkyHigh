@@ -191,8 +191,8 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
         </>}
       </defs>
 
-      {/* ── Left-axis knot grid lines + labels ── */}
-      {knotLines.map(v => (
+      {/* ── Left-axis knot grid lines + labels (skip ideal zone boundaries) ── */}
+      {knotLines.filter(v => v !== minSpeed && v !== maxSpeed).map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={toYWind(v)} x2={PAD_L + PLOT_W} y2={toYWind(v)}
             stroke="#e5e7eb" strokeWidth={0.6} />
@@ -202,6 +202,24 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
           </text>
         </g>
       ))}
+
+      {/* ── Ideal zone boundary lines + green labels ── */}
+      {minSpeed !== null && <>
+        <line x1={PAD_L} y1={toYWind(minSpeed)} x2={PAD_L + PLOT_W} y2={toYWind(minSpeed)}
+          stroke="#10b981" strokeWidth={0.8} strokeDasharray="4,3" opacity={0.7} />
+        <text x={PAD_L - 5} y={toYWind(minSpeed)} textAnchor="end" dominantBaseline="middle"
+          style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'system-ui,sans-serif', fill: '#10b981' }}>
+          {minSpeed}
+        </text>
+      </>}
+      {maxSpeed !== null && <>
+        <line x1={PAD_L} y1={toYWind(maxSpeed)} x2={PAD_L + PLOT_W} y2={toYWind(maxSpeed)}
+          stroke="#10b981" strokeWidth={0.8} strokeDasharray="4,3" opacity={0.7} />
+        <text x={PAD_L - 5} y={toYWind(maxSpeed)} textAnchor="end" dominantBaseline="middle"
+          style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'system-ui,sans-serif', fill: '#10b981' }}>
+          {maxSpeed}
+        </text>
+      </>}
 
       {/* ── Right-axis compass labels + ticks ── */}
       {RIGHT_AXIS.map(({ label, deg }) => {
@@ -232,18 +250,18 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
         KTS
       </text>
 
-      {/* ── Speed zone colour bar (left of labels) ── */}
+      {/* ── Speed zone colour bar (overlaid on left axis line) ── */}
       {minSpeed !== null && maxSpeed !== null ? (
         <>
-          <rect x={16} y={PAD_T} width={5} height={Math.max(0, toYWind(maxSpeed) - PAD_T)}
-            fill="#ef4444" opacity={0.75} rx={1.5} />
-          <rect x={16} y={toYWind(maxSpeed)} width={5} height={Math.max(0, toYWind(minSpeed) - toYWind(maxSpeed))}
-            fill="#10b981" opacity={0.75} rx={1.5} />
-          <rect x={16} y={toYWind(minSpeed)} width={5} height={Math.max(0, PAD_T + PLOT_H - toYWind(minSpeed))}
-            fill="#eab308" opacity={0.75} rx={1.5} />
+          <rect x={PAD_L - 2} y={PAD_T} width={4} height={Math.max(0, toYWind(maxSpeed) - PAD_T)}
+            fill="#ef4444" opacity={0.75} rx={1} />
+          <rect x={PAD_L - 2} y={toYWind(maxSpeed)} width={4} height={Math.max(0, toYWind(minSpeed) - toYWind(maxSpeed))}
+            fill="#10b981" opacity={0.75} rx={1} />
+          <rect x={PAD_L - 2} y={toYWind(minSpeed)} width={4} height={Math.max(0, PAD_T + PLOT_H - toYWind(minSpeed))}
+            fill="#eab308" opacity={0.75} rx={1} />
         </>
       ) : (
-        <rect x={16} y={PAD_T} width={5} height={PLOT_H} fill="#9ca3af" opacity={0.3} rx={1.5} />
+        <rect x={PAD_L - 2} y={PAD_T} width={4} height={PLOT_H} fill="#9ca3af" opacity={0.3} rx={1} />
       )}
 
       {/* Axis borders */}

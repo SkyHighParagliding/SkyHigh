@@ -279,8 +279,8 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
                   <circle cx="4"  cy="3" r="2.5" fill="#10b981" />
-                  <circle cx="14" cy="3" r="2.5" fill="#f97316" />
-                  <circle cx="24" cy="3" r="2.5" fill="#ef4444" />
+                  <circle cx="14" cy="3" r="2.5" fill="#10b981" />
+                  <circle cx="24" cy="3" r="2.5" fill="#10b981" />
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Dir</span>
               </div>
