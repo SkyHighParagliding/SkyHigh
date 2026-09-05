@@ -16,7 +16,7 @@ export function HourlyForecastStrip({ windowedForecasts, site, forecastSubtitle,
 
   if (variant === 'apple') {
     return (
-      <div className="w-full mt-auto rounded-xl p-4" style={{ background: '#f5f5f7' }}>
+      <div className="w-full mt-3 rounded-xl p-4" style={{ background: '#f5f5f7' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#86868b' }}>
@@ -57,7 +57,7 @@ export function HourlyForecastStrip({ windowedForecasts, site, forecastSubtitle,
   }
 
   return (
-    <div className="w-full mt-auto bg-sky/5 rounded-2xl p-4 sm:p-6 border border-sky/10">
+    <div className="w-full mt-3 bg-sky/5 rounded-2xl p-4 sm:p-6 border border-sky/10">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex-1 text-center">
           <p className="text-[9px] sm:text-xs font-bold text-foreground-faint uppercase tracking-widest">
