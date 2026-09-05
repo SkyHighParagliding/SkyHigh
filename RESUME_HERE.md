@@ -1,86 +1,56 @@
-# RESUME_HERE — Last updated: 2026-09-05 (session 46)
+# RESUME_HERE — Last updated: 2026-09-05 (session 48)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 46 investigated two things:
+Session 48 — extensive Wind History chart polish + weather card UI refinements. All pushed to production.
 
-- **3 Sisters Flowerdale showing forecast instead of live weather** — diagnosed: FreeFlightWx
-  station was offline. Code is correct; graceful fallback to forecast is intended behaviour.
-  Station came back online during the session and resumed updating automatically.
+**Wind History chart (WeatherHistoryChart.tsx):**
+- Speed/gust lines: smooth Catmull-Rom bezier via SVG `clipPath` zones (red/green/yellow) — restores smoothing lost by the earlier splitSegment approach
+- Left colour bar overlaid on Y-axis line showing blown-out/good/light zones
+- Green dashed horizontal lines at min and max ideal speed with green labels; regular grid line suppressed at those values
+- 16-point compass right axis with direction dots coloured ideal/cross/not-flyable (green/orange/red)
+- Last reading time (HH:MM) shown below the NOW dashed line, in hour-label style
+- Hour tick labels suppressed when within 36px of the last-reading label to prevent overlap
+- "NOW" text removed from above compass labels
 
-- **Hero/banner image scaling on mobile** — site detail hero fixed: now uses `aspect-video
-  max-h-[60vh]` instead of `h-[40vh] min-h-[300px]`. Since all hero images are 1920×1080
-  (confirmed in `server/routes/ai.ts`), the 16:9 container shows the full image with zero
-  cropping on any viewport. Committed d5483e1.
+**ExtendedOutlookPanel.tsx (Wind History legend):**
+- Wind legend: solid green line; Gust: dashed green line; Dir: three green dots
+- "Last reading HH:MM" above "Next reading in Xm" (tight gap, right-aligned)
+- "(right axis)" dropped from Dir label
 
-  **Home hero is NOT fixed** — it's `min-h-[100vh]` (full-screen glass hero) and there is a
-  fundamental tension: landscape image + portrait phone = you can't show the full image AND
-  fill the screen. Two options being considered (Jon to decide):
-    - **Option A**: `aspect-video` on mobile → shorter hero, full image visible, CTAs below
-    - **Option C**: Use `sliderPortrait` image variant for the mobile hero src
+**Legend bars (Home + SiteDetail):**
+- Ideal Wind Dir dot: green (was sky-blue, was being overridden by template)
+- Cross dot: bg-orange-500 (was bg-orange CSS variable, overridden by template to blue)
 
-## Last completed task
-- Session 46 (2026-09-05): Site detail hero aspect-video fix (commit d5483e1)
-- Session 45 (2026-09-03): Wind History panel polish
-
-## Currently in progress
-- Nothing
-
-- **Multi-source history**: Sites with two live sources (e.g. Flinders Golf Club) now track
-  each source independently. History query passes `?station=<name>` and switches automatically
-  when the user swaps sources. The previous bug was that alt-source history wrote under
-  `siteId='site:alt'` (never queried); fixed with `historySiteId` parameter in `saveObservation()`.
-
-- **Chart text sizing**: Removed SVG `viewBox` entirely; switched to ResizeObserver so 1 SVG
-  unit = 1 CSS px always. Font sizes now match the rest of the app.
-
-- **Chart smoothing**: Lines (speed, gust, direction) use Catmull-Rom → cubic bezier smoothing
-  (tension 0.3 for speed/gust, 0.2 for direction).
-
-- **Matrix row reorder**: Avg Wind → Max Gust → Avg Dir (was Max Gust first).
-
-- **Matrix colour coding**: Values now use site colour scheme (green/yellow/orange/red) via
-  `getWindStatus`, matching ECMWF forecast slot colours exactly.
-
-- **Wind History as default tab**: Live-weather sites now open with Wind History showing.
-  Non-live sites still default to 7-Day Outlook (fixed `showOutlook` logic in
-  `ExtendedOutlookPanel` to account for `!hasLiveWeather`).
-
-- **"Last 15M" bucket**: Was "Last 10M" — changed to close the 10–15 min gap with the next bucket.
-
-- **KTS axis label**: Added rotated label on left Y axis.
-
-- **NOW label spacing**: Lifted to same vertical gap as N→NE compass spacing.
-
-All changes deployed to Railway (commits 56589d1 → 2139447).
+**WeatherCardApple.tsx:**
+- Wind speed number coloured by speed status (green/yellow/red)
+- Live station line: `text-[10px] font-semibold uppercase tracking-widest` matching DAYLIGHT style
+- Station line order: FRANKSTON BEACH · LIVE · 13.9KM · 12:56PM
+- Navigation icon removed from station line
+- DAYLIGHT row font matches ECMWF Forecast label size
+- Gap between station line and DAYLIGHT row tightened (mb-5 → mb-1)
 
 ## Last completed task
-- Session 45 (2026-09-03): Wind History panel polish (smoothing, colours, layout, default tab)
+- Session 48 (2026-09-05): Wind history chart polish + weather card UI refinements (commits c3793f4–4d88eaa)
+- Session 47 (2026-09-05): Cleared Smart Search fixes, TASK-030, Craigie Rd repoint
 
 ## Currently in progress
 - Nothing
 
 ## Next task to start
-- **Decide whether to repoint Craigie Rd, Mt Martha** from `livewind-94871` (Frankston Beach)
-  to `davis-82c002b05de74cc5ab177b0ba2b73c80`. Deliberately NOT done — one-click in Admin → Site Edit.
-- **Fix Smart Search manual-test issues** (Jon found issues — ask for his findings). Code is
-  already deployed on Railway (commit 1455482 on origin/main).
-- After Smart Search fixed: "Report bad answer" button for Smart Search chat
-- Then: TASK-030 Siteguide Version Change Email Notification
+- **"Report bad answer" button** for Smart Search chat (`src/components/PublicSearchBox.tsx`)
 - Future: Weather panel upgrades using WeatherWatcher API + BRYC data (Red Bluff panel)
 
 ## Open questions / blockers
-- **⚠️ CORRECTION (session 44):** The Smart Search "do not push" blocker was wrong — commit
-  `1455482` is already on `origin/main` and live on Railway. Jon's manual-test issues are
-  live-site issues. Still need his findings to plan the fix.
-- **MMYC coordinates** — registry uses `-38.2758, 145.0055` (derived by hand, no lat/lon in
-  WeatherLink payload). Worth eyeballing; only affects distance ranking in picker.
+- **Home hero on mobile** — landscape image + portrait phone = can't show full image AND fill screen. Jon to decide:
+  - **Option A**: `aspect-video` on mobile → shorter hero, full image visible, CTAs below
+  - **Option C**: Use `sliderPortrait` image variant for the mobile hero src
+- **MMYC coordinates** — registry uses `-38.2758, 145.0055` (derived by hand). Worth eyeballing on a map.
 
 ## Quick context refresher
-SkyHigh is the paragliding club platform on Railway. Live weather has five sources (BOM,
-FreeFlightWx, Live-Wind, Weather Underground, Davis/WeatherLink). The Wind History panel is
-now polished and deployed: colour-coded matrix, smooth chart, correct default tab. Smart Search
-safety layer is deployed but has outstanding manual-test issues Jon found.
+SkyHigh is the paragliding club platform on Railway. Session 48 was a major UI polish pass on the
+Wind History chart and Apple-style weather cards. All changes are live in production. Next quick win
+is the "Report bad answer" button in Smart Search.
