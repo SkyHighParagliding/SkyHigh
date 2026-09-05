@@ -813,18 +813,33 @@ router.get("/:siteId/history", asyncHandler(async (req, res) => {
 
   const now = Date.now();
 
-  function modeDir(pts: typeof rows): string | null {
-    if (!pts.length) return null;
-    const counts: Record<string, number> = {};
-    for (const p of pts) { if (p.direction) counts[p.direction] = (counts[p.direction] ?? 0) + 1; }
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const DIR_DEG: Record<string, number> = {
+    N:0, NNE:22.5, NE:45, ENE:67.5, E:90, ESE:112.5, SE:135, SSE:157.5,
+    S:180, SSW:202.5, SW:225, WSW:247.5, W:270, WNW:292.5, NW:315, NNW:337.5,
+  };
+  const DEG_DIR = Object.fromEntries(Object.entries(DIR_DEG).map(([k, v]) => [v, k]));
+
+  function circularMeanDir(pts: typeof rows): string | null {
+    const valid = pts.map(p => p.direction).filter((d): d is string => d != null && DIR_DEG[d] !== undefined);
+    if (!valid.length) return null;
+    let sinSum = 0, cosSum = 0;
+    for (const d of valid) {
+      const rad = (DIR_DEG[d] * Math.PI) / 180;
+      sinSum += Math.sin(rad);
+      cosSum += Math.cos(rad);
+    }
+    let deg = (Math.atan2(sinSum / valid.length, cosSum / valid.length) * 180) / Math.PI;
+    if (deg < 0) deg += 360;
+    // Snap to nearest 16-point compass label
+    const snapped = Math.round(deg / 22.5) * 22.5 % 360;
+    return DEG_DIR[snapped] ?? null;
   }
 
   function aggregate(pts: typeof rows) {
     if (!pts.length) return null;
     const maxGust = Math.max(...pts.map(p => p.windGust ?? 0));
     const avgWind = Math.round(pts.reduce((s, p) => s + (p.windSpeed ?? 0), 0) / pts.length);
-    return { maxGust, avgWind, avgDir: modeDir(pts) };
+    return { maxGust, avgWind, avgDir: circularMeanDir(pts) };
   }
 
   const dayRows = await query<{ timestamp: string; windSpeed: number | null; windGust: number | null; direction: string | null }>(
