@@ -95,7 +95,7 @@ async function getSourceSettings(type: SourceType) {
   const key = SOURCE_KEY[type];
   const def = SOURCE_DEFAULTS[type];
   const rows = await query<{ key: string; value: string }>(
-    `SELECT key, value FROM settings WHERE key IN ($1, $2, $3, $4)`,
+    `SELECT key, value FROM settings WHERE key IN ($1, $2, $3, $4, $5)`,
     [`weatherScraper_${key}_min`, `weatherScraper_${key}_max`, 'weatherScraperStartHour', 'weatherScraperEndHour', 'weatherScraperRunContinuously']
   );
   const cfg = Object.fromEntries(rows.map(r => [r.key, r.value]));
