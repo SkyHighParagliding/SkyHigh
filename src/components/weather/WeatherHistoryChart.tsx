@@ -271,20 +271,23 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       <line x1={PAD_L} y1={PAD_T + PLOT_H} x2={PAD_L + PLOT_W} y2={PAD_T + PLOT_H}
         stroke="#e5e7eb" strokeWidth={0.8} />
 
-      {/* ── Hour tick marks + labels ── */}
+      {/* ── Hour tick marks + labels (suppressed if too close to last reading label) ── */}
       {hourMarks.map(ms => {
         const x = toX(ms);
         const label = new Date(ms)
           .toLocaleTimeString([], { hour: 'numeric', hour12: true })
           .replace(' ', '').toUpperCase();
+        const tooClose = Math.abs(x - nowX) < 36;
         return (
           <g key={ms}>
             <line x1={x} y1={PAD_T + PLOT_H} x2={x} y2={PAD_T + PLOT_H + 4}
               stroke="#d1d5db" strokeWidth={0.8} />
-            <text x={x} y={PAD_T + PLOT_H + 7}
-              textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
-              {label}
-            </text>
+            {!tooClose && (
+              <text x={x} y={PAD_T + PLOT_H + 7}
+                textAnchor="middle" dominantBaseline="hanging" style={hourStyle}>
+                {label}
+              </text>
+            )}
           </g>
         );
       })}
