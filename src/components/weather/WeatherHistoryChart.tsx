@@ -179,11 +179,19 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       const p1 = pts[i];
       const p2 = pts[i + 1];
       const p3 = pts[Math.min(pts.length - 1, i + 2)];
-      // Clamp X to [p1, p2] to prevent backward loops when Y jumps are large
-      const cp1x = Math.min(Math.max(p1[0] + (p2[0] - p0[0]) * tension, p1[0]), p2[0]);
-      const cp1y = p1[1] + (p2[1] - p0[1]) * tension;
-      const cp2x = Math.min(Math.max(p2[0] - (p3[0] - p1[0]) * tension, p1[0]), p2[0]);
-      const cp2y = p2[1] - (p3[1] - p1[1]) * tension;
+      const segW = p2[0] - p1[0];
+      // Scale the full tangent vector proportionally to prevent horizontal overshoot
+      // (preserves tangent direction, avoiding the vertical-stub artefact from hard X-clamping)
+      const t1dx = (p2[0] - p0[0]) * tension;
+      const t1dy = (p2[1] - p0[1]) * tension;
+      const t2dx = (p3[0] - p1[0]) * tension;
+      const t2dy = (p3[1] - p1[1]) * tension;
+      const s1 = t1dx > segW && t1dx > 0 ? segW / t1dx : 1;
+      const s2 = t2dx > segW && t2dx > 0 ? segW / t2dx : 1;
+      const cp1x = p1[0] + t1dx * s1;
+      const cp1y = p1[1] + t1dy * s1;
+      const cp2x = p2[0] - t2dx * s2;
+      const cp2y = p2[1] - t2dy * s2;
       d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
     }
     return d;
