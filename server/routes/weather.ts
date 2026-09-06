@@ -5,6 +5,7 @@ import { fetchWithRetry, degreesToDirection, isWuStationId } from "../weather-ut
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
 import { getDavisStations, getDavisStationId, parseDavisStationId } from "../davisWeather.js";
+import { getWdlStations, getWdlStationId, parseWdlStationId, getWportStations, getWportStationId, parseWportStationId } from "../wdlWeather.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -284,6 +285,38 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
             });
           }
         }
+      } else if (currentStationId.startsWith('wdl-')) {
+        const parsed = parseWdlStationId(currentStationId);
+        if (parsed) {
+          const wdl = getWdlStations().find(s => s.id === parsed.id);
+          if (wdl) {
+            const distance = getDistance(targetLat, targetLon, wdl.lat, wdl.lon);
+            stations.push({
+              id: currentStationId,
+              name: `${wdl.name} (WDL)`,
+              distanceKm: distance,
+              lat: wdl.lat,
+              lon: wdl.lon,
+              source: 'wdl'
+            });
+          }
+        }
+      } else if (currentStationId.startsWith('wport-')) {
+        const parsed = parseWportStationId(currentStationId);
+        if (parsed) {
+          const wport = getWportStations().find(s => s.id === parsed.id);
+          if (wport) {
+            const distance = getDistance(targetLat, targetLon, wport.lat, wport.lon);
+            stations.push({
+              id: currentStationId,
+              name: `${wport.name} (Wport)`,
+              distanceKm: distance,
+              lat: wport.lat,
+              lon: wport.lon,
+              source: 'wport'
+            });
+          }
+        }
       }
     } catch (e) {
       log.error("Error looking up current station:", e);
@@ -337,6 +370,38 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
         lat: davis.lat,
         lon: davis.lon,
         source: 'davis'
+      });
+    }
+  }
+
+  for (const wdl of getWdlStations()) {
+    const stationId = getWdlStationId(wdl);
+    if (stations.find(s => s.id === stationId)) continue;
+    const distance = getDistance(targetLat, targetLon, wdl.lat, wdl.lon);
+    if (distance <= radiusKm) {
+      stations.push({
+        id: stationId,
+        name: `${wdl.name} (WDL)`,
+        distanceKm: distance,
+        lat: wdl.lat,
+        lon: wdl.lon,
+        source: 'wdl'
+      });
+    }
+  }
+
+  for (const wport of getWportStations()) {
+    const stationId = getWportStationId(wport);
+    if (stations.find(s => s.id === stationId)) continue;
+    const distance = getDistance(targetLat, targetLon, wport.lat, wport.lon);
+    if (distance <= radiusKm) {
+      stations.push({
+        id: stationId,
+        name: `${wport.name} (Wport)`,
+        distanceKm: distance,
+        lat: wport.lat,
+        lon: wport.lon,
+        source: 'wport'
       });
     }
   }

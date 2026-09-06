@@ -3,6 +3,7 @@ import { query, queryOne, execute } from "./pg.js";
 import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
 import { parseBomStationId, fetchBomObservation } from "./bomWeather.js";
 import { parseDavisStationId, fetchDavisObservation } from "./davisWeather.js";
+import { parseWdlStationId, fetchWdlObservation, parseWportStationId, fetchWportObservation } from "./wdlWeather.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
 
@@ -46,7 +47,7 @@ async function saveObservation(
 
 const LIVE_WIND_VIC_URL = "https://live-wind.com.au/windobs/v3/query_newest_obs_smart_v2.php?state=vic";
 
-type SourceType = 'freeflightwx' | 'wu' | 'livewind' | 'bom' | 'davis';
+type SourceType = 'freeflightwx' | 'wu' | 'livewind' | 'bom' | 'davis' | 'wdl' | 'wport';
 
 const SOURCE_DEFAULTS: Record<SourceType, { min: number; max: number }> = {
   freeflightwx: { min: 2,  max: 3  },
@@ -54,6 +55,8 @@ const SOURCE_DEFAULTS: Record<SourceType, { min: number; max: number }> = {
   livewind:     { min: 5,  max: 10 },
   bom:          { min: 10, max: 20 },
   davis:        { min: 5,  max: 10 },
+  wdl:          { min: 5,  max: 10 },
+  wport:        { min: 5,  max: 10 },
 };
 
 const SOURCE_KEY: Record<SourceType, string> = {
@@ -62,9 +65,11 @@ const SOURCE_KEY: Record<SourceType, string> = {
   livewind:     'livewind',
   bom:          'bom',
   davis:        'davis',
+  wdl:          'wdl',
+  wport:        'wport',
 };
 
-const ALL_SOURCE_TYPES: SourceType[] = ['freeflightwx', 'wu', 'livewind', 'bom', 'davis'];
+const ALL_SOURCE_TYPES: SourceType[] = ['freeflightwx', 'wu', 'livewind', 'bom', 'davis', 'wdl', 'wport'];
 
 const scraperTimeouts: Partial<Record<SourceType, NodeJS.Timeout>> = {};
 const scraperNextRun: Partial<Record<SourceType, number>> = {};
@@ -184,6 +189,8 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
         case 'livewind':     return id.startsWith('livewind-');
         case 'bom':          return id.startsWith('bom-');
         case 'davis':        return id.startsWith('davis-');
+        case 'wdl':          return id.startsWith('wdl-');
+        case 'wport':        return id.startsWith('wport-');
         case 'wu':           return isWuStationId(id);
       }
     };
@@ -261,6 +268,30 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
         if (davisObs) {
           await saveObservation(dbKey, davisObs.windSpeed, davisObs.windGust, davisObs.direction, davisObs.stationName, davisObs.stationLat, davisObs.stationLon, davisObs.timestamp, siteId);
           console.log(`Weather scraper [davis]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${davisObs.windSpeed}kt (Gust ${davisObs.windGust}kt) ${davisObs.direction} from ${davisObs.stationName}`);
+        }
+      } else if (stationId.startsWith('wdl-')) {
+        const parsed = parseWdlStationId(stationId);
+        if (!parsed) {
+          log.error(`Weather scraper [wdl]: Invalid station ID format: ${stationId}`);
+          return;
+        }
+        console.log(`Weather scraper [wdl]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
+        const wdlObs = await fetchWdlObservation(parsed.id);
+        if (wdlObs) {
+          await saveObservation(dbKey, wdlObs.windSpeed, wdlObs.windGust, wdlObs.direction, wdlObs.stationName, wdlObs.stationLat, wdlObs.stationLon, wdlObs.timestamp, siteId);
+          console.log(`Weather scraper [wdl]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${wdlObs.windSpeed}kt (Gust ${wdlObs.windGust}kt) ${wdlObs.direction} from ${wdlObs.stationName}`);
+        }
+      } else if (stationId.startsWith('wport-')) {
+        const parsed = parseWportStationId(stationId);
+        if (!parsed) {
+          log.error(`Weather scraper [wport]: Invalid station ID format: ${stationId}`);
+          return;
+        }
+        console.log(`Weather scraper [wport]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);
+        const wportObs = await fetchWportObservation(parsed.id);
+        if (wportObs) {
+          await saveObservation(dbKey, wportObs.windSpeed, wportObs.windGust, wportObs.direction, wportObs.stationName, wportObs.stationLat, wportObs.stationLon, wportObs.timestamp, siteId);
+          console.log(`Weather scraper [wport]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${wportObs.windSpeed}kt (Gust ${wportObs.windGust}kt) ${wportObs.direction} from ${wportObs.stationName}`);
         }
       } else {
         console.log(`Weather scraper [wu]: Fetching ${siteId}${dbKey !== siteId ? ' (alt)' : ''} (${stationId})${isManual ? ' (manual)' : ''}...`);

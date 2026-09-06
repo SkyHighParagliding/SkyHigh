@@ -26,6 +26,7 @@ export interface DavisObservation {
 // (https://www.weatherlink.com/embeddablePage/show/<token>/slim).
 const DAVIS_STATIONS: DavisStation[] = [
   { token: "82c002b05de74cc5ab177b0ba2b73c80", name: "Mount Martha Yacht Club", lat: -38.2758, lon: 145.0055 },
+  { token: "d51901db93e74ac6922a1743f0f9df19", name: "Cowes Yacht Club — Phillip Island", lat: -38.4528, lon: 145.2355 },
 ];
 
 export function getDavisStations(): DavisStation[] {
