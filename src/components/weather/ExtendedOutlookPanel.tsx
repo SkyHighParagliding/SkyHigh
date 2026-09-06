@@ -268,7 +268,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 <svg width="28" height="6" style={{ display: 'block' }}>
                   <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-                <span className="text-[9px] text-muted-foreground font-medium">Good Spd / Good Dir</span>
+                <span className="text-[9px] text-muted-foreground font-medium">Wind Spd</span>
               </div>
               <div className="flex items-center gap-1">
                 <svg width="28" height="6" style={{ display: 'block' }}>
@@ -276,14 +276,12 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 </svg>
                 <span className="text-[9px] text-muted-foreground font-medium">Gust</span>
               </div>
-              {tideData && (
-                <div className="flex items-center gap-1">
-                  <svg width="28" height="6" style={{ display: 'block' }}>
-                    <line x1="0" y1="3" x2="28" y2="3" stroke="#0071e3" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  <span className="text-[9px] text-muted-foreground font-medium">Tide</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1">
+                <svg width="28" height="6" style={{ display: 'block' }}>
+                  <line x1="0" y1="3" x2="28" y2="3" stroke="#10b981" strokeWidth="2" strokeDasharray="1,4" strokeLinecap="round" />
+                </svg>
+                <span className="text-[9px] text-muted-foreground font-medium">Wind Dir</span>
+              </div>
               <div className="flex flex-col items-end ml-auto" style={{ gap: '1px' }}>
                 {historyData && historyData.points.length > 0 && (() => {
                   const last = historyData.points[historyData.points.length - 1];
