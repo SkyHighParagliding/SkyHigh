@@ -457,7 +457,12 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       </defs>
 
       {/* ── Left-axis knot grid lines + labels (skip ideal zone boundaries) ── */}
-      {knotLines.filter(v => v !== minSpeed && v !== maxSpeed).map(v => (
+      {knotLines.filter(v => {
+        if (v === minSpeed || v === maxSpeed) return false;
+        if (minSpeed !== null && Math.abs(toYWind(v) - toYWind(minSpeed)) < 14) return false;
+        if (maxSpeed !== null && Math.abs(toYWind(v) - toYWind(maxSpeed)) < 14) return false;
+        return true;
+      }).map(v => (
         <g key={v}>
           <line x1={PAD_L} y1={toYWind(v)} x2={PAD_L + PLOT_W} y2={toYWind(v)}
             stroke="#e5e7eb" strokeWidth={0.6} />
