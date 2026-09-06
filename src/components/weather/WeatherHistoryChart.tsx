@@ -540,8 +540,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       {/* ── Hour tick marks + labels (suppressed if too close to last reading label) ── */}
       {hourMarks.map(ms => {
         const x = toX(ms);
-        const label = new Date(ms)
-          .toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const label = String(new Date(ms).getHours());
         const tooClose = Math.abs(x - nowX) < 36;
         return (
           <g key={ms}>
