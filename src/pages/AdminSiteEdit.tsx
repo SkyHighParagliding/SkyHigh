@@ -86,6 +86,18 @@ export function AdminSiteEdit() {
     closurePillsMax, setClosurePillsMax,
   } = form;
 
+  const handleSaveAndGo = async () => {
+    try {
+      await saveSite();
+      const siteId = isNew
+        ? (formData.name as string).toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        : id;
+      setTimeout(() => navigate(`/sites/${siteId}`), 1200);
+    } catch {
+      setSaveMessage({ type: 'error', text: 'Error saving site' });
+    }
+  };
+
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -105,12 +117,19 @@ export function AdminSiteEdit() {
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-6">
-            <div className="flex justify-end">
+            <div className="flex flex-col items-end gap-2">
               <Button
                 type="submit"
                 className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
               >
                 {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Site</>}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveAndGo}
+                className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-sky hover:bg-sky-light"} text-white`}
+              >
+                <Eye className="w-4 h-4 mr-2" /> Save &amp; Go To
               </Button>
             </div>
             <Card>
@@ -1144,12 +1163,21 @@ export function AdminSiteEdit() {
 
             <div className="flex justify-end gap-4">
               <Button type="button" variant="outline" onClick={() => navigate("/admin/sites")}>Cancel</Button>
-              <Button
-                type="submit"
-                className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
-              >
-                {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Site</>}
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                <Button
+                  type="submit"
+                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                >
+                  {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Site</>}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveAndGo}
+                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-sky hover:bg-sky-light"} text-white`}
+                >
+                  <Eye className="w-4 h-4 mr-2" /> Save &amp; Go To
+                </Button>
+              </div>
             </div>
           </div>
         </form>
