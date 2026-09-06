@@ -169,7 +169,8 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
 
   const allSpeeds = points.flatMap(p => [p.windSpeed ?? 0, p.windGust ?? 0]);
   const rawMax  = allSpeeds.length ? Math.max(...allSpeeds) : 20;
-  const yMax    = Math.max(Math.ceil(rawMax * 1.25 / 5) * 5, 10);
+  const idealFloor = maxSpeed !== null ? Math.ceil(maxSpeed * 1.25 / 5) * 5 : 10;
+  const yMax    = Math.max(Math.ceil(rawMax * 1.25 / 5) * 5, idealFloor);
   const toYWind = (v: number) => PAD_T + PLOT_H - (v / yMax) * PLOT_H;
 
   // Dynamic direction axis: anchor the circular mean of ideal directions
