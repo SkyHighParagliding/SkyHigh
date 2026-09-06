@@ -117,6 +117,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const [crosshairX, setCrosshairX] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const isDown = useRef(false);
+  const crosshairActive = useRef(false);
 
   useEffect(() => {
     const el = svgRef.current;
@@ -126,13 +127,26 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     return () => ro.disconnect();
   }, []);
 
+  // Dismiss crosshair when tapping outside the SVG
+  useEffect(() => {
+    const dismiss = (e: PointerEvent) => {
+      if (crosshairActive.current && !svgRef.current?.contains(e.target as Node)) {
+        setCrosshairX(null);
+      }
+    };
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, []);
+
+  crosshairActive.current = crosshairX !== null;
+
   const getSvgX = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = svgRef.current!.getBoundingClientRect();
     return e.clientX - rect.left;
   };
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     const x = getSvgX(e);
-    if (x < PAD_L || x > PAD_L + PLOT_W) return;
+    if (x < PAD_L || x > PAD_L + PLOT_W) { setCrosshairX(null); return; }
     isDown.current = true;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setCrosshairX(Math.max(PAD_L, Math.min(PAD_L + PLOT_W, x)));
@@ -141,7 +155,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     if (!isDown.current) return;
     setCrosshairX(Math.max(PAD_L, Math.min(PAD_L + PLOT_W, getSvgX(e))));
   };
-  const handlePointerUp = () => { isDown.current = false; setCrosshairX(null); };
+  const handlePointerUp = () => { isDown.current = false; };
 
   const PLOT_W = svgW - PAD_L - PAD_R;
   const PLOT_H = SVG_H - PAD_T - PAD_B;
@@ -409,11 +423,12 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       ref={svgRef}
       width="100%"
       height={totalSvgH}
-      style={{ display: 'block', overflow: 'visible', cursor: 'crosshair', touchAction: 'none', userSelect: 'none' }}
+      style={{ display: 'block', overflow: 'visible', cursor: 'crosshair', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onContextMenu={e => e.preventDefault()}
     >
       <defs>
         <clipPath id={`${chartId}-plot`}>
