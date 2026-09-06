@@ -63,7 +63,7 @@ export function Sites() {
           </p>
 
           {mappableSites.length > 0 && (
-            <div className="mb-8 rounded-xl overflow-hidden shadow-sm relative aspect-video">
+            <div className="mb-8 rounded-xl overflow-hidden shadow-sm relative aspect-square">
               <Suspense fallback={
                 <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a] rounded-xl">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>

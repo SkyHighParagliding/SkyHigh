@@ -35,7 +35,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
 
   if (loading) {
     return (
-      <div className={`${fullscreen ? 'w-full h-full' : 'w-full h-[320px]'} relative flex items-center justify-center bg-[#0a0a0a] ${fullscreen ? '' : 'rounded-xl'}`}>
+      <div className={`${fullscreen ? 'w-full h-full' : 'w-full aspect-square'} relative flex items-center justify-center bg-[#0a0a0a] ${fullscreen ? '' : 'rounded-xl'}`}>
         <div className="absolute top-3 left-3 z-30">{modeToggle}</div>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
@@ -47,7 +47,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
 
   if (error || !windGrid) {
     return (
-      <div className={`${fullscreen ? 'w-full h-full' : 'w-full h-[320px]'} relative flex items-center justify-center bg-[#0a0a0a] ${fullscreen ? '' : 'rounded-xl'}`}>
+      <div className={`${fullscreen ? 'w-full h-full' : 'w-full aspect-square'} relative flex items-center justify-center bg-[#0a0a0a] ${fullscreen ? '' : 'rounded-xl'}`}>
         <div className="absolute top-3 left-3 z-30">{modeToggle}</div>
         <span className="text-xs text-red-400 font-mono">{error || 'No wind data available'}</span>
       </div>
@@ -57,8 +57,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
   return (
     <div className={fullscreen ? 'w-full h-full flex flex-col' : 'w-full'}>
       <div
-        className={`relative overflow-hidden ${fullscreen ? 'flex-1 min-h-0' : 'rounded-xl border border-gray-700'}`}
-        style={fullscreen ? undefined : { height: '320px' }}
+        className={`relative overflow-hidden ${fullscreen ? 'flex-1 min-h-0' : 'rounded-xl border border-gray-700 aspect-square'}`}
       >
         <WindCanvas
           windGrid={windGrid}
