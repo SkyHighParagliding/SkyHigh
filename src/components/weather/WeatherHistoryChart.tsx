@@ -58,6 +58,18 @@ function normDiff(diff: number): number {
   return diff;
 }
 
+function interpTideHeight(preds: Array<{ time: string; height: number }>, ms: number): number {
+  for (let i = 0; i < preds.length - 1; i++) {
+    const t0 = new Date(preds[i].time).getTime();
+    const t1 = new Date(preds[i + 1].time).getTime();
+    if (ms >= t0 && ms <= t1) {
+      const p = (ms - t0) / (t1 - t0);
+      return preds[i].height + (preds[i + 1].height - preds[i].height) * ((1 - Math.cos(p * Math.PI)) / 2);
+    }
+  }
+  return ms < new Date(preds[0].time).getTime() ? preds[0].height : preds[preds.length - 1].height;
+}
+
 
 const COMPASS_DEG: Record<string, number> = {
   N: 0, NNE: 22.5, NE: 45, ENE: 67.5,
@@ -102,7 +114,9 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     return { minSpeed: range?.min ?? null, maxSpeed: range?.max ?? null };
   }, [site]);
   const [svgW, setSvgW] = useState(480);
+  const [crosshairX, setCrosshairX] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const isDown = useRef(false);
 
   useEffect(() => {
     const el = svgRef.current;
@@ -111,6 +125,23 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  const getSvgX = (e: React.PointerEvent<SVGSVGElement>) => {
+    const rect = svgRef.current!.getBoundingClientRect();
+    return e.clientX - rect.left;
+  };
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    const x = getSvgX(e);
+    if (x < PAD_L || x > PAD_L + PLOT_W) return;
+    isDown.current = true;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    setCrosshairX(Math.max(PAD_L, Math.min(PAD_L + PLOT_W, x)));
+  };
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!isDown.current) return;
+    setCrosshairX(Math.max(PAD_L, Math.min(PAD_L + PLOT_W, getSvgX(e))));
+  };
+  const handlePointerUp = () => { isDown.current = false; setCrosshairX(null); };
 
   const PLOT_W = svgW - PAD_L - PAD_R;
   const PLOT_H = SVG_H - PAD_T - PAD_B;
@@ -297,21 +328,10 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const tidePath = useMemo(() => {
     if (!tidePreds || !tideScale) return '';
     const { toYT } = tideScale;
-    const interp = (ms: number): number => {
-      for (let i = 0; i < tidePreds.length - 1; i++) {
-        const t0 = new Date(tidePreds[i].time).getTime();
-        const t1 = new Date(tidePreds[i + 1].time).getTime();
-        if (ms >= t0 && ms <= t1) {
-          const p = (ms - t0) / (t1 - t0);
-          return tidePreds[i].height + (tidePreds[i + 1].height - tidePreds[i].height) * ((1 - Math.cos(p * Math.PI)) / 2);
-        }
-      }
-      return ms < new Date(tidePreds[0].time).getTime() ? tidePreds[0].height : tidePreds[tidePreds.length - 1].height;
-    };
     const pts: string[] = [];
     for (let i = 0; i <= 200; i++) {
       const ms = startMs + (i / 200) * sixH;
-      pts.push(`${i === 0 ? 'M' : 'L'}${toX(ms).toFixed(1)},${toYT(interp(ms)).toFixed(1)}`);
+      pts.push(`${i === 0 ? 'M' : 'L'}${toX(ms).toFixed(1)},${toYT(interpTideHeight(tidePreds, ms)).toFixed(1)}`);
     }
     return pts.join(' ');
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -330,6 +350,51 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tidePreds, tideScale, startMs, sixH, PLOT_W]);
 
+  const crosshairData = useMemo(() => {
+    if (crosshairX === null || points.length < 2) return null;
+    const ms = startMs + ((crosshairX - PAD_L) / PLOT_W) * sixH;
+
+    let windSpeed: number | null = null;
+    let windGust: number | null = null;
+    let direction: string | null = null;
+    let nearestDist = Infinity;
+
+    for (let i = 0; i < points.length; i++) {
+      const t = new Date(points[i].timestamp).getTime();
+      const dist = Math.abs(t - ms);
+      if (dist < nearestDist) { nearestDist = dist; direction = points[i].direction; }
+      if (i < points.length - 1) {
+        const t1 = new Date(points[i + 1].timestamp).getTime();
+        if (ms >= t && ms <= t1) {
+          const frac = (ms - t) / (t1 - t);
+          const s0 = points[i].windSpeed, s1 = points[i + 1].windSpeed;
+          const g0 = points[i].windGust,  g1 = points[i + 1].windGust;
+          windSpeed = s0 !== null && s1 !== null ? s0 + (s1 - s0) * frac : (s0 ?? s1);
+          windGust  = g0 !== null && g1 !== null ? g0 + (g1 - g0) * frac : (g0 ?? g1);
+        }
+      }
+    }
+    if (windSpeed === null) {
+      const p = ms < new Date(points[0].timestamp).getTime() ? points[0] : points[points.length - 1];
+      windSpeed = p.windSpeed; windGust = p.windGust;
+    }
+
+    let tideHeight: number | null = null;
+    let tideRising: boolean | null = null;
+    if (tidePreds) {
+      tideHeight = interpTideHeight(tidePreds, ms);
+      tideRising = tideHeight > interpTideHeight(tidePreds, ms - 15 * 60 * 1000);
+    }
+
+    return {
+      windSpeed: windSpeed !== null ? Math.round(windSpeed) : null,
+      windGust:  windGust  !== null ? Math.round(windGust)  : null,
+      direction,
+      tideHeight,
+      tideRising,
+    };
+  }, [crosshairX, points, startMs, sixH, PLOT_W, tidePreds]);
+
   const lastPoint = points[points.length - 1];
   const lastReadingLabel = new Date(lastPoint.timestamp).toLocaleTimeString('en-AU', {
     hour: '2-digit', minute: '2-digit', hour12: false,
@@ -340,7 +405,16 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const hourStyle  = { fontSize: '12px', fontWeight: 500, fontFamily: 'system-ui,sans-serif', fill: '#86868b' } as const;
 
   return (
-    <svg ref={svgRef} width="100%" height={totalSvgH} style={{ display: 'block', overflow: 'visible' }}>
+    <svg
+      ref={svgRef}
+      width="100%"
+      height={totalSvgH}
+      style={{ display: 'block', overflow: 'visible', cursor: 'crosshair', touchAction: 'none', userSelect: 'none' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
       <defs>
         <clipPath id={`${chartId}-plot`}>
           <rect x={PAD_L} y={PAD_T} width={PLOT_W} height={PLOT_H} />
@@ -556,6 +630,66 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
             </g>;
           })()}
         </>;
+      })()}
+
+      {/* ── Crosshair ── */}
+      {crosshairX !== null && crosshairData && (() => {
+        const x = crosshairX;
+        const tipW = 68;
+        const rows = hasTide && crosshairData.tideHeight !== null ? 4 : 3;
+        const tipH = rows * 16 + 10;
+        const tipX = x > PAD_L + PLOT_W - tipW - 14 ? x - tipW - 8 : x + 8;
+        const tipY = PAD_T + 4;
+        const lh = 16;
+        const lineBot = hasTide ? TIDE_BOT : PAD_T + PLOT_H;
+        const labelStyle = { fontSize: '11px', fontFamily: 'system-ui,sans-serif', fontWeight: 700, fill: '#64748b' } as const;
+        const valStyle   = { fontSize: '11px', fontFamily: 'system-ui,sans-serif', fontWeight: 600 } as const;
+        const spdC  = crosshairData.windSpeed !== null ? spdColor(crosshairData.windSpeed, minSpeed, maxSpeed) : '#94a3b8';
+        const gustC = crosshairData.windGust  !== null ? spdColor(crosshairData.windGust,  minSpeed, maxSpeed) : '#94a3b8';
+        const dirC  = crosshairData.direction ? dirColor(crosshairData.direction, idealSet, crossSet) : '#94a3b8';
+
+        return <g style={{ pointerEvents: 'none' }}>
+          <line x1={x} y1={PAD_T} x2={x} y2={lineBot}
+            stroke="#475569" strokeWidth={1} strokeDasharray="3,2" opacity={0.65} />
+
+          <rect x={tipX} y={tipY} width={tipW} height={tipH}
+            fill="white" fillOpacity={0.96} stroke="#cbd5e1" strokeWidth={1} rx={5} />
+
+          {/* W row */}
+          <text x={tipX + 7} y={tipY + 13} style={labelStyle}>W</text>
+          <text x={tipX + 22} y={tipY + 13} style={{ ...valStyle, fill: spdC }}>
+            {crosshairData.windSpeed ?? '—'}
+          </text>
+
+          {/* G row */}
+          <text x={tipX + 7} y={tipY + 13 + lh} style={labelStyle}>G</text>
+          <text x={tipX + 22} y={tipY + 13 + lh} style={{ ...valStyle, fill: gustC }}>
+            {crosshairData.windGust ?? '—'}
+          </text>
+
+          {/* D row */}
+          <text x={tipX + 7} y={tipY + 13 + lh * 2} style={labelStyle}>D</text>
+          <text x={tipX + 22} y={tipY + 13 + lh * 2} style={{ ...valStyle, fill: dirC }}>
+            {crosshairData.direction ?? '—'}
+          </text>
+
+          {/* T row — tide only */}
+          {hasTide && crosshairData.tideHeight !== null && (() => {
+            const ty = tipY + 13 + lh * 3;
+            const tx = tipX + 22;
+            const s = 4;
+            return <>
+              <text x={tipX + 7} y={ty} style={labelStyle}>T</text>
+              {crosshairData.tideRising
+                ? <polygon points={`${tx + 4},${ty - s - 1} ${tx},${ty + s * 0.5} ${tx + 8},${ty + s * 0.5}`} fill="#0071e3" />
+                : <polygon points={`${tx + 4},${ty + s - 1} ${tx},${ty - s * 0.5 - 2} ${tx + 8},${ty - s * 0.5 - 2}`} fill="#0071e3" />
+              }
+              <text x={tx + 13} y={ty} style={{ ...valStyle, fill: '#0071e3' }}>
+                {crosshairData.tideHeight.toFixed(1)}
+              </text>
+            </>;
+          })()}
+        </g>;
       })()}
 
     </svg>
