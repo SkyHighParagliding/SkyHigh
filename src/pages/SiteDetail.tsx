@@ -364,7 +364,7 @@ export function SiteDetail() {
                         <div className="bg-sky/10 p-2 rounded-xl mb-2">
                           <ClipboardList className="w-5 h-5 text-sky" />
                         </div>
-                        <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">Induction</p>
+                        <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">Endorsement</p>
                         <p className="font-bold text-navy text-sm">Complete Form</p>
                       </button>
                     )}
