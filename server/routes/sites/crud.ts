@@ -192,7 +192,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, weatherGaugeUrl, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax, heroImages, displayOnMap, displayInList } = req.body;
+  const { name, type, pgRating, hgRating, windDir, windSpeed, status, hazardLevel, lat, lon, description, launch, landing, hazards, rules, image, useLiveWeather, liveStationId, liveStationIdAlt, siteguideUrl, siteContact, siteContactPhone, navigateTo, launchHeight, launchHeightHigh, launchHeight2, landingHeight2, hoodedPloversLink, hoodedPloversActive, emergencyMarker, what3words, weatherStationLink, weatherGaugeUrl, isSkyHighSite, crossLeft, crossRight, overrideHideClosed, essentialInfoImages, essentialInfoText, unassignedText, siteguideVersion, siteguideScrapedAt, isTidal, tideStationId, skipBulkImport, isXCSite, closurePillsMax, heroImages, displayOnMap, displayInList, inductionFormUrl } = req.body;
   try {
       // Parameter order for UPDATE:
       // $1=name, $2=type, $3=pgRating, $4=hgRating, $5=windDir, $6=windSpeed,
@@ -206,7 +206,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
       // $38=essentialInfoText, $39=unassignedText, $40=siteguideVersion, $41=siteguideScrapedAt,
       // $42=isTidal, $43=tideStationId, $44=skipBulkImport, $45=isXCSite,
       // $46=closurePillsMax, $47=weatherGaugeUrl, $48=heroImages,
-      // $49=displayOnMap, $50=displayInList, $51=id (WHERE clause)
+      // $49=displayOnMap, $50=displayInList, $51=id (WHERE clause), $52=inductionFormUrl
       const updateResult = await execute(`
         UPDATE sites SET
           name = $1, type = $2,
@@ -242,7 +242,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           "weatherGaugeUrl" = CASE WHEN $47::text != '' THEN $47 ELSE "weatherGaugeUrl" END,
           "heroImages" = CASE WHEN $48::text != '' AND $48::text != '[]' THEN $48 ELSE "heroImages" END,
           "displayOnMap" = $49,
-          "displayInList" = $50
+          "displayInList" = $50,
+          "inductionFormUrl" = $52
         WHERE id = $51
       `, [
           name,                                                        // $1  name
@@ -296,6 +297,7 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           displayOnMap != null ? Number(displayOnMap) : 1,            // $49 displayOnMap
           displayInList != null ? Number(displayInList) : 1,          // $50 displayInList
           req.params.id,                                               // $51 id (WHERE)
+          inductionFormUrl || null,                                    // $52 inductionFormUrl
       ]);
       if (updateResult.rowCount === 0) {
         return res.status(404).json({ error: "Site not found" });
