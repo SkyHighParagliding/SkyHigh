@@ -279,28 +279,31 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
   const dirSegPts: [number, number][][] = [];
   {
     let seg: [number, number][] = [];
-    let prevRaw: number | null = null;
+    let prevY: number | null = null;
     let prevX: number | null = null;
     for (const p of points) {
       const deg = p.direction != null ? COMPASS_DEG[p.direction] : undefined;
       if (deg === undefined) {
         if (seg.length >= 2) dirSegPts.push(seg);
-        seg = []; prevRaw = null; prevX = null; continue;
+        seg = []; prevY = null; prevX = null; continue;
       }
       const x = toX(new Date(p.timestamp).getTime());
       const y = toYDir(deg);
-      const raw = rawYDir(deg);
-      if (prevRaw !== null && prevX !== null) {
-        const lo = Math.min(prevRaw, raw), hi = Math.max(prevRaw, raw);
-        const cBot = lo < BOT_D && hi > BOT_D;
-        const cTop = lo < PAD_T && hi > PAD_T;
-        if (cBot || cTop) {
-          const br = cBot ? BOT_D : PAD_T;
-          const t = (br - prevRaw) / (raw - prevRaw);
+      if (prevY !== null && prevX !== null) {
+        const dy = y - prevY;
+        if (Math.abs(dy) > PLOT_H / 2) {
+          let exitY: number, enterY: number, d1: number, d2: number;
+          if (dy > 0) {
+            // jumped from near PAD_T to near BOT_D → exited top, entered bottom
+            exitY = PAD_T; enterY = BOT_D;
+            d1 = prevY - PAD_T; d2 = BOT_D - y;
+          } else {
+            // jumped from near BOT_D to near PAD_T → exited bottom, entered top
+            exitY = BOT_D; enterY = PAD_T;
+            d1 = BOT_D - prevY; d2 = y - PAD_T;
+          }
+          const t = d1 / (d1 + d2);
           const xC = prevX + t * (x - prevX);
-          let exitY: number, enterY: number;
-          if (cBot) { if (prevRaw < raw) { exitY = BOT_D; enterY = PAD_T; } else { exitY = PAD_T; enterY = BOT_D; } }
-          else       { if (prevRaw > raw) { exitY = PAD_T; enterY = BOT_D; } else { exitY = BOT_D; enterY = PAD_T; } }
           seg.push([xC, exitY]);
           dirSegPts.push(seg);
           seg = [[xC, enterY], [x, y]];
@@ -310,7 +313,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       } else {
         seg.push([x, y]);
       }
-      prevRaw = raw; prevX = x;
+      prevY = y; prevX = x;
     }
     if (seg.length >= 2) dirSegPts.push(seg);
   }
@@ -373,11 +376,12 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
     let windGust: number | null = null;
     let direction: string | null = null;
     let nearestDist = Infinity;
+    let nearestTimestamp: number = ms;
 
     for (let i = 0; i < points.length; i++) {
       const t = new Date(points[i].timestamp).getTime();
       const dist = Math.abs(t - ms);
-      if (dist < nearestDist) { nearestDist = dist; direction = points[i].direction; }
+      if (dist < nearestDist) { nearestDist = dist; direction = points[i].direction; nearestTimestamp = t; }
       if (i < points.length - 1) {
         const t1 = new Date(points[i + 1].timestamp).getTime();
         if (ms >= t && ms <= t1) {
@@ -407,6 +411,7 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       direction,
       tideHeight,
       tideRising,
+      nearestTimestamp,
     };
   }, [crosshairX, points, startMs, sixH, PLOT_W, tidePreds]);
 
@@ -656,8 +661,11 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
       {crosshairX !== null && crosshairData && (() => {
         const x = crosshairX;
         const tipW = 68;
-        const rows = hasTide && crosshairData.tideHeight !== null ? 4 : 3;
+        const rows = hasTide && crosshairData.tideHeight !== null ? 5 : 4;
         const tipH = rows * 16 + 10;
+        const timeLabel = new Date(crosshairData.nearestTimestamp).toLocaleTimeString('en-AU', {
+          hour: '2-digit', minute: '2-digit', hour12: false,
+        });
         const tipX = x > PAD_L + PLOT_W - tipW - 14 ? x - tipW - 8 : x + 8;
         const tipY = PAD_T + 4;
         const lh = 16;
@@ -675,27 +683,33 @@ export const WeatherHistoryChart = memo(function WeatherHistoryChart({ points, s
           <rect x={tipX} y={tipY} width={tipW} height={tipH}
             fill="white" fillOpacity={0.96} stroke="#cbd5e1" strokeWidth={1} rx={5} />
 
+          {/* Time row */}
+          <text x={tipX + 7} y={tipY + 13} style={labelStyle}>T</text>
+          <text x={tipX + 22} y={tipY + 13} style={{ ...valStyle, fill: '#334155' }}>
+            {timeLabel}
+          </text>
+
           {/* W row */}
-          <text x={tipX + 7} y={tipY + 13} style={labelStyle}>W</text>
-          <text x={tipX + 22} y={tipY + 13} style={{ ...valStyle, fill: spdC }}>
+          <text x={tipX + 7} y={tipY + 13 + lh} style={labelStyle}>W</text>
+          <text x={tipX + 22} y={tipY + 13 + lh} style={{ ...valStyle, fill: spdC }}>
             {crosshairData.windSpeed ?? '—'}
           </text>
 
           {/* G row */}
-          <text x={tipX + 7} y={tipY + 13 + lh} style={labelStyle}>G</text>
-          <text x={tipX + 22} y={tipY + 13 + lh} style={{ ...valStyle, fill: gustC }}>
+          <text x={tipX + 7} y={tipY + 13 + lh * 2} style={labelStyle}>G</text>
+          <text x={tipX + 22} y={tipY + 13 + lh * 2} style={{ ...valStyle, fill: gustC }}>
             {crosshairData.windGust ?? '—'}
           </text>
 
           {/* D row */}
-          <text x={tipX + 7} y={tipY + 13 + lh * 2} style={labelStyle}>D</text>
-          <text x={tipX + 22} y={tipY + 13 + lh * 2} style={{ ...valStyle, fill: dirC }}>
+          <text x={tipX + 7} y={tipY + 13 + lh * 3} style={labelStyle}>D</text>
+          <text x={tipX + 22} y={tipY + 13 + lh * 3} style={{ ...valStyle, fill: dirC }}>
             {crosshairData.direction ?? '—'}
           </text>
 
-          {/* T row — tide only */}
+          {/* Tide row — tide only */}
           {hasTide && crosshairData.tideHeight !== null && (() => {
-            const ty = tipY + 13 + lh * 3;
+            const ty = tipY + 13 + lh * 4;
             const tx = tipX + 22;
             const s = 4;
             return <>
