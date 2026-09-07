@@ -719,6 +719,18 @@ export function AdminSiteEdit() {
                     <p className="text-xs text-foreground-faint">Copies coordinates to clipboard and opens what3words.</p>
                   </div>
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground-label">Induction Form URL</label>
+                    <input
+                      type="text"
+                      name="inductionFormUrl"
+                      value={formData.inductionFormUrl ?? ""}
+                      onChange={handleChange}
+                      placeholder="https://docs.google.com/forms/..."
+                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                    />
+                    <p className="text-xs text-foreground-faint">Google Form URL. When set, a card appears on the site page opening the form in a full-screen overlay.</p>
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground-label">Paste Coordinates from Google Maps</label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input

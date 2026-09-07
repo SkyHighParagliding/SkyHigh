@@ -87,6 +87,7 @@ export function useSiteForm() {
     siteguideVersion: "", siteguideScrapedAt: "",
     isTidal: "false", tideStationId: "",
     skipBulkImport: "false", isXCSite: "false",
+    inductionFormUrl: "",
   });
 
   const [baseUrl, setBaseUrl] = useState(window.location.origin);
@@ -143,6 +144,7 @@ export function useSiteForm() {
             tideStationId: safeStr(data.tideStationId),
             skipBulkImport: safeStr(data.skipBulkImport) || "false",
             isXCSite: safeStr(data.isXCSite) || "false",
+            inductionFormUrl: safeStr(data.inductionFormUrl),
           });
           setEssentialImages(safeStrArr(data.essentialInfoImages));
           setClosurePillsMax(typeof data.closurePillsMax === 'number' ? data.closurePillsMax : 7);

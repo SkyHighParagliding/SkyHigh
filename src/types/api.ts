@@ -42,6 +42,7 @@ export interface Site {
   tideStationId: string;
   skipBulkImport: string;
   isXCSite: string;
+  inductionFormUrl?: string;
   essentialInfoImages?: string[];
   essentialInfoText?: string;
   temporarilyClosed?: number;

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Wind, AlertTriangle, Info, Compass, ArrowLeft, CheckCircle2, ShieldAlert, CloudSun, Pencil, Map, X, ChevronLeft, ChevronRight, Shield, Lock, Unlock, Settings } from "lucide-react";
+import { MapPin, Wind, AlertTriangle, Info, Compass, ArrowLeft, CheckCircle2, ShieldAlert, CloudSun, Pencil, Map, X, ChevronLeft, ChevronRight, Shield, Lock, Unlock, Settings, ClipboardList } from "lucide-react";
 import { EmergencyMedicalCard } from "@/components/EmergencyMedicalCard";
 import { InfoCard } from "@/components/InfoCard";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -38,6 +38,7 @@ export function SiteDetail() {
     return parseFloat(haversineDistance(site.lat, site.lon, weather.stationLat, weather.stationLon).toFixed(1));
   }, [weather, site]);
   const error = siteError ? (siteError as Error).message : "";
+  const [inductionOpen, setInductionOpen] = useState(false);
   const [essentialInfoOpen, setEssentialInfoOpen] = useState(false);
   const [essentialImgIndex, setEssentialImgIndex] = useState(0);
   const [closureLoading, setClosureLoading] = useState(false);
@@ -356,6 +357,18 @@ export function SiteDetail() {
                     {isValidField(site.siteguideUrl) && (
                       <InfoCard icon={<Info className="w-5 h-5 text-sky" />} label="Siteguide" value="View Info" href={site.siteguideUrl} />
                     )}
+                    {isValidField(site.inductionFormUrl) && (
+                      <button
+                        onClick={() => setInductionOpen(true)}
+                        className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center hover:bg-background transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-sky"
+                      >
+                        <div className="bg-sky/10 p-2 rounded-xl mb-2">
+                          <ClipboardList className="w-5 h-5 text-sky" />
+                        </div>
+                        <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">Induction</p>
+                        <p className="font-bold text-navy text-sm">Complete Form</p>
+                      </button>
+                    )}
                     {(() => {
                       const ffwxId = [site.liveStationId, site.liveStationIdAlt].find((id: string) => id?.startsWith('freeflightwx-'));
                       if (!ffwxId) return null;
@@ -574,6 +587,26 @@ export function SiteDetail() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {inductionOpen && isValidField(site?.inductionFormUrl) && (
+        <div className="fixed inset-0 z-[10002] flex flex-col bg-white">
+          <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shadow-sm shrink-0">
+            <button
+              onClick={() => setInductionOpen(false)}
+              className="flex items-center gap-2 text-sky font-semibold text-sm hover:text-sky-600 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to {site.name}
+            </button>
+          </div>
+          <iframe
+            src={site.inductionFormUrl.replace(/[?&]embedded=true/, '') + (site.inductionFormUrl.includes('?') ? '&embedded=true' : '?embedded=true')}
+            className="flex-1 w-full border-0"
+            title="Induction Form"
+            allow="camera; microphone"
+          />
         </div>
       )}
     </div>
