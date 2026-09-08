@@ -21,6 +21,14 @@ interface ExtendedGridPoint {
   windDirection: number[];
   temperature: number[];
   weatherCode: number[];
+  precipitation: number[];
+  precipitationProbability: number[];
+  cloudCover: number[];
+  cloudCoverLow: number[];
+  visibility: number[];
+  cape: number[];
+  liftedIndex: number[];
+  boundaryLayerHeight: number[];
 }
 
 interface ExtendedGrid {
@@ -48,6 +56,14 @@ interface SiteExtendedForecast {
       weatherCode: number;
       weatherSummary: string;
       weatherIcon: string;
+      precipitation: number;
+      precipitationProbability: number;
+      cloudCover: number;
+      cloudCoverLow: number;
+      visibility: number;
+      cape: number;
+      liftedIndex: number;
+      boundaryLayerHeight: number;
     }[];
     bestSpeed: number;
     bestDirection: string;
@@ -103,8 +119,15 @@ function filterToExtendedSlots(times: string[], data: {
   windDirection: number[];
   temperature: number[];
   weatherCode: number[];
+  precipitation: number[];
+  precipitationProbability: number[];
+  cloudCover: number[];
+  cloudCoverLow: number[];
+  visibility: number[];
+  cape: number[];
+  liftedIndex: number[];
+  boundaryLayerHeight: number[];
 }): { filteredTimes: string[]; filteredData: typeof data } {
-  const today = getMelbourneDate(0);
   const tomorrow = getMelbourneDate(1);
   const targetHours = [7, 11, 15, 19];
 
@@ -129,6 +152,14 @@ function filterToExtendedSlots(times: string[], data: {
       windDirection: filteredIndices.map(i => data.windDirection[i]),
       temperature: filteredIndices.map(i => data.temperature[i]),
       weatherCode: filteredIndices.map(i => data.weatherCode[i]),
+      precipitation: filteredIndices.map(i => data.precipitation[i] ?? 0),
+      precipitationProbability: filteredIndices.map(i => data.precipitationProbability[i] ?? 0),
+      cloudCover: filteredIndices.map(i => data.cloudCover[i] ?? 0),
+      cloudCoverLow: filteredIndices.map(i => data.cloudCoverLow[i] ?? 0),
+      visibility: filteredIndices.map(i => data.visibility[i] ?? 0),
+      cape: filteredIndices.map(i => data.cape[i] ?? 0),
+      liftedIndex: filteredIndices.map(i => data.liftedIndex[i] ?? 0),
+      boundaryLayerHeight: filteredIndices.map(i => data.boundaryLayerHeight[i] ?? 0),
     }
   };
 }
@@ -157,7 +188,7 @@ export async function fetchExtendedForecast(): Promise<void> {
       const params = buildOpenMeteoParams({
         lats: tile.lats,
         lons: tile.lons,
-        hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
+        hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,lifted_index,boundary_layer_height',
         forecastDays: 8,
         apiKey: OPEN_METEO_API_KEY || undefined,
       });
@@ -178,6 +209,14 @@ export async function fetchExtendedForecast(): Promise<void> {
             windDirection: r.hourly.wind_direction_10m,
             temperature: r.hourly.temperature_2m,
             weatherCode: r.hourly.weather_code,
+            precipitation: r.hourly.precipitation ?? [],
+            precipitationProbability: r.hourly.precipitation_probability ?? [],
+            cloudCover: r.hourly.cloud_cover ?? [],
+            cloudCoverLow: r.hourly.cloud_cover_low ?? [],
+            visibility: r.hourly.visibility ?? [],
+            cape: r.hourly.cape ?? [],
+            liftedIndex: r.hourly.lifted_index ?? [],
+            boundaryLayerHeight: r.hourly.boundary_layer_height ?? [],
           });
 
           if (filteredTimes.length > 0) {
@@ -190,6 +229,14 @@ export async function fetchExtendedForecast(): Promise<void> {
               windDirection: filteredData.windDirection,
               temperature: filteredData.temperature,
               weatherCode: filteredData.weatherCode,
+              precipitation: filteredData.precipitation,
+              precipitationProbability: filteredData.precipitationProbability,
+              cloudCover: filteredData.cloudCover,
+              cloudCoverLow: filteredData.cloudCoverLow,
+              visibility: filteredData.visibility,
+              cape: filteredData.cape,
+              liftedIndex: filteredData.liftedIndex,
+              boundaryLayerHeight: filteredData.boundaryLayerHeight,
             });
           }
         }
@@ -429,6 +476,14 @@ function buildSiteExtendedForecast(
           weatherCode: wc,
           weatherSummary: text,
           weatherIcon: icon,
+          precipitation: vicNearestPoint.hourly.precipitation[idx] ?? 0,
+          precipitationProbability: vicNearestPoint.hourly.precipitation_probability[idx] ?? 0,
+          cloudCover: vicNearestPoint.hourly.cloud_cover[idx] ?? 0,
+          cloudCoverLow: vicNearestPoint.hourly.cloud_cover_low[idx] ?? 0,
+          visibility: vicNearestPoint.hourly.visibility[idx] ?? 0,
+          cape: vicNearestPoint.hourly.cape[idx] ?? 0,
+          liftedIndex: vicNearestPoint.hourly.lifted_index[idx] ?? 0,
+          boundaryLayerHeight: vicNearestPoint.hourly.boundary_layer_height[idx] ?? 0,
         });
       }
     }
@@ -444,6 +499,14 @@ function buildSiteExtendedForecast(
         weatherCode: 0,
         weatherSummary: h.summary || '',
         weatherIcon: h.icon || 'CloudSun',
+        precipitation: 0,
+        precipitationProbability: 0,
+        cloudCover: 0,
+        cloudCoverLow: 0,
+        visibility: 0,
+        cape: 0,
+        liftedIndex: 0,
+        boundaryLayerHeight: 0,
       }));
 
       const bestIdx = pickBestSlotIdx(slots, siteInfo);
@@ -498,6 +561,14 @@ function buildSiteExtendedForecast(
         weatherCode: wc,
         weatherSummary: text,
         weatherIcon: icon,
+        precipitation: nearest.precipitation[i] ?? 0,
+        precipitationProbability: nearest.precipitationProbability[i] ?? 0,
+        cloudCover: nearest.cloudCover[i] ?? 0,
+        cloudCoverLow: nearest.cloudCoverLow[i] ?? 0,
+        visibility: nearest.visibility[i] ?? 0,
+        cape: nearest.cape[i] ?? 0,
+        liftedIndex: nearest.liftedIndex[i] ?? 0,
+        boundaryLayerHeight: nearest.boundaryLayerHeight[i] ?? 0,
       };
     });
 
@@ -688,6 +759,14 @@ export async function getSiteExtendedForecast(siteId: string): Promise<SiteExten
               weatherCode: 0,
               weatherSummary: h.summary || '',
               weatherIcon: h.icon || 'CloudSun',
+              precipitation: 0,
+              precipitationProbability: 0,
+              cloudCover: 0,
+              cloudCoverLow: 0,
+              visibility: 0,
+              cape: 0,
+              liftedIndex: 0,
+              boundaryLayerHeight: 0,
             }));
           if (todaySlots.length >= 3) {
             const bestIdx = pickBestSlotIdx(todaySlots);

@@ -102,6 +102,14 @@ interface GridPoint {
     wind_direction_10m: number[];
     temperature_2m: number[];
     weather_code: number[];
+    precipitation: number[];
+    precipitation_probability: number[];
+    cloud_cover: number[];
+    cloud_cover_low: number[];
+    visibility: number[];
+    cape: number[];
+    lifted_index: number[];
+    boundary_layer_height: number[];
   };
 }
 
@@ -208,7 +216,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     const params = buildOpenMeteoParams({
       lats: tile.lats,
       lons: tile.lons,
-      hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code',
+      hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,lifted_index,boundary_layer_height',
       forecastDays: 2,
       apiKey: OPEN_METEO_API_KEY || undefined,
     });
@@ -236,7 +244,15 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
             wind_gusts_10m: hourlyFields.wind_gusts_10m ?? [],
             wind_direction_10m: hourlyFields.wind_direction_10m,
             temperature_2m: hourlyFields.temperature_2m ?? [],
-            weather_code: hourlyFields.weather_code ?? []
+            weather_code: hourlyFields.weather_code ?? [],
+            precipitation: hourlyFields.precipitation ?? [],
+            precipitation_probability: hourlyFields.precipitation_probability ?? [],
+            cloud_cover: hourlyFields.cloud_cover ?? [],
+            cloud_cover_low: hourlyFields.cloud_cover_low ?? [],
+            visibility: hourlyFields.visibility ?? [],
+            cape: hourlyFields.cape ?? [],
+            lifted_index: hourlyFields.lifted_index ?? [],
+            boundary_layer_height: hourlyFields.boundary_layer_height ?? [],
           }
         });
       }
@@ -418,7 +434,15 @@ async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
             wind_gusts_10m: [],
             wind_direction_10m: hourlyFields.wind_direction_10m,
             temperature_2m: [],
-            weather_code: []
+            weather_code: [],
+            precipitation: [],
+            precipitation_probability: [],
+            cloud_cover: [],
+            cloud_cover_low: [],
+            visibility: [],
+            cape: [],
+            lifted_index: [],
+            boundary_layer_height: [],
           }
         });
       }
