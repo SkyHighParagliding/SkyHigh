@@ -82,6 +82,7 @@ const AdminFlightTracker = lazy(() => import("./pages/AdminFlightTracker").then(
 const AdminSafety = lazy(() => import("./pages/AdminSafety").then(m => ({ default: m.AdminSafety })));
 const AdminPublicContacts = lazy(() => import("./pages/AdminPublicContacts").then(m => ({ default: m.AdminPublicContacts })));
 const AdminSiteOptions = lazy(() => import("./pages/AdminSiteOptions").then(m => ({ default: m.AdminSiteOptions })));
+const AdminForecast = lazy(() => import("./pages/AdminForecast").then(m => ({ default: m.AdminForecast })));
 const AdminLogin = lazy(() => import("./pages/AdminLogin").then(m => ({ default: m.AdminLogin })));
 
 function SlugFallback() {
@@ -239,6 +240,7 @@ export default function App() {
               <Route path="admin/safety" element={<AdminRoute><AdminSafety /></AdminRoute>} />
               <Route path="admin/public-contacts" element={<AdminRoute><AdminPublicContacts /></AdminRoute>} />
               <Route path="admin/site-options" element={<AdminRoute><AdminSiteOptions /></AdminRoute>} />
+              <Route path="admin/forecast" element={<AdminRoute><AdminForecast /></AdminRoute>} />
 
               <Route path="page/:slug" element={<Page />} />
               <Route path="features" element={<Features />} />

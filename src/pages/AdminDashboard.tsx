@@ -200,6 +200,18 @@ export function AdminDashboard() {
               </Card>
             </Link>
 
+            <Link to="/admin/forecast" className="block group">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                    <BarChart3 className="w-6 h-6 mr-2" />
+                    Forecast Features
+                  </CardTitle>
+                  <CardDescription>Control thermal map, meteogram, and flying condition feature flags and thresholds.</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+
             <Link to="/admin/ai-models" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
