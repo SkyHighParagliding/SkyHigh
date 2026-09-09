@@ -284,7 +284,7 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Fine), 5:13am (Coarse), and 5:30am (Extended). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Fine wind/weather), 5:26am (Thermal CAPE+BLH), and 5:30am (Extended 7-day). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
@@ -335,20 +335,20 @@ export function AdminWeather() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleTrigger("/api/weather/coarse-grid/fetch-now", "coarse")}
+                    onClick={() => handleTrigger("/api/weather/thermal-grid/fetch-now", "thermal")}
                     disabled={loadingType !== null}
                     className="flex items-center gap-2 whitespace-nowrap"
                   >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'coarse' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'coarse' ? "Fetching..." : "Coarse Grid"}
+                    <RefreshCw className={`w-4 h-4 ${loadingType === 'thermal' ? 'animate-spin' : ''}`} />
+                    {loadingType === 'thermal' ? "Fetching..." : "Thermal Grid"}
                   </Button>
-                  {messages.coarse && (
+                  {messages.thermal && (
                     <span className={`text-xs font-medium text-center ${
-                      messages.coarse.toLowerCase().includes('failed') || messages.coarse.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.coarse.toLowerCase().includes('rate limited') || messages.coarse.toLowerCase().includes('partial') ? 'text-amber-500' :
+                      messages.thermal.toLowerCase().includes('failed') || messages.thermal.toLowerCase().includes('error') ? 'text-red-500' :
+                      messages.thermal.toLowerCase().includes('rate limited') || messages.thermal.toLowerCase().includes('partial') ? 'text-amber-500' :
                       'text-emerald-500'
                     }`}>
-                      {messages.coarse}
+                      {messages.thermal}
                     </span>
                   )}
                 </div>
@@ -356,7 +356,7 @@ export function AdminWeather() {
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
                   { label: "Fine grid", runKey: "fineGridLastRun", resultKey: "fineGridLastResult" },
-                  { label: "Coarse grid", runKey: "coarseGridLastRun", resultKey: "coarseGridLastResult" },
+                  { label: "Thermal grid", runKey: "thermalGridLastRun", resultKey: "thermalGridLastResult" },
                   { label: "Extended (7-day)", runKey: "extendedForecastLastRun", resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
@@ -395,7 +395,7 @@ export function AdminWeather() {
             isOpen={showGridSelector}
             onClose={() => setShowGridSelector(false)}
             onSaved={() => {
-              setMessages(prev => ({ ...prev, fine: "", coarse: "" }));
+              setMessages(prev => ({ ...prev, fine: "", thermal: "" }));
             }}
           />
 

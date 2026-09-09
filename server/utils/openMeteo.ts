@@ -29,7 +29,7 @@ export function buildOpenMeteoParams({
     latitude: lats.join(','),
     longitude: lons.join(','),
     hourly: hourlyFields,
-    models: 'ecmwf_ifs025',
+    models: 'ecmwf_ifs',
     wind_speed_unit: 'kn',
     timezone: 'Australia/Melbourne',
     forecast_days: String(forecastDays),

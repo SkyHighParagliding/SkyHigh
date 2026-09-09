@@ -126,18 +126,18 @@ async function fetchFineGridDaily() {
   }
 }
 
-async function fetchCoarseGridDaily() {
+async function fetchThermalGridDaily() {
   const ts = new Date().toISOString();
   try {
-    const { fetchCoarseGrid } = await import("../victoriaGrid.js");
-    await fetchCoarseGrid(true);
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastRun", ts]);
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastResult", "ok"]);
-    log.info("Coarse grid daily fetch completed");
+    const { fetchThermalGrid } = await import("../victoriaGrid.js");
+    await fetchThermalGrid(true);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", "ok"]);
+    log.info("Thermal grid daily fetch completed");
   } catch (e: any) {
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastRun", ts]);
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["coarseGridLastResult", e.message || "Unknown error"]);
-    log.error(`Coarse grid daily fetch failed: ${e.message}`);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", e.message || "Unknown error"]);
+    log.error(`Thermal grid daily fetch failed: ${e.message}`);
   }
 }
 
@@ -159,19 +159,19 @@ async function startupGridCheck() {
     setTimeout(() => fetchFineGridDaily(), 60_000);
   }
 
-  // Check coarse grid: only fetch if NOT fetched within last 12 hours
-  const wideLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'coarseGridLastRun'");
-  if (wideLastRun?.value) {
-    const timeSinceLastRun = Date.now() - new Date(wideLastRun.value).getTime();
+  // Check thermal grid: only fetch if NOT fetched within last 22 hours
+  const thermalLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridLastRun'");
+  if (thermalLastRun?.value) {
+    const timeSinceLastRun = Date.now() - new Date(thermalLastRun.value).getTime();
     if (timeSinceLastRun < RECENT_FETCH_MS) {
-      log.info(`Coarse grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
+      log.info(`Thermal grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
     } else {
-      log.info(`Coarse grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
-      setTimeout(() => fetchCoarseGridDaily(), 3 * 60_000);
+      log.info(`Thermal grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
+      setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
     }
   } else {
-    log.info("Coarse grid never fetched — fetching in 3min...");
-    setTimeout(() => fetchCoarseGridDaily(), 3 * 60_000);
+    log.info("Thermal grid never fetched — fetching in 3min...");
+    setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
   }
 }
 
@@ -179,12 +179,12 @@ export async function startScheduledJobs() {
   // On startup: catch up if grid data is stale (server started after scheduled window)
   await startupGridCheck();
 
-  // Daily wind grid pre-fetches: Fine at 5:00am, Coarse at 5:13am (Melbourne time)
+  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am (Melbourne time)
   cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
 
-  cron.schedule("13 5 * * *", fetchCoarseGridDaily, { timezone: "Australia/Melbourne" });
-  log.info("Coarse grid daily fetch scheduled: 5:13am Melbourne time");
+  cron.schedule("26 5 * * *", fetchThermalGridDaily, { timezone: "Australia/Melbourne" });
+  log.info("Thermal grid daily fetch scheduled: 5:26am Melbourne time");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));

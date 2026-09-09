@@ -32,8 +32,8 @@ interface Settings {
   weatherScraperLastRun?: string;
   fineGridLastRun?: string;
   fineGridLastResult?: string;
-  coarseGridLastRun?: string;
-  coarseGridLastResult?: string;
+  thermalGridLastRun?: string;
+  thermalGridLastResult?: string;
   extendedForecastLastRun?: string;
   extendedForecastLastResult?: string;
   homeCardsSelection?: string;
@@ -266,8 +266,8 @@ function buildSettings(data: Record<string, any>): Settings {
     weatherScraperLastRun: data.weatherScraperLastRun,
     fineGridLastRun: data.fineGridLastRun,
     fineGridLastResult: data.fineGridLastResult,
-    coarseGridLastRun: data.coarseGridLastRun,
-    coarseGridLastResult: data.coarseGridLastResult,
+    thermalGridLastRun: data.thermalGridLastRun,
+    thermalGridLastResult: data.thermalGridLastResult,
     extendedForecastLastRun: data.extendedForecastLastRun,
     extendedForecastLastResult: data.extendedForecastLastResult,
     homeCardsSelection: cleanString(data.homeCardsSelection),

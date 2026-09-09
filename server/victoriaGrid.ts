@@ -9,9 +9,8 @@ const OPEN_METEO_URL = OPEN_METEO_API_KEY
   : `https://api.open-meteo.com/v1/forecast`;
 
 const FINE_GRID_CACHE_KEY = "fine_grid";
-const COARSE_GRID_CACHE_KEY = "coarse_grid";
+const THERMAL_GRID_CACHE_KEY = "thermal_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
-const COARSE_GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
 
 function melbourneToday(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
@@ -31,27 +30,23 @@ export interface GridFetchStatus {
   cacheAgeMinutes?: number;
 }
 
-// Default bounds — used as fallback when no grid bounds saved in settings
-const FINE_LAT_MIN = -39.2;
-const FINE_LAT_MAX = -34.0;
-const FINE_LON_MIN = 141.0;
-const FINE_LON_MAX = 150.0;
-const FINE_DELTA = 0.35;
+// Default bounds — Victoria + surrounds, covering all club sites
+const FINE_LAT_MIN = -39.5;
+const FINE_LAT_MAX = -33.5;
+const FINE_LON_MIN = 140.0;
+const FINE_LON_MAX = 151.0;
+const FINE_DELTA = 0.15;
 
-const COARSE_LAT_MIN = -50;
-const COARSE_LAT_MAX = -5;
-const COARSE_LON_MIN = 105;
-const COARSE_LON_MAX = 165;
-const COARSE_DELTA = 2.0;
+// Thermal grid: same bounds, finer resolution, CAPE + BLH only
+const THERMAL_DELTA = 0.09;
+const THERMAL_MAX_PER_TILE = 300;
 
 export interface GridBounds {
   fineLatMin: number; fineLatMax: number; fineLonMin: number; fineLonMax: number;
-  coarseLatMin: number; coarseLatMax: number; coarseLonMin: number; coarseLonMax: number;
 }
 
 export async function getGridBounds(): Promise<GridBounds> {
-  const keys = ['gridFineLatMin','gridFineLatMax','gridFineLonMin','gridFineLonMax',
-                 'gridCoarseLatMin','gridCoarseLatMax','gridCoarseLonMin','gridCoarseLonMax'];
+  const keys = ['gridFineLatMin', 'gridFineLatMax', 'gridFineLonMin', 'gridFineLonMax'];
   try {
     const rows = await query<{ key: string; value: string }>(
       `SELECT key, value FROM settings WHERE key IN (${keys.map((_k, i) => `$${i + 1}`).join(',')})`,
@@ -60,21 +55,15 @@ export async function getGridBounds(): Promise<GridBounds> {
     const s: Record<string, number> = {};
     for (const r of rows) s[r.key] = parseFloat(r.value);
     return {
-      fineLatMin:   Number.isFinite(s.gridFineLatMin)   ? s.gridFineLatMin   : FINE_LAT_MIN,
-      fineLatMax:   Number.isFinite(s.gridFineLatMax)   ? s.gridFineLatMax   : FINE_LAT_MAX,
-      fineLonMin:   Number.isFinite(s.gridFineLonMin)   ? s.gridFineLonMin   : FINE_LON_MIN,
-      fineLonMax:   Number.isFinite(s.gridFineLonMax)   ? s.gridFineLonMax   : FINE_LON_MAX,
-      coarseLatMin: Number.isFinite(s.gridCoarseLatMin) ? s.gridCoarseLatMin : COARSE_LAT_MIN,
-      coarseLatMax: Number.isFinite(s.gridCoarseLatMax) ? s.gridCoarseLatMax : COARSE_LAT_MAX,
-      coarseLonMin: Number.isFinite(s.gridCoarseLonMin) ? s.gridCoarseLonMin : COARSE_LON_MIN,
-      coarseLonMax: Number.isFinite(s.gridCoarseLonMax) ? s.gridCoarseLonMax : COARSE_LON_MAX,
+      fineLatMin: Number.isFinite(s.gridFineLatMin) ? s.gridFineLatMin : FINE_LAT_MIN,
+      fineLatMax: Number.isFinite(s.gridFineLatMax) ? s.gridFineLatMax : FINE_LAT_MAX,
+      fineLonMin: Number.isFinite(s.gridFineLonMin) ? s.gridFineLonMin : FINE_LON_MIN,
+      fineLonMax: Number.isFinite(s.gridFineLonMax) ? s.gridFineLonMax : FINE_LON_MAX,
     };
   } catch {
     return {
       fineLatMin: FINE_LAT_MIN, fineLatMax: FINE_LAT_MAX,
       fineLonMin: FINE_LON_MIN, fineLonMax: FINE_LON_MAX,
-      coarseLatMin: COARSE_LAT_MIN, coarseLatMax: COARSE_LAT_MAX,
-      coarseLonMin: COARSE_LON_MIN, coarseLonMax: COARSE_LON_MAX,
     };
   }
 }
@@ -92,6 +81,8 @@ async function cleanupOldGridData(baseKey: string): Promise<void> {
   }
 }
 
+// ─── Fine wind/weather grid ───────────────────────────────────────────────────
+
 interface GridPoint {
   lat: number;
   lon: number;
@@ -108,7 +99,6 @@ interface GridPoint {
     cloud_cover_low: number[];
     visibility: number[];
     cape: number[];
-    lifted_index: number[];
     boundary_layer_height: number[];
   };
 }
@@ -146,23 +136,16 @@ async function buildFineTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
 
   const MAX_PER_TILE = 90;
   const tiles: { lats: number[]; lons: number[] }[] = [];
-
   for (let i = 0; i < allPoints.length; i += MAX_PER_TILE) {
     const chunk = allPoints.slice(i, i + MAX_PER_TILE);
-    tiles.push({
-      lats: chunk.map(p => p.lat),
-      lons: chunk.map(p => p.lon)
-    });
+    tiles.push({ lats: chunk.map(p => p.lat), lons: chunk.map(p => p.lon) });
   }
-
   return tiles;
 }
 
 const MEM_CACHE_TTL_MS = 30 * 60 * 1000;
 let memFineGrid: VictoriaGrid | null = null;
 let memFineGridAt = 0;
-let memCoarseGrid: VictoriaGrid | null = null;
-let memCoarseGridAt = 0;
 
 let cachedFullWindOverlay: any = null;
 let cachedFullWindOverlayKey = '';
@@ -205,7 +188,7 @@ export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
 }
 
 async function doFetchFineGrid(): Promise<VictoriaGrid> {
-  console.log("Fine grid: Fetching fresh data from Open-Meteo...");
+  console.log("Fine grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg)...");
 
   const bounds = await getGridBounds();
   const tiles = await buildFineTiles();
@@ -218,7 +201,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     const params = buildOpenMeteoParams({
       lats: tile.lats,
       lons: tile.lons,
-      hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,lifted_index,boundary_layer_height',
+      hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,boundary_layer_height',
       forecastDays: 2,
       apiKey: OPEN_METEO_API_KEY || undefined,
     });
@@ -232,8 +215,8 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (!r?.hourly) continue;
-        const hourlyFields = r.hourly;
-        if (!Array.isArray(hourlyFields.wind_speed_10m) || !Array.isArray(hourlyFields.wind_direction_10m)) {
+        const h = r.hourly;
+        if (!Array.isArray(h.wind_speed_10m) || !Array.isArray(h.wind_direction_10m)) {
           console.warn(`Fine grid: Skipping point ${tile.lats[j]},${tile.lons[j]} — missing hourly arrays`);
           continue;
         }
@@ -241,20 +224,19 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
           lat: tile.lats[j],
           lon: tile.lons[j],
           hourly: {
-            time: hourlyFields.time ?? [],
-            wind_speed_10m: hourlyFields.wind_speed_10m,
-            wind_gusts_10m: hourlyFields.wind_gusts_10m ?? [],
-            wind_direction_10m: hourlyFields.wind_direction_10m,
-            temperature_2m: hourlyFields.temperature_2m ?? [],
-            weather_code: hourlyFields.weather_code ?? [],
-            precipitation: hourlyFields.precipitation ?? [],
-            precipitation_probability: hourlyFields.precipitation_probability ?? [],
-            cloud_cover: hourlyFields.cloud_cover ?? [],
-            cloud_cover_low: hourlyFields.cloud_cover_low ?? [],
-            visibility: hourlyFields.visibility ?? [],
-            cape: hourlyFields.cape ?? [],
-            lifted_index: hourlyFields.lifted_index ?? [],
-            boundary_layer_height: hourlyFields.boundary_layer_height ?? [],
+            time: h.time ?? [],
+            wind_speed_10m: h.wind_speed_10m,
+            wind_gusts_10m: h.wind_gusts_10m ?? [],
+            wind_direction_10m: h.wind_direction_10m,
+            temperature_2m: h.temperature_2m ?? [],
+            weather_code: h.weather_code ?? [],
+            precipitation: h.precipitation ?? [],
+            precipitation_probability: h.precipitation_probability ?? [],
+            cloud_cover: h.cloud_cover ?? [],
+            cloud_cover_low: h.cloud_cover_low ?? [],
+            visibility: h.visibility ?? [],
+            cape: h.cape ?? [],
+            boundary_layer_height: h.boundary_layer_height ?? [],
           }
         });
       }
@@ -325,195 +307,6 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   return grid;
 }
 
-async function buildCoarseTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
-  const bounds = await getGridBounds();
-  const allLats: number[] = [];
-  const allLons: number[] = [];
-
-  for (let lat = bounds.coarseLatMin; lat <= bounds.coarseLatMax; lat += COARSE_DELTA) {
-    allLats.push(parseFloat(lat.toFixed(4)));
-  }
-  for (let lon = bounds.coarseLonMin; lon <= bounds.coarseLonMax; lon += COARSE_DELTA) {
-    allLons.push(parseFloat(lon.toFixed(4)));
-  }
-
-  const allPoints: { lat: number; lon: number }[] = [];
-  for (const lat of allLats) {
-    for (const lon of allLons) {
-      allPoints.push({ lat, lon });
-    }
-  }
-
-  const MAX_PER_TILE = 90;
-  const tiles: { lats: number[]; lons: number[] }[] = [];
-
-  for (let i = 0; i < allPoints.length; i += MAX_PER_TILE) {
-    const chunk = allPoints.slice(i, i + MAX_PER_TILE);
-    tiles.push({
-      lats: chunk.map(p => p.lat),
-      lons: chunk.map(p => p.lon)
-    });
-  }
-
-  return tiles;
-}
-
-let inflightCoarseFetch: Promise<VictoriaGrid> | null = null;
-
-export async function fetchCoarseGrid(force = false): Promise<VictoriaGrid> {
-  if (!force) {
-    try {
-      const today = melbourneToday();
-      const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
-      if (cached) {
-        const age = Date.now() - new Date(cached.updatedAt).getTime();
-        if (age < COARSE_GRID_CACHE_EXPIRY) {
-          const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-          console.log(`Coarse grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
-          memCoarseGrid = grid;
-          memCoarseGridAt = Date.now();
-          return grid;
-        }
-      }
-    } catch (e) {
-      console.error("Coarse grid: Cache read error, will re-fetch", e);
-    }
-  }
-
-  if (inflightCoarseFetch) {
-    console.log("Coarse grid: Waiting for in-flight fetch...");
-    return inflightCoarseFetch;
-  }
-
-  inflightCoarseFetch = doFetchCoarseGrid();
-  try {
-    return await inflightCoarseFetch;
-  } finally {
-    inflightCoarseFetch = null;
-  }
-}
-
-async function doFetchCoarseGrid(): Promise<VictoriaGrid> {
-  console.log("Coarse grid: Fetching fresh data from Open-Meteo...");
-
-  const bounds = await getGridBounds();
-  const tiles = await buildCoarseTiles();
-  const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
-  console.log(`Coarse grid: ${totalPoints} total points in ${tiles.length} tiles`);
-
-  const allPoints: GridPoint[] = [];
-
-  for (let i = 0; i < tiles.length; i++) {
-    const tile = tiles[i];
-    const params = buildOpenMeteoParams({
-      lats: tile.lats,
-      lons: tile.lons,
-      hourlyFields: 'wind_speed_10m,wind_direction_10m',
-      forecastDays: 2,
-      apiKey: OPEN_METEO_API_KEY || undefined,
-    });
-
-    const url = `${OPEN_METEO_URL}?${params.toString()}`;
-
-    try {
-      const rawData = await fetchWithRetry(url);
-      const results = Array.isArray(rawData) ? rawData : [rawData];
-
-      for (let j = 0; j < results.length; j++) {
-        const r = results[j];
-        if (!r?.hourly) continue;
-        const hourlyFields = r.hourly;
-        if (!Array.isArray(hourlyFields.wind_speed_10m) || !Array.isArray(hourlyFields.wind_direction_10m)) {
-          console.warn(`Coarse grid: Skipping point ${tile.lats[j]},${tile.lons[j]} — missing hourly arrays`);
-          continue;
-        }
-        allPoints.push({
-          lat: tile.lats[j],
-          lon: tile.lons[j],
-          hourly: {
-            time: hourlyFields.time ?? [],
-            wind_speed_10m: hourlyFields.wind_speed_10m,
-            wind_gusts_10m: [],
-            wind_direction_10m: hourlyFields.wind_direction_10m,
-            temperature_2m: [],
-            weather_code: [],
-            precipitation: [],
-            precipitation_probability: [],
-            cloud_cover: [],
-            cloud_cover_low: [],
-            visibility: [],
-            cape: [],
-            lifted_index: [],
-            boundary_layer_height: [],
-          }
-        });
-      }
-
-      console.log(`Coarse grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
-
-      if (i < tiles.length - 1) {
-        await new Promise(r => setTimeout(r, 500));
-      }
-    } catch (err) {
-      console.error(`Coarse grid: Tile ${i + 1}/${tiles.length} failed:`, err);
-    }
-  }
-
-  const ni = Math.round((bounds.coarseLonMax - bounds.coarseLonMin) / COARSE_DELTA) + 1;
-  const nj = Math.round((bounds.coarseLatMax - bounds.coarseLatMin) / COARSE_DELTA) + 1;
-  const completeness = allPoints.length / totalPoints;
-
-  if (completeness < 0.8) {
-    console.warn(`Coarse grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
-    if (completeness === 0) throw new Error(`All tiles failed (429 rate limited) — no data fetched`);
-    const today = melbourneToday();
-    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
-    if (!cached) {
-      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
-      if (rows.length > 0) cached = rows[0];
-    }
-    if (cached) {
-      try {
-        const fallbackGrid = JSON.parse(cached.gridData) as VictoriaGrid;
-        memCoarseGrid = fallbackGrid;
-        memCoarseGridAt = Date.now();
-        return fallbackGrid;
-      } catch (e: any) {
-        console.error("Coarse grid: Failed to parse cached data:", e.message);
-      }
-    }
-  }
-
-  const grid: VictoriaGrid = {
-    latMin: bounds.coarseLatMin,
-    latMax: bounds.coarseLatMax,
-    lonMin: bounds.coarseLonMin,
-    lonMax: bounds.coarseLonMax,
-    delta: COARSE_DELTA,
-    ni, nj,
-    points: allPoints,
-    fetchedAt: Date.now()
-  };
-
-  try {
-    const jsonStr = JSON.stringify(grid);
-    const today = melbourneToday();
-    const cacheKey = `${COARSE_GRID_CACHE_KEY}_${today}`;
-    await execute(
-      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
-      [cacheKey, jsonStr, ni, COARSE_DELTA]
-    );
-    console.log(`Coarse grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024).toFixed(0)}KB)`);
-    await cleanupOldGridData(COARSE_GRID_CACHE_KEY);
-  } catch (e) {
-    console.error("Coarse grid: Failed to cache:", e);
-  }
-
-  memCoarseGrid = grid;
-  memCoarseGridAt = Date.now();
-  return grid;
-}
-
 export async function getCachedFineGrid(): Promise<VictoriaGrid | null> {
   if (memFineGrid && Date.now() - memFineGridAt < MEM_CACHE_TTL_MS) {
     return memFineGrid;
@@ -539,43 +332,233 @@ export async function getCachedFineGrid(): Promise<VictoriaGrid | null> {
   return null;
 }
 
-export async function getCachedCoarseGrid(): Promise<VictoriaGrid | null> {
-  if (memCoarseGrid && Date.now() - memCoarseGridAt < MEM_CACHE_TTL_MS) {
-    return memCoarseGrid;
+// ─── Thermal grid (CAPE + BLH at 0.09°) ─────────────────────────────────────
+
+interface ThermalPoint {
+  lat: number;
+  lon: number;
+  hourly: {
+    time: string[];
+    cape: number[];
+    boundary_layer_height: number[];
+  };
+}
+
+interface ThermalVictoriaGrid {
+  latMin: number; latMax: number;
+  lonMin: number; lonMax: number;
+  delta: number; ni: number; nj: number;
+  points: ThermalPoint[];
+  fetchedAt: number;
+}
+
+let memThermalGrid: ThermalVictoriaGrid | null = null;
+let memThermalGridAt = 0;
+let inflightThermalFetch: Promise<ThermalVictoriaGrid> | null = null;
+
+async function buildThermalTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
+  const bounds = await getGridBounds();
+  const allLats: number[] = [];
+  const allLons: number[] = [];
+
+  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += THERMAL_DELTA) {
+    allLats.push(parseFloat(lat.toFixed(4)));
+  }
+  for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += THERMAL_DELTA) {
+    allLons.push(parseFloat(lon.toFixed(4)));
+  }
+
+  const allPoints: { lat: number; lon: number }[] = [];
+  for (const lat of allLats) {
+    for (const lon of allLons) {
+      allPoints.push({ lat, lon });
+    }
+  }
+
+  const tiles: { lats: number[]; lons: number[] }[] = [];
+  for (let i = 0; i < allPoints.length; i += THERMAL_MAX_PER_TILE) {
+    const chunk = allPoints.slice(i, i + THERMAL_MAX_PER_TILE);
+    tiles.push({ lats: chunk.map(p => p.lat), lons: chunk.map(p => p.lon) });
+  }
+  return tiles;
+}
+
+export async function fetchThermalGrid(force = false): Promise<ThermalVictoriaGrid> {
+  if (!force) {
+    try {
+      const today = melbourneToday();
+      const cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${THERMAL_GRID_CACHE_KEY}_${today}`]);
+      if (cached) {
+        const age = Date.now() - new Date(cached.updatedAt).getTime();
+        if (age < GRID_CACHE_EXPIRY) {
+          const grid = JSON.parse(cached.gridData) as ThermalVictoriaGrid;
+          console.log(`Thermal grid: Using cached data (age: ${Math.round(age / 60000)}min)`);
+          memThermalGrid = grid;
+          memThermalGridAt = Date.now();
+          return grid;
+        }
+      }
+    } catch (e) {
+      console.error("Thermal grid: Cache read error, will re-fetch", e);
+    }
+  }
+
+  if (inflightThermalFetch) {
+    console.log("Thermal grid: Waiting for in-flight fetch...");
+    return inflightThermalFetch;
+  }
+
+  inflightThermalFetch = doFetchThermalGrid();
+  try {
+    return await inflightThermalFetch;
+  } finally {
+    inflightThermalFetch = null;
+  }
+}
+
+async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
+  console.log("Thermal grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg, CAPE+BLH only)...");
+
+  const bounds = await getGridBounds();
+  const tiles = await buildThermalTiles();
+  const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
+  console.log(`Thermal grid: ${totalPoints} total points in ${tiles.length} tiles`);
+
+  const allPoints: ThermalPoint[] = [];
+
+  for (let i = 0; i < tiles.length; i++) {
+    const tile = tiles[i];
+    const params = buildOpenMeteoParams({
+      lats: tile.lats,
+      lons: tile.lons,
+      hourlyFields: 'cape,boundary_layer_height',
+      forecastDays: 2,
+      apiKey: OPEN_METEO_API_KEY || undefined,
+    });
+
+    const url = `${OPEN_METEO_URL}?${params.toString()}`;
+
+    try {
+      const rawData = await fetchWithRetry(url);
+      const results = Array.isArray(rawData) ? rawData : [rawData];
+
+      for (let j = 0; j < results.length; j++) {
+        const r = results[j];
+        if (!r?.hourly) continue;
+        const h = r.hourly;
+        allPoints.push({
+          lat: tile.lats[j],
+          lon: tile.lons[j],
+          hourly: {
+            time: h.time ?? [],
+            cape: h.cape ?? [],
+            boundary_layer_height: h.boundary_layer_height ?? [],
+          }
+        });
+      }
+
+      console.log(`Thermal grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
+
+      if (i < tiles.length - 1) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    } catch (err) {
+      console.error(`Thermal grid: Tile ${i + 1}/${tiles.length} failed:`, err);
+    }
+  }
+
+  const ni = Math.round((bounds.fineLonMax - bounds.fineLonMin) / THERMAL_DELTA) + 1;
+  const nj = Math.round((bounds.fineLatMax - bounds.fineLatMin) / THERMAL_DELTA) + 1;
+  const completeness = allPoints.length / totalPoints;
+
+  if (completeness < 0.8) {
+    console.warn(`Thermal grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
+    if (completeness === 0) throw new Error(`All thermal tiles failed — no data fetched`);
+    const today = melbourneToday();
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${THERMAL_GRID_CACHE_KEY}_${today}`]);
+    if (!cached) {
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(THERMAL_GRID_CACHE_KEY)}\\_%`]);
+      if (rows.length > 0) cached = rows[0];
+    }
+    if (cached) {
+      try {
+        const fallbackGrid = JSON.parse(cached.gridData) as ThermalVictoriaGrid;
+        memThermalGrid = fallbackGrid;
+        memThermalGridAt = Date.now();
+        return fallbackGrid;
+      } catch (e: any) {
+        console.error("Thermal grid: Failed to parse cached data:", e.message);
+      }
+    }
+    throw new Error(`Thermal grid too incomplete (${allPoints.length}/${totalPoints}, ${Math.round(completeness * 100)}%) and no cache available`);
+  }
+
+  const grid: ThermalVictoriaGrid = {
+    latMin: bounds.fineLatMin, latMax: bounds.fineLatMax,
+    lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax,
+    delta: THERMAL_DELTA, ni, nj,
+    points: allPoints,
+    fetchedAt: Date.now()
+  };
+
+  try {
+    const jsonStr = JSON.stringify(grid);
+    const today = melbourneToday();
+    const cacheKey = `${THERMAL_GRID_CACHE_KEY}_${today}`;
+    await execute(
+      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+      [cacheKey, jsonStr, ni, THERMAL_DELTA]
+    );
+    console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
+    await cleanupOldGridData(THERMAL_GRID_CACHE_KEY);
+  } catch (e) {
+    console.error("Thermal grid: Failed to cache:", e);
+  }
+
+  memThermalGrid = grid;
+  memThermalGridAt = Date.now();
+  return grid;
+}
+
+export async function getCachedThermalGrid(): Promise<ThermalVictoriaGrid | null> {
+  if (memThermalGrid && Date.now() - memThermalGridAt < MEM_CACHE_TTL_MS) {
+    return memThermalGrid;
   }
   try {
     const today = melbourneToday();
-    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
-
+    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${THERMAL_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
-      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
+      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(THERMAL_GRID_CACHE_KEY)}\\_%`]);
       if (rows.length > 0) cached = rows[0];
     }
-
     if (cached) {
-      const grid = JSON.parse(cached.gridData) as VictoriaGrid;
-      memCoarseGrid = grid;
-      memCoarseGridAt = Date.now();
+      const grid = JSON.parse(cached.gridData) as ThermalVictoriaGrid;
+      memThermalGrid = grid;
+      memThermalGridAt = Date.now();
       return grid;
     }
   } catch (e) {
-    console.error("Coarse grid: Cache read error", e);
+    console.error("Thermal grid: Cache read error", e);
   }
   return null;
 }
 
+// ─── Cache invalidation ───────────────────────────────────────────────────────
+
 export function clearFineGridCaches(): void {
   memFineGrid = null;
   memFineGridAt = 0;
-  memCoarseGrid = null;
-  memCoarseGridAt = 0;
+  memThermalGrid = null;
+  memThermalGridAt = 0;
   cachedFullWindOverlay = null;
   cachedFullWindOverlayKey = '';
   cachedThermalOverlay = null;
   cachedThermalOverlayKey = '';
 }
 
-export function extractThermalGrid(grid: VictoriaGrid): any | null {
+// ─── Thermal overlay extraction ───────────────────────────────────────────────
+
+export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
   if (!grid.points.length) return null;
   const firstPoint = grid.points[0];
   if (!firstPoint.hourly?.time) return null;
@@ -592,7 +575,7 @@ export function extractThermalGrid(grid: VictoriaGrid): any | null {
   const ni = subLons.length;
   const nj = subLats.length;
 
-  const pointMap = new Map<string, GridPoint>();
+  const pointMap = new Map<string, ThermalPoint>();
   for (const p of grid.points) {
     pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
   }
@@ -636,6 +619,8 @@ export function extractThermalGrid(grid: VictoriaGrid): any | null {
   return result;
 }
 
+// ─── Wind grid utilities ──────────────────────────────────────────────────────
+
 function findNearestPoint(grid: VictoriaGrid, lat: number, lon: number): GridPoint | null {
   let bestPoint: GridPoint | null = null;
   let bestDist = Infinity;
@@ -674,7 +659,6 @@ export function extractSiteForecast(grid: VictoriaGrid, siteId: string, siteLat:
 
   let hourIdx = nearest.hourly.time.indexOf(dateStr);
   if (hourIdx === -1) {
-    // Grid is stale — find the most recent available past time as fallback
     let fallbackIdx = -1;
     for (let i = nearest.hourly.time.length - 1; i >= 0; i--) {
       if (nearest.hourly.time[i] <= dateStr) { fallbackIdx = i; break; }
@@ -836,7 +820,7 @@ export function getTimeWindow(allTimes: string[]) {
   return { startIdx, selectedTimes };
 }
 
-export function extractFullWindGrid(grid: VictoriaGrid, coarseGrid?: VictoriaGrid | null): any | null {
+export function extractFullWindGrid(grid: VictoriaGrid): any | null {
   if (!grid.points.length) return null;
 
   const firstPoint = grid.points[0];
@@ -844,7 +828,7 @@ export function extractFullWindGrid(grid: VictoriaGrid, coarseGrid?: VictoriaGri
 
   const melbNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
   const melbDate = `${melbNow.getFullYear()}-${String(melbNow.getMonth() + 1).padStart(2, '0')}-${String(melbNow.getDate()).padStart(2, '0')}`;
-  const cacheKey = `${grid.fetchedAt}|${coarseGrid?.fetchedAt ?? 0}|${melbDate}`;
+  const cacheKey = `${grid.fetchedAt}|${melbDate}`;
 
   if (cachedFullWindOverlay && cacheKey === cachedFullWindOverlayKey) {
     return cachedFullWindOverlay;
@@ -853,21 +837,12 @@ export function extractFullWindGrid(grid: VictoriaGrid, coarseGrid?: VictoriaGri
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
   const result = gridToWindData(grid.points, grid.delta, startIdx, selectedTimes);
 
-  if (coarseGrid && coarseGrid.points.length > 0) {
-    const coarseFirstPoint = coarseGrid.points[0];
-    if (coarseFirstPoint?.hourly?.time) {
-      const coarseTimeWindow = getTimeWindow(coarseFirstPoint.hourly.time);
-      const coarseResult = gridToWindData(coarseGrid.points, coarseGrid.delta, coarseTimeWindow.startIdx, coarseTimeWindow.selectedTimes);
-      (result as any).wideGrid = coarseResult;
-    }
-  }
-
   cachedFullWindOverlay = result;
   cachedFullWindOverlayKey = cacheKey;
   return result;
 }
 
-export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLon: number, coarseGrid?: VictoriaGrid | null): any | null {
+export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLon: number): any | null {
   const spread = 1.5;
   const lonMin = siteLon - spread;
   const lonMax = siteLon + spread;
@@ -885,146 +860,5 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   if (!firstPoint.hourly?.time) return null;
 
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
-
-  const result = gridToWindData(relevantPoints, grid.delta, startIdx, selectedTimes);
-
-  if (coarseGrid && coarseGrid.points.length > 0) {
-    const coarseFirstPoint = coarseGrid.points[0];
-    if (coarseFirstPoint?.hourly?.time) {
-      const coarseTimeWindow = getTimeWindow(coarseFirstPoint.hourly.time);
-      const coarseResult = gridToWindData(coarseGrid.points, coarseGrid.delta, coarseTimeWindow.startIdx, coarseTimeWindow.selectedTimes);
-      (result as any).wideGrid = coarseResult;
-    }
-  }
-
-  return result;
+  return gridToWindData(relevantPoints, grid.delta, startIdx, selectedTimes);
 }
-
-async function fetchFineGridWithStatus(): Promise<GridFetchStatus> {
-  try {
-    const bounds = await getGridBounds();
-    const today = melbourneToday();
-    let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${FINE_GRID_CACHE_KEY}_${today}`]);
-    if (!cached) {
-      const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(FINE_GRID_CACHE_KEY)}\\_%`]);
-      if (rows.length > 0) cached = rows[0];
-    }
-    const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
-    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
-
-    const grid = await fetchFineGrid(true);
-
-    const expectedPoints = Math.round((bounds.fineLonMax - bounds.fineLonMin) / FINE_DELTA + 1) * Math.round((bounds.fineLatMax - bounds.fineLatMin) / FINE_DELTA + 1);
-
-    if (!grid.points || grid.points.length === 0) {
-      if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
-        return {
-          success: true,
-          message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
-          cacheAgeMinutes,
-          pointsFetched: 0,
-          pointsExpected: expectedPoints,
-          fetchPercentage: 0
-        };
-      }
-      return {
-        success: false,
-        message: 'Rate limited and no cached data available',
-        pointsFetched: 0,
-        pointsExpected: expectedPoints,
-        fetchPercentage: 0
-      };
-    }
-
-    const percentage = Math.round((grid.points.length / expectedPoints) * 100);
-
-    if (percentage < 100) {
-      return {
-        success: true,
-        message: `Partial fetch — ${percentage}% of ${expectedPoints} points (${grid.points.length} points)`,
-        pointsFetched: grid.points.length,
-        pointsExpected: expectedPoints,
-        fetchPercentage: percentage
-      };
-    }
-
-    return {
-      success: true,
-      message: `Downloaded fresh data — ${grid.points.length} points (100%)`,
-      pointsFetched: grid.points.length,
-      pointsExpected: expectedPoints,
-      fetchPercentage: 100
-    };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      message: `Error fetching data: ${errorMsg}`
-    };
-  }
-}
-
-async function fetchCoarseGridWithStatus(): Promise<GridFetchStatus> {
-  try {
-    const bounds = await getGridBounds();
-    const today = melbourneToday();
-    let cached = await queryOne<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" = $1`, [`${COARSE_GRID_CACHE_KEY}_${today}`]);
-    if (!cached) {
-      const rows = await query<{ gridData: string; updatedAt: string }>(`SELECT "gridData", "updatedAt" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(COARSE_GRID_CACHE_KEY)}\\_%`]);
-      if (rows.length > 0) cached = rows[0];
-    }
-    const cacheAgeMs = cached ? Date.now() - new Date(cached.updatedAt).getTime() : null;
-    const cacheAgeMinutes = cacheAgeMs ? Math.round(cacheAgeMs / 60000) : null;
-
-    const grid = await fetchCoarseGrid(true);
-
-    const expectedPoints = Math.round((bounds.coarseLonMax - bounds.coarseLonMin) / COARSE_DELTA + 1) * Math.round((bounds.coarseLatMax - bounds.coarseLatMin) / COARSE_DELTA + 1);
-
-    if (!grid.points || grid.points.length === 0) {
-      if (cacheAgeMinutes && cacheAgeMinutes < 26 * 60) {
-        return {
-          success: true,
-          message: `Rate limited — using cache from ${cacheAgeMinutes} minutes ago (still valid)`,
-          cacheAgeMinutes,
-          pointsFetched: 0,
-          pointsExpected: expectedPoints,
-          fetchPercentage: 0
-        };
-      }
-      return {
-        success: false,
-        message: 'Rate limited and no cached data available',
-        pointsFetched: 0,
-        pointsExpected: expectedPoints,
-        fetchPercentage: 0
-      };
-    }
-
-    const percentage = Math.round((grid.points.length / expectedPoints) * 100);
-
-    if (percentage < 100) {
-      return {
-        success: true,
-        message: `Partial fetch — ${percentage}% of ${expectedPoints} points (${grid.points.length} points)`,
-        pointsFetched: grid.points.length,
-        pointsExpected: expectedPoints,
-        fetchPercentage: percentage
-      };
-    }
-
-    return {
-      success: true,
-      message: `Downloaded fresh data — ${grid.points.length} points (100%)`,
-      pointsFetched: grid.points.length,
-      pointsExpected: expectedPoints,
-      fetchPercentage: 100
-    };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      message: `Error fetching data: ${errorMsg}`
-    };
-  }
-}
-

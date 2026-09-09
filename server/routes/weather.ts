@@ -9,7 +9,7 @@ import { getWdlStations, getWdlStationId, parseWdlStationId, getWportStations, g
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getCachedFineGrid, getCachedCoarseGrid, extractWindParticles, fetchFineGrid, fetchCoarseGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
+import { getCachedFineGrid, getCachedThermalGrid, extractWindParticles, fetchFineGrid, fetchThermalGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
@@ -529,11 +529,9 @@ router.get("/grid-bounds", requireAuth, asyncHandler(async (_req, res) => {
 }));
 
 router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
-  const { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
-          coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax } = req.body;
+  const { fineLatMin, fineLatMax, fineLonMin, fineLonMax } = req.body;
 
-  const vals = { fineLatMin, fineLatMax, fineLonMin, fineLonMax,
-                 coarseLatMin, coarseLatMax, coarseLonMin, coarseLonMax };
+  const vals = { fineLatMin, fineLatMax, fineLonMin, fineLonMax };
 
   for (const [k, v] of Object.entries(vals)) {
     if (!Number.isFinite(Number(v))) {
@@ -542,37 +540,21 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
   }
 
   const f = { latMin: Number(fineLatMin), latMax: Number(fineLatMax), lonMin: Number(fineLonMin), lonMax: Number(fineLonMax) };
-  const c = { latMin: Number(coarseLatMin), latMax: Number(coarseLatMax), lonMin: Number(coarseLonMin), lonMax: Number(coarseLonMax) };
 
-  if (f.latMin >= f.latMax) return res.status(400).json({ error: "Fine grid: south boundary must be less than north boundary" });
-  if (f.lonMin >= f.lonMax) return res.status(400).json({ error: "Fine grid: west boundary must be less than east boundary" });
-  if (c.latMin >= c.latMax) return res.status(400).json({ error: "Coarse grid: south boundary must be less than north boundary" });
-  if (c.lonMin >= c.lonMax) return res.status(400).json({ error: "Coarse grid: west boundary must be less than east boundary" });
+  if (f.latMin >= f.latMax) return res.status(400).json({ error: "South boundary must be less than north boundary" });
+  if (f.lonMin >= f.lonMax) return res.status(400).json({ error: "West boundary must be less than east boundary" });
 
-  if (f.latMin < c.latMin || f.latMax > c.latMax || f.lonMin < c.lonMin || f.lonMax > c.lonMax) {
-    return res.status(400).json({ error: "Fine grid must be fully contained within the coarse grid" });
-  }
-
-  const FINE_DELTA = 0.35;
-  const COARSE_DELTA = 2.0;
-  const FINE_MAX_POINTS = 2000;
-  const COARSE_MAX_POINTS = 3000;
-
+  const FINE_DELTA = 0.15;
+  const FINE_MAX_POINTS = 10000;
   const finePts = Math.ceil((f.latMax - f.latMin) / FINE_DELTA) * Math.ceil((f.lonMax - f.lonMin) / FINE_DELTA);
-  const coarsePts = Math.ceil((c.latMax - c.latMin) / COARSE_DELTA) * Math.ceil((c.lonMax - c.lonMin) / COARSE_DELTA);
 
   if (finePts > FINE_MAX_POINTS) {
-    return res.status(400).json({ error: `Fine grid too large: ${finePts} points exceeds limit of ${FINE_MAX_POINTS}. Reduce the area.` });
-  }
-  if (coarsePts > COARSE_MAX_POINTS) {
-    return res.status(400).json({ error: `Coarse grid too large: ${coarsePts} points exceeds limit of ${COARSE_MAX_POINTS}. Reduce the area.` });
+    return res.status(400).json({ error: `Grid too large: ${finePts} points exceeds limit of ${FINE_MAX_POINTS}. Reduce the area.` });
   }
 
   const entries = [
     ['gridFineLatMin', f.latMin], ['gridFineLatMax', f.latMax],
     ['gridFineLonMin', f.lonMin], ['gridFineLonMax', f.lonMax],
-    ['gridCoarseLatMin', c.latMin], ['gridCoarseLatMax', c.latMax],
-    ['gridCoarseLonMin', c.lonMin], ['gridCoarseLonMax', c.lonMax],
   ] as [string, number][];
 
   for (const [key, value] of entries) {
@@ -585,13 +567,13 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
 
   clearFineGridCaches();
 
-  res.json({ success: true, finePts, coarsePts, bounds: { ...f, ...c } });
+  res.json({ success: true, finePts, bounds: f });
 }));
 
 router.get("/thermal-overlay", asyncHandler(async (_req, res) => {
-  let grid = await getCachedFineGrid();
+  let grid = await getCachedThermalGrid();
   if (!grid) {
-    try { grid = await fetchFineGrid(); } catch (e) { log.error("Fine grid fetch failed:", e); }
+    try { grid = await fetchThermalGrid(); } catch (e) { log.error("Thermal grid fetch failed:", e); }
   }
   if (!grid) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
   const result = extractThermalGrid(grid);
@@ -685,8 +667,7 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
 
   const gridBounds = await getGridBounds();
   const inFine = site.lat >= gridBounds.fineLatMin && site.lat <= gridBounds.fineLatMax && site.lon >= gridBounds.fineLonMin && site.lon <= gridBounds.fineLonMax;
-  const inCoarse = site.lat >= gridBounds.coarseLatMin && site.lat <= gridBounds.coarseLatMax && site.lon >= gridBounds.coarseLonMin && site.lon <= gridBounds.coarseLonMax && !inFine;
-  const baseGridCacheKey = inFine ? "fine_grid" : inCoarse ? "coarse_grid" : null;
+  const baseGridCacheKey = inFine ? "fine_grid" : null;
 
   if (baseGridCacheKey) {
     const today = new Date().toISOString().split('T')[0];
@@ -821,7 +802,6 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
   }
 
   let grid = await getCachedFineGrid();
-  let wideGrid = await getCachedCoarseGrid();
 
   if (!grid) {
     grid = await fetchFineGrid().catch(e => { log.error("Fine grid fetch failed:", e); return null; });
@@ -830,11 +810,7 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
-  if (!wideGrid) {
-    wideGrid = await fetchCoarseGrid().catch(e => { log.warn("Coarse grid fetch failed:", e); return null; });
-  }
-
-  const particles = extractWindParticles(grid, site.lat, site.lon, wideGrid);
+  const particles = extractWindParticles(grid, site.lat, site.lon);
   if (!particles) {
     return res.status(404).json({ error: "No wind data available for this location" });
   }
@@ -845,7 +821,6 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
   let grid = await getCachedFineGrid();
-  let wideGrid = await getCachedCoarseGrid();
 
   if (!grid) {
     try {
@@ -858,11 +833,7 @@ router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
-  if (!wideGrid) {
-    wideGrid = await fetchCoarseGrid().catch(() => null);
-  }
-
-  const result = extractFullWindGrid(grid, wideGrid);
+  const result = extractFullWindGrid(grid);
   if (!result) {
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
@@ -1026,30 +997,30 @@ router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) 
   }
 }));
 
-router.post("/coarse-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
   const ts = new Date().toISOString();
   try {
-    await fetchCoarseGrid(true);
+    await fetchThermalGrid(true);
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["coarseGridLastRun", ts]
+      ["thermalGridLastRun", ts]
     );
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["coarseGridLastResult", "ok"]
+      ["thermalGridLastResult", "ok"]
     );
-    res.json({ success: true, message: "Coarse grid fetch completed" });
+    res.json({ success: true, message: "Thermal grid fetch completed" });
   } catch (e: any) {
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["coarseGridLastRun", ts]
+      ["thermalGridLastRun", ts]
     );
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["coarseGridLastResult", e.message || "Unknown error"]
+      ["thermalGridLastResult", e.message || "Unknown error"]
     );
-    log.error("Manual coarse grid fetch failed:", e);
-    res.status(500).json({ success: false, message: e.message || "Coarse grid fetch failed" });
+    log.error("Manual thermal grid fetch failed:", e);
+    res.status(500).json({ success: false, message: e.message || "Thermal grid fetch failed" });
   }
 }));
 

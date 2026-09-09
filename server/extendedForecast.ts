@@ -188,7 +188,7 @@ export async function fetchExtendedForecast(): Promise<void> {
       const params = buildOpenMeteoParams({
         lats: tile.lats,
         lons: tile.lons,
-        hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,lifted_index,boundary_layer_height',
+        hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,boundary_layer_height',
         forecastDays: 8,
         apiKey: OPEN_METEO_API_KEY || undefined,
       });
@@ -608,6 +608,7 @@ async function computeExtendedWindGrid(grid: ExtendedGrid): Promise<any> {
 
   const pointMap = new Map<string, ExtendedGridPoint>();
   for (const p of grid.points) {
+    if (p.lat == null || p.lon == null) continue;
     pointMap.set(`${p.lat.toFixed(2)},${p.lon.toFixed(2)}`, p);
   }
 
@@ -627,6 +628,7 @@ async function computeExtendedWindGrid(grid: ExtendedGrid): Promise<any> {
     ];
 
     const uvs = corners.map(c => {
+      if (c.lat == null || c.lon == null) return { u: 0, v: 0 };
       const key = `${c.lat.toFixed(2)},${c.lon.toFixed(2)}`;
       const pt = pointMap.get(key);
       if (!pt || t >= pt.windSpeed.length) return { u: 0, v: 0 };
