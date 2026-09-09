@@ -166,6 +166,8 @@ let memCoarseGridAt = 0;
 
 let cachedFullWindOverlay: any = null;
 let cachedFullWindOverlayKey = '';
+let cachedThermalOverlay: any = null;
+let cachedThermalOverlayKey = '';
 
 let inflightFetch: Promise<VictoriaGrid> | null = null;
 
@@ -569,6 +571,69 @@ export function clearFineGridCaches(): void {
   memCoarseGridAt = 0;
   cachedFullWindOverlay = null;
   cachedFullWindOverlayKey = '';
+  cachedThermalOverlay = null;
+  cachedThermalOverlayKey = '';
+}
+
+export function extractThermalGrid(grid: VictoriaGrid): any | null {
+  if (!grid.points.length) return null;
+  const firstPoint = grid.points[0];
+  if (!firstPoint.hourly?.time) return null;
+
+  const cacheKey = `thermal_${grid.fetchedAt}`;
+  if (cachedThermalOverlay && cacheKey === cachedThermalOverlayKey) {
+    return cachedThermalOverlay;
+  }
+
+  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
+
+  const subLons = [...new Set(grid.points.map(p => p.lon))].sort((a, b) => a - b);
+  const subLats = [...new Set(grid.points.map(p => p.lat))].sort((a, b) => a - b);
+  const ni = subLons.length;
+  const nj = subLats.length;
+
+  const pointMap = new Map<string, GridPoint>();
+  for (const p of grid.points) {
+    pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
+  }
+
+  const data: { cape: number; blh: number }[][] = [];
+
+  for (let t = 0; t < selectedTimes.length; t++) {
+    const timeIdx = startIdx + t;
+    const timeStepData: { cape: number; blh: number }[] = [];
+    for (const lat of subLats) {
+      for (const lon of subLons) {
+        const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+        const point = pointMap.get(key);
+        if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
+          timeStepData.push({
+            cape: point.hourly.cape[timeIdx] ?? 0,
+            blh: point.hourly.boundary_layer_height[timeIdx] ?? 0,
+          });
+        } else {
+          timeStepData.push({ cape: 0, blh: 0 });
+        }
+      }
+    }
+    data.push(timeStepData);
+  }
+
+  const result = {
+    lonMin: parseFloat(subLons[0].toFixed(4)),
+    lonMax: parseFloat(subLons[subLons.length - 1].toFixed(4)),
+    latMin: parseFloat(subLats[0].toFixed(4)),
+    latMax: parseFloat(subLats[subLats.length - 1].toFixed(4)),
+    deltaLon: grid.delta,
+    deltaLat: grid.delta,
+    ni, nj,
+    times: selectedTimes,
+    data,
+  };
+
+  cachedThermalOverlay = result;
+  cachedThermalOverlayKey = cacheKey;
+  return result;
 }
 
 function findNearestPoint(grid: VictoriaGrid, lat: number, lon: number): GridPoint | null {

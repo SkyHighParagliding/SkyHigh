@@ -380,6 +380,7 @@ function buildSettings(data: Record<string, any>): Settings {
     windMapDefaultLon: data.windMapDefaultLon,
     windMapDefaultZoom: data.windMapDefaultZoom,
     bulkUploadLimit: data.bulkUploadLimit || "20",
+    featureThermalMap: data.featureThermalMap,
     ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
   };
 }

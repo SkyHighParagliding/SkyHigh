@@ -9,7 +9,7 @@ import { getWdlStations, getWdlStationId, parseWdlStationId, getWportStations, g
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getCachedFineGrid, getCachedCoarseGrid, extractWindParticles, fetchFineGrid, fetchCoarseGrid, extractFullWindGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
+import { getCachedFineGrid, getCachedCoarseGrid, extractWindParticles, fetchFineGrid, fetchCoarseGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
@@ -586,6 +586,18 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
   clearFineGridCaches();
 
   res.json({ success: true, finePts, coarsePts, bounds: { ...f, ...c } });
+}));
+
+router.get("/thermal-overlay", asyncHandler(async (_req, res) => {
+  let grid = await getCachedFineGrid();
+  if (!grid) {
+    try { grid = await fetchFineGrid(); } catch (e) { log.error("Fine grid fetch failed:", e); }
+  }
+  if (!grid) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
+  const result = extractThermalGrid(grid);
+  if (!result) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
+  res.setHeader('Cache-Control', 'public, max-age=1800');
+  res.json(result);
 }));
 
 router.get("/:siteId", asyncHandler(async (req, res) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Loader2, Layers, Maximize2, Minimize2, Crosshair } from 'lucide-react';
+import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -8,8 +8,12 @@ import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
+import { getThermalAt, getThermalStrength } from './windmap/thermalInterpolation';
+import type { ThermalGrid } from './windmap/thermalInterpolation';
+import { THERMAL_LEGEND_CSS } from './windmap/thermalRenderer';
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
+const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
 
 interface SitesWindMapProps {
   sites: SiteMarker[];
@@ -23,11 +27,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const clubName = settings.clubName || 'SkyHigh';
   const isAdmin = !!user?.isAdmin;
   const containerRef = useRef<HTMLDivElement>(null);
+  const isThermalEnabled = settings.featureThermalMap === 'true';
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number } | null>(null);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
+  const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
+  const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
+  const [thermalLoading, setThermalLoading] = useState(false);
+  const [thermalError, setThermalError] = useState<string | null>(null);
   const [showOverlay, setShowOverlay] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
@@ -55,6 +65,37 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     playSpeed, timeStep, forecastStart, forecastEnd,
     formattedTime, handleSliderChange, togglePlay, cycleSpeed,
   } = useWindPlayback(mapMode, todayFetcher);
+
+  // Lazy-load thermal grid when user switches to thermal mode
+  useEffect(() => {
+    if (viewMode !== 'thermal' || thermalGrid) return;
+    setThermalLoading(true);
+    setThermalError(null);
+    fetch('/api/weather/thermal-overlay')
+      .then(async res => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error((body as { error?: string })?.error || `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<ThermalGrid>;
+      })
+      .then(data => { setThermalGrid(data); setThermalLoading(false); })
+      .catch(e => { setThermalError((e as Error).message); setThermalLoading(false); });
+  }, [viewMode, thermalGrid]);
+
+  const handleViewModeChange = useCallback((mode: 'wind' | 'thermal') => {
+    setViewMode(mode);
+    setSelectedSite(null);
+    if (mode === 'thermal') setMapMode('today');
+  }, []);
+
+  // Thermal data at the selected site, live-updating with currentTime
+  const thermalAtSite = useMemo(() => {
+    if (viewMode !== 'thermal' || !thermalGrid || !selectedSite) return null;
+    return getThermalAt(selectedSite.site.lon, selectedSite.site.lat, currentTime, thermalGrid);
+  }, [viewMode, thermalGrid, selectedSite, currentTime]);
+
+  const thermalSiteStrength = thermalAtSite ? getThermalStrength(thermalAtSite.cape) : null;
 
   const handleSaveView = useCallback(async () => {
     if (!liveView) return;
@@ -181,39 +222,78 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     ? 'fixed inset-0 z-[10001] w-screen h-screen'
     : 'w-full h-full relative';
 
+  const canvasFallback = (
+    <div className="w-full h-full flex items-center justify-center bg-[#e8e8e8]">
+      <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+    </div>
+  );
+
   return (
     <div ref={containerRef} className={fullscreenClasses}>
       <div className={`relative overflow-hidden w-full h-full ${isFullscreen ? '' : 'rounded-xl'}`}>
-        <Suspense fallback={
-          <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
-            <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
-          </div>
-        }>
-          <WindCanvas
-            windGrid={windGrid}
-            currentTime={currentTime}
-            siteLat={centerLat}
-            siteLon={centerLon}
-            onZoomChange={handleZoomChange}
-            zoomSetpoints={zoomSetpoints}
-            siteMarkers={sites}
-            onSiteClick={handleSiteClick}
-            onWindInfoChange={setSitesWindInfo}
-            sizeKey={canvasSizeKey}
-            initialZoomK={INITIAL_K}
-            savedCenterLat={savedLat}
-            savedCenterLon={savedLon}
-            savedZoom={savedZoom}
-            onTransformChange={handleTransformChange}
-          />
-        </Suspense>
 
+        {/* Canvas area */}
+        {viewMode === 'thermal' ? (
+          thermalLoading ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[#e8e8e8]">
+              <Loader2 className="w-6 h-6 text-amber-500 animate-spin mb-2" />
+              <span className="text-xs text-gray-500 font-mono">Loading thermal data…</span>
+            </div>
+          ) : thermalError ? (
+            <div className="w-full h-full flex items-center justify-center bg-[#e8e8e8]">
+              <span className="text-xs text-red-500 font-mono">{thermalError}</span>
+            </div>
+          ) : thermalGrid ? (
+            <Suspense fallback={canvasFallback}>
+              <ThermalCanvas
+                thermalGrid={thermalGrid}
+                currentTime={currentTime}
+                siteLat={centerLat}
+                siteLon={centerLon}
+                siteMarkers={sites}
+                onSiteClick={handleSiteClick}
+                onThermalInfoChange={setThermalInfo}
+                sizeKey={canvasSizeKey}
+                savedCenterLat={savedLat}
+                savedCenterLon={savedLon}
+                savedZoom={savedZoom}
+                onTransformChange={handleTransformChange}
+              />
+            </Suspense>
+          ) : null
+        ) : (
+          <Suspense fallback={
+            <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
+              <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
+            </div>
+          }>
+            <WindCanvas
+              windGrid={windGrid}
+              currentTime={currentTime}
+              siteLat={centerLat}
+              siteLon={centerLon}
+              onZoomChange={handleZoomChange}
+              zoomSetpoints={zoomSetpoints}
+              siteMarkers={sites}
+              onSiteClick={handleSiteClick}
+              onWindInfoChange={setSitesWindInfo}
+              sizeKey={canvasSizeKey}
+              initialZoomK={INITIAL_K}
+              savedCenterLat={savedLat}
+              savedCenterLon={savedLon}
+              savedZoom={savedZoom}
+              onTransformChange={handleTransformChange}
+            />
+          </Suspense>
+        )}
+
+        {/* Site popup */}
         {selectedSite && (
           <div
             className="absolute z-30 bg-card rounded-lg shadow-xl border border-border-subtle p-3 min-w-[180px]"
             style={{
               left: Math.min(Math.max(8, selectedSite.x + 12), (containerRef.current?.clientWidth || 400) - 200),
-              top: Math.min(Math.max(8, selectedSite.y - 60), (containerRef.current?.clientHeight || 400) - 140),
+              top: Math.min(Math.max(8, selectedSite.y - 60), (containerRef.current?.clientHeight || 400) - 160),
               pointerEvents: 'auto',
             }}
           >
@@ -227,21 +307,43 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             {selectedSite.site.isSkyHighSite === 'true' && (
               <div className="text-[10px] text-emerald-600 font-medium">a {clubName} Site</div>
             )}
-            <div className="text-xs text-muted-foreground mt-0.5">{selectedSite.site.type} &middot; {selectedSite.site.windDir}</div>
+
+            {viewMode === 'thermal' ? (
+              thermalSiteStrength ? (
+                <div className="mt-1.5 space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: thermalSiteStrength.color }} />
+                    <span className="font-medium" style={{ color: thermalSiteStrength.color }}>{thermalSiteStrength.label}</span>
+                  </div>
+                  {thermalAtSite && thermalAtSite.cape >= 10 && (
+                    <div className="text-[10px] text-foreground-secondary">
+                      CAPE {Math.round(thermalAtSite.cape)} J/kg
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-foreground-secondary mt-1">Thermal data loading…</div>
+              )
+            ) : (
+              <div className="text-xs text-muted-foreground mt-0.5">{selectedSite.site.type} &middot; {selectedSite.site.windDir}</div>
+            )}
+
             <div className="flex items-center gap-3 mt-2">
               <a href={`/sites/${selectedSite.site.id}`} className="text-xs font-medium text-sky hover:underline">
                 View Site Guide &rarr;
               </a>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.site.lat},${selectedSite.site.lon}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-emerald-600 hover:underline"
-              >
-                Navigate
-              </a>
+              {viewMode !== 'thermal' && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedSite.site.lat},${selectedSite.site.lon}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-emerald-600 hover:underline"
+                >
+                  Navigate
+                </a>
+              )}
             </div>
-            {isAuthenticated && (
+            {isAuthenticated && viewMode !== 'thermal' && (
               <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
                 <a href={`/admin/sites/${selectedSite.site.id}/edit`} className="text-xs font-medium text-orange hover:underline">
                   Edit Site
@@ -268,6 +370,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         />
       </div>
 
+      {/* Fullscreen button */}
       <button
         onClick={() => isFullscreen ? exitFullscreen() : setIsFullscreen(true)}
         className="absolute top-3 left-3 z-40 w-8 h-8 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors shadow-lg"
@@ -298,61 +401,120 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         INFO
       </button>
 
+      {/* Overlay info panel */}
       <div className={`absolute top-14 left-3 z-30 flex-col gap-1.5 ${showOverlay ? 'flex' : 'hidden'} lg:flex`}>
-        {sitesModeToggle}
-        <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[9px] font-mono">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
-          <span className="text-white/70">{clubName}</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5" />
-          <span className="text-white/70">Other</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5" />
-          <span className="text-white/70">Restricted</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5" />
-          <span className="text-white/70">Closed</span>
-        </div>
+
+        {/* Wind / Thermal view toggle (feature-flagged) */}
+        {isThermalEnabled && (
+          <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
+            <button
+              onClick={() => handleViewModeChange('wind')}
+              className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'wind' ? 'bg-sky-500 text-white' : 'text-white/50 hover:text-white/80'}`}
+            >
+              <Wind aria-hidden="true" className="w-2.5 h-2.5" />
+              WIND
+            </button>
+            <button
+              onClick={() => handleViewModeChange('thermal')}
+              className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'thermal' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white/80'}`}
+            >
+              <Thermometer aria-hidden="true" className="w-2.5 h-2.5" />
+              THERMAL
+            </button>
+          </div>
+        )}
+
+        {/* Today / 7-day toggle (wind mode only) */}
+        {viewMode === 'wind' && sitesModeToggle}
+
+        {/* Site type legend (wind mode only) */}
+        {viewMode === 'wind' && (
+          <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[9px] font-mono">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
+            <span className="text-white/70">{clubName}</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5" />
+            <span className="text-white/70">Other</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5" />
+            <span className="text-white/70">Restricted</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5" />
+            <span className="text-white/70">Closed</span>
+          </div>
+        )}
+
+        {/* Data legend bar */}
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
-          <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Forecast Data</div>
-          <div className="relative">
-            <div className="h-2 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
-            {sitesWindInfo && (
-              <div
-                className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
-                style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }}
-              />
-            )}
-          </div>
-          <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
-            <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
-          </div>
+          {viewMode === 'thermal' ? (
+            <>
+              <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Thermal Strength</div>
+              <div className="h-2 w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
+              <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
+                <span>None</span><span>Weak</span><span>Mod</span><span>Good</span><span>Strong</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Forecast Data</div>
+              <div className="relative">
+                <div className="h-2 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
+                {sitesWindInfo && (
+                  <div
+                    className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
+                    style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }}
+                  />
+                )}
+              </div>
+              <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
+                <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Readout panel */}
         <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap pointer-events-none">
-          <div className="flex items-center gap-2">
-            {sitesWindInfo ? (
-              <>
-                <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
-                <span className="text-white/40">|</span>
-                <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
-                <span className="text-sky-300 font-bold tracking-wider">{getCompassDirection(sitesWindInfo.direction)}</span>
-                <svg
-                  width="10"
-                  height="14"
-                  viewBox="0 0 10 18"
-                  className="fill-white drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]"
-                  style={{ transform: `rotate(${sitesWindInfo.direction}deg)`, transformOrigin: 'center' }}
-                >
-                  <path d="M 5 0 L 10 18 L 0 18 Z" />
-                </svg>
-                <span className="text-white/40">|</span>
-                <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
-              </>
-            ) : (
-              <>
-                <span className="text-white/40">Tap map to pin wind reading</span>
-                <span className="text-white/40">|</span>
-                <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
-              </>
-            )}
-          </div>
+          {viewMode === 'thermal' ? (
+            <div className="flex items-center gap-2">
+              {thermalInfo ? (
+                <>
+                  <span className="font-bold" style={{ color: getThermalStrength(thermalInfo.cape).color }}>
+                    {getThermalStrength(thermalInfo.cape).shortLabel}
+                  </span>
+                  <span className="text-white/40">|</span>
+                  <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
+                </>
+              ) : (
+                <span className="text-white/40">Tap map for thermal reading</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {sitesWindInfo ? (
+                <>
+                  <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
+                  <span className="text-white/40">|</span>
+                  <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
+                  <span className="text-sky-300 font-bold tracking-wider">{getCompassDirection(sitesWindInfo.direction)}</span>
+                  <svg
+                    width="10"
+                    height="14"
+                    viewBox="0 0 10 18"
+                    className="fill-white drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]"
+                    style={{ transform: `rotate(${sitesWindInfo.direction}deg)`, transformOrigin: 'center' }}
+                  >
+                    <path d="M 5 0 L 10 18 L 0 18 Z" />
+                  </svg>
+                  <span className="text-white/40">|</span>
+                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-white/40">Tap map to pin wind reading</span>
+                  <span className="text-white/40">|</span>
+                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
