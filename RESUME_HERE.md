@@ -1,56 +1,56 @@
-# RESUME_HERE — Last updated: 2026-09-09 (session 50)
+# RESUME_HERE — Last updated: 2026-09-09 (session 51)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 50 — two-grid architecture upgrade (ecmwf_ifs high-res). Work 95% done, waiting for
-Open-Meteo hourly rate limit to reset before final verification fetch.
+Session 51 — debugging thermal grid DB write failure + rate limit issues.
 
 **Completed this session:**
-1. **Correct model name**: `ecmwf_ifs_hres` (400 error) → `ecmwf_ifs` (correct, ~0.07° native res)
-   - Changed in `server/utils/openMeteo.ts` (shared by all grid fetches)
-2. **Two-grid architecture**: Replaced coarse 2.0° grid with thermal grid (0.09°, CAPE+BLH only)
-   - New: `fetchThermalGrid`, `getCachedThermalGrid`, `extractThermalGrid` in `victoriaGrid.ts`
-   - Fine grid: still 0.15° spacing, same 12 fields including CAPE+BLH
-   - Removed all coarse/wide grid code from routes, scheduled jobs, admin UI, settings context
-3. **Thermal tile size fix**: `THERMAL_MAX_PER_TILE` 500 → 300 (prevents HTTP 414 URL-too-long)
-4. **Completeness fallthrough bug fix**: When fetch gets <80% data and no cache exists, now
-   throws proper error instead of silently saving partial data as "ok"
-5. **Extended forecast null guard**: Fixed crash in `computeExtendedWindGrid` when grid points
-   have undefined lat/lon (defensive guards added at lines 611 and 630)
-6. **Removed lifted_index** from extended forecast fields (not available on ecmwf_ifs)
+1. **Diagnosed thermal grid fetch issue**: Previous VPN fetch completed and set memThermalGrid
+   in memory, but the DB write was silently swallowed by a try/catch. Route still wrote "ok"
+   to thermalGridLastResult even though no data hit the DB.
+2. **Fixed silent failure**: Removed the try/catch wrapper around the INSERT in `doFetchThermalGrid`
+   and `doFetchFineGrid`. DB write failure now propagates up → route writes the actual error to
+   thermalGridLastResult instead of "ok". Only the cleanup (old row deletion) remains non-fatal.
+3. **Reset thermalGridLastRun** in DB to 2000-01-01 so tomorrow's 5:26am Melbourne cron will
+   actually run instead of skipping (it would have skipped because the previous "ok" was < 22h ago).
+4. **Stopped rate-limit-burning retries**: Killed server when fresh fetch was hammering 429s
+   (VPN no longer connected), saving Open-Meteo quota.
+5. **Committed fix**: `572a860` — fix: DB write failure now propagates instead of swallowing silently
 
-**Commits this session:**
-- `36e6324` — feat: Stage 1 thermal map overlay on wind map (previous session)
-- `1815fb7` — fix: two-grid architecture (ecmwf_ifs) + thermal grid bugs
+**Current DB state:**
+- fine_grid_2026-09-09: ✅ 1.32MB (fetched 5:15am today)
+- thermal_grid_*: ❌ No data yet — all fetch attempts failed
+- thermalGridLastRun: reset to 2000-01-01 → cron WILL run at 5:26am tomorrow
+- thermalGridLastResult: reset to "no data — cron reset"
 
-NOT pushed to GitHub (Jon may want to revert these UI/grid changes).
+**NOT pushed to GitHub** (Jon may want to revert these UI/grid changes).
 
 ## Last completed task
-- Session 50: Two-grid architecture + thermal grid bug fixes (committed, not pushed)
-- Session 49 (2026-09-05): Davis gust fix + scraper schedule UI
+- Session 51: DB write fix committed (`572a860`)
+- Session 50 (2026-09-09): Two-grid architecture + thermal grid bug fixes
 
 ## Currently in progress
-- **Verifying thermal grid fetch works cleanly** — Open-Meteo hourly quota exhausted from
-  repeated test fetches during debugging. Rate limit resets at top of hour (8:00pm Melbourne).
-  Corrupted thermal grid row deleted from DB. After reset, start server + trigger fresh fetch.
+- Nothing blocking — server running, app functional
 
 ## Next task to start
-1. **After rate limit reset**: Start server, trigger `/api/weather/thermal-grid/fetch-now`,
-   verify overlay shows nj~68 lat rows covering -39.5 to -33.5
-2. **Trigger fine grid fetch**: `/api/weather/fine-grid/fetch-now` to replace old IFS025 data
-3. **"Report bad answer" button** for Smart Search chat (was next before this grid work)
+1. **Get thermal grid data** (two options):
+   - A) Reconnect VPN → start server → Admin Weather → "Thermal Grid" button → wait ~10-15min
+   - B) Wait for 5:26am Melbourne cron tomorrow (automatic)
+2. **After thermal data arrives**: Verify thermal-overlay returns nj~68 lat rows (-39.5 to -33.5)
+3. **"Report bad answer" button** for Smart Search chat (queued since last session)
+4. **Push to GitHub/Railway**: Jon to decide once thermal grid is verified working
 
 ## Open questions / blockers
-- Jon to decide whether to push these grid changes to Railway (they're committed locally)
-- **Home hero on mobile** — landscape image + portrait phone decision still pending (Options A/C)
+- Jon to decide whether to push these grid changes to Railway once verified
+- **Home hero on mobile** — landscape image + portrait phone decision still pending
 - **MMYC coordinates** — registry uses -38.2758, 145.0055. Worth eyeballing on a map.
 
 ## Quick context refresher
 SkyHigh's wind map uses two grids: fine grid (0.15°, 12 fields, 5am daily) for wind particles
 and per-site forecasts; thermal grid (0.09°, CAPE+BLH only, 5:26am daily) for the thermal
-overlay on the wind map. Both now use Open-Meteo's ecmwf_ifs model (~0.07° native, same as
-Windy's data source). The coarse 2.0° grid is removed. Code is committed but NOT pushed —
-Jon decides when to push to Railway. Verify fetches work once rate limit resets at 8pm.
+overlay. Both use ecmwf_ifs model. Code committed but NOT pushed. The cron will auto-fetch
+the thermal grid at 5:26am tomorrow (Melbourne time). To get it earlier, reconnect VPN and
+trigger fetch-now from Admin Weather panel.
