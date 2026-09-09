@@ -90,11 +90,11 @@ export function useConnectionsConfig() {
   const [searchLogEnabled, setSearchLogEnabled] = useState(false);
   const [searchLogStats, setSearchLogStats] = useState<{ total: number; sizeMb: number; oldestAt: string | null; warningMb: number } | null>(null);
   const [showSearchLogs, setShowSearchLogs] = useState(false);
-  const [searchLogEntries, setSearchLogEntries] = useState<{ id: number; search_type: string; query: string; response: string; created_at: string }[]>([]);
+  const [searchLogEntries, setSearchLogEntries] = useState<{ id: number; search_type: string; query: string; response: string; created_at: string; flagged: boolean }[]>([]);
   const [searchLogPage, setSearchLogPage] = useState(1);
   const [searchLogTotal, setSearchLogTotal] = useState(0);
   const [searchLogPages, setSearchLogPages] = useState(1);
-  const [searchLogType, setSearchLogType] = useState<"all" | "public" | "admin">("all");
+  const [searchLogType, setSearchLogType] = useState<"all" | "public" | "admin" | "flagged">("all");
   const [loadingSearchLogs, setLoadingSearchLogs] = useState(false);
   const [clearingSearchLogs, setClearingSearchLogs] = useState(false);
   const [printingSearchLogs, setPrintingSearchLogs] = useState(false);
@@ -634,12 +634,14 @@ export function useConnectionsConfig() {
     } catch {}
   };
 
-  const fetchSearchLogs = async (page = 1, type: "all" | "public" | "admin" = "all") => {
+  const fetchSearchLogs = async (page = 1, type: "all" | "public" | "admin" | "flagged" = "all") => {
     setLoadingSearchLogs(true);
     setSearchLogType(type);
     setSearchLogPage(page);
     try {
-      const res = await fetch(`/api/search-logs?type=${type}&page=${page}&limit=50`, { headers: { Authorization: `Bearer ${token}` } });
+      const baseType = type === "flagged" ? "all" : type;
+      const flagParam = type === "flagged" ? "&flagged=true" : "";
+      const res = await fetch(`/api/search-logs?type=${baseType}&page=${page}&limit=50${flagParam}`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setSearchLogEntries(data.entries || []);

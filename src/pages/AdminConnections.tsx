@@ -1375,13 +1375,13 @@ export function AdminConnections() {
 
             {/* Filter tabs */}
             <div className="flex items-center gap-1 px-6 py-3 border-b border-border shrink-0 bg-muted/30">
-              {(["all", "public", "admin"] as const).map((type) => (
+              {(["all", "public", "admin", "flagged"] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => fetchSearchLogs(1, type)}
                   className={`px-3 py-1.5 rounded text-xs font-medium transition-colors capitalize ${searchLogType === type ? "bg-navy text-white" : "text-foreground-label hover:bg-muted"}`}
                 >
-                  {type === "all" ? "All" : type === "public" ? "Public" : "Admin"}
+                  {type === "all" ? "All" : type === "public" ? "Public" : type === "admin" ? "Admin" : "⚑ Flagged"}
                 </button>
               ))}
             </div>
@@ -1419,9 +1419,16 @@ export function AdminConnections() {
                             {new Date(entry.created_at).toLocaleString("en-AU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${entry.search_type === "public" ? "bg-sky/10 text-sky" : "bg-purple-100 text-purple-700"}`}>
-                              {entry.search_type}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${entry.search_type === "public" ? "bg-sky/10 text-sky" : "bg-purple-100 text-purple-700"}`}>
+                                {entry.search_type}
+                              </span>
+                              {entry.flagged && (
+                                <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-600">
+                                  flagged
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-navy max-w-xs">
                             <p className={isExpanded ? "" : "line-clamp-2"}>{entry.query}</p>

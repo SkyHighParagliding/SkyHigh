@@ -6,6 +6,7 @@ import { parseDavisStationId, fetchDavisObservation } from "./davisWeather.js";
 import { parseWdlStationId, fetchWdlObservation, parseWportStationId, fetchWportObservation } from "./wdlWeather.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
+import { gridFetchActive } from "./victoriaGrid.js";
 
 const log = createLogger("weather");
 
@@ -173,6 +174,12 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
 
   if (!isManual && !runContinuously && (hour < startHour || hour >= endHour)) {
     console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour % 24}pm). Melbourne hour: ${hour}`);
+    scheduleSourceFetch(type, min, max);
+    return 0;
+  }
+
+  if (!isManual && gridFetchActive) {
+    console.log(`Weather scraper [${type}]: Grid fetch in progress — skipping this cycle`);
     scheduleSourceFetch(type, min, max);
     return 0;
   }

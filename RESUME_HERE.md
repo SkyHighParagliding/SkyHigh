@@ -1,56 +1,41 @@
-# RESUME_HERE — Last updated: 2026-09-09 (session 51)
+# RESUME_HERE — Last updated: 2026-09-09 (session 52)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 51 — debugging thermal grid DB write failure + rate limit issues.
+Session 52 — thermal grid successfully fetched and verified working on map. Report bad answer button shipped.
 
 **Completed this session:**
-1. **Diagnosed thermal grid fetch issue**: Previous VPN fetch completed and set memThermalGrid
-   in memory, but the DB write was silently swallowed by a try/catch. Route still wrote "ok"
-   to thermalGridLastResult even though no data hit the DB.
-2. **Fixed silent failure**: Removed the try/catch wrapper around the INSERT in `doFetchThermalGrid`
-   and `doFetchFineGrid`. DB write failure now propagates up → route writes the actual error to
-   thermalGridLastResult instead of "ok". Only the cleanup (old row deletion) remains non-fatal.
-3. **Reset thermalGridLastRun** in DB to 2000-01-01 so tomorrow's 5:26am Melbourne cron will
-   actually run instead of skipping (it would have skipped because the previous "ok" was < 22h ago).
-4. **Stopped rate-limit-burning retries**: Killed server when fresh fetch was hammering 429s
-   (VPN no longer connected), saving Open-Meteo quota.
-5. **Committed fix**: `572a860` — fix: DB write failure now propagates instead of swallowing silently
+1. **Report bad answer button** — migration 043 (`flagged` column on `search_logs`), public `POST /api/search-logs/flag` endpoint (no auth, matches by query text), `ThumbsDown` button on assistant messages in `PublicSearchBox.tsx`, admin "⚑ Flagged" filter tab in search log viewer. All committed.
+2. **Thermal grid rate limit fixes** — inter-tile delay increased 500ms → 3000ms (both fine + thermal); exported `gridFetchActive` flag from `victoriaGrid.ts`; weather scraper skips its cycle when a grid fetch is active. These changes prevent scraper/grid API call conflicts.
+3. **Thermal grid data confirmed** — `thermal_grid_2026-09-09` in DB, 10.7MB, 123 grid columns, 0.09° spacing. Thermal overlay rendering correctly on Sites wind map (verified via browser screenshot).
 
-**Current DB state:**
-- fine_grid_2026-09-09: ✅ 1.32MB (fetched 5:15am today)
-- thermal_grid_*: ❌ No data yet — all fetch attempts failed
-- thermalGridLastRun: reset to 2000-01-01 → cron WILL run at 5:26am tomorrow
-- thermalGridLastResult: reset to "no data — cron reset"
+**Rate limit lessons this session:**
+- Reducing THERMAL_MAX_PER_TILE from 300→150 DOUBLES API calls — reverted back to 300. Fewer larger tiles = fewer requests = better rate limit behaviour.
+- Open-Meteo rate limits by IP. After hammering, changing VPN IP gave a fresh quota slate.
+- PowerShell `*>>` redirect creates UTF-16 log — use `Get-Content | Select-String` to read it.
 
-**NOT pushed to GitHub** (Jon may want to revert these UI/grid changes).
+**NOT pushed to Railway** — Jon to verify thermal overlay visually in browser before pushing.
 
 ## Last completed task
-- Session 51: DB write fix committed (`572a860`)
-- Session 50 (2026-09-09): Two-grid architecture + thermal grid bug fixes
+- Session 52: thermal grid live + report bad answer button shipped
+- Session 51: DB write fix (`572a860`)
 
 ## Currently in progress
-- Nothing blocking — server running, app functional
+- Nothing blocking
 
 ## Next task to start
-1. **Get thermal grid data** (two options):
-   - A) Reconnect VPN → start server → Admin Weather → "Thermal Grid" button → wait ~10-15min
-   - B) Wait for 5:26am Melbourne cron tomorrow (automatic)
-2. **After thermal data arrives**: Verify thermal-overlay returns nj~68 lat rows (-39.5 to -33.5)
-3. **"Report bad answer" button** for Smart Search chat (queued since last session)
-4. **Push to GitHub/Railway**: Jon to decide once thermal grid is verified working
+1. **Push to GitHub/Railway** once Jon is happy with thermal overlay
+2. **"Report bad answer" button manual test** — Jon to test in Smart Search UI, verify flag appears in admin log
+3. **Smart Search safety layer manual test** (still pending from session 40) — verify no regressions
+4. **Home hero mobile** — landscape image + portrait phone decision still pending
 
 ## Open questions / blockers
-- Jon to decide whether to push these grid changes to Railway once verified
-- **Home hero on mobile** — landscape image + portrait phone decision still pending
+- Jon to decide whether to push grid changes to Railway
+- **Home hero on mobile** — landscape vs portrait image decision still pending
 - **MMYC coordinates** — registry uses -38.2758, 145.0055. Worth eyeballing on a map.
 
 ## Quick context refresher
-SkyHigh's wind map uses two grids: fine grid (0.15°, 12 fields, 5am daily) for wind particles
-and per-site forecasts; thermal grid (0.09°, CAPE+BLH only, 5:26am daily) for the thermal
-overlay. Both use ecmwf_ifs model. Code committed but NOT pushed. The cron will auto-fetch
-the thermal grid at 5:26am tomorrow (Melbourne time). To get it earlier, reconnect VPN and
-trigger fetch-now from Admin Weather panel.
+SkyHigh's wind map now has two confirmed working grids: fine grid (0.15°, 12 fields, fetched 5am daily) for wind particles and per-site forecasts; thermal grid (0.09°, CAPE+BLH, fetched 5:26am daily) for the thermal overlay. Both use ecmwf_ifs. The thermal overlay is visible on the Sites page wind map. Code NOT yet pushed to Railway — confirm in browser first then push. Rate limiting from Open-Meteo is the main operational risk; the 3s tile delay + scraper yield should make future fetches reliable.

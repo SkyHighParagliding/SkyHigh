@@ -11,6 +11,10 @@ const OPEN_METEO_URL = OPEN_METEO_API_KEY
 const FINE_GRID_CACHE_KEY = "fine_grid";
 const THERMAL_GRID_CACHE_KEY = "thermal_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
+const TILE_DELAY_MS = 3000;
+
+// Exported so the weather scraper can yield during grid fetches
+export let gridFetchActive = false;
 
 function melbourneToday(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
@@ -180,10 +184,12 @@ export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
   }
 
   inflightFetch = doFetchFineGrid();
+  gridFetchActive = true;
   try {
     return await inflightFetch;
   } finally {
     inflightFetch = null;
+    gridFetchActive = false;
   }
 }
 
@@ -244,7 +250,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
       console.log(`Fine grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
 
       if (i < tiles.length - 1) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, TILE_DELAY_MS));
       }
     } catch (err) {
       console.error(`Fine grid: Tile ${i + 1}/${tiles.length} failed:`, err);
@@ -409,10 +415,12 @@ export async function fetchThermalGrid(force = false): Promise<ThermalVictoriaGr
   }
 
   inflightThermalFetch = doFetchThermalGrid();
+  gridFetchActive = true;
   try {
     return await inflightThermalFetch;
   } finally {
     inflightThermalFetch = null;
+    gridFetchActive = false;
   }
 }
 
@@ -460,7 +468,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
       console.log(`Thermal grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
 
       if (i < tiles.length - 1) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, TILE_DELAY_MS));
       }
     } catch (err) {
       console.error(`Thermal grid: Tile ${i + 1}/${tiles.length} failed:`, err);

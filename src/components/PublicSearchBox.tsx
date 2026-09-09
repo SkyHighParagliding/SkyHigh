@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Send, Bot, User, Loader2, X, MessageCircle } from "lucide-react";
+import { Send, Bot, User, Loader2, X, MessageCircle, ThumbsDown } from "lucide-react";
 import { VoiceMicButton } from "@/components/VoiceMicButton";
 
 interface Message {
   role: "user" | "assistant";
   text: string;
   isCta?: boolean;
+  query?: string;
+  flagged?: boolean;
 }
 
 function isSafeUrl(url: string): boolean {
@@ -250,7 +252,7 @@ export function PublicSearchBox() {
 
         const answerText = (finalText || accumulated) + (disclaimer ? "\n\n**" + disclaimer + "**" : "");
         responseCountRef.current += 1;
-        const newMessages: Message[] = [...updatedMessages, { role: "assistant", text: answerText }];
+        const newMessages: Message[] = [...updatedMessages, { role: "assistant", text: answerText, query: q }];
 
         if (ctaFrequency > 0 && ctaMessage && responseCountRef.current % ctaFrequency === 0) {
           newMessages.push({ role: "assistant", text: ctaMessage, isCta: true });
@@ -267,7 +269,7 @@ export function PublicSearchBox() {
         if (disclaimer) answerText += "\n\n**" + disclaimer + "**";
 
         responseCountRef.current += 1;
-        const newMessages: Message[] = [...updatedMessages, { role: "assistant", text: answerText }];
+        const newMessages: Message[] = [...updatedMessages, { role: "assistant", text: answerText, query: q }];
 
         if (ctaFrequency > 0 && ctaMessage && responseCountRef.current % ctaFrequency === 0) {
           newMessages.push({ role: "assistant", text: ctaMessage, isCta: true });
@@ -285,6 +287,17 @@ export function PublicSearchBox() {
       abortRef.current = null;
     }
   }, [query, loading, messages, ctaFrequency, ctaMessage]);
+
+  const handleFlag = useCallback(async (query: string, msgIndex: number) => {
+    setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: true } : m));
+    try {
+      await fetch("/api/search-logs/flag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+    } catch {}
+  }, []);
 
   function handleClose() {
     if (abortRef.current) {
@@ -335,16 +348,32 @@ export function PublicSearchBox() {
               {msg.role === "assistant" && (
                 <Bot className={`w-5 h-5 mt-1 flex-shrink-0 ${msg.isCta ? "text-amber-300" : "text-sky-300"}`} />
               )}
-              <div
-                className={`rounded-xl px-3 py-2 text-sm max-w-[85%] leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-sky-600/60 text-white"
-                    : msg.isCta
-                      ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 text-white/90"
-                      : "bg-white/10 text-white/90"
-                }`}
-              >
-                {msg.role === "assistant" ? renderMarkdown(msg.text) : msg.text}
+              <div className="flex flex-col gap-1 max-w-[85%]">
+                <div
+                  className={`rounded-xl px-3 py-2 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-sky-600/60 text-white"
+                      : msg.isCta
+                        ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30 text-white/90"
+                        : "bg-white/10 text-white/90"
+                  }`}
+                >
+                  {msg.role === "assistant" ? renderMarkdown(msg.text) : msg.text}
+                </div>
+                {msg.role === "assistant" && !msg.isCta && msg.query && (
+                  <button
+                    onClick={() => !msg.flagged && handleFlag(msg.query!, i)}
+                    className={`self-start flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                      msg.flagged
+                        ? "text-red-400 cursor-default"
+                        : "text-white/30 hover:text-red-400"
+                    }`}
+                    title={msg.flagged ? "Reported" : "Report bad answer"}
+                  >
+                    <ThumbsDown className="w-3 h-3" />
+                    {msg.flagged ? "Reported" : "Report"}
+                  </button>
+                )}
               </div>
               {msg.role === "user" && (
                 <User className="w-5 h-5 text-white/50 mt-1 flex-shrink-0" />

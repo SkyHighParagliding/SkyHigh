@@ -12,19 +12,26 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
   const offset = (page - 1) * limit;
 
+  const flaggedOnly = req.query.flagged === "true";
   const baseCount = "SELECT COUNT(*) as total FROM search_logs";
-  const baseData = "SELECT id, search_type, query, response, created_at FROM search_logs";
+  const baseData = "SELECT id, search_type, query, response, created_at, flagged FROM search_logs";
+
+  const conditions: string[] = [];
+  const params: any[] = [];
 
   if (type !== "all") {
-    const countRow = await queryOne<{ total: string }>(baseCount + " WHERE search_type = $1", [type]);
-    const rows = await query<any>(baseData + " WHERE search_type = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3", [type, limit, offset]);
-    const total = parseInt(String(countRow?.total ?? 0));
-    return res.json({ entries: rows, total, page, limit, pages: Math.ceil(total / limit) });
+    params.push(type);
+    conditions.push(`search_type = $${params.length}`);
+  }
+  if (flaggedOnly) {
+    conditions.push("flagged = TRUE");
   }
 
-  const countRow = await queryOne<{ total: string }>(baseCount);
-  const rows = await query<any>(baseData + " ORDER BY created_at DESC LIMIT $1 OFFSET $2", [limit, offset]);
+  const where = conditions.length ? " WHERE " + conditions.join(" AND ") : "";
+  const countRow = await queryOne<{ total: string }>(baseCount + where, params);
   const total = parseInt(String(countRow?.total ?? 0));
+  params.push(limit, offset);
+  const rows = await query<any>(baseData + where + ` ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`, params);
   res.json({ entries: rows, total, page, limit, pages: Math.ceil(total / limit) });
 }));
 
@@ -54,6 +61,21 @@ router.post("/toggle", requireAuth, asyncHandler(async (req, res) => {
   const val = String(!!enabled);
   await execute("INSERT INTO settings (key, value) VALUES ('searchLoggingEnabled', $1) ON CONFLICT (key) DO UPDATE SET value = $1", [val]);
   res.json({ ok: true, enabled: !!enabled });
+}));
+
+// POST /api/search-logs/flag — no auth, public pilots flag bad answers by query text
+router.post("/flag", asyncHandler(async (req, res) => {
+  const { query: q } = req.body;
+  if (!q || typeof q !== "string") return res.status(400).json({ error: "query required" });
+
+  const row = await queryOne<{ id: number }>(
+    "SELECT id FROM search_logs WHERE query = $1 AND search_type = 'public' ORDER BY created_at DESC LIMIT 1",
+    [q.trim()]
+  );
+  if (!row) return res.status(404).json({ error: "log entry not found" });
+
+  await execute("UPDATE search_logs SET flagged = TRUE WHERE id = $1", [row.id]);
+  res.json({ ok: true, id: row.id });
 }));
 
 // DELETE /api/search-logs
