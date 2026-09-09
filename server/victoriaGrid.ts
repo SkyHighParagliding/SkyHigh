@@ -288,18 +288,18 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     fetchedAt: Date.now()
   };
 
+  const jsonStr = JSON.stringify(grid);
+  const today = melbourneToday();
+  const cacheKey = `${FINE_GRID_CACHE_KEY}_${today}`;
+  await execute(
+    `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+    [cacheKey, jsonStr, ni, FINE_DELTA]
+  );
+  console.log(`Fine grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
   try {
-    const jsonStr = JSON.stringify(grid);
-    const today = melbourneToday();
-    const cacheKey = `${FINE_GRID_CACHE_KEY}_${today}`;
-    await execute(
-      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
-      [cacheKey, jsonStr, ni, FINE_DELTA]
-    );
-    console.log(`Fine grid: Cached for ${today} ${allPoints.length}/${expectedPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
     await cleanupOldGridData(FINE_GRID_CACHE_KEY);
   } catch (e) {
-    console.error("Fine grid: Failed to cache:", e);
+    console.error("Fine grid: Cleanup error (non-fatal):", e);
   }
 
   memFineGrid = grid;
@@ -501,18 +501,18 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
     fetchedAt: Date.now()
   };
 
+  const jsonStr = JSON.stringify(grid);
+  const today = melbourneToday();
+  const cacheKey = `${THERMAL_GRID_CACHE_KEY}_${today}`;
+  await execute(
+    `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+    [cacheKey, jsonStr, ni, THERMAL_DELTA]
+  );
+  console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
   try {
-    const jsonStr = JSON.stringify(grid);
-    const today = melbourneToday();
-    const cacheKey = `${THERMAL_GRID_CACHE_KEY}_${today}`;
-    await execute(
-      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
-      [cacheKey, jsonStr, ni, THERMAL_DELTA]
-    );
-    console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
     await cleanupOldGridData(THERMAL_GRID_CACHE_KEY);
   } catch (e) {
-    console.error("Thermal grid: Failed to cache:", e);
+    console.error("Thermal grid: Cleanup error (non-fatal):", e);
   }
 
   memThermalGrid = grid;
