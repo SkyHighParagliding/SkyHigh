@@ -375,6 +375,8 @@ interface ThermalVictoriaGrid {
 let memThermalGrid: ThermalVictoriaGrid | null = null;
 let memThermalGridAt = 0;
 let inflightThermalFetch: Promise<ThermalVictoriaGrid> | null = null;
+// Set by doFetchThermalGrid — true if fresh data was written, false if fallback was used
+export let lastThermalGridFresh = false;
 
 async function buildThermalTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
   const bounds = await getGridBounds();
@@ -527,6 +529,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
         const fallbackGrid = JSON.parse(cached.gridData) as ThermalVictoriaGrid;
         memThermalGrid = fallbackGrid;
         memThermalGridAt = Date.now();
+        lastThermalGridFresh = false;
         return fallbackGrid;
       } catch (e: any) {
         console.error("Thermal grid: Failed to parse cached data:", e.message);
@@ -551,6 +554,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
     [cacheKey, jsonStr, ni, THERMAL_DELTA]
   );
   await setThermalProgress('');
+  lastThermalGridFresh = true;
   console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
   try {
     await cleanupOldGridData(THERMAL_GRID_CACHE_KEY);

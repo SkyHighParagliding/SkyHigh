@@ -9,7 +9,7 @@ import { getWdlStations, getWdlStationId, parseWdlStationId, getWportStations, g
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getCachedFineGrid, getCachedThermalGrid, extractWindParticles, fetchFineGrid, fetchThermalGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches } from "../victoriaGrid.js";
+import { getCachedFineGrid, getCachedThermalGrid, extractWindParticles, fetchFineGrid, fetchThermalGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches, lastThermalGridFresh } from "../victoriaGrid.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
@@ -1001,15 +1001,17 @@ router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, re
   const ts = new Date().toISOString();
   try {
     await fetchThermalGrid(true);
+    const resultMsg = lastThermalGridFresh ? "ok" : "ok (rate limited — showing cached data)";
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
       ["thermalGridLastRun", ts]
     );
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["thermalGridLastResult", "ok"]
+      ["thermalGridLastResult", resultMsg]
     );
-    res.json({ success: true, message: "Thermal grid fetch completed" });
+    const msg = lastThermalGridFresh ? "Thermal grid updated successfully" : "Rate limited — showing cached data from previous run";
+    res.json({ success: lastThermalGridFresh, message: msg });
   } catch (e: any) {
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,

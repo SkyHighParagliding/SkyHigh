@@ -129,11 +129,12 @@ async function fetchFineGridDaily() {
 async function fetchThermalGridDaily() {
   const ts = new Date().toISOString();
   try {
-    const { fetchThermalGrid } = await import("../victoriaGrid.js");
+    const { fetchThermalGrid, lastThermalGridFresh } = await import("../victoriaGrid.js");
     await fetchThermalGrid(true);
+    const resultMsg = lastThermalGridFresh ? "ok" : "ok (rate limited — showing cached data)";
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", "ok"]);
-    log.info("Thermal grid daily fetch completed");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
+    log.info(`Thermal grid daily fetch completed (${lastThermalGridFresh ? "fresh data" : "fallback to cache"})`);
   } catch (e: any) {
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", e.message || "Unknown error"]);
