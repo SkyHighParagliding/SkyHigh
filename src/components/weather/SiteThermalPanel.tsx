@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info } from 'lucide-react';
+import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { cn } from '@/lib/utils';
 import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar, getThermalAt } from '../windmap/thermalInterpolation';
@@ -48,6 +49,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
   const [error, setError] = useState<string | null>(null);
   const [sliderIndex, setSliderIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
 
   useEffect(() => {
@@ -225,11 +227,18 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
       <div className={panelClass} style={panelStyle}>
         {/* Header */}
         <div className={cn('flex items-center justify-between', isApple ? 'mb-2' : 'mb-2 sm:mb-3')}>
-          <div>
+          <div className="flex items-center gap-1.5">
             <span className={headerClass} style={headerStyle}>Thermal Forecast</span>
             {dateLabel && (
-              <span className="ml-2 text-[8px] text-muted-foreground font-mono">{dateLabel} · ECMWF</span>
+              <span className="text-[8px] text-muted-foreground font-mono">{dateLabel} · ECMWF</span>
             )}
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
+              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              title="What do these readings mean?"
+            >
+              <Info className="w-3 h-3" />
+            </button>
           </div>
           <div className="flex items-center gap-1.5">
             {hasLiveWeather && (
@@ -324,6 +333,8 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
         </div>,
         document.body
       )}
+
+      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} />}
     </>
   );
 }
