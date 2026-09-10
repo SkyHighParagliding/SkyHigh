@@ -438,15 +438,28 @@ export async function fetchThermalGrid(force = false): Promise<ThermalVictoriaGr
   }
 }
 
+async function setThermalProgress(value: string) {
+  try {
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ('thermalGridProgress', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [value]
+    );
+  } catch { /* non-fatal */ }
+}
+
 async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
   console.log("Thermal grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg, CAPE+BLH only)...");
 
   const bounds = await getGridBounds();
   const tiles = await buildThermalTiles();
   const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
-  console.log(`Thermal grid: ${totalPoints} total points in ${tiles.length} tiles`);
+  const totalTiles = tiles.length;
+  console.log(`Thermal grid: ${totalPoints} total points in ${totalTiles} tiles`);
+  await setThermalProgress(`0 / ${totalTiles} tiles`);
 
   const allPoints: ThermalPoint[] = [];
+  let failedTiles = 0;
 
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
@@ -482,13 +495,16 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
         });
       }
 
-      console.log(`Thermal grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
+      console.log(`Thermal grid: Tile ${i + 1}/${totalTiles} fetched (${tile.lats.length} points)`);
+      await setThermalProgress(`${i + 1} / ${totalTiles} tiles`);
 
       if (i < tiles.length - 1) {
         await new Promise(r => setTimeout(r, TILE_DELAY_MS));
       }
     } catch (err) {
-      console.error(`Thermal grid: Tile ${i + 1}/${tiles.length} failed:`, err);
+      failedTiles++;
+      console.error(`Thermal grid: Tile ${i + 1}/${totalTiles} failed:`, err);
+      await setThermalProgress(`${i + 1} / ${totalTiles} tiles (${failedTiles} failed)`);
     }
   }
 
@@ -498,7 +514,8 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
 
   if (completeness < 0.8) {
     console.warn(`Thermal grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
-    if (completeness === 0) throw new Error(`All thermal tiles failed — no data fetched`);
+    await setThermalProgress('');
+    if (completeness === 0) throw new Error(`All thermal tiles failed — rate limited or no connectivity`);
     const today = melbourneToday();
     let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${THERMAL_GRID_CACHE_KEY}_${today}`]);
     if (!cached) {
@@ -515,7 +532,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
         console.error("Thermal grid: Failed to parse cached data:", e.message);
       }
     }
-    throw new Error(`Thermal grid too incomplete (${allPoints.length}/${totalPoints}, ${Math.round(completeness * 100)}%) and no cache available`);
+    throw new Error(`Thermal grid too incomplete (${Math.round(completeness * 100)}%) and no previous cache available`);
   }
 
   const grid: ThermalVictoriaGrid = {
@@ -533,6 +550,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
     `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
     [cacheKey, jsonStr, ni, THERMAL_DELTA]
   );
+  await setThermalProgress('');
   console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
   try {
     await cleanupOldGridData(THERMAL_GRID_CACHE_KEY);

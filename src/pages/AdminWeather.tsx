@@ -124,22 +124,25 @@ export function AdminWeather() {
     }
   };
 
-  const startStatusPolling = () => {
+  const startStatusPolling = (fast = false) => {
     if (pollRef.current) clearInterval(pollRef.current);
     let ticks = 0;
+    const interval = fast ? 2000 : 5000;
+    const maxTicks = fast ? 300 : 12; // fast: up to 10 min; slow: 60 s
     pollRef.current = setInterval(async () => {
       await refreshSettings();
       ticks++;
-      if (ticks >= 12) {
+      if (ticks >= maxTicks) {
         clearInterval(pollRef.current!);
         pollRef.current = null;
       }
-    }, 5000);
+    }, interval);
   };
 
   const handleTrigger = async (endpoint: string, type: string) => {
     setLoadingType(type);
     setMessages(prev => ({ ...prev, [type]: "" }));
+    if (type === 'thermal') startStatusPolling(true);
     try {
       const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
       const message = data.message || "Failed to download data";
@@ -148,7 +151,7 @@ export function AdminWeather() {
       if (data.success) {
         toast.success(`${type}: ${message}`);
         setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 5000);
-        startStatusPolling();
+        if (type !== 'thermal') startStatusPolling();
       } else {
         toast.error(`${type}: ${message}`);
       }
@@ -158,6 +161,10 @@ export function AdminWeather() {
       toast.error(errorMsg);
     } finally {
       setLoadingType(null);
+      if (type === 'thermal') {
+        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        startStatusPolling();
+      }
     }
   };
 
@@ -342,6 +349,11 @@ export function AdminWeather() {
                     <RefreshCw className={`w-4 h-4 ${loadingType === 'thermal' ? 'animate-spin' : ''}`} />
                     {loadingType === 'thermal' ? "Fetching..." : "Thermal Grid"}
                   </Button>
+                  {loadingType === 'thermal' && settings.thermalGridProgress && (
+                    <span className="text-xs font-mono text-sky text-center tabular-nums">
+                      {settings.thermalGridProgress}
+                    </span>
+                  )}
                   {messages.thermal && (
                     <span className={`text-xs font-medium text-center ${
                       messages.thermal.toLowerCase().includes('failed') || messages.thermal.toLowerCase().includes('error') ? 'text-red-500' :

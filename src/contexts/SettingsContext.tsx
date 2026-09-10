@@ -34,6 +34,7 @@ interface Settings {
   fineGridLastResult?: string;
   thermalGridLastRun?: string;
   thermalGridLastResult?: string;
+  thermalGridProgress?: string;
   extendedForecastLastRun?: string;
   extendedForecastLastResult?: string;
   homeCardsSelection?: string;
@@ -268,6 +269,7 @@ function buildSettings(data: Record<string, any>): Settings {
     fineGridLastResult: data.fineGridLastResult,
     thermalGridLastRun: data.thermalGridLastRun,
     thermalGridLastResult: data.thermalGridLastResult,
+    thermalGridProgress: data.thermalGridProgress || undefined,
     extendedForecastLastRun: data.extendedForecastLastRun,
     extendedForecastLastResult: data.extendedForecastLastResult,
     homeCardsSelection: cleanString(data.homeCardsSelection),
