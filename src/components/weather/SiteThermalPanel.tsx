@@ -220,7 +220,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                 )}
               </div>
               <button
-                onClick={() => setThermalInfo(null)}
+                onClick={(e) => { e.stopPropagation(); setThermalInfo(null); }}
                 className="text-white/40 hover:text-white/80 transition-colors shrink-0 mt-0.5"
               >
                 <X className="w-3 h-3" />
