@@ -355,6 +355,41 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 ## Phase 8: Future / Low Priority
 
+### TASK-THERMAL-001 ⬜ Thermal Overlay — W* Strength + CCL Ceiling Height
+- **Status:** ⬜ BACKLOG
+- **Prerequisites:** Existing ECMWF IFS thermal grid (CAPE + BLH already fetched and stored)
+- **Estimated effort:** L
+- **Description:** Upgrade the thermal heatmap from a CAPE proxy to a dual-field system showing both thermal *strength* (W* — how fast you climb) and thermal *ceiling* (CCL height — how high you can go). Both are needed for a complete picture of flying conditions; a pilot needs to know whether the air is lifting AND whether the ceiling is high enough to use it. Comparative analysis against Windy's Thermals layer (CCL-based) and AusRASP's W* layer (2026-09-10) confirmed that CAPE misses both dimensions, especially in shoulder-season conditions where thermals form but CAPE stays near-zero.
+- **Why — W*:** Raw CAPE is a thunderstorm metric, not a thermal metric. AusRASP's Thermal Updraft Velocity (W*) shows meaningful differentiation even when CAPE ≈ 0 (e.g. early spring), because it captures BL mixing driven by surface heating. SkyHigh's CAPE overlay failed to show weak-but-flyable thermals that W* correctly identifies.
+- **Why — CCL:** Windy's dedicated Thermals layer uses Convective Condensation Level (CCL) height — the altitude at which rising thermals condense into cumulus cloud. This is the thermal *ceiling* — what pilots actually call "cloud base." A low CCL means restricted flying even if thermals are strong. This dimension is entirely absent from the current overlay.
+- **Why — colour scheme:** Current blue→green→yellow→orange→red ramp starts with blue for "weak thermals" which reads as *cold/inactive* — counterintuitive. Windy's grey→amber→orange scheme reads immediately as cold=grey, warm=orange with no legend required. New scheme should use a warm ramp: transparent/grey (none) → light amber → amber → orange → deep orange/red (very strong).
+- **ECMWF fields needed:**
+  - `ishf` — instantaneous surface sensible heat flux (W/m²) → used to compute W*; in IFS open API
+  - `blh` — boundary layer height → already fetched
+  - `2d` / `t2m` — 2m temperature → already fetched (needed for CCL calculation)
+  - `2r` / `r2` — 2m dewpoint or relative humidity → available in IFS API; needed for CCL
+- **W* formula:** `W* = (g/Θ × BLH × H_s / (ρ × Cp))^(1/3)` where Θ ≈ 288K, ρ ≈ 1.2 kg/m³, Cp = 1005 J/kg/K
+- **CCL formula:** `CCL_height ≈ (T2m - Tdew) / 8 × 1000` metres AGL (empirical dry-adiabatic lift rate: 1°C spread ≈ 125m). Surface pressure → convert to metres via hypsometric equation.
+- **Colour scheme — W* primary driver:**
+  - 0–0.3 m/s → transparent (no overlay)
+  - 0.3–0.8 m/s → light amber `rgba(210, 160, 60, 100)` — weak
+  - 0.8–1.5 m/s → amber `rgba(220, 130, 30, 160)` — moderate
+  - 1.5–2.5 m/s → orange `rgba(210, 90, 20, 190)` — good
+  - 2.5+ m/s → deep orange/red `rgba(190, 50, 20, 210)` — strong/XC
+- **Tap-to-read readout (both values):** Tapping the map should show:
+  - `W* 1.4 m/s  |  Ceiling 1,850 m` (primary line)
+  - Strength label: Moderate / Good / Strong / XC
+  - If CCL is low (< 600m): show amber warning "Low ceiling"
+  - If W* < 0.3: show "No thermals"
+- **Acceptance Criteria:**
+  - `ishf`, `r2` (or dewpoint) fetched alongside existing thermal grid fields in the daily 5:26am cron job.
+  - `wstar` and `ccl_height` computed server-side and stored in the thermal grid JSON blob.
+  - Heatmap colour driven by W* using new warm ramp (transparent → amber → orange → red).
+  - Legend bar updated to warm ramp with m/s labels and pilot-friendly strength names.
+  - Tap-to-read badge shows both W* (m/s) and CCL height (m AGL), plus low-ceiling warning when < 600m.
+  - CAPE retained in storage for reference but not used as primary colour or readout.
+  - Backward-compatible: falls back to CAPE-based render if `wstar` absent in older cached grids.
+
 ### TASK-MIG-001 ⬜ Railway → Fly.io Migration
 - **Status:** ⬜ DEFERRED — Pending future need
 - **Description:** Migrate SkyHigh hosting from Railway to Fly.io for potential cost savings.
@@ -377,7 +412,7 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 10 | Postgres Dev + SQLite Removal | 3 | ✅ Complete | 2026-05-27 |
 | 4 | Production Deployment | 4 | ✅ Complete | 2026-05-30 |
 | 5 | Hardening & Audit | 1 | ✅ Complete | 2026-06-02 |
-| 8 | Future / Low Priority | 1 | ⬜ DEFERRED | — |
+| 8 | Future / Low Priority | 2 | ⬜ DEFERRED/BACKLOG | — |
 | Code Review | Sonnet Review | 7 | 6✅ / 1⬜ | — |
 
 ---
@@ -389,4 +424,4 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 - **Backlog (3):** Tasks 030, 031, 032
 - **Review deferred (1):** TASK-REVIEW-F (useWindPlayback hook extraction)
 
-Last updated: 2026-05-27
+Last updated: 2026-09-10

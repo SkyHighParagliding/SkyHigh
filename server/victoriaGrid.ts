@@ -605,28 +605,29 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
     pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
   }
 
-  const data: { cape: number; blh: number; wstar: number; ccl: number }[][] = [];
+  const data: { cape: number; blh: number; wstar?: number; ccl?: number }[][] = [];
 
   for (let t = 0; t < selectedTimes.length; t++) {
     const timeIdx = startIdx + t;
-    const timeStepData: { cape: number; blh: number; wstar: number; ccl: number }[] = [];
+    const timeStepData: { cape: number; blh: number; wstar?: number; ccl?: number }[] = [];
     for (const lat of subLats) {
       for (const lon of subLons) {
         const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
         const point = pointMap.get(key);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
-          const blh  = point.hourly.boundary_layer_height[timeIdx] ?? 0;
-          const ishf = point.hourly.surface_sensible_heat_flux[timeIdx] ?? 0;
-          const t2m  = point.hourly.temperature_2m[timeIdx] ?? 15;
-          const td2m = point.hourly.dew_point_2m[timeIdx] ?? 10;
+          const blh      = point.hourly.boundary_layer_height[timeIdx] ?? 0;
+          const ishfArr  = point.hourly.surface_sensible_heat_flux;
+          const t2mArr   = point.hourly.temperature_2m;
+          const td2mArr  = point.hourly.dew_point_2m;
+          const hasNewFields = Array.isArray(ishfArr) && ishfArr.length > 0;
           timeStepData.push({
             cape:  point.hourly.cape[timeIdx] ?? 0,
             blh,
-            wstar: computeWstar(blh, ishf),
-            ccl:   computeCCL(t2m, td2m),
+            wstar: hasNewFields ? computeWstar(blh, ishfArr[timeIdx] ?? 0) : undefined,
+            ccl:   hasNewFields ? computeCCL(t2mArr?.[timeIdx] ?? 15, td2mArr?.[timeIdx] ?? 10) : undefined,
           });
         } else {
-          timeStepData.push({ cape: 0, blh: 0, wstar: 0, ccl: 0 });
+          timeStepData.push({ cape: 0, blh: 0 });
         }
       }
     }
