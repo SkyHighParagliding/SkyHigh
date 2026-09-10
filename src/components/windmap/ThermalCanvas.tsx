@@ -157,7 +157,6 @@ export const ThermalCanvas = memo(function ThermalCanvas({
 
     let lastTileKey = '';
     let lastTiles: TileResult | null = null;
-    let lastThermalInfoUpdate = 0;
 
     const resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
@@ -220,18 +219,6 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr, true);
       }
 
-      const now = performance.now();
-      if (pinnedCrosshairRef.current && now - lastThermalInfoUpdate > 200) {
-        lastThermalInfoUpdate = now;
-        const pin = pinnedCrosshairRef.current;
-        const inverted = currentTransform.invert([pin.x, pin.y]);
-        const geo = projection.invert!(inverted);
-        if (geo) {
-          const th = getThermalAt(geo[0], geo[1], currentTimeRef.current, thermalGrid);
-          onThermalInfoChangeRef.current?.(th ?? null);
-        }
-      }
-
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -254,14 +241,25 @@ export const ThermalCanvas = memo(function ThermalCanvas({
 
   const handlePointerLeave = () => setCrosshair(null);
 
+  // Recompute thermal info when the time slider moves (while a pin is active)
+  useEffect(() => {
+    if (!pinnedCrosshair || !projectionRef.current) return;
+    const t = transformRef.current;
+    const inverted = t.invert([pinnedCrosshair.x, pinnedCrosshair.y]);
+    const geo = projectionRef.current.invert!(inverted);
+    if (geo) {
+      const th = getThermalAt(geo[0], geo[1], currentTime, thermalGrid);
+      onThermalInfoChangeRef.current?.(th ?? null);
+    }
+  }, [currentTime, thermalGrid, pinnedCrosshair]);
+
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    setPinnedCrosshair({ x, y });
-
+    // Check for site marker hit first
     if (projectionRef.current && siteMarkersRef.current && onSiteClick) {
       const currentTransform = transformRef.current;
       for (const site of siteMarkersRef.current) {
@@ -272,7 +270,9 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         if (dist < 12) { onSiteClick(site, x, y); return; }
       }
     }
-    // No site clicked — leave popup open, user can dismiss with ×
+
+    // Pin the crosshair — the useEffect above will compute thermal info once
+    setPinnedCrosshair({ x, y });
   }, [onSiteClick]);
 
   return (
