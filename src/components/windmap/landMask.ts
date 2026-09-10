@@ -1,6 +1,7 @@
 // Simplified Victoria mainland polygon — [longitude, latitude] pairs.
 // Traces the coastline clockwise. Key omissions by design:
 //   • Port Phillip Bay: line jumps from Point Lonsdale directly to Point Nepean
+//     (bay is then subtracted via PORT_PHILLIP_BAY polygon below)
 //   • Western Port Bay: line jumps from Flinders to Inverloch
 //   • Bass Strait / ocean: everything south of the south coast is outside
 // Resolution is adequate for the 0.09–0.15° thermal grid (~10–15 km cells).
@@ -18,7 +19,7 @@ const VICTORIA_LAND: [number, number][] = [
   [144.37, -38.33],
   [144.55, -38.27], // Barwon Heads
   [144.67, -38.27], // Point Lonsdale (west side of The Heads)
-  // — Jump across The Heads (3 km) to Point Nepean, excluding Port Phillip Bay —
+  // — Jump across The Heads to Point Nepean; bay water excluded by PORT_PHILLIP_BAY below —
   [144.73, -38.51], // Point Nepean (tip of Mornington Peninsula)
   [144.88, -38.52], // Cape Schanck
   [145.00, -38.48], // Flinders (outer Mornington Peninsula)
@@ -39,17 +40,54 @@ const VICTORIA_LAND: [number, number][] = [
   // Close back to SA border north via the Murray River (north boundary)
 ];
 
-// Ray-casting point-in-polygon. Returns true if (lon, lat) is inside Victoria.
-export function isOnLand(lon: number, lat: number): boolean {
-  const n = VICTORIA_LAND.length;
+// Port Phillip Bay outline — traced clockwise from Point Lonsdale.
+// Any point inside this polygon is bay water, not land.
+const PORT_PHILLIP_BAY: [number, number][] = [
+  [144.67, -38.27], // Point Lonsdale (west entrance / The Heads)
+  [144.66, -38.24], // Queenscliff
+  [144.72, -38.17], // St Leonards
+  [144.65, -38.12], // Portarlington
+  [144.52, -38.09], // Edwards Point
+  [144.42, -38.13], // Point Henry / Geelong South
+  [144.38, -38.12], // Geelong / Rippleside
+  [144.38, -38.07], // North Geelong
+  [144.43, -37.97], // Lara / Little River area
+  [144.55, -37.94], // Werribee South
+  [144.65, -37.93], // Werribee coast
+  [144.80, -37.88], // Altona / Laverton
+  [144.88, -37.86], // Williamstown
+  [144.97, -37.86], // Port Melbourne / Docklands
+  [145.03, -37.88], // St Kilda
+  [145.08, -37.95], // Brighton / Mentone
+  [145.12, -38.05], // Aspendale / Edithvale
+  [145.14, -38.13], // Frankston
+  [145.08, -38.22], // Mornington
+  [145.01, -38.29], // Mount Martha
+  [144.90, -38.36], // Rosebud
+  [144.83, -38.40], // Rye
+  [144.76, -38.38], // Sorrento
+  [144.74, -38.34], // Portsea
+  [144.73, -38.51], // Point Nepean (east entrance / The Heads)
+  // Close back to Point Lonsdale via The Heads (3 km open-water gap)
+];
+
+function isInsidePolygon(poly: [number, number][], lon: number, lat: number): boolean {
+  const n = poly.length;
   let inside = false;
   for (let i = 0, j = n - 1; i < n; j = i++) {
-    const [xi, yi] = VICTORIA_LAND[i];
-    const [xj, yj] = VICTORIA_LAND[j];
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
     if (((yi > lat) !== (yj > lat)) &&
         (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
       inside = !inside;
     }
   }
   return inside;
+}
+
+// Returns true if (lon, lat) is on Victorian land (not ocean or bay water).
+export function isOnLand(lon: number, lat: number): boolean {
+  if (!isInsidePolygon(VICTORIA_LAND, lon, lat)) return false;
+  if (isInsidePolygon(PORT_PHILLIP_BAY, lon, lat)) return false;
+  return true;
 }
