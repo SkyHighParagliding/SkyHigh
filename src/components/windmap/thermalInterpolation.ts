@@ -88,7 +88,7 @@ export interface ThermalStrength {
 }
 
 export function getThermalStrength(cape: number): ThermalStrength {
-  if (cape < 10)   return { label: 'No thermals',            shortLabel: 'None',       color: '#4b6fa8', bgColor: 'bg-blue-700' };
+  if (cape < 10)   return { label: 'No thermals',            shortLabel: 'None',       color: '#a0aec0', bgColor: 'bg-blue-700' };
   if (cape < 50)   return { label: 'Weak thermals',          shortLabel: 'Weak',       color: '#1e96c8', bgColor: 'bg-sky-500' };
   if (cape < 200)  return { label: 'Moderate thermals',      shortLabel: 'Moderate',   color: '#28aa50', bgColor: 'bg-green-600' };
   if (cape < 500)  return { label: 'Good thermals',          shortLabel: 'Good',       color: '#c8c820', bgColor: 'bg-yellow-500' };
