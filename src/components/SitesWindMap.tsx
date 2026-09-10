@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer } from 'lucide-react';
+import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -33,6 +33,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
+  const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
@@ -316,13 +317,24 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     <span className="font-medium" style={{ color: thermalSiteStrength.color }}>{thermalSiteStrength.label}</span>
                   </div>
                   {thermalAtSite && effectiveWstar(thermalAtSite.wstar, thermalAtSite.cape) >= 0.3 && (
-                    <div className="text-[10px] text-foreground-secondary">
-                      {thermalAtSite.wstar !== undefined
-                        ? `W* ${thermalAtSite.wstar.toFixed(1)} m/s`
-                        : `CAPE ${Math.round(thermalAtSite.cape)} J/kg`}
-                      {thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0
-                        ? ` · ↑${Math.round(thermalAtSite.ccl / 100) * 100}m`
-                        : ''}
+                    <div className="text-[10px] text-foreground-secondary space-y-0.5">
+                      <div>
+                        {thermalAtSite.wstar !== undefined
+                          ? `W* ${thermalAtSite.wstar.toFixed(1)} m/s`
+                          : `CAPE ${Math.round(thermalAtSite.cape)} J/kg`}
+                      </div>
+                      {(thermalAtSite.blh > 0 || (thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0)) && (
+                        <div className="flex items-center gap-2">
+                          {thermalAtSite.blh > 0 && (
+                            <span>⬆ {Math.round(thermalAtSite.blh / 100) * 100}m</span>
+                          )}
+                          {thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0 && (
+                            <span className={thermalAtSite.ccl < 600 ? 'text-amber-500 font-medium' : ''}>
+                              ☁ {Math.round(thermalAtSite.ccl / 100) * 100}m{thermalAtSite.ccl < 600 ? ' ⚠' : ''}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -450,7 +462,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
           {viewMode === 'thermal' ? (
             <>
-              <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Thermal Strength</div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[8px] text-white/80 font-semibold tracking-wide uppercase">Thermal Strength</span>
+                <button
+                  onClick={() => setShowThermalHelp(true)}
+                  className="text-white/40 hover:text-white/80 transition-colors pointer-events-auto"
+                  title="What do these readings mean?"
+                >
+                  <Info className="w-3 h-3" />
+                </button>
+              </div>
               <div className="h-2 w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
               <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
                 <span>None</span><span>Weak</span><span>Mod</span><span>Good</span><span>XC</span>
@@ -490,11 +511,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   ) : (
                     <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
                   )}
+                  {thermalInfo.blh > 0 && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      <span className="text-white/60">⬆ {Math.round(thermalInfo.blh / 100) * 100}m</span>
+                    </>
+                  )}
                   {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                     <>
                       <span className="text-white/40">|</span>
                       <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                        ↑ {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        ☁ {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                       </span>
                     </>
                   )}
@@ -534,6 +561,77 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           )}
         </div>
       </div>
+
+      {/* Thermal help modal */}
+      {showThermalHelp && (
+        <div
+          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => setShowThermalHelp(false)}
+        >
+          <div
+            className="bg-[#1a1f2e] border border-white/10 rounded-2xl w-full max-w-sm max-h-[82vh] overflow-y-auto shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
+              <h3 className="text-white font-bold text-sm tracking-wide">Reading the Thermal Map</h3>
+              <button onClick={() => setShowThermalHelp(false)} className="text-white/40 hover:text-white/80 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4 text-[11px] leading-relaxed">
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Strength</div>
+                <p className="text-white/70">The colour overlay shows how strong convective lift (thermals) is expected to be across Victoria at the selected time. Based on W* (convective velocity scale) derived from CAPE and boundary layer data.</p>
+                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                  {[
+                    { label: 'None', color: '#a0aec0', desc: 'No soarable lift' },
+                    { label: 'Weak', color: '#d4a843', desc: '0.3–0.8 m/s · scratchy' },
+                    { label: 'Moderate', color: '#dc821e', desc: '0.8–1.5 m/s · soarable' },
+                    { label: 'Good', color: '#d45a14', desc: '1.5–2.5 m/s · XC possible' },
+                    { label: 'Strong', color: '#c03210', desc: '2.5–3.5 m/s · great XC' },
+                    { label: 'Extreme', color: '#b41414', desc: '3.5+ m/s · caution' },
+                  ].map(s => (
+                    <div key={s.label} className="flex items-start gap-1.5">
+                      <span className="w-2 h-2 rounded-full mt-0.5 shrink-0" style={{ background: s.color }} />
+                      <span><span className="text-white/80 font-medium">{s.label}</span> <span className="text-white/50">{s.desc}</span></span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">W* — Convective Velocity</div>
+                <p className="text-white/70">How fast air rises inside a thermal (metres per second). A good rule of thumb: W* ≈ average climb rate you can expect in a well-centred thermal. 1.5 m/s is a comfortable XC day; 3 m/s is fast and bumpy.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">CAPE — Convective Energy</div>
+                <p className="text-white/70">Convective Available Potential Energy (Joules/kg). Shown when real W* data isn't available. Think of it as the "fuel tank" for thermals — the higher the value, the more energy available for convection. &gt;100 J/kg = useful thermals; &gt;500 J/kg = strong conditions.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">⬆ Thermal Ceiling (BLH)</div>
+                <p className="text-white/70">Boundary Layer Height — the maximum altitude thermals are expected to reach above ground level. This is your effective ceiling for the day. 1500–2500m AGL is typical for good XC days in the Victorian Alps. Below 800m and you're working hard to stay up.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">☁ Cloud Base (CCL)</div>
+                <p className="text-white/70">Convective Condensation Level — the height where thermals would form cumulus clouds. Calculated from the spread between air temperature and dew point (every 1°C of spread ≈ 125m of cloud base height).</p>
+                <ul className="mt-1.5 space-y-1 text-white/60">
+                  <li><span className="text-white/80">High CCL (1200m+)</span> — blue thermals or high cumulus. Good soaring.</li>
+                  <li><span className="text-white/80">Mid CCL (600–1200m)</span> — cumulus develops. Watch for overdevelopment.</li>
+                  <li><span className="text-amber-400 font-medium">Low CCL (&lt;600m) ⚠</span> — clouds form near ground. Risk of fog, low stratus, or rapid overdevelopment. CCL = 0 near the coast often means marine layer — don't expect blue skies.</li>
+                </ul>
+              </section>
+
+              <section className="border-t border-white/10 pt-3">
+                <p className="text-white/40 text-[10px]">Data source: ECMWF IFS forecast via Open-Meteo. Updated daily at 5:26am Melbourne time. Grid resolution: 0.09° (~10km). This is a forecast tool — always make your own assessment before flying.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
