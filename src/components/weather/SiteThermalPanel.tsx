@@ -4,6 +4,7 @@ import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer 
 import { cn } from '@/lib/utils';
 import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar, getThermalAt } from '../windmap/thermalInterpolation';
+import type { SiteMarker } from '../windMapTypes';
 
 const ThermalCanvas = lazy(() =>
   import('../windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas }))
@@ -95,6 +96,13 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
     ? getThermalStrength(effectiveWstar(siteReading.wstar, siteReading.cape))
     : null;
 
+  // Single-entry marker array for the launch pin; passing exactly 1 marker keeps
+  // ThermalCanvas in the single-site zoom path (not the Victoria-fit path).
+  const launchMarker = useMemo<SiteMarker[]>(() => {
+    if (!site?.lat || !site?.lon) return [];
+    return [{ id: site.id ?? 'site', name: site.name ?? '', lat: site.lat, lon: site.lon, status: site.status, type: site.type }];
+  }, [site?.id, site?.name, site?.lat, site?.lon, site?.status, site?.type]);
+
   const isApple = variant === 'apple';
   const panelClass = isApple ? 'rounded-xl p-3' : 'bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10';
   const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
@@ -172,6 +180,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
             savedZoom={fullscreen ? 7 : 8}
             sizeKey={fullscreen ? 2 : 1}
             onThermalInfoChange={setThermalInfo}
+            siteMarkers={launchMarker}
           />
         </Suspense>
       ) : null}
