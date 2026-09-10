@@ -2,6 +2,7 @@ import type { ZoomTransform } from 'd3-zoom';
 import type { GeoProjection } from 'd3-geo';
 import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
+import { isOnLand } from './landMask';
 
 const CELL = 6; // sample every 6px for a smooth heatmap
 const REBUILD_MIN_INTERVAL = 50; // ms
@@ -102,6 +103,7 @@ function rebuildThermalOverlay(
       const geo = projection.invert!(inverted);
       const idx = (oy * overlayW + ox) * 4;
       if (!geo) { pixels[idx + 3] = 0; continue; }
+      if (!isOnLand(geo[0], geo[1])) { pixels[idx + 3] = 0; continue; }
       const th = getThermalAt(geo[0], geo[1], currentTime, grid);
       if (!th || th.cape < 5) { pixels[idx + 3] = 0; continue; }
       const li = capeToLUTIndex(th.cape);
