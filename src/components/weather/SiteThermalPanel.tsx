@@ -201,6 +201,35 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
         {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
       </button>
 
+      {/* Tapped-point info overlay */}
+      {thermalInfo && (() => {
+        const s = getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape));
+        return (
+          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2.5 py-1.5 z-10 min-w-[110px]">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5">
+                <div className="text-[8px] text-white/45 uppercase tracking-wide font-mono">Tapped point</div>
+                {s && <div className="text-[11px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
+                {thermalInfo.blh > 0 && (
+                  <div className="text-[9px] text-white/70 font-mono">⬆ {Math.round(thermalInfo.blh / 100) * 100}m ceiling</div>
+                )}
+                {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                  <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
+                    ☁ {Math.round(thermalInfo.ccl / 100) * 100}m cloudbase{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setThermalInfo(null)}
+                className="text-white/40 hover:text-white/80 transition-colors shrink-0 mt-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Legend */}
       {thermalGrid && (
         <div className="absolute bottom-2 left-2 bg-black/55 backdrop-blur-sm rounded px-2 py-1 pointer-events-none">
@@ -232,20 +261,20 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
       <div className={panelClass} style={panelStyle}>
         {/* Header */}
         <div className={cn('flex items-center justify-between', isApple ? 'mb-2' : 'mb-2 sm:mb-3')}>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className={headerClass} style={headerStyle}>Thermal Forecast</span>
             {dateLabel && (
-              <span className="text-[8px] text-muted-foreground font-mono">{dateLabel} · ECMWF</span>
+              <span className="text-[8px] text-muted-foreground font-mono truncate">{dateLabel} · ECMWF</span>
             )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
-              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              className="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-0.5"
               title="What do these readings mean?"
             >
-              <Info className="w-3 h-3" />
+              <Info className="w-3.5 h-3.5" />
             </button>
-          </div>
-          <div className="flex items-center gap-1.5">
             {hasLiveWeather && (
               <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack('history'); }} className={btnClass} style={btnStyle}>
                 <ChartLine className="w-3 h-3" />
