@@ -668,13 +668,12 @@ function FlyingSitesWidget() {
   return (
     <div className="flex flex-col items-center gap-1.5 mt-2">
       {selected.map(site => (
-        <Link
+        <span
           key={site.id}
-          to={`/sites/${site.id}`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20 hover:bg-sky/20 transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20"
         >
           {site.name}
-        </Link>
+        </span>
       ))}
     </div>
   );

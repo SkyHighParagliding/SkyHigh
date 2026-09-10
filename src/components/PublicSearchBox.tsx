@@ -291,12 +291,17 @@ export function PublicSearchBox() {
   const handleFlag = useCallback(async (query: string, msgIndex: number) => {
     setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: true } : m));
     try {
-      await fetch("/api/search-logs/flag", {
+      const res = await fetch("/api/search-logs/flag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
-    } catch {}
+      if (!res.ok) {
+        setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: false } : m));
+      }
+    } catch {
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: false } : m));
+    }
   }, []);
 
   function handleClose() {
@@ -363,15 +368,15 @@ export function PublicSearchBox() {
                 {msg.role === "assistant" && !msg.isCta && msg.query && (
                   <button
                     onClick={() => !msg.flagged && handleFlag(msg.query!, i)}
-                    className={`self-start flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                    className={`self-start flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-colors ${
                       msg.flagged
-                        ? "text-red-400 cursor-default"
-                        : "text-white/30 hover:text-red-400"
+                        ? "border-red-500/50 text-red-400 cursor-default"
+                        : "border-white/20 text-white/60 hover:border-red-500/60 hover:text-red-400"
                     }`}
-                    title={msg.flagged ? "Reported" : "Report bad answer"}
+                    title={msg.flagged ? "Reported" : "Report incorrect response"}
                   >
-                    <ThumbsDown className="w-3 h-3" />
-                    {msg.flagged ? "Reported" : "Report"}
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    {msg.flagged ? "Reported" : "Report incorrect response"}
                   </button>
                 )}
               </div>
