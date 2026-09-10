@@ -29,11 +29,23 @@ interface SiteThermalPanelProps {
   hasLiveWeather: boolean;
 }
 
+// Only show slots within flying hours (10am–7pm Melbourne time)
+const FLYING_HOUR_START = 10;
+const FLYING_HOUR_END = 19;
+
+function getMelbHour(isoStr: string): number {
+  return parseInt(
+    new Date(isoStr).toLocaleTimeString('en-AU', {
+      hour: '2-digit', hour12: false, timeZone: 'Australia/Melbourne',
+    })
+  );
+}
+
 export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeIndex, setTimeIndex] = useState(0);
+  const [sliderIndex, setSliderIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
 
@@ -42,26 +54,36 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
       .then(res => res.ok ? res.json() as Promise<ThermalGrid> : Promise.reject(`HTTP ${res.status}`))
       .then(data => {
         setThermalGrid(data);
-        // Default to the closest time slot to current Melbourne time
-        const nowMs = Date.now();
-        const times = data.times.map((t: string) => new Date(t).getTime());
-        const best = times.reduce(
-          (bestIdx: number, t: number, idx: number) =>
-            Math.abs(t - nowMs) < Math.abs(times[bestIdx] - nowMs) ? idx : bestIdx,
-          0
-        );
-        setTimeIndex(best);
         setLoading(false);
       })
       .catch(e => { setError(String(e)); setLoading(false); });
   }, []);
 
-  const timeMs = useMemo(
-    () => (thermalGrid ? thermalGrid.times.map((t: string) => new Date(t).getTime()) : []),
-    [thermalGrid]
-  );
+  // Filter to flying hours only; each entry maps back to original grid index
+  const flyingSlots = useMemo(() => {
+    if (!thermalGrid) return [];
+    return thermalGrid.times
+      .map((t, idx) => ({ t, idx, h: getMelbHour(t) }))
+      .filter(({ h }) => h >= FLYING_HOUR_START && h <= FLYING_HOUR_END);
+  }, [thermalGrid]);
 
-  const currentTime = timeMs[timeIndex] ?? Date.now();
+  // Set initial slider to the closest flying slot to current Melbourne time
+  useEffect(() => {
+    if (!flyingSlots.length) return;
+    const nowMs = Date.now();
+    const best = flyingSlots.reduce(
+      (bestI, slot, i) =>
+        Math.abs(new Date(slot.t).getTime() - nowMs) <
+        Math.abs(new Date(flyingSlots[bestI].t).getTime() - nowMs)
+          ? i : bestI,
+      0
+    );
+    setSliderIndex(best);
+  }, [flyingSlots]);
+
+  // Map slider position → original grid index → Unix ms timestamp
+  const activeSlot = flyingSlots[sliderIndex];
+  const currentTime = activeSlot ? new Date(activeSlot.t).getTime() : Date.now();
 
   // Compute current thermal reading at the site for the readout strip
   const siteReading = useMemo(() => {
@@ -85,27 +107,27 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
     : 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-semibold bg-navy text-white hover:bg-navy/90 transition-colors';
   const btnStyle = isApple ? { background: '#0071e3', color: '#fff' } : undefined;
 
-  const sliderContent = thermalGrid && thermalGrid.times.length > 1 && (
+  const sliderContent = flyingSlots.length > 1 && (
     <div className="mt-2 px-1">
       <div className="flex items-center gap-2">
         <span className="text-[9px] font-mono text-muted-foreground w-7 text-right shrink-0">
-          {fmtMelbTime(thermalGrid.times[0])}
+          {fmtMelbTime(flyingSlots[0].t)}
         </span>
         <input
           type="range"
           min={0}
-          max={thermalGrid.times.length - 1}
-          value={timeIndex}
-          onChange={e => setTimeIndex(Number(e.target.value))}
+          max={flyingSlots.length - 1}
+          value={sliderIndex}
+          onChange={e => setSliderIndex(Number(e.target.value))}
           className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer"
           style={{ accentColor: '#f97316' }}
         />
         <span className="text-[9px] font-mono text-muted-foreground w-7 shrink-0">
-          {fmtMelbTime(thermalGrid.times[thermalGrid.times.length - 1])}
+          {fmtMelbTime(flyingSlots[flyingSlots.length - 1].t)}
         </span>
       </div>
       <div className="text-center text-[10px] font-mono font-semibold text-amber-600 mt-0.5">
-        {fmtMelbTime(thermalGrid.times[timeIndex])}
+        {activeSlot ? fmtMelbTime(activeSlot.t) : ''}
         {strength && (
           <span className="ml-2 font-bold" style={{ color: strength.color }}>
             · {strength.label}
@@ -248,28 +270,28 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
           </div>
 
           {/* Fullscreen time slider */}
-          {thermalGrid && thermalGrid.times.length > 1 && (
+          {flyingSlots.length > 1 && (
             <div className="px-4 py-3 bg-black/80 border-t border-white/10 shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-white/50 w-8 text-right shrink-0">
-                  {fmtMelbTime(thermalGrid.times[0])}
+                  {fmtMelbTime(flyingSlots[0].t)}
                 </span>
                 <input
                   type="range"
                   min={0}
-                  max={thermalGrid.times.length - 1}
-                  value={timeIndex}
-                  onChange={e => setTimeIndex(Number(e.target.value))}
+                  max={flyingSlots.length - 1}
+                  value={sliderIndex}
+                  onChange={e => setSliderIndex(Number(e.target.value))}
                   className="flex-1 h-2 appearance-none rounded-full cursor-pointer"
                   style={{ accentColor: '#f97316' }}
                 />
                 <span className="text-[10px] font-mono text-white/50 w-8 shrink-0">
-                  {fmtMelbTime(thermalGrid.times[thermalGrid.times.length - 1])}
+                  {fmtMelbTime(flyingSlots[flyingSlots.length - 1].t)}
                 </span>
               </div>
               <div className="flex items-center justify-center gap-3 mt-1.5">
                 <span className="text-[11px] font-mono font-bold text-amber-400">
-                  {fmtMelbTime(thermalGrid.times[timeIndex])}
+                  {activeSlot ? fmtMelbTime(activeSlot.t) : ''}
                 </span>
                 {strength && (
                   <span className="text-[11px] font-bold" style={{ color: strength.color }}>
