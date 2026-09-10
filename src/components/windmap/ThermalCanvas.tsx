@@ -21,7 +21,7 @@ interface ThermalCanvasProps {
   siteLon: number;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  onThermalInfoChange?: (info: { cape: number; blh: number } | null) => void;
+  onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number } | null) => void;
   sizeKey?: number;
   savedCenterLat?: number;
   savedCenterLon?: number;

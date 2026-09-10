@@ -347,7 +347,21 @@ interface ThermalPoint {
     time: string[];
     cape: number[];
     boundary_layer_height: number[];
+    surface_sensible_heat_flux: number[];
+    temperature_2m: number[];
+    dew_point_2m: number[];
   };
+}
+
+function computeWstar(blh: number, ishf: number): number {
+  if (blh < 50 || ishf <= 0) return 0;
+  // W* = (g/(Θ·ρ·Cp) · BLH · Hs)^(1/3), coefficient ≈ 2.824e-5
+  return Math.cbrt(2.824e-5 * blh * ishf);
+}
+
+function computeCCL(t2m: number, td2m: number): number {
+  // Empirical: 1°C T-Td spread ≈ 125 m cloud base AGL
+  return Math.max(0, t2m - td2m) * 125;
 }
 
 interface ThermalVictoriaGrid {
@@ -439,7 +453,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
     const params = buildOpenMeteoParams({
       lats: tile.lats,
       lons: tile.lons,
-      hourlyFields: 'cape,boundary_layer_height',
+      hourlyFields: 'cape,boundary_layer_height,surface_sensible_heat_flux,temperature_2m,dew_point_2m',
       forecastDays: 2,
       apiKey: OPEN_METEO_API_KEY || undefined,
     });
@@ -461,6 +475,9 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
             time: h.time ?? [],
             cape: h.cape ?? [],
             boundary_layer_height: h.boundary_layer_height ?? [],
+            surface_sensible_heat_flux: h.surface_sensible_heat_flux ?? [],
+            temperature_2m: h.temperature_2m ?? [],
+            dew_point_2m: h.dew_point_2m ?? [],
           }
         });
       }
@@ -588,22 +605,28 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
     pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
   }
 
-  const data: { cape: number; blh: number }[][] = [];
+  const data: { cape: number; blh: number; wstar: number; ccl: number }[][] = [];
 
   for (let t = 0; t < selectedTimes.length; t++) {
     const timeIdx = startIdx + t;
-    const timeStepData: { cape: number; blh: number }[] = [];
+    const timeStepData: { cape: number; blh: number; wstar: number; ccl: number }[] = [];
     for (const lat of subLats) {
       for (const lon of subLons) {
         const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
         const point = pointMap.get(key);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
+          const blh  = point.hourly.boundary_layer_height[timeIdx] ?? 0;
+          const ishf = point.hourly.surface_sensible_heat_flux[timeIdx] ?? 0;
+          const t2m  = point.hourly.temperature_2m[timeIdx] ?? 15;
+          const td2m = point.hourly.dew_point_2m[timeIdx] ?? 10;
           timeStepData.push({
-            cape: point.hourly.cape[timeIdx] ?? 0,
-            blh: point.hourly.boundary_layer_height[timeIdx] ?? 0,
+            cape:  point.hourly.cape[timeIdx] ?? 0,
+            blh,
+            wstar: computeWstar(blh, ishf),
+            ccl:   computeCCL(t2m, td2m),
           });
         } else {
-          timeStepData.push({ cape: 0, blh: 0 });
+          timeStepData.push({ cape: 0, blh: 0, wstar: 0, ccl: 0 });
         }
       }
     }

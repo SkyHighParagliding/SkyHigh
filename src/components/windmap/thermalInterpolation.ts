@@ -8,7 +8,7 @@ export interface ThermalGrid {
   ni: number;
   nj: number;
   times: string[];
-  data: { cape: number; blh: number }[][];
+  data: { cape: number; blh: number; wstar?: number; ccl?: number }[][];
 }
 
 const epochCache = new WeakMap<string[], number[]>();
@@ -23,9 +23,9 @@ function getGridEpochs(times: string[]): number[] {
 
 function interpolateSpatial(
   lon: number, lat: number,
-  timeData: { cape: number; blh: number }[],
+  timeData: { cape: number; blh: number; wstar?: number; ccl?: number }[],
   grid: ThermalGrid,
-): { cape: number; blh: number } | null {
+): { cape: number; blh: number; wstar?: number; ccl?: number } | null {
   const fi = (lon - grid.lonMin) / grid.deltaLon;
   const fj = (lat - grid.latMin) / grid.deltaLat;
   const i = Math.floor(fi);
@@ -44,20 +44,24 @@ function interpolateSpatial(
   const v11 = getVal(i1, j1);
   if (!v00 || !v10 || !v01 || !v11) return null;
 
-  const cape0 = v00.cape * (1 - dx) + v10.cape * dx;
-  const cape1 = v01.cape * (1 - dx) + v11.cape * dx;
-  const blh0  = v00.blh  * (1 - dx) + v10.blh  * dx;
-  const blh1  = v01.blh  * (1 - dx) + v11.blh  * dx;
+  const lerp = (a: number, b: number, c: number, d: number) => {
+    const r0 = a * (1 - dx) + b * dx;
+    const r1 = c * (1 - dx) + d * dx;
+    return r0 * (1 - dy) + r1 * dy;
+  };
 
+  const hasWstar = v00.wstar !== undefined;
   return {
-    cape: cape0 * (1 - dy) + cape1 * dy,
-    blh:  blh0  * (1 - dy) + blh1  * dy,
+    cape:  lerp(v00.cape, v10.cape, v01.cape, v11.cape),
+    blh:   lerp(v00.blh,  v10.blh,  v01.blh,  v11.blh),
+    wstar: hasWstar ? lerp(v00.wstar!, v10.wstar!, v01.wstar!, v11.wstar!) : undefined,
+    ccl:   hasWstar ? lerp(v00.ccl!,  v10.ccl!,  v01.ccl!,  v11.ccl!)   : undefined,
   };
 }
 
 export function getThermalAt(
   lon: number, lat: number, time: number, grid: ThermalGrid,
-): { cape: number; blh: number } | null {
+): { cape: number; blh: number; wstar?: number; ccl?: number } | null {
   if (lon < grid.lonMin || lon > grid.lonMax || lat < grid.latMin || lat > grid.latMax) return null;
 
   const epochs = getGridEpochs(grid.times);
@@ -74,10 +78,20 @@ export function getThermalAt(
   const v1 = interpolateSpatial(lon, lat, grid.data[t1], grid);
   if (!v0 || !v1) return null;
 
+  const hasWstar = v0.wstar !== undefined && v1.wstar !== undefined;
   return {
-    cape: v0.cape * (1 - dt) + v1.cape * dt,
-    blh:  v0.blh  * (1 - dt) + v1.blh  * dt,
+    cape:  v0.cape  * (1 - dt) + v1.cape  * dt,
+    blh:   v0.blh   * (1 - dt) + v1.blh   * dt,
+    wstar: hasWstar ? v0.wstar! * (1 - dt) + v1.wstar! * dt : undefined,
+    ccl:   hasWstar ? v0.ccl!   * (1 - dt) + v1.ccl!   * dt : undefined,
   };
+}
+
+// Derive effective W* from CAPE when real W* not available (old cached grids).
+// Rough empirical: cape=100 → ~1.0 m/s, cape=400 → ~2.0 m/s
+export function effectiveWstar(wstar: number | undefined, cape: number): number {
+  if (wstar !== undefined) return wstar;
+  return Math.min(4, Math.sqrt(Math.max(0, cape) / 100));
 }
 
 export interface ThermalStrength {
@@ -87,11 +101,12 @@ export interface ThermalStrength {
   bgColor: string;
 }
 
-export function getThermalStrength(cape: number): ThermalStrength {
-  if (cape < 10)   return { label: 'No thermals',            shortLabel: 'None',       color: '#a0aec0', bgColor: 'bg-blue-700' };
-  if (cape < 50)   return { label: 'Weak thermals',          shortLabel: 'Weak',       color: '#1e96c8', bgColor: 'bg-sky-500' };
-  if (cape < 200)  return { label: 'Moderate thermals',      shortLabel: 'Moderate',   color: '#28aa50', bgColor: 'bg-green-600' };
-  if (cape < 500)  return { label: 'Good thermals',          shortLabel: 'Good',       color: '#c8c820', bgColor: 'bg-yellow-500' };
-  if (cape < 1000) return { label: 'Strong thermals',        shortLabel: 'Strong',     color: '#e07820', bgColor: 'bg-orange-500' };
-  return                  { label: 'Very strong / storm risk', shortLabel: 'Storm risk', color: '#c82828', bgColor: 'bg-red-600' };
+// W*-based strength classification (m/s)
+export function getThermalStrength(wstar: number): ThermalStrength {
+  if (wstar < 0.3)  return { label: 'No thermals',      shortLabel: 'None',    color: '#a0aec0', bgColor: 'bg-slate-500' };
+  if (wstar < 0.8)  return { label: 'Weak thermals',    shortLabel: 'Weak',    color: '#d4a843', bgColor: 'bg-amber-500' };
+  if (wstar < 1.5)  return { label: 'Moderate thermals',shortLabel: 'Moderate',color: '#dc821e', bgColor: 'bg-amber-600' };
+  if (wstar < 2.5)  return { label: 'Good thermals',    shortLabel: 'Good',    color: '#d45a14', bgColor: 'bg-orange-600' };
+  if (wstar < 3.5)  return { label: 'Strong / XC',      shortLabel: 'Strong',  color: '#c03210', bgColor: 'bg-orange-700' };
+  return                   { label: 'Extreme / caution', shortLabel: 'Extreme', color: '#b41414', bgColor: 'bg-red-700' };
 }

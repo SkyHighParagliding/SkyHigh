@@ -8,7 +8,7 @@ import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
-import { getThermalAt, getThermalStrength } from './windmap/thermalInterpolation';
+import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
 import { THERMAL_LEGEND_CSS } from './windmap/thermalRenderer';
 
@@ -32,7 +32,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
@@ -95,7 +95,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     return getThermalAt(selectedSite.site.lon, selectedSite.site.lat, currentTime, thermalGrid);
   }, [viewMode, thermalGrid, selectedSite, currentTime]);
 
-  const thermalSiteStrength = thermalAtSite ? getThermalStrength(thermalAtSite.cape) : null;
+  const thermalSiteStrength = thermalAtSite ? getThermalStrength(effectiveWstar(thermalAtSite.wstar, thermalAtSite.cape)) : null;
 
   const handleSaveView = useCallback(async () => {
     if (!liveView) return;
@@ -315,9 +315,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: thermalSiteStrength.color }} />
                     <span className="font-medium" style={{ color: thermalSiteStrength.color }}>{thermalSiteStrength.label}</span>
                   </div>
-                  {thermalAtSite && thermalAtSite.cape >= 10 && (
+                  {thermalAtSite && effectiveWstar(thermalAtSite.wstar, thermalAtSite.cape) >= 0.3 && (
                     <div className="text-[10px] text-foreground-secondary">
-                      CAPE {Math.round(thermalAtSite.cape)} J/kg
+                      {thermalAtSite.wstar !== undefined
+                        ? `W* ${thermalAtSite.wstar.toFixed(1)} m/s`
+                        : `CAPE ${Math.round(thermalAtSite.cape)} J/kg`}
+                      {thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0
+                        ? ` · ↑${Math.round(thermalAtSite.ccl / 100) * 100}m`
+                        : ''}
                     </div>
                   )}
                 </div>
@@ -448,7 +453,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Thermal Strength</div>
               <div className="h-2 w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
               <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
-                <span>None</span><span>Weak</span><span>Mod</span><span>Good</span><span>Strong</span>
+                <span>None</span><span>Weak</span><span>Mod</span><span>Good</span><span>XC</span>
               </div>
             </>
           ) : (
@@ -476,11 +481,23 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             <div className="flex items-center gap-2">
               {thermalInfo ? (
                 <>
-                  <span className="font-bold" style={{ color: getThermalStrength(thermalInfo.cape).color }}>
-                    {getThermalStrength(thermalInfo.cape).shortLabel}
+                  <span className="font-bold" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
+                    {getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
                   </span>
                   <span className="text-white/40">|</span>
-                  <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
+                  {thermalInfo.wstar !== undefined ? (
+                    <span className="text-white/60">W* {thermalInfo.wstar.toFixed(1)} m/s</span>
+                  ) : (
+                    <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
+                  )}
+                  {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
+                        ↑ {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                      </span>
+                    </>
+                  )}
                 </>
               ) : (
                 <span className="text-white/40">Tap map for thermal reading</span>

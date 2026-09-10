@@ -1,39 +1,37 @@
 import type { ZoomTransform } from 'd3-zoom';
 import type { GeoProjection } from 'd3-geo';
-import { getThermalAt } from './thermalInterpolation';
+import { getThermalAt, effectiveWstar } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import { isOnLand } from './landMask';
 
 const CELL = 6; // sample every 6px for a smooth heatmap
 const REBUILD_MIN_INTERVAL = 50; // ms
 
-// CAPE colour + alpha stops. BLH < 200m forces alpha=0 regardless.
-const STOPS: { cape: number; r: number; g: number; b: number; a: number }[] = [
-  { cape: 0,    r:  30, g:  60, b: 180, a:   0 },
-  { cape: 10,   r:  30, g:  80, b: 210, a:  50 },
-  { cape: 50,   r:  30, g: 160, b: 200, a: 130 },
-  { cape: 200,  r:  40, g: 185, b:  80, a: 160 },
-  { cape: 500,  r: 210, g: 200, b:  30, a: 185 },
-  { cape: 1000, r: 230, g: 120, b:  20, a: 205 },
-  { cape: 2000, r: 200, g:  40, b:  40, a: 220 },
+// W*-based colour stops (warm ramp: transparent → amber → orange → red)
+const STOPS: { wstar: number; r: number; g: number; b: number; a: number }[] = [
+  { wstar: 0.0,  r: 210, g: 150, b:  50, a:   0 },
+  { wstar: 0.3,  r: 210, g: 160, b:  60, a:  90 },
+  { wstar: 0.8,  r: 220, g: 130, b:  30, a: 155 },
+  { wstar: 1.5,  r: 215, g:  90, b:  20, a: 185 },
+  { wstar: 2.5,  r: 200, g:  55, b:  20, a: 205 },
+  { wstar: 4.0,  r: 185, g:  20, b:  20, a: 220 },
 ];
 
 const LUT_SIZE = 512;
-const LUT_MAX_CAPE = 2500;
+const LUT_MAX_WSTAR = 5.0;
 
-// Build look-up table: [r,g,b,a] * LUT_SIZE entries
 const thermalLUT = new Uint8Array(LUT_SIZE * 4);
 (() => {
   for (let i = 0; i < LUT_SIZE; i++) {
-    const cape = (i / (LUT_SIZE - 1)) * LUT_MAX_CAPE;
+    const wstar = (i / (LUT_SIZE - 1)) * LUT_MAX_WSTAR;
     let s0 = STOPS[0];
     let s1 = STOPS[STOPS.length - 1];
     for (let s = 0; s < STOPS.length - 1; s++) {
-      if (cape >= STOPS[s].cape && cape <= STOPS[s + 1].cape) {
+      if (wstar >= STOPS[s].wstar && wstar <= STOPS[s + 1].wstar) {
         s0 = STOPS[s]; s1 = STOPS[s + 1]; break;
       }
     }
-    const t = s1.cape === s0.cape ? 1 : (cape - s0.cape) / (s1.cape - s0.cape);
+    const t = s1.wstar === s0.wstar ? 1 : (wstar - s0.wstar) / (s1.wstar - s0.wstar);
     thermalLUT[i * 4]     = Math.round(s0.r + (s1.r - s0.r) * t);
     thermalLUT[i * 4 + 1] = Math.round(s0.g + (s1.g - s0.g) * t);
     thermalLUT[i * 4 + 2] = Math.round(s0.b + (s1.b - s0.b) * t);
@@ -41,15 +39,15 @@ const thermalLUT = new Uint8Array(LUT_SIZE * 4);
   }
 })();
 
-function capeToLUTIndex(cape: number): number {
-  return Math.min(LUT_SIZE - 1, Math.max(0, Math.round((cape / LUT_MAX_CAPE) * (LUT_SIZE - 1))));
+function wstarToLUTIndex(wstar: number): number {
+  return Math.min(LUT_SIZE - 1, Math.max(0, Math.round((wstar / LUT_MAX_WSTAR) * (LUT_SIZE - 1))));
 }
 
 // CSS gradient for the legend bar
 export const THERMAL_LEGEND_CSS = (() => {
   const pts: string[] = [];
   for (const s of STOPS) {
-    const pct = Math.min(100, (s.cape / 1500) * 100);
+    const pct = Math.min(100, (s.wstar / 4.0) * 100);
     pts.push(`rgba(${s.r},${s.g},${s.b},${(s.a / 255).toFixed(2)}) ${pct.toFixed(0)}%`);
   }
   return `linear-gradient(to right, ${pts.join(', ')})`;
@@ -105,8 +103,9 @@ function rebuildThermalOverlay(
       if (!geo) { pixels[idx + 3] = 0; continue; }
       if (!isOnLand(geo[0], geo[1])) { pixels[idx + 3] = 0; continue; }
       const th = getThermalAt(geo[0], geo[1], currentTime, grid);
-      if (!th || th.cape < 5) { pixels[idx + 3] = 0; continue; }
-      const li = capeToLUTIndex(th.cape);
+      const ws = th ? effectiveWstar(th.wstar, th.cape) : 0;
+      if (!th || ws < 0.3) { pixels[idx + 3] = 0; continue; }
+      const li = wstarToLUTIndex(ws);
       pixels[idx]     = thermalLUT[li * 4];
       pixels[idx + 1] = thermalLUT[li * 4 + 1];
       pixels[idx + 2] = thermalLUT[li * 4 + 2];
