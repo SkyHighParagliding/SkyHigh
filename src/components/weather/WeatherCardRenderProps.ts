@@ -25,8 +25,8 @@ export interface WeatherCardRenderProps {
   setShowTides: (v: boolean) => void;
   effectiveShowTides: boolean;
   hasLiveWeather: boolean;
-  showHistory: boolean;
-  setShowHistory: (v: boolean) => void;
+  activePanel: 'history' | 'outlook' | 'thermal';
+  setActivePanel: (v: 'history' | 'outlook' | 'thermal') => void;
   historyData: { points: any[]; buckets: any[] } | null;
   nextReadingMs: number | null;
   setShowWindMap: (v: boolean) => void;

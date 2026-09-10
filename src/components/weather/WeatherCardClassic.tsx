@@ -9,7 +9,7 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
-export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+export function WeatherCardClassic({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, activePanel, setActivePanel, historyData, nextReadingMs, setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   const twilight = getCivilTwilight(Number(site.lat), Number(site.lon));
   return (
     <div className="border rounded-3xl p-5 sm:p-8 flex flex-col items-center hover:shadow-xl transition-all bg-card border-sky/10 h-full">
@@ -136,8 +136,8 @@ export function WeatherCardClassic({ site, activeWeather, weather, distance, has
         setShowTides={setShowTides}
         effectiveShowTides={effectiveShowTides}
         hasLiveWeather={hasLiveWeather}
-        showHistory={showHistory}
-        setShowHistory={setShowHistory}
+        activePanel={activePanel}
+        setActivePanel={setActivePanel}
         historyData={historyData}
         nextReadingMs={nextReadingMs}
         forecastWindowStartMs={forecastWindowStartMs}

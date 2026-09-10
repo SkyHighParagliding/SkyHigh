@@ -21,7 +21,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
   const [hourTick, setHourTick] = useState(0);
   const [showTides, setShowTides] = useState(false);
   const [tideData, setTideData] = useState<TideData | null>(null);
-  const [showHistory, setShowHistory] = useState(true);
+  const [activePanel, setActivePanel] = useState<'history' | 'outlook' | 'thermal'>('history');
 
   const isTidal = site && !(site.type || "").toLowerCase().includes("inland");
 
@@ -99,7 +99,7 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
         : `/api/weather/${site!.id}/history`;
       return api.get<{ points: any[]; buckets: any[] }>(url).catch(() => null);
     },
-    enabled: !!site?.id && isLive && showHistory,
+    enabled: !!site?.id && isLive && activePanel === 'history',
     refetchInterval: 2 * 60 * 1000,
     staleTime: 2 * 60 * 1000,
   });
@@ -240,14 +240,14 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     document.body
   );
 
-  const handleSetShowTides = (v: boolean) => { setShowTides(v); if (v) setShowHistory(false); };
-  const handleSetShowHistory = (v: boolean) => { setShowHistory(v); if (v) setShowTides(false); };
+  const handleSetShowTides = (v: boolean) => { setShowTides(v); };
+  const handleSetActivePanel = (v: 'history' | 'outlook' | 'thermal') => { setActivePanel(v); setShowTides(false); };
 
   const renderProps = {
     site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal,
     windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs,
     hasExtended, extendedForecast, tideData, showTides, setShowTides: handleSetShowTides, effectiveShowTides,
-    hasLiveWeather: hasLiveHistory, showHistory, setShowHistory: handleSetShowHistory, historyData: hasLiveHistory ? (historyData ?? null) : null,
+    hasLiveWeather: hasLiveHistory, activePanel, setActivePanel: handleSetActivePanel, historyData: hasLiveHistory ? (historyData ?? null) : null,
     nextReadingMs: hasLiveHistory ? nextReadingMs : null,
     setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP,
   };

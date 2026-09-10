@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { CloudSun, Waves, ChartLine, type LucideIcon } from 'lucide-react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+import { CloudSun, Waves, ChartLine, Thermometer, type LucideIcon } from 'lucide-react';
+import { SiteThermalPanel } from './SiteThermalPanel';
 import { cn, getWindStatus } from '@/lib/utils';
 import { TideChart } from './TideChart';
 import { WeatherHistoryChart } from './WeatherHistoryChart';
@@ -16,8 +17,8 @@ interface ExtendedOutlookPanelProps {
   setShowTides: (v: boolean) => void;
   effectiveShowTides: boolean;
   hasLiveWeather: boolean;
-  showHistory: boolean;
-  setShowHistory: (v: boolean) => void;
+  activePanel: 'history' | 'outlook' | 'thermal';
+  setActivePanel: (v: 'history' | 'outlook' | 'thermal') => void;
   historyData: { points: any[]; buckets: any[] } | null;
   nextReadingMs?: number | null;
   forecastWindowStartMs?: number;
@@ -82,12 +83,14 @@ function getSlotHour(timeStr: string): number {
   return parseInt(timeStr.split('T')[1]?.slice(0, 2) ?? '0');
 }
 
-export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
+export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, activePanel, setActivePanel, historyData, nextReadingMs, forecastWindowStartMs, forecastWindowEndMs, variant, iconMap }: ExtendedOutlookPanelProps) {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   // Keep last selected data so content stays visible during collapse animation
   const lastDayDataRef = useRef<any>(null);
 
-  if (!hasExtended && !tideData && !hasLiveWeather) return null;
+  const isInland = (site?.type || '').toLowerCase().includes('inland');
+
+  if (!hasExtended && !tideData && !hasLiveWeather && !isInland) return null;
 
   const isApple = variant === 'apple';
 
@@ -106,7 +109,11 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
   const tideHideTransform = "translateY(8px)";
   const historyHideTransform = "translateY(8px)";
 
-  const showOutlook = !effectiveShowTides && (!showHistory || !hasLiveWeather);
+  // When history is the default but there's no live weather, fall back to outlook
+  const effectivePanel = (activePanel === 'history' && !hasLiveWeather) ? 'outlook' : activePanel;
+  const showOutlook = !effectiveShowTides && effectivePanel === 'outlook';
+  const showHistory = !effectiveShowTides && effectivePanel === 'history';
+  const showThermal = !effectiveShowTides && effectivePanel === 'thermal';
 
   const panelClass = isApple ? "rounded-xl p-3" : "bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10";
   const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
@@ -139,12 +146,22 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <div className="flex items-center gap-1.5">
                 {hasLiveWeather && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(true); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('history'); }}
                     className={tidesBtnClass}
                     style={tidesBtnStyle}
                   >
                     <ChartLine className="w-3 h-3" />
                     <span>History</span>
+                  </button>
+                )}
+                {isInland && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('thermal'); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <Thermometer className="w-3 h-3" />
+                    <span>Thermal</span>
                   </button>
                 )}
                 {tideData && (
@@ -204,7 +221,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <div className="flex items-center gap-1.5">
                 {hasLiveWeather && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(true); setShowTides(false); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('history'); setShowTides(false); }}
                     className={tidesBtnClass}
                     style={tidesBtnStyle}
                   >
@@ -214,7 +231,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                 )}
                 {hasExtended && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTides(false); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('outlook'); setShowTides(false); }}
                     className={tidesBtnClass}
                     style={tidesBtnStyle}
                   >
@@ -242,7 +259,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               <div className="flex items-center gap-1.5">
                 {tideData && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); setShowTides(true); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('outlook'); setShowTides(true); }}
                     className={tidesBtnClass}
                     style={tidesBtnStyle}
                   >
@@ -250,9 +267,19 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
                     <span>Tides</span>
                   </button>
                 )}
+                {isInland && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('thermal'); }}
+                    className={tidesBtnClass}
+                    style={tidesBtnStyle}
+                  >
+                    <Thermometer className="w-3 h-3" />
+                    <span>Thermal</span>
+                  </button>
+                )}
                 {hasExtended && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHistory(false); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActivePanel('outlook'); }}
                     className={tidesBtnClass}
                     style={tidesBtnStyle}
                   >
@@ -314,6 +341,21 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               </div>
             )}
           </div>
+        </div>
+      )}
+      {/* ── Thermal panel ────────────────────────────────────────────── */}
+      {isInland && (
+        <div style={showThermal
+          ? TOGGLE_SHOW_STYLE
+          : { ...TOGGLE_HIDE_STYLE, transform: historyHideTransform, top: 0 }
+        }>
+          <SiteThermalPanel
+            site={site}
+            variant={variant}
+            onBack={(target) => setActivePanel(target)}
+            hasExtended={hasExtended}
+            hasLiveWeather={hasLiveWeather}
+          />
         </div>
       )}
     </div>

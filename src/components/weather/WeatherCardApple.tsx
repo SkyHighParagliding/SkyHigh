@@ -9,7 +9,7 @@ import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
-export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, showHistory, setShowHistory, historyData, nextReadingMs, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
+export function WeatherCardApple({ site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal, windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs, hasExtended, extendedForecast, tideData, showTides, setShowTides, effectiveShowTides, hasLiveWeather, activePanel, setActivePanel, historyData, nextReadingMs, setShowWindMap, windMapPortal, WEATHER_ICON_MAP: iconMap }: WeatherCardRenderProps) {
   const dirTextColor = windStatus.directionStatus.label === 'Good' ? '#10b981' : windStatus.directionStatus.label === 'Light' ? '#eab308' : windStatus.directionStatus.label === 'Cross' ? '#f97316' : windStatus.directionStatus.label === 'Blown Out' || windStatus.directionStatus.label === 'Not Flyable' ? '#ef4444' : '#1d1d1f';
   const parsedSpeed = parseWindSpeed(site.windSpeed) || parseWindSpeed(site.windDir);
   const maxIdealSpeed = parsedSpeed?.max ?? null;
@@ -128,8 +128,8 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         setShowTides={setShowTides}
         effectiveShowTides={effectiveShowTides}
         hasLiveWeather={hasLiveWeather}
-        showHistory={showHistory}
-        setShowHistory={setShowHistory}
+        activePanel={activePanel}
+        setActivePanel={setActivePanel}
         historyData={historyData}
         nextReadingMs={nextReadingMs}
         forecastWindowStartMs={forecastWindowStartMs}

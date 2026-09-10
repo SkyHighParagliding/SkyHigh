@@ -96,7 +96,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         .translate(width / 2 - centerPt[0] * useK, height / 2 - centerPt[1] * useK)
         .scale(useK);
     } else {
-      const targetZoom = 9;
+      const targetZoom = savedZoom ?? 9;
       const initialK = 256 * Math.pow(2, targetZoom);
       const sitePixel = projection([siteLon, siteLat])!;
       initialTransform = zoomIdentity
