@@ -43,16 +43,10 @@ function interpolateSpatial(
   const v01 = getVal(i0, j1);
   const v11 = getVal(i1, j1);
 
-  // All four corners missing → outside all column coverage, render transparent
-  if (!v00 && !v10 && !v01 && !v11) return null;
-
-  // Some corners null (column lat boundary) → fill with nearest available value
-  // so we get smooth blending rather than a hard rectangular cutoff
-  const any = v00 ?? v10 ?? v01 ?? v11;
-  const c00 = v00 ?? any!;
-  const c10 = v10 ?? any!;
-  const c01 = v01 ?? any!;
-  const c11 = v11 ?? any!;
+  // Any missing corner → outside column coverage for this point, render transparent.
+  // Gap cells are null (not zero), so this correctly clips at column lat boundaries
+  // without blending toward zero (which caused banding in the old zero-fill approach).
+  if (!v00 || !v10 || !v01 || !v11) return null;
 
   const lerp = (a: number, b: number, c: number, d: number) => {
     const r0 = a * (1 - dx) + b * dx;
@@ -60,12 +54,12 @@ function interpolateSpatial(
     return r0 * (1 - dy) + r1 * dy;
   };
 
-  const hasWstar = c00.wstar !== undefined;
+  const hasWstar = v00.wstar !== undefined;
   return {
-    cape:  lerp(c00.cape, c10.cape, c01.cape, c11.cape),
-    blh:   lerp(c00.blh,  c10.blh,  c01.blh,  c11.blh),
-    wstar: hasWstar ? lerp(c00.wstar!, c10.wstar!, c01.wstar!, c11.wstar!) : undefined,
-    ccl:   hasWstar ? lerp(c00.ccl!,  c10.ccl!,  c01.ccl!,  c11.ccl!)   : undefined,
+    cape:  lerp(v00.cape, v10.cape, v01.cape, v11.cape),
+    blh:   lerp(v00.blh,  v10.blh,  v01.blh,  v11.blh),
+    wstar: hasWstar ? lerp(v00.wstar!, v10.wstar!, v01.wstar!, v11.wstar!) : undefined,
+    ccl:   hasWstar ? lerp(v00.ccl!,  v10.ccl!,  v01.ccl!,  v11.ccl!)   : undefined,
   };
 }
 

@@ -67,12 +67,18 @@ export function buildColumnTiles(
       VIC_LON[i] >= colLonMin - buffer && VIC_LON[i] <= colLonMax + buffer
     );
 
-    const colLatMin = vicLatsInCol.length > 0
+    const rawLatMin = vicLatsInCol.length > 0
       ? Math.max(bounds.latMin, Math.min(...vicLatsInCol) - buffer)
       : bounds.latMin;
-    const colLatMax = vicLatsInCol.length > 0
+    const rawLatMax = vicLatsInCol.length > 0
       ? Math.min(bounds.latMax, Math.max(...vicLatsInCol) + buffer)
       : bounds.latMax;
+
+    // Snap to the global 0-origin delta grid so all columns share identical lat values.
+    // Without this, each column starts at a different fractional lat, producing ~3× more
+    // unique rows in the combined matrix than expected, which breaks the deltaLat indexing.
+    const colLatMin = parseFloat((Math.floor(rawLatMin / delta) * delta).toFixed(4));
+    const colLatMax = parseFloat((Math.ceil(rawLatMax / delta) * delta).toFixed(4));
 
     const allPoints: { lat: number; lon: number }[] = [];
     for (let lat = colLatMin; lat <= colLatMax + delta * 0.5; lat += delta) {
