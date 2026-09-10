@@ -142,6 +142,16 @@ async function fetchThermalGridDaily() {
   }
 }
 
+async function retryThermalFailedTiles() {
+  const setting = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
+  if (!setting?.value) return;
+  const tiles = JSON.parse(setting.value);
+  if (!Array.isArray(tiles) || tiles.length === 0) return;
+
+  log.info(`Thermal grid retry: ${tiles.length} failed tiles detected — re-running fetch`);
+  await fetchThermalGridDaily();
+}
+
 async function startupGridCheck() {
   const RECENT_FETCH_MS = 22 * 60 * 60 * 1000; // 22 hours — safe window before next 5am run; prevents evening deploys from refetching
 
@@ -160,14 +170,17 @@ async function startupGridCheck() {
     setTimeout(() => fetchFineGridDaily(), 60_000);
   }
 
-  // Check thermal grid: only fetch if NOT fetched within last 22 hours
+  // Check thermal grid: fetch if stale OR if failed tiles are pending retry
   const thermalLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridLastRun'");
+  const thermalFailedTiles = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'");
+  const hasPendingRetry = !!thermalFailedTiles?.value && JSON.parse(thermalFailedTiles.value).length > 0;
   if (thermalLastRun?.value) {
     const timeSinceLastRun = Date.now() - new Date(thermalLastRun.value).getTime();
-    if (timeSinceLastRun < RECENT_FETCH_MS) {
+    if (timeSinceLastRun < RECENT_FETCH_MS && !hasPendingRetry) {
       log.info(`Thermal grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
     } else {
-      log.info(`Thermal grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 3min...`);
+      const reason = hasPendingRetry ? 'failed tiles pending retry' : `${Math.round(timeSinceLastRun / 3600000)}h old`;
+      log.info(`Thermal grid startup fetch triggered (${reason}) — running in 3min...`);
       setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
     }
   } else {
@@ -186,6 +199,9 @@ export async function startScheduledJobs() {
 
   cron.schedule("26 5 * * *", fetchThermalGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Thermal grid daily fetch scheduled: 5:26am Melbourne time");
+
+  cron.schedule("30 7 * * *", retryThermalFailedTiles, { timezone: "Australia/Melbourne" });
+  log.info("Thermal grid retry scheduled: 7:30am Melbourne time (runs only if tiles failed)");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));
