@@ -217,7 +217,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
 
       const markersLocal = siteMarkersRef.current;
       if (markersLocal && markersLocal.length > 0) {
-        drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr);
+        drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr, true);
       }
 
       const now = performance.now();

@@ -20,6 +20,7 @@ export function drawSiteMarkers(
   currentTransform: ZoomTransform,
   projection: GeoProjection,
   todayStr: string,
+  lightBackground = false,
 ) {
   const labelFont = '600 10px system-ui, sans-serif';
   ctx.font = labelFont;
@@ -66,7 +67,15 @@ export function drawSiteMarkers(
       ctx.font = labelFont;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'white';
+      if (lightBackground) {
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(label, lx, sp[1]);
+        ctx.fillStyle = '#1e293b';
+      } else {
+        ctx.fillStyle = 'white';
+      }
       ctx.fillText(label, lx, sp[1]);
       placedLabels.push({ x: lx, y: ly, w: lw, h: lh });
     }
@@ -83,6 +92,7 @@ export function drawSingleSiteMarker(
   siteName?: string,
   siteStatus?: string,
   siteUpcomingClosureDates?: string[],
+  lightBackground = false,
 ) {
   const proj = projection([siteLon, siteLat]);
   if (!proj) return;
@@ -101,7 +111,15 @@ export function drawSingleSiteMarker(
     ctx.font = '600 10px system-ui, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'white';
+    if (lightBackground) {
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(label, siteScreen[0] + r + 3, siteScreen[1]);
+      ctx.fillStyle = '#1e293b';
+    } else {
+      ctx.fillStyle = 'white';
+    }
     ctx.fillText(label, siteScreen[0] + r + 3, siteScreen[1]);
   }
 }

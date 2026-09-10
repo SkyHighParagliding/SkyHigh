@@ -610,11 +610,11 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
     pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
   }
 
-  const data: { cape: number; blh: number; wstar?: number; ccl?: number }[][] = [];
+  const data: ({ cape: number; blh: number; wstar?: number; ccl?: number } | null)[][] = [];
 
   for (let t = 0; t < selectedTimes.length; t++) {
     const timeIdx = startIdx + t;
-    const timeStepData: { cape: number; blh: number; wstar?: number; ccl?: number }[] = [];
+    const timeStepData: ({ cape: number; blh: number; wstar?: number; ccl?: number } | null)[] = [];
     for (const lat of subLats) {
       for (const lon of subLons) {
         const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
@@ -631,7 +631,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
             ccl:   hasTd ? computeCCL(t2m, td2m) : undefined,
           });
         } else {
-          timeStepData.push({ cape: 0, blh: 0 });
+          timeStepData.push(null);
         }
       }
     }
