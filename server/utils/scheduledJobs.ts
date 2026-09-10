@@ -180,7 +180,7 @@ export async function startScheduledJobs() {
   // On startup: catch up if grid data is stale (server started after scheduled window)
   await startupGridCheck();
 
-  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am (Melbourne time)
+  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am, Extended at 5:40am (Melbourne time)
   cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
 

@@ -96,6 +96,30 @@ export function AdminWeather() {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [showGridSelector, setShowGridSelector] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerStartRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (loadingType === 'thermal' || loadingType === 'fine' || loadingType === 'extended') {
+      timerStartRef.current = Date.now();
+      setElapsed(0);
+      timerRef.current = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - timerStartRef.current) / 1000));
+      }, 1000);
+    } else {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loadingType]);
+
+  // If page is loaded/refreshed while a fetch is already running, restart fast polling
+  useEffect(() => {
+    const anyInProgress = settings.thermalGridProgress || settings.fineGridProgress || settings.extendedGridProgress;
+    if (anyInProgress && !pollRef.current) {
+      startStatusPolling(true);
+    }
+  }, [settings.thermalGridProgress, settings.fineGridProgress, settings.extendedGridProgress]);
 
   const [schedStartHour, setSchedStartHour] = useState<number>(7);
   const [schedEndHour, setSchedEndHour] = useState<number>(20);
@@ -142,7 +166,7 @@ export function AdminWeather() {
   const handleTrigger = async (endpoint: string, type: string) => {
     setLoadingType(type);
     setMessages(prev => ({ ...prev, [type]: "" }));
-    if (type === 'thermal') startStatusPolling(true);
+    if (type === 'thermal' || type === 'fine' || type === 'extended') startStatusPolling(true);
     try {
       const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
       const message = data.message || "Failed to download data";
@@ -151,7 +175,6 @@ export function AdminWeather() {
       if (data.success) {
         toast.success(`${type}: ${message}`);
         setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 5000);
-        if (type !== 'thermal') startStatusPolling();
       } else {
         toast.error(`${type}: ${message}`);
       }
@@ -161,10 +184,8 @@ export function AdminWeather() {
       toast.error(errorMsg);
     } finally {
       setLoadingType(null);
-      if (type === 'thermal') {
-        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-        startStatusPolling();
-      }
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      startStatusPolling();
     }
   };
 
@@ -291,84 +312,55 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Fine wind/weather), 5:26am (Thermal CAPE+BLH), and 5:30am (Extended 7-day). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Fine wind/weather), 5:26am (Thermal CAPE+BLH), and 5:40am (Extended 7-day). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3 mt-4">
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTrigger("/api/weather/extended-forecast/fetch-now", "extended")}
-                    disabled={loadingType !== null}
-                    className="flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'extended' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'extended' ? "Fetching..." : "Extended"}
-                  </Button>
-                  {messages.extended && (
-                    <span className={`text-xs font-medium text-center ${
-                      messages.extended.toLowerCase().includes('failed') || messages.extended.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.extended.toLowerCase().includes('rate limited') || messages.extended.toLowerCase().includes('partial') ? 'text-amber-500' :
-                      'text-emerald-500'
-                    }`}>
-                      {messages.extended}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTrigger("/api/weather/fine-grid/fetch-now", "fine")}
-                    disabled={loadingType !== null}
-                    className="flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'fine' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'fine' ? "Fetching..." : "Fine Grid"}
-                  </Button>
-                  {messages.fine && (
-                    <span className={`text-xs font-medium text-center ${
-                      messages.fine.toLowerCase().includes('failed') || messages.fine.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.fine.toLowerCase().includes('rate limited') || messages.fine.toLowerCase().includes('partial') ? 'text-amber-500' :
-                      'text-emerald-500'
-                    }`}>
-                      {messages.fine}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTrigger("/api/weather/thermal-grid/fetch-now", "thermal")}
-                    disabled={loadingType !== null}
-                    className="flex items-center gap-2 whitespace-nowrap"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loadingType === 'thermal' ? 'animate-spin' : ''}`} />
-                    {loadingType === 'thermal' ? "Fetching..." : "Thermal Grid"}
-                  </Button>
-                  {loadingType === 'thermal' && settings.thermalGridProgress && (
-                    <span className="text-xs font-mono text-sky text-center tabular-nums">
-                      {settings.thermalGridProgress}
-                    </span>
-                  )}
-                  {messages.thermal && (
-                    <span className={`text-xs font-medium text-center ${
-                      messages.thermal.toLowerCase().includes('failed') || messages.thermal.toLowerCase().includes('error') ? 'text-red-500' :
-                      messages.thermal.toLowerCase().includes('rate limited') || messages.thermal.toLowerCase().includes('partial') ? 'text-amber-500' :
-                      'text-emerald-500'
-                    }`}>
-                      {messages.thermal}
-                    </span>
-                  )}
-                </div>
+                {([
+                  { type: 'extended', label: 'Extended', endpoint: '/api/weather/extended-forecast/fetch-now', progressKey: 'extendedGridProgress' },
+                  { type: 'fine',     label: 'Fine Grid', endpoint: '/api/weather/fine-grid/fetch-now',         progressKey: 'fineGridProgress' },
+                  { type: 'thermal',  label: 'Thermal',   endpoint: '/api/weather/thermal-grid/fetch-now',      progressKey: 'thermalGridProgress' },
+                ] as const).map(({ type, label, endpoint, progressKey }) => {
+                  const progress = settings[progressKey as keyof typeof settings] as string | undefined;
+                  const isActive = loadingType === type || !!progress;
+                  const elapsedStr = loadingType === type
+                    ? ` ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
+                    : '';
+                  return (
+                    <div key={type} className="flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTrigger(endpoint, type)}
+                        disabled={loadingType !== null}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`} />
+                        {isActive ? 'Fetching...' : label}
+                      </Button>
+                      {(progress || (loadingType === type && elapsed > 0)) && (
+                        <span className="text-xs font-mono text-sky text-center tabular-nums">
+                          {progress || 'starting…'}{elapsedStr}
+                        </span>
+                      )}
+                      {messages[type] && (
+                        <span className={`text-xs font-medium text-center ${
+                          messages[type].toLowerCase().includes('failed') || messages[type].toLowerCase().includes('error') ? 'text-red-500' :
+                          messages[type].toLowerCase().includes('rate limited') || messages[type].toLowerCase().includes('partial') ? 'text-amber-500' :
+                          'text-emerald-500'
+                        }`}>
+                          {messages[type]}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Fine grid", runKey: "fineGridLastRun", resultKey: "fineGridLastResult" },
-                  { label: "Thermal grid", runKey: "thermalGridLastRun", resultKey: "thermalGridLastResult" },
+                  { label: "Fine grid (17km)", runKey: "fineGridLastRun", resultKey: "fineGridLastResult" },
+                  { label: "Thermal grid (10km)", runKey: "thermalGridLastRun", resultKey: "thermalGridLastResult" },
                   { label: "Extended (7-day)", runKey: "extendedForecastLastRun", resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
@@ -376,7 +368,7 @@ export function AdminWeather() {
                   const ok = lastResult === "ok";
                   return (
                     <div key={label} className="flex items-start gap-2 text-xs">
-                      <span className="text-muted-foreground w-28 shrink-0">{label}</span>
+                      <span className="text-muted-foreground w-36 shrink-0">{label}</span>
                       {lastRun ? (
                         <span className={ok ? "text-emerald-600" : "text-red-500"}>
                           {ok ? "✓" : "✗"} {new Date(lastRun).toLocaleString("en-AU", { timeZone: "Australia/Melbourne", dateStyle: "short", timeStyle: "short" })}

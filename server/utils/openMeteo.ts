@@ -1,8 +1,12 @@
 /**
- * Open-Meteo API parameter builder.
- * Centralises the repeated URLSearchParams construction used by
- * extendedForecast.ts and victoriaGrid.ts.
+ * Open-Meteo API shared constants and parameter builder.
+ * Consumed by victoriaGrid.ts and extendedForecast.ts.
  */
+
+export const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY ?? "";
+export const OPEN_METEO_URL = OPEN_METEO_API_KEY
+  ? "https://customer-api.open-meteo.com/v1/forecast"
+  : "https://api.open-meteo.com/v1/forecast";
 
 interface OpenMeteoParams {
   lats: number[];

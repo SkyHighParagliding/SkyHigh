@@ -3,12 +3,8 @@ import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./wea
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid, getTimeWindow, getGridBounds } from "./victoriaGrid.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
-import { buildOpenMeteoParams } from "./utils/openMeteo.js";
-
-const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
-const OPEN_METEO_URL = OPEN_METEO_API_KEY
-  ? `https://customer-api.open-meteo.com/v1/forecast`
-  : `https://api.open-meteo.com/v1/forecast`;
+import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
+import { buildColumnTiles } from "./utils/gridTiles.js";
 
 const EXT_DELTA = 0.5;
 
@@ -74,29 +70,6 @@ interface SiteExtendedForecast {
   updatedAt: string;
 }
 
-async function buildExtendedTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
-  const bounds = await getGridBounds();
-  const allPoints: { lat: number; lon: number }[] = [];
-  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += EXT_DELTA) {
-    for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += EXT_DELTA) {
-      allPoints.push({
-        lat: parseFloat(lat.toFixed(4)),
-        lon: parseFloat(lon.toFixed(4))
-      });
-    }
-  }
-
-  const MAX_PER_TILE = 50;
-  const tiles: { lats: number[]; lons: number[] }[] = [];
-  for (let i = 0; i < allPoints.length; i += MAX_PER_TILE) {
-    const chunk = allPoints.slice(i, i + MAX_PER_TILE);
-    tiles.push({
-      lats: chunk.map(p => p.lat),
-      lons: chunk.map(p => p.lon)
-    });
-  }
-  return tiles;
-}
 
 function getMelbourneDate(daysOffset = 0): string {
   const now = new Date();
@@ -166,6 +139,16 @@ function filterToExtendedSlots(times: string[], data: {
 
 let extendedFetchInProgress = false;
 
+async function setExtProgress(value: string) {
+  try {
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ('extendedGridProgress', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [value]
+    );
+  } catch { /* non-fatal */ }
+}
+
 export async function fetchExtendedForecast(): Promise<void> {
   if (extendedFetchInProgress) {
     console.log("Extended forecast: Fetch already in progress, skipping");
@@ -177,11 +160,17 @@ export async function fetchExtendedForecast(): Promise<void> {
 
   try {
     const fineBounds = await getGridBounds();
-    const tiles = await buildExtendedTiles();
+    const tiles = buildColumnTiles(
+      { lonMin: fineBounds.fineLonMin, lonMax: fineBounds.fineLonMax, latMin: fineBounds.fineLatMin, latMax: fineBounds.fineLatMax },
+      EXT_DELTA, 50
+    );
+    const totalTiles = tiles.length;
     const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
-    console.log(`Extended forecast: ${totalPoints} points in ${tiles.length} tiles`);
+    console.log(`Extended forecast: ${totalPoints} points in ${totalTiles} tiles`);
+    await setExtProgress(`0 / ${totalTiles} tiles`);
 
     const allPoints: ExtendedGridPoint[] = [];
+    let failedCount = 0;
 
     for (let i = 0; i < tiles.length; i++) {
       const tile = tiles[i];
@@ -241,15 +230,20 @@ export async function fetchExtendedForecast(): Promise<void> {
           }
         }
 
-        console.log(`Extended forecast: Tile ${i + 1}/${tiles.length} fetched`);
+        console.log(`Extended forecast: Tile ${i + 1}/${totalTiles} fetched`);
+        await setExtProgress(`${i + 1} / ${totalTiles} tiles${failedCount > 0 ? ` (${failedCount} failed)` : ''}`);
 
         if (i < tiles.length - 1) {
           await new Promise(r => setTimeout(r, 500));
         }
       } catch (err) {
-        console.error(`Extended forecast: Tile ${i + 1}/${tiles.length} failed:`, err);
+        failedCount++;
+        console.error(`Extended forecast: Tile ${i + 1}/${totalTiles} failed:`, err);
+        await setExtProgress(`${i + 1} / ${totalTiles} tiles (${failedCount} failed)`);
       }
     }
+
+    await setExtProgress('');
 
     if (allPoints.length < totalPoints * 0.5) {
       throw new Error(`Only ${allPoints.length}/${totalPoints} grid points returned — API may be rate-limited or grid config changed. site_extended_forecasts NOT updated.`);
@@ -284,6 +278,7 @@ export async function fetchExtendedForecast(): Promise<void> {
 
   } catch (err) {
     console.error("Extended forecast: CRITICAL ERROR:", err);
+    await setExtProgress('');
   } finally {
     extendedFetchInProgress = false;
   }
@@ -817,7 +812,7 @@ async function getSettingInt(key: string, fallback: number): Promise<number> {
 export async function scheduleExtendedForecast(): Promise<void> {
   const now = new Date();
   const targetHour = await getSettingInt("schedExtendedForecastHour", 5);
-  const targetMinute = await getSettingInt("schedExtendedForecastMinute", 30);
+  const targetMinute = await getSettingInt("schedExtendedForecastMinute", 40);
 
   const melbFormatter = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne',
@@ -879,7 +874,7 @@ export async function scheduleExtendedForecast(): Promise<void> {
 export async function precomputeWindGridIfNeeded(): Promise<void> {
   try {
     // Only pre-compute on startup if cache is missing (e.g., server restarted between daily fetches)
-    // Normal flow: wind grid is computed during fetchExtendedForecast() at 5:30am
+    // Normal flow: wind grid is computed during fetchExtendedForecast() at 5:40am
     if (cachedWindGrid) {
       console.log("Extended wind grid: Cache present at startup");
       return;

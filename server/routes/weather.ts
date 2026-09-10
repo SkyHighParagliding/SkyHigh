@@ -1001,7 +1001,9 @@ router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, re
   const ts = new Date().toISOString();
   try {
     await fetchThermalGrid(true);
-    const resultMsg = lastThermalGridFresh ? "ok" : "ok (rate limited — showing cached data)";
+    const pendingRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
+    const pendingTiles = pendingRow?.value ? (JSON.parse(pendingRow.value) as unknown[]).length : 0;
+    const resultMsg = pendingTiles > 0 ? `partial — ${pendingTiles} tiles pending retry` : "ok";
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
       ["thermalGridLastRun", ts]
@@ -1010,8 +1012,10 @@ router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, re
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
       ["thermalGridLastResult", resultMsg]
     );
-    const msg = lastThermalGridFresh ? "Thermal grid updated successfully" : "Rate limited — showing cached data from previous run";
-    res.json({ success: lastThermalGridFresh, message: msg });
+    const msg = pendingTiles > 0
+      ? `Partial fetch stored — ${pendingTiles} tiles queued for retry`
+      : "Thermal grid updated successfully";
+    res.json({ success: true, message: msg });
   } catch (e: any) {
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,

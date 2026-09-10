@@ -9,33 +9,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
-const FINE_DELTA = 0.35;
-const FINE_MAX = 2000;
-
 const DEFAULT_FINE = { latMin: -39.2, latMax: -34.0, lonMin: 141.0, lonMax: 150.0 };
 
 type Bounds = { latMin: number; latMax: number; lonMin: number; lonMax: number };
 
-function calcPoints(b: Bounds, delta: number) {
-  return Math.ceil((b.latMax - b.latMin) / delta) * Math.ceil((b.lonMax - b.lonMin) / delta);
+function boundsArea(b: Bounds) {
+  return ((b.latMax - b.latMin) * (b.lonMax - b.lonMin)).toFixed(1);
 }
-
-function getStatus(pts: number, max: number): "good" | "ok" | "poor" {
-  if (pts <= max * 0.4) return "good";
-  if (pts <= max) return "ok";
-  return "poor";
-}
-
-const STATUS_DOT: Record<string, string> = {
-  good: "bg-emerald-500",
-  ok: "bg-amber-400",
-  poor: "bg-red-500",
-};
-const STATUS_TEXT: Record<string, string> = {
-  good: "Good",
-  ok: "OK",
-  poor: "Too large",
-};
 
 const FINE_ICON = L.divIcon({
   html: `<div style="width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #555;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
@@ -92,10 +72,10 @@ function GridBoundsMap({
         const latlng = m.getLatLng();
         const cur = fineRef.current;
         let newFine: Bounds;
-        if (idx === 0) newFine = { ...cur, latMin: Math.min(latlng.lat, cur.latMax - FINE_DELTA), lonMin: Math.min(latlng.lng, cur.lonMax - FINE_DELTA) };
-        else if (idx === 1) newFine = { ...cur, latMax: Math.max(latlng.lat, cur.latMin + FINE_DELTA), lonMin: Math.min(latlng.lng, cur.lonMax - FINE_DELTA) };
-        else if (idx === 2) newFine = { ...cur, latMax: Math.max(latlng.lat, cur.latMin + FINE_DELTA), lonMax: Math.max(latlng.lng, cur.lonMin + FINE_DELTA) };
-        else newFine = { ...cur, latMin: Math.min(latlng.lat, cur.latMax - FINE_DELTA), lonMax: Math.max(latlng.lng, cur.lonMin + FINE_DELTA) };
+        if (idx === 0) newFine = { ...cur, latMin: Math.min(latlng.lat, cur.latMax - 0.5), lonMin: Math.min(latlng.lng, cur.lonMax - 0.5) };
+        else if (idx === 1) newFine = { ...cur, latMax: Math.max(latlng.lat, cur.latMin + 0.5), lonMin: Math.min(latlng.lng, cur.lonMax - 0.5) };
+        else if (idx === 2) newFine = { ...cur, latMax: Math.max(latlng.lat, cur.latMin + 0.5), lonMax: Math.max(latlng.lng, cur.lonMin + 0.5) };
+        else newFine = { ...cur, latMin: Math.min(latlng.lat, cur.latMax - 0.5), lonMax: Math.max(latlng.lng, cur.lonMin + 0.5) };
 
         fineRef.current = newFine;
         setFine(newFine);
@@ -144,9 +124,7 @@ export function GridBoundsSelector({
     }).finally(() => setLoading(false));
   }, [isOpen, token]);
 
-  const finePts = calcPoints(fine, FINE_DELTA);
-  const fineStatus = getStatus(finePts, FINE_MAX);
-  const canSave = fineStatus !== "poor";
+  const canSave = true;
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -173,7 +151,7 @@ export function GridBoundsSelector({
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div>
             <h2 className="text-lg font-bold text-navy">Configure Grid Coverage Area</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Drag the corner handles to resize the grid area</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Drag the corner handles to set the outer boundary used by all three grid fetches</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors">
             <X className="w-4 h-4" />
@@ -207,7 +185,7 @@ export function GridBoundsSelector({
           <div className="absolute bottom-4 right-4 z-[1000] bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-2 text-xs pointer-events-none">
             <div className="flex items-center gap-2">
               <div className="w-6 h-0 border-t-2 border-white shrink-0" />
-              <span className="text-foreground font-medium">Fine grid (high res)</span>
+              <span className="text-foreground font-medium">Coverage area (all grids)</span>
             </div>
           </div>
         </div>
@@ -215,28 +193,14 @@ export function GridBoundsSelector({
         {/* Stats + controls */}
         <div className="px-5 py-4 border-t border-border shrink-0 space-y-3">
           <div className="bg-muted/40 rounded-lg p-3 space-y-1 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-foreground">Fine grid</span>
-              <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${STATUS_DOT[fineStatus]}`} />
-                <span className={`text-xs font-medium ${fineStatus === "poor" ? "text-red-600" : fineStatus === "ok" ? "text-amber-600" : "text-emerald-600"}`}>
-                  {STATUS_TEXT[fineStatus]}
-                </span>
-              </div>
+            <span className="font-medium text-foreground">Coverage bounds</span>
+            <div className="text-xs text-muted-foreground">
+              {fine.latMin.toFixed(1)}°–{fine.latMax.toFixed(1)}° lat · {fine.lonMin.toFixed(1)}°–{fine.lonMax.toFixed(1)}° lon · {boundsArea(fine)}°² area
             </div>
             <div className="text-xs text-muted-foreground">
-              {finePts.toLocaleString()} pts · ~{Math.ceil(finePts / 90) * 0.5}s fetch · {FINE_DELTA}° spacing
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {fine.latMin.toFixed(1)}°–{fine.latMax.toFixed(1)}°, {fine.lonMin.toFixed(1)}°–{fine.lonMax.toFixed(1)}°
+              All three grids (Fine 0.15°, Thermal 0.09°, Extended 0.5°) use these bounds. The Victoria polygon clips each column to a tighter lat range server-side, reducing actual tile count by ~35%.
             </div>
           </div>
-
-          {!canSave && (
-            <p className="text-xs text-red-600">
-              Grid exceeds the point limit. Reduce the area to enable saving.
-            </p>
-          )}
 
           <p className="text-xs text-muted-foreground">
             After saving, use the Fetch Now buttons to apply the new coverage area immediately.

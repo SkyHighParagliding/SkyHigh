@@ -1,12 +1,8 @@
 import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { buildOpenMeteoParams } from "./utils/openMeteo.js";
-
-const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY || "";
-const OPEN_METEO_URL = OPEN_METEO_API_KEY
-  ? `https://customer-api.open-meteo.com/v1/forecast`
-  : `https://api.open-meteo.com/v1/forecast`;
+import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
+import { buildColumnTiles } from "./utils/gridTiles.js";
 
 const FINE_GRID_CACHE_KEY = "fine_grid";
 const THERMAL_GRID_CACHE_KEY = "thermal_grid";
@@ -119,34 +115,6 @@ interface VictoriaGrid {
   fetchedAt: number;
 }
 
-async function buildFineTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
-  const bounds = await getGridBounds();
-  const allLats: number[] = [];
-  const allLons: number[] = [];
-
-  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += FINE_DELTA) {
-    allLats.push(parseFloat(lat.toFixed(4)));
-  }
-  for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += FINE_DELTA) {
-    allLons.push(parseFloat(lon.toFixed(4)));
-  }
-
-  const allPoints: { lat: number; lon: number }[] = [];
-  for (const lat of allLats) {
-    for (const lon of allLons) {
-      allPoints.push({ lat, lon });
-    }
-  }
-
-  const MAX_PER_TILE = 90;
-  const tiles: { lats: number[]; lons: number[] }[] = [];
-  for (let i = 0; i < allPoints.length; i += MAX_PER_TILE) {
-    const chunk = allPoints.slice(i, i + MAX_PER_TILE);
-    tiles.push({ lats: chunk.map(p => p.lat), lons: chunk.map(p => p.lon) });
-  }
-  return tiles;
-}
-
 const MEM_CACHE_TTL_MS = 30 * 60 * 1000;
 let memFineGrid: VictoriaGrid | null = null;
 let memFineGridAt = 0;
@@ -193,14 +161,30 @@ export async function fetchFineGrid(force = false): Promise<VictoriaGrid> {
   }
 }
 
+async function setFineProgress(value: string) {
+  try {
+    await execute(
+      `INSERT INTO settings (key, value) VALUES ('fineGridProgress', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [value]
+    );
+  } catch { /* non-fatal */ }
+}
+
 async function doFetchFineGrid(): Promise<VictoriaGrid> {
   console.log("Fine grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg)...");
 
   const bounds = await getGridBounds();
-  const tiles = await buildFineTiles();
-  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${tiles.length} tiles`);
+  const tiles = buildColumnTiles(
+    { lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax, latMin: bounds.fineLatMin, latMax: bounds.fineLatMax },
+    FINE_DELTA, 90
+  );
+  const totalTiles = tiles.length;
+  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${totalTiles} tiles`);
+  await setFineProgress(`0 / ${totalTiles} tiles`);
 
   const allPoints: GridPoint[] = [];
+  let failedCount = 0;
 
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
@@ -247,15 +231,20 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
         });
       }
 
-      console.log(`Fine grid: Tile ${i + 1}/${tiles.length} fetched (${tile.lats.length} points)`);
+      console.log(`Fine grid: Tile ${i + 1}/${totalTiles} fetched (${tile.lats.length} points)`);
+      await setFineProgress(`${i + 1} / ${totalTiles} tiles${failedCount > 0 ? ` (${failedCount} failed)` : ''}`);
 
       if (i < tiles.length - 1) {
         await new Promise(r => setTimeout(r, TILE_DELAY_MS));
       }
     } catch (err) {
-      console.error(`Fine grid: Tile ${i + 1}/${tiles.length} failed:`, err);
+      failedCount++;
+      console.error(`Fine grid: Tile ${i + 1}/${totalTiles} failed:`, err);
+      await setFineProgress(`${i + 1} / ${totalTiles} tiles (${failedCount} failed)`);
     }
   }
+
+  await setFineProgress('');
 
   const ni = Math.round((bounds.fineLonMax - bounds.fineLonMin) / FINE_DELTA) + 1;
   const nj = Math.round((bounds.fineLatMax - bounds.fineLatMin) / FINE_DELTA) + 1;
@@ -347,16 +336,9 @@ interface ThermalPoint {
     time: string[];
     cape: number[];
     boundary_layer_height: number[];
-    surface_sensible_heat_flux: number[];
     temperature_2m: number[];
     dew_point_2m: number[];
   };
-}
-
-function computeWstar(blh: number, ishf: number): number {
-  if (blh < 50 || ishf <= 0) return 0;
-  // W* = (g/(Θ·ρ·Cp) · BLH · Hs)^(1/3), coefficient ≈ 2.824e-5
-  return Math.cbrt(2.824e-5 * blh * ishf);
 }
 
 function computeCCL(t2m: number, td2m: number): number {
@@ -378,32 +360,6 @@ let inflightThermalFetch: Promise<ThermalVictoriaGrid> | null = null;
 // Set by doFetchThermalGrid — true if fresh data was written, false if fallback was used
 export let lastThermalGridFresh = false;
 
-async function buildThermalTiles(): Promise<{ lats: number[]; lons: number[] }[]> {
-  const bounds = await getGridBounds();
-  const allLats: number[] = [];
-  const allLons: number[] = [];
-
-  for (let lat = bounds.fineLatMin; lat <= bounds.fineLatMax; lat += THERMAL_DELTA) {
-    allLats.push(parseFloat(lat.toFixed(4)));
-  }
-  for (let lon = bounds.fineLonMin; lon <= bounds.fineLonMax; lon += THERMAL_DELTA) {
-    allLons.push(parseFloat(lon.toFixed(4)));
-  }
-
-  const allPoints: { lat: number; lon: number }[] = [];
-  for (const lat of allLats) {
-    for (const lon of allLons) {
-      allPoints.push({ lat, lon });
-    }
-  }
-
-  const tiles: { lats: number[]; lons: number[] }[] = [];
-  for (let i = 0; i < allPoints.length; i += THERMAL_MAX_PER_TILE) {
-    const chunk = allPoints.slice(i, i + THERMAL_MAX_PER_TILE);
-    tiles.push({ lats: chunk.map(p => p.lat), lons: chunk.map(p => p.lon) });
-  }
-  return tiles;
-}
 
 export async function fetchThermalGrid(force = false): Promise<ThermalVictoriaGrid> {
   if (!force) {
@@ -451,120 +407,147 @@ async function setThermalProgress(value: string) {
 }
 
 async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
-  console.log("Thermal grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg, CAPE+BLH only)...");
-
   const bounds = await getGridBounds();
-  const tiles = await buildThermalTiles();
-  const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
-  const totalTiles = tiles.length;
-  console.log(`Thermal grid: ${totalPoints} total points in ${totalTiles} tiles`);
-  await setThermalProgress(`0 / ${totalTiles} tiles`);
+  const allTiles = buildColumnTiles(
+    { lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax, latMin: bounds.fineLatMin, latMax: bounds.fineLatMax },
+    THERMAL_DELTA, THERMAL_MAX_PER_TILE
+  );
+  const totalPoints = allTiles.reduce((s, t) => s + t.lats.length, 0);
+  const today = melbourneToday();
+  const cacheKey = `${THERMAL_GRID_CACHE_KEY}_${today}`;
+  const ni = Math.round((bounds.fineLonMax - bounds.fineLonMin) / THERMAL_DELTA) + 1;
+  const nj = Math.round((bounds.fineLatMax - bounds.fineLatMin) / THERMAL_DELTA) + 1;
 
-  const allPoints: ThermalPoint[] = [];
-  let failedTiles = 0;
+  // Retry mode: if we have stored failed tiles AND today's partial grid, only re-fetch failures
+  let tilesToFetch = allTiles;
+  let basePoints: ThermalPoint[] = [];
+  let isRetry = false;
 
-  for (let i = 0; i < tiles.length; i++) {
-    const tile = tiles[i];
+  const failedTilesSetting = await queryOne<{ value: string }>(
+    `SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`
+  );
+  if (failedTilesSetting?.value) {
+    const partialRow = await queryOne<{ gridData: string }>(
+      `SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [cacheKey]
+    );
+    if (partialRow) {
+      try {
+        basePoints = (JSON.parse(partialRow.gridData) as ThermalVictoriaGrid).points;
+        tilesToFetch = JSON.parse(failedTilesSetting.value);
+        isRetry = true;
+      } catch {
+        basePoints = [];
+        tilesToFetch = allTiles;
+      }
+    }
+  }
+
+  const totalTiles = tilesToFetch.length;
+  const label = isRetry ? `retry ${totalTiles} failed tiles` : `${totalTiles} tiles`;
+  console.log(`Thermal grid: ${isRetry ? 'Retry' : 'Fresh'} fetch — ${totalTiles} tiles, ${totalPoints} total points (${basePoints.length} base points from partial)`);
+  await setThermalProgress(`0 / ${totalTiles}${isRetry ? ' (retry)' : ''} tiles`);
+
+  const newPoints: ThermalPoint[] = [];
+  const newFailedTiles: { lats: number[]; lons: number[] }[] = [];
+  let rateLimitedCount = 0;
+  let failedCount = 0;
+
+  for (let i = 0; i < tilesToFetch.length; i++) {
+    const tile = tilesToFetch[i];
+
+    // Early exit: if even perfect remaining tiles can't reach 80%, abort now
+    const remainingPoints = tilesToFetch.slice(i).reduce((s, t) => s + t.lats.length, 0);
+    const maxAchievable = basePoints.length + newPoints.length + remainingPoints;
+    if (maxAchievable / totalPoints < 0.8) {
+      console.warn(`Thermal grid: 80% no longer achievable — aborting at tile ${i + 1}/${totalTiles}, saving ${newFailedTiles.length + (tilesToFetch.length - i)} failed tiles for retry`);
+      newFailedTiles.push(...tilesToFetch.slice(i));
+      break;
+    }
+
     const params = buildOpenMeteoParams({
       lats: tile.lats,
       lons: tile.lons,
-      hourlyFields: 'cape,boundary_layer_height,surface_sensible_heat_flux,temperature_2m,dew_point_2m',
+      hourlyFields: 'cape,boundary_layer_height,temperature_2m,dew_point_2m',
       forecastDays: 2,
       apiKey: OPEN_METEO_API_KEY || undefined,
     });
 
-    const url = `${OPEN_METEO_URL}?${params.toString()}`;
-
     try {
-      const rawData = await fetchWithRetry(url);
+      const rawData = await fetchWithRetry(`${OPEN_METEO_URL}?${params.toString()}`);
       const results = Array.isArray(rawData) ? rawData : [rawData];
-
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (!r?.hourly) continue;
         const h = r.hourly;
-        allPoints.push({
-          lat: tile.lats[j],
-          lon: tile.lons[j],
+        newPoints.push({
+          lat: tile.lats[j], lon: tile.lons[j],
           hourly: {
             time: h.time ?? [],
             cape: h.cape ?? [],
             boundary_layer_height: h.boundary_layer_height ?? [],
-            surface_sensible_heat_flux: h.surface_sensible_heat_flux ?? [],
             temperature_2m: h.temperature_2m ?? [],
             dew_point_2m: h.dew_point_2m ?? [],
           }
         });
       }
-
       console.log(`Thermal grid: Tile ${i + 1}/${totalTiles} fetched (${tile.lats.length} points)`);
-      await setThermalProgress(`${i + 1} / ${totalTiles} tiles`);
-
-      if (i < tiles.length - 1) {
-        await new Promise(r => setTimeout(r, TILE_DELAY_MS));
-      }
+      await setThermalProgress(`${i + 1} / ${totalTiles}${isRetry ? ' (retry)' : ''} tiles`);
+      if (i < tilesToFetch.length - 1) await new Promise(r => setTimeout(r, TILE_DELAY_MS));
     } catch (err) {
-      failedTiles++;
-      console.error(`Thermal grid: Tile ${i + 1}/${totalTiles} failed:`, err);
-      await setThermalProgress(`${i + 1} / ${totalTiles} tiles (${failedTiles} failed)`);
+      const isRateLimit = err instanceof Error && err.message.includes('429');
+      if (isRateLimit) rateLimitedCount++; else failedCount++;
+      newFailedTiles.push(tile);
+      console.error(`Thermal grid: Tile ${i + 1}/${totalTiles} ${isRateLimit ? 'rate limited' : 'failed'}:`, err);
+      const parts: string[] = [];
+      if (rateLimitedCount > 0) parts.push(`${rateLimitedCount} rate limited`);
+      if (failedCount > 0) parts.push(`${failedCount} failed`);
+      await setThermalProgress(`${i + 1} / ${totalTiles}${isRetry ? ' (retry)' : ''} tiles${parts.length ? ` (${parts.join(', ')})` : ''}`);
     }
   }
 
-  const ni = Math.round((bounds.fineLonMax - bounds.fineLonMin) / THERMAL_DELTA) + 1;
-  const nj = Math.round((bounds.fineLatMax - bounds.fineLatMin) / THERMAL_DELTA) + 1;
+  const allPoints = [...basePoints, ...newPoints];
   const completeness = allPoints.length / totalPoints;
 
-  if (completeness < 0.8) {
-    console.warn(`Thermal grid: Only ${allPoints.length}/${totalPoints} points fetched (${Math.round(completeness * 100)}%), keeping previous cache`);
-    await setThermalProgress('');
-    if (completeness === 0) throw new Error(`All thermal tiles failed — rate limited or no connectivity`);
-    const today = melbourneToday();
-    let cached = await queryOne<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" = $1`, [`${THERMAL_GRID_CACHE_KEY}_${today}`]);
-    if (!cached) {
-      const rows = await query<{ gridData: string }>(`SELECT "gridData" FROM wind_grid_data WHERE "siteId" LIKE $1 ESCAPE '\\' ORDER BY "siteId" DESC LIMIT 1`, [`${escapeLike(THERMAL_GRID_CACHE_KEY)}\\_%`]);
-      if (rows.length > 0) cached = rows[0];
-    }
-    if (cached) {
-      try {
-        const fallbackGrid = JSON.parse(cached.gridData) as ThermalVictoriaGrid;
-        memThermalGrid = fallbackGrid;
-        memThermalGridAt = Date.now();
-        lastThermalGridFresh = false;
-        return fallbackGrid;
-      } catch (e: any) {
-        console.error("Thermal grid: Failed to parse cached data:", e.message);
-      }
-    }
-    throw new Error(`Thermal grid too incomplete (${Math.round(completeness * 100)}%) and no previous cache available`);
+  // Always write whatever we have to today's DB slot (even partial)
+  if (allPoints.length > 0) {
+    const grid: ThermalVictoriaGrid = {
+      latMin: bounds.fineLatMin, latMax: bounds.fineLatMax,
+      lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax,
+      delta: THERMAL_DELTA, ni, nj,
+      points: allPoints,
+      fetchedAt: Date.now()
+    };
+    const jsonStr = JSON.stringify(grid);
+    await execute(
+      `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
+      [cacheKey, jsonStr, ni, THERMAL_DELTA]
+    );
+    console.log(`Thermal grid: Stored ${allPoints.length}/${totalPoints} points (${Math.round(completeness * 100)}%) — ${newFailedTiles.length} tiles pending retry`);
+    memThermalGrid = grid;
+    memThermalGridAt = Date.now();
   }
 
-  const grid: ThermalVictoriaGrid = {
-    latMin: bounds.fineLatMin, latMax: bounds.fineLatMax,
-    lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax,
-    delta: THERMAL_DELTA, ni, nj,
-    points: allPoints,
-    fetchedAt: Date.now()
-  };
-
-  const jsonStr = JSON.stringify(grid);
-  const today = melbourneToday();
-  const cacheKey = `${THERMAL_GRID_CACHE_KEY}_${today}`;
+  // Store failed tiles for next retry, or clear if complete
   await execute(
-    `INSERT INTO wind_grid_data ("siteId", "gridData", "gridSize", "gridSpacing", "updatedAt") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT ("siteId") DO UPDATE SET "gridData" = EXCLUDED."gridData", "gridSize" = EXCLUDED."gridSize", "gridSpacing" = EXCLUDED."gridSpacing", "updatedAt" = EXCLUDED."updatedAt"`,
-    [cacheKey, jsonStr, ni, THERMAL_DELTA]
+    `INSERT INTO settings (key, value) VALUES ('thermalGridFailedTiles', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    [newFailedTiles.length > 0 ? JSON.stringify(newFailedTiles) : '']
   );
+
   await setThermalProgress('');
-  lastThermalGridFresh = true;
-  console.log(`Thermal grid: Cached for ${today} ${allPoints.length}/${totalPoints} points (${(jsonStr.length / 1024 / 1024).toFixed(1)}MB)`);
-  try {
-    await cleanupOldGridData(THERMAL_GRID_CACHE_KEY);
-  } catch (e) {
-    console.error("Thermal grid: Cleanup error (non-fatal):", e);
+  lastThermalGridFresh = allPoints.length > 0;
+
+  if (completeness >= 0.8) {
+    try { await cleanupOldGridData(THERMAL_GRID_CACHE_KEY); } catch { /* non-fatal */ }
+    if (memThermalGrid) return memThermalGrid;
   }
 
-  memThermalGrid = grid;
-  memThermalGridAt = Date.now();
-  return grid;
+  if (memThermalGrid) return memThermalGrid;
+
+  throw new Error(
+    allPoints.length === 0
+      ? `All thermal tiles failed — ${rateLimitedCount > 0 ? 'rate limited' : 'no connectivity'}`
+      : `Thermal grid partial (${Math.round(completeness * 100)}%) — ${newFailedTiles.length} tiles queued for retry`
+  );
 }
 
 export async function getCachedThermalGrid(): Promise<ThermalVictoriaGrid | null> {
@@ -637,16 +620,15 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): any | null {
         const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
         const point = pointMap.get(key);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
-          const blh      = point.hourly.boundary_layer_height[timeIdx] ?? 0;
-          const ishfArr  = point.hourly.surface_sensible_heat_flux;
-          const t2mArr   = point.hourly.temperature_2m;
-          const td2mArr  = point.hourly.dew_point_2m;
-          const hasNewFields = Array.isArray(ishfArr) && ishfArr.length > 0;
+          const blh    = point.hourly.boundary_layer_height[timeIdx] ?? 0;
+          const t2m    = point.hourly.temperature_2m?.[timeIdx] ?? 15;
+          const td2m   = point.hourly.dew_point_2m?.[timeIdx] ?? 10;
+          const hasTd  = Array.isArray(point.hourly.temperature_2m) && point.hourly.temperature_2m.length > 0;
           timeStepData.push({
             cape:  point.hourly.cape[timeIdx] ?? 0,
             blh,
-            wstar: hasNewFields ? computeWstar(blh, ishfArr[timeIdx] ?? 0) : undefined,
-            ccl:   hasNewFields ? computeCCL(t2mArr?.[timeIdx] ?? 15, td2mArr?.[timeIdx] ?? 10) : undefined,
+            wstar: undefined,
+            ccl:   hasTd ? computeCCL(t2m, td2m) : undefined,
           });
         } else {
           timeStepData.push({ cape: 0, blh: 0 });
