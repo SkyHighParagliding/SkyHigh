@@ -31,9 +31,9 @@ interface SiteThermalPanelProps {
   hasLiveWeather: boolean;
 }
 
-// Only show slots within flying hours (10am–7pm Melbourne time)
+// Only show slots within flying hours (10am–8pm Melbourne time), today only
 const FLYING_HOUR_START = 10;
-const FLYING_HOUR_END = 19;
+const FLYING_HOUR_END = 20;
 
 function getMelbHour(isoStr: string): number {
   return parseInt(
@@ -62,12 +62,17 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
       .catch(e => { setError(String(e)); setLoading(false); });
   }, []);
 
-  // Filter to flying hours only; each entry maps back to original grid index
+  // Filter to today's flying hours only (10am–8pm Melbourne time)
+  // thermalGrid.times spans today+tomorrow; we restrict to the first date so
+  // the slider shows a clean single-day view (10am → 8pm).
   const flyingSlots = useMemo(() => {
     if (!thermalGrid) return [];
+    const firstDate = thermalGrid.times[0]?.slice(0, 10) ?? '';
     return thermalGrid.times
       .map((t, idx) => ({ t, idx, h: getMelbHour(t) }))
-      .filter(({ h }) => h >= FLYING_HOUR_START && h <= FLYING_HOUR_END);
+      .filter(({ t, h }) =>
+        t.slice(0, 10) === firstDate && h >= FLYING_HOUR_START && h <= FLYING_HOUR_END
+      );
   }, [thermalGrid]);
 
   // Set initial slider to the closest flying slot to current Melbourne time
@@ -209,8 +214,8 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
 
       {/* Hint */}
       {thermalGrid && (
-        <div className="absolute bottom-2 right-2 text-[7px] text-white/40 font-mono pointer-events-none">
-          Scroll/pinch to zoom
+        <div className="absolute bottom-2 right-2 bg-black/55 backdrop-blur-sm rounded px-2 py-1 pointer-events-none">
+          <span className="text-[7px] text-white/70 font-mono">Scroll / pinch to zoom</span>
         </div>
       )}
     </div>
