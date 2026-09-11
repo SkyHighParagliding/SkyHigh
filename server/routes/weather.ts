@@ -10,6 +10,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getCachedFineGrid, getCachedThermalGrid, extractWindParticles, fetchFineGrid, fetchThermalGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches, lastThermalGridFresh } from "../victoriaGrid.js";
+import { runThermalGridFetch } from "../utils/scheduledJobs.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
 
@@ -975,21 +976,9 @@ router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) 
 }));
 
 router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  // Respond immediately — fetch runs in background (column tiles, ~60s)
+  // Respond immediately — fetch + auto-retries run in background
   res.json({ success: true, message: "Thermal grid fetch started" });
-  const ts = new Date().toISOString();
-  try {
-    await fetchThermalGrid(true);
-    const pendingRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
-    const pendingTiles = pendingRow?.value ? (JSON.parse(pendingRow.value) as unknown[]).length : 0;
-    const resultMsg = pendingTiles > 0 ? `partial — ${pendingTiles} tiles pending retry` : "ok";
-    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastRun", ts]);
-    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastResult", resultMsg]);
-  } catch (e: any) {
-    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastRun", ts]);
-    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastResult", e.message || "Unknown error"]);
-    log.error("Manual thermal grid fetch failed:", e);
-  }
+  runThermalGridFetch(0).catch(e => log.error("Manual thermal grid fetch chain failed:", e));
 }));
 
 export default router;
