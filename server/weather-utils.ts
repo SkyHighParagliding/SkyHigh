@@ -16,13 +16,7 @@ export async function fetchWithRetry(url: string, options: any = {}, retries = 5
         lastStatusCode = statusCode;
         const errorMsg = `HTTP error! status: ${statusCode}`;
         if (statusCode === 429) {
-          if (i === retries - 1) throw new Error(errorMsg);
-          const retryAfter = response.headers.get('retry-after');
-          let waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, i + 3) * 1000;
-          waitMs = Math.min(waitMs, 60000);
-          log.warn(`Rate limited (429). Retrying in ${waitMs}ms... (attempt ${i + 1}/${retries})`);
-          await delay(waitMs);
-          continue;
+          throw new Error(errorMsg);
         }
         throw new Error(errorMsg);
       }
