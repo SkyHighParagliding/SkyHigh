@@ -302,16 +302,22 @@ export function AdminManual() {
       icon: <Wind className="w-6 h-6 text-sky" />,
       link: "/admin/weather",
       category: "Dashboard Settings",
-      description: "Manage weather data and wind map settings. Open via the 'Weather Management' card on the Dashboard.",
+      description: "Manage live weather scraping and the three pre-cached ECMWF wind grids that power the wind map and 7-day outlook. Open via the 'Weather Management' card on the Dashboard.",
       steps: [
-        "Weather fetches automatically every 15–30 min during daylight hours (7am–8pm Melbourne time). Click 'Fetch Now' for an immediate update.",
-        "Forecasts: Days 1–2 use hourly ECMWF data; days 3–7 use 4-hour intervals fetched daily at ~5:30am.",
-        "7-Day Outlook: A compact strip on weather cards showing daily conditions and flyability dots.",
-        "Tides: Coastal sites show an interactive tide chart in the 7-Day Outlook panel, auto-detected from coordinates. Click any point on the chart to see predicted height at that time. The chart covers ±2 hours around now and the next 12 hours by default.",
-        "Wind Map: Animated wind map on the Sites page. TODAY/7 DAYS toggle switches between hourly and extended views. Click the map to see wind speed/direction at any point.",
-        "Click 'Preview Wind Map' for a full-screen preview. Live station selection is per-site in the site editor.",
-        "Troubleshooting — Tide Chart Flat Line: If the tide chart shows a flat horizontal line, the ECMWF weather grid data is stale (the scheduled 5 AM grid fetch may have failed). Click 'Fetch Now' to force an immediate weather update. The chart recovers automatically on the next scraper cycle (15–30 min). The system now detects stale forecast windows and shows a tide-centred view rather than a blank chart.",
-        "Troubleshooting — Stale Weather Data: After each weather scraper cycle, the Railway log shows 'Updated ECMWF forecasts for X/Y sites (grid age: Zmin)'. If X is 0 or grid age is very high (>120 min), the ECMWF data fetch is failing. Use 'Fetch Now' to trigger a fresh cycle. See Troubleshooting section below for how to access Railway logs."
+        "Live Weather: Fetches wind, temperature, and gust readings from all configured stations automatically every 15–30 minutes during operating hours. Click 'Fetch Now' under Live Weather Data for an immediate update. Scraper schedule (start/end hour, continuous mode) is adjustable on the same page.",
+        "Three Wind Grids: The wind map is powered by three independent ECMWF IFS grids fetched daily. Each covers the same geographic area (Tasmania to Canberra, eastern SA to NSW coast) and runs on its own schedule. All three buttons are in the 'Wind Grid Data' card.",
+        "Fine Grid (5:00 am daily): Fetches 2-day hourly wind speed, gusts, direction, temperature, weather code, precipitation, cloud cover, visibility, CAPE, and boundary layer height at 0.15° resolution (~17km). Powers the wind speed colour heatmap and particle animation on the wind map. About 35 tiles × ~3 seconds apart — takes roughly 2 minutes to complete.",
+        "Thermal Grid (5:26 am daily): Fetches CAPE and boundary layer height at 0.09° resolution (~10km) for the coloured thermal overlay on the wind map. Column-tiled to focus on the land area. Takes 3–5 minutes for a full fetch. If some tiles fail, they are automatically retried up to 4 times at increasing intervals (+5 min, +15 min, +40 min, +90 min) — no action needed. The Last Run row shows the current retry status.",
+        "Extended Forecast (5:40 am daily): Fetches 8 days of weather at 0.5° resolution, keeps days 3–8 at four time slots per day (7am, 11am, 3pm, 7pm Melbourne time). Powers the 7-day outlook cards on each site's detail page.",
+        "Fetch Now Buttons: Click any of the three buttons to trigger an immediate manual fetch. The button you clicked shows 'Fetching…' and spins; the other two dim to indicate they are temporarily disabled. A status panel appears below the buttons showing the active fetch name, a live tile-by-tile progress message, and an elapsed time counter (mm:ss). All three fetches respond instantly — the actual data download runs in the background.",
+        "Live Progress: While a fetch is running, the status panel updates every 2 seconds: e.g. 'Fine Grid — Tile 12/35 · 34% · 2400/6912 pts · ok — 0:47'. If a tile fails, it shows in red. When the fetch completes, the result is shown for 5 seconds before the panel clears.",
+        "Configure Grid Areas: Click this button to open a map overlay showing the current geographic coverage area used by all three grids. Drag the corner handles to resize. Click 'Set Grid Area' to save — the new bounds take effect on the next Fetch Now or scheduled run. 'Reset to defaults' restores the standard coverage area (Tasmania to Canberra, eastern SA to NSW coast).",
+        "7-Day Outlook: A compact daily strip on each site's weather page showing weather icon, temperature, wind, and precipitation for days 3–8. Powered by the Extended forecast grid. If the Extended fetch has not run today, the outlook shows the most recent available data.",
+        "Wind Map: Animated three-layer canvas on site pages. The colour heatmap shows wind speed (green = light, red = strong). The particle streaks animate along wind vectors. The thermal overlay (when enabled) shows CAPE-based thermal activity in colour. Click 'Preview Wind Map' for a full-screen view.",
+        "Troubleshooting — No colour on wind map / all grey: The Fine grid fetch likely failed. Check the 'Fine grid (17km)' last run row — if it shows an error, click 'Fine Grid → Fetch Now'. Watch the progress panel to confirm tiles are completing.",
+        "Troubleshooting — Thermal overlay missing: Check the 'Thermal grid (10km)' last run row. If it shows 'partial — N tiles, retry X/4 in Ymin', the auto-retry is still running — wait for it to finish. If it shows 'unresolved after 4 retries', click 'Thermal → Fetch Now' to manually retry.",
+        "Troubleshooting — 7-day outlook cards blank: Check the 'Extended (7-day)' last run row. If stale or errored, click 'Extended → Fetch Now'. The cards populate immediately once the fetch completes.",
+        "Troubleshooting — Tide chart flat line: The Fine grid data is stale (the site forecast relies on the fine grid to position the tide window). Click 'Fine Grid → Fetch Now'. The tide chart recovers automatically after the next live weather scraper cycle (15–30 min)."
       ]
     },
     {
@@ -612,7 +618,7 @@ export function AdminManual() {
           </Link>
           <div className="flex items-center gap-2 text-navy font-bold">
             <Book className="w-5 h-5" />
-            <span>Admin Manual v15.1</span>
+            <span>Admin Manual v15.2</span>
           </div>
         </div>
 

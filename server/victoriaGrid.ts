@@ -181,13 +181,15 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   );
   const totalTiles = tiles.length;
   console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${totalTiles} tiles (rectangular GET)`);
-  await setFineProgress(`0 / ${totalTiles} tiles`);
+  const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
+  await setFineProgress(`Starting · ${totalTiles} tiles · ${totalPoints} pts`);
 
   const allPoints: GridPoint[] = [];
   let failedCount = 0;
 
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
+    const pct = Math.round(((i + 1) / totalTiles) * 100);
     const params = buildOpenMeteoParams({
       lats: tile.lats,
       lons: tile.lons,
@@ -231,8 +233,8 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
         });
       }
 
-      console.log(`Fine grid: Tile ${i + 1}/${totalTiles} fetched (${tile.lats.length} points)`);
-      await setFineProgress(`${i + 1} / ${totalTiles} tiles${failedCount > 0 ? ` (${failedCount} failed)` : ''}`);
+      const failNote = failedCount > 0 ? ` · ${failedCount} failed` : ' · ok';
+      await setFineProgress(`Tile ${i + 1}/${totalTiles} · ${pct}% · ${allPoints.length}/${totalPoints} pts${failNote}`);
 
       if (i < tiles.length - 1) {
         await new Promise(r => setTimeout(r, TILE_DELAY_MS));
@@ -240,7 +242,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
     } catch (err) {
       failedCount++;
       console.error(`Fine grid: Tile ${i + 1}/${totalTiles} failed:`, err);
-      await setFineProgress(`${i + 1} / ${totalTiles} tiles (${failedCount} failed)`);
+      await setFineProgress(`Tile ${i + 1}/${totalTiles} · ${pct}% · FAILED (${failedCount} tile${failedCount > 1 ? 's' : ''} failed)`);
     }
   }
 
