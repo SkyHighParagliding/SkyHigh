@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
-const DEFAULT_FINE = { latMin: -39.2, latMax: -34.0, lonMin: 141.0, lonMax: 150.0 };
+const DEFAULT_FINE = { latMin: -44.5, latMax: -35.0, lonMin: 139.0, lonMax: 155.0 };
 
 type Bounds = { latMin: number; latMax: number; lonMin: number; lonMax: number };
 
@@ -208,6 +208,7 @@ export function GridBoundsSelector({
 
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button variant="outline" onClick={() => setFine(DEFAULT_FINE)} disabled={saving}>Reset to defaults</Button>
             <Button onClick={handleSave} disabled={!canSave || saving}>
               {saving ? "Saving..." : "Set Grid Area"}
             </Button>
