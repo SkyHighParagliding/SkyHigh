@@ -89,6 +89,9 @@ function hourLabel(h: number) {
   return h < 12 ? `${h}:00 am` : `${h - 12}:00 pm`;
 }
 
+type GridType = 'fine' | 'thermal' | 'extended';
+const GRID_LABELS: Record<GridType, string> = { fine: 'Fine Grid', thermal: 'Thermal Grid', extended: 'Extended' };
+
 export function AdminWeather() {
   const { settings, refreshSettings, updateSettings } = useSettings();
   const { token } = useAuth();
@@ -99,7 +102,24 @@ export function AdminWeather() {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerStartRef = useRef<number>(0);
+  const lastProgressRef = useRef('');
 
+  const startStatusPolling = (fast = false) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    let ticks = 0;
+    const interval = fast ? 2000 : 5000;
+    const maxTicks = fast ? 300 : 12; // fast: up to 10 min; slow: 60 s
+    pollRef.current = setInterval(async () => {
+      await refreshSettings();
+      ticks++;
+      if (ticks >= maxTicks) {
+        clearInterval(pollRef.current!);
+        pollRef.current = null;
+      }
+    }, interval);
+  };
+
+  // Timer: runs while loadingType is a grid type
   useEffect(() => {
     if (loadingType === 'thermal' || loadingType === 'fine' || loadingType === 'extended') {
       timerStartRef.current = Date.now();
@@ -112,6 +132,26 @@ export function AdminWeather() {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loadingType]);
+
+  // Detect fetch completion: DB progress key clears → fetch done
+  useEffect(() => {
+    if (!loadingType || !['fine', 'thermal', 'extended'].includes(loadingType)) return;
+    const progress = (
+      loadingType === 'fine' ? settings.fineGridProgress :
+      loadingType === 'thermal' ? settings.thermalGridProgress :
+      settings.extendedGridProgress
+    ) ?? '';
+
+    if (lastProgressRef.current && !progress) {
+      // Progress just cleared → fetch complete; show result for 5s then idle
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      startStatusPolling();
+      const t = setTimeout(() => setLoadingType(null), 5000);
+      return () => clearTimeout(t);
+    }
+    lastProgressRef.current = progress;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingType, settings.fineGridProgress, settings.thermalGridProgress, settings.extendedGridProgress]);
 
   // If page is loaded/refreshed while a fetch is already running, restart fast polling
   useEffect(() => {
@@ -148,49 +188,42 @@ export function AdminWeather() {
     }
   };
 
-  const startStatusPolling = (fast = false) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    let ticks = 0;
-    const interval = fast ? 2000 : 5000;
-    const maxTicks = fast ? 300 : 12; // fast: up to 10 min; slow: 60 s
-    pollRef.current = setInterval(async () => {
-      await refreshSettings();
-      ticks++;
-      if (ticks >= maxTicks) {
-        clearInterval(pollRef.current!);
-        pollRef.current = null;
-      }
-    }, interval);
-  };
-
-  const handleTrigger = async (endpoint: string, type: string) => {
+  // Grid fetches: fire-and-forget — HTTP responds immediately, background fetch runs
+  const handleGridFetch = async (endpoint: string, type: GridType) => {
     setLoadingType(type);
-    setMessages(prev => ({ ...prev, [type]: "" }));
-    if (type === 'thermal' || type === 'fine' || type === 'extended') startStatusPolling(true);
+    lastProgressRef.current = '';
+    startStatusPolling(true);
     try {
-      const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
-      const message = data.message || "Failed to download data";
-      setMessages(prev => ({ ...prev, [type]: message }));
-
-      if (data.success) {
-        toast.success(`${type}: ${message}`);
-        setTimeout(() => setMessages(prev => ({ ...prev, [type]: "" })), 5000);
-      } else {
-        toast.error(`${type}: ${message}`);
-      }
+      await api.post(endpoint, {}, token);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Network error - check server connection";
-      setMessages(prev => ({ ...prev, [type]: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
+      toast.error(err instanceof Error ? err.message : "Network error");
       setLoadingType(null);
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-      startStatusPolling();
     }
+    // loadingType stays set — completion detected via DB progress clearing
   };
 
+  // Live weather: synchronous, short-running — use original pattern
   const handleScrapeNow = async () => {
-    await handleTrigger("/api/weather/scrape-now", "liveWeather");
+    setLoadingType('liveWeather');
+    setMessages(prev => ({ ...prev, liveWeather: "" }));
+    try {
+      const data = await api.post<{ success?: boolean; message?: string }>("/api/weather/scrape-now", {}, token);
+      const message = data.message || "Failed to download data";
+      setMessages(prev => ({ ...prev, liveWeather: message }));
+      if (data.success) {
+        toast.success(message);
+        setTimeout(() => setMessages(prev => ({ ...prev, liveWeather: "" })), 5000);
+      } else {
+        toast.error(message);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      setMessages(prev => ({ ...prev, liveWeather: msg }));
+      toast.error(msg);
+    } finally {
+      setLoadingType(null);
+    }
   };
 
   return (
@@ -316,52 +349,99 @@ export function AdminWeather() {
                   </CardDescription>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                {([
-                  { type: 'extended', label: 'Extended', endpoint: '/api/weather/extended-forecast/fetch-now', progressKey: 'extendedGridProgress' },
-                  { type: 'fine',     label: 'Fine Grid', endpoint: '/api/weather/fine-grid/fetch-now',         progressKey: 'fineGridProgress' },
-                  { type: 'thermal',  label: 'Thermal',   endpoint: '/api/weather/thermal-grid/fetch-now',      progressKey: 'thermalGridProgress' },
-                ] as const).map(({ type, label, endpoint, progressKey }) => {
-                  const progress = settings[progressKey as keyof typeof settings] as string | undefined;
-                  const isActive = loadingType === type || !!progress;
-                  const elapsedStr = loadingType === type
-                    ? ` ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
-                    : '';
-                  return (
-                    <div key={type} className="flex flex-col gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTrigger(endpoint, type)}
-                        disabled={loadingType !== null}
-                        className="flex items-center gap-2 whitespace-nowrap"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${isActive ? 'animate-spin' : ''}`} />
-                        {isActive ? 'Fetching...' : label}
-                      </Button>
-                      {(progress || (loadingType === type && elapsed > 0)) && (
-                        <span className="text-xs font-mono text-sky text-center tabular-nums">
-                          {progress || 'starting…'}{elapsedStr}
-                        </span>
-                      )}
-                      {messages[type] && (
-                        <span className={`text-xs font-medium text-center ${
-                          messages[type].toLowerCase().includes('failed') || messages[type].toLowerCase().includes('error') ? 'text-red-500' :
-                          messages[type].toLowerCase().includes('rate limited') || messages[type].toLowerCase().includes('partial') ? 'text-amber-500' :
-                          'text-emerald-500'
-                        }`}>
-                          {messages[type]}
-                        </span>
-                      )}
+
+              {/* Fetch buttons — grey out non-active when any fetch is running */}
+              {(() => {
+                const activeFromDB: GridType | null =
+                  settings.fineGridProgress ? 'fine' :
+                  settings.thermalGridProgress ? 'thermal' :
+                  settings.extendedGridProgress ? 'extended' : null;
+                const activeType = (loadingType as GridType | null) ?? activeFromDB;
+                const anyActive = activeType !== null;
+
+                const activeProgress = (
+                  activeType === 'fine' ? settings.fineGridProgress :
+                  activeType === 'thermal' ? settings.thermalGridProgress :
+                  activeType === 'extended' ? settings.extendedGridProgress : ''
+                ) ?? '';
+
+                const activeLastResult = (
+                  activeType === 'fine' ? settings.fineGridLastResult :
+                  activeType === 'thermal' ? settings.thermalGridLastResult :
+                  activeType === 'extended' ? settings.extendedForecastLastResult : undefined
+                ) as string | undefined;
+
+                const elapsedStr = loadingType
+                  ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
+                  : '';
+
+                const GRID_BTNS = [
+                  { type: 'extended' as GridType, label: 'Extended',  endpoint: '/api/weather/extended-forecast/fetch-now' },
+                  { type: 'fine'     as GridType, label: 'Fine Grid', endpoint: '/api/weather/fine-grid/fetch-now' },
+                  { type: 'thermal'  as GridType, label: 'Thermal',   endpoint: '/api/weather/thermal-grid/fetch-now' },
+                ];
+
+                return (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mt-4">
+                      {GRID_BTNS.map(({ type, label, endpoint }) => {
+                        const isThisActive = activeType === type;
+                        const isDimmed = anyActive && !isThisActive;
+                        return (
+                          <Button
+                            key={type}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGridFetch(endpoint, type)}
+                            disabled={anyActive || loadingType === 'liveWeather'}
+                            className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''}`}
+                          >
+                            <RefreshCw className={`w-4 h-4 ${isThisActive ? 'animate-spin' : ''}`} />
+                            {isThisActive ? 'Fetching…' : label}
+                          </Button>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Consolidated status panel — below Fine Grid (middle button) */}
+                    {anyActive && (
+                      <div className="mt-2 bg-muted/40 rounded-lg px-3 py-2 space-y-1">
+                        <div className="flex items-center gap-2 text-xs">
+                          <RefreshCw className="w-3 h-3 animate-spin text-sky shrink-0" />
+                          <span className="font-semibold text-sky shrink-0">{activeType ? GRID_LABELS[activeType] : ''}</span>
+                          <span className={`flex-1 font-mono truncate ${
+                            activeProgress.toLowerCase().includes('failed') ? 'text-red-500' :
+                            activeProgress.toLowerCase().includes('partial') ? 'text-amber-500' :
+                            'text-muted-foreground'
+                          }`}>
+                            {activeProgress || 'starting…'}
+                          </span>
+                          {elapsedStr && (
+                            <span className="text-muted-foreground font-mono tabular-nums shrink-0">{elapsedStr}</span>
+                          )}
+                        </div>
+                        {/* Show last result for 5s after completion (loadingType set, progress cleared) */}
+                        {loadingType && !activeProgress && activeLastResult && (
+                          <div className={`text-xs font-medium pl-5 ${
+                            activeLastResult === 'ok' ? 'text-emerald-600' :
+                            activeLastResult.includes('partial') ? 'text-amber-500' :
+                            'text-red-500'
+                          }`}>
+                            {activeLastResult === 'ok' ? '✓ Completed successfully' : `✗ ${activeLastResult}`}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Last run summary */}
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Fine grid (17km)", runKey: "fineGridLastRun", resultKey: "fineGridLastResult" },
-                  { label: "Thermal grid (10km)", runKey: "thermalGridLastRun", resultKey: "thermalGridLastResult" },
-                  { label: "Extended (7-day)", runKey: "extendedForecastLastRun", resultKey: "extendedForecastLastResult" },
+                  { label: "Fine grid (17km)",  runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
+                  { label: "Thermal grid (10km)", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
+                  { label: "Extended (7-day)",  runKey: "extendedForecastLastRun",   resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
                   const lastResult = settings[resultKey as keyof typeof settings] as string | undefined;

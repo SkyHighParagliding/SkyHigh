@@ -945,88 +945,50 @@ router.post("/scrape-now", asyncHandler(async (req, res) => {
 }));
 
 router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  // Respond immediately — fetch runs in background (can take minutes)
+  res.json({ success: true, message: "Extended forecast fetch started" });
   const ts = new Date().toISOString();
   try {
     await fetchExtendedForecast();
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["extendedForecastLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["extendedForecastLastResult", "ok"]
-    );
-    res.json({ success: true, message: "Extended forecast fetch completed successfully" });
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastResult", "ok"]);
   } catch (e: any) {
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["extendedForecastLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["extendedForecastLastResult", e.message || "Unknown error"]
-    );
-    res.status(500).json({ success: false, message: e.message || "Extended forecast fetch failed" });
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["extendedForecastLastResult", e.message || "Unknown error"]);
+    log.error("Manual extended forecast fetch failed:", e);
   }
 }));
 
 router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  // Respond immediately — fetch runs in background (35+ tiles, ~100s)
+  res.json({ success: true, message: "Fine grid fetch started" });
   const ts = new Date().toISOString();
   try {
     await fetchFineGrid(true);
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["fineGridLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["fineGridLastResult", "ok"]
-    );
-    res.json({ success: true, message: "Fine grid fetch completed" });
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["fineGridLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["fineGridLastResult", "ok"]);
   } catch (e: any) {
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["fineGridLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["fineGridLastResult", e.message || "Unknown error"]
-    );
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["fineGridLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["fineGridLastResult", e.message || "Unknown error"]);
     log.error("Manual fine grid fetch failed:", e);
-    res.status(500).json({ success: false, message: e.message || "Fine grid fetch failed" });
   }
 }));
 
 router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
+  // Respond immediately — fetch runs in background (column tiles, ~60s)
+  res.json({ success: true, message: "Thermal grid fetch started" });
   const ts = new Date().toISOString();
   try {
     await fetchThermalGrid(true);
     const pendingRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
     const pendingTiles = pendingRow?.value ? (JSON.parse(pendingRow.value) as unknown[]).length : 0;
     const resultMsg = pendingTiles > 0 ? `partial — ${pendingTiles} tiles pending retry` : "ok";
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["thermalGridLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["thermalGridLastResult", resultMsg]
-    );
-    const msg = pendingTiles > 0
-      ? `Partial fetch stored — ${pendingTiles} tiles queued for retry`
-      : "Thermal grid updated successfully";
-    res.json({ success: true, message: msg });
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastResult", resultMsg]);
   } catch (e: any) {
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["thermalGridLastRun", ts]
-    );
-    await execute(
-      `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      ["thermalGridLastResult", e.message || "Unknown error"]
-    );
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastRun", ts]);
+    await execute(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, ["thermalGridLastResult", e.message || "Unknown error"]);
     log.error("Manual thermal grid fetch failed:", e);
-    res.status(500).json({ success: false, message: e.message || "Thermal grid fetch failed" });
   }
 }));
 
