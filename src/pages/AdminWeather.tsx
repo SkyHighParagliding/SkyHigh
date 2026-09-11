@@ -90,7 +90,7 @@ function hourLabel(h: number) {
 }
 
 type GridType = 'fine' | 'thermal' | 'extended';
-const GRID_LABELS: Record<GridType, string> = { fine: 'Fine Grid', thermal: 'Thermal Grid', extended: '7-Day' };
+const GRID_LABELS: Record<GridType, string> = { fine: 'Wind Grid', thermal: 'Thermal Grid', extended: '7-Day' };
 
 export function AdminWeather() {
   const { settings, refreshSettings, updateSettings } = useSettings();
@@ -345,7 +345,7 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Fine Grid), 5:26am (Thermal Grid), and 5:40am (7-Day). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Wind Grid), 5:26am (Thermal Grid), and 5:40am (7-Day). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
@@ -376,7 +376,7 @@ export function AdminWeather() {
                   : '';
 
                 const GRID_BTNS = [
-                  { type: 'fine'     as GridType, label: 'Fine Grid',    endpoint: '/api/weather/fine-grid/fetch-now' },
+                  { type: 'fine'     as GridType, label: 'Wind Grid',    endpoint: '/api/weather/fine-grid/fetch-now' },
                   { type: 'thermal'  as GridType, label: 'Thermal Grid', endpoint: '/api/weather/thermal-grid/fetch-now' },
                   { type: 'extended' as GridType, label: '7-Day',        endpoint: '/api/weather/extended-forecast/fetch-now' },
                 ];
@@ -403,7 +403,7 @@ export function AdminWeather() {
                       })}
                     </div>
 
-                    {/* Consolidated status panel — below Fine Grid (middle button) */}
+                    {/* Consolidated status panel — below Wind Grid (middle button) */}
                     {anyActive && (
                       <div className="mt-2 bg-muted/40 rounded-lg px-3 py-2 space-y-1">
                         <div className="flex items-center gap-2 text-xs">
@@ -439,7 +439,7 @@ export function AdminWeather() {
               {/* Last run summary */}
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Fine Grid",    runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
+                  { label: "Wind Grid",    runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
                   { label: "Thermal Grid", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
                   { label: "7-Day",        runKey: "extendedForecastLastRun",  resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
