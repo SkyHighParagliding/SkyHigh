@@ -2,7 +2,7 @@ import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
 import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
-import { buildColumnTiles } from "./utils/gridTiles.js";
+import { buildColumnTiles, buildRectangularTiles } from "./utils/gridTiles.js";
 
 const FINE_GRID_CACHE_KEY = "fine_grid";
 const THERMAL_GRID_CACHE_KEY = "thermal_grid";
@@ -30,11 +30,11 @@ export interface GridFetchStatus {
   cacheAgeMinutes?: number;
 }
 
-// Default bounds — Victoria + surrounds, covering all club sites
-const FINE_LAT_MIN = -39.5;
-const FINE_LAT_MAX = -33.5;
-const FINE_LON_MIN = 140.0;
-const FINE_LON_MAX = 151.0;
+// Default bounds — extended to cover Tasmania, ACT/Canberra, eastern SA and NSW coast
+const FINE_LAT_MIN = -44.5;
+const FINE_LAT_MAX = -35.0;
+const FINE_LON_MIN = 139.0;
+const FINE_LON_MAX = 155.0;
 const FINE_DELTA = 0.15;
 
 // Thermal grid: same bounds, finer resolution, CAPE + BLH only
@@ -175,12 +175,12 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   console.log("Fine grid: Fetching fresh data from Open-Meteo (ecmwf_ifs, ~0.07deg)...");
 
   const bounds = await getGridBounds();
-  const tiles = buildColumnTiles(
+  const tiles = buildRectangularTiles(
     { lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax, latMin: bounds.fineLatMin, latMax: bounds.fineLatMax },
-    FINE_DELTA, 90
+    FINE_DELTA, 200
   );
   const totalTiles = tiles.length;
-  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${totalTiles} tiles`);
+  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${totalTiles} tiles (rectangular GET)`);
   await setFineProgress(`0 / ${totalTiles} tiles`);
 
   const allPoints: GridPoint[] = [];

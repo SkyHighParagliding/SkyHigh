@@ -211,6 +211,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       ctx.save();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+      ctx.filter = 'blur(5px)';
       ctx.drawImage(overlay.canvas, 0, 0, w, h);
       ctx.restore();
 

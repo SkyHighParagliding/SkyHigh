@@ -109,7 +109,15 @@ function rebuildThermalOverlay(
       pixels[idx]     = thermalLUT[li * 4];
       pixels[idx + 1] = thermalLUT[li * 4 + 1];
       pixels[idx + 2] = thermalLUT[li * 4 + 2];
-      pixels[idx + 3] = thermalLUT[li * 4 + 3];
+      // Fade alpha within 1° lon / 0.5° lat of grid boundary to avoid hard rectangular clip
+      const edgeFade = Math.min(
+        (geo[0] - grid.lonMin) / 1.0,
+        (grid.lonMax - geo[0]) / 1.0,
+        (geo[1] - grid.latMin) / 0.5,
+        (grid.latMax - geo[1]) / 0.5,
+        1.0,
+      );
+      pixels[idx + 3] = Math.round(thermalLUT[li * 4 + 3] * Math.max(0, edgeFade));
     }
   }
   ctx.putImageData(imageData, 0, 0);

@@ -36,6 +36,31 @@ const VIC_LAT = [
   -34.00,
 ];
 
+/**
+ * Builds a flat rectangular grid of all lat/lon points in the bounding box,
+ * chunked into Open-Meteo batch tiles of at most maxPerTile points each.
+ * Unlike buildColumnTiles, every cell in the rectangle is fetched — no Victoria
+ * polygon clipping — so wind particle rendering has no null dead-zones.
+ */
+export function buildRectangularTiles(
+  bounds: TileBounds,
+  delta: number,
+  maxPerTile: number,
+): { lats: number[]; lons: number[] }[] {
+  const allPoints: { lat: number; lon: number }[] = [];
+  for (let lat = bounds.latMin; lat <= bounds.latMax + delta * 0.5; lat += delta) {
+    for (let lon = bounds.lonMin; lon <= bounds.lonMax + delta * 0.5; lon += delta) {
+      allPoints.push({ lat: parseFloat(lat.toFixed(4)), lon: parseFloat(lon.toFixed(4)) });
+    }
+  }
+  const tiles: { lats: number[]; lons: number[] }[] = [];
+  for (let i = 0; i < allPoints.length; i += maxPerTile) {
+    const chunk = allPoints.slice(i, i + maxPerTile);
+    tiles.push({ lats: chunk.map(p => p.lat), lons: chunk.map(p => p.lon) });
+  }
+  return tiles;
+}
+
 export interface TileBounds {
   lonMin: number;
   lonMax: number;

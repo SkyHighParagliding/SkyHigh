@@ -17,7 +17,7 @@ interface OpenMeteoParams {
 }
 
 /**
- * Builds a URLSearchParams object for an Open-Meteo forecast request.
+ * Builds a URLSearchParams object for an Open-Meteo forecast GET request.
  * Shared constants (models, wind_speed_unit, timezone) are applied automatically.
  * Pass `apiKey` when the customer API URL is in use — the builder appends
  * the `apikey` param only when the value is non-empty.
@@ -40,4 +40,29 @@ export function buildOpenMeteoParams({
   });
   if (apiKey) params.set('apikey', apiKey);
   return params;
+}
+
+/**
+ * Builds a JSON body for an Open-Meteo forecast POST request.
+ * Use this instead of buildOpenMeteoParams when sending large batches
+ * (>~90 points) to avoid URL-length limits.
+ */
+export function buildOpenMeteoBody({
+  lats,
+  lons,
+  hourlyFields,
+  forecastDays,
+  apiKey,
+}: OpenMeteoParams): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    latitude: lats,
+    longitude: lons,
+    hourly: hourlyFields.split(','),
+    models: 'ecmwf_ifs',
+    wind_speed_unit: 'kn',
+    timezone: 'Australia/Melbourne',
+    forecast_days: forecastDays,
+  };
+  if (apiKey) body.apikey = apiKey;
+  return body;
 }
