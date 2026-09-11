@@ -90,7 +90,7 @@ function hourLabel(h: number) {
 }
 
 type GridType = 'fine' | 'thermal' | 'extended';
-const GRID_LABELS: Record<GridType, string> = { fine: 'Fine Grid', thermal: 'Thermal Grid', extended: 'Extended' };
+const GRID_LABELS: Record<GridType, string> = { fine: 'Fine Grid', thermal: 'Thermal Grid', extended: '7-Day' };
 
 export function AdminWeather() {
   const { settings, refreshSettings, updateSettings } = useSettings();
@@ -345,7 +345,7 @@ export function AdminWeather() {
                     Wind Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Fine wind/weather), 5:26am (Thermal CAPE+BLH), and 5:40am (Extended 7-day). Cached for entire day.
+                    Wind grid data downloaded daily at 5:00am (Fine Grid), 5:26am (Thermal Grid), and 5:40am (7-Day). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>
@@ -376,9 +376,9 @@ export function AdminWeather() {
                   : '';
 
                 const GRID_BTNS = [
-                  { type: 'fine'     as GridType, label: 'Fine Grid', endpoint: '/api/weather/fine-grid/fetch-now' },
-                  { type: 'thermal'  as GridType, label: 'Thermal',   endpoint: '/api/weather/thermal-grid/fetch-now' },
-                  { type: 'extended' as GridType, label: 'Extended',  endpoint: '/api/weather/extended-forecast/fetch-now' },
+                  { type: 'fine'     as GridType, label: 'Fine Grid',    endpoint: '/api/weather/fine-grid/fetch-now' },
+                  { type: 'thermal'  as GridType, label: 'Thermal Grid', endpoint: '/api/weather/thermal-grid/fetch-now' },
+                  { type: 'extended' as GridType, label: '7-Day',        endpoint: '/api/weather/extended-forecast/fetch-now' },
                 ];
 
                 return (
@@ -439,9 +439,9 @@ export function AdminWeather() {
               {/* Last run summary */}
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Fine grid (17km)",  runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
-                  { label: "Thermal grid (10km)", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
-                  { label: "Extended (7-day)",  runKey: "extendedForecastLastRun",   resultKey: "extendedForecastLastResult" },
+                  { label: "Fine Grid",    runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
+                  { label: "Thermal Grid", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
+                  { label: "7-Day",        runKey: "extendedForecastLastRun",  resultKey: "extendedForecastLastResult" },
                 ] as const).map(({ label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
                   const lastResult = settings[resultKey as keyof typeof settings] as string | undefined;
