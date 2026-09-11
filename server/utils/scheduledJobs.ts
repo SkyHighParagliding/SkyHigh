@@ -126,8 +126,8 @@ async function fetchFineGridDaily() {
   }
 }
 
-// Delays between retry rounds: 5min, 15min, 40min, 90min
-const THERMAL_RETRY_DELAYS_MS = [5 * 60_000, 15 * 60_000, 40 * 60_000, 90 * 60_000];
+// Delays between retry rounds: 30min, 1h, 2h, 4h — spaced to avoid free-tier rate limit resets
+const THERMAL_RETRY_DELAYS_MS = [30 * 60_000, 60 * 60_000, 120 * 60_000, 240 * 60_000];
 
 async function fetchThermalGridDaily(retryRound = 0) {
   const ts = new Date().toISOString();

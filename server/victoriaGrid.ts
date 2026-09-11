@@ -1,7 +1,7 @@
 import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
+import { buildOpenMeteoParams, buildOpenMeteoBody, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
 import { buildColumnTiles, buildRectangularTiles } from "./utils/gridTiles.js";
 
 const FINE_GRID_CACHE_KEY = "fine_grid";
@@ -39,7 +39,7 @@ const FINE_DELTA = 0.15;
 
 // Thermal grid: same bounds, finer resolution, CAPE + BLH only
 const THERMAL_DELTA = 0.09;
-const THERMAL_MAX_PER_TILE = 300;
+const THERMAL_MAX_PER_TILE = 1000;
 
 export interface GridBounds {
   fineLatMin: number; fineLatMax: number; fineLonMin: number; fineLonMax: number;
@@ -177,11 +177,11 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   const bounds = await getGridBounds();
   const tiles = buildRectangularTiles(
     { lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax, latMin: bounds.fineLatMin, latMax: bounds.fineLatMax },
-    FINE_DELTA, 200
+    FINE_DELTA, 1000
   );
   const totalTiles = tiles.length;
-  console.log(`Fine grid: ${tiles.reduce((s, t) => s + t.lats.length, 0)} total points in ${totalTiles} tiles (rectangular GET)`);
   const totalPoints = tiles.reduce((s, t) => s + t.lats.length, 0);
+  console.log(`Fine grid: ${totalPoints} total points in ${totalTiles} tiles (rectangular POST)`);
   await setFineProgress(`Starting · ${totalTiles} tiles · ${totalPoints} pts`);
 
   const allPoints: GridPoint[] = [];
@@ -190,7 +190,7 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
   for (let i = 0; i < tiles.length; i++) {
     const tile = tiles[i];
     const pct = Math.round(((i + 1) / totalTiles) * 100);
-    const params = buildOpenMeteoParams({
+    const body = buildOpenMeteoBody({
       lats: tile.lats,
       lons: tile.lons,
       hourlyFields: 'temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,precipitation,precipitation_probability,cloud_cover,cloud_cover_low,visibility,cape,boundary_layer_height',
@@ -198,10 +198,12 @@ async function doFetchFineGrid(): Promise<VictoriaGrid> {
       apiKey: OPEN_METEO_API_KEY || undefined,
     });
 
-    const url = `${OPEN_METEO_URL}?${params.toString()}`;
-
     try {
-      const rawData = await fetchWithRetry(url);
+      const rawData = await fetchWithRetry(OPEN_METEO_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const results = Array.isArray(rawData) ? rawData : [rawData];
 
       for (let j = 0; j < results.length; j++) {
@@ -466,7 +468,7 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
       break;
     }
 
-    const params = buildOpenMeteoParams({
+    const body = buildOpenMeteoBody({
       lats: tile.lats,
       lons: tile.lons,
       hourlyFields: 'cape,boundary_layer_height,temperature_2m,dew_point_2m',
@@ -475,7 +477,11 @@ async function doFetchThermalGrid(): Promise<ThermalVictoriaGrid> {
     });
 
     try {
-      const rawData = await fetchWithRetry(`${OPEN_METEO_URL}?${params.toString()}`);
+      const rawData = await fetchWithRetry(OPEN_METEO_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const results = Array.isArray(rawData) ? rawData : [rawData];
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
