@@ -376,9 +376,9 @@ export function AdminWeather() {
                   : '';
 
                 const GRID_BTNS = [
-                  { type: 'extended' as GridType, label: 'Extended',  endpoint: '/api/weather/extended-forecast/fetch-now' },
                   { type: 'fine'     as GridType, label: 'Fine Grid', endpoint: '/api/weather/fine-grid/fetch-now' },
                   { type: 'thermal'  as GridType, label: 'Thermal',   endpoint: '/api/weather/thermal-grid/fetch-now' },
+                  { type: 'extended' as GridType, label: 'Extended',  endpoint: '/api/weather/extended-forecast/fetch-now' },
                 ];
 
                 return (
