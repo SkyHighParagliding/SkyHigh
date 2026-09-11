@@ -355,14 +355,14 @@ All three fetches can be triggered manually from **Admin → Weather → Wind Gr
 ### Button layout
 
 ```
-[ Extended ]    [ Fine Grid ]    [ Thermal ]
+[ Wind Grid ]    [ Thermal Grid ]    [ 7-Day ]
 
   ↕ Consolidated status panel appears when any fetch is active ↕
-  [spinner] Fine Grid — Tile 12/35 · 34% · 2400/6912 pts · ok    0:47
+  [spinner] Wind Grid — Tile 5/7 · 71% · 5000/6912 pts · ok    0:18
 
-Fine grid (17km)      ✓ 11/9/2026, 11:36 am
-Thermal grid (10km)   ✗ 11/9/2026, 11:35 am — partial — 8 tiles, retry 1/4 in 5min
-Extended (7-day)      ✓ 11/9/2026, 5:30 am
+Wind Grid      ✓ 11/9/2026, 11:36 am
+Thermal Grid   ✗ 11/9/2026, 11:35 am — partial — 8 tiles, retry 1/4 in 30min
+7-Day          ✓ 11/9/2026, 5:30 am
 ```
 
 ### Behaviour
@@ -388,7 +388,7 @@ POST /api/weather/fine-grid/fetch-now
 
 ### Thermal vs Fine/Extended — key difference
 
-| | Fine Grid | Thermal Grid | Extended |
+| | Wind Grid | Thermal Grid | 7-Day |
 |---|---|---|---|
 | **Tile-level retry** | ✗ | ✓ (4 rounds, auto-scheduled) | ✗ |
 | **Partial save** | ✗ (keeps previous) | ✓ (saves partial, improves on retry) | ✗ |
