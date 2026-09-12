@@ -518,14 +518,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   {thermalInfo.blh > 0 && (
                     <>
                       <span className="text-white/40">|</span>
-                      <span className="text-white/60">BL Top <Altitude metres={thermalInfo.blh} step={100} /></span>
+                      <span className="text-white/60">BL Top <Altitude metres={thermalInfo.blh} step={100} className="pointer-events-auto" /></span>
                     </>
                   )}
                   {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                     <>
                       <span className="text-white/40">|</span>
                       <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                        Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        Cu Base <Altitude metres={thermalInfo.ccl} step={100} className="pointer-events-auto" />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                       </span>
                     </>
                   )}

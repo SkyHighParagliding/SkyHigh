@@ -199,6 +199,7 @@ export function AdminWeather() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerStartRef = useRef<number>(0);
   const lastProgressRef = useRef('');
+  const [lastDurationByType, setLastDurationByType] = useState<Partial<Record<GridType, number>>>({});
 
   const startStatusPolling = (fast = false) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -240,6 +241,8 @@ export function AdminWeather() {
 
     if (lastProgressRef.current && !progress) {
       // Progress just cleared → fetch complete; show result for 5s then idle
+      const finishedType = loadingType as GridType;
+      setLastDurationByType(prev => ({ ...prev, [finishedType]: Math.floor((Date.now() - timerStartRef.current) / 1000) }));
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       startStatusPolling();
       const t = setTimeout(() => setLoadingType(null), 5000);
@@ -489,8 +492,8 @@ export function AdminWeather() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleGridFetch(endpoint, type)}
-                            disabled={anyActive || loadingType === 'liveWeather'}
-                            className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''}`}
+                            disabled={(anyActive && !isThisActive) || loadingType === 'liveWeather'}
+                            className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''} ${isThisActive ? 'ring-2 ring-sky' : ''}`}
                           >
                             <RefreshCw className={`w-4 h-4 ${isThisActive ? 'animate-spin' : ''}`} />
                             {isThisActive ? 'Fetching…' : label}
@@ -535,19 +538,21 @@ export function AdminWeather() {
               {/* Last run summary */}
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 {([
-                  { label: "Wind",    runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
-                  { label: "Thermal", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
-                  { label: "7-Day",        runKey: "extendedForecastLastRun",  resultKey: "extendedForecastLastResult" },
-                ] as const).map(({ label, runKey, resultKey }) => {
+                  { type: 'fine' as GridType,     label: "Wind",    runKey: "fineGridLastRun",          resultKey: "fineGridLastResult" },
+                  { type: 'thermal' as GridType,  label: "Thermal", runKey: "thermalGridLastRun",       resultKey: "thermalGridLastResult" },
+                  { type: 'extended' as GridType, label: "7-Day",   runKey: "extendedForecastLastRun",  resultKey: "extendedForecastLastResult" },
+                ]).map(({ type, label, runKey, resultKey }) => {
                   const lastRun = settings[runKey as keyof typeof settings] as string | undefined;
                   const lastResult = settings[resultKey as keyof typeof settings] as string | undefined;
                   const ok = lastResult === "ok";
+                  const durationSecs = lastDurationByType[type];
+                  const durationStr = durationSecs != null ? ` (took ${Math.floor(durationSecs / 60)}:${String(durationSecs % 60).padStart(2, '0')})` : '';
                   return (
                     <div key={label} className="flex items-start gap-2 text-xs">
                       <span className="text-muted-foreground w-36 shrink-0">{label}</span>
                       {lastRun ? (
                         <span className={ok ? "text-emerald-600" : "text-red-500"}>
-                          {ok ? "✓" : "✗"} {new Date(lastRun).toLocaleString("en-AU", { timeZone: "Australia/Melbourne", dateStyle: "short", timeStyle: "short" })}
+                          {ok ? "✓" : "✗"} {new Date(lastRun).toLocaleString("en-AU", { timeZone: "Australia/Melbourne", dateStyle: "short", timeStyle: "short" })}{durationStr}
                           {!ok && ` — ${lastResult}`}
                         </span>
                       ) : (

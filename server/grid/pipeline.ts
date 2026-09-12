@@ -204,8 +204,11 @@ async function runFetch<P>(kind: GridKind<P>, state: KindState<PersistedGrid<P>>
   log.info(`${kind.baseKey}: fetching ${points.length} points`);
   await setStatus(kind.progressKey, `Starting · ${points.length} pts`);
 
+  let progressChain: Promise<void> = Promise.resolve();
   const opts: OrchestratorOptions = {
-    onProgress: msg => { void setStatus(kind.progressKey, msg); },
+    onProgress: msg => {
+      progressChain = progressChain.then(() => setStatus(kind.progressKey, msg));
+    },
   };
 
   let merged: MergedGrid;
@@ -215,6 +218,9 @@ async function runFetch<P>(kind: GridKind<P>, state: KindState<PersistedGrid<P>>
       opts,
     );
   } finally {
+    // Wait for every queued progress write to land before issuing the clear,
+    // so the clear can never be overtaken by a late in-flight progress write.
+    await progressChain;
     await setStatus(kind.progressKey, "");
   }
 
