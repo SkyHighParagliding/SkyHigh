@@ -106,6 +106,8 @@ export interface ThermalPoint {
     boundary_layer_height: number[];
     temperature_2m: number[];
     dew_point_2m: number[];
+    shortwave_radiation: number[];
+    soil_moisture_0_to_7cm: number[];
   };
 }
 

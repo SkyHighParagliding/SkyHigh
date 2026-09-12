@@ -40,6 +40,8 @@ const VARIABLE_TO_FIELD: Record<Variable, string> = {
   cloud_cover: "cloud_cover",
   cloud_cover_low: "cloud_cover_low",
   visibility: "visibility",
+  shortwave_radiation: "shortwave_radiation",
+  soil_moisture_0_to_7cm: "soil_moisture_0_to_7cm",
 };
 
 /** Parsed shape of a single point's hourly block in the Open-Meteo response. */
@@ -58,6 +60,8 @@ interface HourlyBlock {
   cloud_cover?: number[];
   cloud_cover_low?: number[];
   visibility?: number[];
+  shortwave_radiation?: number[];
+  soil_moisture_0_to_7cm?: number[];
 }
 
 interface OpenMeteoResponseItem {

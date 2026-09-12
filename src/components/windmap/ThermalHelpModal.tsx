@@ -21,7 +21,7 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
 
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Strength</div>
-            <p className="text-white/70">The colour overlay shows how strong convective lift (thermals) is expected to be across Victoria at the selected time. Based on W* (convective velocity scale) derived from CAPE and boundary layer data.</p>
+            <p className="text-white/70">The colour overlay shows how strong convective lift (thermals) is expected to be across Victoria at the selected time. Based on W* (convective velocity scale), the same quantity RASP and SkySight colour their thermal maps by.</p>
             <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
               {[
                 { label: 'None',     color: '#a0aec0', desc: 'No soarable lift' },
@@ -42,11 +42,12 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">W* — Convective Velocity</div>
             <p className="text-white/70">How fast air rises inside a thermal (metres per second). A good rule of thumb: W* ≈ average climb rate you can expect in a well-centred thermal. 1.5 m/s is a comfortable XC day; 3 m/s is fast and bumpy.</p>
+            <p className="text-white/70 mt-1.5">Worked out from how much sunlight reaches the ground, how wet the ground is, and how deep the boundary layer gets. Cloud cuts the sunlight, so overcast days come out weak automatically — and wet ground after rain thermals poorly even in full sun, because the sun's energy goes into evaporating water instead of heating air.</p>
           </section>
 
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">CAPE — Convective Energy</div>
-            <p className="text-white/70">Convective Available Potential Energy (Joules/kg). Shown when real W* data isn't available. Think of it as the "fuel tank" for thermals — the higher the value, the more energy available for convection. &gt;100 J/kg = useful thermals; &gt;500 J/kg = strong conditions.</p>
+            <p className="text-white/70">Convective Available Potential Energy (Joules/kg). This is a storm-risk measure, not a thermal-strength one — it sits at 0 on many excellent soaring days and climbs high on days that are unflyable. Useful as a caution flag: &gt;500 J/kg means watch for overdevelopment.</p>
           </section>
 
           <section>

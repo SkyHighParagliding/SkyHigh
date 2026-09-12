@@ -339,6 +339,89 @@ export function computeCCL(t2m: number, td2m: number): number {
   return Math.max(0, t2m - td2m) * 125;
 }
 
+// --- W* (Deardorff convective velocity scale) -------------------------------
+//
+// W* is the quantity soaring forecasts (RASP, SkySight) actually colour their
+// thermal maps by: it scales with the average climb a well-centred thermal will
+// give. Until now this grid carried no W* at all and the renderer fell back to
+// sqrt(CAPE/100), which is a poor stand-in — CAPE measures deep-convection
+// energy, so it reads near zero on plenty of excellent blue XC days and reads
+// high on storm days that are unflyable.
+//
+// The textbook form needs the surface sensible heat flux H:
+//
+//     w* = [ (g / θ) · (H / (ρ·cp)) · z_i ]^(1/3)
+//
+// Open-Meteo does publish sensible_heat_flux, but only for GFS — ECMWF returns
+// null for it. Tiers 1 and 2 are both ECMWF, and mixing model families across
+// the grid produces a visible seam, so H has to be derived from fields ECMWF
+// does carry. Everything below uses only shortwave_radiation, soil moisture,
+// boundary_layer_height and temperature_2m, all of which are served by BOTH the
+// tier-1 REST API and the tier-2 S3 archive. (ECMWF's own `albedo` field is in
+// the S3 archive but returns null from the REST API, so a constant is used
+// instead rather than leaving a 1000-point hole wherever tier 1 supplied data.)
+
+/** Typical broadleaf/pasture albedo. ECMWF's own albedo field is not available on tier 1. */
+const LAND_ALBEDO = 0.20;
+/** Representative daytime net longwave loss, W/m². Also what makes w* fall to 0 near dawn/dusk. */
+const NET_LONGWAVE_LOSS = 90;
+/** Ground heat flux as a fraction of net radiation. */
+const GROUND_FLUX_FRACTION = 0.1;
+/** Volumetric soil moisture (m³/m³) at which the ground behaves as fully wet. */
+const SOIL_SATURATION = 0.35;
+/** Bowen ratio endpoints: parched ground partitions most energy into heat, wet ground into evaporation. */
+const BOWEN_DRY = 5.0;
+const BOWEN_WET = 0.3;
+
+const AIR_DENSITY = 1.2;      // kg/m³
+const AIR_HEAT_CAPACITY = 1005; // J/(kg·K)
+const GRAVITY = 9.81;
+
+/**
+ * Boundary layers shallower than this are not usable lift regardless of what the
+ * flux arithmetic says — without it, a 60 m nocturnal layer under weak sun still
+ * produces a non-zero w* and paints colour on the map before sunrise.
+ */
+const MIN_USABLE_BLH = 300;
+
+/**
+ * Deardorff convective velocity scale, m/s. Returns undefined when any input is
+ * missing, and 0 when conditions cannot support convection.
+ *
+ * @param swDown       Downward shortwave radiation at the surface, W/m². Already
+ *                     attenuated by the model's forecast cloud, which is why an
+ *                     overcast day yields weak w* without needing a cloud term.
+ * @param soilMoisture Volumetric soil moisture 0–7 cm, m³/m³. Sets the Bowen
+ *                     ratio: a wet paddock after rain puts its energy into
+ *                     evaporation and barely thermals even in full sun.
+ * @param blh          Boundary layer height, m.
+ * @param t2m          2 m temperature, °C — stands in for the mixed-layer potential temperature.
+ */
+export function computeWstar(
+  swDown: number | undefined,
+  soilMoisture: number | undefined,
+  blh: number | undefined,
+  t2m: number | undefined,
+): number | undefined {
+  if (![swDown, soilMoisture, blh, t2m].every(v => Number.isFinite(v))) return undefined;
+  if (blh! < MIN_USABLE_BLH) return 0;
+
+  const netRadiation = swDown! * (1 - LAND_ALBEDO) - NET_LONGWAVE_LOSS;
+  if (netRadiation <= 0) return 0; // Surface losing heat — stable, no thermals.
+
+  const wetness = Math.max(0, Math.min(1, soilMoisture! / SOIL_SATURATION));
+  const bowen = BOWEN_DRY + (BOWEN_WET - BOWEN_DRY) * wetness;
+
+  // Available energy splits between sensible and latent heat in the Bowen ratio.
+  const sensibleHeatFlux =
+    netRadiation * (1 - GROUND_FLUX_FRACTION) * (bowen / (1 + bowen));
+
+  const kinematicFlux = sensibleHeatFlux / (AIR_DENSITY * AIR_HEAT_CAPACITY); // K·m/s
+  const theta = t2m! + 273.15;
+
+  return Math.cbrt((GRAVITY / theta) * kinematicFlux * blh!);
+}
+
 export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | null {
   if (!grid.points.length) return null;
   const firstPoint = grid.points[0];
@@ -388,10 +471,19 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
           const t2m = point.hourly.temperature_2m?.[timeIdx];
           const td2m = point.hourly.dew_point_2m?.[timeIdx];
           const hasTd = Number.isFinite(t2m) && Number.isFinite(td2m);
+          const blh = point.hourly.boundary_layer_height[timeIdx] ?? 0;
+          const wstar = computeWstar(
+            point.hourly.shortwave_radiation?.[timeIdx],
+            point.hourly.soil_moisture_0_to_7cm?.[timeIdx],
+            blh,
+            t2m,
+          );
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
-            blh: point.hourly.boundary_layer_height[timeIdx] ?? 0,
-            wstar: undefined,
+            blh,
+            // Rounded to 2 dp: this field is emitted for every cell of every hour,
+            // and full float precision inflates the payload for no visible gain.
+            wstar: wstar === undefined ? undefined : Math.round(wstar * 100) / 100,
             ccl: hasTd ? computeCCL(t2m!, td2m!) : undefined,
           });
         } else {

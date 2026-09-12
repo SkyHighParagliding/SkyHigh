@@ -269,6 +269,8 @@ function gfsChunkUrl(variable: string, chunk: number): string {
  *   temperature_2m, dew_point_2m: °C (already canonical)
  *   cape: J/kg, boundary_layer_height: m, precipitation: mm,
  *   cloud_cover, cloud_cover_low: %, visibility: m  — all already canonical.
+ *   shortwave_radiation: W/m² (already canonical — no conversion needed)
+ *   soil_moisture_0_to_7cm: m³/m³ (already canonical — no conversion needed)
  */
 const ECMWF_SUPPORTED = new Set<Variable>([
   "wind_speed_10m",       // derived from wind_u_component_10m + wind_v_component_10m
@@ -282,6 +284,8 @@ const ECMWF_SUPPORTED = new Set<Variable>([
   "cloud_cover",
   "cloud_cover_low",
   "visibility",
+  "shortwave_radiation",
+  "soil_moisture_0_to_7cm",
 ]);
 
 /**

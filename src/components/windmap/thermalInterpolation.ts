@@ -102,7 +102,10 @@ export function getThermalAt(
   };
 }
 
-// Derive effective W* from CAPE when real W* not available (old cached grids).
+// Fallback for cells with no real W*: grids cached before W* was computed, and
+// points supplied by the GFS tiers, which carry neither radiation nor soil
+// moisture. Treat this as degraded, not equivalent — CAPE measures deep-
+// convection energy, so it reads 0 across plenty of perfectly soarable days.
 // Rough empirical: cape=100 → ~1.0 m/s, cape=400 → ~2.0 m/s
 export function effectiveWstar(wstar: number | undefined, cape: number): number {
   if (wstar !== undefined) return wstar;

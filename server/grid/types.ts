@@ -23,6 +23,8 @@
  *   cloud_cover, cloud_cover_low     percent
  *   visibility                       metres
  *   weather_code                     WMO code
+ *   shortwave_radiation              W/m²  (already canonical — no conversion)
+ *   soil_moisture_0_to_7cm           m³/m³ (already canonical — no conversion)
  */
 export type Variable =
   | "wind_speed_10m"
@@ -37,7 +39,9 @@ export type Variable =
   | "precipitation_probability"
   | "cloud_cover"
   | "cloud_cover_low"
-  | "visibility";
+  | "visibility"
+  | "shortwave_radiation"
+  | "soil_moisture_0_to_7cm";
 
 export interface LatLon {
   lat: number;

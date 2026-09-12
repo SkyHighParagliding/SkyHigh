@@ -342,8 +342,9 @@ console.log("\nTest 3: thermal required set excludes S3 GFS");
 
   const thermalPoints = merged.points.map(p => THERMAL_GRID.buildPoint(p, merged.time));
   assertEqual(Object.keys(thermalPoints[0].hourly).sort(),
-    ["boundary_layer_height", "cape", "dew_point_2m", "temperature_2m", "time"],
-    "ThermalPoint.hourly has exactly the legacy key set");
+    ["boundary_layer_height", "cape", "dew_point_2m", "shortwave_radiation",
+     "soil_moisture_0_to_7cm", "temperature_2m", "time"],
+    "ThermalPoint.hourly has exactly the expected key set");
 }
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,13 @@
  * Requiring `cape` + `boundary_layer_height` also excludes the S3 GFS tier,
  * which does not carry them — better to leave a gap than to fill it with
  * points that read as zeroes.
+ *
+ * The grid also carries `shortwave_radiation` (W/m²) and `soil_moisture_0_to_7cm`
+ * (m³/m³) — both served by the tier-1 and tier-2 ECMWF providers — which are
+ * consumed by `computeWstar()` in extract.ts to derive the Deardorff convective
+ * velocity scale. These fields are not required (not in THERMAL_REQUIRED): if a
+ * fallback tier cannot supply them the point is still kept, and w* will be
+ * undefined for that point rather than discarding it.
  */
 
 import { buildLandTiles } from "../utils/gridTiles.js";
@@ -24,6 +31,8 @@ const THERMAL_VARIABLES: Variable[] = [
   "boundary_layer_height",
   "temperature_2m",
   "dew_point_2m",
+  "shortwave_radiation",
+  "soil_moisture_0_to_7cm",
 ];
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
@@ -50,6 +59,8 @@ function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
       boundary_layer_height: seriesOf(p, "boundary_layer_height", n),
       temperature_2m: seriesOf(p, "temperature_2m", n),
       dew_point_2m: seriesOf(p, "dew_point_2m", n),
+      shortwave_radiation: seriesOf(p, "shortwave_radiation", n),
+      soil_moisture_0_to_7cm: seriesOf(p, "soil_moisture_0_to_7cm", n),
     },
   };
 }
