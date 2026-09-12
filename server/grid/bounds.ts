@@ -12,10 +12,24 @@ import type { SourceId } from "./types.js";
 
 const log = createLogger("grid:bounds");
 
-export const FINE_LAT_MIN = -44.5;
-export const FINE_LAT_MAX = -35.0;
-export const FINE_LON_MIN = 139.0;
-export const FINE_LON_MAX = 155.0;
+/**
+ * Box edges, chosen to land useful lattice rows once `buildLandTiles` snaps to
+ * multiples of the spacing (it takes ceil/floor of edge/delta, so an edge only
+ * half a cell outside the target yields nothing):
+ *   latMax -33.90 → northernmost 0.09° row at -33.93, covering all of the
+ *     Mallee and Sunraysia. The previous -35.0 snapped to -35.01 and cut the
+ *     grid off south of Swan Hill; Mildura has never had thermal data.
+ *   latMin -43.70 → southernmost row at -43.65, past South East Cape, so
+ *     Tasmania and the Bass Strait islands are covered rather than being dead
+ *     coverage rings in gridTiles.ts.
+ * Longitude is deliberately tight to the coverage rings: the old 155.0 reached
+ * 400 km into the Tasman Sea, which the land clip discarded and the rectangular
+ * wind grid did not.
+ */
+export const FINE_LAT_MIN = -43.7;
+export const FINE_LAT_MAX = -33.9;
+export const FINE_LON_MIN = 140.0;
+export const FINE_LON_MAX = 151.0;
 
 /** Fine (wind) grid spacing in degrees. */
 export const FINE_DELTA = 0.15;

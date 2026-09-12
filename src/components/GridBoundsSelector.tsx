@@ -9,7 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
-const DEFAULT_FINE = { latMin: -44.5, latMax: -35.0, lonMin: 139.0, lonMax: 155.0 };
+// Must match FINE_LAT_MIN/MAX and FINE_LON_MIN/MAX in server/grid/bounds.ts.
+const DEFAULT_FINE = { latMin: -43.7, latMax: -33.9, lonMin: 140.0, lonMax: 151.0 };
 
 type Bounds = { latMin: number; latMax: number; lonMin: number; lonMax: number };
 
