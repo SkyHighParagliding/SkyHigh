@@ -7,7 +7,7 @@ import { buildColumnTiles, buildRectangularTiles } from "./utils/gridTiles.js";
 const FINE_GRID_CACHE_KEY = "fine_grid";
 const THERMAL_GRID_CACHE_KEY = "thermal_grid";
 const GRID_CACHE_EXPIRY = 26 * 60 * 60 * 1000;
-const TILE_DELAY_MS = 3000;
+const TILE_DELAY_MS = 5000;
 
 // Exported so the weather scraper can yield during grid fetches
 export let gridFetchActive = false;

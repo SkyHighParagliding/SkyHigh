@@ -15,9 +15,6 @@ export async function fetchWithRetry(url: string, options: any = {}, retries = 5
         const statusCode = response.status;
         lastStatusCode = statusCode;
         const errorMsg = `HTTP error! status: ${statusCode}`;
-        if (statusCode === 429) {
-          throw new Error(errorMsg);
-        }
         throw new Error(errorMsg);
       }
       const contentType = response.headers.get('content-type') || '';
@@ -29,6 +26,7 @@ export async function fetchWithRetry(url: string, options: any = {}, retries = 5
     } catch (err) {
       clearTimeout(timeoutId);
       if (i === retries - 1) throw err;
+      if (err instanceof Error && err.message.includes('429')) throw err;
       const wait = backoff * Math.pow(2, i);
       log.warn(`Fetch failed (attempt ${i + 1}/${retries}). Retrying in ${wait}ms...`, err instanceof Error ? err.message : err);
       await delay(wait);

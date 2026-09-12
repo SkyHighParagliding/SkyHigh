@@ -2,6 +2,7 @@ import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
 import { fetchWeatherData, LIVE_WIND_VIC_URL, getScraperNextRun } from "../weather.js";
 import { fetchWithRetry, degreesToDirection, isWuStationId } from "../weather-utils.js";
+import { OPEN_METEO_URL } from "../utils/openMeteo.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
 import { getDavisStations, getDavisStationId, parseDavisStationId } from "../davisWeather.js";
@@ -729,7 +730,7 @@ router.get("/:siteId/wind-grid", asyncHandler(async (req, res) => {
 
   const latParam = lats.join(",");
   const lonParam = lons.join(",");
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latParam}&longitude=${lonParam}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=ecmwf_ifs025&wind_speed_unit=kn&timezone=Australia%2FMelbourne&forecast_days=1`;
+  const url = `${OPEN_METEO_URL}?latitude=${latParam}&longitude=${lonParam}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=ecmwf_ifs025&wind_speed_unit=kn&timezone=Australia%2FMelbourne&forecast_days=1`;
 
   const data = await fetchWithRetry(url);
   if (!data) {

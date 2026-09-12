@@ -188,39 +188,40 @@ async function retryThermalFailedTiles() {
 }
 
 async function startupGridCheck() {
-  const RECENT_FETCH_MS = 22 * 60 * 60 * 1000; // 22 hours — safe window before next 5am run; prevents evening deploys from refetching
+  const todayMelb = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
 
-  // Check fine grid: only fetch if NOT fetched within last 12 hours
-  const vicLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'fineGridLastRun'");
-  if (vicLastRun?.value) {
-    const timeSinceLastRun = Date.now() - new Date(vicLastRun.value).getTime();
-    if (timeSinceLastRun < RECENT_FETCH_MS) {
-      log.info(`Fine grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
-    } else {
-      log.info(`Fine grid last fetched ${Math.round(timeSinceLastRun / 3600000)}h ago — fetching in 60s...`);
-      setTimeout(() => fetchFineGridDaily(), 60_000);
-    }
-  } else {
-    log.info("Fine grid never fetched — fetching in 60s...");
+  // Fine grid: check if today's DB row exists — a failed run still updates fineGridLastRun,
+  // so a timestamp check alone can mistake a failed run for "recently fetched".
+  const fineGridToday = await queryOne<{ siteId: string }>(
+    `SELECT "siteId" FROM wind_grid_data WHERE "siteId" = $1`,
+    [`fine_grid_${todayMelb}`]
+  );
+  if (!fineGridToday) {
+    const vicLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'fineGridLastRun'");
+    const hoursAgo = vicLastRun?.value ? Math.round((Date.now() - new Date(vicLastRun.value).getTime()) / 3600000) : null;
+    log.info(`Fine grid: no data for today (${todayMelb})${hoursAgo !== null ? `, last attempt ${hoursAgo}h ago` : ''} — fetching in 60s...`);
     setTimeout(() => fetchFineGridDaily(), 60_000);
+  } else {
+    log.info(`Fine grid: today's data already cached (${todayMelb}) — skipping startup fetch`);
   }
 
-  // Check thermal grid: fetch if stale OR if failed tiles are pending retry
-  const thermalLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridLastRun'");
+  // Thermal grid: same today-row check, plus failed tiles pending retry
   const thermalFailedTiles = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'");
   const hasPendingRetry = !!thermalFailedTiles?.value && JSON.parse(thermalFailedTiles.value).length > 0;
-  if (thermalLastRun?.value) {
-    const timeSinceLastRun = Date.now() - new Date(thermalLastRun.value).getTime();
-    if (timeSinceLastRun < RECENT_FETCH_MS && !hasPendingRetry) {
-      log.info(`Thermal grid recently fetched (${Math.round(timeSinceLastRun / 3600000)}h ago) — skipping startup fetch`);
-    } else {
-      const reason = hasPendingRetry ? 'failed tiles pending retry' : `${Math.round(timeSinceLastRun / 3600000)}h old`;
-      log.info(`Thermal grid startup fetch triggered (${reason}) — running in 3min...`);
-      setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
-    }
-  } else {
-    log.info("Thermal grid never fetched — fetching in 3min...");
+  const thermalGridToday = await queryOne<{ siteId: string }>(
+    `SELECT "siteId" FROM wind_grid_data WHERE "siteId" = $1`,
+    [`thermal_grid_${todayMelb}`]
+  );
+  if (hasPendingRetry) {
+    log.info(`Thermal grid startup fetch triggered (failed tiles pending retry) — running in 3min...`);
     setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
+  } else if (!thermalGridToday) {
+    const thermalLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridLastRun'");
+    const hoursAgo = thermalLastRun?.value ? Math.round((Date.now() - new Date(thermalLastRun.value).getTime()) / 3600000) : null;
+    log.info(`Thermal grid: no data for today (${todayMelb})${hoursAgo !== null ? `, last attempt ${hoursAgo}h ago` : ''} — fetching in 3min...`);
+    setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
+  } else {
+    log.info(`Thermal grid: today's data already cached (${todayMelb}) — skipping startup fetch`);
   }
 }
 
