@@ -46,6 +46,13 @@ export function buildOpenMeteoParams({
  * Builds a JSON body for an Open-Meteo forecast POST request.
  * Use this instead of buildOpenMeteoParams when sending large batches
  * (>~90 points) to avoid URL-length limits.
+ *
+ * `models` and `timezone` MUST be arrays here, unlike the GET form where they
+ * are plain strings. The POST decoder rejects a bare string with
+ * `Expected Array<Any> at 'timezone'` and returns 400 — which, because the
+ * fetch helper used to discard response bodies, surfaced only as an opaque
+ * retry storm rather than a legible error. `wind_speed_unit` stays a string;
+ * the decoder accepts that one either way.
  */
 export function buildOpenMeteoBody({
   lats,
@@ -58,9 +65,9 @@ export function buildOpenMeteoBody({
     latitude: lats,
     longitude: lons,
     hourly: hourlyFields.split(','),
-    models: 'ecmwf_ifs',
+    models: ['ecmwf_ifs'],
     wind_speed_unit: 'kn',
-    timezone: 'Australia/Melbourne',
+    timezone: ['Australia/Melbourne'],
     forecast_days: forecastDays,
   };
   if (apiKey) body.apikey = apiKey;

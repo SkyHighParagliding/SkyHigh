@@ -25,6 +25,7 @@ import type {
   Variable,
 } from "../types.js";
 import { uvToSpeedDir } from "../types.js";
+import { currentAxisOrigin, toMelbourneLocal } from "../time.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -47,27 +48,6 @@ const READ_PARALLELISM = 20;
 const IO_SIZE_MAX  = BigInt(512 * 1024); // 512 KB per HTTP range request
 const IO_SIZE_MERGE = BigInt(128 * 1024); // merge adjacent chunks within 128 KB
 
-// ---------------------------------------------------------------------------
-// Melbourne local time formatting
-// ---------------------------------------------------------------------------
-
-// Archive timestamps are UTC epoch-seconds. Persisted format is Melbourne-local
-// YYYY-MM-DDTHH:mm. Intl handles DST (AEST UTC+10, AEDT UTC+11) automatically.
-const MELBOURNE_FMT = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Australia/Melbourne",
-  year:     "numeric",
-  month:    "2-digit",
-  day:      "2-digit",
-  hour:     "2-digit",
-  minute:   "2-digit",
-  hour12:   false,
-});
-
-function toMelbourneLocal(epochSec: number): string {
-  const parts = MELBOURNE_FMT.formatToParts(new Date(epochSec * 1000));
-  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-}
 
 // ---------------------------------------------------------------------------
 // Concurrency limiter (reused by both providers)
@@ -367,21 +347,25 @@ async function gfsReadCell(
   backend: OmHttpBackend,
   iLat: number,
   iLon: number,
-  tSteps: number,
+  tStart: number,
+  tEnd: number,
   is3D: boolean,
 ): Promise<Float32Array | null> {
   return withSlowDownRetry(async () => {
     const reader = await OmFileReader.create(backend as unknown as Parameters<typeof OmFileReader.create>[0]);
     try {
+      // Chunks are 481-hour blocks aligned to the epoch, so the forecast window
+      // almost always starts mid-chunk. Reading from index 0 would return data
+      // from weeks ago, silently labelled with today's timestamps.
       const ranges = is3D
         ? [
             { start: iLat, end: iLat + 1 },
             { start: iLon, end: iLon + 1 },
-            { start: 0, end: tSteps },
+            { start: tStart, end: tEnd },
           ]
         : [
             { start: iLat * GFS_NLON + iLon, end: iLat * GFS_NLON + iLon + 1 },
-            { start: 0, end: tSteps },
+            { start: tStart, end: tEnd },
           ];
       return await reader.read({
         type:  OmDataType.FloatArray,
@@ -454,9 +438,9 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
   const vars = variables.filter(v => ECMWF_SUPPORTED.has(v));
   if (vars.length === 0) return { source: "openmeteo-s3-ecmwf", points: [] };
 
-  const nowEpoch  = Math.floor(Date.now() / 1000);
-  const endEpoch  = nowEpoch + forecastDays * 86400;
-  const startChunk = ecmwfChunkForTime(nowEpoch);
+  const originEpoch = currentAxisOrigin();
+  const endEpoch    = originEpoch + forecastDays * 86400;
+  const startChunk = ecmwfChunkForTime(originEpoch);
   const endChunk   = ecmwfChunkForTime(endEpoch);
 
   // Determine which native S3 variable names we need.
@@ -497,9 +481,9 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
     const chunkEnd   = chunkStart + 504 * 3600;
 
     // Time slice within this chunk that falls in our forecast window.
-    const tStart = Math.max(0, Math.round((nowEpoch - chunkStart) / 3600));
+    const tStart = Math.max(0, Math.round((originEpoch - chunkStart) / 3600));
     const tEnd   = Math.min(504, Math.round((endEpoch - chunkStart) / 3600) + 1);
-    if (tStart >= tEnd || chunkEnd < nowEpoch) continue;
+    if (tStart >= tEnd || chunkEnd < originEpoch) continue;
 
     const tCount = tEnd - tStart;
 
@@ -557,9 +541,8 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
   // Build time strings for the full forecast window.
   const totalHours = forecastDays * 24;
   const timeStrings: string[] = [];
-  const nowTruncated = Math.floor(nowEpoch / 3600) * 3600;
   for (let h = 0; h < totalHours; h++) {
-    timeStrings.push(toMelbourneLocal(nowTruncated + h * 3600));
+    timeStrings.push(toMelbourneLocal(originEpoch + h * 3600));
   }
 
   // Assemble PointSeries.
@@ -620,9 +603,9 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
   const vars = variables.filter(v => GFS_SUPPORTED.has(v));
   if (vars.length === 0) return { source: "openmeteo-s3-gfs", points: [] };
 
-  const nowEpoch   = Math.floor(Date.now() / 1000);
-  const endEpoch   = nowEpoch + forecastDays * 86400;
-  const startChunk = gfsChunkForTime(nowEpoch);
+  const originEpoch = currentAxisOrigin();
+  const endEpoch    = originEpoch + forecastDays * 86400;
+  const startChunk = gfsChunkForTime(originEpoch);
   const endChunk   = gfsChunkForTime(endEpoch);
 
   const needsWind = vars.includes("wind_speed_10m") || vars.includes("wind_direction_10m");
@@ -646,9 +629,9 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
     if (signal?.aborted) break;
     const chunkStart = gfsChunkStartEpoch(chunk);
     const chunkEnd   = chunkStart + GFS_CHUNK_HOURS * 3600;
-    if (chunkEnd < nowEpoch) continue;
+    if (chunkEnd < originEpoch) continue;
 
-    const tStart = Math.max(0, Math.round((nowEpoch - chunkStart) / 3600));
+    const tStart = Math.max(0, Math.round((originEpoch - chunkStart) / 3600));
     const tEnd   = Math.min(GFS_CHUNK_HOURS, Math.round((endEpoch - chunkStart) / 3600) + 1);
     if (tStart >= tEnd) continue;
 
@@ -686,7 +669,7 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
           if (signal?.aborted) return;
           let data: Float32Array | null = null;
           try {
-            data = await gfsReadCell(backend, gp.grid.iLat, gp.grid.iLon, tCount, is3D);
+            data = await gfsReadCell(backend, gp.grid.iLat, gp.grid.iLon, tStart, tEnd, is3D);
           } catch (err) {
             log.warn(`GFS cell read failed`, { chunk, s3Var, iLat: gp.grid.iLat, iLon: gp.grid.iLon, error: String(err) });
             return;
@@ -709,9 +692,8 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
   // Build time strings.
   const totalHours = forecastDays * 24;
   const timeStrings: string[] = [];
-  const nowTruncated = Math.floor(nowEpoch / 3600) * 3600;
   for (let h = 0; h < totalHours; h++) {
-    timeStrings.push(toMelbourneLocal(nowTruncated + h * 3600));
+    timeStrings.push(toMelbourneLocal(originEpoch + h * 3600));
   }
 
   const collected: PointSeries[] = [];

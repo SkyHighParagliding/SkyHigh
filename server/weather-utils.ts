@@ -8,14 +8,18 @@ export async function fetchWithRetry(url: string, options: any = {}, retries = 5
   for (let i = 0; i < retries; i++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout per attempt
+    lastStatusCode = 0; // per-attempt: a previous attempt's status must not classify this one
     try {
       const response = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) {
         const statusCode = response.status;
         lastStatusCode = statusCode;
-        const errorMsg = `HTTP error! status: ${statusCode}`;
-        throw new Error(errorMsg);
+        // Include the body: APIs explain themselves there, and discarding it
+        // turned a one-line Open-Meteo schema complaint into an opaque
+        // "status: 400" that went unnoticed through many daily grid fetches.
+        const detail = await response.text().catch(() => "");
+        throw new Error(`HTTP error! status: ${statusCode}${detail ? ` — ${detail.slice(0, 300)}` : ""}`);
       }
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
@@ -26,7 +30,11 @@ export async function fetchWithRetry(url: string, options: any = {}, retries = 5
     } catch (err) {
       clearTimeout(timeoutId);
       if (i === retries - 1) throw err;
-      if (err instanceof Error && err.message.includes('429')) throw err;
+      // 4xx means the request itself is wrong — retrying sends the identical
+      // bad request again. Only transient failures (5xx, network, timeout)
+      // deserve a retry. 429 is a 4xx too: back off at a higher level, or in
+      // the grid's case escalate to another provider.
+      if (lastStatusCode >= 400 && lastStatusCode < 500) throw err;
       const wait = backoff * Math.pow(2, i);
       log.warn(`Fetch failed (attempt ${i + 1}/${retries}). Retrying in ${wait}ms...`, err instanceof Error ? err.message : err);
       await delay(wait);

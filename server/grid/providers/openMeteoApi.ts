@@ -184,9 +184,14 @@ export const openMeteoApiProvider: GridProvider = {
           if (!r?.hourly) continue;
           const h = r.hourly;
 
-          // Guard: a point without both wind arrays is unusable downstream.
-          if (!Array.isArray(h.wind_speed_10m) || !Array.isArray(h.wind_direction_10m)) {
-            log.warn(`Skipping point ${tile.lats[j]},${tile.lons[j]} — missing wind arrays`);
+          // Guard against a point that carries none of what was asked for.
+          // This must be phrased in terms of the request: an earlier version
+          // demanded wind arrays unconditionally, which silently discarded
+          // every point of the thermal grid — it asks for CAPE and boundary
+          // layer height, and no wind at all.
+          const values = extractValues(h, variables);
+          if (Object.keys(values).length === 0) {
+            log.warn(`Skipping point ${tile.lats[j]},${tile.lons[j]} — no requested variables returned`);
             continue;
           }
 
@@ -194,7 +199,7 @@ export const openMeteoApiProvider: GridProvider = {
             lat: tile.lats[j],
             lon: tile.lons[j],
             time: h.time ?? [],
-            values: extractValues(h, variables),
+            values,
           });
         }
 

@@ -139,7 +139,10 @@ export function extractSiteForecast(
   const windSpeed = Math.round(nearest.hourly.wind_speed_10m[hourIdx] ?? 0);
   const windGust = Math.round(nearest.hourly.wind_gusts_10m[hourIdx] ?? 0);
   const windDirection = degreesToDirection(nearest.hourly.wind_direction_10m[hourIdx] ?? 0);
-  const weatherCode = nearest.hourly.weather_code[hourIdx] ?? 0;
+  // No `?? 0` here: 0 is "Clear sky", and the fallback tiers do not carry
+  // weather_code at all. Defaulting would show a sun icon for a point we have
+  // no sky observation for. An absent code falls through to "Unknown".
+  const weatherCode = nearest.hourly.weather_code[hourIdx];
   const time = nearest.hourly.time[hourIdx];
 
   const { text: summary, icon } = getWeatherCodeSummary(weatherCode);

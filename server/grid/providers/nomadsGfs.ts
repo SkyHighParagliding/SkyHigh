@@ -25,6 +25,7 @@ import type {
   Variable,
 } from "../types.js";
 import { uvToSpeedDir } from "../types.js";
+import { currentAxisOrigin, toMelbourneLocal } from "../time.js";
 
 // ---------------------------------------------------------------------------
 // Unit conversion constants
@@ -187,6 +188,14 @@ function latestCycle(): { dateStr: string; cycleHour: number } {
   return { dateStr: `${y}${m}${d}`, cycleHour: 18 };
 }
 
+/** UTC epoch-seconds of a cycle's reference time. */
+function cycleRefEpoch(dateStr: string, cycleHour: number): number {
+  const y = Number(dateStr.slice(0, 4));
+  const m = Number(dateStr.slice(4, 6));
+  const d = Number(dateStr.slice(6, 8));
+  return Date.UTC(y, m - 1, d, cycleHour) / 1000;
+}
+
 /** Steps back one cycle (wraps over midnight). */
 function previousCycle(
   dateStr: string,
@@ -238,27 +247,6 @@ function computeBbox(points: LatLon[]): Bbox {
 // ---------------------------------------------------------------------------
 // Melbourne local time formatting
 // ---------------------------------------------------------------------------
-
-// GRIB reference times are UTC. The persisted format is Melbourne-local
-// YYYY-MM-DDTHH:mm. We use Intl.DateTimeFormat to handle DST correctly —
-// Melbourne is UTC+10 in standard time (AEST) and UTC+11 during DST (AEDT).
-const MELBOURNE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Australia/Melbourne",
-  year:     "numeric",
-  month:    "2-digit",
-  day:      "2-digit",
-  hour:     "2-digit",
-  minute:   "2-digit",
-  hour12:   false,
-});
-
-function toMelbourneLocal(utcDate: Date): string {
-  // en-CA locale produces "YYYY-MM-DD, HH:mm" which we reshape to the
-  // canonical "YYYY-MM-DDTHH:mm" format.
-  const parts = MELBOURNE_FORMATTER.formatToParts(utcDate);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-}
 
 // ---------------------------------------------------------------------------
 // Concurrency limiter
@@ -329,20 +317,34 @@ export const nomadsGfsProvider: GridProvider = {
 
     const bbox = computeBbox(req.points);
     const totalHours = req.forecastDays * 24;
-    // GFS provides 1-hourly steps for hours 0–120, then 3-hourly.
-    // We request hourly for the first 120 h and 3-hourly beyond that.
-    const forecastHours: number[] = [];
-    for (let h = 0; h <= Math.min(totalHours, 120); h++) {
-      forecastHours.push(h);
-    }
-    for (let h = 123; h <= totalHours; h += 3) {
-      forecastHours.push(h);
+    const originEpoch = currentAxisOrigin();
+
+    // Resolve a cycle. It must have been run at or before the axis origin,
+    // otherwise its earliest forecast hour lands after midnight local and the
+    // merged grid loses its leading hours. In practice the newest published
+    // cycle already satisfies this (the 5am Melbourne fetch sees 12Z from the
+    // previous UTC day, two hours before local midnight); the step-back only
+    // bites near the top of the local day.
+    let { dateStr, cycleHour } = latestCycle();
+    while (cycleRefEpoch(dateStr, cycleHour) > originEpoch) {
+      ({ dateStr, cycleHour } = previousCycle(dateStr, cycleHour));
     }
 
-    // Resolve the most recent available cycle, retrying up to 3 cycles back.
-    let { dateStr, cycleHour } = latestCycle();
+    // Forecast hours are numbered from the cycle's reference time, so the
+    // window we want is offset by the gap between that and the axis origin.
+    // GFS publishes 1-hourly steps out to hour 120, then 3-hourly.
+    const hoursForCycle = (date: string, cycle: number): number[] => {
+      const offset = Math.round((originEpoch - cycleRefEpoch(date, cycle)) / 3600);
+      const hours: number[] = [];
+      for (let h = offset; h <= offset + totalHours && h <= 120; h++) hours.push(h);
+      for (let h = Math.max(123, offset); h <= offset + totalHours; h += 3) hours.push(h);
+      return hours;
+    };
+
+    let forecastHours = hoursForCycle(dateStr, cycleHour);
     let cycleResolved = false;
     for (let attempt = 0; attempt < 3; attempt++) {
+      forecastHours = hoursForCycle(dateStr, cycleHour);
       const probeHour = forecastHours[Math.min(1, forecastHours.length - 1)];
       const probeUrl = buildUrl(dateStr, cycleHour, probeHour, bbox, requestedVars);
       try {
@@ -467,8 +469,7 @@ export const nomadsGfsProvider: GridProvider = {
       for (const fh of sortedHours) {
         const byVar = decoded.get(fh)!;
 
-        const validTime = new Date(referenceTimeMs + fh * 3_600_000);
-        timeStrings.push(toMelbourneLocal(validTime));
+        timeStrings.push(toMelbourneLocal(referenceTimeMs / 1000 + fh * 3600));
 
         // Wind speed + direction are derived together from u + v components.
         const uField = byVar.get("wind_speed_10m");
