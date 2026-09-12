@@ -221,7 +221,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   }
 
   const fullscreenClasses = isFullscreen
-    ? 'fixed inset-0 z-[10001] w-screen h-screen'
+    // dvh, not vh: on iOS Safari `100vh` is the *large* viewport, so the bottom
+    // of the map slides under the collapsing toolbar and takes the tray with it.
+    ? 'fixed inset-0 z-[10001] w-screen h-[100dvh]'
     : 'w-full h-full relative';
 
   const canvasFallback = (

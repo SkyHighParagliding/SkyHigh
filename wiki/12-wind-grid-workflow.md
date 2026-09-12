@@ -139,16 +139,16 @@ scheduledJobs: write fineGridLastRun + fineGridLastResult to settings
 
 ## 2. Thermal Grid
 
-**What it does:** Fetches 2-day hourly CAPE (Convective Available Potential Energy) and BLH (Boundary Layer Height) across Victoria at 0.09° resolution. This feeds the coloured thermal overlay on the wind map. Uses column tiling (Victoria polygon clipped) so thermal data is land-focused.
+**What it does:** Fetches 2-day hourly CAPE (Convective Available Potential Energy) and BLH (Boundary Layer Height) across Victoria at 0.09° resolution. This feeds the coloured thermal overlay on the wind map. Clipped to coastline polygons so thermal data is land-focused — thermals do not form over water.
 
 ### Specification
 
 | Property | Value |
 |---|---|
 | Resolution | 0.09° (~10km) |
-| Coverage | Same configured bounds, but column-clipped to Victoria polygon |
-| Tiling method | `buildColumnTiles` — per-longitude-column, clipped to VIC lat range, 300 pts/tile |
-| Estimated tile count | ~60–80 column tiles |
+| Coverage | Same configured bounds, clipped to land (mainland SE Australia, Tasmania, King/Flinders Is) + 0.2° buffer — 6,276 points |
+| Tiling method | `buildLandTiles` — coastline point-in-polygon + 0.2 deg buffer, 300 pts/tile |
+| Estimated tile count | ~21 tiles |
 | Tile delay | 3,000ms between tiles |
 | Estimated fetch time | ~3–5 minutes (full grid) |
 | Forecast days | 2 |
@@ -179,8 +179,8 @@ fetchThermalGrid(force=true) [victoriaGrid.ts]
 doFetchThermalGrid()
     │
     ├── Read bounds from settings
-    ├── buildColumnTiles(bounds, delta=0.09, maxPerTile=300)
-    │       → Per-longitude column, clips lat range to Victoria polygon
+    ├── buildLandTiles(bounds, delta=0.09, maxPerTile=300)
+    │       → 0-origin lattice, keeps points on land or within 0.2° of a coast
     │
     ├── CHECK thermalGridFailedTiles in settings:
     │   ├── EMPTY → fresh fetch: tilesToFetch = allTiles, basePoints = []
@@ -268,8 +268,8 @@ Round 2 complete with 0 failed:  "ok"
 | Property | Value |
 |---|---|
 | Resolution | 0.5° (~55km) |
-| Coverage | Same configured bounds, column-clipped |
-| Tiling method | `buildColumnTiles`, 50 pts/tile |
+| Coverage | Same configured bounds, land-clipped |
+| Tiling method | `buildLandTiles`, 50 pts/tile |
 | Tile delay | 500ms between tiles (shorter — smaller payload per tile) |
 | Forecast days fetched | 8 |
 | Days kept | Days 3–8 (tomorrow+1 onwards) |
@@ -301,7 +301,7 @@ fetchExtendedForecast()
     ├── extendedFetchInProgress guard (deduplicates)
     │
     ├── Read bounds from settings (shared with fine/thermal)
-    ├── buildColumnTiles(bounds, delta=0.5, maxPerTile=50)
+    ├── buildLandTiles(bounds, delta=0.5, maxPerTile=50)
     │
     ├── setExtProgress("0 / N tiles")
     │
@@ -454,10 +454,17 @@ All requests use:
 File: `server/utils/gridTiles.ts`
 
 ### `buildRectangularTiles` (Fine grid only)
-Full bounding box — every lat/lon cell in the rectangle, chunked to `maxPerTile` points. No geographic clipping. Includes ocean, NSW, SA, Tasmania. Eliminates the column-boundary stepping artifacts that column tiling caused.
+Full bounding box — every lat/lon cell in the rectangle, chunked to `maxPerTile` points. No geographic clipping. Includes ocean, NSW, SA, Tasmania. Wind particles interpolate across the whole viewport, so a clipped grid would leave dead zones.
 
-### `buildColumnTiles` (Thermal + Extended)
-Per-longitude-column, with each column's lat range clipped to the Victorian coastline polygon. Reduces point count by ~35% versus a full rectangle for Victoria-only data. Used for thermal (land-clipped thermal data more useful than ocean CAPE values) and extended (lower resolution makes the savings less significant, but column tiles are retained for consistency).
+### `buildLandTiles` (Thermal + Extended)
+Point-in-polygon clip against coastline rings (mainland SE Australia, Tasmania, King and Flinders Islands) plus a 0.2° buffer. Points are generated from step indices off a 0-origin lattice, so every point is an exact multiple of `delta`. Thermal drops from 10,710 to 6,276 points (−41%).
+
+Replaced `buildColumnTiles` on 2026-09-12. That function split the box into four longitude columns and clipped each one independently to whichever Victoria border vertices fell inside it. Two consequences:
+
+- Victoria's northern border is the Murray, which dips ~1.5° south in the centre-east, so adjacent columns stopped at different latitudes and left **hard-edged rectangular voids** in the overlay — most visibly at lon 147–151, lat −35.7 to −34.9.
+- The "no border vertices in this column" case fell back to the *full bounding box*, so the easternmost column fetched 4,860 points of open Tasman Sea (45% of the thermal budget) while **Tasmania had no thermal data at all**.
+
+Each column also started its longitudes at its own fractional origin, off the `delta` lattice the renderer assumes, shifting the overlay by up to 0.27° (~24 km) east of each seam.
 
 ---
 

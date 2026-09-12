@@ -6,7 +6,7 @@ import { getTimeWindow } from "./grid/extract.js";
 import { getGridBounds } from "./grid/bounds.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
 import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
-import { buildColumnTiles } from "./utils/gridTiles.js";
+import { buildLandTiles } from "./utils/gridTiles.js";
 
 const EXT_DELTA = 0.5;
 
@@ -162,7 +162,7 @@ export async function fetchExtendedForecast(): Promise<void> {
 
   try {
     const fineBounds = await getGridBounds();
-    const tiles = buildColumnTiles(
+    const tiles = buildLandTiles(
       { lonMin: fineBounds.fineLonMin, lonMax: fineBounds.fineLonMax, latMin: fineBounds.fineLatMin, latMax: fineBounds.fineLatMax },
       EXT_DELTA, 50
     );

@@ -351,8 +351,20 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
 
   const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
 
-  const subLons = [...new Set(grid.points.map(p => p.lon))].sort((a, b) => a - b);
-  const subLats = [...new Set(grid.points.map(p => p.lat))].sort((a, b) => a - b);
+  // The overlay is addressed by the renderer as a uniform lattice: it computes a
+  // cell index from (lon - lonMin) / deltaLon. So ni and nj must come from the
+  // lattice spacing, NOT from the count of distinct values present. The grid is
+  // clipped to land, and a latitude band that happens to be all water (Bass
+  // Strait) contributes no points at all — counting distinct values would drop
+  // that row and slide everything south of it northward.
+  const lons = grid.points.map(p => p.lon);
+  const lats = grid.points.map(p => p.lat);
+  const lonMin = Math.min(...lons);
+  const lonMax = Math.max(...lons);
+  const latMin = Math.min(...lats);
+  const latMax = Math.max(...lats);
+  const ni = Math.round((lonMax - lonMin) / grid.delta) + 1;
+  const nj = Math.round((latMax - latMin) / grid.delta) + 1;
 
   const pointMap = new Map<string, ThermalPoint>();
   for (const p of grid.points) {
@@ -364,8 +376,10 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
   for (let t = 0; t < selectedTimes.length; t++) {
     const timeIdx = startIdx + t;
     const timeStepData: Array<ThermalCell | null> = [];
-    for (const lat of subLats) {
-      for (const lon of subLons) {
+    for (let j = 0; j < nj; j++) {
+      const lat = latMin + j * grid.delta;
+      for (let i = 0; i < ni; i++) {
+        const lon = lonMin + i * grid.delta;
         const point = pointMap.get(`${lat.toFixed(4)},${lon.toFixed(4)}`);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
           // Both readings must be real. An earlier version defaulted to 15/10 °C,
@@ -389,14 +403,14 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
   }
 
   const result: ThermalOverlay = {
-    lonMin: parseFloat(subLons[0].toFixed(4)),
-    lonMax: parseFloat(subLons[subLons.length - 1].toFixed(4)),
-    latMin: parseFloat(subLats[0].toFixed(4)),
-    latMax: parseFloat(subLats[subLats.length - 1].toFixed(4)),
+    lonMin: parseFloat(lonMin.toFixed(4)),
+    lonMax: parseFloat(lonMax.toFixed(4)),
+    latMin: parseFloat(latMin.toFixed(4)),
+    latMax: parseFloat(latMax.toFixed(4)),
     deltaLon: grid.delta,
     deltaLat: grid.delta,
-    ni: subLons.length,
-    nj: subLats.length,
+    ni,
+    nj,
     times: selectedTimes,
     data,
   };

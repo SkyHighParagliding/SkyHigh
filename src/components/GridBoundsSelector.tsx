@@ -198,7 +198,7 @@ export function GridBoundsSelector({
               {fine.latMin.toFixed(1)}°–{fine.latMax.toFixed(1)}° lat · {fine.lonMin.toFixed(1)}°–{fine.lonMax.toFixed(1)}° lon · {boundsArea(fine)}°² area
             </div>
             <div className="text-xs text-muted-foreground">
-              All three grids (Fine 0.15°, Thermal 0.09°, Extended 0.5°) use these bounds. The Victoria polygon clips each column to a tighter lat range server-side, reducing actual tile count by ~35%.
+              All three grids (Fine 0.15°, Thermal 0.09°, Extended 0.5°) use these bounds. Thermal and Extended are clipped to land plus a 0.2° coastal buffer server-side, cutting their point count by ~40%; Fine fetches the full rectangle so wind particles have no dead zones.
             </div>
           </div>
 

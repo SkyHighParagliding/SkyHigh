@@ -99,7 +99,7 @@ server/
 ├── utils/
 │   ├── scheduledJobs.ts        # All cron jobs: fine/thermal/extended grid, version check
 │   ├── openMeteo.ts            # buildOpenMeteoParams / buildOpenMeteoBody
-│   ├── gridTiles.ts            # buildColumnTiles / buildRectangularTiles
+│   ├── gridTiles.ts            # buildLandTiles / buildRectangularTiles
 │   ├── asyncHandler.ts         # Express async error wrapper
 │   ├── logger.ts               # Structured logger factory (createLogger)
 │   ├── email.ts                # Email sending (admin notifications)

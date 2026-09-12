@@ -26,7 +26,17 @@ export function WindMapScrubberTray({
   return (
     <div
       className="absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-in-out"
-      style={{ transform: trayOpen ? 'translateY(0)' : `translateY(calc(100% - ${TRAY_HANDLE_HEIGHT_PX}px))` }}
+      style={{
+        // Collapsed, the tray is pushed down by its own height less the handle
+        // AND less the home-indicator inset. Without the inset term the handle
+        // lands inside iOS's bottom gesture strip, where the system swipe claims
+        // every touch and the tray simply cannot be opened. The strip below the
+        // handle is then filled by the top of the control bar, so the tray still
+        // reads as flush with the screen edge.
+        transform: trayOpen
+          ? 'translateY(0)'
+          : `translateY(calc(100% - ${TRAY_HANDLE_HEIGHT_PX}px - env(safe-area-inset-bottom, 0px)))`,
+      }}
     >
       <div className="flex justify-center">
         <button
@@ -38,7 +48,11 @@ export function WindMapScrubberTray({
           <ChevronUp aria-hidden="true" className={`w-3 h-3 text-white/50 transition-transform duration-300 ${trayOpen ? 'rotate-180' : ''}`} />
         </button>
       </div>
-      <div className="bg-black/85 border-t border-white/10 px-3 py-2" inert={!trayOpen}>
+      <div
+        className="bg-black/85 border-t border-white/10 px-3 pt-2 pb-2"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
+        inert={!trayOpen}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={onPlayToggle}

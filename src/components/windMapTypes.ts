@@ -63,4 +63,10 @@ const PLAY_SPEEDS = [5000, 2500, 1250] as const;
 export type PlaySpeed = typeof PLAY_SPEEDS[number];
 export const nextSpeed = (current: PlaySpeed): PlaySpeed =>
   PLAY_SPEEDS[(PLAY_SPEEDS.indexOf(current) + 1) % PLAY_SPEEDS.length];
-export const TRAY_HANDLE_HEIGHT_PX = 24;
+/**
+ * Height of the always-visible tray grab handle. 32 rather than the original 24
+ * because on a home-indicator iPhone the handle is the only part of the tray a
+ * user can aim at, and a 24px strip flush against the screen edge is a hard
+ * target. The tray is also lifted clear of the indicator — see WindMapScrubberTray.
+ */
+export const TRAY_HANDLE_HEIGHT_PX = 32;

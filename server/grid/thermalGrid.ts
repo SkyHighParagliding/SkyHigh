@@ -1,17 +1,17 @@
 /**
  * Thermal grid — 0.09° CAPE / boundary-layer field for thermal forecasting.
  *
- * Geometry note: unlike the fine grid this one is clipped to the Victoria
- * polygon by `buildColumnTiles`. Thermal data is only rendered over land where
- * pilots fly, so fetching ocean cells at this spacing would roughly double the
- * request volume for no gain.
+ * Geometry note: unlike the fine grid this one is clipped to coastline polygons
+ * by `buildLandTiles`. Thermal data is only rendered over land where pilots fly,
+ * so fetching ocean cells at this spacing would roughly double the request
+ * volume for no gain.
  *
  * Requiring `cape` + `boundary_layer_height` also excludes the S3 GFS tier,
  * which does not carry them — better to leave a gap than to fill it with
  * points that read as zeroes.
  */
 
-import { buildColumnTiles } from "../utils/gridTiles.js";
+import { buildLandTiles } from "../utils/gridTiles.js";
 import { MAX_POINTS_PER_TILE, THERMAL_DELTA, getGridBounds } from "./bounds.js";
 import type { ThermalPoint, ThermalVictoriaGrid } from "./bounds.js";
 import { fetchGrid, getCachedGrid, seriesOf, type GridKind } from "./pipeline.js";
@@ -30,7 +30,7 @@ const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
 
 async function buildThermalPoints(): Promise<LatLon[]> {
   const bounds = await getGridBounds();
-  const tiles = buildColumnTiles(
+  const tiles = buildLandTiles(
     { lonMin: bounds.fineLonMin, lonMax: bounds.fineLonMax, latMin: bounds.fineLatMin, latMax: bounds.fineLatMax },
     THERMAL_DELTA,
     MAX_POINTS_PER_TILE,

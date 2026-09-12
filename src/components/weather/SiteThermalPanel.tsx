@@ -302,7 +302,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
       {/* Fullscreen portal */}
       {isFullscreen && createPortal(
         <div
-          className="fixed inset-0 z-[10001] bg-black flex flex-col"
+          className="fixed inset-0 z-[10001] h-[100dvh] bg-black flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Fullscreen header */}
@@ -328,7 +328,10 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
 
           {/* Fullscreen time slider */}
           {flyingSlots.length > 1 && (
-            <div className="px-4 py-3 bg-black/80 border-t border-white/10 shrink-0">
+            <div
+              className="px-4 pt-3 bg-black/80 border-t border-white/10 shrink-0"
+              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+            >
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-white/50 w-8 text-right shrink-0">
                   {fmtMelbTime(flyingSlots[0].t)}
