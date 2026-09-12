@@ -41,7 +41,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [thermalLoading, setThermalLoading] = useState(false);
   const [thermalError, setThermalError] = useState<string | null>(null);
-  const [showOverlay, setShowOverlay] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  // The INFO button cycles three ways on phones, where vertical space is scarce:
+  //   'full'    — mode toggle, gradient legend, and the data bar
+  //   'compact' — gradient legend dropped, so the data bar rises into its place
+  //   'off'     — nothing but the map
+  // Desktop always renders 'full' (the INFO button is lg:hidden), so the cycle
+  // only ever matters below the lg breakpoint.
+  const [overlayMode, setOverlayMode] = useState<'full' | 'compact' | 'off'>(
+    () => (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'full' : 'off'),
+  );
+  const showOverlay = overlayMode !== 'off';
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
@@ -126,7 +135,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => setShowOverlay(e.matches);
+    const handler = (e: MediaQueryListEvent) => setOverlayMode(e.matches ? 'full' : 'off');
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
@@ -415,15 +424,22 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       )}
 
       <button
-        onClick={() => setShowOverlay(o => !o)}
-        className={`absolute top-3 right-3 z-30 lg:hidden flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors border shadow-lg ${showOverlay ? 'bg-sky-500 text-white border-white/20' : 'bg-black/60 text-white/70 border-white/10 backdrop-blur-md'}`}
+        onClick={() => setOverlayMode(m => (m === 'off' ? 'full' : m === 'full' ? 'compact' : 'off'))}
+        title={overlayMode === 'off' ? 'Show map info' : overlayMode === 'full' ? 'Hide the strength legend' : 'Hide map info'}
+        className={`absolute top-3 right-3 z-30 lg:hidden flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors border shadow-lg ${
+          overlayMode === 'full'
+            ? 'bg-sky-500 text-white border-white/20'
+            : overlayMode === 'compact'
+              ? 'bg-sky-500/30 text-sky-100 border-sky-400/50 backdrop-blur-md'
+              : 'bg-black/60 text-white/70 border-white/10 backdrop-blur-md'
+        }`}
       >
         <Layers className="w-3 h-3" />
         INFO
       </button>
 
       {/* Overlay info panel */}
-      <div className={`absolute top-14 left-3 z-30 flex-col gap-1.5 ${showOverlay ? 'flex' : 'hidden'} lg:flex`}>
+      <div className={`absolute top-14 left-3 z-30 flex-col gap-1.5 max-w-[calc(100vw-1.5rem)] ${showOverlay ? 'flex' : 'hidden'} lg:flex`}>
 
         {/* Wind / Thermal view toggle (feature-flagged) */}
         {isThermalEnabled && (
@@ -462,7 +478,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           </div>
         )}
 
-        {/* Data legend bar */}
+        {/* Gradient legend — the tall block. Dropped in 'compact' so the flex
+            column collapses and the readout below rises into its place. */}
+        {overlayMode !== 'compact' && (
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
           {viewMode === 'thermal' ? (
             <>
@@ -499,13 +517,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             </>
           )}
         </div>
+        )}
 
         {/* Readout panel */}
-        <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap pointer-events-none">
+        <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono lg:whitespace-nowrap pointer-events-none">
           {viewMode === 'thermal' ? (
-            <div className="flex items-center gap-2">
+            <>
+              {/* Desktop: single row (lg+) */}
               {thermalInfo ? (
-                <>
+                <div className="hidden lg:flex items-center gap-2">
                   <span className="font-bold" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
                     {getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
                   </span>
@@ -532,20 +552,64 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   {typeof thermalInfo.groundAmsl === 'number' && (
                     <>
                       <span className="text-white/40">|</span>
-                      <span className="text-white/60">
-                        Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" />
-                      </span>
+                      <span className="text-white/60">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
                     </>
                   )}
-                </>
+                </div>
               ) : (
-                <span className="text-white/40">Tap map for thermal reading</span>
+                <div className="hidden lg:flex items-center gap-2">
+                  <span className="text-white/40">Tap map for thermal reading</span>
+                </div>
               )}
-            </div>
+              {/* Mobile: two rows (below lg) */}
+              {thermalInfo ? (
+                <div className="flex lg:hidden flex-col gap-1">
+                  {/* Row 1: Strength | W-star/CAPE | BL */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
+                      {getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
+                    </span>
+                    <span className="text-white/40">|</span>
+                    {thermalInfo.wstar !== undefined ? (
+                      <span className="text-white/60">W* {thermalInfo.wstar.toFixed(1)} m/s</span>
+                    ) : (
+                      <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
+                    )}
+                    {thermalInfo.blh > 0 && (
+                      <>
+                        <span className="text-white/40">|</span>
+                        <span className="text-white/60">BL <Altitude metres={thermalInfo.blh} step={100} className="pointer-events-auto" /></span>
+                      </>
+                    )}
+                  </div>
+                  {/* Row 2: Cu Base | Ground (only if either is present) */}
+                  {(thermalInfo.ccl !== undefined && thermalInfo.ccl > 0) || typeof thermalInfo.groundAmsl === 'number' ? (
+                    <div className="flex items-center gap-1.5">
+                      {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                        <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
+                          Cu <Altitude metres={thermalInfo.ccl} step={100} className="pointer-events-auto" />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        </span>
+                      )}
+                      {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && typeof thermalInfo.groundAmsl === 'number' && (
+                        <span className="text-white/40">|</span>
+                      )}
+                      {typeof thermalInfo.groundAmsl === 'number' && (
+                        <span className="text-white/60">Gnd <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="flex lg:hidden items-center gap-2">
+                  <span className="text-white/40">Tap map for thermal reading</span>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="flex items-center gap-2">
+            <>
+              {/* Desktop: single row (lg+) */}
               {sitesWindInfo ? (
-                <>
+                <div className="hidden lg:flex items-center gap-2">
                   <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
                   <span className="text-white/40">|</span>
                   <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
@@ -562,22 +626,60 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   {typeof sitesWindInfo.groundAmsl === 'number' && (
                     <>
                       <span className="text-white/40">|</span>
-                      <span className="text-white/60">
-                        Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" />
-                      </span>
+                      <span className="text-white/60">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
                     </>
                   )}
                   <span className="text-white/40">|</span>
                   <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="hidden lg:flex items-center gap-2">
                   <span className="text-white/40">Tap map to pin wind reading</span>
                   <span className="text-white/40">|</span>
                   <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
-                </>
+                </div>
               )}
-            </div>
+              {/* Mobile: two rows (below lg) */}
+              {sitesWindInfo ? (
+                <div className="flex lg:hidden flex-col gap-1">
+                  {/* Row 1: speed | dir compass arrow */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
+                    <span className="text-white/40">|</span>
+                    <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
+                    <span className="text-sky-300 font-bold tracking-wider">{getCompassDirection(sitesWindInfo.direction)}</span>
+                    <svg
+                      width="10"
+                      height="14"
+                      viewBox="0 0 10 18"
+                      className="fill-white drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]"
+                      style={{ transform: `rotate(${sitesWindInfo.direction}deg)`, transformOrigin: 'center' }}
+                    >
+                      <path d="M 5 0 L 10 18 L 0 18 Z" />
+                    </svg>
+                  </div>
+                  {/* Row 2: Gnd | Z */}
+                  <div className="flex items-center gap-1.5">
+                    {typeof sitesWindInfo.groundAmsl === 'number' && (
+                      <>
+                        <span className="text-white/60">Gnd <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
+                        <span className="text-white/40">|</span>
+                      </>
+                    )}
+                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex lg:hidden flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white/40">Tap map to pin wind reading</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
