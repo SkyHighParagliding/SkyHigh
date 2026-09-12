@@ -432,6 +432,133 @@ credentials; the station ID format and all wiring stay as-is.
 
 ---
 
+## DECISION-011: Client-Side Terrain Sampling (not a Pre-Baked Postgres DEM Grid)
+
+**Date:** 2026-09-13
+**Owner:** Jon Pamment
+**Status:** Locked (implemented, commit `8e6f39e`)
+
+### Context
+Tapping the wind or thermal map pins a readout. We added a **Ground** figure (terrain elevation
+AMSL) to it so a pilot can read BL Top and Cu Base against the ground they will actually fly over
+rather than against sea level. The first implementation called `GET /api/weather/elevation-at` on
+every tap, which felt sluggish.
+
+The initial hypothesis — and Jon's original proposal — was that the server-side tile fetch and
+decode was the bottleneck, and that pre-baking a DEM into Postgres as a lookup grid would fix it.
+
+**Measurement first.** Against production: `/api/health` returned in 461–465 ms; a *warm*
+`/elevation-at` returned in 464–496 ms. The elevation work itself is therefore only ~5–30 ms. The
+lag was almost entirely network round-trip from Australia to Railway. **A pre-baked Postgres DEM
+would not have helped** — it would have removed the 5–30 ms and left the 465 ms untouched, while
+adding a large table, a bake pipeline, and a resolution ceiling.
+
+### Options Considered
+1. **Pre-baked DEM grid in Postgres** — the original proposal. Rejected on the measurement above:
+   it optimises the part that was already fast, and still pays the round-trip.
+2. **Keep the server route, add aggressive server caching** — same problem. The round-trip is the
+   cost.
+3. **Sample terrarium tiles in the browser** (chosen) — fetch the same AWS Open Data terrarium
+   PNGs the server already uses, decode them client-side, and read elevation locally. Removes the
+   round-trip entirely rather than shrinking the small part of it.
+
+### Chosen
+**Client-side sampling with the server route retained as a fallback.**
+`src/components/windmap/terrainTiles.ts` fetches z12 terrarium tiles and decodes them with the
+same bilinear maths as `server/grid/elevationPoint.ts`.
+`src/components/windmap/elevationPoint.ts` became a two-tier facade.
+
+Two details that matter and should not be "tidied" away:
+
+- **`sampleElevationSync` is three-valued.** `undefined` = tile not resident (retry after
+  `ensureTileFor`); `null` = authoritative no-data (ocean); `number` = metres AMSL. Tier 1
+  short-circuits on **both** `number` and `null` — treating `null` as a miss would send every
+  ocean tap to the API forever.
+- **The background tile warm is deliberately not awaited.** AWS tile latency from Australia is
+  730–940 ms, versus ~465 ms for the API. Awaiting the tile on a cold tap would make the first tap
+  *slower*, so we fire-and-forget and let the API answer this tap while the tile warms for the next.
+
+Both canvases prefetch the 3×3 z12 block around the map centre, debounced 300 ms after pan/zoom
+(~180 KB, covering ~29 × 22 km — more than any site-level view shows), so in practice the first
+tap already hits the local path.
+
+### Rationale
+- **Correct target.** Chosen from a measurement, not an intuition; the rejected option addressed
+  the wrong 30 ms.
+- **Free.** AWS Open Data terrarium tiles need no key and no account, which the project requires.
+- **Verified end to end.** A tap on a prefetched centre issues **zero** `/elevation-at` requests
+  and still reads correctly; an isolated check agreed with the server to 0.01 m
+  (457.0247563323889 m) in ~0.2 ms.
+
+### Consequences / Known Limitations
+- **Terrain tiles do not persist between sessions on most pages.** `public/sw.js` (registered by
+  `src/main.tsx`) and `public/sw-tiles.js` (registered by `src/hooks/useXCMapState.ts`) both claim
+  scope `/`; only one can own it, and `sw.js` has no fetch handler *and* clears every cache on
+  activate. The terrain caching added to `sw-tiles.js` therefore only applies on the XC map. The
+  in-memory LRU plus prefetch already remove the tap latency, so this is survivable — logged as
+  **TASK-SW-001** rather than patched blind during a wrap-up session.
+- **Attribution is now a licence obligation.** Australian data in these tiles is © Commonwealth of
+  Australia (Geoscience Australia) 2017 under CC BY 4.0. The notice lives in
+  `ThermalHelpModal.tsx` with a short credit in the wind map legend. **Do not remove it.**
+- **An R2 mirror of the z12 pyramid is deferred** (~0.37 GB / 18,288 tiles, inside the 10 GB free
+  tier) behind `VITE_TERRAIN_TILE_URL`. It would let us serve tiles with
+  `Cache-Control: immutable` from a nearer edge. Not required for correctness.
+
+**Reversibility:** Easy. `elevationPoint.ts` still contains the original API path intact; deleting
+the Tier 1 block restores the previous behaviour.
+
+---
+
+## DECISION-012: Accept a GPL-2.0 Dependency on the Strength of Hosted-Only Distribution
+
+**Date:** 2026-09-12 (recorded 2026-09-13 — this entry was a carry-over)
+**Owner:** Jon Pamment
+**Status:** Locked (implemented — `@openmeteo/file-reader` is in use in `server/grid/providers/openMeteoS3.ts`)
+
+### Context
+Grid tiers 2 and 3 read Open-Meteo's S3 archive, which needs `@openmeteo/file-reader` to decode
+the `.om` format. That package is **GPL-2.0-only**. Linking it into SkyHigh's server puts the whole
+server under the GPL's copyleft terms *if we ever distribute the work*.
+
+This mattered because SkyHigh had previously been described as "white-label ready" — i.e. shippable
+to other clubs — which would have been distribution, and would have forced us to release SkyHigh's
+source under the GPL.
+
+### Options Considered
+1. **Write our own `.om` decoder** — avoids the licence entirely, but the format is non-trivial and
+   this is a large amount of work to re-solve a solved problem, with a real risk of subtle
+   decode bugs in data pilots rely on.
+2. **Drop tiers 2 and 3** — leaves Open-Meteo's REST API (tier 1) with only NOAA GFS (tier 4) as
+   backup, so a rate-limited tier 1 means a visible model change. This is the failure mode the
+   whole provider layer exists to prevent.
+3. **Accept the GPL on hosted-only grounds** (chosen).
+
+### Chosen
+**Accept the dependency.** The GPL's obligations attach to *distribution*. SkyHigh is operated as a
+hosted service and is never shipped to anyone as source or binaries, so the distribution trigger
+never fires and no copyleft obligation arises.
+
+Jon confirmed in the same conversation that **white-label is no longer a project goal**, which
+removes the one scenario that would have made this unsafe.
+
+### Rationale
+- Tier 2 is the only source that returns the **identical 9 km ECMWF IFS model including
+  `boundary_layer_height`** — ECMWF's own free open data is 0.25° and omits BLH entirely. Losing
+  tier 2 would materially degrade the thermal grid.
+- The licence risk is contingent on a thing we have decided not to do.
+
+### Consequences — read this before changing course
+- **SkyHigh must not be distributed as code or binaries.** If white-label, self-hosting for another
+  club, or any source release is ever back on the table, this decision has to be revisited *first*:
+  either replace `@openmeteo/file-reader` or GPL the project.
+- `CLAUDE.md` Section 0 and `wiki/00-overview.md` still say "white-label ready". That text is now
+  **wrong** and contradicts this decision — it is an outstanding cleanup Jon has been reminded of.
+
+**Reversibility:** Medium. Removing the dependency means either writing an `.om` decoder or dropping
+two of the four grid tiers.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -445,7 +572,9 @@ credentials; the station ID format and all wiring stay as-is.
 | 007 | Cache pagination bypass | Bypass cache if non-default limit param present | 2026-05-04 | ✅ Locked |
 | 009 | 1Password Draw/Wipe | Automated .env draw on startup/cd, and wipe on exit | 2026-05-27 | ✅ Locked |
 | 010 | Davis via embeddable page | Public WeatherLink endpoint, no API key; v2 API needs club's credentials | 2026-08-30 | ✅ Locked |
+| 011 | Client-side terrain sampling | Browser-decoded terrarium tiles + API fallback; pre-baked Postgres DEM rejected on measurement | 2026-09-13 | ✅ Locked |
+| 012 | Accept GPL-2.0 dependency | Hosted-only, never distributed, so copyleft never triggers; **blocks any future white-label/source release** | 2026-09-12 | ✅ Locked |
 
 ---
 
-Last updated: 2026-08-30
+Last updated: 2026-09-13

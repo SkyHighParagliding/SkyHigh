@@ -42,6 +42,7 @@ const categories: FeatureCategory[] = [
           "D3-based wind particle animation across Victoria",
           "Play/pause timeline, zoom controls, speed adjustment",
           "HSL colour-coded wind speed (calm to strong)",
+          "Ground readout: tap any point for wind speed, direction and terrain elevation (AMSL). On the thermal map the same tap also gives boundary layer top and cloud base, so you can judge how high they sit above the ground you will be flying over",
         ],
       },
     ],

@@ -15,7 +15,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, PostgreSQL (dev + prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** Professional code review pass 2 (sessions 36–37) completed — dead code removed, shared utilities extracted, boot-time DB-write bug fixed. Next: TASK-030 (Siteguide Version Change Email Notification).  
+**Current Focus:** Session 57 completed the Ground AMSL readout across all four map surfaces and moved terrain elevation to client-side terrarium-tile sampling (commit `8e6f39e`) — see DECISION-011. Next: TASK-030 (Siteguide Version Change Email Notification). Queued smaller items: TASK-SW-001 (consolidate the two competing `/`-scope service workers) and the deferred R2 terrain-tile mirror.  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
@@ -27,6 +27,8 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Deployed on Railway with PostgreSQL — see DECISION-006
 - Scheduled closure calendar: `site_closure_dates` table, unified admin calendar UI (replaces Status dropdown), auto-generated home-page banners 7 days before closure — see DECISION-008
 - 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009
+- Ground elevation is sampled client-side from AWS terrarium tiles (no API key), with the server route retained as fallback — see DECISION-011. The Geoscience Australia CC BY 4.0 attribution is a licence obligation; do not remove it.
+- `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future white-label or source release must revisit that decision first.
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**

@@ -97,6 +97,7 @@ const categories: SpecCategory[] = [
           "QR codes: Info Page (links to site detail) and XC Maps (links to map centred on site) variants.",
           "Compact Field View (/sites/:id/field): stripped-down mobile page for field QR code scanning, showing essential safety info.",
           "Animated wind map: particle animation across the state, colour-coded by wind speed with timeline controls.",
+          "Ground readout: tapping any point on the wind map or thermal map shows terrain elevation above mean sea level (AMSL) at that point, alongside the boundary layer top and cloud base altitudes. Lets pilots read how high the boundary layer and cloud base sit above the ground they will be flying over. Tapping the Ground figure toggles the whole app between metres and feet.",
         ],
       },
       {
@@ -375,6 +376,16 @@ const categories: SpecCategory[] = [
           "Slider image generation: generate crop sizes from existing hero images.",
           "Admin Search: AI-summarised search across all admin content, procedures, sites, news, pages, and Drive documents.",
           "Public Smart Assistant: conversational AI on the home page with access to live weather, site data, forecasts, safety officers, and club documents.",
+        ],
+      },
+      {
+        icon: <MapPin className="w-5 h-5" />,
+        title: "AWS Open Data — Terrain Tiles",
+        details: [
+          "Provides terrain elevation data (metres AMSL) for the Ground readout on wind and thermal maps.",
+          "Terrarium-format tiles at zoom level 12 (~30 m/px resolution at Victorian latitudes). No API key required.",
+          "Data for the Australian portion is derived from the 'DEM derived from LiDAR 5 Metre Grid' — © Commonwealth of Australia (Geoscience Australia) 2017, used under CC BY 4.0. Attribution is shown in the thermal map help panel and the wind map legend.",
+          "Tiles are fetched and decoded in the browser; an in-memory LRU cache of 64 tiles avoids repeat network requests within a session.",
         ],
       },
       {

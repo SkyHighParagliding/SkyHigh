@@ -12,6 +12,16 @@ type: wiki
 
 ---
 
+## Public Static Files (`public/`)
+
+### `public/sw.js`
+Main service worker. Registered by `src/main.tsx` at scope `/`. Handles offline page caching for the PWA. Its activate handler deletes all caches on version change. **Does not have a fetch handler for terrain tiles** — see limitation note under `sw-tiles.js`.
+
+### `public/sw-tiles.js`
+Tile-caching service worker used by the XC map (`src/hooks/useXCMapState.ts`). Registered at scope `/`, the same scope as `sw.js`. Only one registration can own a scope at a time, so on pages where `sw.js` is the active controller, terrain tiles bypass the tile cache and rely on the in-memory LRU cache in `terrainTiles.ts` instead. Consolidating the two service workers into one is a known open follow-up (see TASK-SW-001 in wiki/02-tasks.md).
+
+---
+
 ## Root Configuration & Entry
 
 ### `server.ts`
@@ -75,6 +85,9 @@ Because Weather Underground is the **catch-all**, adding a source means register
 **Media storage abstraction.** Routes file uploads to local `/uploads/` (dev) or Cloudflare R2 (prod). **Read this to understand DECISION-002.**
 
 Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`.
+
+### `server/grid/elevationPoint.ts`
+**Server-side terrain elevation fallback.** Fetches AWS terrarium tiles via `sharp`, decodes RGB to metres AMSL, and bilinearly interpolates at the requested coordinate. Used by `GET /api/weather/elevation-at` — the fallback path when the browser tile cache in `src/components/windmap/terrainTiles.ts` does not yet have the required tile. Maintains its own LRU cache (128 decoded tiles, ~17 MB). Cross-tile bilinear sampling is handled correctly for coordinates near tile edges.
 
 ---
 
@@ -231,6 +244,12 @@ Core wind map math:
 
 ### `src/components/windmap/handleZoom.ts`
 D3 zoom event handlers. Maps D3 zoom transform (translate, scale) to canvas transforms. Redraws wind map on zoom/pan.
+
+### `src/components/windmap/terrainTiles.ts`
+**Client-side terrain tile sampler.** Fetches AWS Open Data "terrarium" tiles at zoom level 12 (~30 m/px) and decodes RGB pixel values to metres AMSL using bilinear interpolation. Maintains an in-memory LRU cache (64 tiles). Sampling a resident tile takes about 0.2 ms, against a ~465 ms round-trip for the server fallback. Both wind and thermal map canvases call this module to prefetch the 3×3 tile block around the map centre (debounced 300 ms after pan/zoom).
+
+### `src/components/windmap/elevationPoint.ts`
+**Two-tier elevation facade.** Tries `terrainTiles.ts` (local cache) first; falls back to `GET /api/weather/elevation-at` only when the required tile is not yet resident. On fallback it kicks off a background tile fetch. Previously this module was a direct proxy to the server route; it now uses the local sampler as the primary path.
 
 ---
 

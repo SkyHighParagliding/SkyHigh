@@ -22,6 +22,8 @@ Open-Meteo API (ECMWF IFS)
         └──► Extended Grid (0.5°)   ──► 7-day site outlook cards
 ```
 
+> **Ground readout is not part of the daily grid fetch.** The terrain elevation AMSL shown when a user taps the map comes from AWS Open Data terrarium tiles sampled directly in the browser (`src/components/windmap/terrainTiles.ts`). It has no fetch schedule, no database entry, and no admin control in this workflow. See `wiki/01-architecture.md` — "Client-Side Terrain Elevation Sampling" for details.
+
 ---
 
 ## Coverage Area

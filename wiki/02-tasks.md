@@ -398,6 +398,53 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 ---
 
+## Phase 11: Ground Readout & Terrain Tile Sampling (✅ Complete)
+
+### TASK-TERRAIN-001 ✅ Ground elevation readout on wind and thermal maps
+- **Status:** ✅ DONE — 2026-09-13 (commits 572834c, 83940cb, 0a4ccd9, 6bdaf84, 8e6f39e)
+- **Prerequisites:** None
+- **Estimated effort:** M
+- **Description:** Tapping any point on the all-sites wind map, the all-sites thermal map, the per-site wind map, or the per-site thermal map (inline and fullscreen) now shows a "Ground" readout: the terrain elevation AMSL at the tapped point. Tapping the Ground value toggles the app between metres and feet, the same as the other altitude values (BL Top, Cu Base). On the thermal map the tapped-point panel shows thermal strength label, BL Top, Cu Base, and Ground. On the wind map the readout row shows speed, direction, compass point, an arrow, Ground, and the zoom level indicator.
+- **Acceptance Criteria:**
+  - Ground value appears in the readout on all four map surfaces.
+  - Tapping Ground toggles metres/feet app-wide.
+  - On phones, the readout wraps to two rows below the `lg` breakpoint; desktop keeps single-row layout.
+  - The INFO button on phones cycles through three states: everything on → gradient legend hidden (data bar rises) → everything off.
+
+### TASK-TERRAIN-002 ✅ Client-side terrain tile sampling (performance)
+- **Status:** ✅ DONE — 2026-09-13 (commits 572834c, 83940cb, 0a4ccd9, 6bdaf84, 8e6f39e)
+- **Prerequisites:** TASK-TERRAIN-001
+- **Estimated effort:** M
+- **Description:** Ground elevation is resolved in the browser from AWS Open Data terrarium tiles (z12, ~30 m/px) rather than via a server round-trip. `src/components/windmap/terrainTiles.ts` fetches and decodes tiles and holds an in-memory LRU cache of 64 tiles. `src/components/windmap/elevationPoint.ts` is now a two-tier facade: local tile cache first, `GET /api/weather/elevation-at` server fallback when the tile is not yet resident. Both map canvases prefetch the 3×3 z12 tile block around the map centre (debounced 300 ms). Tile source is overridable via `VITE_TERRAIN_TILE_URL`.
+- **Acceptance Criteria:**
+  - Tapping a prefetched point issues zero `/elevation-at` requests.
+  - Local sampler agrees with server endpoint to within 0.01 m on a spot check.
+  - Sampling a cached point resolves in ≤0.2 ms.
+  - Server route `GET /api/weather/elevation-at` retained as fallback; unchanged.
+
+### TASK-TERRAIN-003 ✅ Terrain data attribution notice (CC BY 4.0)
+- **Status:** ✅ DONE — 2026-09-13 (commits 572834c, 83940cb, 0a4ccd9, 6bdaf84, 8e6f39e)
+- **Prerequisites:** TASK-TERRAIN-001
+- **Estimated effort:** XS
+- **Description:** Australian terrain data in the terrarium tiles is © Commonwealth of Australia (Geoscience Australia) 2017 under CC BY 4.0 and requires an attribution notice. Full notice added to `ThermalHelpModal.tsx`; short "Terrain © GA / USGS" credit with full notice on hover added to the wind map legend.
+- **Acceptance Criteria:**
+  - Full attribution notice visible in the thermal map help panel.
+  - Short credit visible in the wind map legend, with full notice on hover.
+
+### TASK-SW-001 ⬜ Consolidate sw.js and sw-tiles.js into a single service worker
+- **Status:** ⬜ BACKLOG
+- **Prerequisites:** TASK-TERRAIN-001
+- **Estimated effort:** S
+- **Description:** `public/sw.js` (registered by `src/main.tsx` at scope `/`) and `public/sw-tiles.js` (registered by `src/hooks/useXCMapState.ts` at the same scope `/`) compete for the same service worker scope. Only one can be active at a time; on pages where `sw.js` wins, its activate handler clears all caches. This means terrain tiles are not persistently cached between sessions on most pages — they rely solely on the in-memory LRU cache in `terrainTiles.ts`. Merging both service workers into one would allow terrain tiles (and other tile layers) to persist across sessions. Currently harmless due to the in-memory cache and prefetch, but worth consolidating.
+- **Acceptance Criteria:**
+  - Single service worker registered at scope `/` in `src/main.tsx`.
+  - All tile-caching logic from `sw-tiles.js` merged into `sw.js`.
+  - `src/hooks/useXCMapState.ts` no longer registers `sw-tiles.js`.
+  - Offline map tiles continue to work on XC Maps.
+  - Terrain tiles persist in the service worker cache across page loads.
+
+---
+
 ## Summary
 
 | Phase | Name | Tasks | Status | Completion Date |
@@ -412,16 +459,17 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 10 | Postgres Dev + SQLite Removal | 3 | ✅ Complete | 2026-05-27 |
 | 4 | Production Deployment | 4 | ✅ Complete | 2026-05-30 |
 | 5 | Hardening & Audit | 1 | ✅ Complete | 2026-06-02 |
+| 11 | Ground Readout & Terrain Tiles | 4 | 3✅ / 1⬜ | 2026-09-13 |
 | 8 | Future / Low Priority | 2 | ⬜ DEFERRED/BACKLOG | — |
 | Code Review | Sonnet Review | 7 | 6✅ / 1⬜ | — |
 
 ---
 
 **Task Summary:**
-- **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10 + Tasks 026, 027, 035 from Phase 4/5 + Review A–E, G
+- **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
-- **Backlog (3):** Tasks 030, 031, 032
+- **Backlog (4):** Tasks 030, 031, 032, TASK-SW-001 (service worker consolidation)
 - **Review deferred (1):** TASK-REVIEW-F (useWindPlayback hook extraction)
 
-Last updated: 2026-09-10
+Last updated: 2026-09-13

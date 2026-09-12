@@ -67,8 +67,20 @@ Low-resolution continental wind grid covering all Australia (2.0° spacing ≈ 2
 ### Wind Grid Data
 Database table storing cached ECMWF grids. Columns: grid_type (Victoria/Wide), data (GeoJSON), fetch_time, expiry (7-day rolling cleanup).
 
+### AMSL (Above Mean Sea Level)
+Elevation measured from the average sea surface. Launch heights, landing heights, and terrain elevation in SkyHigh are all expressed in metres AMSL unless stated otherwise. Distinct from AGL (Above Ground Level).
+
+### Terrarium Tiles
+A tile format for encoding terrain elevation in PNG images. Each pixel's RGB values encode an elevation in metres: `elevation = R × 256 + G + B / 256 − 32768`. SkyHigh fetches these tiles from AWS Open Data at zoom level 12 to power the Ground readout on the wind and thermal maps. Australian data is from the Geoscience Australia LiDAR 5-metre DEM; global data from USGS 3DEP/SRTM and NOAA ETOPO1.
+
+### Ground Readout
+The terrain elevation AMSL shown when a pilot taps any point on the wind map or thermal map. Displayed alongside BL Top and Cu Base (cloud base) so pilots can judge how high the boundary layer sits above the ground they will actually be flying over, not just above sea level. Tapping the Ground value toggles the whole app between metres and feet.
+
+### Z12 / Zoom Level 12
+A Web Mercator tile zoom level. At zoom level 12, one tile covers approximately 9.6 × 7.5 km at Victorian latitudes and each pixel represents roughly 30 metres. SkyHigh uses z12 terrarium tiles for terrain elevation sampling — coarser than the LiDAR source but accurate to within ±10 m for the purposes of the Ground readout.
+
 ### Bilinear Interpolation
-Method to compute wind vector at arbitrary (lat, lon) from surrounding grid corners. Used in wind map rendering to smooth vector field between grid points.
+Method to compute wind vector at arbitrary (lat, lon) from surrounding grid corners. Used in wind map rendering to smooth vector field between grid points. Also used when decoding terrain tile pixels to sub-pixel elevation accuracy.
 
 ### TidyHQ
 Membership management platform used by Australian clubs. SkyHigh syncs contacts (name, email, phone, roles) via TidyHQ webhooks or manual trigger.
@@ -181,6 +193,9 @@ Database schema change script (SQL). Stored in `server/pg_migrations/`. Run on s
 | RLS | Row-Level Security |
 | OWASP | Open Web Application Security Project |
 | SQL | Structured Query Language |
+| AMSL | Above Mean Sea Level |
+| AGL | Above Ground Level |
+| LRU | Least Recently Used (cache eviction policy) |
 
 ---
 

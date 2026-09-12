@@ -239,6 +239,15 @@ The wind map has three layers rendered independently:
 
 D3 handles zoom/pan math. Bilinear interpolation runs at render time from the cached grid.
 
+### Client-Side Terrain Elevation Sampling
+The Ground readout on wind and thermal maps resolves terrain elevation (metres AMSL) without a server round-trip.
+
+- **`src/components/windmap/terrainTiles.ts`** — fetches AWS Open Data "terrarium" tiles at zoom level 12 (~30 m/px) and decodes RGB pixel values to metres AMSL using bilinear interpolation. Holds an in-memory LRU cache of 64 tiles.
+- **`src/components/windmap/elevationPoint.ts`** — two-tier facade: tries the local tile cache first; falls back to `GET /api/weather/elevation-at` (server) only when the required tile is not yet resident, and kicks off a background tile fetch so the next tap is instant.
+- **Prefetch:** both map canvases prefetch the 3×3 block of z12 tiles around the map centre (debounced 300 ms after pan/zoom). Nine tiles covers roughly 29 × 22 km and amounts to ~180 KB.
+- **Tile source:** `https://s3.amazonaws.com/elevation-tiles-prod/terrarium` by default; overridable via `VITE_TERRAIN_TILE_URL` (Vite build-time env var).
+- **Attribution obligation:** Australian terrain data is © Commonwealth of Australia (Geoscience Australia) 2017 under CC BY 4.0. Full attribution is shown in `ThermalHelpModal.tsx` and summarised in the wind map legend.
+
 ### Thermal Retry Chain
 After any thermal fetch that leaves failed tiles, the scheduler automatically retries up to 4 times at +5min, +15min, +40min, +90min. Each retry fetches only the failed tiles (not the full grid). The `thermalGridLastResult` setting reflects the current retry state. A 7:30am cron is the final backstop.
 

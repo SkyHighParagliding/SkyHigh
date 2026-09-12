@@ -1,3 +1,44 @@
+# AWS Open Data — Terrain Tiles
+
+## What It Does
+
+Provides terrain elevation (metres AMSL) for the Ground readout on the wind and thermal maps. When a user taps any point on either map, the browser fetches and decodes a "terrarium" format PNG tile to read the elevation at that coordinate.
+
+## Setup
+
+No API key or account required. Tiles are fetched directly from:
+
+```
+https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
+```
+
+The tile URL base is overridable via the `VITE_TERRAIN_TILE_URL` build-time environment variable (useful if self-hosting tiles or switching providers).
+
+## Technical Summary
+
+| Property | Value |
+|---|---|
+| Format | Terrarium PNG tiles |
+| Zoom level | 12 (~30 m/px at Victorian latitudes) |
+| Encoding | `elevation = R × 256 + G + B / 256 − 32768` (metres) |
+| API key | None required |
+| Client file | `src/components/windmap/terrainTiles.ts` |
+| Server fallback | `server/grid/elevationPoint.ts` via `GET /api/weather/elevation-at` |
+| Cache (browser) | In-memory LRU, 64 tiles |
+| Cache (server) | In-memory LRU, 128 decoded tiles (~17 MB) |
+
+## Attribution Obligation (CC BY 4.0)
+
+Australian terrain data is sourced from the **"DEM derived from LiDAR 5 Metre Grid"** published by Geoscience Australia. Use requires attribution under CC BY 4.0.
+
+**Full notice (shown in `ThermalHelpModal.tsx` and on hover in the wind map legend):**
+
+> Ground elevation from Mapzen/AWS Terrain Tiles. Australian data from the "DEM derived from LiDAR 5 Metre Grid" — © Commonwealth of Australia (Geoscience Australia) 2017, used under CC BY 4.0. Elsewhere: USGS 3DEP/SRTM/GMTED2010 and NOAA ETOPO1 (public domain).
+
+**Short credit** (shown inline in the wind map legend): `Terrain © GA / USGS`
+
+---
+
 # TidyHQ Integration Setup Guide
 
 How to connect TidyHQ to the SkyHigh website for contact import, shop products, and automatic role sync.
