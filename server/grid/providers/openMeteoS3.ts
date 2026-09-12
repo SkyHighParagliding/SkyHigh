@@ -493,10 +493,13 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
 
     // Read each S3 variable × each row group in parallel, bounded by sem.
     const tasks: Array<Promise<void>> = [];
+    const backends: OmHttpBackend[] = [];
+    const droppedReads: Array<{ s3Var: string; row: number }> = [];
 
     for (const s3Var of s3Vars) {
       const url = ecmwfChunkUrl(s3Var, chunk);
       const backend = new OmHttpBackend({ url, debug: false });
+      backends.push(backend);
 
       for (const [row, rowPts] of rowGroups) {
         if (signal?.aborted) break;
@@ -513,9 +516,19 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
           let data: Float32Array | null = null;
           try {
             data = await ecmwfReadRow(backend, spatStart, spatEnd, tStart, tEnd);
-          } catch (err) {
-            log.warn(`ECMWF row read failed`, { chunk, s3Var, row, error: String(err) });
-            return;
+          } catch (firstErr) {
+            // One retry: a transient S3 read failure otherwise costs this variable
+            // for the whole latitude row, which renders as a blank stripe on the map.
+            if (signal?.aborted) return;
+            await new Promise(r => setTimeout(r, 250));
+            try {
+              data = await ecmwfReadRow(backend, spatStart, spatEnd, tStart, tEnd);
+            } catch (err) {
+              droppedReads.push({ s3Var, row });
+              log.warn(`ECMWF row read failed after retry`, { chunk, s3Var, row, error: String(err) });
+              return;
+            }
+            void firstErr;
           }
           if (!data) return;
 
@@ -535,11 +548,21 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
           void ni; // silence unused-variable warning (ni used implicitly above)
         }));
       }
-
-      tasks.push(sem(async () => { await backend.close(); }));
     }
 
-    await Promise.all(tasks);
+    try {
+      await Promise.all(tasks);
+    } finally {
+      await Promise.all(backends.map(b => b.close().catch(() => {})));
+    }
+
+    if (droppedReads.length > 0) {
+      log.warn(`ECMWF chunk finished with dropped row reads`, {
+        chunk,
+        dropped: droppedReads.length,
+        detail: droppedReads.slice(0, 20),
+      });
+    }
   }
 
   // Build time strings for the full forecast window.
@@ -661,10 +684,13 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
     }
 
     const tasks: Array<Promise<void>> = [];
+    const backends: OmHttpBackend[] = [];
+    const droppedReads: Array<{ s3Var: string; iLat: number; iLon: number }> = [];
 
     for (const s3Var of s3Vars) {
       const url     = gfsChunkUrl(s3Var, chunk);
       const backend = new OmHttpBackend({ url, debug: false });
+      backends.push(backend);
 
       for (const gp of gridPoints) {
         if (signal?.aborted) break;
@@ -674,9 +700,19 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
           let data: Float32Array | null = null;
           try {
             data = await gfsReadCell(backend, gp.grid.iLat, gp.grid.iLon, tStart, tEnd, is3D);
-          } catch (err) {
-            log.warn(`GFS cell read failed`, { chunk, s3Var, iLat: gp.grid.iLat, iLon: gp.grid.iLon, error: String(err) });
-            return;
+          } catch (firstErr) {
+            // One retry: a transient S3 read failure otherwise costs this variable
+            // for the whole grid cell, which renders as a blank point on the map.
+            if (signal?.aborted) return;
+            await new Promise(r => setTimeout(r, 250));
+            try {
+              data = await gfsReadCell(backend, gp.grid.iLat, gp.grid.iLon, tStart, tEnd, is3D);
+            } catch (err) {
+              droppedReads.push({ s3Var, iLat: gp.grid.iLat, iLon: gp.grid.iLon });
+              log.warn(`GFS cell read failed after retry`, { chunk, s3Var, iLat: gp.grid.iLat, iLon: gp.grid.iLon, error: String(err) });
+              return;
+            }
+            void firstErr;
           }
           if (!data) return;
 
@@ -686,11 +722,21 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
           store.set(s3Var, existing);
         }));
       }
-
-      tasks.push(sem(async () => { await backend.close(); }));
     }
 
-    await Promise.all(tasks);
+    try {
+      await Promise.all(tasks);
+    } finally {
+      await Promise.all(backends.map(b => b.close().catch(() => {})));
+    }
+
+    if (droppedReads.length > 0) {
+      log.warn(`GFS chunk finished with dropped cell reads`, {
+        chunk,
+        dropped: droppedReads.length,
+        detail: droppedReads.slice(0, 20),
+      });
+    }
   }
 
   // Build time strings.
