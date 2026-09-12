@@ -33,7 +33,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
-  const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
+  const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
@@ -559,6 +559,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   >
                     <path d="M 5 0 L 10 18 L 0 18 Z" />
                   </svg>
+                  {typeof sitesWindInfo.groundAmsl === 'number' && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      <span className="text-white/60">
+                        Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" />
+                      </span>
+                    </>
+                  )}
                   <span className="text-white/40">|</span>
                   <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
                 </>

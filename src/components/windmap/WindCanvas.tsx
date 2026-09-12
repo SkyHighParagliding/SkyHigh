@@ -10,6 +10,7 @@ import { getWindAt } from './windInterpolation';
 import type { WindGrid } from './windInterpolation';
 import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay, drawSpeedOverlay } from './particleRenderer';
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
+import { fetchElevationAt } from './elevationPoint';
 
 const TILE_CACHE_MAX = 200;
 
@@ -25,7 +26,7 @@ interface WindCanvasProps {
   zoomSetpoints?: ZoomSetpoints;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  onWindInfoChange?: (info: { speed: number; direction: number } | null) => void;
+  onWindInfoChange?: (info: { speed: number; direction: number; groundAmsl?: number } | null) => void;
   sizeKey?: number;
   initialZoomK?: number;
   savedCenterLat?: number;
@@ -56,6 +57,11 @@ export const WindCanvas = memo(function WindCanvas({
   pinnedCrosshairRef.current = pinnedCrosshair;
   const onWindInfoChangeRef = useRef(onWindInfoChange);
   onWindInfoChangeRef.current = onWindInfoChange;
+  // Ground elevation for the pinned point. The readout below re-emits at 10fps,
+  // so this is keyed by pin position: the lookup fires once when the pin moves,
+  // never once per frame. `value` stays undefined until the request resolves.
+  const elevationPinRef = useRef<{ key: string; value?: number } | null>(null);
+  const elevationSeqRef = useRef(0);
   // Refs keep siteStatus/siteUpcomingClosureDates live inside the render loop without
   // adding them to the useEffect dependency array (#1).
   const siteStatusRef = useRef(siteStatus);
@@ -280,7 +286,26 @@ export const WindCanvas = memo(function WindCanvas({
             const speedMs = Math.sqrt(wind[0] ** 2 + wind[1] ** 2);
             let dir = (Math.atan2(-wind[0], -wind[1]) * 180) / Math.PI;
             if (dir < 0) dir += 360;
-            onWindInfoChangeRef.current?.({ speed: speedMs * 1.94384, direction: dir });
+
+            // Dispatch one elevation lookup per pin position. Recording the key
+            // before the request resolves is what stops the render loop from
+            // firing a duplicate on every subsequent frame.
+            const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
+            if (elevationPinRef.current?.key !== pinKey) {
+              elevationPinRef.current = { key: pinKey };
+              const seq = ++elevationSeqRef.current;
+              fetchElevationAt(geo[0], geo[1]).then(metres => {
+                // Ignore a superseded lookup so the pin can't show another point's ground.
+                if (seq !== elevationSeqRef.current || metres === null) return;
+                elevationPinRef.current = { key: pinKey, value: metres };
+              });
+            }
+
+            onWindInfoChangeRef.current?.({
+              speed: speedMs * 1.94384,
+              direction: dir,
+              groundAmsl: elevationPinRef.current?.value,
+            });
           } else {
             onWindInfoChangeRef.current?.(null);
           }
