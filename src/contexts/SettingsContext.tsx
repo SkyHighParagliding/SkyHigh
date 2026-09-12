@@ -32,11 +32,16 @@ interface Settings {
   weatherScraperLastRun?: string;
   fineGridLastRun?: string;
   fineGridLastResult?: string;
+  fineGridProgress?: string;
   thermalGridLastRun?: string;
   thermalGridLastResult?: string;
   thermalGridProgress?: string;
   extendedForecastLastRun?: string;
   extendedForecastLastResult?: string;
+  extendedGridProgress?: string;
+  /** JSON-encoded Provenance for the last fine/thermal grid fetch. */
+  fineGridProvenance?: string;
+  thermalGridProvenance?: string;
   homeCardsSelection?: string;
   homeCardsCycle?: boolean;
   homeCardsCyclePinned?: string;
@@ -267,11 +272,15 @@ function buildSettings(data: Record<string, any>): Settings {
     weatherScraperLastRun: data.weatherScraperLastRun,
     fineGridLastRun: data.fineGridLastRun,
     fineGridLastResult: data.fineGridLastResult,
+    fineGridProgress: data.fineGridProgress || undefined,
     thermalGridLastRun: data.thermalGridLastRun,
     thermalGridLastResult: data.thermalGridLastResult,
     thermalGridProgress: data.thermalGridProgress || undefined,
     extendedForecastLastRun: data.extendedForecastLastRun,
     extendedForecastLastResult: data.extendedForecastLastResult,
+    extendedGridProgress: data.extendedGridProgress || undefined,
+    fineGridProvenance: data.fineGridProvenance || undefined,
+    thermalGridProvenance: data.thermalGridProvenance || undefined,
     homeCardsSelection: cleanString(data.homeCardsSelection),
     homeCardsCycle: data.homeCardsCycle === "true",
     homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),

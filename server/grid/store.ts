@@ -1,9 +1,9 @@
 /**
  * Persistence helpers for the wind_grid_data table.
  *
- * Replaces the copy-pasted SQL in victoriaGrid.ts with a single canonical
- * implementation. Key scheme and JSON column name are preserved exactly so
- * rows already in production remain readable.
+ * The single canonical implementation of grid persistence. Key scheme and
+ * JSON column name are preserved exactly so rows already in production
+ * remain readable.
  *
  * Key scheme: `${baseKey}_${YYYY-MM-DD}` (Melbourne local date).
  * Example:    "fine_grid_2026-09-12", "thermal_grid_2026-09-12"
@@ -98,7 +98,7 @@ export async function readLatestGrid<T>(baseKey: string): Promise<T | null> {
  * Upserts a grid for the given day.
  * `gridSize` and `gridSpacing` are not used by the new orchestrator path but
  * are preserved in the upsert so existing rows keep their values and the
- * schema stays compatible with victoriaGrid.ts reads.
+ * schema stays compatible with pre-refactor reads.
  */
 export async function writeGrid(
   baseKey: string,
@@ -162,11 +162,11 @@ export async function cleanupOldGrids(
 // ---------------------------------------------------------------------------
 
 /**
- * Writes a progress string to the settings table.
- * Used for the admin panel's live progress display during grid fetches.
- * Errors are swallowed — a failed progress write must never abort a fetch.
+ * Upserts a settings value used purely for admin-panel reporting (live progress,
+ * provenance). Errors are swallowed — a failed status write must never abort or
+ * fail a grid fetch.
  */
-export async function setProgress(key: string, value: string): Promise<void> {
+export async function setStatus(key: string, value: string): Promise<void> {
   try {
     await execute(
       `INSERT INTO settings (key, value) VALUES ($1, $2)

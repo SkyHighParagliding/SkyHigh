@@ -1,0 +1,140 @@
+/**
+ * Grid geometry: bounding box, spacing, and the persisted grid shape.
+ *
+ * The bounding box is admin-configurable via the `gridFine*` settings keys and
+ * defaults to a box covering Victoria plus Tasmania, ACT, eastern SA and the
+ * NSW coast.
+ */
+
+import { query } from "../pg.js";
+import createLogger from "../utils/logger.js";
+import type { SourceId } from "./types.js";
+
+const log = createLogger("grid:bounds");
+
+export const FINE_LAT_MIN = -44.5;
+export const FINE_LAT_MAX = -35.0;
+export const FINE_LON_MIN = 139.0;
+export const FINE_LON_MAX = 155.0;
+
+/** Fine (wind) grid spacing in degrees. */
+export const FINE_DELTA = 0.15;
+
+/** Thermal grid spacing in degrees — finer, fewer variables. */
+export const THERMAL_DELTA = 0.09;
+
+/** Open-Meteo batch limit per request. */
+export const MAX_POINTS_PER_TILE = 1000;
+
+export interface GridBounds {
+  fineLatMin: number;
+  fineLatMax: number;
+  fineLonMin: number;
+  fineLonMax: number;
+}
+
+const DEFAULT_BOUNDS: GridBounds = {
+  fineLatMin: FINE_LAT_MIN,
+  fineLatMax: FINE_LAT_MAX,
+  fineLonMin: FINE_LON_MIN,
+  fineLonMax: FINE_LON_MAX,
+};
+
+const BOUNDS_KEYS = ["gridFineLatMin", "gridFineLatMax", "gridFineLonMin", "gridFineLonMax"] as const;
+
+/** Reads the admin-configured bounds, falling back to defaults on any failure. */
+export async function getGridBounds(): Promise<GridBounds> {
+  try {
+    const rows = await query<{ key: string; value: string }>(
+      `SELECT key, value FROM settings WHERE key IN (${BOUNDS_KEYS.map((_k, i) => `$${i + 1}`).join(",")})`,
+      [...BOUNDS_KEYS],
+    );
+    const s: Record<string, number> = {};
+    for (const r of rows) s[r.key] = parseFloat(r.value);
+    return {
+      fineLatMin: Number.isFinite(s.gridFineLatMin) ? s.gridFineLatMin : FINE_LAT_MIN,
+      fineLatMax: Number.isFinite(s.gridFineLatMax) ? s.gridFineLatMax : FINE_LAT_MAX,
+      fineLonMin: Number.isFinite(s.gridFineLonMin) ? s.gridFineLonMin : FINE_LON_MIN,
+      fineLonMax: Number.isFinite(s.gridFineLonMax) ? s.gridFineLonMax : FINE_LON_MAX,
+    };
+  } catch (err) {
+    log.warn("getGridBounds failed — using defaults", err instanceof Error ? err.message : err);
+    return { ...DEFAULT_BOUNDS };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Persisted grid shape
+// ---------------------------------------------------------------------------
+
+/**
+ * PERSISTED SHAPE — DO NOT RESTRUCTURE.
+ *
+ * Rows of this shape exist in production `wind_grid_data`. Fields may be added
+ * (optionally) but never renamed, removed or nested differently, or every
+ * cached grid becomes unreadable and the extraction helpers break.
+ */
+export interface GridPoint {
+  lat: number;
+  lon: number;
+  /** Added by the provider layer; absent on rows written before it existed. */
+  source?: SourceId;
+  hourly: {
+    time: string[];
+    wind_speed_10m: number[];
+    wind_gusts_10m: number[];
+    wind_direction_10m: number[];
+    temperature_2m: number[];
+    weather_code: number[];
+    precipitation: number[];
+    precipitation_probability: number[];
+    cloud_cover: number[];
+    cloud_cover_low: number[];
+    visibility: number[];
+    cape: number[];
+    boundary_layer_height: number[];
+  };
+}
+
+export interface ThermalPoint {
+  lat: number;
+  lon: number;
+  source?: SourceId;
+  hourly: {
+    time: string[];
+    cape: number[];
+    boundary_layer_height: number[];
+    temperature_2m: number[];
+    dew_point_2m: number[];
+  };
+}
+
+/** Common envelope shared by both persisted grid kinds. */
+export interface GridEnvelope {
+  latMin: number;
+  latMax: number;
+  lonMin: number;
+  lonMax: number;
+  delta: number;
+  ni: number;
+  nj: number;
+  fetchedAt: number;
+  /** Added by the provider layer; absent on rows written before it existed. */
+  provenance?: import("./types.js").Provenance;
+}
+
+export interface VictoriaGrid extends GridEnvelope {
+  points: GridPoint[];
+}
+
+export interface ThermalVictoriaGrid extends GridEnvelope {
+  points: ThermalPoint[];
+}
+
+/** Nominal column/row counts for the bounding box at the given spacing. */
+export function gridDimensions(bounds: GridBounds, delta: number): { ni: number; nj: number } {
+  return {
+    ni: Math.round((bounds.fineLonMax - bounds.fineLonMin) / delta) + 1,
+    nj: Math.round((bounds.fineLatMax - bounds.fineLatMin) / delta) + 1,
+  };
+}

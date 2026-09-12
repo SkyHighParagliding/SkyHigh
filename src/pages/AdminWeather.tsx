@@ -92,6 +92,56 @@ function hourLabel(h: number) {
 type GridType = 'fine' | 'thermal' | 'extended';
 const GRID_LABELS: Record<GridType, string> = { fine: 'Wind Grid', thermal: 'Thermal Grid', extended: '7-Day' };
 
+/** Mirrors server/grid/types.ts Provenance — which source supplied which points. */
+interface Provenance {
+  bySource: Array<{ source: string; label: string; points: number }>;
+  missing: number;
+  requested: number;
+  mixedFamilies: boolean;
+  notes: string[];
+}
+
+function parseProvenance(raw: string | undefined): Provenance | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw) as Provenance;
+    return Array.isArray(p?.bySource) ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Per-grid source breakdown, shown under the last-run summary. */
+function ProvenanceRow({ label, raw }: { label: string; raw: string | undefined }) {
+  const prov = parseProvenance(raw);
+  if (!prov) return null;
+
+  const supplied = prov.requested - prov.missing;
+  const pct = prov.requested > 0 ? Math.round((supplied / prov.requested) * 100) : 0;
+
+  return (
+    <div className="flex items-start gap-2 text-xs">
+      <span className="text-muted-foreground w-36 shrink-0">{label} sources</span>
+      <div className="space-y-0.5 min-w-0">
+        <div className="text-muted-foreground">
+          {supplied.toLocaleString()}/{prov.requested.toLocaleString()} points ({pct}%)
+          {prov.missing > 0 && <span className="text-amber-500"> — {prov.missing.toLocaleString()} missing</span>}
+        </div>
+        {prov.bySource.map(s => (
+          <div key={s.source} className="text-muted-foreground">
+            <span className="font-medium text-navy">{s.label}</span> — {s.points.toLocaleString()} points
+          </div>
+        ))}
+        {prov.mixedFamilies && (
+          <div className="text-amber-500 font-medium">
+            ⚠ Mixed ECMWF + GFS — map may show a seam
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AdminWeather() {
   const { settings, refreshSettings, updateSettings } = useSettings();
   const { token } = useAuth();
@@ -461,6 +511,15 @@ export function AdminWeather() {
                   );
                 })}
               </div>
+
+              {/* Data provenance — which source(s) supplied the last grid */}
+              {(settings.fineGridProvenance || settings.thermalGridProvenance) && (
+                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                  <ProvenanceRow label="Wind Grid" raw={settings.fineGridProvenance} />
+                  <ProvenanceRow label="Thermal Grid" raw={settings.thermalGridProvenance} />
+                </div>
+              )}
+
               <div className="mt-3 pt-3 border-t border-border">
                 <Button
                   variant="outline"

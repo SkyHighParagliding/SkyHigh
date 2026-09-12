@@ -6,7 +6,7 @@ import { parseDavisStationId, fetchDavisObservation } from "./davisWeather.js";
 import { parseWdlStationId, fetchWdlObservation, parseWportStationId, fetchWportObservation } from "./wdlWeather.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
-import { gridFetchActive } from "./victoriaGrid.js";
+import { isGridFetchActive } from "./grid/pipeline.js";
 
 const log = createLogger("weather");
 
@@ -126,7 +126,8 @@ function scheduleSourceFetch(type: SourceType, min: number, max: number) {
 async function updateForecasts(isManual: boolean): Promise<{ forecastsUpdated: number; totalSites: number; gridPoints: number; gridAgeMin: number; forecastError: string | null }> {
   const result = { forecastsUpdated: 0, totalSites: 0, gridPoints: 0, gridAgeMin: 0, forecastError: null as string | null };
   try {
-    const { fetchFineGrid, extractSiteForecast } = await import("./victoriaGrid.js");
+    const { fetchFineGrid } = await import("./grid/fineGrid.js");
+    const { extractSiteForecast } = await import("./grid/extract.js");
     const grid = await fetchFineGrid(isManual);
     result.gridPoints = grid.points.length;
     result.gridAgeMin = Math.round((Date.now() - grid.fetchedAt) / 60000);
@@ -178,7 +179,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
     return 0;
   }
 
-  if (!isManual && gridFetchActive) {
+  if (!isManual && isGridFetchActive()) {
     console.log(`Weather scraper [${type}]: Grid fetch in progress — skipping this cycle`);
     scheduleSourceFetch(type, min, max);
     return 0;

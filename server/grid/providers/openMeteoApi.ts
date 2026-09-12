@@ -15,7 +15,7 @@ import type {
 
 const log = createLogger("grid:openmeteo-api");
 
-/** Matches the tuned inter-tile pause in victoriaGrid.ts. */
+/** Inter-tile pause tuned against Open-Meteo's volume-based rate limiting. */
 const TILE_DELAY_MS = 5000;
 
 /** Open-Meteo batch limit — exceeding this returns an error. */
@@ -184,7 +184,7 @@ export const openMeteoApiProvider: GridProvider = {
           if (!r?.hourly) continue;
           const h = r.hourly;
 
-          // Guard: both wind arrays must be present; matches victoriaGrid.ts behaviour.
+          // Guard: a point without both wind arrays is unusable downstream.
           if (!Array.isArray(h.wind_speed_10m) || !Array.isArray(h.wind_direction_10m)) {
             log.warn(`Skipping point ${tile.lats[j]},${tile.lons[j]} — missing wind arrays`);
             continue;

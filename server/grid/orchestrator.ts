@@ -99,6 +99,38 @@ function reindexOntoCanonical(
   return { lat: series.lat, lon: series.lon, values };
 }
 
+/**
+ * The longest contiguous run of hours for which every point has a finite value
+ * in every variable it carries, as `[start, end)`.
+ *
+ * A window rather than a prefix, because gaps appear at either end: a source
+ * whose cycle starts later than the canonical axis leaves holes at the front,
+ * one with a shorter horizon leaves them at the back. Trimming to the shared
+ * window is what lets a grid assembled from disagreeing axes stay dense.
+ */
+function coveredWindow(points: MergedPoint[], axisLength: number): [number, number] {
+  const ok = new Array<boolean>(axisLength).fill(true);
+  for (const p of points) {
+    for (const series of Object.values(p.values) as number[][]) {
+      for (let i = 0; i < axisLength; i++) {
+        if (!Number.isFinite(series[i])) ok[i] = false;
+      }
+    }
+  }
+
+  let bestStart = 0, bestLen = 0, runStart = 0, runLen = 0;
+  for (let i = 0; i < axisLength; i++) {
+    if (ok[i]) {
+      if (runLen === 0) runStart = i;
+      runLen++;
+      if (runLen > bestLen) { bestLen = runLen; bestStart = runStart; }
+    } else {
+      runLen = 0;
+    }
+  }
+  return [bestStart, bestStart + bestLen];
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -273,6 +305,29 @@ export async function fetchMergedGrid(
 
   if (missingCount > 0) {
     notes.push(`${missingCount} point(s) not covered by any provider`);
+  }
+
+  // Re-indexing leaves NaN at any hour a source could not cover. Those holes
+  // must not survive into the grid: downstream the arrays are plain numbers,
+  // and a gap that reads as 0 would render as dead calm — indistinguishable
+  // from genuinely still air, in a tool people use to decide whether to fly.
+  // So we trim the axis to the leading run of fully-covered hours instead of
+  // encoding absence as a value. A shorter honest forecast beats a longer one
+  // with invented calm in it.
+  const [from, to] = coveredWindow(points, canonicalTime.length);
+  if (to === 0) {
+    throw new Error("fetchMergedGrid: no hour was covered by every point — refusing to emit a grid with holes");
+  }
+  if (to - from < canonicalTime.length) {
+    const dropped = canonicalTime.length - (to - from);
+    notes.push(`Forecast trimmed by ${dropped}h to ${canonicalTime[from]} – ${canonicalTime[to - 1]} — not every source covered the full horizon`);
+    log.warn(`Trimming canonical axis ${canonicalTime.length}h → ${to - from}h (incomplete coverage)`);
+    canonicalTime = canonicalTime.slice(from, to);
+    for (const p of points) {
+      for (const key of Object.keys(p.values) as Variable[]) {
+        p.values[key] = p.values[key]!.slice(from, to);
+      }
+    }
   }
 
   // Derived from what actually contributed, not from which families we walked:

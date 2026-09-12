@@ -114,7 +114,7 @@ async function runDriveSync() {
 async function fetchFineGridDaily() {
   const ts = new Date().toISOString();
   try {
-    const { fetchFineGrid } = await import("../victoriaGrid.js");
+    const { fetchFineGrid } = await import("../grid/fineGrid.js");
     await fetchFineGrid(true);
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastRun", ts]);
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", "ok"]);
@@ -129,34 +129,61 @@ async function fetchFineGridDaily() {
 // Delays between retry rounds: 30min, 1h, 2h, 4h — spaced to avoid free-tier rate limit resets
 const THERMAL_RETRY_DELAYS_MS = [30 * 60_000, 60 * 60_000, 120 * 60_000, 240 * 60_000];
 
+/**
+ * Number of requested points no provider could supply on the last thermal
+ * fetch. Written after every run so the admin panel and the startup check have
+ * a single, always-current signal.
+ *
+ * This replaces the old list of failed tiles: the orchestrator now gap-fills
+ * across providers, so a tile that failed at tier 1 is usually filled at tier 2
+ * and is not a gap at all. Only points missing from the merged result warrant
+ * a retry.
+ */
+const THERMAL_GAP_KEY = "thermalGridMissingPoints";
+
+async function setThermalGapCount(count: number): Promise<void> {
+  await execute(
+    "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+    [THERMAL_GAP_KEY, String(count)],
+  );
+}
+
+export async function getThermalGapCount(): Promise<number> {
+  const row = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = $1", [THERMAL_GAP_KEY]);
+  const n = parseInt(row?.value ?? "0", 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 async function fetchThermalGridDaily(retryRound = 0) {
   const ts = new Date().toISOString();
   const roundLabel = retryRound > 0 ? ` (retry ${retryRound}/${THERMAL_RETRY_DELAYS_MS.length})` : '';
   try {
-    const { fetchThermalGrid, lastThermalGridFresh } = await import("../victoriaGrid.js");
-    await fetchThermalGrid(true);
+    const { fetchThermalGrid, THERMAL_GRID_CACHE_KEY } = await import("../grid/thermalGrid.js");
+    const { wasLastFetchFresh } = await import("../grid/pipeline.js");
+    const grid = await fetchThermalGrid(true);
+    const isFresh = wasLastFetchFresh(THERMAL_GRID_CACHE_KEY);
 
-    const failedRow = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
-    const failedCount = failedRow?.value ? (JSON.parse(failedRow.value) as unknown[]).length : 0;
+    const missing = grid.provenance?.missing ?? 0;
+    await setThermalGapCount(missing);
 
-    if (failedCount > 0 && retryRound < THERMAL_RETRY_DELAYS_MS.length) {
+    if (missing > 0 && retryRound < THERMAL_RETRY_DELAYS_MS.length) {
       const delayMs = THERMAL_RETRY_DELAYS_MS[retryRound];
       const delayMin = Math.round(delayMs / 60_000);
-      const resultMsg = `partial — ${failedCount} tiles, retry ${retryRound + 1}/${THERMAL_RETRY_DELAYS_MS.length} in ${delayMin}min`;
+      const resultMsg = `partial — ${missing} points, retry ${retryRound + 1}/${THERMAL_RETRY_DELAYS_MS.length} in ${delayMin}min`;
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
-      log.info(`Thermal grid${roundLabel}: ${failedCount} tiles failed — retry ${retryRound + 1} scheduled in ${delayMin}min`);
+      log.info(`Thermal grid${roundLabel}: ${missing} points missing — retry ${retryRound + 1} scheduled in ${delayMin}min`);
       setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
-    } else if (failedCount > 0) {
-      const resultMsg = `partial — ${failedCount} tiles unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries`;
+    } else if (missing > 0) {
+      const resultMsg = `partial — ${missing} points unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries`;
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
-      log.warn(`Thermal grid: ${failedCount} tiles still failing after ${THERMAL_RETRY_DELAYS_MS.length} retries — 7:30am cron is the final backstop`);
+      log.warn(`Thermal grid: ${missing} points still missing after ${THERMAL_RETRY_DELAYS_MS.length} retries — 7:30am cron is the final backstop`);
     } else {
-      const resultMsg = lastThermalGridFresh ? "ok" : "ok (rate limited — showing cached data)";
+      const resultMsg = isFresh ? "ok" : "ok (rate limited — showing cached data)";
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
-      log.info(`Thermal grid${roundLabel} completed (${lastThermalGridFresh ? "fresh data" : "fallback to cache"})`);
+      log.info(`Thermal grid${roundLabel} completed (${isFresh ? "fresh data" : "fallback to cache"})`);
     }
   } catch (e: any) {
     if (retryRound < THERMAL_RETRY_DELAYS_MS.length) {
@@ -177,14 +204,12 @@ async function fetchThermalGridDaily(retryRound = 0) {
 // Exported so the manual fetch route uses the same retry chain
 export { fetchThermalGridDaily as runThermalGridFetch };
 
-async function retryThermalFailedTiles() {
-  // 7:30am cron — final backstop if auto-retries above didn't clear all tiles
-  const setting = await queryOne<{ value: string }>(`SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'`);
-  if (!setting?.value) return;
-  const tiles = JSON.parse(setting.value);
-  if (!Array.isArray(tiles) || tiles.length === 0) return;
-  log.info(`Thermal grid 7:30am backstop: ${tiles.length} tiles still pending — re-running fetch`);
-  await fetchThermalGridDaily();
+/** 7:30am backstop — runs only if the auto-retry chain left gaps behind. */
+async function retryThermalGaps() {
+  const missing = await getThermalGapCount();
+  if (missing === 0) return;
+  log.info(`Thermal grid 7:30am backstop: ${missing} points still missing — re-running fetch`);
+  await fetchThermalGridDaily(0);
 }
 
 async function startupGridCheck() {
@@ -205,21 +230,20 @@ async function startupGridCheck() {
     log.info(`Fine grid: today's data already cached (${todayMelb}) — skipping startup fetch`);
   }
 
-  // Thermal grid: same today-row check, plus failed tiles pending retry
-  const thermalFailedTiles = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridFailedTiles'");
-  const hasPendingRetry = !!thermalFailedTiles?.value && JSON.parse(thermalFailedTiles.value).length > 0;
+  // Thermal grid: same today-row check, plus any gaps left by a previous run
+  const pendingGaps = await getThermalGapCount();
   const thermalGridToday = await queryOne<{ siteId: string }>(
     `SELECT "siteId" FROM wind_grid_data WHERE "siteId" = $1`,
     [`thermal_grid_${todayMelb}`]
   );
-  if (hasPendingRetry) {
-    log.info(`Thermal grid startup fetch triggered (failed tiles pending retry) — running in 3min...`);
-    setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
+  if (pendingGaps > 0) {
+    log.info(`Thermal grid startup fetch triggered (${pendingGaps} points missing) — running in 3min...`);
+    setTimeout(() => fetchThermalGridDaily(0), 3 * 60_000);
   } else if (!thermalGridToday) {
     const thermalLastRun = await queryOne<{ value: string }>("SELECT value FROM settings WHERE key = 'thermalGridLastRun'");
     const hoursAgo = thermalLastRun?.value ? Math.round((Date.now() - new Date(thermalLastRun.value).getTime()) / 3600000) : null;
     log.info(`Thermal grid: no data for today (${todayMelb})${hoursAgo !== null ? `, last attempt ${hoursAgo}h ago` : ''} — fetching in 3min...`);
-    setTimeout(() => fetchThermalGridDaily(), 3 * 60_000);
+    setTimeout(() => fetchThermalGridDaily(0), 3 * 60_000);
   } else {
     log.info(`Thermal grid: today's data already cached (${todayMelb}) — skipping startup fetch`);
   }
@@ -233,11 +257,14 @@ export async function startScheduledJobs() {
   cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
 
-  cron.schedule("26 5 * * *", fetchThermalGridDaily, { timezone: "Australia/Melbourne" });
+  // Wrapped, not passed directly: node-cron invokes tasks with a TaskContext
+  // argument, which would arrive as `retryRound` and silently disable the
+  // retry chain on the cron path (an object is never < the delay count).
+  cron.schedule("26 5 * * *", () => fetchThermalGridDaily(0), { timezone: "Australia/Melbourne" });
   log.info("Thermal grid daily fetch scheduled: 5:26am Melbourne time");
 
-  cron.schedule("30 7 * * *", retryThermalFailedTiles, { timezone: "Australia/Melbourne" });
-  log.info("Thermal grid retry scheduled: 7:30am Melbourne time (runs only if tiles failed)");
+  cron.schedule("30 7 * * *", () => retryThermalGaps(), { timezone: "Australia/Melbourne" });
+  log.info("Thermal grid retry scheduled: 7:30am Melbourne time (runs only if points are missing)");
 
   cron.schedule("0 * * * *", async () => {
     const melbourneNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));

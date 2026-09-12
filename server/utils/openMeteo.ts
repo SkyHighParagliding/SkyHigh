@@ -1,6 +1,6 @@
 /**
  * Open-Meteo API shared constants and parameter builder.
- * Consumed by victoriaGrid.ts and extendedForecast.ts.
+ * Consumed by the grid providers and extendedForecast.ts.
  */
 
 export const OPEN_METEO_API_KEY = process.env.OPEN_METEO_API_KEY ?? "";

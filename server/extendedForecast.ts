@@ -1,7 +1,9 @@
 import { query, queryOne, execute } from "./pg.js";
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
-import { getCachedFineGrid, getTimeWindow, getGridBounds } from "./victoriaGrid.js";
+import { getCachedFineGrid } from "./grid/fineGrid.js";
+import { getTimeWindow } from "./grid/extract.js";
+import { getGridBounds } from "./grid/bounds.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
 import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
 import { buildColumnTiles } from "./utils/gridTiles.js";

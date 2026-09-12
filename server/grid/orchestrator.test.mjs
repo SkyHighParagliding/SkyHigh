@@ -352,12 +352,16 @@ console.log("\nTEST 5: Misaligned time axes — re-indexed by string match, not 
   // TIME_AXIS_1: ["T06", "T07", "T08"]  (provider 1)
   // TIME_AXIS_2: ["T07", "T08", "T09"]  (provider 2)
   //
-  // After merge, the canonical axis is TIME_AXIS_1 (first provider).
-  // Provider 2's point must be re-indexed so:
-  //   canonical T06 → NaN   (provider 2 has no T06)
+  // After merge the canonical axis starts as TIME_AXIS_1 (first provider), and
+  // provider 2's point is re-indexed onto it BY TIMESTAMP STRING:
+  //   canonical T06 → no value (provider 2 has no T06)
   //   canonical T07 → provider2's index 0 value
   //   canonical T08 → provider2's index 1 value
   //   (T09 from provider 2 is beyond the canonical axis — dropped)
+  //
+  // The orchestrator then trims to the window every point covers, so T06 goes
+  // and the result is T07–T08. Absence is never encoded as a number: a 0 would
+  // read as dead calm, which is a lie a pilot might act on.
 
   const provider1 = makeProvider({
     id: "openmeteo-api",
@@ -388,25 +392,34 @@ console.log("\nTEST 5: Misaligned time axes — re-indexed by string match, not 
     { providers: [provider1, provider2] },
   );
 
-  assert(result.time.length === 3, "Canonical time axis has 3 entries");
-  assertEqual(result.time, TIME_AXIS_1, "Canonical axis matches provider 1 (first to return data)");
+  // T06 is uncovered by point B, so the shared window is T07–T08.
+  assertEqual(result.time, TIME_AXIS_1.slice(1), "Axis trimmed to the window both points cover");
+  assert(
+    result.provenance.notes.some(n => n.includes("trimmed")),
+    "Trimming is disclosed in provenance, not silent",
+  );
 
   const ptA = result.points.find(p => Math.abs(p.lat - POINT_A.lat) < 0.001);
   const ptB = result.points.find(p => Math.abs(p.lat - POINT_B.lat) < 0.001);
 
   assert(!!ptA && !!ptB, "Both points present");
 
-  // Point A: from provider 1, already on canonical axis — no change
-  assertEqual(ptA.values.wind_speed_10m, [10, 11, 12], "Point A values intact");
+  // Point A came from provider 1 on the canonical axis: T06's 10 is dropped by
+  // the trim, leaving T07=11, T08=12. If re-indexing were positional this would
+  // still be [10, 11] and the whole forecast would be shifted an hour early.
+  assertEqual(ptA.values.wind_speed_10m, [11, 12], "Point A sliced to the window, not shifted");
 
-  // Point B: from provider 2 with offset axis — must be re-indexed
-  // canonical[0] = T06 → provider 2 has no T06 → NaN
-  // canonical[1] = T07 → provider 2's index 0 → 71
-  // canonical[2] = T08 → provider 2's index 1 → 81
-  const bVals = ptB.values.wind_speed_10m;
-  assert(Number.isNaN(bVals[0]), "Point B at T06 is NaN (provider 2 had no T06)");
-  assert(bVals[1] === 71, "Point B at T07 is 71 (re-indexed from provider 2's position 0)");
-  assert(bVals[2] === 81, "Point B at T08 is 81 (re-indexed from provider 2's position 1)");
+  // Point B came from the offset axis: T07 and T08 must carry provider 2's
+  // index 0 and 1 values, matched by string.
+  assertEqual(ptB.values.wind_speed_10m, [71, 81], "Point B re-indexed by timestamp, then sliced");
+
+  // The invariant that matters: no hole survives into the grid.
+  for (const p of result.points) {
+    assert(
+      p.values.wind_speed_10m.every(Number.isFinite),
+      `No non-finite values survive for point ${p.lat}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

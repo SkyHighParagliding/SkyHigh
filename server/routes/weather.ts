@@ -10,7 +10,10 @@ import { getWdlStations, getWdlStationId, parseWdlStationId, getWportStations, g
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getCachedFineGrid, getCachedThermalGrid, extractWindParticles, fetchFineGrid, fetchThermalGrid, extractFullWindGrid, extractThermalGrid, getGridBounds, clearFineGridCaches, lastThermalGridFresh } from "../victoriaGrid.js";
+import { getGridBounds } from "../grid/bounds.js";
+import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches } from "../grid/fineGrid.js";
+import { fetchThermalGrid, getCachedThermalGrid } from "../grid/thermalGrid.js";
+import { extractFullWindGrid, extractThermalGrid, extractWindParticles } from "../grid/extract.js";
 import { runThermalGridFetch } from "../utils/scheduledJobs.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
 import { fetchExtendedForecast } from "../extendedForecast.js";
