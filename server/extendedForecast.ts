@@ -813,8 +813,10 @@ async function getSettingInt(key: string, fallback: number): Promise<number> {
 
 export async function scheduleExtendedForecast(): Promise<void> {
   const now = new Date();
+  // Defaults must match seed.ts and the AdminScheduledTasks client default —
+  // they disagreed (5:40 / 4:30 / 5:30) until 2026-09-13.
   const targetHour = await getSettingInt("schedExtendedForecastHour", 5);
-  const targetMinute = await getSettingInt("schedExtendedForecastMinute", 40);
+  const targetMinute = await getSettingInt("schedExtendedForecastMinute", 30);
 
   const melbFormatter = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne',

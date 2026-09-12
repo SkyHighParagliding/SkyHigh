@@ -138,7 +138,9 @@ let seedSettings: [string, string][] = [
   ['weatherScraper_davis_max', '10'],
   ['schedSiteguideHour', '5'],
   ['schedSiteguideMinute', '0'],
-  ['schedExtendedForecastHour', '4'],
+  // 5:30am — after the 5:00am Wind and 5:26am Thermal crons, matching production
+  // and the extendedForecast.ts fallback. Was '4' here, which disagreed with both.
+  ['schedExtendedForecastHour', '5'],
   ['schedExtendedForecastMinute', '30'],
   ['submissionNotifyHour', '19'],
   ['submissionNotifyEnabled', 'true'],

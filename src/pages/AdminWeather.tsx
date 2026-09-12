@@ -260,6 +260,17 @@ export function AdminWeather() {
     }
   }, [settings.thermalGridProgress, settings.fineGridProgress, settings.extendedGridProgress]);
 
+  // 7-Day fetch time, read from the same setting the scheduler uses so this
+  // description cannot drift from the real schedule.
+  const extendedScheduleLabel = (() => {
+    const h = parseInt(String(settings.schedExtendedForecastHour ?? "5"), 10);
+    const m = parseInt(String(settings.schedExtendedForecastMinute ?? "30"), 10);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return "its scheduled time";
+    const suffix = h < 12 ? "am" : "pm";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, "0")}${suffix}`;
+  })();
+
   const [schedStartHour, setSchedStartHour] = useState<number>(7);
   const [schedEndHour, setSchedEndHour] = useState<number>(20);
   const [schedContinuous, setSchedContinuous] = useState(false);
@@ -444,7 +455,11 @@ export function AdminWeather() {
                     Grid Data
                   </CardTitle>
                   <CardDescription>
-                    Wind grid data downloaded daily at 5:00am (Wind), 5:26am (Thermal), and 5:40am (7-Day). Cached for entire day.
+                    {/* Wind and Thermal are fixed crons in scheduledJobs.ts. The 7-Day
+                        time is a database setting editable on Scheduled Tasks, so it is
+                        read live rather than written here — a hard-coded time drifted
+                        out of step with the real schedule once already. */}
+                    Wind grid data downloaded daily at 5:00am (Wind), 5:26am (Thermal), and {extendedScheduleLabel} (7-Day). Cached for entire day.
                   </CardDescription>
                 </div>
               </div>

@@ -15,10 +15,20 @@ router.get("/", asyncHandler(async (req, res) => {
     result[s.key] = s.value;
   }
 
+  // The three *LastRun keys in the settings table record when a fetch *started*
+  // and are only written once it finishes, so a long run leaves the admin panel
+  // showing the previous run's time with no sign that a new one is underway.
+  // Where the data table itself carries a write time, prefer it — it answers the
+  // question the panel actually asks ("when did this data land?").
   const fineRow = await query<{ ts: Date | string | null }>(
     `SELECT MAX("updatedAt") as ts FROM wind_grid_data WHERE "siteId" LIKE 'fine_grid_%'`
   );
   if (fineRow?.[0]?.ts) result.fineGridLastRun = new Date(fineRow[0].ts).toISOString();
+
+  const thermalRow = await query<{ ts: Date | string | null }>(
+    `SELECT MAX("updatedAt") as ts FROM wind_grid_data WHERE "siteId" LIKE 'thermal_grid_%'`
+  );
+  if (thermalRow?.[0]?.ts) result.thermalGridLastRun = new Date(thermalRow[0].ts).toISOString();
 
   const extRow = await query<{ ts: string | null }>(
     `SELECT MAX("computedAt") as ts FROM extended_wind_grids`
