@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info } from 'lucide-react';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
+import { MapScaleBar } from '../windmap/MapScaleBar';
 import { cn } from '@/lib/utils';
 import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar, getThermalAt } from '../windmap/thermalInterpolation';
@@ -52,6 +53,11 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
+  // lat/k from onTransformChange; fall back to site lat and a sensible default zoom.
+  const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: site?.lat ?? -37.8, k: 256 * Math.pow(2, 8) });
+  const handleTransformChange = useCallback((lat: number, _lon: number, zoomLevel: number) => {
+    setMapTransform({ lat, k: 256 * Math.pow(2, zoomLevel) });
+  }, []);
 
   useEffect(() => {
     fetch('/api/weather/thermal-overlay')
@@ -194,6 +200,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
             sizeKey={fullscreen ? 2 : 1}
             onThermalInfoChange={setThermalInfo}
             siteMarkers={launchMarker}
+            onTransformChange={handleTransformChange}
           />
         </Suspense>
       ) : null}
@@ -238,6 +245,19 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
           </div>
         );
       })()}
+
+      {/* Scale bar.
+          Embedded: top-right, clear of the tapped-point info (top-left) and the
+          fullscreen button (top-right of the map — but that's right-2 and this bar
+          is tucked left of it; in practice the fullscreen button is 28px so we use
+          right-10 to stay clear of it).
+          Fullscreen: bottom-left, above the legend. */}
+      {thermalGrid && (
+        <div className={`absolute z-10 ${fullscreen ? 'left-2' : 'top-2 right-10'}`}
+             style={fullscreen ? { bottom: 'calc(0.5rem + 52px)' } : undefined}>
+          <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
+        </div>
+      )}
 
       {/* Legend */}
       {thermalGrid && (

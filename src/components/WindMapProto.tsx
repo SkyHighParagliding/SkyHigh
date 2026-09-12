@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { Altitude } from '@/components/Altitude';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
+import { MapScaleBar } from './windmap/MapScaleBar';
 import { fetchWindGridCached } from '@/lib/windGridCache';
 import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
 import { WindCanvas } from './windmap/WindCanvas';
@@ -22,8 +23,14 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [singleWindInfo, setSingleWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
+  // lat/k from onTransformChange (zoomLevel → k = 256 * 2^zoomLevel)
+  const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: siteLat, k: INITIAL_K });
 
   const todayFetcher = useCallback(() => fetchWindGridCached(siteId), [siteId]);
+
+  const handleTransformChange = useCallback((lat: number, _lon: number, zoomLevel: number) => {
+    setMapTransform({ lat, k: 256 * Math.pow(2, zoomLevel) });
+  }, []);
 
   const {
     windGrid, loading, error,
@@ -68,6 +75,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
           siteName={siteName}
           onZoomChange={setZoomK}
           onWindInfoChange={setSingleWindInfo}
+          onTransformChange={handleTransformChange}
           siteStatus={siteStatus}
           siteUpcomingClosureDates={siteUpcomingClosureDates}
         />
@@ -133,6 +141,14 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
               )}
             </div>
           </div>
+        </div>
+
+        {/* Scale bar — bottom-left, clears the tray handle when closed and the full tray when open */}
+        <div
+          className="absolute left-3 z-30 transition-[bottom] duration-300"
+          style={{ bottom: trayOpen ? 104 : 8 }}
+        >
+          <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
         </div>
 
         <WindMapScrubberTray

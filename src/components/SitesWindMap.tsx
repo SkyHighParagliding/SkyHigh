@@ -3,6 +3,7 @@ import { Altitude } from '@/components/Altitude';
 import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
+import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes';
@@ -23,6 +24,9 @@ interface SitesWindMapProps {
   zoomSetpoints?: ZoomSetpoints;
 }
 
+/** Overlay hide-level at which nothing is drawn over the map at all. */
+const OVERLAY_OFF = 5;
+
 export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
@@ -41,20 +45,48 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [thermalLoading, setThermalLoading] = useState(false);
   const [thermalError, setThermalError] = useState<string | null>(null);
-  // The INFO button cycles three ways on phones, where vertical space is scarce:
-  //   'full'    — mode toggle, gradient legend, and the data bar
-  //   'compact' — gradient legend dropped, so the data bar rises into its place
-  //   'off'     — nothing but the map
-  // Desktop always renders 'full' (the INFO button is lg:hidden), so the cycle
-  // only ever matters below the lg breakpoint.
-  const [overlayMode, setOverlayMode] = useState<'full' | 'compact' | 'off'>(
-    () => (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'full' : 'off'),
+  // The INFO button strips overlay pills one at a time on phones where vertical
+  // space is scarce. We use a numeric level rather than a named enum because the
+  // pill count varies by viewMode and isThermalEnabled — a fixed enum cannot
+  // express "one press removes exactly one currently-rendered pill". Each
+  // increment hides one more pill, in this order:
+  //   0 = full (all pills visible)
+  //   1 = gradient legend hidden
+  //   2 = site type legend hidden (wind mode only; skipped in thermal)
+  //   3 = today/7-day toggle hidden (wind mode only; skipped in thermal)
+  //   4 = view toggle hidden (only when isThermalEnabled)
+  //   5 = off (bare map)
+  // Desktop always renders the full overlay (lg:flex); the INFO button is
+  // lg:hidden so the level only matters below the lg breakpoint.
+  const [overlayLevel, setOverlayLevel] = useState(
+    () => (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : OVERLAY_OFF),
   );
-  const showOverlay = overlayMode !== 'off';
+  // Derived helpers — read these instead of comparing the level directly, so the
+  // logic stays in one place when pill definitions change.
+  const showOverlay = overlayLevel < OVERLAY_OFF;
+  const hideGradientLegend = overlayLevel >= 1;
+  const hideSiteTypeLegend = overlayLevel >= 2;
+  const hideModeToggle = overlayLevel >= 3;
+  const hideViewToggle = overlayLevel >= 4;
+  // Which pills are actually on screen right now, combining the hide level with
+  // each pill's own render condition.
+  const gradientPillShown = !hideGradientLegend;
+  const siteTypePillShown = viewMode === 'wind' && !hideSiteTypeLegend;
+  const modeTogglePillShown = viewMode === 'wind' && !hideModeToggle;
+  const viewTogglePillShown = isThermalEnabled && !hideViewToggle;
+  // The data pill moves up and left the moment it is the last one standing —
+  // derived from the pills themselves rather than from a magic level, because the
+  // level at which that happens differs by mode (4 in thermal, 3 when the thermal
+  // feature is off, 4 in wind with it on).
+  const dataPillOnly = showOverlay
+    && !gradientPillShown && !siteTypePillShown && !modeTogglePillShown && !viewTogglePillShown;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
   const [liveView, setLiveView] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
+  // lat/k for the scale bar, derived from onTransformChange (which fires on both
+  // WindCanvas and ThermalCanvas). k = 256 * 2^zoomLevel.
+  const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: -37.8, k: INITIAL_K });
   const didPushHistoryRef = useRef(false);
   const closingViaPopRef = useRef(false);
 
@@ -99,6 +131,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setViewMode(mode);
     setSelectedSite(null);
     if (mode === 'thermal') setMapMode('today');
+    // Reset overlay to full when switching modes — the pill set changes and the
+    // previous level may hide wrong pills.
+    setOverlayLevel(prev => prev < OVERLAY_OFF ? 0 : prev);
   }, []);
 
   // Thermal data at the selected site, live-updating with currentTime
@@ -135,7 +170,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => setOverlayMode(e.matches ? 'full' : 'off');
+    const handler = (e: MediaQueryListEvent) => setOverlayLevel(e.matches ? 0 : OVERLAY_OFF);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
@@ -196,6 +231,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const handleTransformChange = useCallback((lat: number, lon: number, zoom: number) => {
     setLiveView({ lat, lon, zoom });
+    setMapTransform({ lat, k: 256 * Math.pow(2, zoom) });
   }, []);
 
   const handleSiteClick = useCallback((site: SiteMarker, x: number, y: number) => {
@@ -206,6 +242,33 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setZoomK(k);
     setSelectedSite(null);
   }, []);
+
+  /**
+   * The next level up that actually changes what is on screen. Levels whose pill
+   * is not rendered in the current mode are skipped, so every press visibly
+   * removes exactly one pill instead of appearing to do nothing.
+   */
+  const nextOverlayLevel = useCallback((prev: number) => {
+    if (prev >= OVERLAY_OFF) return 0; // wrap: off → full
+    let next = prev + 1;
+    if (next === 2 && viewMode !== 'wind') next++;        // site type legend — wind only
+    if (next === 3 && viewMode !== 'wind') next++;        // today/7-day toggle — wind only
+    if (next === 4 && !isThermalEnabled) next++;          // view toggle — only when enabled
+    return next;
+  }, [viewMode, isThermalEnabled]);
+
+  const advanceOverlayLevel = useCallback(() => {
+    setOverlayLevel(nextOverlayLevel);
+  }, [nextOverlayLevel]);
+
+  // Tooltip describes what the *next* press will do, accounting for the skips
+  // above — otherwise it promises to hide a pill that this mode never showed.
+  const infoButtonTitle = (() => {
+    const next = nextOverlayLevel(overlayLevel);
+    if (next === 0) return 'Show map info';
+    if (next >= OVERLAY_OFF) return 'Hide map info';
+    return ['', 'Hide the strength legend', 'Hide the site key', 'Hide the today/7-day toggle', 'Hide the wind/thermal toggle'][next];
+  })();
 
   const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
@@ -424,25 +487,39 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       )}
 
       <button
-        onClick={() => setOverlayMode(m => (m === 'off' ? 'full' : m === 'full' ? 'compact' : 'off'))}
-        title={overlayMode === 'off' ? 'Show map info' : overlayMode === 'full' ? 'Hide the strength legend' : 'Hide map info'}
+        onClick={advanceOverlayLevel}
+        title={infoButtonTitle}
         className={`absolute top-3 right-3 z-30 lg:hidden flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors border shadow-lg ${
-          overlayMode === 'full'
+          overlayLevel === 0
             ? 'bg-sky-500 text-white border-white/20'
-            : overlayMode === 'compact'
-              ? 'bg-sky-500/30 text-sky-100 border-sky-400/50 backdrop-blur-md'
-              : 'bg-black/60 text-white/70 border-white/10 backdrop-blur-md'
+            : dataPillOnly
+              // De-emphasised but still legible. A translucent sky tint was tried
+              // here first and disappeared against the near-white thermal basemap,
+              // so this state reuses the dark plate with a sky accent.
+              ? 'bg-black/55 text-sky-200 border-sky-400/40 backdrop-blur-md'
+              : showOverlay
+                // Kept opaque enough to stay readable over the near-white thermal
+                // basemap as well as the dark wind map.
+                ? 'bg-sky-600/80 text-white border-sky-300/50 backdrop-blur-md'
+                : 'bg-black/60 text-white/70 border-white/10 backdrop-blur-md'
         }`}
       >
         <Layers className="w-3 h-3" />
         INFO
       </button>
 
-      {/* Overlay info panel */}
-      <div className={`absolute top-14 left-3 z-30 flex-col gap-1.5 max-w-[calc(100vw-1.5rem)] ${showOverlay ? 'flex' : 'hidden'} lg:flex`}>
+      {/* Overlay info panel.
+          dataPillOnly: repositioned to top-3 left-14 so it sits in the top bar
+          beside the fullscreen button, freeing the map area. max-w is tightened
+          in that state so it cannot run under the INFO button at top-3 right-3. */}
+      <div className={`absolute z-30 flex-col gap-1.5 ${
+        dataPillOnly
+          ? 'top-3 left-14 max-w-[calc(100vw-7rem)]'
+          : 'top-14 left-3 max-w-[calc(100vw-1.5rem)]'
+      } ${showOverlay ? 'flex' : 'hidden'} lg:flex lg:top-14 lg:left-3 lg:max-w-[calc(100vw-1.5rem)]`}>
 
         {/* Wind / Thermal view toggle (feature-flagged) */}
-        {isThermalEnabled && (
+        {isThermalEnabled && !hideViewToggle && (
           <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
             <button
               onClick={() => handleViewModeChange('wind')}
@@ -462,10 +539,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         )}
 
         {/* Today / 7-day toggle (wind mode only) */}
-        {viewMode === 'wind' && sitesModeToggle}
+        {viewMode === 'wind' && !hideModeToggle && sitesModeToggle}
 
         {/* Site type legend (wind mode only) */}
-        {viewMode === 'wind' && (
+        {viewMode === 'wind' && !hideSiteTypeLegend && (
           <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[9px] font-mono">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
             <span className="text-white/70">{clubName}</span>
@@ -478,9 +555,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           </div>
         )}
 
-        {/* Gradient legend — the tall block. Dropped in 'compact' so the flex
-            column collapses and the readout below rises into its place. */}
-        {overlayMode !== 'compact' && (
+        {/* Gradient legend — dropped first (level 1+) so the readout below rises. */}
+        {!hideGradientLegend && (
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
           {viewMode === 'thermal' ? (
             <>
@@ -630,13 +706,13 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     </>
                   )}
                   <span className="text-white/40">|</span>
-                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2">
                   <span className="text-white/40">Tap map to pin wind reading</span>
                   <span className="text-white/40">|</span>
-                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
                 </div>
               )}
               {/* Mobile: two rows (below lg) */}
@@ -666,7 +742,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         <span className="text-white/40">|</span>
                       </>
                     )}
-                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
                   </div>
                 </div>
               ) : (
@@ -675,7 +751,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     <span className="text-white/40">Tap map to pin wind reading</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
+                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
                   </div>
                 </div>
               )}
@@ -683,6 +759,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           )}
         </div>
       </div>
+
+      {/* Scale bar — visible in every INFO state except the bare-map off state.
+          Shifts up when the scrubber tray is open so the tray doesn't cover it. */}
+      {showOverlay && (
+        <div
+          className="absolute left-3 z-30 transition-[bottom] duration-300 pointer-events-none"
+          style={{ bottom: trayOpen ? 104 : 8 }}
+        >
+          <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
+        </div>
+      )}
 
       {/* Thermal help modal */}
       {showThermalHelp && <ThermalHelpModal onClose={() => setShowThermalHelp(false)} />}
