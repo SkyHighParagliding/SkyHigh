@@ -111,6 +111,52 @@ function parseProvenance(raw: string | undefined): Provenance | null {
   }
 }
 
+interface GridHealthRecord {
+  severity: "ok" | "degraded" | "critical";
+  summary: string;
+  at: string;
+}
+
+function parseHealth(raw: string | undefined): GridHealthRecord | null {
+  if (!raw) return null;
+  try {
+    const h = JSON.parse(raw) as GridHealthRecord;
+    return h?.severity ? h : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fallback banner. Silent while the grid is served by ECMWF (tiers 1–2),
+ * including when tier 1 is rate-limited — that is the normal case and flagging
+ * it would train everyone to ignore this box.
+ */
+function GridHealthBanner({ label, raw }: { label: string; raw: string | undefined }) {
+  const health = parseHealth(raw);
+  if (!health || health.severity === "ok") return null;
+
+  const critical = health.severity === "critical";
+  return (
+    <div
+      className={`rounded-md px-3 py-2 text-xs ${
+        critical
+          ? "bg-red-50 border border-red-300 text-red-800"
+          : "bg-amber-50 border border-amber-300 text-amber-800"
+      }`}
+    >
+      <div className="font-semibold">
+        {critical ? "⛔" : "⚠"} {label}: {critical ? "last-resort provider used" : "reduced-quality fallback"}
+      </div>
+      <div className="mt-0.5">{health.summary}</div>
+      <div className="mt-1 opacity-75">
+        {new Date(health.at).toLocaleString("en-AU", { timeZone: "Australia/Melbourne" })}
+        {critical && " — admins have been emailed"}
+      </div>
+    </div>
+  );
+}
+
 /** Per-grid source breakdown, shown under the last-run summary. */
 function ProvenanceRow({ label, raw }: { label: string; raw: string | undefined }) {
   const prov = parseProvenance(raw);
@@ -515,6 +561,8 @@ export function AdminWeather() {
               {/* Data provenance — which source(s) supplied the last grid */}
               {(settings.fineGridProvenance || settings.thermalGridProvenance) && (
                 <div className="mt-3 pt-3 border-t border-border space-y-2">
+                  <GridHealthBanner label="Wind Grid" raw={settings.fineGridHealth} />
+                  <GridHealthBanner label="Thermal Grid" raw={settings.thermalGridHealth} />
                   <ProvenanceRow label="Wind Grid" raw={settings.fineGridProvenance} />
                   <ProvenanceRow label="Thermal Grid" raw={settings.thermalGridProvenance} />
                 </div>

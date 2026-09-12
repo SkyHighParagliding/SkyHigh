@@ -42,6 +42,9 @@ interface Settings {
   /** JSON-encoded Provenance for the last fine/thermal grid fetch. */
   fineGridProvenance?: string;
   thermalGridProvenance?: string;
+  /** JSON-encoded GridHealthRecord — set whenever a fallback tier contributed. */
+  fineGridHealth?: string;
+  thermalGridHealth?: string;
   homeCardsSelection?: string;
   homeCardsCycle?: boolean;
   homeCardsCyclePinned?: string;
@@ -281,6 +284,8 @@ function buildSettings(data: Record<string, any>): Settings {
     extendedGridProgress: data.extendedGridProgress || undefined,
     fineGridProvenance: data.fineGridProvenance || undefined,
     thermalGridProvenance: data.thermalGridProvenance || undefined,
+    fineGridHealth: data.fineGridHealth || undefined,
+    thermalGridHealth: data.thermalGridHealth || undefined,
     homeCardsSelection: cleanString(data.homeCardsSelection),
     homeCardsCycle: data.homeCardsCycle === "true",
     homeCardsCyclePinned: cleanString(data.homeCardsCyclePinned),

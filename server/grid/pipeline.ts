@@ -17,6 +17,7 @@
  */
 
 import createLogger from "../utils/logger.js";
+import { reportGridHealth } from "../utils/gridAlerts.js";
 import { fetchMergedGrid, type OrchestratorOptions } from "./orchestrator.js";
 import { cleanupOldGrids, melbourneToday, readGrid, readLatestGrid, setStatus, writeGrid } from "./store.js";
 import type { GridEnvelope } from "./bounds.js";
@@ -59,6 +60,10 @@ export interface GridKind<P> {
   progressKey: string;
   /** Settings key holding the last run's Provenance as JSON, for the admin panel. */
   provenanceKey: string;
+  /** Settings key holding the last run's GridHealthRecord as JSON. */
+  healthKey: string;
+  /** Human name for this grid, used in the admin panel and alert emails. */
+  label: string;
   /** Grid spacing in degrees. */
   delta: number;
   /** Everything the caller wants from the providers. */
@@ -216,6 +221,11 @@ async function runFetch<P>(kind: GridKind<P>, state: KindState<PersistedGrid<P>>
   // Recorded regardless of which branch follows — the admin panel should see
   // what the providers actually returned, even when we then keep the old cache.
   await setStatus(kind.provenanceKey, JSON.stringify(merged.provenance));
+
+  // Sits here rather than in the scheduler so that a manual admin fetch is held
+  // to the same account as the 5am cron. A fallback to tier 4 is equally worth
+  // knowing about whoever asked for the data.
+  await reportGridHealth(kind.healthKey, kind.label, merged.provenance);
 
   const { requested, missing } = merged.provenance;
   const completeness = requested > 0 ? (requested - missing) / requested : 0;

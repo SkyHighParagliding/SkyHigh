@@ -58,6 +58,8 @@ export const THERMAL_GRID: GridKind<ThermalPoint> = {
   baseKey: THERMAL_GRID_CACHE_KEY,
   progressKey: "thermalGridProgress",
   provenanceKey: "thermalGridProvenance",
+  healthKey: "thermalGridHealth",
+  label: "Thermal Grid",
   delta: THERMAL_DELTA,
   variables: THERMAL_VARIABLES,
   required: THERMAL_REQUIRED,

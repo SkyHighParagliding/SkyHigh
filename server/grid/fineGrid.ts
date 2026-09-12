@@ -71,6 +71,8 @@ export const FINE_GRID: GridKind<GridPoint> = {
   baseKey: FINE_GRID_CACHE_KEY,
   progressKey: "fineGridProgress",
   provenanceKey: "fineGridProvenance",
+  healthKey: "fineGridHealth",
+  label: "Wind Grid",
   delta: FINE_DELTA,
   variables: FINE_VARIABLES,
   required: FINE_REQUIRED,
