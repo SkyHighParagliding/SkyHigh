@@ -1,41 +1,83 @@
-# RESUME_HERE — Last updated: 2026-09-10 (session 53)
+# RESUME_HERE — Last updated: 2026-09-12 (session 56)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
 
-Session 52 — thermal grid successfully fetched and verified working on map. Report bad answer button shipped.
+Session 56 — diagnosed the production Wind Grid failure and began building a
+tiered multi-source weather-grid layer so a rate-limited Open-Meteo can never
+again leave the map with no data.
 
-**Completed this session:**
-1. **Report bad answer button** — migration 043 (`flagged` column on `search_logs`), public `POST /api/search-logs/flag` endpoint (no auth, matches by query text), `ThumbsDown` button on assistant messages in `PublicSearchBox.tsx`, admin "⚑ Flagged" filter tab in search log viewer. All committed.
-2. **Thermal grid rate limit fixes** — inter-tile delay increased 500ms → 3000ms (both fine + thermal); exported `gridFetchActive` flag from `victoriaGrid.ts`; weather scraper skips its cycle when a grid fetch is active. These changes prevent scraper/grid API call conflicts.
-3. **Thermal grid data confirmed** — `thermal_grid_2026-09-09` in DB, 10.7MB, 123 grid columns, 0.09° spacing. Thermal overlay rendering correctly on Sites wind map (verified via browser screenshot).
+**The production bug (fixed, commit `2d6357e`):** `startupGridCheck` decided
+whether to fetch using a last-run timestamp. A *failed* run still writes that
+timestamp, so the failed 5am cron looked like a recent success and the startup
+fetch was skipped — the grid stayed stuck on 11/9. It now checks for the
+existence of today's `wind_grid_data` row. Same commit also stops
+`fetchWithRetry` burning 5 retries on a 429 (the earlier fix `f278aa7` was dead
+code — both branches threw identically), routes the hourly wind endpoint through
+`OPEN_METEO_URL` so it actually uses the API key, and widens tile spacing 3s→5s.
 
-**Rate limit lessons this session:**
-- Reducing THERMAL_MAX_PER_TILE from 300→150 DOUBLES API calls — reverted back to 300. Fewer larger tiles = fewer requests = better rate limit behaviour.
-- Open-Meteo rate limits by IP. After hammering, changing VPN IP gave a fresh quota slate.
-- PowerShell `*>>` redirect creates UTF-16 log — use `Get-Content | Select-String` to read it.
+**Commits this session (2, NOT pushed):**
+1. `2d6357e` — the three fixes above
+2. `e4a5194` — `server/grid/` provider layer: contract, GRIB2 decoder, tiers 1 & 4
 
-**NOT pushed to Railway** — Jon to verify thermal overlay visually in browser before pushing.
+## The 4-tier design (approved)
 
-## Last completed task
-- Session 52: thermal grid live + report bad answer button shipped
-- Session 51: DB write fix (`572a860`)
+| Tier | Source | Quality | Status |
+|---|---|---|---|
+| 1 | Open-Meteo REST API | 9 km ECMWF IFS HRES (baseline) | ✅ `openMeteoApi.ts` |
+| 2 | Open-Meteo S3 `ecmwf_ifs` | **identical data, zero loss** | 🔄 in progress |
+| 3 | Open-Meteo S3 `ncep_gfs013` | 0.1° GFS — model change | 🔄 in progress |
+| 4 | NOAA NOMADS GFS 0.25° | 28 km, emergency only | ✅ `nomadsGfs.ts` |
+
+Tier 1↔2 mix seamlessly (same model). Mixing GFS with ECMWF creates a visible
+seam in the rendered field, so the orchestrator should prefer completing the
+whole grid from one model and flag cross-model mixes in the admin panel.
+
+**Key empirical finding that inverted the original plan:** ECMWF's *own* free
+open data is the worst option — 0.25°, **no `boundary_layer_height` field at
+all**, CCSDS/AEC packing needing native libaec, no server-side subsetting, and
+`data.ecmwf.int` itself returns 429s. Open-Meteo's S3 archive carries the
+identical 9 km `ecmwf_ifs` model *including* BLH. NOAA GFS proved easiest to
+implement (simple packing + server-side bbox subsetting).
+
+**Licence decision:** `@openmeteo/file-reader` is GPL-2.0-only. Accepted —
+SkyHigh is hosted-only and never distributed as code/binaries, so the GPL
+distribution obligation never triggers. Jon confirmed white-label is **no longer
+a project goal**. Needs a DECISION entry in `wiki/03-decisions-log.md`.
 
 ## Currently in progress
-- Nothing blocking
+- **Tier 2/3 S3 provider** (`server/grid/providers/openMeteoS3.ts`) — a background
+  agent was building this when the session ended. Check whether the file exists
+  and whether `@openmeteo/file-reader@0.0.18` got added to package.json.
+  Constraints: read row-by-row (bulk reads OOM the WASM), parallelise ~P=20,
+  reduced Gaussian grid O1280 with ~0.035° latitude approximation, retry on S3
+  `SlowDown`.
 
 ## Next task to start
-1. **Push to GitHub/Railway** once Jon is happy with thermal overlay
-2. **"Report bad answer" button manual test** — Jon to test in Smart Search UI, verify flag appears in admin log
-3. **Smart Search safety layer manual test** (still pending from session 40) — verify no regressions
-4. **Home hero mobile** — landscape image + portrait phone decision still pending
+1. Finish/verify the S3 provider
+2. **Orchestrator** — `server/grid/orchestrator.ts` (tier escalation + gap-fill
+   merge + per-point provenance), plus `store.ts`, `tiles.ts`, `registry.ts`
+3. Wire into `scheduledJobs.ts`; add provenance display to `AdminWeather.tsx`
+4. **Rewrite `server/victoriaGrid.ts`** (909 lines, assessed patchy — duplicate
+   cache-read logic, repeated upsert SQL, mutable module-level exports,
+   asymmetric retry handling between fine and thermal) onto the new grid layer
+5. Verify the three fixes in `2d6357e` actually hold in production
+6. Record the GPL/hosted-only DECISION in the wiki
 
 ## Open questions / blockers
-- Jon to decide whether to push grid changes to Railway
-- **Home hero on mobile** — landscape vs portrait image decision still pending
-- **MMYC coordinates** — registry uses -38.2758, 145.0055. Worth eyeballing on a map.
+- **Jon asked to be reminded** of two cleanups when next choosing what to tackle:
+  (a) update the intention notes — CLAUDE.md Section 0 and `wiki/00-overview.md`
+  still claim "white-label ready", which is no longer true; (b) delete the
+  alternative-site-design code.
+- Still not pushed to Railway (now 22 commits ahead of origin/main).
 
 ## Quick context refresher
-SkyHigh's wind map now has two confirmed working grids: fine grid (0.15°, 12 fields, fetched 5am daily) for wind particles and per-site forecasts; thermal grid (0.09°, CAPE+BLH, fetched 5:26am daily) for the thermal overlay. Both use ecmwf_ifs. The thermal overlay is visible on the Sites page wind map. Code NOT yet pushed to Railway — confirm in browser first then push. Rate limiting from Open-Meteo is the main operational risk; the 3s tile delay + scraper yield should make future fetches reliable.
+The wind/thermal grids are fetched daily from Open-Meteo and cached in
+`wind_grid_data`. The single point of failure was that Open-Meteo rate-limits by
+data volume, and when it throttled there was no fallback. Session 56 fixed the
+startup logic that hid the failure, and is now building a provider abstraction
+(`server/grid/`) with four tiered sources that gap-fill each other point by
+point. Nothing is wired into `victoriaGrid.ts` yet — the new layer is additive
+and inert until the orchestrator lands.
