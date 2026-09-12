@@ -7,6 +7,7 @@ import type { SiteMarker } from '../windMapTypes';
 import { toMelbourneDate } from '@/utils/closureStatus';
 import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
+import { fetchElevationAt } from './elevationPoint';
 import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
 
@@ -21,7 +22,7 @@ interface ThermalCanvasProps {
   siteLon: number;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number } | null) => void;
+  onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null) => void;
   sizeKey?: number;
   savedCenterLat?: number;
   savedCenterLon?: number;
@@ -48,6 +49,10 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   onThermalInfoChangeRef.current = onThermalInfoChange;
 
   const currentTimeRef = useRef(currentTime);
+  // Monotonically increasing counter — used to discard stale elevation responses.
+  const elevationSeqRef = useRef(0);
+  // Last resolved ground elevation, tagged with the pin it belongs to.
+  const elevationForPinRef = useRef<{ key: string; value: number } | null>(null);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
   const transformRef = useRef(zoomIdentity);
   const initialTransformApplied = useRef(false);
@@ -237,16 +242,41 @@ export const ThermalCanvas = memo(function ThermalCanvas({
 
   const handlePointerLeave = () => setCrosshair(null);
 
-  // Recompute thermal info when the time slider moves (while a pin is active)
+  // Recompute thermal info when the time slider moves (while a pin is active),
+  // and fetch ground elevation asynchronously. A stale-response guard on
+  // elevationSeqRef discards results from superseded lookups so that tapping
+  // point B while point A's request is still in flight cannot show A's elevation.
   useEffect(() => {
     if (!pinnedCrosshair || !projectionRef.current) return;
     const t = transformRef.current;
     const inverted = t.invert([pinnedCrosshair.x, pinnedCrosshair.y]);
     const geo = projectionRef.current.invert!(inverted);
-    if (geo) {
-      const th = getThermalAt(geo[0], geo[1], currentTime, thermalGrid);
-      onThermalInfoChangeRef.current?.(th ?? null);
-    }
+    if (!geo) return;
+
+    const th = getThermalAt(geo[0], geo[1], currentTime, thermalGrid);
+    if (!th) { onThermalInfoChangeRef.current?.(null); return; }
+
+    // Terrain doesn't change with the time slider, so reuse the elevation already
+    // resolved for this pin. Without this the readout would blink out and back on
+    // every slider frame as each re-run re-emitted without groundAmsl first.
+    const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
+    const known = elevationForPinRef.current;
+    const cached = known?.key === pinKey ? known.value : undefined;
+
+    // Emit immediately so the panel never blocks on the network.
+    onThermalInfoChangeRef.current?.({ ...th, groundAmsl: cached });
+    if (cached !== undefined) return;
+
+    // Increment sequence and capture it for this specific lookup.
+    const seq = ++elevationSeqRef.current;
+    fetchElevationAt(geo[0], geo[1]).then(groundAmsl => {
+      // Discard if a newer lookup has already been dispatched.
+      if (seq !== elevationSeqRef.current) return;
+      if (groundAmsl !== null) {
+        elevationForPinRef.current = { key: pinKey, value: groundAmsl };
+        onThermalInfoChangeRef.current?.({ ...th, groundAmsl });
+      }
+    });
   }, [currentTime, thermalGrid, pinnedCrosshair]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {

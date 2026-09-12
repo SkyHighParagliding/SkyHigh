@@ -34,7 +34,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
@@ -526,6 +526,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                       <span className="text-white/40">|</span>
                       <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
                         Cu Base <Altitude metres={thermalInfo.ccl} step={100} className="pointer-events-auto" />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                      </span>
+                    </>
+                  )}
+                  {typeof thermalInfo.groundAmsl === 'number' && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      <span className="text-white/60">
+                        Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" />
                       </span>
                     </>
                   )}

@@ -11,6 +11,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getGridBounds } from "../grid/bounds.js";
+import { getElevationAt as getElevationAtPoint } from "../grid/elevationPoint.js";
 import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches } from "../grid/fineGrid.js";
 import { fetchThermalGrid, getCachedThermalGrid } from "../grid/thermalGrid.js";
 import { extractFullWindGrid, extractThermalGrid, extractWindParticles } from "../grid/extract.js";
@@ -573,6 +574,42 @@ router.post("/grid-bounds", requireAuth, asyncHandler(async (req, res) => {
   clearFineGridCaches();
 
   res.json({ success: true, finePts, bounds: f });
+}));
+
+// Public point-lookup for ground elevation (AMSL) from terrarium tiles.
+// No auth required — the wind/thermal map is public.
+router.get("/elevation-at", asyncHandler(async (req, res) => {
+  const rawLat = parseFloat(req.query.lat as string);
+  const rawLon = parseFloat(req.query.lon as string);
+
+  if (!Number.isFinite(rawLat) || !Number.isFinite(rawLon)) {
+    return res.status(400).json({ error: "lat and lon must be finite numbers" });
+  }
+
+  // Constrain to the configured grid box as an abuse guard — this endpoint
+  // is not a general-purpose worldwide DEM proxy.
+  const bounds = await getGridBounds();
+  if (
+    rawLat < bounds.fineLatMin || rawLat > bounds.fineLatMax ||
+    rawLon < bounds.fineLonMin || rawLon > bounds.fineLonMax
+  ) {
+    return res.status(400).json({ error: "Coordinates outside configured grid bounds" });
+  }
+
+  const elevation = await getElevationAtPoint(rawLon, rawLat);
+
+  // Terrain is static, so a real answer caches for a week. A null means a tile
+  // fetch failed — that must NOT be cached, or a transient upstream blip would
+  // pin "no elevation" into every client cache for seven days.
+  res.setHeader(
+    "Cache-Control",
+    elevation !== null ? "public, max-age=604800, immutable" : "no-store",
+  );
+  res.json({
+    lat: rawLat,
+    lon: rawLon,
+    elevation: elevation !== null ? Math.round(elevation) : null,
+  });
 }));
 
 router.get("/thermal-overlay", asyncHandler(async (_req, res) => {
