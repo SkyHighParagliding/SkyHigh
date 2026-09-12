@@ -327,11 +327,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                       {(thermalAtSite.blh > 0 || (thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0)) && (
                         <div className="flex items-center gap-2">
                           {thermalAtSite.blh > 0 && (
-                            <span>⬆ {Math.round(thermalAtSite.blh / 100) * 100}m</span>
+                            <span>Top {Math.round(thermalAtSite.blh / 100) * 100}m</span>
                           )}
                           {thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0 && (
                             <span className={thermalAtSite.ccl < 600 ? 'text-amber-500 font-medium' : ''}>
-                              ☁ {Math.round(thermalAtSite.ccl / 100) * 100}m{thermalAtSite.ccl < 600 ? ' ⚠' : ''}
+                              Base {Math.round(thermalAtSite.ccl / 100) * 100}m{thermalAtSite.ccl < 600 ? ' ⚠' : ''}
                             </span>
                           )}
                         </div>
@@ -515,14 +515,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   {thermalInfo.blh > 0 && (
                     <>
                       <span className="text-white/40">|</span>
-                      <span className="text-white/60">⬆ {Math.round(thermalInfo.blh / 100) * 100}m</span>
+                      <span className="text-white/60">Top {Math.round(thermalInfo.blh / 100) * 100}m</span>
                     </>
                   )}
                   {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                     <>
                       <span className="text-white/40">|</span>
                       <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                        ☁ {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        Base {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                       </span>
                     </>
                   )}

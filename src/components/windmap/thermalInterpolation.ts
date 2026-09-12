@@ -59,12 +59,17 @@ function interpolateSpatial(
     return r0 * (1 - dy) + r1 * dy;
   };
 
+  // Gated separately: CCL comes from temperature and dew point, W* does not.
+  // Tying them together hid cloud base on every grid, because W* is not yet
+  // computed anywhere and is always undefined.
   const hasWstar = c00.wstar !== undefined;
+  const hasCcl = c00.ccl !== undefined && c10.ccl !== undefined
+    && c01.ccl !== undefined && c11.ccl !== undefined;
   return {
     cape:  lerp(c00.cape, c10.cape, c01.cape, c11.cape),
     blh:   lerp(c00.blh,  c10.blh,  c01.blh,  c11.blh),
     wstar: hasWstar ? lerp(c00.wstar!, c10.wstar!, c01.wstar!, c11.wstar!) : undefined,
-    ccl:   hasWstar ? lerp(c00.ccl!,  c10.ccl!,  c01.ccl!,  c11.ccl!)   : undefined,
+    ccl:   hasCcl   ? lerp(c00.ccl!,   c10.ccl!,   c01.ccl!,   c11.ccl!)   : undefined,
   };
 }
 
@@ -88,11 +93,12 @@ export function getThermalAt(
   if (!v0 || !v1) return null;
 
   const hasWstar = v0.wstar !== undefined && v1.wstar !== undefined;
+  const hasCcl = v0.ccl !== undefined && v1.ccl !== undefined;
   return {
     cape:  v0.cape  * (1 - dt) + v1.cape  * dt,
     blh:   v0.blh   * (1 - dt) + v1.blh   * dt,
     wstar: hasWstar ? v0.wstar! * (1 - dt) + v1.wstar! * dt : undefined,
-    ccl:   hasWstar ? v0.ccl!   * (1 - dt) + v1.ccl!   * dt : undefined,
+    ccl:   hasCcl   ? v0.ccl!   * (1 - dt) + v1.ccl!   * dt : undefined,
   };
 }
 

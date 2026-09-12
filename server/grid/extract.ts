@@ -368,14 +368,17 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
       for (const lon of subLons) {
         const point = pointMap.get(`${lat.toFixed(4)},${lon.toFixed(4)}`);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
-          const t2m = point.hourly.temperature_2m?.[timeIdx] ?? 15;
-          const td2m = point.hourly.dew_point_2m?.[timeIdx] ?? 10;
-          const hasTd = Array.isArray(point.hourly.temperature_2m) && point.hourly.temperature_2m.length > 0;
+          // Both readings must be real. An earlier version defaulted to 15/10 °C,
+          // which manufactured a 5 °C spread — a confident 625 m cloud base for a
+          // point that carried no temperature at all. Absent is better than wrong.
+          const t2m = point.hourly.temperature_2m?.[timeIdx];
+          const td2m = point.hourly.dew_point_2m?.[timeIdx];
+          const hasTd = Number.isFinite(t2m) && Number.isFinite(td2m);
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
             blh: point.hourly.boundary_layer_height[timeIdx] ?? 0,
             wstar: undefined,
-            ccl: hasTd ? computeCCL(t2m, td2m) : undefined,
+            ccl: hasTd ? computeCCL(t2m!, td2m!) : undefined,
           });
         } else {
           timeStepData.push(null);
