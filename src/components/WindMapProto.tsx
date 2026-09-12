@@ -88,6 +88,13 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
             <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
               <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
             </div>
+            {/* CC BY 4.0 attribution for the DEM behind the Ground readout. */}
+            <div
+              className="text-[6px] font-mono text-white/35 mt-1 text-center"
+              title="Ground elevation from Mapzen/AWS Terrain Tiles. Australian data: DEM derived from LiDAR 5 Metre Grid — © Commonwealth of Australia (Geoscience Australia) 2017, CC BY 4.0. Elsewhere: USGS 3DEP/SRTM/GMTED2010, NOAA ETOPO1 (public domain)."
+            >
+              Terrain © GA / USGS
+            </div>
           </div>
           <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono whitespace-nowrap pointer-events-none">
             <div className="flex items-center gap-2">

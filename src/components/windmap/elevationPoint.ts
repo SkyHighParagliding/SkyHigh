@@ -1,15 +1,28 @@
 /**
  * elevationPoint.ts — client-side point lookup for ground elevation (AMSL).
  *
- * Calls GET /api/weather/elevation-at?lat=<n>&lon=<n> and returns the
- * elevation in metres AMSL, or null if unavailable. Failures are silent
- * — the ground readout simply doesn't appear rather than breaking the panel.
+ * Two-tier strategy:
+ *   1. Local-first (fast path): sampleElevationSync reads a decoded terrarium
+ *      tile from the in-memory LRU in terrainTiles.ts — zero network cost.
+ *      A resident tile is authoritative for BOTH outcomes:
+ *        - number → the answer (0–0.1 ms, instant for the user).
+ *        - null   → confirmed no-data (ocean / outside dataset).  The server
+ *                   samples the exact same terrarium dataset, so a round trip
+ *                   would return null too; short-circuiting avoids 465 ms of
+ *                   pointless Railway RTT.
+ *      undefined means the tile is not yet resident — fall through to tier 2.
+ *   2. API fallback (cold path): GET /api/weather/elevation-at — unchanged.
+ *      When the tile is not resident, ensureTileFor is fired-and-forgotten to
+ *      warm the cache for the next tap, then the API call proceeds immediately
+ *      so a cold tap is never slower than the status quo (~465 ms Railway RTT).
  *
  * Module-level caches:
  *   - Result cache keyed on rounded coordinates (4 d.p. ≈ 11 m grid).
  *   - In-flight coalescing: a second tap near the same point while the
  *     first request is pending receives the same promise.
  */
+
+import { sampleElevationSync, ensureTileFor } from "./terrainTiles";
 
 /** Round a coordinate to 4 decimal places for cache key construction. */
 function roundCoord(v: number): string {
@@ -27,12 +40,25 @@ const resultCache = new Map<string, number | null>();
 const inFlight = new Map<string, Promise<number | null>>();
 
 /**
- * Fetch ground elevation at (lon, lat) from the server, with caching and
- * in-flight coalescing.
+ * Fetch ground elevation at (lon, lat), with a local-first fast path.
  *
- * Resolves to null on any network error or non-OK response — never throws.
+ * Resolves to null on any network error, non-OK response, or confirmed
+ * no-data — never throws.
  */
 export function fetchElevationAt(lon: number, lat: number): Promise<number | null> {
+  // --- Tier 1: local terrarium tile (fast path) ---
+  // A resident tile is authoritative for both number and null.  undefined
+  // means the tile is not yet loaded — only then do we fall through to the API.
+  const local = sampleElevationSync(lon, lat);
+  if (local !== undefined) return Promise.resolve(local);
+
+  // Tile is not resident. Fire-and-forget a background warm so the *next* tap
+  // hits the fast path.  ensureTileFor never throws (loadTile is documented as
+  // "Never throws" and ensureTileFor wraps it in Promise.all — so a bare void
+  // call is safe and needs no .catch()).
+  void ensureTileFor(lon, lat);
+
+  // --- Tier 2: API fallback (cold path) — unchanged ---
   const key = cacheKey(lon, lat);
 
   const cached = resultCache.get(key);

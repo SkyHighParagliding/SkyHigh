@@ -65,8 +65,18 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
             </ul>
           </section>
 
-          <section className="border-t border-white/10 pt-3">
+          <section className="border-t border-white/10 pt-3 space-y-1.5">
             <p className="text-white/40 text-[10px]">Data source: ECMWF IFS forecast via Open-Meteo. Updated daily at 5:26am Melbourne time. Grid resolution: 0.09° (~10km). This is a forecast tool — always make your own assessment before flying.</p>
+            {/* CC BY 4.0 requires the Geoscience Australia notice wherever the DEM
+                is used. The Ground readout on the wind and thermal maps is derived
+                from these tiles, so the credit belongs on this help panel. */}
+            <p className="text-white/40 text-[10px]">
+              Ground elevation: <span className="text-white/55">Mapzen/AWS Terrain Tiles</span>. Australian data from the
+              {' '}<span className="text-white/55">DEM derived from LiDAR 5 Metre Grid</span> — © Commonwealth of Australia
+              {' '}(Geoscience Australia) 2017, used under{' '}
+              <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline hover:text-white/70">CC BY 4.0</a>.
+              Elsewhere: USGS 3DEP/SRTM/GMTED2010 and NOAA ETOPO1 (public domain).
+            </p>
           </section>
         </div>
       </div>

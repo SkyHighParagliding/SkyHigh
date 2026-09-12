@@ -11,6 +11,7 @@ import type { WindGrid } from './windInterpolation';
 import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay, drawSpeedOverlay } from './particleRenderer';
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
 import { fetchElevationAt } from './elevationPoint';
+import { tileCoordsFor, prefetchTile } from './terrainTiles';
 
 const TILE_CACHE_MAX = 200;
 
@@ -171,6 +172,33 @@ export const WindCanvas = memo(function WindCanvas({
     const minK = Math.max(fitK, 256 * Math.pow(2, 3));
     const maxK = 256 * Math.pow(2, 20);
 
+    // Prefetch the 3×3 block of z12 terrain tiles around the current map centre
+    // so that the next user tap usually hits the local fast path in elevationPoint.ts.
+    // One z12 tile ≈ 9.6 × 7.5 km, so a 3×3 block covers ~29 × 22 km — more than
+    // any site-level view shows.  9 tiles × ~20 KB ≈ 180 KB per pan/zoom settle.
+    let prefetchTimer: ReturnType<typeof setTimeout> | null = null;
+    const schedulePrefetch = () => {
+      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
+      prefetchTimer = setTimeout(() => {
+        prefetchTimer = null;
+        const proj = projectionRef.current;
+        const t = transformRef.current;
+        const { width: cw, height: ch } = canvasSizeRef.current;
+        if (!proj || cw === 0 || ch === 0) return;
+        const screen = t.invert([cw / 2, ch / 2]);
+        const geo = proj.invert!(screen);
+        if (!geo) return;
+        const [lon, lat] = geo;
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+        const { x: cx, y: cy } = tileCoordsFor(lon, lat);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            void prefetchTile(cx + dx, cy + dy);
+          }
+        }
+      }, 300);
+    };
+
     const zoom = d3Zoom<HTMLDivElement, unknown>()
       .scaleExtent([minK, maxK])
       .translateExtent([[gridTL[0], gridTL[1]], [gridBR[0], gridBR[1]]])
@@ -186,11 +214,16 @@ export const WindCanvas = memo(function WindCanvas({
             onTransformChange(inverted[1], inverted[0], Math.log2(t.k / 256));
           }
         }
+        schedulePrefetch();
       });
 
     const d3Container = select(containerRef.current);
     d3Container.call(zoom as Parameters<typeof d3Container.call>[0]);
     d3Container.call((zoom as Parameters<typeof d3Container.call>[0]).transform, transformRef.current);
+
+    // Warm the initial view immediately (debounce fires after 300 ms so it
+    // doesn't race the first render frame).
+    schedulePrefetch();
 
     // todayStr refreshed every minute — computed once outside the render loop
     let todayStr = toMelbourneDate(new Date());
@@ -320,6 +353,7 @@ export const WindCanvas = memo(function WindCanvas({
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
+      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
       clearInterval(todayInterval);
       resizeObserver.disconnect();
     };
