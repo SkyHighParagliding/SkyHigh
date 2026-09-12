@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Altitude } from '@/components/Altitude';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { fetchWindGridCached } from '@/lib/windGridCache';
@@ -19,7 +20,7 @@ interface WindMapProps {
 
 export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteStatus, siteUpcomingClosureDates, fullscreen = false }: WindMapProps) {
   const [zoomK, setZoomK] = useState(INITIAL_K);
-  const [singleWindInfo, setSingleWindInfo] = useState<{ speed: number; direction: number } | null>(null);
+  const [singleWindInfo, setSingleWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
 
   const todayFetcher = useCallback(() => fetchWindGridCached(siteId), [siteId]);
@@ -105,6 +106,14 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
                   >
                     <path d="M 5 0 L 10 18 L 0 18 Z" />
                   </svg>
+                  {typeof singleWindInfo.groundAmsl === 'number' && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      {/* The panel is pointer-events-none so the map pans underneath it;
+                          Altitude needs pointer-events-auto for the m/ft tap to land. */}
+                      <span className="text-white/70">Ground <Altitude metres={singleWindInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
+                    </>
+                  )}
                   <span className="text-white/40">|</span>
                   <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round((Math.log2(zoomK / 256) - 6) * (10 / 7))))}</span>
                 </>

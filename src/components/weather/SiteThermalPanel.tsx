@@ -51,7 +51,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
   const [sliderIndex, setSliderIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
 
   useEffect(() => {
     fetch('/api/weather/thermal-overlay')
@@ -223,6 +223,9 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                   <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
                     Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                   </div>
+                )}
+                {typeof thermalInfo.groundAmsl === 'number' && (
+                  <div className="text-[9px] text-white/70 font-mono">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /></div>
                 )}
               </div>
               <button
