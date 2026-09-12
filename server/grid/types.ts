@@ -68,9 +68,26 @@ export interface PointSeries {
   values: Partial<Record<Variable, number[]>>;
 }
 
+/**
+ * The physical model behind a source. Providers in the same family produce
+ * interchangeable data: mixing them point-for-point is invisible in the
+ * rendered field. Mixing ACROSS families is not — ECMWF and GFS disagree
+ * enough that a partly-filled grid shows a seam where the two meet — so the
+ * orchestrator only does it when the alternative is missing data entirely.
+ */
+export type ModelFamily = "ecmwf" | "gfs";
+
 export interface GridRequest {
   points: LatLon[];
+  /** Everything the caller wants. A provider supplies whatever subset it has. */
   variables: Variable[];
+  /**
+   * The subset without which the result is useless to the caller — a provider
+   * that cannot supply all of these is skipped entirely rather than returning
+   * points that would later read as gaps. The thermal grid requires
+   * `cape` + `boundary_layer_height`, which excludes the S3 GFS tier.
+   */
+  required?: Variable[];
   /** Forecast horizon in days from today (Melbourne). */
   forecastDays: number;
   signal?: AbortSignal;
@@ -85,6 +102,40 @@ export interface ProviderResult {
    * e.g. temporally interpolated from coarser steps. Surfaced in admin UI.
    */
   degraded?: string;
+}
+
+/**
+ * What the orchestrator returns: one merged grid plus an honest account of
+ * where each part of it came from.
+ */
+export interface MergedGrid {
+  /**
+   * The canonical hourly axis, set by the first provider to return data. Later
+   * providers are re-indexed onto it — their series are NOT assumed to align.
+   */
+  time: string[];
+  points: MergedPoint[];
+  provenance: Provenance;
+}
+
+export interface MergedPoint {
+  lat: number;
+  lon: number;
+  source: SourceId;
+  /** Aligned to `MergedGrid.time`; NaN where the source had no value. */
+  values: Partial<Record<Variable, number[]>>;
+}
+
+export interface Provenance {
+  /** Points supplied, keyed by source, in tier order. */
+  bySource: Array<{ source: SourceId; label: string; points: number }>;
+  /** Points requested but supplied by nobody. */
+  missing: number;
+  requested: number;
+  /** True when families were mixed — the rendered field may show a seam. */
+  mixedFamilies: boolean;
+  /** Human-readable notes for the admin panel (degraded flags, skipped tiers). */
+  notes: string[];
 }
 
 /** Key used to match a point across providers. 4dp ~= 11 m, well below any grid spacing. */

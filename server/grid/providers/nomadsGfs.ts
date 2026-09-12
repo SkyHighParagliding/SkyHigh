@@ -292,6 +292,7 @@ const log = createLogger("grid:nomads-gfs");
 export const nomadsGfsProvider: GridProvider = {
   id:            "nomads-gfs",
   tier:          4,
+  modelFamily:   "gfs",
   label:         "NOAA GFS 0.25° (NOMADS)",
   resolutionDeg: 0.25,
 

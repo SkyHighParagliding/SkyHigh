@@ -119,6 +119,7 @@ function extractValues(
 export const openMeteoApiProvider: GridProvider = {
   id: "openmeteo-api",
   tier: 1,
+  modelFamily: "ecmwf",
   label: "Open-Meteo API (ECMWF IFS HRES)",
   resolutionDeg: 0.09,
 

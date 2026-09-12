@@ -1,4 +1,4 @@
-import type { GridRequest, ProviderResult, SourceId, Variable } from "../types.js";
+import type { GridRequest, ModelFamily, ProviderResult, SourceId, Variable } from "../types.js";
 
 /**
  * A source of gridded forecast data.
@@ -14,6 +14,8 @@ export interface GridProvider {
   readonly id: SourceId;
   /** Lower is preferred. The registry is sorted by this. */
   readonly tier: number;
+  /** Sources sharing a family mix seamlessly; crossing families shows a seam. */
+  readonly modelFamily: ModelFamily;
   /** Human-readable, shown in the admin panel. */
   readonly label: string;
   /** Native grid spacing in degrees, for provenance reporting. */

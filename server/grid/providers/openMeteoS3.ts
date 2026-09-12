@@ -18,6 +18,7 @@ import type { GridProvider } from "./provider.js";
 import type {
   GridRequest,
   LatLon,
+  ModelFamily,
   PointSeries,
   ProviderResult,
   SourceId,
@@ -403,11 +404,12 @@ async function gfsReadCell(
 type Variant = "ecmwf" | "gfs";
 
 interface VariantConfig {
-  id:           SourceId;
-  tier:         number;
-  label:        string;
+  id:            SourceId;
+  tier:          number;
+  modelFamily:   ModelFamily;
+  label:         string;
   resolutionDeg: number;
-  supported:    Set<Variable>;
+  supported:     Set<Variable>;
   availabilityUrl: () => string;
 }
 
@@ -415,6 +417,7 @@ const CONFIGS: Record<Variant, VariantConfig> = {
   ecmwf: {
     id:            "openmeteo-s3-ecmwf",
     tier:          2,
+    modelFamily:   "ecmwf",
     label:         "Open-Meteo S3 archive (ECMWF IFS HRES 9 km)",
     resolutionDeg: 0.09,
     supported:     ECMWF_SUPPORTED,
@@ -426,6 +429,7 @@ const CONFIGS: Record<Variant, VariantConfig> = {
   gfs: {
     id:            "openmeteo-s3-gfs",
     tier:          3,
+    modelFamily:   "gfs",
     label:         "Open-Meteo S3 archive (NCEP GFS 0.13°)",
     resolutionDeg: 0.117,
     supported:     GFS_SUPPORTED,
@@ -772,6 +776,7 @@ export function createOpenMeteoS3Provider(variant: Variant): GridProvider {
   return {
     id:            config.id,
     tier:          config.tier,
+    modelFamily:   config.modelFamily,
     label:         config.label,
     resolutionDeg: config.resolutionDeg,
 
