@@ -8,7 +8,7 @@ import { toMelbourneDate } from '@/utils/closureStatus';
 import type { ZoomSetpoints, SiteMarker } from '../windMapTypes';
 import { getWindAt } from './windInterpolation';
 import type { WindGrid } from './windInterpolation';
-import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay } from './particleRenderer';
+import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay, drawSpeedOverlay } from './particleRenderer';
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
 
 const TILE_CACHE_MAX = 200;
@@ -256,13 +256,7 @@ export const WindCanvas = memo(function WindCanvas({
       }
 
       maybeRebuildOverlay(overlay, currentTransform, transformRef, projection, currentTimeRef, windGrid);
-
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(overlay.canvas, 0, 0, w, h);
-      ctx.restore();
+      drawSpeedOverlay(ctx, overlay, currentTransform);
 
       updateAndDrawParticles(ctx, particles, w, h, currentTransform, projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
 

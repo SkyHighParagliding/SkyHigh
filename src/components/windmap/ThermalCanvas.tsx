@@ -7,7 +7,7 @@ import type { SiteMarker } from '../windMapTypes';
 import { toMelbourneDate } from '@/utils/closureStatus';
 import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
-import { createThermalOverlay, maybeRebuildThermalOverlay } from './thermalRenderer';
+import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
 
 const TILE_CACHE_MAX = 200;
@@ -208,12 +208,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       }
 
       maybeRebuildThermalOverlay(overlay, currentTransform, transformRef, projection, currentTimeRef, thermalGrid);
-      ctx.save();
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.filter = 'blur(5px)';
-      ctx.drawImage(overlay.canvas, 0, 0, w, h);
-      ctx.restore();
+      drawThermalOverlay(ctx, overlay, currentTransform);
 
       const markersLocal = siteMarkersRef.current;
       if (markersLocal && markersLocal.length > 0) {

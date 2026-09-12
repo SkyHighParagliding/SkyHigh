@@ -60,6 +60,21 @@ export interface ThermalOverlayState {
   pixels: Uint8ClampedArray;
   width: number;
   height: number;
+  /**
+   * Screen-space extent the raster covers, in CSS px. Not the same as the
+   * canvas the raster is drawn onto: `width` is rounded up, so the samples
+   * span `width * CELL`, which overshoots the viewport by up to CELL-1 px.
+   * Drawing the raster across the viewport instead of across its own span
+   * squeezed it by that margin and shifted every cell slightly west.
+   */
+  spanX: number;
+  spanY: number;
+  /**
+   * The transform in force when the raster was built. The raster is baked in
+   * screen space, so it is only valid for this transform; drawing it under any
+   * other one misplaces it. Null until the first build completes.
+   */
+  builtTransform: ZoomTransform | null;
   cachedTransformKey: string;
   cachedTime: number;
   rebuildTimeout: ReturnType<typeof setTimeout> | null;
@@ -78,11 +93,43 @@ export function createThermalOverlay(width: number, height: number): ThermalOver
     canvas, ctx, imageData,
     pixels: imageData.data,
     width: overlayW, height: overlayH,
+    spanX: overlayW * CELL, spanY: overlayH * CELL,
+    builtTransform: null,
     cachedTransformKey: '',
     cachedTime: 0,
     rebuildTimeout: null,
     lastRebuild: 0,
   };
+}
+
+/**
+ * Draws the raster, compensating for any drift between the transform it was
+ * baked against and the one in force now.
+ *
+ * Both transforms share the same projected coordinate space, so a projected
+ * point p lands at `k_b * p + t_b` in the raster and `k_c * p + t_c` on screen.
+ * Eliminating p gives an affine map from raster space to screen space: scale by
+ * `k_c / k_b`, then translate. Applying it keeps a stale raster pinned to the
+ * ground it was computed for — it goes soft during a pan or pinch, then sharpens
+ * when the throttled rebuild lands, rather than sliding off the map.
+ */
+export function drawThermalOverlay(
+  ctx: CanvasRenderingContext2D,
+  overlay: ThermalOverlayState,
+  currentTransform: ZoomTransform,
+) {
+  const built = overlay.builtTransform;
+  if (!built) return; // Nothing rasterised yet — drawing garbage is worse than drawing nothing.
+
+  const s = currentTransform.k / built.k;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.filter = 'blur(5px)';
+  ctx.translate(currentTransform.x - s * built.x, currentTransform.y - s * built.y);
+  ctx.scale(s, s);
+  ctx.drawImage(overlay.canvas, 0, 0, overlay.spanX, overlay.spanY);
+  ctx.restore();
 }
 
 function rebuildThermalOverlay(
@@ -121,6 +168,9 @@ function rebuildThermalOverlay(
     }
   }
   ctx.putImageData(imageData, 0, 0);
+  // Record the transform the raster was baked against so drawThermalOverlay can
+  // re-register it if the map has moved on since.
+  overlay.builtTransform = currentTransform;
 }
 
 export function maybeRebuildThermalOverlay(

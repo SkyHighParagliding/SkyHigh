@@ -145,6 +145,18 @@ export interface SpeedOverlayState {
   pixels: Uint8ClampedArray;
   width: number;
   height: number;
+  /**
+   * Screen-space extent the raster covers, in CSS px. `width` is rounded up, so
+   * the samples span `width * CELL`, overshooting the viewport by up to CELL-1
+   * px. Drawing it across the viewport instead squeezed it by that margin.
+   */
+  spanX: number;
+  spanY: number;
+  /**
+   * The transform in force when the raster was built. The raster is baked in
+   * screen space, so it is only valid for this transform. Null until first build.
+   */
+  builtTransform: ZoomTransform | null;
   cachedTransformKey: string;
   cachedTime: number;
   rebuildTimeout: ReturnType<typeof setTimeout> | null;
@@ -169,6 +181,9 @@ export function createSpeedOverlay(width: number, height: number): SpeedOverlayS
     pixels: imageData.data,
     width: overlayW,
     height: overlayH,
+    spanX: overlayW * CELL,
+    spanY: overlayH * CELL,
+    builtTransform: null,
     cachedTransformKey: '',
     cachedTime: 0,
     rebuildTimeout: null,
@@ -209,6 +224,37 @@ function rebuildSpeedOverlay(
     }
   }
   ctx.putImageData(imageData, 0, 0);
+  overlay.builtTransform = currentTransform;
+}
+
+/**
+ * Draws the raster, compensating for drift between the transform it was baked
+ * against and the one in force now.
+ *
+ * Both transforms share the same projected space, so a projected point p lands
+ * at `k_b * p + t_b` in the raster and `k_c * p + t_c` on screen. Eliminating p
+ * gives an affine map from raster space to screen space. Applying it keeps a
+ * stale raster pinned to the ground it was computed for — it goes soft during a
+ * pan or pinch, then sharpens when the throttled rebuild lands, rather than
+ * sliding out of register with the basemap.
+ */
+export function drawSpeedOverlay(
+  ctx: CanvasRenderingContext2D,
+  overlay: SpeedOverlayState,
+  currentTransform: ZoomTransform,
+) {
+  const built = overlay.builtTransform;
+  if (!built) return; // Nothing rasterised yet.
+
+  const s = currentTransform.k / built.k;
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.translate(currentTransform.x - s * built.x, currentTransform.y - s * built.y);
+  ctx.scale(s, s);
+  ctx.drawImage(overlay.canvas, 0, 0, overlay.spanX, overlay.spanY);
+  ctx.restore();
 }
 
 export function maybeRebuildOverlay(
