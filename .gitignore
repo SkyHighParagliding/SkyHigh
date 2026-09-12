@@ -18,6 +18,7 @@ skyhigh.db
 database.sqlite
 server/data.sqlite
 scratch/
+spike/
 *.code-workspace
 lint_output.txt
 memory/

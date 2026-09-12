@@ -440,18 +440,40 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
   // clipped to land, and a latitude band that happens to be all water (Bass
   // Strait) contributes no points at all — counting distinct values would drop
   // that row and slide everything south of it northward.
-  const lons = grid.points.map(p => p.lon);
-  const lats = grid.points.map(p => p.lat);
-  const lonMin = Math.min(...lons);
-  const lonMax = Math.max(...lons);
-  const latMin = Math.min(...lats);
-  const latMax = Math.max(...lats);
-  const ni = Math.round((lonMax - lonMin) / grid.delta) + 1;
-  const nj = Math.round((latMax - latMin) / grid.delta) + 1;
+  // The lattice is anchored to the absolute 0-origin lattice that buildLandTiles
+  // generates (every point is a multiple of `delta`), and each point is placed by
+  // its rounded step index rather than by an exact coordinate-string match.
+  //
+  // Deriving the origin from Math.min(lon) instead makes the whole overlay hostage
+  // to a single point: anything not sitting exactly on `lonMin + i * delta` shifts
+  // the reconstructed origin off the lattice, and then every other point misses the
+  // lookup and renders as a hole. That is what blanked ~90% of the overlay — the
+  // stored latitudes were on-lattice (latMin/delta = -495.0000) while the longitude
+  // extreme was not (lonMin/delta = 1544.4444). Index arithmetic cannot drift.
+  const iOf = (lon: number) => Math.round(lon / grid.delta);
+  const jOf = (lat: number) => Math.round(lat / grid.delta);
 
+  let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
+  for (const p of grid.points) {
+    const i = iOf(p.lon), j = jOf(p.lat);
+    if (i < i0) i0 = i;
+    if (i > i1) i1 = i;
+    if (j < j0) j0 = j;
+    if (j > j1) j1 = j;
+  }
+
+  const ni = i1 - i0 + 1;
+  const nj = j1 - j0 + 1;
+  const lonMin = i0 * grid.delta;
+  const lonMax = i1 * grid.delta;
+  const latMin = j0 * grid.delta;
+  const latMax = j1 * grid.delta;
+
+  // Keyed by lattice step index, so a point that is a few decimals off its cell
+  // centre still lands in the right cell instead of vanishing.
   const pointMap = new Map<string, ThermalPoint>();
   for (const p of grid.points) {
-    pointMap.set(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, p);
+    pointMap.set(`${jOf(p.lat)},${iOf(p.lon)}`, p);
   }
 
   const data: Array<Array<ThermalCell | null>> = [];
@@ -460,10 +482,8 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
     const timeIdx = startIdx + t;
     const timeStepData: Array<ThermalCell | null> = [];
     for (let j = 0; j < nj; j++) {
-      const lat = latMin + j * grid.delta;
       for (let i = 0; i < ni; i++) {
-        const lon = lonMin + i * grid.delta;
-        const point = pointMap.get(`${lat.toFixed(4)},${lon.toFixed(4)}`);
+        const point = pointMap.get(`${j0 + j},${i0 + i}`);
         if (point && timeIdx < (point.hourly.cape?.length ?? 0)) {
           // Both readings must be real. An earlier version defaulted to 15/10 °C,
           // which manufactured a 5 °C spread — a confident 625 m cloud base for a
