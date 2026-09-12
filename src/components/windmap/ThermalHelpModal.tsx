@@ -50,13 +50,13 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
           </section>
 
           <section>
-            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Top (BLH)</div>
-            <p className="text-white/70">Shown as <span className="text-white/90 font-mono">Top</span>. Boundary Layer Height — the maximum altitude thermals are expected to reach above ground level. This is your effective ceiling for the day. 1500–2500m AGL is typical for good XC days in the Victorian Alps. Below 800m and you're working hard to stay up.</p>
+            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">BL Top (BLH)</div>
+            <p className="text-white/70">Shown as <span className="text-white/90 font-mono">BL Top</span>. Boundary Layer Height — the maximum altitude thermals are expected to reach above ground level. This is your effective ceiling for the day. 1500–2500m AGL is typical for good XC days in the Victorian Alps. Below 800m and you're working hard to stay up.</p>
           </section>
 
           <section>
-            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cloudbase (CCL)</div>
-            <p className="text-white/70">Shown as <span className="text-white/90 font-mono">Base</span>. Convective Condensation Level — the height where thermals would form cumulus clouds. Calculated from the spread between air temperature and dew point (every 1°C of spread ≈ 125m of cloud base height).</p>
+            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cu Base (CCL)</div>
+            <p className="text-white/70">Shown as <span className="text-white/90 font-mono">Cu Base</span>. Convective Condensation Level — the height where thermals would form cumulus clouds. Calculated from the spread between air temperature and dew point (every 1°C of spread ≈ 125m of cloud base height).</p>
             <ul className="mt-1.5 space-y-1 text-white/60">
               <li><span className="text-white/80">High CCL (1200m+)</span> — blue thermals or high cumulus. Good soaring.</li>
               <li><span className="text-white/80">Mid CCL (600–1200m)</span> — cumulus develops. Watch for overdevelopment.</li>

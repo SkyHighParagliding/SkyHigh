@@ -150,12 +150,12 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
         )}
         {siteReading && siteReading.blh > 0 && (
           <span className="ml-1.5 text-muted-foreground font-normal">
-            Top {Math.round(siteReading.blh / 100) * 100}m
+            BL Top {Math.round(siteReading.blh / 100) * 100}m
           </span>
         )}
         {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
           <span className={cn('ml-1.5 font-normal', siteReading.ccl < 600 ? 'text-amber-500' : 'text-muted-foreground')}>
-            Base {Math.round(siteReading.ccl / 100) * 100}m
+            Cu Base {Math.round(siteReading.ccl / 100) * 100}m
           </span>
         )}
       </div>
@@ -216,11 +216,11 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                 <div className="text-[8px] text-white/45 uppercase tracking-wide font-mono">Tapped point</div>
                 {s && <div className="text-[11px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
                 {thermalInfo.blh > 0 && (
-                  <div className="text-[9px] text-white/70 font-mono">Thermal top {Math.round(thermalInfo.blh / 100) * 100}m</div>
+                  <div className="text-[9px] text-white/70 font-mono">BL Top {Math.round(thermalInfo.blh / 100) * 100}m</div>
                 )}
                 {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                   <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
-                    Cloudbase {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                    Cu Base {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                   </div>
                 )}
               </div>
@@ -360,12 +360,12 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                 )}
                 {siteReading && siteReading.blh > 0 && (
                   <span className="text-[10px] text-white/50 font-mono">
-                    Thermal top {Math.round(siteReading.blh / 100) * 100}m
+                    BL Top {Math.round(siteReading.blh / 100) * 100}m
                   </span>
                 )}
                 {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
                   <span className={cn('text-[10px] font-mono', siteReading.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/50')}>
-                    Cloudbase {Math.round(siteReading.ccl / 100) * 100}m
+                    Cu Base {Math.round(siteReading.ccl / 100) * 100}m
                     {siteReading.ccl < 600 ? ' ⚠' : ''}
                   </span>
                 )}
