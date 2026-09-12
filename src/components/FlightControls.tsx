@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Altitude } from '@/components/Altitude';
 import {
   Play,
   Square,
@@ -122,7 +123,7 @@ export function FlightControls({
                     <div className={`flex items-center justify-center text-gray-400 ${isDemo ? 'gap-0.5 text-[8px]' : 'gap-1 text-xs'}`}>
                       <Mountain className={isDemo ? "w-2.5 h-2.5" : "w-4 h-4"} /> ALT
                     </div>
-                    <div className={`font-bold ${isDemo ? 'text-xs' : 'text-base'}`}>{Math.round(liveStats.altitude)}m</div>
+                    <div className={`font-bold ${isDemo ? 'text-xs' : 'text-base'}`}><Altitude metres={liveStats.altitude} step={1} /></div>
                   </div>
                   <div>
                     <div className={`flex items-center justify-center text-gray-400 ${isDemo ? 'gap-0.5 text-[8px]' : 'gap-1 text-xs'}`}>
@@ -181,7 +182,7 @@ export function FlightControls({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Max Alt</span>
-                  <span className="font-medium">{Math.round(flightStats.maxAltitude)}m</span>
+                  <span className="font-medium"><Altitude metres={flightStats.maxAltitude} step={1} /></span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Max Speed</span>
@@ -197,11 +198,11 @@ export function FlightControls({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Alt Gain</span>
-                  <span className="font-medium text-green-600">+{Math.round(flightStats.altitudeGain)}m</span>
+                  <span className="font-medium text-green-600">+<Altitude metres={flightStats.altitudeGain} step={1} /></span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Alt Loss</span>
-                  <span className="font-medium text-red-600">-{Math.round(flightStats.altitudeLoss)}m</span>
+                  <span className="font-medium text-red-600">-<Altitude metres={flightStats.altitudeLoss} step={1} /></span>
                 </div>
               </div>
               {!pilot && (

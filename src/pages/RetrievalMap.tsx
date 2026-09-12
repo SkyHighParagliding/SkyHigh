@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useUnits } from '@/hooks/useUnits';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Navigation, X as XIcon, CheckCircle, Car, MapPin, ChevronDown, ChevronUp, Maximize, Minimize, Plus, Minus, Map as MapIcon, Compass } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -226,6 +227,7 @@ function UserInteractionDetector({ onInteraction }: { onInteraction: () => void 
 }
 
 export function RetrievalMap() {
+  const { formatAltitude } = useUnits();
   const map = useRetrievalMap();
   const {
     pilot, token, demoRole, isDemo, demoSession, apiBase,
@@ -365,7 +367,7 @@ export function RetrievalMap() {
                 <Popup>
                   <div className="text-sm">
                     <strong>{p.firstName}</strong>
-                    <div className="text-green-600">In flight — {Math.round(p.altitude)}m / {Math.round(p.speed)} km/h</div>
+                    <div className="text-green-600">In flight — {formatAltitude(p.altitude)} / {Math.round(p.speed)} km/h</div>
                     <div style={{ color: vFpm > 0 ? '#16a34a' : vFpm < 0 ? '#dc2626' : '#666' }}>{vSign}{vFpm} ft/min</div>
                     {p.pilotId !== pilot?.id && <button onClick={() => { setComposeTarget({ pilotId: p.pilotId, name: p.firstName }); mapRef.current?.closePopup(); }} style={{display:'block',width:'100%',marginTop:6,padding:'5px 0',background:'#0ea5e9',color:'#fff',border:'none',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer'}}>Message</button>}
                   </div>

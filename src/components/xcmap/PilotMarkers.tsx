@@ -3,6 +3,7 @@ import { useMap } from 'react-leaflet';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { escapeHtml, createWindArrowIcon, parseDirection } from '@/lib/xcMapUtils';
+import { formatAltitude } from '@/lib/units';
 import type { XCSite, WindData, LivePilotData } from '@/lib/xcMapUtils';
 
 export function PilotMarker({ position, isRecording, color, verticalSpeed }: {
@@ -40,9 +41,7 @@ export function PilotMarker({ position, isRecording, color, verticalSpeed }: {
 
     const hasAlt = position.altitude != null;
     if (hasAlt) {
-      const altM = Math.round(position.altitude!);
-      const altFt = Math.round(position.altitude! * 3.28084);
-      const altText = `${altM}m / ${altFt}ft`;
+      const altText = formatAltitude(position.altitude!, 1);
       const vsFpm = verticalSpeed != null ? Math.round(verticalSpeed * 196.85) : null;
       const vsText = vsFpm != null ? ` <span style="color:${vsFpm > 0 ? '#4ade80' : vsFpm < 0 ? '#fca5a5' : '#fff'}">${vsFpm > 0 ? '+' : ''}${vsFpm}fpm</span>` : '';
       const label = L.marker([position.lat, position.lon], {
@@ -136,8 +135,7 @@ export function LivePilotMarkers({ pilots, enableMessaging, currentPilotId }: { 
     }
 
     for (const p of pilots) {
-      const altFt = p.altitude != null ? Math.round(p.altitude * 3.281) : 0;
-      const altM = p.altitude != null ? Math.round(p.altitude) : 0;
+      const altDisplay = p.altitude != null ? formatAltitude(p.altitude, 1) : '—';
       const spdKmh = p.speed != null ? Math.round(p.speed) : 0;
       const headingDeg = p.heading != null ? Math.round(p.heading) : 0;
       const vspeedMps = p.verticalSpeed ?? 0;
@@ -198,7 +196,7 @@ export function LivePilotMarkers({ pilots, enableMessaging, currentPilotId }: { 
         : '';
       const popupContent = `<div style="font-size:13px;line-height:1.4">
             <strong>${safeName}</strong><br/>
-            Alt: ${altM}m / ${altFt}ft<br/>
+            Alt: ${altDisplay}<br/>
             ${vspeedPopup}
             ${statusLine}
             ${msgBtn}

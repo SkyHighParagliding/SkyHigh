@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useUnits } from "@/hooks/useUnits";
+import { metresToFeet, type UnitSystem } from "@/lib/units";
 import { Link, useNavigate } from "react-router-dom";
 import { useSettings } from "@/contexts/SettingsContext";
 import { ArrowLeft, Calendar, MapPin, Clock, Mountain, Gauge, Route, TrendingUp, TrendingDown, ChevronRight, Download, X, Plane, FileText, Trash2, LogOut, LogIn, Map, ChevronDown, ChevronUp, Flag, Zap, AlertTriangle } from "lucide-react";
@@ -46,10 +48,6 @@ function formatTimestamp(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function metersToFeet(m: number): number {
-  return Math.round(m * 3.28084);
-}
-
 function mpsToKmh(mps: number): number {
   return Math.round(mps * 3.6);
 }
@@ -59,7 +57,7 @@ function distanceDisplay(m: number): string {
   return `${Math.round(m)} m`;
 }
 
-function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
+function computePointsOfInterest(flight: FlightDetail, formatAlt: (m: number) => string): PointOfInterest[] {
   const crumbs = flight.breadcrumbs;
   if (!crumbs || crumbs.length < 2) return [];
   const pois: PointOfInterest[] = [];
@@ -67,7 +65,7 @@ function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
   const start = crumbs[0];
   pois.push({
     label: "Launch",
-    value: formatTimestamp(start.timestamp) + ` · ${metersToFeet(start.altitude)} ft`,
+    value: formatTimestamp(start.timestamp) + ` · ${formatAlt(start.altitude)}`,
     lat: start.lat,
     lon: start.lon,
     color: "#30d158",
@@ -77,7 +75,7 @@ function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
   const end = crumbs[crumbs.length - 1];
   pois.push({
     label: "Landing",
-    value: (flight.endedAt ? formatTimestamp(end.timestamp) : "—") + ` · ${metersToFeet(end.altitude)} ft`,
+    value: (flight.endedAt ? formatTimestamp(end.timestamp) : "—") + ` · ${formatAlt(end.altitude)}`,
     lat: end.lat,
     lon: end.lon,
     color: "#ff3b30",
@@ -91,7 +89,7 @@ function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
   if (crumbs[maxAltIdx].altitude > 0) {
     pois.push({
       label: "Max Altitude",
-      value: `${metersToFeet(crumbs[maxAltIdx].altitude)} ft AGL`,
+      value: `${formatAlt(crumbs[maxAltIdx].altitude)} AGL`,
       lat: crumbs[maxAltIdx].lat,
       lon: crumbs[maxAltIdx].lon,
       color: "#ff9500",
@@ -120,7 +118,7 @@ function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
   if (maxClimbIdx >= 0 && maxClimb > 0.2) {
     pois.push({
       label: "Best Climb",
-      value: `+${maxClimb.toFixed(1)} m/s · ${metersToFeet(crumbs[maxClimbIdx].altitude)} ft`,
+      value: `+${maxClimb.toFixed(1)} m/s · ${formatAlt(crumbs[maxClimbIdx].altitude)}`,
       lat: crumbs[maxClimbIdx].lat,
       lon: crumbs[maxClimbIdx].lon,
       color: "#34c759",
@@ -131,7 +129,7 @@ function computePointsOfInterest(flight: FlightDetail): PointOfInterest[] {
   if (maxSinkIdx >= 0 && maxSink < -0.5) {
     pois.push({
       label: "Max Sink",
-      value: `${maxSink.toFixed(1)} m/s · ${metersToFeet(crumbs[maxSinkIdx].altitude)} ft`,
+      value: `${maxSink.toFixed(1)} m/s · ${formatAlt(crumbs[maxSinkIdx].altitude)}`,
       lat: crumbs[maxSinkIdx].lat,
       lon: crumbs[maxSinkIdx].lon,
       color: "#ff453a",
@@ -259,9 +257,12 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
-function StatCard({ icon: Icon, label, value, unit, color }: { icon: any; label: string; value: string | number; unit?: string; color: string }) {
+function StatCard({ icon: Icon, label, value, unit, color, onClick }: { icon: any; label: string; value: string | number; unit?: string; color: string; onClick?: () => void }) {
   return (
-    <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+    <div
+      className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100${onClick ? " cursor-pointer select-none" : ""}`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3.5 h-3.5" style={{ color }} />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</span>
@@ -272,6 +273,17 @@ function StatCard({ icon: Icon, label, value, unit, color }: { icon: any; label:
       </div>
     </div>
   );
+}
+
+/**
+ * Splits an altitude into the separate value/unit halves StatCard styles differently,
+ * rather than letting formatAltitude glue them into one string — otherwise the unit
+ * loses its smaller grey treatment and the card stops matching the neighbouring stats.
+ */
+function altStat(metres: number, units: UnitSystem): { value: number; unit: string } {
+  return units === "metric"
+    ? { value: Math.round(metres), unit: "m" }
+    : { value: Math.round(metresToFeet(metres)), unit: "ft" };
 }
 
 function poiIcon(poi: PointOfInterest) {
@@ -452,6 +464,7 @@ function PilotLoginForm() {
 }
 
 function FlightMapPanel({ flight, onClose }: { flight: FlightDetail; onClose: () => void }) {
+  const { formatAltitude, units, toggleUnits } = useUnits();
   const positions = useMemo(() => {
     if (!flight?.breadcrumbs?.length) return [];
     return flight.breadcrumbs.map((b) => [b.lat, b.lon] as [number, number]);
@@ -467,7 +480,7 @@ function FlightMapPanel({ flight, onClose }: { flight: FlightDetail; onClose: ()
     );
   }, [flight]);
 
-  const pois = useMemo(() => computePointsOfInterest(flight), [flight]);
+  const pois = useMemo(() => computePointsOfInterest(flight, formatAltitude), [flight, formatAltitude]);
 
   if (positions.length < 2 || !bounds) {
     return (
@@ -561,7 +574,7 @@ function FlightMapPanel({ flight, onClose }: { flight: FlightDetail; onClose: ()
           <div className="px-4 pb-3">
             <div className="grid grid-cols-3 gap-2">
               <StatCard icon={Route} label="Distance" value={distanceDisplay(flight.totalDistance)} color="#34c759" />
-              <StatCard icon={Mountain} label="Max Alt" value={metersToFeet(flight.maxAltitude)} unit="ft" color="#ff9500" />
+              <StatCard icon={Mountain} label="Max Alt" {...altStat(flight.maxAltitude, units)} onClick={toggleUnits} color="#ff9500" />
               <StatCard icon={Gauge} label="Max Speed" value={mpsToKmh(flight.maxSpeed)} unit="km/h" color="#ff3b30" />
             </div>
           </div>
@@ -573,6 +586,7 @@ function FlightMapPanel({ flight, onClose }: { flight: FlightDetail; onClose: ()
 
 function FlightDetailView({ flightId, onBack, onDelete }: { flightId: string; onBack: () => void; onDelete: (id: string) => void }) {
   const { token } = usePilotAuth();
+  const { formatAltitude, units, toggleUnits } = useUnits();
   const [flight, setFlight] = useState<FlightDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExport, setShowExport] = useState(false);
@@ -589,7 +603,7 @@ function FlightDetailView({ flightId, onBack, onDelete }: { flightId: string; on
       .finally(() => setLoading(false));
   }, [flightId, token]);
 
-  const pois = useMemo(() => (flight ? computePointsOfInterest(flight) : []), [flight]);
+  const pois = useMemo(() => (flight ? computePointsOfInterest(flight, formatAltitude) : []), [flight, formatAltitude]);
 
   if (loading) {
     return (
@@ -692,10 +706,10 @@ function FlightDetailView({ flightId, onBack, onDelete }: { flightId: string; on
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
           <StatCard icon={Clock} label="Duration" value={duration} color="#007aff" />
           <StatCard icon={Route} label="Distance" value={distanceDisplay(flight.totalDistance)} color="#34c759" />
-          <StatCard icon={Mountain} label="Max Alt" value={metersToFeet(flight.maxAltitude)} unit="ft" color="#ff9500" />
+          <StatCard icon={Mountain} label="Max Alt" {...altStat(flight.maxAltitude, units)} onClick={toggleUnits} color="#ff9500" />
           <StatCard icon={Gauge} label="Max Speed" value={mpsToKmh(flight.maxSpeed)} unit="km/h" color="#ff3b30" />
-          <StatCard icon={TrendingUp} label="Alt Gain" value={metersToFeet(flight.altitudeGain)} unit="ft" color="#30d158" />
-          <StatCard icon={TrendingDown} label="Alt Loss" value={metersToFeet(flight.altitudeLoss)} unit="ft" color="#ff453a" />
+          <StatCard icon={TrendingUp} label="Alt Gain" {...altStat(flight.altitudeGain, units)} onClick={toggleUnits} color="#30d158" />
+          <StatCard icon={TrendingDown} label="Alt Loss" {...altStat(flight.altitudeLoss, units)} onClick={toggleUnits} color="#ff453a" />
         </div>
       </div>
 
@@ -828,6 +842,7 @@ export function FlightHistory() {
     }
   }, [settingsLoading, settings.xcMapsEnabled, navigate]);
   const { pilot, token, logout } = usePilotAuth();
+  const { formatAltitude } = useUnits();
   const { data: flights = [], isLoading: loading } = useFlights(token);
   const deleteMutation = useDeleteFlightMutation(token);
   const qc = useQueryClient();
@@ -1056,7 +1071,7 @@ export function FlightHistory() {
                       {f.maxAltitude > 0 && (
                         <span className="flex items-center gap-1">
                           <Mountain className="w-3 h-3 text-gray-400" />
-                          {metersToFeet(f.maxAltitude)} ft
+                          {formatAltitude(f.maxAltitude)}
                         </span>
                       )}
                       {f.maxSpeed > 0 && (

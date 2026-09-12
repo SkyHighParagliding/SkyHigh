@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
+import { Altitude } from '@/components/Altitude';
 import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
@@ -329,11 +330,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                       {(thermalAtSite.blh > 0 || (thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0)) && (
                         <div className="flex items-center gap-2">
                           {thermalAtSite.blh > 0 && (
-                            <span>BL Top {Math.round(thermalAtSite.blh / 100) * 100}m</span>
+                            <span>BL Top <Altitude metres={thermalAtSite.blh} step={100} /></span>
                           )}
                           {thermalAtSite.ccl !== undefined && thermalAtSite.ccl > 0 && (
                             <span className={thermalAtSite.ccl < 600 ? 'text-amber-500 font-medium' : ''}>
-                              Cu Base {Math.round(thermalAtSite.ccl / 100) * 100}m{thermalAtSite.ccl < 600 ? ' ⚠' : ''}
+                              Cu Base <Altitude metres={thermalAtSite.ccl} step={100} />{thermalAtSite.ccl < 600 ? ' ⚠' : ''}
                             </span>
                           )}
                         </div>
@@ -517,14 +518,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   {thermalInfo.blh > 0 && (
                     <>
                       <span className="text-white/40">|</span>
-                      <span className="text-white/60">BL Top {Math.round(thermalInfo.blh / 100) * 100}m</span>
+                      <span className="text-white/60">BL Top <Altitude metres={thermalInfo.blh} step={100} /></span>
                     </>
                   )}
                   {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                     <>
                       <span className="text-white/40">|</span>
                       <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                        Cu Base {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                       </span>
                     </>
                   )}

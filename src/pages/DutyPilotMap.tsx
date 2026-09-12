@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo, type TouchEvent as ReactTouchEvent } from 'react';
+import { useUnits } from '@/hooks/useUnits';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Car, MapPin, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Plus, Minus, Map as MapIcon, MessageCircle, Users, Navigation, X as XIcon, Shield } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -125,6 +126,7 @@ function useOrientation() {
 
 export function DutyPilotMap() {
   const { pilot, token } = usePilotAuth();
+  const { formatAltitude } = useUnits();
   const demoRole = useMemo(() => getDemoRole(), []);
   const isDemo = !!demoRole;
   const apiBase = '/api';
@@ -501,7 +503,6 @@ export function DutyPilotMap() {
               </div>
             )}
             {inFlightPilots.map(p => {
-              const altFt = Math.round(p.altitude * 3.28084);
               const vFpm = Math.round((p.verticalSpeed || 0) * 196.85);
               const vSign = vFpm > 0 ? '+' : '';
               return (
@@ -512,7 +513,7 @@ export function DutyPilotMap() {
                     <span className="ml-auto text-xs text-gray-500 tabular-nums">{Math.round(p.speed)} km/h</span>
                   </div>
                   <div className="flex items-center gap-3 ml-4.5 mt-0.5">
-                    <span className="text-xs text-gray-500 tabular-nums">{Math.round(p.altitude)}m / {altFt}ft</span>
+                    <span className="text-xs text-gray-500 tabular-nums">{formatAltitude(p.altitude)}</span>
                     <span className={`text-xs font-medium tabular-nums ${vFpm > 0 ? 'text-green-600' : vFpm < 0 ? 'text-red-500' : 'text-gray-400'}`}>{vSign}{vFpm} ft/m</span>
                   </div>
                   <div className="flex items-center gap-2 ml-4.5 mt-0.5">
@@ -684,7 +685,7 @@ export function DutyPilotMap() {
               <Popup>
                 <div className="text-sm">
                   <strong>{p.firstName}</strong>
-                  <div className="text-green-600">In flight — {Math.round(p.altitude)}m / {Math.round(p.speed)} km/h</div>
+                  <div className="text-green-600">In flight — {formatAltitude(p.altitude)} / {Math.round(p.speed)} km/h</div>
                   <button onClick={() => { setComposeTarget({ pilotId: p.pilotId, name: p.firstName }); mapRef.current?.closePopup(); }} style={{display:'block',width:'100%',marginTop:6,padding:'5px 0',background:'#0ea5e9',color:'#fff',border:'none',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer'}}>Message</button>
                 </div>
               </Popup>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info } from 'lucide-react';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
@@ -150,12 +151,12 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
         )}
         {siteReading && siteReading.blh > 0 && (
           <span className="ml-1.5 text-muted-foreground font-normal">
-            BL Top {Math.round(siteReading.blh / 100) * 100}m
+            BL Top <Altitude metres={siteReading.blh} step={100} />
           </span>
         )}
         {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
           <span className={cn('ml-1.5 font-normal', siteReading.ccl < 600 ? 'text-amber-500' : 'text-muted-foreground')}>
-            Cu Base {Math.round(siteReading.ccl / 100) * 100}m
+            Cu Base <Altitude metres={siteReading.ccl} step={100} />
           </span>
         )}
       </div>
@@ -216,11 +217,11 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                 <div className="text-[8px] text-white/45 uppercase tracking-wide font-mono">Tapped point</div>
                 {s && <div className="text-[11px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
                 {thermalInfo.blh > 0 && (
-                  <div className="text-[9px] text-white/70 font-mono">BL Top {Math.round(thermalInfo.blh / 100) * 100}m</div>
+                  <div className="text-[9px] text-white/70 font-mono">BL Top <Altitude metres={thermalInfo.blh} step={100} /></div>
                 )}
                 {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                   <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
-                    Cu Base {Math.round(thermalInfo.ccl / 100) * 100}m{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                    Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                   </div>
                 )}
               </div>
@@ -360,12 +361,12 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
                 )}
                 {siteReading && siteReading.blh > 0 && (
                   <span className="text-[10px] text-white/50 font-mono">
-                    BL Top {Math.round(siteReading.blh / 100) * 100}m
+                    BL Top <Altitude metres={siteReading.blh} step={100} />
                   </span>
                 )}
                 {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
                   <span className={cn('text-[10px] font-mono', siteReading.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/50')}>
-                    Cu Base {Math.round(siteReading.ccl / 100) * 100}m
+                    Cu Base <Altitude metres={siteReading.ccl} step={100} />
                     {siteReading.ccl < 600 ? ' ⚠' : ''}
                   </span>
                 )}

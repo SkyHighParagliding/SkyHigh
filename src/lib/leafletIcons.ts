@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import { escapeHtml } from '@/lib/xcMapUtils';
+import { formatAltitude } from '@/lib/units';
 
 /**
  * Shared Leaflet icon factories used by DutyPilotMap and RetrievalMap.
@@ -22,8 +23,7 @@ export function driverIcon(name: string): L.DivIcon {
 
 export function livePilotIcon(name: string, altitudeM: number, verticalSpeed?: number): L.DivIcon {
   const safeName = escapeHtml(name);
-  const altFt = Math.round(altitudeM * 3.28084);
-  const altM = Math.round(altitudeM);
+  const altDisplay = formatAltitude(altitudeM, 1);
   const vspeedMps = verticalSpeed || 0;
   const vspeedFpm = Math.round(vspeedMps * 196.85);
   const vspeedColor = vspeedFpm > 0 ? '#4ade80' : vspeedFpm < 0 ? '#f87171' : '#fff';
@@ -33,7 +33,7 @@ export function livePilotIcon(name: string, altitudeM: number, verticalSpeed?: n
     html: `<div style="position:relative;width:28px;height:28px;">
       <div style="width:28px;height:28px;border-radius:50%;background:rgba(34,197,94,0.9);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>
       <div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:rgba(34,197,94,0.95);color:white;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.2);">${safeName}</div>
-      <div style="position:absolute;top:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:1px 5px;border-radius:6px;font-size:9px;font-weight:500;white-space:nowrap;">${altM}m / ${altFt}ft</div>
+      <div style="position:absolute;top:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:1px 5px;border-radius:6px;font-size:9px;font-weight:500;white-space:nowrap;">${altDisplay}</div>
       <div style="position:absolute;top:46px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:${vspeedColor};padding:1px 5px;border-radius:6px;font-size:9px;font-weight:600;white-space:nowrap;">${vspeedSign}${vspeedFpm} ft/m</div>
     </div>`,
     iconSize: [28, 28],
