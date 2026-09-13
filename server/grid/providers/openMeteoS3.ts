@@ -262,7 +262,9 @@ function gfsChunkUrl(variable: string, chunk: number): string {
  * Verified by listing s3://openmeteo/data/ecmwf_ifs/ prefixes.
  *
  * Absent from archive (do NOT add): precipitation_probability, weather_code,
- *   wind_speed_10m (archive stores U/V components, not derived speed/direction).
+ *   wind_speed_10m (archive stores U/V components, not derived speed/direction),
+ *   lifted_index (listed every prefix under data/ecmwf_ifs/ — it is not present;
+ *   adding it would produce silent zeroes on every tier-2 point).
  *
  * Native units (verified by reading actual values):
  *   wind U/V, gusts: m/s  → convert to knots (× 1.943844)
@@ -271,6 +273,7 @@ function gfsChunkUrl(variable: string, chunk: number): string {
  *   cloud_cover, cloud_cover_low: %, visibility: m  — all already canonical.
  *   shortwave_radiation: W/m² (already canonical — no conversion needed)
  *   soil_moisture_0_to_7cm: m³/m³ (already canonical — no conversion needed)
+ *   convective_inhibition: J/kg (already canonical — no conversion needed)
  */
 const ECMWF_SUPPORTED = new Set<Variable>([
   "wind_speed_10m",       // derived from wind_u_component_10m + wind_v_component_10m
@@ -286,6 +289,9 @@ const ECMWF_SUPPORTED = new Set<Variable>([
   "visibility",
   "shortwave_radiation",
   "soil_moisture_0_to_7cm",
+  // Present in the S3 archive — the inhibition cap is a useful second signal for
+  // overdevelopment when lifted_index (tier-1 only) is not available.
+  "convective_inhibition",
 ]);
 
 /**

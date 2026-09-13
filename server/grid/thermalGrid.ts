@@ -16,6 +16,18 @@
  * velocity scale. These fields are not required (not in THERMAL_REQUIRED): if a
  * fallback tier cannot supply them the point is still kept, and w* will be
  * undefined for that point rather than discarding it.
+ *
+ * Overdevelopment signal:
+ *
+ * `lifted_index` and `convective_inhibition` carry the two-rung OD signal that
+ * replaced the old (structurally unreachable) `blh − ccl > 3000 m` proxy.
+ * Neither is added to THERMAL_REQUIRED because:
+ *  - Adding `lifted_index` would collapse the provider chain to tier-1 alone:
+ *    it is absent from the ECMWF S3 archive, so tier-2 can never satisfy it.
+ *  - Adding either would discard any point a fallback tier provides without
+ *    these fields, turning a degraded-but-useful point into a silent gap.
+ * The client renderer degrades gracefully when these are missing: it falls through
+ * to CAPE-only thresholds rather than suppressing the signal entirely.
  */
 
 import { buildLandTiles } from "../utils/gridTiles.js";
@@ -33,6 +45,9 @@ const THERMAL_VARIABLES: Variable[] = [
   "dew_point_2m",
   "shortwave_radiation",
   "soil_moisture_0_to_7cm",
+  // OD signal variables — deliberately optional (see module doc above).
+  "lifted_index",
+  "convective_inhibition",
 ];
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
@@ -61,6 +76,12 @@ function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
       dew_point_2m: seriesOf(p, "dew_point_2m", n),
       shortwave_radiation: seriesOf(p, "shortwave_radiation", n),
       soil_moisture_0_to_7cm: seriesOf(p, "soil_moisture_0_to_7cm", n),
+      // seriesOf fills NaN for hours where the provider had no value.
+      // lifted_index is tier-1 only; convective_inhibition is tier-1 + tier-2.
+      // NaN propagates to the client as-is and is converted to undefined there
+      // (see extract.ts) so downstream `!= null` checks work correctly.
+      lifted_index: seriesOf(p, "lifted_index", n),
+      convective_inhibition: seriesOf(p, "convective_inhibition", n),
     },
   };
 }

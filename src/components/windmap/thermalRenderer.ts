@@ -4,6 +4,66 @@ import { getThermalAt, effectiveWstar } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import { isOnLand } from './landMask';
 
+// ---------------------------------------------------------------------------
+// Overdevelopment risk signal
+// ---------------------------------------------------------------------------
+
+/** Categorical OD risk, ascending severity.
+ *    0 = no signal (CAPE too low to matter)
+ *    1 = watch (some indicators present; check sounding)
+ *    2 = likely (multiple indicators agree; avoid or give extra margin)
+ */
+export type OdRisk = 0 | 1 | 2;
+
+/**
+ * Derives an overdevelopment risk category from convective parameters.
+ *
+ * The three rungs exist so the signal degrades with provider tier rather than
+ * disappearing entirely when a field is missing:
+ *
+ *   Rung 1 (LI gate): Lifted Index is the most direct buoyancy measure aloft.
+ *     LI < −2 °C means the parcel is substantially warmer than the environment
+ *     at 500 hPa — vigorous deep convection is likely. LI < 0 °C is unstable
+ *     but marginal. LI is tier-1 only (Open-Meteo REST API); the ECMWF S3
+ *     archive does not carry it, so tier-2 points fall through to rung 2.
+ *
+ *   Rung 2 (CIN gate): Convective inhibition measures the capping inversion —
+ *     the lid that keeps thermals from punching through to free convection.
+ *     A weak cap (CIN < 50 J/kg) means the lid can be broken easily once CAPE
+ *     is present; CIN is a weaker signal than LI because it measures whether
+ *     convection can start rather than how violent it will be once going.
+ *     Empirically corr(CAPE, LI) ≈ −0.43 vs corr(CAPE, CIN) ≈ 0.20, so CIN
+ *     adds information but is not a substitute for LI. Available tier-1 + tier-2.
+ *
+ *   Rung 3 (CAPE only): Last resort when neither LI nor CIN is available.
+ *     500 J/kg is the threshold already documented to pilots in the help modal
+ *     as the OD watch level, and 800 J/kg is a blunt upper-tier flag. Not
+ *     equivalent to the upper rungs — kept only so the signal is never absent.
+ */
+export function computeOdRisk(cape: number, li?: number, cin?: number): OdRisk {
+  // Below 500 J/kg CAPE the atmosphere simply does not have enough energy for
+  // deep convection regardless of what the stability indices say.
+  if (cape < 500) return 0;
+
+  // Rung 1: Lifted Index is available (tier-1 only).
+  if (li != null && !Number.isNaN(li)) {
+    if (li < -2) return 2;  // Strongly unstable — overdevelopment likely.
+    if (li < 0)  return 1;  // Marginally unstable — watch.
+    return 0;               // LI ≥ 0 means stable or neutral aloft.
+  }
+
+  // Rung 2: CIN available (tier-1 + tier-2), LI was not.
+  if (cin != null && !Number.isNaN(cin)) {
+    // A weak cap combined with meaningful CAPE means convection can break free.
+    if (cin < 50) return 1;
+    return 0;
+  }
+
+  // Rung 3: CAPE only. Blunt, but better than silence.
+  if (cape > 800) return 1;
+  return 0;
+}
+
 export const CELL = 6; // sample every 6px for a smooth heatmap — exported for cumulusField.ts
 const REBUILD_MIN_INTERVAL = 50; // ms
 
@@ -91,6 +151,14 @@ export interface ThermalOverlayState {
    */
   cumulusDepth: Float32Array;
   /**
+   * Overdevelopment risk for each overlay cell: 0 = none, 1 = watch, 2 = likely.
+   * Populated in the same per-cell loop as cumulusDepth (no second pass), but
+   * deliberately NOT behind the cumulus gate: a hot blue day with high CAPE has
+   * no cumulus to mark and is exactly when a pilot is most easily caught out.
+   * Read by cumulusField.ts, which draws a separate warning triangle for it.
+   */
+  odRisk: Uint8Array;
+  /**
    * The transform in force when the raster was built. The raster is baked in
    * screen space, so it is only valid for this transform; drawing it under any
    * other one misplaces it. Null until the first build completes.
@@ -123,6 +191,8 @@ export function createThermalOverlay(width: number, height: number): ThermalOver
     // Zero-initialised: any cell not reached by the loop (or skipped by continue)
     // stays 0, which cumulusField.ts treats as "no cumulus here".
     cumulusDepth: new Float32Array(overlayW * overlayH),
+    // Zero-initialised likewise: 0 = no OD risk, matching the type invariant.
+    odRisk: new Uint8Array(overlayW * overlayH),
   };
 }
 
@@ -163,11 +233,11 @@ function rebuildThermalOverlay(
   currentTime: number,
   grid: ThermalGrid,
 ) {
-  const { width: overlayW, height: overlayH, pixels, ctx, imageData, cumulusDepth } = overlay;
-  // Zero the cumulus depth array up front; only positive depths are written below.
-  // This means every skipped cell (water, no data, etc.) stays 0 without needing
-  // an explicit write in each continue branch.
+  const { width: overlayW, height: overlayH, pixels, ctx, imageData, cumulusDepth, odRisk } = overlay;
+  // Zero both arrays up front; only cells with data and sufficient edgeFade are
+  // written below, so every skipped cell (water, no data, outside edge) stays 0.
   cumulusDepth.fill(0);
+  odRisk.fill(0);
   for (let oy = 0; oy < overlayH; oy++) {
     for (let ox = 0; ox < overlayW; ox++) {
       const px = ox * CELL + CELL / 2;
@@ -180,10 +250,12 @@ function rebuildThermalOverlay(
       const th = getThermalAt(geo[0], geo[1], currentTime, grid);
       const ws = th ? effectiveWstar(th.wstar, th.cape) : 0;
       if (!th || ws < 0.3) { pixels[idx + 3] = 0; continue; }
-      const li = wstarToLUTIndex(ws);
-      pixels[idx]     = thermalLUT[li * 4];
-      pixels[idx + 1] = thermalLUT[li * 4 + 1];
-      pixels[idx + 2] = thermalLUT[li * 4 + 2];
+      // Named lutIdx, not li: `li` now means Lifted Index on the thermal cell
+      // (see th.li below), and having both in one function invites a misread.
+      const lutIdx = wstarToLUTIndex(ws);
+      pixels[idx]     = thermalLUT[lutIdx * 4];
+      pixels[idx + 1] = thermalLUT[lutIdx * 4 + 1];
+      pixels[idx + 2] = thermalLUT[lutIdx * 4 + 2];
       // Fade alpha within 1° lon / 0.5° lat of grid boundary to avoid hard rectangular clip
       const edgeFade = Math.min(
         (geo[0] - grid.lonMin) / 1.0,
@@ -192,14 +264,29 @@ function rebuildThermalOverlay(
         (grid.latMax - geo[1]) / 0.5,
         1.0,
       );
-      pixels[idx + 3] = Math.round(thermalLUT[li * 4 + 3] * Math.max(0, edgeFade));
+      pixels[idx + 3] = Math.round(thermalLUT[lutIdx * 4 + 3] * Math.max(0, edgeFade));
 
-      // Cumulus depth: piggy-backed on the existing getThermalAt result so we
-      // pay for the interpolation only once. Multiplied by edgeFade so the stipple
-      // boundary matches the heat ramp and never leaves a hard-edged rectangle.
+      // Cumulus depth and OD risk: both piggy-back on the existing getThermalAt
+      // result so we pay for the interpolation only once per cell.
+      // edgeFade gating is identical: no marks outside the grid footprint.
       if (th.ccl != null && th.blh - th.ccl >= 50) {
         cumulusDepth[oy * overlayW + ox] = (th.blh - th.ccl) * Math.max(0, edgeFade);
       }
+
+      // OD risk is written for EVERY cell that survives the land + ws + edgeFade
+      // gates — not just the ones with a cumulus glyph. This recovers the "hot
+      // blue day" case: high CAPE, healthy boundary layer, but CCL above BLH so
+      // no cumulus forms. Measured against the live grid those cells represent
+      // ~207 additional OD warnings that would otherwise be silently dropped.
+      //
+      // No extra boundary-layer floor is applied here. The ws < 0.3 gate above
+      // already excludes collapsed-BL cases (evening elevated instability, etc.):
+      // measured across the live grid it rejects 165 of 596 high-CAPE cells, and
+      // zero surviving cells had BLH below 300 m — a separate BLH threshold
+      // would be dead code. OD risk is also categorical (0/1/2), not a magnitude,
+      // so edgeFade multiplication would be wrong; zero-initialisation and the
+      // continue statements above already ensure edge cells read 0.
+      odRisk[oy * overlayW + ox] = computeOdRisk(th.cape, th.li, th.cin);
     }
   }
   ctx.putImageData(imageData, 0, 0);

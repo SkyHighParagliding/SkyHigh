@@ -75,8 +75,8 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
 
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cumulus Marks</div>
-            <p className="text-white/70">Small white cloud marks fill the areas where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and form cumulus. The marks grow larger and brighter where the cloud layer is deeper (BLH − CCL). <span className="text-white/50">Plain areas mean a blue day: thermals exist but top out below condensation, leaving a clear sky and nothing to mark the lift.</span></p>
-            <p className="text-white/50 mt-1.5">Grey marks indicate very deep cumulus (&gt;3000 m thick). That much cloud depth signals overdevelopment risk — likely a worse day for flying, not a better one.</p>
+            <p className="text-white/70">Small white cloud marks fill the areas where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and form cumulus. The marks grow larger and brighter where the cloud layer is deeper (BLH − CCL). Plain areas are typically blue days: thermals exist but top out below condensation, leaving a clear sky. A blue day can still carry an overdevelopment warning (see below).</p>
+            <p className="text-white/50 mt-1.5">A small warning triangle marks overdevelopment risk — hollow (▲) for watch, solid (▲) for likely. The risk is judged from CAPE together with how unstable the air is higher up (Lifted Index or CIN), not from cloud thickness alone. Critically, the triangle can appear on a blue day with no cumulus at all — that is exactly when it is easiest to be caught out, because there is no visible cloud to warn you the atmosphere is loaded.</p>
           </section>
 
           <section className="border-t border-white/10 pt-3 space-y-1.5">

@@ -25,6 +25,11 @@
  *   weather_code                     WMO code
  *   shortwave_radiation              W/m²  (already canonical — no conversion)
  *   soil_moisture_0_to_7cm           m³/m³ (already canonical — no conversion)
+ *   lifted_index                     °C (dimensionless parcel temperature difference;
+ *                                    negative = unstable: parcel warmer than environment.
+ *                                    No conversion — Open-Meteo returns °C directly.)
+ *   convective_inhibition            J/kg (energy required to lift a parcel to the
+ *                                    level of free convection; no conversion needed)
  */
 export type Variable =
   | "wind_speed_10m"
@@ -41,7 +46,9 @@ export type Variable =
   | "cloud_cover_low"
   | "visibility"
   | "shortwave_radiation"
-  | "soil_moisture_0_to_7cm";
+  | "soil_moisture_0_to_7cm"
+  | "lifted_index"
+  | "convective_inhibition";
 
 export interface LatLon {
   lat: number;

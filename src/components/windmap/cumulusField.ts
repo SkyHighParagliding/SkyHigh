@@ -12,6 +12,12 @@ import type { ThermalOverlayState } from './thermalRenderer';
 // makes it read as cloud texture rather than as a grid.
 const GLYPH_SPACING = 18; // px
 
+// OD warning triangles are drawn on a coarser lattice — every 3rd cumulus point.
+// At the 18 px cumulus spacing a widespread OD region would become a solid wall
+// of symbols if triangles used the same density; 54 px keeps it clearly readable
+// as a caution layer rather than a texture.
+const OD_SPACING = GLYPH_SPACING * 3; // 54 px
+
 export interface CumulusFieldState {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -54,6 +60,22 @@ function traceCumulus(ctx: CanvasRenderingContext2D, x: number, y: number, r: nu
   ctx.closePath();
 }
 
+/**
+ * Traces an apex-up equilateral triangle centred at (x, y) with the given
+ * half-height `size`. Caller is responsible for fill and/or stroke.
+ */
+function traceWarningTriangle(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
+  // The apex is `size` above centre; the two base corners are `size` below,
+  // offset horizontally so the triangle is equilateral.
+  // For total height 2·size the side is 4·size/√3, so half-base = 2·size/√3.
+  const bx = size * 1.155;
+  ctx.beginPath();
+  ctx.moveTo(x,        y - size);       // apex (top)
+  ctx.lineTo(x + bx,  y + size);       // bottom-right
+  ctx.lineTo(x - bx,  y + size);       // bottom-left
+  ctx.closePath();
+}
+
 // ─── rebuild (called once per thermal overlay rebuild) ────────────────────────
 
 /**
@@ -80,7 +102,7 @@ export function rebuildCumulusField(
   const { ctx, width, height } = field;
   ctx.clearRect(0, 0, width, height);
 
-  const { cumulusDepth, width: overlayW, height: overlayH } = overlay;
+  const { cumulusDepth, odRisk, width: overlayW, height: overlayH } = overlay;
 
   const cols = Math.ceil(width  / GLYPH_SPACING);
   const rows = Math.ceil(height / GLYPH_SPACING);
@@ -88,6 +110,18 @@ export function rebuildCumulusField(
   // Half-step inset so the lattice doesn't hug the canvas edge on one side.
   const inset = GLYPH_SPACING / 2;
 
+  // ── Cumulus glyph pass ────────────────────────────────────────────────────
+  // Glyphs are always white. The old `depth > 3000 m` proxy for OD colouring
+  // has been removed; CAPE + LI/CIN signal is now shown as a separate triangle
+  // glyph below rather than as a colour on the cloud mark.
+  //
+  // Why the old depth proxy was dropped: `blh − ccl` measures cloud depth
+  // INSIDE the dry boundary layer. Real overdevelopment grows above the BL top
+  // via latent heat release, which that formula cannot see. Across 269,856
+  // cell-hours of the live grid the maximum depth was 1293 m; not a single
+  // cell ever reached the 3000 m threshold — the branch was dead code.
+  // CAPE + LI/CIN can see the deep instability directly, and the signal now
+  // also fires on blue days (no cumulus), which the old proxy never could.
   for (let j = 0; j <= rows; j++) {
     for (let i = 0; i <= cols; i++) {
       const sx = inset + i * GLYPH_SPACING;
@@ -101,21 +135,77 @@ export function rebuildCumulusField(
       if (depth <= 0) continue;
 
       // Size and opacity both ramp with cloud depth, saturating at 1200 m.
-      // Typical depths here run 100-400 m, so scaling against the rare 3000 m
-      // case would render every ordinary day at the bottom of the range.
+      // Typical depths here run 100–400 m, so scaling against a rare 3000 m
+      // case would crush every ordinary day into the bottom of the range.
       const t = Math.min(1, depth / 1200);
       const r = 2.0 + t * 1.8;
       const alpha = 0.6 + t * 0.35;
 
-      // Deep cumulus (> 3000 m thick) signals overdevelopment / Cu-nim risk —
-      // a worse day for flying, not a better one. Render in grey so pilots read
-      // it as a caution rather than an abundance of lift.
-      ctx.fillStyle = depth > 3000
-        ? `rgba(105,112,126,${alpha.toFixed(2)})`
-        : `rgba(255,255,255,${alpha.toFixed(2)})`;
-
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
       traceCumulus(ctx, sx, sy, r);
       ctx.fill();
+    }
+  }
+
+  // ── OD warning triangle pass ──────────────────────────────────────────────
+  // Drawn AFTER all cumulus glyphs so the triangles sit on top.
+  // Uses the coarser OD_SPACING lattice so a widespread OD region reads as
+  // a caution layer rather than a solid wall of symbols.
+  // Draws into the same canvas, so the stale-transform affine correction
+  // applied in drawCumulusField covers both passes for free.
+  const odCols = Math.ceil(width  / OD_SPACING);
+  const odRows = Math.ceil(height / OD_SPACING);
+  const odInset = OD_SPACING / 2;
+
+  // Number of overlay cells spanned by one lattice step, used to take the block
+  // maximum below.
+  const odBlock = Math.max(1, Math.round(OD_SPACING / CELL));
+
+  for (let j = 0; j <= odRows; j++) {
+    for (let i = 0; i <= odCols; i++) {
+      const sx = odInset + i * OD_SPACING;
+      const sy = odInset + j * OD_SPACING;
+
+      const cx = Math.floor(sx / CELL);
+      const cy = Math.floor(sy / CELL);
+      if (cx < 0 || cx >= overlayW || cy < 0 || cy >= overlayH) continue;
+
+      // Take the MAXIMUM risk over the whole lattice block rather than sampling
+      // the single centre cell. Sampling the centre silently loses small OD
+      // patches: at a typical zoom one 0.09° grid cell is ~13 px across while
+      // the lattice step is 54 px, so an isolated OD cell has only about a
+      // (13/54)² ≈ 6% chance of containing the sample point. Taking the block
+      // maximum guarantees any OD cell in the block raises a triangle, and
+      // biases toward showing the warning — the right way to err for a hazard.
+      let risk = 0;
+      const x0 = Math.max(0, cx - (odBlock >> 1)), x1 = Math.min(overlayW - 1, cx + (odBlock >> 1));
+      const y0 = Math.max(0, cy - (odBlock >> 1)), y1 = Math.min(overlayH - 1, cy + (odBlock >> 1));
+      for (let by = y0; by <= y1 && risk < 2; by++) {
+        for (let bx = x0; bx <= x1; bx++) {
+          const v = odRisk[by * overlayW + bx];
+          if (v > risk) { risk = v; if (risk === 2) break; }
+        }
+      }
+      if (risk === 0) continue;
+
+      if (risk === 2) {
+        // OD likely: filled dark triangle, white outline so it stays legible
+        // against the dark red end of the heat ramp.
+        traceWarningTriangle(ctx, sx, sy, 6.5);
+        ctx.fillStyle = 'rgba(28,31,40,0.92)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } else {
+        // OD watch (risk === 1): hollow dark triangle — unobtrusive but present.
+        traceWarningTriangle(ctx, sx, sy, 5);
+        ctx.strokeStyle = 'rgba(38,42,54,0.85)';
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+      }
+      // Reset lineWidth so it doesn't leak into other draw calls.
+      ctx.lineWidth = 1;
     }
   }
 

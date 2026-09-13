@@ -319,6 +319,13 @@ export interface ThermalCell {
   blh: number;
   wstar?: number;
   ccl?: number;
+  /** Lifted Index (°C). Negative values indicate instability — the parcel is
+   *  warmer than the environment aloft. Tier-1 (Open-Meteo REST API) only;
+   *  undefined when the grid was supplied by a lower tier. */
+  li?: number;
+  /** Convective inhibition (J/kg). Measures the energy cap that must be
+   *  overcome before free convection begins. Tier-1 and tier-2. */
+  cin?: number;
 }
 
 export interface ThermalOverlay {
@@ -498,6 +505,11 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
             blh,
             t2m,
           );
+          // NaN → undefined: seriesOf fills NaN for hours where a provider had
+          // no data. Letting NaN reach the client would silently break `!= null`
+          // guards (NaN != null is true), so we normalise here at the boundary.
+          const liRaw  = point.hourly.lifted_index?.[timeIdx];
+          const cinRaw = point.hourly.convective_inhibition?.[timeIdx];
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
             blh,
@@ -505,6 +517,8 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
             // and full float precision inflates the payload for no visible gain.
             wstar: wstar === undefined ? undefined : Math.round(wstar * 100) / 100,
             ccl: hasTd ? computeCCL(t2m!, td2m!) : undefined,
+            li:  (liRaw  != null && !Number.isNaN(liRaw))  ? liRaw  : undefined,
+            cin: (cinRaw != null && !Number.isNaN(cinRaw)) ? cinRaw : undefined,
           });
         } else {
           timeStepData.push(null);

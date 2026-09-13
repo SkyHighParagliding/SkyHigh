@@ -122,6 +122,12 @@ export interface ThermalPoint {
     dew_point_2m: number[];
     shortwave_radiation: number[];
     soil_moisture_0_to_7cm: number[];
+    /** Lifted Index (°C). Negative = unstable parcel; tier-1 (Open-Meteo REST API) only.
+     *  Tier-2 (ECMWF S3) does not carry this field; seriesOf fills NaN for missing entries. */
+    lifted_index: number[];
+    /** Convective inhibition (J/kg). Tier-1 and tier-2 both carry this.
+     *  seriesOf fills NaN for any missing entries. */
+    convective_inhibition: number[];
   };
 }
 

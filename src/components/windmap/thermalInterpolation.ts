@@ -8,7 +8,7 @@ export interface ThermalGrid {
   ni: number;
   nj: number;
   times: string[];
-  data: ({ cape: number; blh: number; wstar?: number; ccl?: number } | null)[][];
+  data: ({ cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null)[][];
 }
 
 const epochCache = new WeakMap<string[], number[]>();
@@ -23,9 +23,9 @@ function getGridEpochs(times: string[]): number[] {
 
 function interpolateSpatial(
   lon: number, lat: number,
-  timeData: { cape: number; blh: number; wstar?: number; ccl?: number }[],
+  timeData: { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number }[],
   grid: ThermalGrid,
-): { cape: number; blh: number; wstar?: number; ccl?: number } | null {
+): { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null {
   const fi = (lon - grid.lonMin) / grid.deltaLon;
   const fj = (lat - grid.latMin) / grid.deltaLat;
   const i = Math.floor(fi);
@@ -62,20 +62,28 @@ function interpolateSpatial(
   // Gated separately: CCL comes from temperature and dew point, W* does not.
   // Tying them together hid cloud base on every grid, because W* is not yet
   // computed anywhere and is always undefined.
+  // li and cin follow the same pattern: only interpolate when all four corners
+  // have a value, otherwise leave undefined so the renderer degrades gracefully.
   const hasWstar = c00.wstar !== undefined;
   const hasCcl = c00.ccl !== undefined && c10.ccl !== undefined
     && c01.ccl !== undefined && c11.ccl !== undefined;
+  const hasLi  = c00.li  !== undefined && c10.li  !== undefined
+    && c01.li  !== undefined && c11.li  !== undefined;
+  const hasCin = c00.cin !== undefined && c10.cin !== undefined
+    && c01.cin !== undefined && c11.cin !== undefined;
   return {
     cape:  lerp(c00.cape, c10.cape, c01.cape, c11.cape),
     blh:   lerp(c00.blh,  c10.blh,  c01.blh,  c11.blh),
     wstar: hasWstar ? lerp(c00.wstar!, c10.wstar!, c01.wstar!, c11.wstar!) : undefined,
     ccl:   hasCcl   ? lerp(c00.ccl!,   c10.ccl!,   c01.ccl!,   c11.ccl!)   : undefined,
+    li:    hasLi    ? lerp(c00.li!,    c10.li!,    c01.li!,    c11.li!)    : undefined,
+    cin:   hasCin   ? lerp(c00.cin!,   c10.cin!,   c01.cin!,   c11.cin!)   : undefined,
   };
 }
 
 export function getThermalAt(
   lon: number, lat: number, time: number, grid: ThermalGrid,
-): { cape: number; blh: number; wstar?: number; ccl?: number } | null {
+): { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null {
   if (lon < grid.lonMin || lon > grid.lonMax || lat < grid.latMin || lat > grid.latMax) return null;
 
   const epochs = getGridEpochs(grid.times);
@@ -94,11 +102,15 @@ export function getThermalAt(
 
   const hasWstar = v0.wstar !== undefined && v1.wstar !== undefined;
   const hasCcl = v0.ccl !== undefined && v1.ccl !== undefined;
+  const hasLi  = v0.li  !== undefined && v1.li  !== undefined;
+  const hasCin = v0.cin !== undefined && v1.cin !== undefined;
   return {
     cape:  v0.cape  * (1 - dt) + v1.cape  * dt,
     blh:   v0.blh   * (1 - dt) + v1.blh   * dt,
     wstar: hasWstar ? v0.wstar! * (1 - dt) + v1.wstar! * dt : undefined,
     ccl:   hasCcl   ? v0.ccl!   * (1 - dt) + v1.ccl!   * dt : undefined,
+    li:    hasLi    ? v0.li!    * (1 - dt) + v1.li!    * dt : undefined,
+    cin:   hasCin   ? v0.cin!   * (1 - dt) + v1.cin!   * dt : undefined,
   };
 }
 

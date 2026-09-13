@@ -42,6 +42,10 @@ const VARIABLE_TO_FIELD: Record<Variable, string> = {
   visibility: "visibility",
   shortwave_radiation: "shortwave_radiation",
   soil_moisture_0_to_7cm: "soil_moisture_0_to_7cm",
+  // Names are identical to canonical — the mapping is still explicit so any
+  // future Open-Meteo field rename is caught here rather than silently wrong.
+  lifted_index: "lifted_index",
+  convective_inhibition: "convective_inhibition",
 };
 
 /** Parsed shape of a single point's hourly block in the Open-Meteo response. */
@@ -62,6 +66,8 @@ interface HourlyBlock {
   visibility?: number[];
   shortwave_radiation?: number[];
   soil_moisture_0_to_7cm?: number[];
+  lifted_index?: number[];
+  convective_inhibition?: number[];
 }
 
 interface OpenMeteoResponseItem {
