@@ -69,14 +69,23 @@ function ifs025Url(variable: string, chunk: number): string {
 const HSURF_URL = `${S3_BASE}/data/ecmwf_ifs025/static/HSURF.om`;
 
 // ---------------------------------------------------------------------------
+// Cell-key helper.
+// Both the HSURF cache and the read-deduplication logic below are keyed by
+// "${iLat},${iLon}" — the same string so the two cannot drift apart.
+// ---------------------------------------------------------------------------
+function cellKey(iLat: number, iLon: number): string {
+  return `${iLat},${iLon}`;
+}
+
+// ---------------------------------------------------------------------------
 // HSURF cache — the static elevation grid never changes between fetches.
-// Keyed by "${iLat},${iLon}" so we only hit the remote once per grid cell
+// Keyed by cellKey(iLat, iLon) so we only hit the remote once per grid cell
 // for the lifetime of the process.
 // ---------------------------------------------------------------------------
 const hsurfCache = new Map<string, number>();
 
 async function readHsurf(iLat: number, iLon: number): Promise<number> {
-  const key = `${iLat},${iLon}`;
+  const key = cellKey(iLat, iLon);
   if (hsurfCache.has(key)) return hsurfCache.get(key)!;
 
   const backend = new OmHttpBackend({ url: HSURF_URL, debug: false });
@@ -233,42 +242,65 @@ export async function fetchEcmwfLiftedIndex(
     const tEnd   = Math.min(IFS025_NSTEPS, Math.round((tMax - chunkStart) / (IFS025_STEP_H * 3600)) + 2);
     if (tStart >= tEnd || chunkEnd <= tMin) continue;
 
-    // For each point × each variable: read in parallel, bounded by the shared semaphore.
+    // -----------------------------------------------------------------------
+    // Deduplicate reads by ifs025 cell.
+    //
+    // The thermal grid samples at 0.09°, but the ifs025 bucket is 0.25° —
+    // roughly 7.5 thermal points map to the SAME (iLat, iLon) cell. Without
+    // deduplication a full grid run issues ~54,120 reads where 7,200 suffice,
+    // stretching a scheduled fetch from minutes to hours. We therefore:
+    //   1. group points by their cell key (same "${iLat},${iLon}" format as the
+    //      HSURF cache — the same helper so the two cannot drift apart),
+    //   2. issue exactly ONE read per unique cell × variable,
+    //   3. fan the result out to every point sharing that cell.
+    // If a cell read fails, ALL points in that cell are omitted (no zero-fill).
+    // -----------------------------------------------------------------------
+
+    // Build cell → points mapping for this chunk.
+    type CellInfo = { iLat: number; iLon: number; ptKeys: string[] };
+    const cellMap = new Map<string, CellInfo>();
+    for (const pt of points) {
+      const iLat = ifs025ILat(pt.lat);
+      const iLon = ifs025ILon(pt.lon);
+      const ck   = cellKey(iLat, iLon);
+      if (!cellMap.has(ck)) cellMap.set(ck, { iLat, iLon, ptKeys: [] });
+      cellMap.get(ck)!.ptKeys.push(pointKey(pt));
+    }
+
+    // For each unique variable: read in parallel, bounded by the shared semaphore.
     const tasks: Array<Promise<void>> = [];
     const backends: OmHttpBackend[] = [];
 
-    // Collect raw values per-point for this chunk so we can assemble RawStep entries.
-    type PointVarData = Partial<Record<TimeVar, Float32Array>>;
-    const chunkData = new Map<string, PointVarData>();
-    for (const p of points) chunkData.set(pointKey(p), {});
+    // Collect raw values per-cell for this chunk.
+    type CellVarData = Partial<Record<TimeVar, Float32Array>>;
+    const chunkData = new Map<string, CellVarData>();
+    for (const ck of cellMap.keys()) chunkData.set(ck, {});
 
     for (const varName of TIME_VARS) {
       const url     = ifs025Url(varName, chunk);
       const backend = new OmHttpBackend({ url, debug: false });
       backends.push(backend);
 
-      for (const pt of points) {
+      for (const [ck, { iLat, iLon }] of cellMap) {
         if (signal?.aborted) break;
-        const key  = pointKey(pt);
-        const iLat = ifs025ILat(pt.lat);
-        const iLon = ifs025ILon(pt.lon);
 
         tasks.push(sem(async () => {
           if (signal?.aborted) return;
           try {
             const data = await readIfs025Cell(backend, iLat, iLon, tStart, tEnd);
-            chunkData.get(key)![varName] = data;
+            chunkData.get(ck)![varName] = data;
           } catch (err) {
             // One retry (matching openMeteoS3.ts discipline).
             if (signal?.aborted) return;
             await new Promise(r => setTimeout(r, 250));
             try {
               const data = await readIfs025Cell(backend, iLat, iLon, tStart, tEnd);
-              chunkData.get(key)![varName] = data;
+              chunkData.get(ck)![varName] = data;
             } catch (err2) {
               log.warn(`ecmwfLiftedIndex: read failed`, {
-                chunk, varName, lat: pt.lat, lon: pt.lon, error: String(err2),
+                chunk, varName, iLat, iLon, error: String(err2),
               });
+              // Cell read failed — all points in this cell will be omitted below.
             }
           }
         }));
@@ -281,29 +313,34 @@ export async function fetchEcmwfLiftedIndex(
       await Promise.all(backends.map(b => b.close().catch(() => {})));
     }
 
-    // Assemble RawStep entries for each point from this chunk.
-    for (const pt of points) {
-      const key  = pointKey(pt);
-      const pvd  = chunkData.get(key)!;
-      const t500 = pvd["temperature_500hPa"];
-      const t2m  = pvd["temperature_2m"];
-      const rh2m = pvd["relative_humidity_2m"];
-      const pMsl = pvd["pressure_msl"];
+    // Assemble RawStep entries. Fan cell data out to all points sharing that cell.
+    for (const [ck, { ptKeys }] of cellMap) {
+      const cvd  = chunkData.get(ck)!;
+      const t500 = cvd["temperature_500hPa"];
+      const t2m  = cvd["temperature_2m"];
+      const rh2m = cvd["relative_humidity_2m"];
+      const pMsl = cvd["pressure_msl"];
 
-      // If any variable failed for this point, we silently skip it here. The
-      // point will end up with partial or no data and is omitted from results.
+      // If any variable failed for this cell, all co-located points are skipped
+      // here — they will end up with partial or no data and be omitted from results.
       if (!t500 || !t2m || !rh2m || !pMsl) continue;
 
-      const existing = rawByPoint.get(key)!;
-      const nSteps   = t500.length;
+      const nSteps = t500.length;
+      const steps: RawStep[] = [];
       for (let i = 0; i < nSteps; i++) {
         const epochSec = chunkStart + (tStart + i) * IFS025_STEP_H * 3600;
-        existing.push({ epochSec, t500: t500[i], t2m: t2m[i], rh2m: rh2m[i], pMsl: pMsl[i] });
+        steps.push({ epochSec, t500: t500[i], t2m: t2m[i], rh2m: rh2m[i], pMsl: pMsl[i] });
+      }
+
+      // Each point in this cell gets its own entry (same values, separate keys).
+      for (const pk of ptKeys) {
+        rawByPoint.get(pk)!.push(...steps);
       }
     }
   }
 
-  // Read HSURF for each unique grid cell (cached after the first read per cell).
+  // Read HSURF for each unique ifs025 cell (cached after the first read per cell).
+  // Multiple thermal points sharing one cell each get the same elevation value.
   const hsurfByPoint = new Map<string, number>();
   await Promise.all(
     points.map(async (pt) => {
