@@ -23,13 +23,21 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Strength</div>
             <p className="text-white/70">The colour overlay shows how strong convective lift (thermals) is expected to be across Victoria at the selected time. Based on W* (convective velocity scale), the same quantity RASP and SkySight colour their thermal maps by.</p>
             <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+              {/* Swatch colours sampled from the midpoint of each W* band by
+                  interpolating the STOPS table in thermalRenderer.ts.
+                    None:     no colour is painted below 0.3 → neutral grey
+                    Weak:     W*≈0.55 between stops 0.30→0.80 (t=0.5)  → #fae48c
+                    Moderate: W*≈1.15 between stops 0.80→1.20 (t=0.875)→ #fabd4b
+                    Good:     W*=2.00 exact stop                        → #e85f1e
+                    Strong:   W*≈2.80 between stops 2.40→3.00 (t=0.667)→ #b21e20
+                    Extreme:  W*=4.00 exact stop                        → #780a3c */}
               {[
                 { label: 'None',     color: '#a0aec0', desc: 'No soarable lift' },
-                { label: 'Weak',     color: '#d4a843', desc: '0.3–0.8 m/s · scratchy' },
-                { label: 'Moderate', color: '#dc821e', desc: '0.8–1.5 m/s · soarable' },
-                { label: 'Good',     color: '#d45a14', desc: '1.5–2.5 m/s · XC possible' },
-                { label: 'Strong',   color: '#c03210', desc: '2.5–3.5 m/s · great XC' },
-                { label: 'Extreme',  color: '#b41414', desc: '3.5+ m/s · caution' },
+                { label: 'Weak',     color: '#fae48c', desc: '0.3–0.8 m/s · scratchy' },
+                { label: 'Moderate', color: '#fabd4b', desc: '0.8–1.5 m/s · soarable' },
+                { label: 'Good',     color: '#e85f1e', desc: '1.5–2.5 m/s · XC possible' },
+                { label: 'Strong',   color: '#b21e20', desc: '2.5–3.5 m/s · great XC' },
+                { label: 'Extreme',  color: '#780a3c', desc: '3.5+ m/s · caution' },
               ].map(s => (
                 <div key={s.label} className="flex items-start gap-1.5">
                   <span className="w-2 h-2 rounded-full mt-0.5 shrink-0" style={{ background: s.color }} />

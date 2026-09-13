@@ -7,14 +7,22 @@ import { isOnLand } from './landMask';
 export const CELL = 6; // sample every 6px for a smooth heatmap — exported for cumulusField.ts
 const REBUILD_MIN_INTERVAL = 50; // ms
 
-// W*-based colour stops (warm ramp: transparent → amber → orange → red)
+// W*-based colour stops (pale yellow → gold → orange → red → crimson).
+// Stops are concentrated between 0.8 and 2.4 because that is where the
+// large majority of cells fall on a normal day (p25≈1.4, p75≈2.0).
+// An evenly-spaced ramp across 0–4 wastes most of its range on values
+// that essentially never occur and flattens the part of the map pilots
+// actually read.
 const STOPS: { wstar: number; r: number; g: number; b: number; a: number }[] = [
-  { wstar: 0.0,  r: 210, g: 150, b:  50, a:   0 },
-  { wstar: 0.3,  r: 210, g: 160, b:  60, a:  90 },
-  { wstar: 0.8,  r: 220, g: 130, b:  30, a: 155 },
-  { wstar: 1.5,  r: 215, g:  90, b:  20, a: 185 },
-  { wstar: 2.5,  r: 200, g:  55, b:  20, a: 205 },
-  { wstar: 4.0,  r: 185, g:  20, b:  20, a: 220 },
+  { wstar: 0.00, r: 250, g: 245, b: 200, a:   0 },
+  { wstar: 0.30, r: 250, g: 240, b: 170, a:  70 },
+  { wstar: 0.80, r: 250, g: 215, b: 110, a: 125 },
+  { wstar: 1.20, r: 250, g: 185, b:  70, a: 160 },
+  { wstar: 1.60, r: 245, g: 140, b:  45, a: 185 },
+  { wstar: 2.00, r: 232, g:  95, b:  30, a: 200 },
+  { wstar: 2.40, r: 205, g:  50, b:  25, a: 212 },
+  { wstar: 3.00, r: 165, g:  20, b:  35, a: 222 },
+  { wstar: 4.00, r: 120, g:  10, b:  60, a: 232 },
 ];
 
 const LUT_SIZE = 512;
@@ -43,11 +51,16 @@ function wstarToLUTIndex(wstar: number): number {
   return Math.min(LUT_SIZE - 1, Math.max(0, Math.round((wstar / LUT_MAX_WSTAR) * (LUT_SIZE - 1))));
 }
 
+// The legend bar represents the range pilots actually encounter — normalise
+// to 3.0 m/s so the full hue travel is visible, rather than 4.0 which
+// would compress all the colour into the left ~75% of the bar.
+export const LEGEND_MAX_WSTAR = 3.0;
+
 // CSS gradient for the legend bar
 export const THERMAL_LEGEND_CSS = (() => {
   const pts: string[] = [];
   for (const s of STOPS) {
-    const pct = Math.min(100, (s.wstar / 4.0) * 100);
+    const pct = Math.min(100, (s.wstar / LEGEND_MAX_WSTAR) * 100);
     pts.push(`rgba(${s.r},${s.g},${s.b},${(s.a / 255).toFixed(2)}) ${pct.toFixed(0)}%`);
   }
   return `linear-gradient(to right, ${pts.join(', ')})`;

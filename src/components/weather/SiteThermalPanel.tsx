@@ -8,13 +8,11 @@ import { cn } from '@/lib/utils';
 import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar, getThermalAt } from '../windmap/thermalInterpolation';
 import type { SiteMarker } from '../windMapTypes';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from '../windmap/thermalRenderer';
 
 const ThermalCanvas = lazy(() =>
   import('../windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas }))
 );
-
-const THERMAL_LEGEND_CSS =
-  'linear-gradient(to right, #0f172a 0%, #1e3a5f 15%, #1d6f42 30%, #d4a017 55%, #ff6b00 75%, #dc143c 100%)';
 
 function fmtMelbTime(isoStr: string): string {
   const h = parseInt(
@@ -264,8 +262,32 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
         <div className="absolute bottom-2 left-2 bg-black/55 backdrop-blur-sm rounded px-2 py-1 pointer-events-none">
           <div className="text-[7px] text-white/60 font-mono uppercase tracking-wide mb-0.5">Thermal Strength</div>
           <div className="h-1.5 w-24 rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
-          <div className="flex justify-between text-[6px] text-white/45 font-mono mt-0.5 px-0.5">
-            <span>None</span><span>Weak</span><span>Mod</span><span>XC</span>
+          {/* Labels pinned to their true W* threshold position so they stay
+              aligned with the gradient when the ramp changes. */}
+          <div className="relative mt-0.5 h-[9px] text-[6px] text-white/45 font-mono">
+            {(
+              [
+                // Three labels only: this bar is w-24 at 6px type, so a fourth
+                // collides. No 'None' — nothing is painted below W* 0.3.
+                { label: 'Weak',   wstar: 0.3 },
+                { label: 'Good',   wstar: 1.5 },
+                { label: 'Strong', wstar: 2.5 },
+              ] as { label: string; wstar: number }[]
+            ).map(({ label, wstar }, i, arr) => {
+              const pct = Math.min(100, (wstar / LEGEND_MAX_WSTAR) * 100);
+              const isFirst = i === 0;
+              const isLast  = i === arr.length - 1;
+              return (
+                <span
+                  key={label}
+                  className="absolute"
+                  style={{
+                    left: `${pct}%`,
+                    transform: isFirst ? 'none' : isLast ? 'translateX(-100%)' : 'translateX(-50%)',
+                  }}
+                >{label}</span>
+              );
+            })}
           </div>
         </div>
       )}

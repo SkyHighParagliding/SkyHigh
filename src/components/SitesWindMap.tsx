@@ -12,7 +12,7 @@ import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
-import { THERMAL_LEGEND_CSS } from './windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from './windmap/thermalRenderer';
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
@@ -571,8 +571,33 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 </button>
               </div>
               <div className="h-2 w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
-              <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
-                <span>None</span><span>Weak</span><span>Mod</span><span>Good</span><span>XC</span>
+              {/* Labels positioned at the true W* threshold fraction of LEGEND_MAX_WSTAR
+                  so they align with where each band actually sits on the gradient. */}
+              <div className="relative mt-1 h-[10px] text-[7px] font-mono text-white/70">
+                {(
+                  [
+                    // No 'None' label: nothing is painted below W* 0.3, so it would
+                    // sit at 0% with no colour to point at and collide with 'Weak'.
+                    { label: 'Weak',   wstar: 0.3 },
+                    { label: 'Mod',    wstar: 0.8 },
+                    { label: 'Good',   wstar: 1.5 },
+                    { label: 'Strong', wstar: 2.5 },
+                  ] as { label: string; wstar: number }[]
+                ).map(({ label, wstar }, i, arr) => {
+                  const pct = Math.min(100, (wstar / LEGEND_MAX_WSTAR) * 100);
+                  const isFirst = i === 0;
+                  const isLast  = i === arr.length - 1;
+                  return (
+                    <span
+                      key={label}
+                      className="absolute"
+                      style={{
+                        left: `${pct}%`,
+                        transform: isFirst ? 'none' : isLast ? 'translateX(-100%)' : 'translateX(-50%)',
+                      }}
+                    >{label}</span>
+                  );
+                })}
               </div>
               <div className="flex items-center gap-1 mt-1.5 text-[7px] text-white/60">
                 <span className="text-[9px] leading-none">☁</span>
