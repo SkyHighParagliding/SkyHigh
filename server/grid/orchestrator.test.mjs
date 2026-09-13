@@ -497,6 +497,274 @@ console.log("\nTEST 7: Total failure throws");
 }
 
 // ---------------------------------------------------------------------------
+// TEST 8: Optional variable full of NaN does not veto the grid
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 8: Optional variable full of NaN does not veto the grid");
+{
+  // Both points have cape + boundary_layer_height fully finite.
+  // lifted_index is entirely NaN on both.
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "boundary_layer_height", "lifted_index"],
+    points: [
+      {
+        ...POINT_A, time: TIME_AXIS_1,
+        values: { cape: [100, 200, 300], boundary_layer_height: [500, 600, 700], lifted_index: [NaN, NaN, NaN] },
+      },
+      {
+        ...POINT_B, time: TIME_AXIS_1,
+        values: { cape: [110, 210, 310], boundary_layer_height: [510, 610, 710], lifted_index: [NaN, NaN, NaN] },
+      },
+    ],
+  });
+
+  let grid;
+  try {
+    grid = await fetchMergedGrid(
+      {
+        points: [POINT_A, POINT_B],
+        variables: ["cape", "boundary_layer_height", "lifted_index"],
+        required: ["cape", "boundary_layer_height"],
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch (err) {
+    assert(false, `Should not throw, but threw: ${err.message}`);
+  }
+
+  if (grid) {
+    assert(grid.time.length === 3, "Full 3-hour axis retained");
+    const ptA = grid.points.find(p => Math.abs(p.lat - POINT_A.lat) < 0.001);
+    assert(!!ptA, "Point A present");
+    assert(ptA?.values?.cape?.[0] === 100, "cape values intact (first hour)");
+    // lifted_index must still be present and still NaN — not zero-filled
+    assert(
+      ptA?.values?.lifted_index?.every(v => Number.isNaN(v)),
+      "lifted_index still NaN (not zero-filled)",
+    );
+    assert(
+      ptA?.values?.lifted_index !== undefined,
+      "lifted_index key still present in point",
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TEST 9: Disjoint optional windows still produce a full grid (production failure)
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 9: Disjoint optional LI windows — production failure shape");
+{
+  // 4-hour axis for clarity
+  const AXIS = ["2026-09-12T06:00", "2026-09-12T07:00", "2026-09-12T08:00", "2026-09-12T09:00"];
+
+  // Point A: LI finite only on first two hours, NaN on last two
+  // Point B: LI finite only on last two hours, NaN on first two
+  // cape + boundary_layer_height: complete on both
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "boundary_layer_height", "lifted_index"],
+    points: [
+      {
+        ...POINT_A, time: AXIS,
+        values: {
+          cape: [100, 200, 300, 400],
+          boundary_layer_height: [500, 600, 700, 800],
+          lifted_index: [2, 3, NaN, NaN],      // finite on first half only
+        },
+      },
+      {
+        ...POINT_B, time: AXIS,
+        values: {
+          cape: [110, 210, 310, 410],
+          boundary_layer_height: [510, 610, 710, 810],
+          lifted_index: [NaN, NaN, 4, 5],      // finite on second half only
+        },
+      },
+    ],
+  });
+
+  let grid;
+  try {
+    grid = await fetchMergedGrid(
+      {
+        points: [POINT_A, POINT_B],
+        variables: ["cape", "boundary_layer_height", "lifted_index"],
+        required: ["cape", "boundary_layer_height"],
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch (err) {
+    assert(false, `Should not throw, but threw: ${err.message}`);
+  }
+
+  if (grid) {
+    assert(grid.time.length === 4, "Full 4-hour axis retained");
+    assert(
+      grid.provenance.notes.some(n => n.includes("lifted_index")),
+      "Provenance notes mention lifted_index",
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TEST 10: A REQUIRED variable with holes trims the axis
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 10: Required variable with holes trims the axis");
+{
+  // Point A: cape NaN at the last 2 hours
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "boundary_layer_height"],
+    points: [
+      {
+        ...POINT_A, time: TIME_AXIS_1,
+        values: { cape: [100, NaN, NaN], boundary_layer_height: [500, 600, 700] },
+      },
+      {
+        ...POINT_B, time: TIME_AXIS_1,
+        values: { cape: [110, 210, 310], boundary_layer_height: [510, 610, 710] },
+      },
+    ],
+  });
+
+  let grid;
+  try {
+    grid = await fetchMergedGrid(
+      {
+        points: [POINT_A, POINT_B],
+        variables: ["cape", "boundary_layer_height"],
+        required: ["cape", "boundary_layer_height"],
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch (err) {
+    assert(false, `Should not throw, but threw: ${err.message}`);
+  }
+
+  if (grid) {
+    assert(grid.time.length === 1, "Axis trimmed to 1 (only first hour complete)");
+    assert(
+      grid.provenance.notes.some(n => n.toLowerCase().includes("trimmed")),
+      "'Forecast trimmed' note is present",
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TEST 11: Required variable with disjoint holes throws with diagnostic message
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 11: Required variable disjoint holes throws with cape in message");
+{
+  // Point A cape: NaN on first two hours; Point B cape: NaN on last hour.
+  // No single hour has cape on both — should throw.
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "boundary_layer_height"],
+    points: [
+      {
+        ...POINT_A, time: TIME_AXIS_1,
+        values: { cape: [NaN, NaN, 300], boundary_layer_height: [500, 600, 700] },
+      },
+      {
+        ...POINT_B, time: TIME_AXIS_1,
+        values: { cape: [110, 210, NaN], boundary_layer_height: [510, 610, 710] },
+      },
+    ],
+  });
+
+  let threw = false;
+  let errorMsg = "";
+  try {
+    await fetchMergedGrid(
+      {
+        points: [POINT_A, POINT_B],
+        variables: ["cape", "boundary_layer_height"],
+        required: ["cape", "boundary_layer_height"],
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch (err) {
+    threw = true;
+    errorMsg = err.message;
+  }
+
+  assert(threw, "fetchMergedGrid throws for disjoint required variable holes");
+  assert(errorMsg.includes("cape"), `Error message mentions 'cape' — got: ${errorMsg}`);
+  // The diagnostic should include point counts (e.g. "1/2 points")
+  assert(
+    /\d+\/\d+/.test(errorMsg),
+    `Error message contains point count fraction — got: ${errorMsg}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TEST 12: No `required` declared falls back to all-variables behaviour
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 12: No required declared — all-variables fallback (old behaviour)");
+{
+  // Same disjoint-LI shape as T9, but NO required set declared.
+  // Without required, LI holes veto hours, so no window exists → should throw.
+  const AXIS = ["2026-09-12T06:00", "2026-09-12T07:00", "2026-09-12T08:00", "2026-09-12T09:00"];
+
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "lifted_index"],
+    points: [
+      {
+        ...POINT_A, time: AXIS,
+        values: {
+          cape: [100, 200, 300, 400],
+          lifted_index: [2, 3, NaN, NaN],      // finite on first half only
+        },
+      },
+      {
+        ...POINT_B, time: AXIS,
+        values: {
+          cape: [110, 210, 310, 410],
+          lifted_index: [NaN, NaN, 4, 5],      // finite on second half only
+        },
+      },
+    ],
+  });
+
+  let threw = false;
+  try {
+    await fetchMergedGrid(
+      {
+        points: [POINT_A, POINT_B],
+        variables: ["cape", "lifted_index"],
+        // NOTE: no `required` field — old all-variables behaviour
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch {
+    threw = true;
+  }
+
+  assert(threw, "Without required, disjoint optional windows throw (old behaviour preserved)");
+}
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 

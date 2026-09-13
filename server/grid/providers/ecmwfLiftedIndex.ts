@@ -380,17 +380,28 @@ export async function fetchEcmwfLiftedIndex(
           if (signal?.aborted) return;
 
           let box: Float32Array;
-          try {
-            box = await readIfs025Box(reader, tile, tStart, tEnd);
-          } catch {
-            // One retry (matching openMeteoS3.ts discipline).
-            if (signal?.aborted) return;
-            await new Promise(r => setTimeout(r, 250));
-            try {
-              box = await readIfs025Box(reader, tile, tStart, tEnd);
-            } catch (err2) {
+          {
+            // 3-attempt retry with backoff 250 ms / 1000 ms.
+            const DELAYS = [250, 1000];
+            let lastErr: unknown;
+            let succeeded = false;
+            for (let attempt = 0; attempt < 3; attempt++) {
+              if (signal?.aborted) return;
+              try {
+                box = await readIfs025Box(reader, tile, tStart, tEnd);
+                succeeded = true;
+                break;
+              } catch (err) {
+                lastErr = err;
+                if (attempt < DELAYS.length) {
+                  const delay = DELAYS[attempt];
+                  await new Promise(r => setTimeout(r, delay));
+                }
+              }
+            }
+            if (!succeeded) {
               log.warn(`ecmwfLiftedIndex: box read failed`, {
-                chunk, varName, tile, error: String(err2),
+                chunk, varName, tile, attempts: 3, error: String(lastErr),
               });
               // Every cell in this tile stays absent, so its points are omitted
               // below rather than zero-filled.

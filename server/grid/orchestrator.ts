@@ -101,19 +101,49 @@ function reindexOntoCanonical(
 
 /**
  * The longest contiguous run of hours for which every point has a finite value
- * in every variable it carries, as `[start, end)`.
+ * in every variable listed in `coverageVars`, as `[start, end)`.
  *
  * A window rather than a prefix, because gaps appear at either end: a source
  * whose cycle starts later than the canonical axis leaves holes at the front,
  * one with a shorter horizon leaves them at the back. Trimming to the shared
  * window is what lets a grid assembled from disagreeing axes stay dense.
+ *
+ * Only the variables the grid declares as REQUIRED may veto an hour. Optional
+ * variables are best-effort by contract — `seriesOf()` fills NaN for them and
+ * `extract.ts` converts NaN to `undefined` on the client — so letting a
+ * deliberately-absent optional field shorten or destroy the forecast inverts
+ * the intent. When `coverageVars` is empty we fall back to checking every
+ * variable every point carries, preserving the old behaviour for callers that
+ * declare no required set.
+ *
+ * A variable that a point does not carry at all (`undefined` series) simply
+ * does not constrain that point — it is treated as a truly optional field that
+ * the provider was not asked for.
  */
-function coveredWindow(points: MergedPoint[], axisLength: number): [number, number] {
+function coveredWindow(
+  points: MergedPoint[],
+  axisLength: number,
+  coverageVars: Variable[],
+): [number, number] {
   const ok = new Array<boolean>(axisLength).fill(true);
-  for (const p of points) {
-    for (const series of Object.values(p.values) as number[][]) {
-      for (let i = 0; i < axisLength; i++) {
-        if (!Number.isFinite(series[i])) ok[i] = false;
+
+  if (coverageVars.length === 0) {
+    // Legacy path: all variables a point carries may veto.
+    for (const p of points) {
+      for (const series of Object.values(p.values) as number[][]) {
+        for (let i = 0; i < axisLength; i++) {
+          if (!Number.isFinite(series[i])) ok[i] = false;
+        }
+      }
+    }
+  } else {
+    for (const p of points) {
+      for (const v of coverageVars) {
+        const series = p.values[v];
+        if (series === undefined) continue; // variable not carried by this point — no constraint
+        for (let i = 0; i < axisLength; i++) {
+          if (!Number.isFinite(series[i])) ok[i] = false;
+        }
       }
     }
   }
@@ -311,12 +341,42 @@ export async function fetchMergedGrid(
   // must not survive into the grid: downstream the arrays are plain numbers,
   // and a gap that reads as 0 would render as dead calm — indistinguishable
   // from genuinely still air, in a tool people use to decide whether to fly.
-  // So we trim the axis to the leading run of fully-covered hours instead of
-  // encoding absence as a value. A shorter honest forecast beats a longer one
-  // with invented calm in it.
-  const [from, to] = coveredWindow(points, canonicalTime.length);
+  // So we trim the axis to the longest contiguous run of hours covered by every
+  // required variable, rather than encoding absence as a value. A shorter honest
+  // forecast beats a longer one with invented calm in it.
+  //
+  // Only required variables may veto an hour. Optional variables (those in the
+  // request's variable list but not in `required`) are deliberately best-effort;
+  // letting them shorten or destroy the forecast inverts the contract.
+  const coverageVars: Variable[] = required.length > 0
+    ? required
+    : ([...new Set(points.flatMap(p => Object.keys(p.values)))] as Variable[]);
+  const [from, to] = coveredWindow(points, canonicalTime.length, coverageVars);
   if (to === 0) {
-    throw new Error("fetchMergedGrid: no hour was covered by every point — refusing to emit a grid with holes");
+    // Build a diagnostic: for each coverage variable, how many points have at
+    // least one non-finite value, and how many hours does that veto.
+    const varStats = coverageVars.map(v => {
+      let incompletePoints = 0;
+      let vetoedHours = 0;
+      const hourVetoed = new Array<boolean>(canonicalTime!.length).fill(false);
+      for (const p of points) {
+        const series = p.values[v];
+        if (series === undefined) continue;
+        let pointIncomplete = false;
+        for (let i = 0; i < series.length; i++) {
+          if (!Number.isFinite(series[i])) {
+            hourVetoed[i] = true;
+            pointIncomplete = true;
+          }
+        }
+        if (pointIncomplete) incompletePoints++;
+      }
+      vetoedHours = hourVetoed.filter(Boolean).length;
+      return `${v} (${incompletePoints}/${points.length} points incomplete, ${vetoedHours}h lost)`;
+    });
+    throw new Error(
+      `fetchMergedGrid: no hour was covered by every point — refusing to emit a grid with holes. Coverage variables: ${varStats.join(", ")}`,
+    );
   }
   if (to - from < canonicalTime.length) {
     const dropped = canonicalTime.length - (to - from);
@@ -327,6 +387,29 @@ export async function fetchMergedGrid(
       for (const key of Object.keys(p.values) as Variable[]) {
         p.values[key] = p.values[key]!.slice(from, to);
       }
+    }
+  }
+
+  // Surface optional-variable holes that survived the trim. These were excluded
+  // from coverage checking by design, but we note them so the admin panel stays
+  // honest: they render as "unavailable" on the client, not as zeroes.
+  {
+    const allVarsInGrid = new Set(points.flatMap(p => Object.keys(p.values)));
+    const optionalVarsWithHoles: string[] = [];
+    for (const v of allVarsInGrid) {
+      if (coverageVars.includes(v as Variable)) continue; // already governs coverage
+      let incompleteCount = 0;
+      for (const p of points) {
+        const series = p.values[v as Variable];
+        if (series === undefined) continue;
+        if (series.some(x => !Number.isFinite(x))) incompleteCount++;
+      }
+      if (incompleteCount > 0) {
+        optionalVarsWithHoles.push(`${v}: incomplete for ${incompleteCount}/${points.length} point(s) within the retained window (optional — rendered as unavailable)`);
+      }
+    }
+    if (optionalVarsWithHoles.length > 0) {
+      notes.push(optionalVarsWithHoles.join("; "));
     }
   }
 
