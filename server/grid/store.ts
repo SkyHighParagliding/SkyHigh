@@ -177,3 +177,19 @@ export async function setStatus(key: string, value: string): Promise<void> {
     // Non-fatal: silently swallow so the caller's fetch is not disrupted.
   }
 }
+
+/**
+ * Clears all grid progress keys written by the fine, thermal, and extended-forecast
+ * fetches. Called once at server startup, before any fetches begin.
+ *
+ * Nothing can legitimately be mid-fetch at boot: in-flight fetch state is
+ * held purely in process memory, which does not survive a restart. Any non-empty
+ * progress value left in the database therefore reflects a fetch that was killed
+ * mid-run, and would otherwise display forever as a phantom "fetching N points"
+ * in the admin panel.
+ */
+export async function clearStaleGridProgress(): Promise<void> {
+  const keys = ["fineGridProgress", "thermalGridProgress", "extendedGridProgress"];
+  await Promise.all(keys.map(k => setStatus(k, "")));
+  log.info("Cleared stale grid progress keys on startup");
+}

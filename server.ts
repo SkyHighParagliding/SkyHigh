@@ -13,6 +13,7 @@ import { cleanExpiredSessions } from "./server/middleware/auth.js";
 import { csrfTokenProvider, csrfTokenValidator, getCSRFTokenRoute } from "./server/middleware/csrf.js";
 import createLogger from "./server/utils/logger.js";
 import { startScheduledJobs } from "./server/utils/scheduledJobs.js";
+import { clearStaleGridProgress } from "./server/grid/store.js";
 import { precomputeWindGridIfNeeded } from "./server/extendedForecast.js";
 
 import sitesRouter, { externalSitesRouter } from "./server/routes/sites/index.js";
@@ -356,6 +357,7 @@ async function startServer() {
   }, 60 * 60 * 1000);
 
   await precomputeWindGridIfNeeded();
+  await clearStaleGridProgress();
   startScheduledJobs();
   seedPublicPrompt().catch(e => log.error("seedPublicPrompt failed", e?.message));
 }

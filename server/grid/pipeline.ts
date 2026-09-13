@@ -81,6 +81,10 @@ interface KindState<G> {
   memGrid: G | null;
   memGridAt: number;
   inflight: Promise<G> | null;
+  /** AbortController for the running fetch, if any. Replaced each time a new fetch starts. */
+  controller: AbortController | null;
+  /** Wall-clock ms when the current fetch started; null when idle. */
+  startedAt: number | null;
 }
 
 const states = new Map<string, KindState<unknown>>();
@@ -88,10 +92,53 @@ const states = new Map<string, KindState<unknown>>();
 function stateFor<G>(baseKey: string): KindState<G> {
   let s = states.get(baseKey);
   if (!s) {
-    s = { memGrid: null, memGridAt: 0, inflight: null };
+    s = { memGrid: null, memGridAt: 0, inflight: null, controller: null, startedAt: null };
     states.set(baseKey, s);
   }
   return s as KindState<G>;
+}
+
+// ---------------------------------------------------------------------------
+// Cancellation
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown (and re-thrown) when a grid fetch is explicitly cancelled via
+ * cancelGridFetch(). Callers that need to distinguish a cancellation from a
+ * real failure should check with isGridFetchCancelled() rather than catching
+ * the class directly, to avoid coupling to the exact class reference across
+ * module boundaries.
+ */
+export class GridFetchCancelledError extends Error {
+  constructor(baseKey: string) {
+    super(`Grid fetch cancelled: ${baseKey}`);
+    this.name = "GridFetchCancelledError";
+  }
+}
+
+export function isGridFetchCancelled(err: unknown): err is GridFetchCancelledError {
+  return err instanceof GridFetchCancelledError;
+}
+
+/**
+ * Aborts the running fetch for the given base key. Returns true when a fetch
+ * was actually running, false when idle (no-op).
+ */
+export function cancelGridFetch(baseKey: string): boolean {
+  const state = stateFor(baseKey);
+  if (!state.controller) return false;
+  state.controller.abort();
+  return true;
+}
+
+/**
+ * Current execution status for the given base key — whether a fetch is running
+ * and when it started. Used by the "Fetch Now" routes to compose an accurate
+ * response message before kicking off a new fetch.
+ */
+export function getGridFetchStatus(baseKey: string): { running: boolean; startedAt: number | null } {
+  const state = stateFor(baseKey);
+  return { running: state.inflight !== null, startedAt: state.startedAt };
 }
 
 // ---------------------------------------------------------------------------
@@ -181,21 +228,63 @@ export async function fetchGrid<P>(kind: GridKind<P>, force = false): Promise<Pe
   }
 
   if (state.inflight) {
-    log.info(`${kind.baseKey}: joining in-flight fetch`);
-    return state.inflight;
+    if (!force) {
+      // Non-forced callers (ordinary reads) join the in-flight fetch rather than
+      // racing against it — they all want the same grid and the first one to ask
+      // already triggered the work.
+      log.info(`${kind.baseKey}: joining in-flight fetch`);
+      return state.inflight;
+    }
+
+    // force === true with a fetch already running: the user explicitly asked for a
+    // fresh start (e.g. "Fetch Now" while a previous run was wedged). Cancel the
+    // running fetch and wait for its promise to settle — the finally block in the
+    // outer try below will clear state.inflight and decrement activeFetches before
+    // we proceed, so we never start a second fetch while the cancelled one is still
+    // winding down.
+    log.warn(`${kind.baseKey}: force-cancelling in-flight fetch before starting fresh`);
+    state.controller?.abort();
+    try {
+      await state.inflight;
+    } catch {
+      // Expected: the cancelled fetch throws GridFetchCancelledError (or an AbortError
+      // if a lower layer surfaces it first). Either way we don't care — we're about
+      // to start a new fetch.
+    }
+    // state.inflight is now null: the owning fetchGrid call registered its finally
+    // on this promise before we registered our await, and promise reactions run in
+    // registration order, so its cleanup has already run.
+
+    // Unless another forced caller got here first and started a fresh fetch while
+    // we were waiting. That fetch is already newer than this request, so join it
+    // instead. Without this, two near-simultaneous force calls each cancel the
+    // other's brand-new fetch and neither ever completes.
+    if (state.inflight) {
+      log.info(`${kind.baseKey}: a fresh fetch already started — joining it`);
+      return state.inflight;
+    }
   }
 
-  state.inflight = runFetch(kind, state);
+  const controller = new AbortController();
+  state.controller = controller;
+  state.startedAt = Date.now();
+  state.inflight = runFetch(kind, state, controller.signal);
   activeFetches++;
   try {
     return await state.inflight;
   } finally {
     state.inflight = null;
+    state.controller = null;
+    state.startedAt = null;
     activeFetches--;
   }
 }
 
-async function runFetch<P>(kind: GridKind<P>, state: KindState<PersistedGrid<P>>): Promise<PersistedGrid<P>> {
+async function runFetch<P>(
+  kind: GridKind<P>,
+  state: KindState<PersistedGrid<P>>,
+  signal: AbortSignal,
+): Promise<PersistedGrid<P>> {
   type G = PersistedGrid<P>;
   const bounds = await getGridBounds();
   const points = await kind.buildPoints();
@@ -212,17 +301,35 @@ async function runFetch<P>(kind: GridKind<P>, state: KindState<PersistedGrid<P>>
   };
 
   let merged: MergedGrid;
+  let cancelled = false;
   try {
     merged = await fetchMergedGrid(
-      { points, variables: kind.variables, required: kind.required, forecastDays: FORECAST_DAYS },
+      { points, variables: kind.variables, required: kind.required, forecastDays: FORECAST_DAYS, signal },
       opts,
     );
+
+    // The orchestrator honours the signal at polling points but does not throw on
+    // abort — it simply stops filling points and returns whatever it had so far.
+    // Check the signal here so the persistence block below is never reached when
+    // the caller has already cancelled this run.
+    if (signal.aborted) cancelled = true;
+  } catch (err) {
+    if (signal.aborted) cancelled = true;
+    // Re-throw regardless: if cancelled, the outer catch in fetchGrid handles it;
+    // if a real error, the caller's catch (scheduler / route) handles it.
+    throw cancelled ? new GridFetchCancelledError(kind.baseKey) : err;
   } finally {
-    // Wait for every queued progress write to land before issuing the clear,
-    // so the clear can never be overtaken by a late in-flight progress write.
+    // Always clear progress, cancelled or not. Wait for every queued write to land
+    // first so this clear cannot be overtaken by a late in-flight progress write.
     await progressChain;
     await setStatus(kind.progressKey, "");
   }
+
+  // A cancelled run must not persist anything — no grid, no provenance, no health
+  // record. This is the exit for the case where fetchMergedGrid returned normally
+  // after observing the abort (it stops filling points rather than throwing); the
+  // throwing case has already left via the catch above.
+  if (cancelled) throw new GridFetchCancelledError(kind.baseKey);
 
   // Recorded regardless of which branch follows — the admin panel should see
   // what the providers actually returned, even when we then keep the old cache.

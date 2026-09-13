@@ -130,6 +130,13 @@ async function fetchFineGridDaily() {
 const THERMAL_RETRY_DELAYS_MS = [30 * 60_000, 60 * 60_000, 120 * 60_000, 240 * 60_000];
 
 /**
+ * Handle for the pending thermal-grid retry timer, if any. Only one retry chain
+ * should ever be live at a time. Each new chain clears this before scheduling
+ * its own timer, so manual "Fetch Now" clicks don't accumulate ghost chains.
+ */
+let thermalRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
  * Number of requested points no provider could supply on the last thermal
  * fetch. Written after every run so the admin panel and the startup check have
  * a single, always-current signal.
@@ -155,12 +162,39 @@ export async function getThermalGapCount(): Promise<number> {
 }
 
 async function fetchThermalGridDaily(retryRound = 0) {
+  // Cancel any previously scheduled retry timer before starting a new chain.
+  // Without this, each manual "Fetch Now" click would layer a new chain on top
+  // of the pending timers from previous clicks, accumulating ghost retry chains
+  // that all compete for the same quota and write conflicting status rows.
+  if (thermalRetryTimer !== null) {
+    clearTimeout(thermalRetryTimer);
+    thermalRetryTimer = null;
+  }
+
   const ts = new Date().toISOString();
   const roundLabel = retryRound > 0 ? ` (retry ${retryRound}/${THERMAL_RETRY_DELAYS_MS.length})` : '';
   try {
     const { fetchThermalGrid, THERMAL_GRID_CACHE_KEY } = await import("../grid/thermalGrid.js");
-    const { wasLastFetchFresh } = await import("../grid/pipeline.js");
-    const grid = await fetchThermalGrid(true);
+    const { wasLastFetchFresh, isGridFetchCancelled } = await import("../grid/pipeline.js");
+
+    let grid;
+    try {
+      grid = await fetchThermalGrid(true);
+    } catch (fetchErr) {
+      // A cancellation is not a failure: the user deliberately interrupted the run
+      // to start a fresh one. Do not reschedule a retry chain — the new fetch,
+      // which is already running, will manage its own retry schedule if needed.
+      if (isGridFetchCancelled(fetchErr)) {
+        log.info(`Thermal grid${roundLabel}: cancelled — skipping retry and result write`);
+        await execute(
+          "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+          ["thermalGridLastResult", "cancelled"],
+        );
+        return;
+      }
+      throw fetchErr;
+    }
+
     const isFresh = wasLastFetchFresh(THERMAL_GRID_CACHE_KEY);
 
     const missing = grid.provenance?.missing ?? 0;
@@ -173,7 +207,7 @@ async function fetchThermalGridDaily(retryRound = 0) {
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
       log.info(`Thermal grid${roundLabel}: ${missing} points missing — retry ${retryRound + 1} scheduled in ${delayMin}min`);
-      setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
+      thermalRetryTimer = setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
     } else if (missing > 0) {
       const resultMsg = `partial — ${missing} points unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries`;
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
@@ -192,7 +226,7 @@ async function fetchThermalGridDaily(retryRound = 0) {
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", `error — retry ${retryRound + 1} in ${delayMin}min`]);
       log.warn(`Thermal grid${roundLabel} threw error — retry ${retryRound + 1} in ${delayMin}min: ${e.message}`);
-      setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
+      thermalRetryTimer = setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
     } else {
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", e.message || "Unknown error"]);

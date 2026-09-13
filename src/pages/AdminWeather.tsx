@@ -304,7 +304,10 @@ export function AdminWeather() {
     lastProgressRef.current = '';
     startStatusPolling(true);
     try {
-      await api.post(endpoint, {}, token);
+      const data = await api.post<{ success?: boolean; message?: string }>(endpoint, {}, token);
+      // Surface the server's message so the user knows whether their click cancelled
+      // a wedged run and started fresh, or simply kicked off a new one.
+      if (data.message) toast.info(data.message);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Network error");
       setLoadingType(null);

@@ -12,8 +12,9 @@ import createLogger from "../utils/logger.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getGridBounds } from "../grid/bounds.js";
 import { getElevationAt as getElevationAtPoint } from "../grid/elevationPoint.js";
-import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches } from "../grid/fineGrid.js";
-import { fetchThermalGrid, getCachedThermalGrid } from "../grid/thermalGrid.js";
+import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches, FINE_GRID_CACHE_KEY } from "../grid/fineGrid.js";
+import { fetchThermalGrid, getCachedThermalGrid, THERMAL_GRID_CACHE_KEY } from "../grid/thermalGrid.js";
+import { getGridFetchStatus, cancelGridFetch } from "../grid/pipeline.js";
 import { extractFullWindGrid, extractThermalGrid, extractWindParticles } from "../grid/extract.js";
 import { runThermalGridFetch } from "../utils/scheduledJobs.js";
 import { getSiteExtendedForecast, getCachedExtendedGrid, getExtendedWindGrid } from "../extendedForecast.js";
@@ -1001,9 +1002,30 @@ router.post("/extended-forecast/fetch-now", requireAuth, asyncHandler(async (_re
   }
 }));
 
+/**
+ * Message describing what a "Fetch Now" click actually did, so the admin panel
+ * can say whether it displaced a run that was already going. Must be called
+ * BEFORE the new fetch starts, while the previous run's state is still readable.
+ */
+function fetchNowMessage(cacheKey: string, label: string): string {
+  const prev = getGridFetchStatus(cacheKey);
+  if (!prev.running || prev.startedAt === null) return `${label} fetch started`;
+
+  const mins = Math.floor((Date.now() - prev.startedAt) / 60_000);
+  const age = mins > 0 ? `running for ${mins}min` : "just started";
+  return `Cancelled the previous run (${age}), starting fresh`;
+}
+
 router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  // Respond immediately — fetch runs in background (35+ tiles, ~100s)
-  res.json({ success: true, message: "Fine grid fetch started" });
+  // Capture status before starting, so the response message is accurate.
+  // The fetch itself runs in the background — HTTP responds immediately.
+  const message = fetchNowMessage(FINE_GRID_CACHE_KEY, "Wind grid");
+  // fetchFineGrid(true) below cancels the in-flight run itself; this makes the
+  // abort happen now rather than after the await chain re-enters the pipeline.
+  cancelGridFetch(FINE_GRID_CACHE_KEY);
+
+  res.json({ success: true, message });
+
   const ts = new Date().toISOString();
   try {
     await fetchFineGrid(true);
@@ -1017,8 +1039,15 @@ router.post("/fine-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) 
 }));
 
 router.post("/thermal-grid/fetch-now", requireAuth, asyncHandler(async (_req, res) => {
-  // Respond immediately — fetch + auto-retries run in background
-  res.json({ success: true, message: "Thermal grid fetch started" });
+  // Capture status before starting, so the response message is accurate.
+  // The fetch + auto-retries run in the background — HTTP responds immediately.
+  const message = fetchNowMessage(THERMAL_GRID_CACHE_KEY, "Thermal grid");
+  // runThermalGridFetch reaches fetchGrid(force=true), which cancels and restarts
+  // on its own; aborting here just starts the wind-down a moment sooner.
+  cancelGridFetch(THERMAL_GRID_CACHE_KEY);
+
+  res.json({ success: true, message });
+
   runThermalGridFetch(0).catch(e => log.error("Manual thermal grid fetch chain failed:", e));
 }));
 
