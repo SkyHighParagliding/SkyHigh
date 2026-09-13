@@ -189,7 +189,7 @@ function ProvenanceRow({ label, raw }: { label: string; raw: string | undefined 
 }
 
 export function AdminWeather() {
-  const { settings, refreshSettings, updateSettings } = useSettings();
+  const { settings, refreshSettings, updateSettings, settingsFetchedAt } = useSettings();
   const { token } = useAuth();
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -200,6 +200,13 @@ export function AdminWeather() {
   const timerStartRef = useRef<number>(0);
   const lastProgressRef = useRef('');
   const [lastDurationByType, setLastDurationByType] = useState<Partial<Record<GridType, number>>>({});
+
+  // Throttle gate: stores the ms timestamp of the last visibility/focus refresh
+  // so that visibilitychange + focus firing together don't double-fetch.
+  const lastResumeFetchRef = useRef<number>(0);
+
+  // Bumped every 30 s so the "Checked X min ago" label re-renders without a network call.
+  const [, setAgeTick] = useState(0);
 
   const startStatusPolling = (fast = false) => {
     if (pollRef.current) clearInterval(pollRef.current);
@@ -259,6 +266,38 @@ export function AdminWeather() {
       startStatusPolling(true);
     }
   }, [settings.thermalGridProgress, settings.fineGridProgress, settings.extendedGridProgress]);
+
+  // Refresh settings on mount and whenever the tab becomes visible or regains focus,
+  // so a long-lived PWA tab doesn't show yesterday's cron results as fresh.
+  // Skip when polling is already running — it already covers freshness.
+  useEffect(() => {
+    const maybeRefresh = () => {
+      if (pollRef.current) return; // polling covers it
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastResumeFetchRef.current < 5000) return; // de-dupe paired events
+      lastResumeFetchRef.current = now;
+      refreshSettings();
+    };
+
+    // Immediate mount refresh
+    lastResumeFetchRef.current = Date.now();
+    refreshSettings();
+
+    document.addEventListener("visibilitychange", maybeRefresh);
+    window.addEventListener("focus", maybeRefresh);
+    return () => {
+      document.removeEventListener("visibilitychange", maybeRefresh);
+      window.removeEventListener("focus", maybeRefresh);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-render every 30 s so the staleness age label stays current. No network call.
+  useEffect(() => {
+    const id = setInterval(() => setAgeTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // 7-Day fetch time, read from the same setting the scheduler uses so this
   // description cannot drift from the real schedule.
@@ -579,6 +618,28 @@ export function AdminWeather() {
                     </div>
                   );
                 })}
+                {/* Staleness indicator — warns when the panel snapshot is old */}
+                {settingsFetchedAt != null && (() => {
+                  const ageMs = Date.now() - settingsFetchedAt;
+                  const stale = ageMs >= 3 * 60 * 1000;
+                  const timeStr = new Date(settingsFetchedAt).toLocaleTimeString("en-AU", {
+                    timeZone: "Australia/Melbourne",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  });
+                  let ageLabel = "";
+                  if (stale) {
+                    const ageMin = Math.floor(ageMs / 60_000);
+                    ageLabel = ageMin >= 60
+                      ? ` — ${Math.floor(ageMin / 60)} h ago`
+                      : ` — ${ageMin} min ago`;
+                  }
+                  return (
+                    <div className={`text-xs ${stale ? "text-amber-500" : "text-muted-foreground"}`}>
+                      Checked {timeStr}{ageLabel}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Data provenance — which source(s) supplied the last grid */}

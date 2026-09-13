@@ -205,6 +205,8 @@ interface SettingsContextType {
   activeLogos: LogoSet;
   lightLogos: LogoSet;
   darkLogos: LogoSet;
+  /** Unix ms timestamp of the last successful /api/settings read. Null until first load. */
+  settingsFetchedAt: number | null;
 }
 
 const emptyLogos: LogoSet = { nav: "", footer: "", favicon: "", splash: "" };
@@ -239,6 +241,7 @@ const SettingsContext = createContext<SettingsContextType>({
   activeLogos: emptyLogos,
   lightLogos: emptyLogos,
   darkLogos: emptyLogos,
+  settingsFetchedAt: null,
 });
 
 function buildSettings(data: Record<string, any>): Settings {
@@ -404,12 +407,14 @@ function buildSettings(data: Record<string, any>): Settings {
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [loading, setLoading] = useState(true);
+  const [settingsFetchedAt, setSettingsFetchedAt] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         setSettings(buildSettings(data));
+        setSettingsFetchedAt(Date.now());
         setLoading(false);
       })
       .catch((err) => {
@@ -423,6 +428,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/settings", { cache: "no-store" });
       const data = await res.json();
       setSettings(buildSettings(data));
+      setSettingsFetchedAt(Date.now());
     } catch (err) {
       console.error("Failed to refresh settings:", err);
     }
@@ -460,7 +466,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     activeLogos: resolveActiveLogos(settings),
     lightLogos: resolveLightLogos(settings),
     darkLogos: resolveDarkLogos(settings),
-  }), [settings, updateSettings, refreshSettings, loading]);
+    settingsFetchedAt,
+  }), [settings, updateSettings, refreshSettings, loading, settingsFetchedAt]);
 
   return (
     <SettingsContext.Provider value={providerValue}>
