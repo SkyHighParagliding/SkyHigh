@@ -10,8 +10,8 @@ import type { ThermalGrid } from './thermalInterpolation';
 import { fetchElevationAt } from './elevationPoint';
 import { tileCoordsFor, prefetchTile } from './terrainTiles';
 import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
-import { createCumulusGlyphState, maybeRebuildCumulusGlyphs, drawCumulusGlyphs } from './cumulusGlyphs';
-import type { CumulusGlyphState } from './cumulusGlyphs';
+import { createCumulusField, rebuildCumulusField, drawCumulusField } from './cumulusField';
+import type { CumulusFieldState } from './cumulusField';
 import { drawSiteMarkers } from './siteMarkerRenderer';
 
 const TILE_CACHE_MAX = 200;
@@ -134,7 +134,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     if (!ctx) return;
 
     let overlay = createThermalOverlay(width, height);
-    let glyphState: CumulusGlyphState = createCumulusGlyphState();
+    let field: CumulusFieldState = createCumulusField(width, height);
 
     const gridTL = projection([thermalGrid.lonMin, thermalGrid.latMax])!;
     const gridBR = projection([thermalGrid.lonMax, thermalGrid.latMin])!;
@@ -209,8 +209,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
             canvasRef.current.height = h;
             if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
             overlay = createThermalOverlay(w, h);
-            if (glyphState.rebuildTimeout) clearTimeout(glyphState.rebuildTimeout);
-            glyphState = createCumulusGlyphState();
+            field = createCumulusField(w, h);
           }
         }
       }
@@ -253,10 +252,10 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       maybeRebuildThermalOverlay(overlay, currentTransform, transformRef, projection, currentTimeRef, thermalGrid);
       drawThermalOverlay(ctx, overlay, currentTransform);
 
-      // Cumulus glyphs sit above the heat raster but below the site markers so
-      // pilots see cloud symbols without them obscuring the interactive pin targets.
-      maybeRebuildCumulusGlyphs(glyphState, currentTransform, transformRef, projection, currentTimeRef, thermalGrid, w, h);
-      drawCumulusGlyphs(ctx, glyphState, currentTransform);
+      // Cumulus stipple sits above the heat raster but below the site markers so
+      // pilots see the texture without it obscuring the interactive pin targets.
+      rebuildCumulusField(field, overlay, currentTransform);
+      drawCumulusField(ctx, field, currentTransform);
 
       const markersLocal = siteMarkersRef.current;
       if (markersLocal && markersLocal.length > 0) {
@@ -271,7 +270,6 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
-      if (glyphState.rebuildTimeout) clearTimeout(glyphState.rebuildTimeout);
       if (prefetchTimer !== null) clearTimeout(prefetchTimer);
       clearInterval(todayInterval);
       resizeObserver.disconnect();

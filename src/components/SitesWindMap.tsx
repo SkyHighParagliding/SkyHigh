@@ -577,7 +577,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               <div className="flex items-center gap-1 mt-1.5 text-[7px] text-white/60">
                 <span className="text-[9px] leading-none">☁</span>
                 <span>Cumulus</span>
-                <span className="text-white/35 ml-auto">no symbol = blue thermals</span>
+                <span className="text-white/35 ml-auto">plain = blue thermals</span>
               </div>
             </>
           ) : (

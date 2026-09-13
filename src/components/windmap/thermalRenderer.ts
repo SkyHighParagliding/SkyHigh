@@ -4,7 +4,7 @@ import { getThermalAt, effectiveWstar } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import { isOnLand } from './landMask';
 
-const CELL = 6; // sample every 6px for a smooth heatmap
+export const CELL = 6; // sample every 6px for a smooth heatmap — exported for cumulusField.ts
 const REBUILD_MIN_INTERVAL = 50; // ms
 
 // W*-based colour stops (warm ramp: transparent → amber → orange → red)
@@ -70,6 +70,14 @@ export interface ThermalOverlayState {
   spanX: number;
   spanY: number;
   /**
+   * Cumulus depth (blh − ccl) in metres for each overlay cell, pre-multiplied
+   * by the edge-fade factor so the stipple follows the same soft boundary as
+   * the heat ramp. Zero for any cell that is skipped (water, no data, blue
+   * day, or depth < 50 m). Read by cumulusField.ts without re-running
+   * getThermalAt — that is why it lives here rather than in a separate pass.
+   */
+  cumulusDepth: Float32Array;
+  /**
    * The transform in force when the raster was built. The raster is baked in
    * screen space, so it is only valid for this transform; drawing it under any
    * other one misplaces it. Null until the first build completes.
@@ -99,6 +107,9 @@ export function createThermalOverlay(width: number, height: number): ThermalOver
     cachedTime: 0,
     rebuildTimeout: null,
     lastRebuild: 0,
+    // Zero-initialised: any cell not reached by the loop (or skipped by continue)
+    // stays 0, which cumulusField.ts treats as "no cumulus here".
+    cumulusDepth: new Float32Array(overlayW * overlayH),
   };
 }
 
@@ -139,7 +150,11 @@ function rebuildThermalOverlay(
   currentTime: number,
   grid: ThermalGrid,
 ) {
-  const { width: overlayW, height: overlayH, pixels, ctx, imageData } = overlay;
+  const { width: overlayW, height: overlayH, pixels, ctx, imageData, cumulusDepth } = overlay;
+  // Zero the cumulus depth array up front; only positive depths are written below.
+  // This means every skipped cell (water, no data, etc.) stays 0 without needing
+  // an explicit write in each continue branch.
+  cumulusDepth.fill(0);
   for (let oy = 0; oy < overlayH; oy++) {
     for (let ox = 0; ox < overlayW; ox++) {
       const px = ox * CELL + CELL / 2;
@@ -165,6 +180,13 @@ function rebuildThermalOverlay(
         1.0,
       );
       pixels[idx + 3] = Math.round(thermalLUT[li * 4 + 3] * Math.max(0, edgeFade));
+
+      // Cumulus depth: piggy-backed on the existing getThermalAt result so we
+      // pay for the interpolation only once. Multiplied by edgeFade so the stipple
+      // boundary matches the heat ramp and never leaves a hard-edged rectangle.
+      if (th.ccl != null && th.blh - th.ccl >= 50) {
+        cumulusDepth[oy * overlayW + ox] = (th.blh - th.ccl) * Math.max(0, edgeFade);
+      }
     }
   }
   ctx.putImageData(imageData, 0, 0);

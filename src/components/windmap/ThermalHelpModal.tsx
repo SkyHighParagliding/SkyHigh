@@ -66,9 +66,9 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
           </section>
 
           <section>
-            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cloud Symbols</div>
-            <p className="text-white/70">White puff symbols appear where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and mark themselves with cumulus clouds. Bigger symbols mean a deeper cloud layer. <span className="text-white/50">No symbol means a blue day: thermals exist but top out before condensation, leaving no visual marker in the sky.</span></p>
-            <p className="text-white/50 mt-1.5">Grey symbols indicate very deep cumulus (&gt;3000 m thick). Deep cloud signals overdevelopment risk — likely a worse day for flying, not a better one.</p>
+            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cumulus Marks</div>
+            <p className="text-white/70">Small white cloud marks fill the areas where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and form cumulus. The marks grow larger and brighter where the cloud layer is deeper (BLH − CCL). <span className="text-white/50">Plain areas mean a blue day: thermals exist but top out below condensation, leaving a clear sky and nothing to mark the lift.</span></p>
+            <p className="text-white/50 mt-1.5">Grey marks indicate very deep cumulus (&gt;3000 m thick). That much cloud depth signals overdevelopment risk — likely a worse day for flying, not a better one.</p>
           </section>
 
           <section className="border-t border-white/10 pt-3 space-y-1.5">
