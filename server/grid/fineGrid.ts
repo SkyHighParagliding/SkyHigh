@@ -30,7 +30,15 @@ const FINE_VARIABLES: Variable[] = [
   "boundary_layer_height",
 ];
 
-/** Without wind there is no wind map; a provider lacking these is skipped. */
+/**
+ * Without wind there is no wind map; a provider lacking these is skipped.
+ *
+ * The fine grid deliberately declares NO gap-tolerant variables (no `optional`
+ * list). Consumers such as `extract.ts:140` coerce a missing gust to 0 with
+ * `?? 0`, which would render as dead calm — a dangerous lie in a tool people
+ * use to decide whether to fly. Every variable must therefore be complete before
+ * the axis is accepted.
+ */
 const FINE_REQUIRED: Variable[] = ["wind_speed_10m", "wind_direction_10m"];
 
 async function buildFinePoints(): Promise<LatLon[]> {

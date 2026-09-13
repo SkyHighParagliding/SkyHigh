@@ -63,14 +63,19 @@ function assertEqual(actual, expected, message) {
 // If this fails, run: node --import tsx/esm server/grid/orchestrator.test.mjs
 
 let fetchMergedGrid;
+let seriesOf;
 try {
-  const mod = await import("./orchestrator.ts");
-  fetchMergedGrid = mod.fetchMergedGrid;
+  const orchMod = await import("./orchestrator.ts");
+  fetchMergedGrid = orchMod.fetchMergedGrid;
+  const pipeMod = await import("./pipeline.ts");
+  seriesOf = pipeMod.seriesOf;
 } catch (err) {
   // Fallback: try without tsx (may work if compiled)
   try {
-    const mod = await import("./orchestrator.js");
-    fetchMergedGrid = mod.fetchMergedGrid;
+    const orchMod = await import("./orchestrator.js");
+    fetchMergedGrid = orchMod.fetchMergedGrid;
+    const pipeMod = await import("./pipeline.js");
+    seriesOf = pipeMod.seriesOf;
   } catch {
     console.error("Could not import orchestrator. Run with: node --import tsx/esm server/grid/orchestrator.test.mjs");
     console.error("Original error:", err.message);
@@ -497,13 +502,13 @@ console.log("\nTEST 7: Total failure throws");
 }
 
 // ---------------------------------------------------------------------------
-// TEST 8: Optional variable full of NaN does not veto the grid
+// TEST 8: optional: ["lifted_index"] — NaN LI does not veto the grid
 // ---------------------------------------------------------------------------
 
-console.log("\nTEST 8: Optional variable full of NaN does not veto the grid");
+console.log("\nTEST 8: optional LI full of NaN does not veto the grid; axis retained");
 {
   // Both points have cape + boundary_layer_height fully finite.
-  // lifted_index is entirely NaN on both.
+  // lifted_index is entirely NaN on both, but it is declared optional.
   const provider = makeProvider({
     id: "openmeteo-api",
     tier: 1,
@@ -528,6 +533,7 @@ console.log("\nTEST 8: Optional variable full of NaN does not veto the grid");
         points: [POINT_A, POINT_B],
         variables: ["cape", "boundary_layer_height", "lifted_index"],
         required: ["cape", "boundary_layer_height"],
+        optional: ["lifted_index"],
         forecastDays: 1,
       },
       { providers: [provider] },
@@ -554,10 +560,10 @@ console.log("\nTEST 8: Optional variable full of NaN does not veto the grid");
 }
 
 // ---------------------------------------------------------------------------
-// TEST 9: Disjoint optional windows still produce a full grid (production failure)
+// TEST 9: Disjoint optional LI windows — full axis retained; provenance notes LI
 // ---------------------------------------------------------------------------
 
-console.log("\nTEST 9: Disjoint optional LI windows — production failure shape");
+console.log("\nTEST 9: Disjoint optional LI windows — full axis retained; provenance notes LI");
 {
   // 4-hour axis for clarity
   const AXIS = ["2026-09-12T06:00", "2026-09-12T07:00", "2026-09-12T08:00", "2026-09-12T09:00"];
@@ -565,6 +571,7 @@ console.log("\nTEST 9: Disjoint optional LI windows — production failure shape
   // Point A: LI finite only on first two hours, NaN on last two
   // Point B: LI finite only on last two hours, NaN on first two
   // cape + boundary_layer_height: complete on both
+  // Because LI is declared optional it does NOT veto hours.
   const provider = makeProvider({
     id: "openmeteo-api",
     tier: 1,
@@ -597,6 +604,7 @@ console.log("\nTEST 9: Disjoint optional LI windows — production failure shape
         points: [POINT_A, POINT_B],
         variables: ["cape", "boundary_layer_height", "lifted_index"],
         required: ["cape", "boundary_layer_height"],
+        optional: ["lifted_index"],
         forecastDays: 1,
       },
       { providers: [provider] },
@@ -606,21 +614,22 @@ console.log("\nTEST 9: Disjoint optional LI windows — production failure shape
   }
 
   if (grid) {
-    assert(grid.time.length === 4, "Full 4-hour axis retained");
+    assert(grid.time.length === 4, "Full 4-hour axis retained (optional LI did not veto)");
     assert(
       grid.provenance.notes.some(n => n.includes("lifted_index")),
-      "Provenance notes mention lifted_index",
+      "Provenance notes mention lifted_index (optional hole surfaced honestly)",
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// TEST 10: A REQUIRED variable with holes trims the axis
+// TEST 10: A NON-optional variable with holes trims the axis
 // ---------------------------------------------------------------------------
 
-console.log("\nTEST 10: Required variable with holes trims the axis");
+console.log("\nTEST 10: Non-optional variable with holes trims the axis");
 {
-  // Point A: cape NaN at the last 2 hours
+  // Point A: cape NaN at the last 2 hours.
+  // cape is NOT in optional — so the axis is trimmed to the 1 good hour.
   const provider = makeProvider({
     id: "openmeteo-api",
     tier: 1,
@@ -644,7 +653,7 @@ console.log("\nTEST 10: Required variable with holes trims the axis");
       {
         points: [POINT_A, POINT_B],
         variables: ["cape", "boundary_layer_height"],
-        required: ["cape", "boundary_layer_height"],
+        // No optional: cape must be complete everywhere
         forecastDays: 1,
       },
       { providers: [provider] },
@@ -663,13 +672,13 @@ console.log("\nTEST 10: Required variable with holes trims the axis");
 }
 
 // ---------------------------------------------------------------------------
-// TEST 11: Required variable with disjoint holes throws with diagnostic message
+// TEST 11: A NON-optional variable with disjoint holes throws, naming the variable
 // ---------------------------------------------------------------------------
 
-console.log("\nTEST 11: Required variable disjoint holes throws with cape in message");
+console.log("\nTEST 11: Non-optional variable with disjoint holes throws; error names the variable");
 {
   // Point A cape: NaN on first two hours; Point B cape: NaN on last hour.
-  // No single hour has cape on both — should throw.
+  // No single hour has cape on both — should throw. cape is NOT optional.
   const provider = makeProvider({
     id: "openmeteo-api",
     tier: 1,
@@ -694,7 +703,7 @@ console.log("\nTEST 11: Required variable disjoint holes throws with cape in mes
       {
         points: [POINT_A, POINT_B],
         variables: ["cape", "boundary_layer_height"],
-        required: ["cape", "boundary_layer_height"],
+        // No optional: disjoint cape holes → no valid window → throw
         forecastDays: 1,
       },
       { providers: [provider] },
@@ -704,7 +713,7 @@ console.log("\nTEST 11: Required variable disjoint holes throws with cape in mes
     errorMsg = err.message;
   }
 
-  assert(threw, "fetchMergedGrid throws for disjoint required variable holes");
+  assert(threw, "fetchMergedGrid throws for disjoint non-optional variable holes");
   assert(errorMsg.includes("cape"), `Error message mentions 'cape' — got: ${errorMsg}`);
   // The diagnostic should include point counts (e.g. "1/2 points")
   assert(
@@ -714,13 +723,15 @@ console.log("\nTEST 11: Required variable disjoint holes throws with cape in mes
 }
 
 // ---------------------------------------------------------------------------
-// TEST 12: No `required` declared falls back to all-variables behaviour
+// TEST 12: No optional declared — disjoint holes in ANY variable throw (fine-grid safety)
 // ---------------------------------------------------------------------------
 
-console.log("\nTEST 12: No required declared — all-variables fallback (old behaviour)");
+console.log("\nTEST 12: No optional declared — disjoint LI holes throw (fine-grid safety case)");
 {
-  // Same disjoint-LI shape as T9, but NO required set declared.
-  // Without required, LI holes veto hours, so no window exists → should throw.
+  // Same disjoint-LI shape as T9, but NO optional declared.
+  // Without optional, LI holes veto hours, no window exists → should throw.
+  // This is the safety guarantee that protects the fine (wind) grid, where
+  // consumers coerce absent values to 0 and would render dead calm as a lie.
   const AXIS = ["2026-09-12T06:00", "2026-09-12T07:00", "2026-09-12T08:00", "2026-09-12T09:00"];
 
   const provider = makeProvider({
@@ -752,7 +763,7 @@ console.log("\nTEST 12: No required declared — all-variables fallback (old beh
       {
         points: [POINT_A, POINT_B],
         variables: ["cape", "lifted_index"],
-        // NOTE: no `required` field — old all-variables behaviour
+        // NOTE: no optional declared — disjoint lifted_index holes must throw
         forecastDays: 1,
       },
       { providers: [provider] },
@@ -761,7 +772,135 @@ console.log("\nTEST 12: No required declared — all-variables fallback (old beh
     threw = true;
   }
 
-  assert(threw, "Without required, disjoint optional windows throw (old behaviour preserved)");
+  assert(threw, "Without optional, disjoint LI holes throw (fine-grid safety preserved)");
+}
+
+// ---------------------------------------------------------------------------
+// TEST 13: seriesOf throws for a non-gap-tolerant variable (allowGaps false)
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 13: seriesOf throws for a non-gap-tolerant variable");
+{
+  // A synthetic merged point with a NaN in its series.
+  const point = {
+    lat: -37.0,
+    lon: 144.0,
+    source: "openmeteo-api",
+    values: {
+      cape: [100, NaN, 300],
+    },
+  };
+
+  let threw = false;
+  let errorMsg = "";
+  try {
+    seriesOf(point, "cape", 3);           // allowGaps defaults to false
+  } catch (err) {
+    threw = true;
+    errorMsg = err.message;
+  }
+
+  assert(threw, "seriesOf throws when allowGaps is false and the series contains NaN");
+  assert(errorMsg.includes("cape"), `Error message names the variable 'cape' — got: ${errorMsg}`);
+}
+
+// ---------------------------------------------------------------------------
+// TEST 14: seriesOf emits NaN for a gap-tolerant variable (allowGaps true)
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 14: seriesOf emits NaN for a gap-tolerant variable");
+{
+  const point = {
+    lat: -37.0,
+    lon: 144.0,
+    source: "openmeteo-api",
+    values: {
+      lifted_index: [2.5, NaN, -1.0],
+    },
+  };
+
+  let result;
+  let threw = false;
+  try {
+    result = seriesOf(point, "lifted_index", 3, true);   // allowGaps = true
+  } catch (err) {
+    threw = true;
+    assert(false, `seriesOf should not throw with allowGaps=true, but threw: ${err.message}`);
+  }
+
+  if (!threw) {
+    assert(result.length === 3, "result has the correct length");
+    assert(result[0] === 2.5, "finite value at index 0 preserved exactly");
+    assert(Number.isNaN(result[1]), "gap position is NaN (not zero-filled)");
+    assert(result[2] === -1.0, "finite value at index 2 preserved exactly");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TEST 15: End-to-end — optional CIN survives the pipeline as NaN (production failure path)
+// ---------------------------------------------------------------------------
+
+console.log("\nTEST 15: End-to-end optional CIN NaN survives the pipeline without throwing");
+{
+  // This is the exact shape that caused the production failure:
+  // convective_inhibition is NaN at some hours, but it is declared optional.
+  // The orchestrator must not throw during grid assembly, and seriesOf must
+  // emit a NaN-containing array (not throw) when called with allowGaps=true.
+  const AXIS = ["2026-09-12T06:00", "2026-09-12T07:00", "2026-09-12T08:00"];
+
+  const provider = makeProvider({
+    id: "openmeteo-api",
+    tier: 1,
+    modelFamily: "ecmwf",
+    supportedVars: ["cape", "boundary_layer_height", "convective_inhibition"],
+    points: [
+      {
+        ...POINT_A, time: AXIS,
+        values: {
+          cape: [100, 200, 300],
+          boundary_layer_height: [500, 600, 700],
+          convective_inhibition: [NaN, -50, NaN],   // gaps at hours 0 and 2
+        },
+      },
+    ],
+  });
+
+  let merged;
+  try {
+    merged = await fetchMergedGrid(
+      {
+        points: [POINT_A],
+        variables: ["cape", "boundary_layer_height", "convective_inhibition"],
+        required: ["cape", "boundary_layer_height"],
+        optional: ["convective_inhibition"],
+        forecastDays: 1,
+      },
+      { providers: [provider] },
+    );
+  } catch (err) {
+    assert(false, `fetchMergedGrid should not throw with optional CIN, but threw: ${err.message}`);
+  }
+
+  if (merged) {
+    assert(merged.time.length === 3, "Full 3-hour axis retained (CIN did not veto)");
+
+    const p = merged.points[0];
+    let cinResult;
+    let threw = false;
+    try {
+      cinResult = seriesOf(p, "convective_inhibition", merged.time.length, true);
+    } catch (err) {
+      threw = true;
+      assert(false, `seriesOf should not throw with allowGaps=true, but threw: ${err.message}`);
+    }
+
+    if (!threw) {
+      assert(cinResult.length === 3, "CIN result array has correct length");
+      assert(Number.isNaN(cinResult[0]), "CIN gap at hour 0 is NaN (not thrown, not zero-filled)");
+      assert(cinResult[1] === -50, "CIN finite value at hour 1 preserved exactly");
+      assert(Number.isNaN(cinResult[2]), "CIN gap at hour 2 is NaN");
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

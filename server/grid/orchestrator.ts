@@ -108,13 +108,20 @@ function reindexOntoCanonical(
  * one with a shorter horizon leaves them at the back. Trimming to the shared
  * window is what lets a grid assembled from disagreeing axes stay dense.
  *
- * Only the variables the grid declares as REQUIRED may veto an hour. Optional
- * variables are best-effort by contract — `seriesOf()` fills NaN for them and
- * `extract.ts` converts NaN to `undefined` on the client — so letting a
- * deliberately-absent optional field shorten or destroy the forecast inverts
- * the intent. When `coverageVars` is empty we fall back to checking every
- * variable every point carries, preserving the old behaviour for callers that
- * declare no required set.
+ * `coverageVars` is every variable actually present on the merged points MINUS
+ * those the request declares gap-tolerant (`req.optional`). Gap-tolerant
+ * variables are best-effort by contract — `seriesOf()` emits NaN for them and
+ * `extract.ts` converts NaN to `undefined` on the client — so letting them
+ * shorten or destroy the forecast inverts the intent.
+ *
+ * Note: `required` governs provider ELIGIBILITY (a provider that cannot supply
+ * all required variables is skipped entirely). It is a DIFFERENT concept from
+ * gap tolerance: a provider may be required to supply a variable yet still
+ * return holes in it. Gap tolerance is declared separately via `optional`.
+ *
+ * When `coverageVars` is empty we fall back to checking every variable every
+ * point carries, preserving the old behaviour for callers that declare neither
+ * `required` nor `optional`.
  *
  * A variable that a point does not carry at all (`undefined` series) simply
  * does not constrain that point — it is treated as a truly optional field that
@@ -342,15 +349,22 @@ export async function fetchMergedGrid(
   // and a gap that reads as 0 would render as dead calm — indistinguishable
   // from genuinely still air, in a tool people use to decide whether to fly.
   // So we trim the axis to the longest contiguous run of hours covered by every
-  // required variable, rather than encoding absence as a value. A shorter honest
-  // forecast beats a longer one with invented calm in it.
+  // gap-intolerant variable, rather than encoding absence as a value. A shorter
+  // honest forecast beats a longer one with invented calm in it.
   //
-  // Only required variables may veto an hour. Optional variables (those in the
-  // request's variable list but not in `required`) are deliberately best-effort;
-  // letting them shorten or destroy the forecast inverts the contract.
-  const coverageVars: Variable[] = required.length > 0
-    ? required
-    : ([...new Set(points.flatMap(p => Object.keys(p.values)))] as Variable[]);
+  // Coverage is assessed over every variable actually present on the merged
+  // points, MINUS those the request declares gap-tolerant (req.optional).
+  // Gap-tolerant variables are best-effort by contract: `seriesOf` emits NaN
+  // for them and `extract.ts` converts NaN to `undefined` on the client, so
+  // letting them shorten or destroy the forecast inverts the intent.
+  //
+  // Note: `required` governs provider ELIGIBILITY — a provider that cannot
+  // supply a required variable is skipped entirely. That is a different question
+  // from gap tolerance. A provider may be required to supply a variable yet
+  // still return holes in it; `optional` is the mechanism for permitting that.
+  const optional = new Set(req.optional ?? []);
+  const coverageVars = ([...new Set(points.flatMap(p => Object.keys(p.values)))] as Variable[])
+    .filter(v => !optional.has(v));
   const [from, to] = coveredWindow(points, canonicalTime.length, coverageVars);
   if (to === 0) {
     // Build a diagnostic: for each coverage variable, how many points have at
@@ -391,13 +405,12 @@ export async function fetchMergedGrid(
   }
 
   // Surface optional-variable holes that survived the trim. These were excluded
-  // from coverage checking by design, but we note them so the admin panel stays
-  // honest: they render as "unavailable" on the client, not as zeroes.
+  // from coverage checking by design (they are in req.optional), but we note
+  // them so the admin panel stays honest: they render as "unavailable" on the
+  // client, not as zeroes.
   {
-    const allVarsInGrid = new Set(points.flatMap(p => Object.keys(p.values)));
     const optionalVarsWithHoles: string[] = [];
-    for (const v of allVarsInGrid) {
-      if (coverageVars.includes(v as Variable)) continue; // already governs coverage
+    for (const v of optional) {
       let incompleteCount = 0;
       for (const p of points) {
         const series = p.values[v as Variable];

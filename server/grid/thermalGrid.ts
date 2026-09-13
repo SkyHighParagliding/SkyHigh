@@ -22,13 +22,19 @@
  * The OD triangle is driven by `lifted_index` + `cape`. ECMWF publishes no lifted
  * index under any name, so tier 2 derives it from the `ecmwf_ifs025` pressure-level
  * bucket by parcel ascent (see providers/ecmwfLiftedIndex.ts and grid/parcel.ts).
- * That means LI is now available on tiers 1 AND 2 — only the GFS fallback tiers
+ * That means LI is available on tiers 1 AND 2 — only the GFS fallback tiers
  * lack it, where `convective_inhibition` acts as a degraded stand-in.
  *
- * Neither is added to THERMAL_REQUIRED: doing so would discard any point a
- * fallback tier provides without these fields, turning a degraded-but-useful
- * point into a silent gap. The client renderer degrades gracefully when they are
- * missing rather than suppressing the signal entirely.
+ * Both `lifted_index` and `convective_inhibition` are listed in THERMAL_OPTIONAL
+ * rather than THERMAL_REQUIRED. This — not THERMAL_REQUIRED — is what permits
+ * their gaps: the orchestrator excludes them from the axis-coverage check so a
+ * run of NaN values does not veto or shorten the forecast, and `seriesOf` emits
+ * NaN for them instead of throwing.
+ *
+ * `convective_inhibition` is non-finite on roughly a third to two-thirds of
+ * Victoria points in the ECMWF bucket (2,294/6,173 measured 2026-09-13), so it
+ * must never be treated as reliably present. Adding it to THERMAL_REQUIRED would
+ * cause the orchestrator to throw on nearly every run.
  */
 
 import { buildLandTiles } from "../utils/gridTiles.js";
@@ -53,6 +59,17 @@ const THERMAL_VARIABLES: Variable[] = [
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
 
+/**
+ * Variables permitted to contain gaps. The orchestrator excludes these from the
+ * axis-coverage check; `seriesOf` emits NaN for missing hours rather than
+ * throwing. `extract.ts` normalises NaN (and JSON null) to `undefined`, so
+ * absence stays absence and is never shown as a value on the client.
+ *
+ * `convective_inhibition` is non-finite on roughly a third to two-thirds of
+ * Victoria points in the ECMWF bucket (2,294/6,173 measured 2026-09-13).
+ */
+const THERMAL_OPTIONAL: Variable[] = ["lifted_index", "convective_inhibition"];
+
 async function buildThermalPoints(): Promise<LatLon[]> {
   const bounds = await getGridBounds();
   const tiles = buildLandTiles(
@@ -65,24 +82,31 @@ async function buildThermalPoints(): Promise<LatLon[]> {
 
 function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
   const n = time.length;
+  // `gaps` drives the allowGaps flag on seriesOf from the single source of truth
+  // (THERMAL_OPTIONAL), so the two can never drift apart.
+  const gaps = (v: Variable) => THERMAL_OPTIONAL.includes(v);
   return {
     lat: p.lat,
     lon: p.lon,
     source: p.source,
     hourly: {
       time,
-      cape: seriesOf(p, "cape", n),
-      boundary_layer_height: seriesOf(p, "boundary_layer_height", n),
-      temperature_2m: seriesOf(p, "temperature_2m", n),
-      dew_point_2m: seriesOf(p, "dew_point_2m", n),
-      shortwave_radiation: seriesOf(p, "shortwave_radiation", n),
-      soil_moisture_0_to_7cm: seriesOf(p, "soil_moisture_0_to_7cm", n),
-      // seriesOf fills NaN for hours where the provider had no value.
-      // lifted_index is tier-1 only; convective_inhibition is tier-1 + tier-2.
-      // NaN propagates to the client as-is and is converted to undefined there
-      // (see extract.ts) so downstream `!= null` checks work correctly.
-      lifted_index: seriesOf(p, "lifted_index", n),
-      convective_inhibition: seriesOf(p, "convective_inhibition", n),
+      cape: seriesOf(p, "cape", n, gaps("cape")),
+      boundary_layer_height: seriesOf(p, "boundary_layer_height", n, gaps("boundary_layer_height")),
+      temperature_2m: seriesOf(p, "temperature_2m", n, gaps("temperature_2m")),
+      dew_point_2m: seriesOf(p, "dew_point_2m", n, gaps("dew_point_2m")),
+      shortwave_radiation: seriesOf(p, "shortwave_radiation", n, gaps("shortwave_radiation")),
+      soil_moisture_0_to_7cm: seriesOf(p, "soil_moisture_0_to_7cm", n, gaps("soil_moisture_0_to_7cm")),
+      // Both of these are declared in THERMAL_OPTIONAL: the orchestrator excluded
+      // them from the axis-coverage check so NaN values do not shorten or destroy
+      // the forecast. seriesOf emits NaN for missing hours (rather than throwing),
+      // which JSON.stringify turns into null on the wire; extract.ts normalises
+      // both null and NaN to undefined, so absence stays absence on the client.
+      // lifted_index is available on tiers 1 and 2 (tier 2 derives it by parcel
+      // ascent); convective_inhibition is non-finite on ~a third to two-thirds of
+      // Victoria points in the ECMWF bucket.
+      lifted_index: seriesOf(p, "lifted_index", n, gaps("lifted_index")),
+      convective_inhibition: seriesOf(p, "convective_inhibition", n, gaps("convective_inhibition")),
     },
   };
 }
@@ -96,6 +120,7 @@ export const THERMAL_GRID: GridKind<ThermalPoint> = {
   delta: THERMAL_DELTA,
   variables: THERMAL_VARIABLES,
   required: THERMAL_REQUIRED,
+  optional: THERMAL_OPTIONAL,
   buildPoints: buildThermalPoints,
   buildPoint: buildThermalPoint,
 };

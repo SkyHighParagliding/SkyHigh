@@ -99,6 +99,13 @@ export interface GridRequest {
    * `cape` + `boundary_layer_height`, which excludes the S3 GFS tier.
    */
   required?: Variable[];
+  /**
+   * Variables permitted to contain gaps. These do NOT constrain the covered
+   * time window, and `seriesOf` emits NaN for them rather than throwing.
+   * Distinct from `required`, which governs provider ELIGIBILITY — a provider
+   * may be required to supply a variable yet still return holes in it.
+   */
+  optional?: Variable[];
   /** Forecast horizon in days from today (Melbourne). */
   forecastDays: number;
   signal?: AbortSignal;

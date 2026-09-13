@@ -70,6 +70,8 @@ export interface GridKind<P> {
   variables: Variable[];
   /** Without these the grid is useless; providers lacking them are skipped. */
   required: Variable[];
+  /** Variables permitted to contain gaps (see GridRequest.optional). */
+  optional?: Variable[];
   /** The point set to request, derived from the configured bounds. */
   buildPoints(): Promise<LatLon[]>;
   /** Converts one merged point into the persisted per-point shape. */
@@ -304,7 +306,7 @@ async function runFetch<P>(
   let cancelled = false;
   try {
     merged = await fetchMergedGrid(
-      { points, variables: kind.variables, required: kind.required, forecastDays: FORECAST_DAYS, signal },
+      { points, variables: kind.variables, required: kind.required, optional: kind.optional ?? [], forecastDays: FORECAST_DAYS, signal },
       opts,
     );
 
@@ -401,19 +403,35 @@ async function loadPrevious<G>(baseKey: string): Promise<G | null> {
 /**
  * Reads one variable off a merged point as a plain number array.
  *
- * The orchestrator trims the time axis to hours every point covers, so values
- * here are already finite. We assert rather than coerce: substituting a number
- * for a gap would put invented weather into the grid — 0 kn reads as dead calm —
+ * When `allowGaps` is false (the default), the function asserts that every
+ * value is finite. We assert rather than coerce: substituting a number for a
+ * gap would put invented weather into the grid — 0 kn reads as dead calm —
  * and it is far better to fail the fetch and serve yesterday's cache than to
  * serve a plausible-looking lie.
+ *
+ * When `allowGaps` is true, the function writes NaN into `out[i]` instead of
+ * throwing. This is safe only for variables declared in the grid kind's
+ * `optional` list, because:
+ *  - `JSON.stringify` converts NaN to `null` on the way to the client.
+ *  - `extract.ts` already normalises both `null` and `NaN` to `undefined`
+ *    (see the `li`/`cin` handling around extract.ts:511-521), so absence
+ *    stays absence and is never shown as a value.
+ * The coerce-to-0 warning still applies to non-gap-tolerant variables: a 0
+ * would render as dead calm, which is a lie a pilot might act on.
  */
-export function seriesOf(point: MergedPoint, variable: Variable, length: number): number[] {
+export function seriesOf(
+  point: MergedPoint, variable: Variable, length: number, allowGaps = false,
+): number[] {
   const raw = point.values[variable];
   if (!raw) return [];
   const out = new Array<number>(length);
   for (let i = 0; i < length; i++) {
     const v = raw[i];
     if (!Number.isFinite(v)) {
+      if (allowGaps) {
+        out[i] = NaN;
+        continue;
+      }
       throw new Error(
         `seriesOf: non-finite ${variable} at hour ${i} for ${point.lat},${point.lon} — orchestrator should have trimmed this`,
       );
