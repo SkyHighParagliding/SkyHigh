@@ -82,74 +82,96 @@ function cellKey(iLat: number, iLon: number): string {
 // Keyed by cellKey(iLat, iLon) so we only hit the remote once per grid cell
 // for the lifetime of the process.
 // ---------------------------------------------------------------------------
-const hsurfCache = new Map<string, number>();
+//
+// The cache holds the in-flight PROMISE, not the resolved value. Callers run
+// under Promise.all, so caching only the resolved value dedupes nothing: every
+// caller for a cell starts its own read before the first one finishes. With a
+// full grid that stampeded thousands of simultaneous connections at a single
+// static file and most of them failed with "fetch failed". Storing the promise
+// means the second and later callers for a cell await the first one's read.
+const hsurfCache = new Map<string, Promise<number>>();
 
-async function readHsurf(iLat: number, iLon: number): Promise<number> {
+function readHsurf(iLat: number, iLon: number): Promise<number> {
   const key = cellKey(iLat, iLon);
-  if (hsurfCache.has(key)) return hsurfCache.get(key)!;
+  const inFlight = hsurfCache.get(key);
+  if (inFlight) return inFlight;
 
-  const backend = new OmHttpBackend({ url: HSURF_URL, debug: false });
-  try {
-    const raw = await withSlowDownRetry(async () => {
-      const reader = await OmFileReader.create(
-        backend as unknown as Parameters<typeof OmFileReader.create>[0],
-      );
-      try {
-        return await reader.read({
-          type: OmDataType.FloatArray,
-          ranges: [
-            { start: iLat, end: iLat + 1 },
-            { start: iLon, end: iLon + 1 },
-          ],
-          ioSizeMax:  IO_SIZE_MAX,
-          ioSizeMerge: IO_SIZE_MERGE,
-        }) as Float32Array;
-      } finally {
-        reader.dispose();
-      }
-    });
-    // -999 (or any value < -100) is the ocean/missing sentinel.
-    // Treating it as 0 m gives a sensible coastal surface pressure rather than garbage.
-    const z = (raw[0] < -100) ? 0 : raw[0];
-    hsurfCache.set(key, z);
-    return z;
-  } finally {
-    await backend.close().catch(() => {});
+  const pending = readHsurfUncached(iLat, iLon);
+  hsurfCache.set(key, pending);
+  // A rejected promise must not be cached, or one transient network error would
+  // poison this cell for the lifetime of the process.
+  pending.catch(() => hsurfCache.delete(key));
+  return pending;
+}
+
+// HSURF is one static file covering the whole globe, so every cell reads from
+// the same reader. It is created once and kept for the process lifetime: the
+// file never changes (model orography), and creating a reader costs an HTTP
+// round-trip for the metadata trailer that we would otherwise pay per cell.
+// The backend is deliberately never closed — it is a single long-lived handle,
+// and closing it would invalidate the reader for later grid fetches.
+let hsurfReader: Promise<OmFileReader> | null = null;
+
+function getHsurfReader(): Promise<OmFileReader> {
+  if (!hsurfReader) {
+    hsurfReader = OmFileReader.create(
+      new OmHttpBackend({ url: HSURF_URL, debug: false }) as unknown as
+        Parameters<typeof OmFileReader.create>[0],
+    );
+    // Don't cache a failed create, or one transient error disables HSURF — and
+    // therefore surface pressure, and therefore LI — for the whole process.
+    hsurfReader.catch(() => { hsurfReader = null; });
   }
+  return hsurfReader;
+}
+
+async function readHsurfUncached(iLat: number, iLon: number): Promise<number> {
+  const reader = await getHsurfReader();
+  const raw = await withSlowDownRetry(async () =>
+    await reader.read({
+      type: OmDataType.FloatArray,
+      ranges: [
+        { start: iLat, end: iLat + 1 },
+        { start: iLon, end: iLon + 1 },
+      ],
+      ioSizeMax:  IO_SIZE_MAX,
+      ioSizeMerge: IO_SIZE_MERGE,
+    }) as Float32Array,
+  );
+  // -999 (or any value < -100) is the ocean/missing sentinel.
+  // Treating it as 0 m gives a sensible coastal surface pressure rather than garbage.
+  return (raw[0] < -100) ? 0 : raw[0];
 }
 
 // ---------------------------------------------------------------------------
 // Read a single ifs025 3-D cell: [iLat..iLat+1, iLon..iLon+1, tStart..tEnd].
 // Returns Float32Array of length (tEnd - tStart).
 // ---------------------------------------------------------------------------
+// The reader is passed in rather than created here on purpose. Creating one
+// costs an HTTP round-trip to read the file's metadata, and every cell in a
+// chunk reads from the same file — creating one per cell meant ~7,200 redundant
+// metadata fetches per run, which dominated the wall-clock time.
 async function readIfs025Cell(
-  backend: OmHttpBackend,
+  reader: OmFileReader,
   iLat: number,
   iLon: number,
   tStart: number,
   tEnd: number,
 ): Promise<Float32Array> {
-  return withSlowDownRetry(async () => {
-    const reader = await OmFileReader.create(
-      backend as unknown as Parameters<typeof OmFileReader.create>[0],
-    );
-    try {
-      return await reader.read({
-        type: OmDataType.FloatArray,
-        ranges: [
-          { start: iLat, end: iLat + 1 },
-          { start: iLon, end: iLon + 1 },
-          { start: tStart, end: tEnd },
-        ],
-        ioSizeMax:          IO_SIZE_MAX,
-        ioSizeMerge:        IO_SIZE_MERGE,
-        prefetch:           true,
-        prefetchConcurrency: 4,
-      }) as Float32Array;
-    } finally {
-      reader.dispose();
-    }
-  });
+  return withSlowDownRetry(async () =>
+    await reader.read({
+      type: OmDataType.FloatArray,
+      ranges: [
+        { start: iLat, end: iLat + 1 },
+        { start: iLon, end: iLon + 1 },
+        { start: tStart, end: tEnd },
+      ],
+      ioSizeMax:          IO_SIZE_MAX,
+      ioSizeMerge:        IO_SIZE_MERGE,
+      prefetch:           true,
+      prefetchConcurrency: 4,
+    }) as Float32Array,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -267,19 +289,31 @@ export async function fetchEcmwfLiftedIndex(
       cellMap.get(ck)!.ptKeys.push(pointKey(pt));
     }
 
-    // For each unique variable: read in parallel, bounded by the shared semaphore.
-    const tasks: Array<Promise<void>> = [];
-    const backends: OmHttpBackend[] = [];
-
     // Collect raw values per-cell for this chunk.
     type CellVarData = Partial<Record<TimeVar, Float32Array>>;
     const chunkData = new Map<string, CellVarData>();
     for (const ck of cellMap.keys()) chunkData.set(ck, {});
 
+    // One backend AND one reader per (variable, chunk) — never per cell.
+    // OmFileReader.create() costs an HTTP round-trip to fetch the file's
+    // metadata trailer. Every cell of a variable reads from the same file, so
+    // creating a reader per cell meant ~1,800 redundant metadata fetches per
+    // variable and dominated the wall-clock time of the whole run.
+    const backends: OmHttpBackend[] = [];
+    const readers:  OmFileReader[]  = [];
     for (const varName of TIME_VARS) {
-      const url     = ifs025Url(varName, chunk);
-      const backend = new OmHttpBackend({ url, debug: false });
+      const backend = new OmHttpBackend({ url: ifs025Url(varName, chunk), debug: false });
       backends.push(backend);
+      readers.push(await OmFileReader.create(
+        backend as unknown as Parameters<typeof OmFileReader.create>[0],
+      ));
+    }
+
+    // For each unique variable: read in parallel, bounded by the shared semaphore.
+    const tasks: Array<Promise<void>> = [];
+    for (let v = 0; v < TIME_VARS.length; v++) {
+      const varName = TIME_VARS[v];
+      const reader  = readers[v];
 
       for (const [ck, { iLat, iLon }] of cellMap) {
         if (signal?.aborted) break;
@@ -287,14 +321,14 @@ export async function fetchEcmwfLiftedIndex(
         tasks.push(sem(async () => {
           if (signal?.aborted) return;
           try {
-            const data = await readIfs025Cell(backend, iLat, iLon, tStart, tEnd);
+            const data = await readIfs025Cell(reader, iLat, iLon, tStart, tEnd);
             chunkData.get(ck)![varName] = data;
           } catch (err) {
             // One retry (matching openMeteoS3.ts discipline).
             if (signal?.aborted) return;
             await new Promise(r => setTimeout(r, 250));
             try {
-              const data = await readIfs025Cell(backend, iLat, iLon, tStart, tEnd);
+              const data = await readIfs025Cell(reader, iLat, iLon, tStart, tEnd);
               chunkData.get(ck)![varName] = data;
             } catch (err2) {
               log.warn(`ecmwfLiftedIndex: read failed`, {
@@ -310,6 +344,7 @@ export async function fetchEcmwfLiftedIndex(
     try {
       await Promise.all(tasks);
     } finally {
+      for (const r of readers) { try { r.dispose(); } catch { /* already disposed */ } }
       await Promise.all(backends.map(b => b.close().catch(() => {})));
     }
 
@@ -339,22 +374,40 @@ export async function fetchEcmwfLiftedIndex(
     }
   }
 
-  // Read HSURF for each unique ifs025 cell (cached after the first read per cell).
-  // Multiple thermal points sharing one cell each get the same elevation value.
+  // Read HSURF once per unique ifs025 cell, then fan the elevation out to every
+  // point in that cell. Iterating `points` here instead of cells would issue one
+  // read per thermal point — ~7.5x more work, and at full grid size enough
+  // simultaneous connections to exhaust the socket pool. Bounded by the same
+  // semaphore as the time-series reads.
+  const hsurfCells = new Map<string, { iLat: number; iLon: number; ptKeys: string[] }>();
+  for (const pt of points) {
+    const iLat = ifs025ILat(pt.lat);
+    const iLon = ifs025ILon(pt.lon);
+    const ck   = cellKey(iLat, iLon);
+    if (!hsurfCells.has(ck)) hsurfCells.set(ck, { iLat, iLon, ptKeys: [] });
+    hsurfCells.get(ck)!.ptKeys.push(pointKey(pt));
+  }
+
   const hsurfByPoint = new Map<string, number>();
+  let hsurfFailedCells = 0;
   await Promise.all(
-    points.map(async (pt) => {
-      const key  = pointKey(pt);
-      const iLat = ifs025ILat(pt.lat);
-      const iLon = ifs025ILon(pt.lon);
-      try {
-        hsurfByPoint.set(key, await readHsurf(iLat, iLon));
-      } catch (err) {
-        log.warn(`ecmwfLiftedIndex: HSURF read failed`, { lat: pt.lat, lon: pt.lon, error: String(err) });
-        // Leave absent — point will be omitted below.
-      }
-    }),
+    [...hsurfCells.values()].map(({ iLat, iLon, ptKeys }) =>
+      sem(async () => {
+        try {
+          const z = await readHsurf(iLat, iLon);
+          for (const k of ptKeys) hsurfByPoint.set(k, z);
+        } catch (err) {
+          // Leave absent — every point in this cell is omitted below rather than
+          // being given a fabricated elevation.
+          hsurfFailedCells++;
+          log.warn(`ecmwfLiftedIndex: HSURF read failed`, { iLat, iLon, error: String(err) });
+        }
+      }),
+    ),
   );
+  if (hsurfFailedCells > 0) {
+    log.warn(`ecmwfLiftedIndex: HSURF failed for ${hsurfFailedCells}/${hsurfCells.size} cells`);
+  }
 
   // Derive LI at each 3-hourly raw step, then interpolate onto the hourly axis.
   const result = new Map<string, number[]>();
