@@ -65,6 +65,12 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
             </ul>
           </section>
 
+          <section>
+            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cloud Symbols</div>
+            <p className="text-white/70">White puff symbols appear where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and mark themselves with cumulus clouds. Bigger symbols mean a deeper cloud layer. <span className="text-white/50">No symbol means a blue day: thermals exist but top out before condensation, leaving no visual marker in the sky.</span></p>
+            <p className="text-white/50 mt-1.5">Grey symbols indicate very deep cumulus (&gt;3000 m thick). Deep cloud signals overdevelopment risk — likely a worse day for flying, not a better one.</p>
+          </section>
+
           <section className="border-t border-white/10 pt-3 space-y-1.5">
             <p className="text-white/40 text-[10px]">Data source: ECMWF IFS forecast via Open-Meteo. Updated daily at 5:26am Melbourne time. Grid resolution: 0.09° (~10km). This is a forecast tool — always make your own assessment before flying.</p>
             {/* CC BY 4.0 requires the Geoscience Australia notice wherever the DEM
