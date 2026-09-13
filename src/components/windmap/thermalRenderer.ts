@@ -18,48 +18,48 @@ export type OdRisk = 0 | 1 | 2;
 /**
  * Derives an overdevelopment risk category from convective parameters.
  *
- * The three rungs exist so the signal degrades with provider tier rather than
- * disappearing entirely when a field is missing:
+ * The intended signal is LI + CAPE. LI is now available on both tier-1
+ * (Open-Meteo REST API) and tier-2 (derived from ecmwf_ifs025 by
+ * ecmwfLiftedIndex.ts), so rung 1 fires for the great majority of points.
+ * The CIN and CAPE-only rungs are degraded fallbacks retained for tier-3
+ * GFS-sourced points, where LI is also available (ncep_gfs025 carries it
+ * directly), but kept for completeness in case the derivation fails.
  *
- *   Rung 1 (LI gate): Lifted Index is the most direct buoyancy measure aloft.
- *     LI < −2 °C means the parcel is substantially warmer than the environment
- *     at 500 hPa — vigorous deep convection is likely. LI < 0 °C is unstable
- *     but marginal. LI is tier-1 only (Open-Meteo REST API); the ECMWF S3
- *     archive does not carry it, so tier-2 points fall through to rung 2.
+ *   Rung 1 (LI + CAPE gate — primary): Lifted Index is the most direct
+ *     buoyancy measure aloft. LI < −2 °C means the parcel is substantially
+ *     warmer than the environment at 500 hPa — vigorous deep convection is
+ *     likely. LI < 0 °C is unstable but marginal. Available tier-1 and tier-2.
  *
- *   Rung 2 (CIN gate): Convective inhibition measures the capping inversion —
- *     the lid that keeps thermals from punching through to free convection.
- *     A weak cap (CIN < 50 J/kg) means the lid can be broken easily once CAPE
- *     is present; CIN is a weaker signal than LI because it measures whether
- *     convection can start rather than how violent it will be once going.
- *     Empirically corr(CAPE, LI) ≈ −0.43 vs corr(CAPE, CIN) ≈ 0.20, so CIN
- *     adds information but is not a substitute for LI. Available tier-1 + tier-2.
+ *   Rung 2 (CIN gate — degraded fallback): Convective inhibition measures the
+ *     capping inversion. A weak cap (CIN < 50 J/kg) means the lid can be broken
+ *     easily once CAPE is present. CIN is a weaker signal than LI — it measures
+ *     whether convection can start rather than how violent it will be once going.
+ *     Only fires when LI is absent. Available tier-1 + tier-2.
  *
- *   Rung 3 (CAPE only): Last resort when neither LI nor CIN is available.
- *     500 J/kg is the threshold already documented to pilots in the help modal
- *     as the OD watch level, and 800 J/kg is a blunt upper-tier flag. Not
- *     equivalent to the upper rungs — kept only so the signal is never absent.
+ *   Rung 3 (CAPE only — last resort): 500 J/kg threshold already documented to
+ *     pilots in the help modal. 800 J/kg is a blunt upper flag. Not equivalent
+ *     to the upper rungs — kept only so the signal is never absent.
  */
 export function computeOdRisk(cape: number, li?: number, cin?: number): OdRisk {
-  // Below 500 J/kg CAPE the atmosphere simply does not have enough energy for
-  // deep convection regardless of what the stability indices say.
+  // Below 500 J/kg CAPE the atmosphere does not have enough energy for deep
+  // convection regardless of what the stability indices say.
   if (cape < 500) return 0;
 
-  // Rung 1: Lifted Index is available (tier-1 only).
+  // Rung 1: Lifted Index (primary signal, tier-1 and tier-2).
   if (li != null && !Number.isNaN(li)) {
     if (li < -2) return 2;  // Strongly unstable — overdevelopment likely.
     if (li < 0)  return 1;  // Marginally unstable — watch.
     return 0;               // LI ≥ 0 means stable or neutral aloft.
   }
 
-  // Rung 2: CIN available (tier-1 + tier-2), LI was not.
+  // Rung 2: CIN available, LI was not (degraded fallback).
   if (cin != null && !Number.isNaN(cin)) {
     // A weak cap combined with meaningful CAPE means convection can break free.
     if (cin < 50) return 1;
     return 0;
   }
 
-  // Rung 3: CAPE only. Blunt, but better than silence.
+  // Rung 3: CAPE only — blunt, but better than silence.
   if (cape > 800) return 1;
   return 0;
 }

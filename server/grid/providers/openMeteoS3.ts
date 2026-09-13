@@ -24,8 +24,9 @@ import type {
   SourceId,
   Variable,
 } from "../types.js";
-import { uvToSpeedDir } from "../types.js";
+import { pointKey, uvToSpeedDir } from "../types.js";
 import { currentAxisOrigin, toMelbourneLocal } from "../time.js";
+import { fetchEcmwfLiftedIndex } from "./ecmwfLiftedIndex.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -41,19 +42,21 @@ const MS_TO_KNOTS = 1.943844;
 const AVAILABILITY_CACHE_MS = 3 * 60 * 1000; // 3 minutes
 
 /** Bounded parallelism for row-by-row reads. The spike found P=20 is safe
- *  without triggering S3 SlowDown. */
-const READ_PARALLELISM = 20;
+ *  without triggering S3 SlowDown. Exported so ecmwfLiftedIndex.ts can share
+ *  the same discipline without duplicating the constant. */
+export const READ_PARALLELISM = 20;
 
-/** HTTP reader tuning, matching the spike. */
-const IO_SIZE_MAX  = BigInt(512 * 1024); // 512 KB per HTTP range request
-const IO_SIZE_MERGE = BigInt(128 * 1024); // merge adjacent chunks within 128 KB
+/** HTTP reader tuning, matching the spike. Exported for ecmwfLiftedIndex.ts. */
+export const IO_SIZE_MAX  = BigInt(512 * 1024); // 512 KB per HTTP range request
+export const IO_SIZE_MERGE = BigInt(128 * 1024); // merge adjacent chunks within 128 KB
 
 
 // ---------------------------------------------------------------------------
 // Concurrency limiter (reused by both providers)
 // ---------------------------------------------------------------------------
 
-function makeSemaphore(limit: number) {
+/** Exported so ecmwfLiftedIndex.ts can share the same concurrency limiter. */
+export function makeSemaphore(limit: number) {
   let running = 0;
   const queue: Array<() => void> = [];
 
@@ -76,8 +79,9 @@ function makeSemaphore(limit: number) {
 // ---------------------------------------------------------------------------
 
 /** Retries fn up to maxAttempts when the S3 returns a SlowDown error.
- *  Uses exponential backoff with jitter. Does NOT retry on AbortError. */
-async function withSlowDownRetry<T>(
+ *  Uses exponential backoff with jitter. Does NOT retry on AbortError.
+ *  Exported so ecmwfLiftedIndex.ts can reuse the same retry discipline. */
+export async function withSlowDownRetry<T>(
   fn: () => Promise<T>,
   maxAttempts = 4,
 ): Promise<T> {
@@ -199,11 +203,13 @@ function ecmwfChunkUrl(variable: string, chunk: number): string {
  * CRS BBOX: lat [-89.912125, 89.912125], lon [-180, 179.88281].
  *
  * File layout:
- *  - Current chunks (≥ ~1033) use 3D dims [1536, 3072, time_steps].
+ *  - Recent chunks use 3D dims [1536, 3072, time_steps].  The 3D layout is
+ *    confirmed by probing getDimensions() at runtime (see gfsReadCell and the
+ *    probe logic in fetchGfs); the probe is the authoritative source — do not
+ *    hard-code a chunk number threshold here.
  *  - Older archive chunks used flat 2D dims [4718592, time_steps].
- *    The provider targets the current chunk only, so the 3D layout is primary.
- *    If a flat chunk is encountered (e.g. during a chunk boundary transition),
- *    we fall back gracefully.
+ *    The provider detects the layout from getDimensions() on each chunk, so
+ *    both are handled transparently.
  *
  * GFS chunk_time_length = 481, so chunk = floor(epochSec / (481 * 3600)).
  */
@@ -261,10 +267,13 @@ function gfsChunkUrl(variable: string, chunk: number): string {
  * ECMWF IFS variables available in the S3 archive and their native names.
  * Verified by listing s3://openmeteo/data/ecmwf_ifs/ prefixes.
  *
- * Absent from archive (do NOT add): precipitation_probability, weather_code,
- *   wind_speed_10m (archive stores U/V components, not derived speed/direction),
- *   lifted_index (listed every prefix under data/ecmwf_ifs/ — it is not present;
- *   adding it would produce silent zeroes on every tier-2 point).
+ * Absent from the ecmwf_ifs 9 km bucket: precipitation_probability, weather_code,
+ *   wind_speed_10m (archive stores U/V components, not derived speed/direction).
+ *   lifted_index is listed in ECMWF_SUPPORTED but is DERIVED from the ecmwf_ifs025
+ *   pressure-level bucket (0.25 °), not read directly from this 9 km bucket.
+ *   The ecmwf_ifs 9 km bucket does NOT carry lifted_index — verified by listing
+ *   every prefix under data/ecmwf_ifs/.  The derivation in ecmwfLiftedIndex.ts
+ *   uses temperature_500hPa + parcel thermodynamics validated at r = 0.9962 vs GFS.
  *
  * Native units (verified by reading actual values):
  *   wind U/V, gusts: m/s  → convert to knots (× 1.943844)
@@ -289,9 +298,11 @@ const ECMWF_SUPPORTED = new Set<Variable>([
   "visibility",
   "shortwave_radiation",
   "soil_moisture_0_to_7cm",
-  // Present in the S3 archive — the inhibition cap is a useful second signal for
-  // overdevelopment when lifted_index (tier-1 only) is not available.
+  // Present in the S3 archive — a useful second signal for overdevelopment.
   "convective_inhibition",
+  // Derived from the ecmwf_ifs025 pressure-level bucket (not read directly from
+  // this 9 km archive). Merged into fetch results by fetchEcmwfLiftedIndex.
+  "lifted_index",
 ]);
 
 /**
@@ -454,13 +465,17 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
   const endChunk   = ecmwfChunkForTime(endEpoch);
 
   // Determine which native S3 variable names we need.
+  // lifted_index is NOT read directly from this bucket — it is derived from
+  // ecmwf_ifs025 by fetchEcmwfLiftedIndex after the main S3 reads complete.
+  const needsLI    = vars.includes("lifted_index");
   const needsWind  = vars.includes("wind_speed_10m") || vars.includes("wind_direction_10m");
   const needsGusts = vars.includes("wind_gusts_10m");
   const s3Vars: string[] = [];
   if (needsWind) s3Vars.push("wind_u_component_10m", "wind_v_component_10m");
   if (needsGusts) s3Vars.push("wind_gusts_10m");
   for (const v of vars) {
-    if (v !== "wind_speed_10m" && v !== "wind_direction_10m" && v !== "wind_gusts_10m") {
+    if (v !== "wind_speed_10m" && v !== "wind_direction_10m" && v !== "wind_gusts_10m"
+        && v !== "lifted_index") {
       s3Vars.push(v);
     }
   }
@@ -479,8 +494,8 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
   log.info(`ECMWF S3 fetch: ${points.length} points → ${rowGroups.size} row(s), chunks ${startChunk}–${endChunk}, vars: ${s3Vars.join(",")}`);
 
   // Collected raw values per point: varName → time-indexed float array.
+  // pointKey is imported from ../types.js (4 d.p. → 11 m, well within grid spacing).
   const rawByPoint = new Map<string, Map<string, number[]>>();
-  const pointKey = (p: LatLon) => `${p.lat},${p.lon}`;
   for (const p of points) rawByPoint.set(pointKey(p), new Map());
 
   const sem = makeSemaphore(READ_PARALLELISM);
@@ -605,8 +620,10 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
     }
 
     // Scalar variables — already in canonical units.
+    // lifted_index is excluded here; it is merged in below from the ifs025 derivation.
     for (const v of vars) {
-      if (v === "wind_speed_10m" || v === "wind_direction_10m" || v === "wind_gusts_10m") continue;
+      if (v === "wind_speed_10m" || v === "wind_direction_10m" || v === "wind_gusts_10m"
+          || v === "lifted_index") continue;
       const arr = raw.get(v);
       if (arr?.length) values[v] = arr;
     }
@@ -623,7 +640,55 @@ async function fetchEcmwf(req: GridRequest, log: ReturnType<typeof createLogger>
   }
 
   log.info(`ECMWF S3 fetch complete: ${collected.length}/${points.length} points`);
-  return { source: "openmeteo-s3-ecmwf", points: collected };
+
+  // ── Lifted index derivation ──────────────────────────────────────────────
+  // lifted_index is not present in the ecmwf_ifs 9 km S3 bucket; we derive it
+  // from the ecmwf_ifs025 pressure-level bucket (temperature_500hPa + parcel
+  // thermodynamics). A failure here must NOT fail the whole fetch — we catch,
+  // log, and return the collected points without lifted_index rather than
+  // propagating the error.
+  let degradedNote: string | undefined;
+
+  if (needsLI && collected.length > 0) {
+    try {
+      // Build the hourly epoch-second axis that the caller expects.
+      const totalHours = forecastDays * 24;
+      const hourlyAxis: number[] = [];
+      for (let h = 0; h < totalHours; h++) {
+        hourlyAxis.push(originEpoch + h * 3600);
+      }
+
+      const liMap = await fetchEcmwfLiftedIndex(
+        collected.map(ps => ({ lat: ps.lat, lon: ps.lon })),
+        hourlyAxis,
+        log,
+        signal,
+      );
+
+      // Merge LI into the collected PointSeries. Both axes start at originEpoch
+      // and step hourly, so index i means the same instant in each. `ps.time` was
+      // already truncated to the longest S3 series, which may be shorter than the
+      // full forecast window if a chunk ran short — trim LI to match so every
+      // series on a point has one value per entry in `ps.time`.
+      for (const ps of collected) {
+        const li = liMap.get(pointKey(ps));
+        if (li) ps.values.lifted_index = li.slice(0, ps.time.length);
+      }
+
+      // Flag the degradation so the admin panel can surface it: LI is
+      // interpolated from 3-hourly data and sampled at 0.25 ° rather than 9 km.
+      if (liMap.size > 0) {
+        degradedNote =
+          "lifted_index derived from ecmwf_ifs025 (0.25 °, 3-hourly → linearly interpolated to 1-hourly)";
+      }
+    } catch (liErr) {
+      log.warn(`ECMWF fetch: lifted_index derivation failed — returning points without it`, {
+        error: String(liErr),
+      });
+    }
+  }
+
+  return { source: "openmeteo-s3-ecmwf", points: collected, degraded: degradedNote };
 }
 
 // ---------------------------------------------------------------------------
@@ -652,7 +717,7 @@ async function fetchGfs(req: GridRequest, log: ReturnType<typeof createLogger>):
 
   log.info(`GFS S3 fetch: ${points.length} points, chunks ${startChunk}–${endChunk}, vars: ${s3Vars.join(",")}`);
 
-  const pointKey = (p: LatLon) => `${p.lat},${p.lon}`;
+  // pointKey is imported from ../types.js (4 d.p. → 11 m, well within grid spacing).
   const rawByPoint = new Map<string, Map<string, number[]>>();
   for (const p of points) rawByPoint.set(pointKey(p), new Map());
 

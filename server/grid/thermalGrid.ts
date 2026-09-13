@@ -19,15 +19,16 @@
  *
  * Overdevelopment signal:
  *
- * `lifted_index` and `convective_inhibition` carry the two-rung OD signal that
- * replaced the old (structurally unreachable) `blh − ccl > 3000 m` proxy.
- * Neither is added to THERMAL_REQUIRED because:
- *  - Adding `lifted_index` would collapse the provider chain to tier-1 alone:
- *    it is absent from the ECMWF S3 archive, so tier-2 can never satisfy it.
- *  - Adding either would discard any point a fallback tier provides without
- *    these fields, turning a degraded-but-useful point into a silent gap.
- * The client renderer degrades gracefully when these are missing: it falls through
- * to CAPE-only thresholds rather than suppressing the signal entirely.
+ * The OD triangle is driven by `lifted_index` + `cape`. ECMWF publishes no lifted
+ * index under any name, so tier 2 derives it from the `ecmwf_ifs025` pressure-level
+ * bucket by parcel ascent (see providers/ecmwfLiftedIndex.ts and grid/parcel.ts).
+ * That means LI is now available on tiers 1 AND 2 — only the GFS fallback tiers
+ * lack it, where `convective_inhibition` acts as a degraded stand-in.
+ *
+ * Neither is added to THERMAL_REQUIRED: doing so would discard any point a
+ * fallback tier provides without these fields, turning a degraded-but-useful
+ * point into a silent gap. The client renderer degrades gracefully when they are
+ * missing rather than suppressing the signal entirely.
  */
 
 import { buildLandTiles } from "../utils/gridTiles.js";
