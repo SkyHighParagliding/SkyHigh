@@ -1,15 +1,27 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { zoomIdentity } from 'd3-zoom';
 import { geoMercator } from 'd3-geo';
-import type { SiteMarker } from '../windMapTypes';
+import type { SiteMarker, ZoomSetpoints } from '../windMapTypes';
+import { DEFAULT_ZOOM_SETPOINTS } from '../windMapTypes';
 import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
+import type { WindGrid } from './windInterpolation';
 import { fetchElevationAt } from './elevationPoint';
 import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
 import { createCumulusField, rebuildCumulusField, drawCumulusField } from './cumulusField';
+import { createParticlePool, updateAndDrawParticles } from './particleRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
 import { MapCanvas } from './MapCanvas';
 import type { MapLayer, MapPin } from './MapCanvas';
+
+/**
+ * The wind map draws white trails over a black basemap. The thermal map's
+ * basemap is pale grey and its ramp runs through warm oranges, so white
+ * vanishes. A dark near-navy reads against both extremes, and the reduced
+ * opacity keeps the flow legible without competing with the heat field the
+ * pilot is actually there to read.
+ */
+const THERMAL_WIND_TRAIL_STYLE = { rgb: '15, 23, 42', opacityScale: 0.55 };
 
 interface ThermalCanvasProps {
   thermalGrid: ThermalGrid;
@@ -24,18 +36,32 @@ interface ThermalCanvasProps {
   savedCenterLon?: number;
   savedZoom?: number;
   onTransformChange?: (lat: number, lon: number, zoomLevel: number) => void;
+  /** Optional wind grid. When combined with showWind, overlays wind flow lines. Off by default. */
+  windGrid?: WindGrid;
+  /** When true and windGrid is provided, renders wind particle trails on the thermal map. */
+  showWind?: boolean;
+  /**
+   * Particle density/speed curve for the wind overlay. Must be the curve the
+   * wind map is using, or the same wind reads as a far sparser flow here than
+   * it does one toggle away.
+   */
+  zoomSetpoints?: ZoomSetpoints;
 }
 
 export const ThermalCanvas = memo(function ThermalCanvas({
   thermalGrid, currentTime, siteLat, siteLon,
   siteMarkers, onSiteClick, onThermalInfoChange,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
-  onTransformChange,
+  onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
 }: ThermalCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
   const onThermalInfoChangeRef = useRef(onThermalInfoChange);
   onThermalInfoChangeRef.current = onThermalInfoChange;
+  // Held in a ref, as WindCanvas does, so retuning the setpoints does not
+  // change the layer list identity and tear down the map shell.
+  const zoomSetpointsRef = useRef(zoomSetpoints);
+  zoomSetpointsRef.current = zoomSetpoints;
 
   const currentTimeRef = useRef(currentTime);
   // Monotonically increasing counter — used to discard stale elevation responses.
@@ -57,12 +83,12 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     latMax: thermalGrid.latMax,
   }), [thermalGrid]);
 
-  const layers = useMemo((): MapLayer<any>[] => [
+  const layers = useMemo((): MapLayer<any>[] => {
     // Layer 0: combined thermal overlay + cumulus stipple.
     // The cumulus rebuild needs the overlay object, so they share one create() return value.
     // Cumulus stipple sits above the heat raster but below the site markers so
     // pilots see the texture without it obscuring the interactive pin targets.
-    {
+    const heatAndCumulus: MapLayer<any> = {
       create: (w: number, h: number) => ({
         overlay: createThermalOverlay(w, h),
         field: createCumulusField(w, h),
@@ -76,15 +102,35 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         rebuildCumulusField(res.field, res.overlay, c.transform);
         drawCumulusField(c.ctx, res.field, c.transform);
       },
-    },
-    // Layer 1: site markers.
-    {
+    };
+
+    // Layer (optional): wind particle trails.
+    // Wind draws above the heat raster and cumulus stipple but below the site
+    // markers so the flow lines never obscure the interactive pin targets.
+    const windLayer: MapLayer<any> = {
+      create: (w: number, h: number) => createParticlePool(w, h),
+      draw: (c, p: ReturnType<typeof createParticlePool>) => {
+        updateAndDrawParticles(
+          c.ctx, p, c.width, c.height, c.transform, c.projection,
+          currentTimeRef.current, windGrid!, zoomSetpointsRef.current,
+          THERMAL_WIND_TRAIL_STYLE,
+        );
+      },
+    };
+
+    // Layer last: site markers — always on top so pins remain interactive.
+    const markers: MapLayer<any> = {
       draw: (c) => {
         const m = siteMarkersRef.current;
         if (m && m.length > 0) drawSiteMarkers(c.ctx, m, c.transform, c.projection, c.todayStr, true);
       },
-    },
-  ], [thermalGrid]);
+    };
+
+    const l: MapLayer<any>[] = [heatAndCumulus];
+    if (showWind && windGrid) l.push(windLayer);
+    l.push(markers);
+    return l;
+  }, [thermalGrid, windGrid, showWind]);
 
   // Recompute thermal info when the time slider moves (while a pin is active),
   // and fetch ground elevation asynchronously. A stale-response guard on

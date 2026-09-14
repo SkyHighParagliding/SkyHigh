@@ -40,6 +40,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
   const [showThermalHelp, setShowThermalHelp] = useState(false);
+  const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
@@ -357,6 +358,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 savedCenterLon={viewLon}
                 savedZoom={viewZoom}
                 onTransformChange={handleTransformChange}
+                windGrid={windGrid}
+                showWind={showWindOnThermal}
+                zoomSetpoints={zoomSetpoints}
               />
             </Suspense>
           ) : null
@@ -631,6 +635,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 <span>Overdevelopment</span>
                 <span className="text-white/35 ml-auto">hollow = watch · solid = likely</span>
               </div>
+              <button
+                onClick={() => setShowWindOnThermal(v => !v)}
+                className="flex items-center gap-1 mt-0.5 text-[7px] w-full pointer-events-auto transition-colors hover:text-white/90 text-white/60"
+              >
+                <span className="text-[9px] leading-none">〰</span>
+                <span>Wind flow</span>
+                <span className={`ml-auto font-bold ${showWindOnThermal ? 'text-sky-300' : 'text-white/35'}`}>
+                  {showWindOnThermal ? 'ON' : 'OFF'}
+                </span>
+              </button>
             </>
           ) : (
             <>

@@ -43,6 +43,20 @@ export function createParticlePool(width: number, height: number): Particle[] {
   return particles;
 }
 
+/**
+ * Optional style override for the particle trails.
+ *
+ * The wind map uses the default (white trails over a black basemap).
+ * The thermal map needs dark trails because white is invisible against
+ * its pale grey CARTO basemap and warm-orange heat raster.
+ */
+export interface ParticleTrailStyle {
+  /** CSS-style RGB triple, e.g. '255, 255, 255'. Defaults to white. */
+  rgb?: string;
+  /** Multiplied into the per-particle opacity. Defaults to 1 (no change). */
+  opacityScale?: number;
+}
+
 export function updateAndDrawParticles(
   ctx: CanvasRenderingContext2D,
   particles: Particle[],
@@ -53,11 +67,16 @@ export function updateAndDrawParticles(
   currentTime: number,
   windGrid: WindGrid,
   zoomSetpoints: ZoomSetpoints,
+  style?: ParticleTrailStyle,
 ) {
   const zoomDisplay = zoomKToDisplaySmooth(currentTransform.k);
   const sp = interpolateSetpoint(zoomSetpoints, zoomDisplay);
   const activeCount = Math.min(POOL_PARTICLES, sp.particleCount);
   const activeTLen = Math.min(POOL_TRAIL, sp.trailLength);
+
+  // Hoist trail colour values out of the per-particle loop — computed once.
+  const rgb = style?.rgb ?? '255, 255, 255';
+  const opacityScale = style?.opacityScale ?? 1;
 
   for (let i = 0; i < POOL_PARTICLES; i++) {
     if (i >= activeCount) {
@@ -134,7 +153,7 @@ export function updateAndDrawParticles(
     ctx.lineTo(p.x, p.y);
 
     ctx.lineWidth = p.thickness * sp.lineWidth;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${baseOpacity * sp.opacity * 0.85})`;
+    ctx.strokeStyle = `rgba(${rgb}, ${baseOpacity * sp.opacity * 0.85 * opacityScale})`;
     ctx.stroke();
   }
 }
