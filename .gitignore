@@ -32,6 +32,15 @@ SkyHigh-Credential-Recovery.pdf
 credential-recovery-preview.png
 graphify-out/
 
+# Land mask build input: GEODATA COAST 100K 2004 (Geoscience Australia, CC BY
+# 4.0), ~22 MB of shapefiles. Only the baked output is committed — see
+# shared/landMask.generated.ts and scripts/bake-land-mask.mjs, whose header has
+# the download command for anyone needing to regenerate.
+data/ga-coast/
+.ga-coast/
+# Visual review render, regenerate with: node scripts/bake-land-mask.mjs --png
+land-mask.png
+
 # Local tooling artifacts & sensitive files
 .playwright-mcp/
 .codegraph/

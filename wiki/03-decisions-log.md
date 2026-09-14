@@ -559,6 +559,84 @@ two of the four grid tiers.
 
 ---
 
+## DECISION-013: One Baked Raster Land Mask, Not Two Hand-Traced Polygon Rings
+
+**Date:** 2026-09-14
+**Owner:** Jon Pamment
+**Status:** Locked (implemented — `shared/landMask.generated.ts`, built by `scripts/bake-land-mask.mjs`)
+
+### Context
+The coastline was encoded twice by hand: `COVERAGE` rings in `server/utils/gridTiles.ts` decided
+which lattice points to fetch, and a near-identical copy in `src/components/windmap/landMask.ts`
+decided which pixels to paint. Two copies of the same geometry, maintained independently.
+
+They drifted, and the client copy drifted into being **the Victorian state border** — straight
+verticals at lon 140.96 (SA) and 149.98 (NSW), and a straight lat −33.98 "Murray". Roughly ten
+columns of South Australia and seven of the NSW far south coast were fetched, stored, and then
+discarded in the browser. The wind map, which is clipped to nothing, showed that ground; the
+thermal map did not.
+
+Separately, the rings were too coarse for the geography that matters to pilots. Wilsons Promontory
+was a **single vertex**. Western Port, French Island, Phillip Island and Corner Inlet did not exist
+at all — the ring simply cut across them.
+
+The client mask is not belt-and-braces. `interpolateSpatial` in `thermalInterpolation.ts` is a
+*relaxed* bilinear: one non-null corner is enough to produce a value, so the field bleeds ~10 km
+offshore. **The mask is what draws the visible coastline.**
+
+### Options considered
+- **A — Fix the client ring by hand.** Cheapest. Leaves two hand-maintained copies of the same
+  geometry, so the same drift recurs; and no hand-traced ring resolves Western Port.
+- **B — Ship a GeoJSON coastline and run point-in-polygon at runtime.** Accurate, but ~190k
+  vertices in the grid box; point-in-polygon per pixel per frame is not affordable in the renderer.
+- **C — Bake a raster mask at build time.** ✅ **Chosen.** Constant-time lookup, one artifact, and
+  accuracy limited only by cell size.
+
+### Chosen: C
+Source is **GEODATA COAST 100K 2004** (Geoscience Australia), coastline at Mean High Water derived
+from the 1:100,000 National Topographic Map Series, with islands as discrete features. Free, CC BY
+4.0, and the attribution obligation was already discharged for DECISION-011, so no new obligation.
+The `.prj` declares GCS_GDA_1994 — geographic degrees, differing from WGS84 by ~1 m at this epoch,
+far below one cell — so no reprojection is needed.
+
+**Shape of the artifact:** 1250 × 1100 cells at 0.01° (~1.1 km) over lon 139.0–151.5, lat −44.0 to
+−33.0. Two masks: exact land, and land dilated by 0.2° for the server's fetch set. Run-length
+encoded as LEB128 varints, base64'd, and **inlined as TypeScript** — 5.8 KB and 4.4 KB, small
+enough that fetching them as assets would add a load-order hazard on first paint for no benefit.
+Rollup tree-shakes the coverage mask out of the browser bundle, so the client ships only what it
+uses.
+
+**Why the buffer is baked rather than a parameter.** `buildLandTiles` took `buffer = 0.2` and both
+call sites used the default. A runtime distance query against a raster is far more expensive than
+against a polygon, so the parameter is gone. A second buffer width means baking a second mask.
+
+### Measured outcome
+- Verification: **22/22** in the bake, **39/39** against the decoded artifact.
+- Fetch set at 0.09°: 7,496 → **7,653 points (+2.1%)**, tile count unchanged at **8** — so the
+  number of Open-Meteo requests is identical and the volume change is negligible.
+- **Zero land points lost.** 211 points dropped, all water; 24 points gained are real land the old
+  17-vertex Tasmania ring cut off in the south-west.
+
+### Two bugs this surfaced, worth remembering
+1. The first `--bake` reported 18/19, failing "Corner Inlet is water" at (146.55, −38.78). That
+   point is inside **Snake Island** (GA record 7635). The *check* was wrong, not the mask. Both
+   points are now in `CHECKS` so the distinction stays documented.
+2. The separable distance transform initially dropped the spacing term from the parabola
+   intersection, comparing a term of order 1e-4 against one of order 1e6. It produced a
+   plausible-looking buffer with one-cell-wide streaks trailing off the coast — visible in a PNG
+   render, invisible to spot checks. The bake now verifies the dilation against brute force
+   **exhaustively over all 105,420 band cells**, because random sampling across 1.375M cells would
+   likely have missed it. The `--png` mode exists because of this: a wrong mask looks plausible in
+   a pass/fail table and obvious in a picture.
+
+**Reversibility:** Easy. Both consumers are one import each; the previous rings are in git history
+at `37a9d18`. The 22 MB source archive is **not committed** (see `.gitignore`); the download
+command is in the bake script's header.
+
+**Confirms:** DECISION-011 — same Geoscience Australia licence and attribution, already in place.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -574,7 +652,8 @@ two of the four grid tiers.
 | 010 | Davis via embeddable page | Public WeatherLink endpoint, no API key; v2 API needs club's credentials | 2026-08-30 | ✅ Locked |
 | 011 | Client-side terrain sampling | Browser-decoded terrarium tiles + API fallback; pre-baked Postgres DEM rejected on measurement | 2026-09-13 | ✅ Locked |
 | 012 | Accept GPL-2.0 dependency | Hosted-only, never distributed, so copyleft never triggers; **blocks any future white-label/source release** | 2026-09-12 | ✅ Locked |
+| 013 | Baked raster land mask | One generated artifact replaces two drifted hand-traced rings; Western Port / Phillip Is. / the Prom now real geometry; +2.1% points, same tile count | 2026-09-14 | ✅ Locked |
 
 ---
 
-Last updated: 2026-09-13
+Last updated: 2026-09-14

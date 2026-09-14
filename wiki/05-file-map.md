@@ -179,6 +179,9 @@ Structured JSON logging. All server logs emit JSON with timestamp, level, compon
 ### `server/utils/validation.ts`
 Zod schemas for request body validation. Applied to mutation endpoints to ensure data integrity before processing.
 
+### `server/utils/gridTiles.ts`
+Builds the Open-Meteo batch tiles for a bounding box. `buildLandTiles` keeps only lattice points on land or within the mask's baked 0.2° offshore buffer, chunked at `maxPerTile`; `buildRectangularTiles` keeps every point in the box (wind blows over water, thermals do not). The coastline used to be hand-traced polygon rings in this file — it now comes from `shared/landMask.generated.ts`. See DECISION-013.
+
 ### `server/constants.ts`
 Magic numbers and config defaults. Examples: `MAX_LIMIT` (500), `DEFAULT_LIMIT` (50), `GRID_CLEANUP_AGE_DAYS` (7), `RATE_LIMIT_WINDOW_MS` (60000). **Centralized for Phase 3 cleanup.**
 
@@ -250,6 +253,22 @@ D3 zoom event handlers. Maps D3 zoom transform (translate, scale) to canvas tran
 
 ### `src/components/windmap/elevationPoint.ts`
 **Two-tier elevation facade.** Tries `terrainTiles.ts` (local cache) first; falls back to `GET /api/weather/elevation-at` only when the required tile is not yet resident. On fallback it kicks off a background tile fetch. Previously this module was a direct proxy to the server route; it now uses the local sampler as the primary path.
+
+### `src/components/windmap/landMask.ts`
+Thin re-export of `isOnLand` from `shared/landMask.generated.ts`, so windmap callers need not reach across the tree. Load-bearing, not belt-and-braces: `interpolateSpatial` is a *relaxed* bilinear (one non-null corner produces a value), so the thermal field bleeds ~10 km offshore and **this mask is what draws the visible coastline**.
+
+---
+
+## Shared Between Server and Client (`shared/`)
+
+### `shared/landMask.generated.ts`
+**GENERATED — do not edit.** Two run-length-encoded raster masks at 0.01° (~1.1 km) over lon 139.0–151.5, lat −44.0 to −33.0: `isOnLand` (exact coastline, used by the client renderer) and `isCovered` (dilated 0.2°, used by the server to pick fetch points). Baked from Geoscience Australia COAST 100K data. Replaces two hand-traced polygon rings that had drifted apart — see DECISION-013. Regenerate with `npm run bake:landmask`.
+
+### `shared/landMask.test.mjs`
+Tests the *decoded* artifact (39 assertions) rather than the raster the bake script builds, so a fault in the RLE writer or varint reader cannot slip through. `npm run test:landmask`.
+
+### `scripts/bake-land-mask.mjs`
+Builds the above from the GA shapefiles. Contains its own shapefile and dBASE readers, scanline rasteriser, and a separable exact Euclidean distance transform for the buffer. Modes: `--bake [--write]`, `--inspect`, `--islands`, `--map <lonMin> <latMin> <lonMax> <latMax>` (ASCII), `--png [out]`. The source archive is a ~22 MB build input and is **not committed**; the download command is in the script header.
 
 ---
 
