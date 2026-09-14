@@ -2,21 +2,40 @@ import type { ZoomTransform } from 'd3-zoom';
 import { CELL } from './thermalRenderer';
 import type { ThermalOverlayState } from './thermalRenderer';
 
-// Screen-space spacing of the glyph lattice, matched to Windy's thermals layer.
+// ── Cumulus glyph lattice geometry ───────────────────────────────────────────
 //
 // The lattice is deliberately regular and anchored to SCREEN space, not to
 // degrees of lat/lon. An earlier version anchored it geographically so the
 // glyphs would stay welded to the ground during a pan; that made spacing a
 // function of zoom, which went coarse enough to read as a sparse grid of marks.
-// At a fixed ~18 px the field stays equally dense at every zoom, which is what
-// makes it read as cloud texture rather than as a grid.
-const GLYPH_SPACING = 18; // px
+// At a fixed screen pitch the field stays equally dense at every zoom, which is
+// what makes it read as cloud texture rather than as a grid.
+//
+// Tangent packing: pitch is derived from the glyph's own dimensions at the
+// nominal (max-depth) radius so neighbouring glyphs just touch.
+//
+// The cumulus shape traced by `traceCumulus` is approximately 2.7·r wide but
+// only about 1.2·r tall — a flat base with a domed top. This asymmetry
+// demands an asymmetric pitch: the horizontal step must clear the full cloud
+// width while the vertical step only needs to clear the cloud height. Using a
+// single square pitch equal to the cloud width leaves a wide vertical gap and
+// makes the field read as scattered dots; using a square pitch equal to the
+// cloud height merges the glyphs into horizontal ridges. The two independent
+// pitches below are the correct solution to that geometry.
+//
+// Staggering every second row by half the X pitch (brick / hex packing) stops
+// the glyphs reading as aligned columns while maintaining the tangent density.
+const CU_SIZE = 3.0;                         // overall glyph size multiplier (~3× the original 2–3.8 px range)
+const CU_R_NOM = 3.8 * CU_SIZE;              // radius at max depth — the lattice is sized to this (~11.4 px)
+const GLYPH_X_SPACING = 2.7 * CU_R_NOM;     // ~30.8 px — cloud width so horizontal neighbours are tangent
+const GLYPH_Y_SPACING = 1.2 * CU_R_NOM;     // ~13.7 px — cloud height so vertical neighbours are tangent
 
-// OD warning triangles are drawn on a coarser lattice — every 3rd cumulus point.
-// At the 18 px cumulus spacing a widespread OD region would become a solid wall
-// of symbols if triangles used the same density; 54 px keeps it clearly readable
-// as a caution layer rather than a texture.
-const OD_SPACING = GLYPH_SPACING * 3; // 54 px
+// OD warning triangles are drawn on a coarser, independent lattice.
+// 54 px is deliberately NOT tied to the cumulus pitch: the OD layer is a
+// caution signal that must stay clearly readable as discrete symbols, and a
+// widespread OD region at the denser cumulus spacing would become a solid wall
+// of triangles. 54 px keeps it legible as a caution layer rather than a texture.
+const OD_SPACING = 54; // px
 
 export interface CumulusFieldState {
   canvas: HTMLCanvasElement;
@@ -104,11 +123,22 @@ export function rebuildCumulusField(
 
   const { cumulusDepth, odRisk, width: overlayW, height: overlayH } = overlay;
 
-  const cols = Math.ceil(width  / GLYPH_SPACING);
-  const rows = Math.ceil(height / GLYPH_SPACING);
+  const cols = Math.ceil(width  / GLYPH_X_SPACING);
+  const rows = Math.ceil(height / GLYPH_Y_SPACING);
 
-  // Half-step inset so the lattice doesn't hug the canvas edge on one side.
-  const inset = GLYPH_SPACING / 2;
+  // Half-step insets keep the lattice from hugging the canvas edge, using each
+  // axis's own pitch so the margin scales with glyph size on both axes.
+  const xInset = GLYPH_X_SPACING / 2;
+  const yInset = GLYPH_Y_SPACING / 2;
+
+  // Number of overlay cells spanned by one cumulus lattice step.
+  // Hoisted out of the loop: widening the pitch reduced the sample density, so
+  // a single centre-cell sample now misses small cumulus patches that happen to
+  // fall between lattice points. Taking the block maximum over the full lattice
+  // cell guarantees any cumulus present in the block draws a glyph — mirroring
+  // the same logic the OD triangle pass uses (see the long comment there).
+  const cuXBlock = Math.max(1, Math.round(GLYPH_X_SPACING / CELL));
+  const cuYBlock = Math.max(1, Math.round(GLYPH_Y_SPACING / CELL));
 
   // ── Cumulus glyph pass ────────────────────────────────────────────────────
   // Glyphs are always white. The old `depth > 3000 m` proxy for OD colouring
@@ -123,22 +153,39 @@ export function rebuildCumulusField(
   // CAPE + LI/CIN can see the deep instability directly, and the signal now
   // also fires on blue days (no cumulus), which the old proxy never could.
   for (let j = 0; j <= rows; j++) {
+    // Brick / hex packing: stagger every second row right by half the X pitch.
+    // This stops the glyphs reading as aligned columns (Windy uses the same
+    // idiom) while preserving the tangent horizontal density on each row.
+    const stagger = j % 2 === 1 ? GLYPH_X_SPACING / 2 : 0;
+
     for (let i = 0; i <= cols; i++) {
-      const sx = inset + i * GLYPH_SPACING;
-      const sy = inset + j * GLYPH_SPACING;
+      const sx = xInset + i * GLYPH_X_SPACING + stagger;
+      const sy = yInset + j * GLYPH_Y_SPACING;
+
+      // Stagger can push the last glyph on an odd row beyond the canvas; skip it.
+      if (sx > width + GLYPH_X_SPACING) continue;
 
       const cx = Math.floor(sx / CELL);
       const cy = Math.floor(sy / CELL);
       if (cx < 0 || cx >= overlayW || cy < 0 || cy >= overlayH) continue;
 
-      const depth = cumulusDepth[cy * overlayW + cx];
+      // Block-maximum cumulus depth over the lattice cell.
+      let depth = 0;
+      const x0 = Math.max(0, cx - (cuXBlock >> 1)), x1 = Math.min(overlayW - 1, cx + (cuXBlock >> 1));
+      const y0 = Math.max(0, cy - (cuYBlock >> 1)), y1 = Math.min(overlayH - 1, cy + (cuYBlock >> 1));
+      for (let by = y0; by <= y1; by++) {
+        for (let bx = x0; bx <= x1; bx++) {
+          const v = cumulusDepth[by * overlayW + bx];
+          if (v > depth) depth = v;
+        }
+      }
       if (depth <= 0) continue;
 
       // Size and opacity both ramp with cloud depth, saturating at 1200 m.
       // Typical depths here run 100–400 m, so scaling against a rare 3000 m
       // case would crush every ordinary day into the bottom of the range.
       const t = Math.min(1, depth / 1200);
-      const r = 2.0 + t * 1.8;
+      const r = (2.0 + t * 1.8) * CU_SIZE;
       const alpha = 0.6 + t * 0.35;
 
       ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
