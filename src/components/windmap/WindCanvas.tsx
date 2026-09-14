@@ -181,7 +181,7 @@ export const WindCanvas = memo(function WindCanvas({
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"
       hoverCrosshairClassName="bg-white/40"
-      pinnedCrosshairClassName="bg-sky-400/80"
+      pinnedCrosshairColor="rgb(56, 189, 248)"
     />
   );
 });

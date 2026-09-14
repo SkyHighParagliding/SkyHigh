@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { zoomIdentity } from 'd3-zoom';
 import { geoMercator } from 'd3-geo';
 import type { SiteMarker, ZoomSetpoints } from '../windMapTypes';
@@ -68,11 +68,18 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   const elevationSeqRef = useRef(0);
   // Last resolved ground elevation, tagged with the pin it belongs to.
   const elevationForPinRef = useRef<{ key: string; value: number } | null>(null);
+  // The pin position an elevation lookup has already been dispatched for. Set
+  // before the request resolves, so the readout layer below cannot fire a
+  // duplicate on every subsequent frame.
+  const elevationRequestedKeyRef = useRef<string | null>(null);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
   const transformRef = useRef(zoomIdentity);
 
-  // pinnedCrosshair as React state so the useEffect below re-runs when the pin moves.
-  const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number; y: number } | null>(null);
+  // The pin lives in a ref, not state: the readout runs inside the render loop
+  // and must see the live value without re-running the layer memo.
+  const pinnedCrosshairRef = useRef<MapPin | null>(null);
+  // Readout throttle, matching the wind map: at most 10fps into parent state.
+  const lastThermalInfoUpdateRef = useRef(0);
 
   useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
 
@@ -126,51 +133,69 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       },
     };
 
+    // Readout layer — throttled to 10fps, mirroring the wind map's.
+    //
+    // This has to run in the render loop rather than in an effect. The pin is
+    // fixed in SCREEN space, so what sits underneath it changes whenever the
+    // transform changes — but the transform lives in a ref, and mutating a ref
+    // re-renders nothing. An effect keyed on the pin and the time therefore
+    // never re-runs while panning, and the panel keeps reporting the point that
+    // was under the cross at the moment of the tap. Reading currentTimeRef here
+    // covers the time slider too, so this replaces the effect outright.
+    const readout: MapLayer<any> = {
+      draw: (c) => {
+        const pin = pinnedCrosshairRef.current;
+        if (!pin) return;
+        const now = performance.now();
+        if (now - lastThermalInfoUpdateRef.current <= 100) return;
+        lastThermalInfoUpdateRef.current = now;
+
+        const geo = c.projection.invert!(c.transform.invert([pin.x, pin.y]));
+        if (!geo) return;
+
+        const th = getThermalAt(geo[0], geo[1], currentTimeRef.current, thermalGrid);
+        if (!th) { onThermalInfoChangeRef.current?.(null); return; }
+
+        // Terrain doesn't change with the time slider, so reuse the elevation
+        // already resolved for this pin. Without this the readout would blink
+        // out and back as each pass re-emitted without groundAmsl first.
+        const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
+        const known = elevationForPinRef.current;
+        const cached = known?.key === pinKey ? known.value : undefined;
+
+        // Emit immediately so the panel never blocks on the network.
+        onThermalInfoChangeRef.current?.({ ...th, groundAmsl: cached });
+        if (cached !== undefined || elevationRequestedKeyRef.current === pinKey) return;
+
+        elevationRequestedKeyRef.current = pinKey;
+        const seq = ++elevationSeqRef.current;
+        fetchElevationAt(geo[0], geo[1]).then(groundAmsl => {
+          // Discard if a newer lookup has already been dispatched, so tapping
+          // point B mid-flight cannot show point A's ground.
+          if (seq !== elevationSeqRef.current) return;
+          if (groundAmsl === null) return;
+          elevationForPinRef.current = { key: pinKey, value: groundAmsl };
+          // Re-emit rather than wait for the next throttled pass. A resident
+          // terrain tile resolves in a microtask, so without this the ground
+          // line would blink empty for a full throttle window on every pin
+          // position — which, while panning, is most of the time.
+          onThermalInfoChangeRef.current?.({ ...th, groundAmsl });
+        });
+      },
+    };
+
     const l: MapLayer<any>[] = [heatAndCumulus];
     if (showWind && windGrid) l.push(windLayer);
     l.push(markers);
+    l.push(readout);
     return l;
   }, [thermalGrid, windGrid, showWind]);
 
-  // Recompute thermal info when the time slider moves (while a pin is active),
-  // and fetch ground elevation asynchronously. A stale-response guard on
-  // elevationSeqRef discards results from superseded lookups so that tapping
-  // point B while point A's request is still in flight cannot show A's elevation.
-  useEffect(() => {
-    if (!pinnedCrosshair || !projectionRef.current) return;
-    const t = transformRef.current;
-    const inverted = t.invert([pinnedCrosshair.x, pinnedCrosshair.y]);
-    const geo = projectionRef.current.invert!(inverted);
-    if (!geo) return;
-
-    const th = getThermalAt(geo[0], geo[1], currentTime, thermalGrid);
-    if (!th) { onThermalInfoChangeRef.current?.(null); return; }
-
-    // Terrain doesn't change with the time slider, so reuse the elevation already
-    // resolved for this pin. Without this the readout would blink out and back on
-    // every slider frame as each re-run re-emitted without groundAmsl first.
-    const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
-    const known = elevationForPinRef.current;
-    const cached = known?.key === pinKey ? known.value : undefined;
-
-    // Emit immediately so the panel never blocks on the network.
-    onThermalInfoChangeRef.current?.({ ...th, groundAmsl: cached });
-    if (cached !== undefined) return;
-
-    // Increment sequence and capture it for this specific lookup.
-    const seq = ++elevationSeqRef.current;
-    fetchElevationAt(geo[0], geo[1]).then(groundAmsl => {
-      // Discard if a newer lookup has already been dispatched.
-      if (seq !== elevationSeqRef.current) return;
-      if (groundAmsl !== null) {
-        elevationForPinRef.current = { key: pinKey, value: groundAmsl };
-        onThermalInfoChangeRef.current?.({ ...th, groundAmsl });
-      }
-    });
-  }, [currentTime, thermalGrid, pinnedCrosshair]);
-
   const handlePinChange = useCallback((pin: MapPin) => {
-    setPinnedCrosshair(pin);
+    pinnedCrosshairRef.current = pin;
+    // Let the next readout pass emit straight away rather than waiting out the
+    // throttle window, so a tap feels instant.
+    lastThermalInfoUpdateRef.current = 0;
   }, []);
 
   return (
@@ -193,7 +218,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"
       hoverCrosshairClassName="bg-black/30"
-      pinnedCrosshairClassName="bg-orange-500/80"
+      pinnedCrosshairColor="rgb(249, 115, 22)"
     />
   );
 });

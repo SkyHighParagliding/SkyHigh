@@ -80,7 +80,77 @@ interface MapCanvasProps {
   transformRef?: React.MutableRefObject<ZoomTransform>;
   containerClassName: string;
   hoverCrosshairClassName: string;
-  pinnedCrosshairClassName: string;
+  /** CSS colour for the pinned reticle. A colour, not a class, because the
+   *  reticle is an SVG drawn twice (dark halo under, colour over). */
+  pinnedCrosshairColor: string;
+}
+
+// ---------------------------------------------------------------------------
+// Pinned reticle
+// ---------------------------------------------------------------------------
+
+/**
+ * The pinned marker is a reticle, not a small cross.
+ *
+ * Two things it has to survive: a pale grey basemap under a warm heat ramp on
+ * the thermal map, and a near-black one on the wind map. A single flat stroke
+ * disappears into one or the other, so every stroke is painted twice — a dark
+ * halo underneath, the colour over it — which reads on both.
+ *
+ * The centre is deliberately left open. The point the legend is reporting sits
+ * exactly there, so filling it in would hide the pixel the user is asking about.
+ * The arms stop short of the middle, a ring marks the spot, and the dot inside
+ * it is drawn with a 1-px outline rather than the 4-px halo the rest gets —
+ * haloed at full width its dark edge spans the whole ring and closes the gap
+ * back up, which is the one thing this shape exists to avoid.
+ */
+const RETICLE = {
+  /** Half the SVG box. Arms reach armOuter, so this must exceed it. */
+  half: 24,
+  /** Arms run from the edge of the gap out to here. */
+  armOuter: 23,
+  /** Where the arms start. Sits clear of the ring so the two read as separate. */
+  gap: 13,
+  ring: 7,
+  dot: 1.5,
+  stroke: 2,
+  halo: 4,
+  haloColor: 'rgba(0,0,0,0.55)',
+};
+
+function PinnedReticle({ x, y, color }: { x: number; y: number; color: string }) {
+  const { half, armOuter, gap, ring, dot, stroke, halo, haloColor } = RETICLE;
+  const size = half * 2;
+  // One arm per side, drawn from the gap outwards.
+  const arms = [
+    [half, half - gap, half, half - armOuter],
+    [half, half + gap, half, half + armOuter],
+    [half - gap, half, half - armOuter, half],
+    [half + gap, half, half + armOuter, half],
+  ];
+
+  const paint = (strokeColor: string, width: number) => (
+    <g stroke={strokeColor} strokeWidth={width} strokeLinecap="round" fill="none">
+      {arms.map(([x1, y1, x2, y2], i) => (
+        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />
+      ))}
+      <circle cx={half} cy={half} r={ring} />
+    </g>
+  );
+
+  return (
+    <svg
+      className="absolute pointer-events-none"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ left: x - half, top: y - half }}
+    >
+      {paint(haloColor, halo)}
+      {paint(color, stroke)}
+      <circle cx={half} cy={half} r={dot} fill={color} stroke={haloColor} strokeWidth={1} />
+    </svg>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +178,7 @@ export const MapCanvas = memo(function MapCanvas({
   transformRef: transformRefProp,
   containerClassName,
   hoverCrosshairClassName,
-  pinnedCrosshairClassName,
+  pinnedCrosshairColor,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -438,13 +508,11 @@ export const MapCanvas = memo(function MapCanvas({
       )}
 
       {pinnedCrosshair && (
-        <div
-          className="absolute pointer-events-none"
-          style={{ left: pinnedCrosshair.x, top: pinnedCrosshair.y }}
-        >
-          <div className={`absolute w-3 h-px ${pinnedCrosshairClassName} -left-1.5 top-0`} />
-          <div className={`absolute h-3 w-px ${pinnedCrosshairClassName} left-0 -top-1.5`} />
-        </div>
+        <PinnedReticle
+          x={pinnedCrosshair.x}
+          y={pinnedCrosshair.y}
+          color={pinnedCrosshairColor}
+        />
       )}
     </div>
   );
