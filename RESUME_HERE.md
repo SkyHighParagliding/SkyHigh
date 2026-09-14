@@ -1,9 +1,79 @@
-# RESUME_HERE — Last updated: 2026-09-14 (session 59)
+# RESUME_HERE — Last updated: 2026-09-14 (session 60)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
+
+Session 60 shipped **TASK-036 — the thermal map now distinguishes an overcast
+sheet from cumulus** (commit `3389874`, local only). `origin/main` is now **4
+commits behind**: `1b5bd4e`, `737cab0`, `92b49b2`, `3389874`.
+
+**The defect Jon spotted.** Side by side with Windy at the same forecast hour,
+our map claimed cumulus almost everywhere on a day that was largely overcast.
+Root cause: the cumulus gate was purely thermodynamic — `ccl != null && blh -
+ccl >= 50` — which answers "if thermals are the cloud-maker, will they mark?"
+and is blind to advected stratiform cloud. The failure mode is **inverted, not
+random**: with `ccl = (T - Td) * 125`, humid overcast gives a small dewpoint
+spread, a low CCL, a large `blh - ccl`, and therefore the *biggest and
+brightest* glyphs exactly where the sky is solid grey. Cloud cover was absent at
+every layer — not fetched, not in `ThermalCell`, not in the client grid — even
+though it is free on the tiers the thermal grid already uses.
+
+**What shipped.** `cloud_cover` and `cloud_cover_low` are fetched into the
+thermal grid (registered THERMAL_OPTIONAL so a NaN run cannot veto the forecast
+axis; added as *optional* fields on `ThermalPoint` per the persisted-shape
+rule). Two new overlay rasters (`overcast`, `cuCoverage`) drive three mutually
+exclusive states where there were two:
+
+| state | meaning |
+|---|---|
+| plain | genuinely blue |
+| white glyphs | cumulus — **density** = areal coverage, **size/brightness** = `blh - ccl` depth |
+| dark diagonal hatch | stratiform sheet |
+
+This *builds on* the earlier BLH-vs-CCL call rather than replacing it: `blh -
+ccl` is still the blue-vs-cumulus discriminator and still sets glyph size. What
+was missing was the third question — "is the sky covered by something thermals
+didn't make?" W* needed no change; `computeWstar` already consumes model
+`shortwave_radiation`, which is cloud-attenuated.
+
+**Three things in there are load-bearing.**
+- Glyphs and hatch share one exported `HATCH_MIN`. A cell that is both hatched
+  and stippled reads as neither, so the two behaviours must move together —
+  sharing the constant is what enforces that.
+- OD triangles are **deliberately not suppressed** by overcast. A storm building
+  behind a grey sheet is precisely when the warning matters. Verified at the
+  code level: the OD pass reads only `odRisk`, never `overcast`/`cuCoverage`.
+- Degradation lives in the **values**, not in a presence guard. Both rasters are
+  allocated unconditionally by `createThermalOverlay`; a grid with no cloud
+  fields leaves `overcast` all-zero and `cuCoverage` filled to 1.0, which is
+  pixel-identical to the old map.
+
+**Two agent mistakes I caught and fixed.** (1) Suppression was written as
+`overcast < 1.0` — wrong twice over: the raster is pre-multiplied by `fade`, so
+cells near the grid edge can *never* reach 1.0 and suppression would silently
+never fire there; and it left a whole 70–95 % band both hatched and stippled.
+(2) An agent added `(overlay as {overcast?: Float32Array})` casts guarded by `if
+(raster)`, reasoning that old grids might lack the raster — dead code that
+defeated type checking, since the rasters are always allocated.
+
+**The hatch needed a second pass.** White at α 0.18 measured **1.15:1** against
+the fully-overcast sheet colour `rgb(181,185,191)` — it took a 6× contrast
+stretch to see the lines in a screenshot at all, which means a pilot outdoors
+never would. Lightening on light had nowhere to go. Now slate `90,96,106` at
+α 0.35 (~1.44:1) and clearly legible.
+
+**Verified against real data, not synthetic.** The 05:26 cron had already run
+with the new fields, so the live grid carried real cloud cover: at 2026-09-14
+13:00 Melbourne, 1523 clear / 3240 cumulus / 2733 sheet cells. Hatch with zero
+glyphs confirmed over the East Gippsland sheet at native resolution.
+`tsc --noEmit` clean.
+
+Note TASK-031 was **already taken** ("Pilot XC Flight History Export"), so this
+work is TASK-036 throughout — spec at `wiki/prompts/TASK-036.md`.
+
+---
 
 Session 59 replaced the **two hand-traced coastline polygons with one baked raster
 land mask** (commit `92b49b2`). Three commits are unpushed: `1b5bd4e`, `737cab0`,
@@ -96,6 +166,7 @@ density (trails cover 9.91% of both maps; mean darkening is only 24/255 against 
 orange stipple). The setpoints wiring was kept as correct coupling, not as a fix.
 
 ## Last completed task
+- TASK-036 (thermal overcast vs cumulus), commit `3389874` — completed 2026-09-14.
 - Baked raster land mask (DECISION-013), commit `92b49b2` — completed 2026-09-14.
 - Wind/thermal map consolidation, steps 1–4 — completed 2026-09-14.
 - TASK-TERRAIN-001/002/003 (wiki/02-tasks.md Phase 11) — Ground readout, client-side
@@ -107,8 +178,8 @@ None. Clean tree apart from two long-standing unrelated modifications to
 (deliberately excluded from every commit this session — decide what to do with them).
 
 ## Next task to start
-**Decide whether to push** — `origin/main` is 3 commits behind (`1b5bd4e`,
-`737cab0`, `92b49b2`). Note the 7-day fix only reaches production once deployed,
+**Decide whether to push** — `origin/main` is 4 commits behind (`1b5bd4e`,
+`737cab0`, `92b49b2`, `3389874`). Note the 7-day fix only reaches production once deployed,
 and after deploy the stale extended-forecast rows need
 `POST /api/weather/extended-forecast/fetch-now` (requireAuth — Jon triggers it, or
 wait for the 05:30 Melbourne cron).
