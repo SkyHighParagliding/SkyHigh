@@ -621,7 +621,12 @@ router.get("/thermal-overlay", asyncHandler(async (_req, res) => {
   if (!grid) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
   const result = extractThermalGrid(grid);
   if (!result) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
-  res.setHeader('Cache-Control', 'public, max-age=1800');
+  // no-cache (not no-store): always revalidate before reuse. The Express ETag
+  // makes an unchanged payload a cheap 304, so we keep the bandwidth saving on
+  // this large (~25 MB uncompressed) response. Without revalidation, a schema
+  // change (e.g. new fields added in TASK-036) would be pinned into every client
+  // cache for up to 30 minutes with no server-side escape hatch.
+  res.setHeader('Cache-Control', 'no-cache');
   res.json(result);
 }));
 

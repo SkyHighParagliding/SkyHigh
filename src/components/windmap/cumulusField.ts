@@ -375,6 +375,17 @@ export function rebuildCumulusField(
       const cy = Math.floor(sy / CELL);
       if (cx < 0 || cx >= overlayW || cy < 0 || cy >= overlayH) continue;
 
+      // Mutual-exclusivity guard: skip this lattice point when its anchor cell
+      // is hatched. We test the anchor cell (cy * overlayW + cx), not a block
+      // statistic, because the anchor is precisely the cell the hatch mark is
+      // drawn into — testing it is what makes hatch and glyph mutually exclusive
+      // at the glyph's origin. A block mean or max would reintroduce the fuzziness
+      // being fixed. Perfect exclusivity over the full glyph footprint is impossible
+      // with a fixed lattice (a glyph is ~10-19 px wide and can overhang a
+      // neighbouring hatched cell), so anchor-cell exclusivity is the correct,
+      // defensible rule.
+      if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) continue;
+
       // Block sample bounds — shared by both the depth and coverage passes.
       const x0 = Math.max(0, cx - (cuXBlock >> 1)), x1 = Math.min(overlayW - 1, cx + (cuXBlock >> 1));
       const y0 = Math.max(0, cy - (cuYBlock >> 1)), y1 = Math.min(overlayH - 1, cy + (cuYBlock >> 1));
