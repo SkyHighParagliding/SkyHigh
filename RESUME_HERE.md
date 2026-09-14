@@ -6,8 +6,10 @@
 ## Where I left off
 
 Session 60 shipped **TASK-036 — the thermal map now distinguishes an overcast
-sheet from cumulus** (commit `3389874`, local only). `origin/main` is now **4
-commits behind**: `1b5bd4e`, `737cab0`, `92b49b2`, `3389874`.
+sheet from cumulus** (commit `3389874`, local only). `origin/main` is **2 commits
+behind**: `3389874` and this session's `[SESSION-SUMMARY]`. (Session 59's notes
+below claimed `1b5bd4e`, `737cab0` and `92b49b2` were unpushed — they have since
+been pushed; `git log origin/main..main` is the authority, not the prose.)
 
 **The defect Jon spotted.** Side by side with Windy at the same forecast hour,
 our map claimed cumulus almost everywhere on a day that was largely overcast.
@@ -178,8 +180,8 @@ None. Clean tree apart from two long-standing unrelated modifications to
 (deliberately excluded from every commit this session — decide what to do with them).
 
 ## Next task to start
-**Decide whether to push** — `origin/main` is 4 commits behind (`1b5bd4e`,
-`737cab0`, `92b49b2`, `3389874`). Note the 7-day fix only reaches production once deployed,
+**Decide whether to push** — `origin/main` is 2 commits behind (`3389874` and the
+session summary). Pushing `main` deploys to Railway production. Note the 7-day fix only reaches production once deployed,
 and after deploy the stale extended-forecast rows need
 `POST /api/weather/extended-forecast/fetch-now` (requireAuth — Jon triggers it, or
 wait for the 05:30 Melbourne cron).
