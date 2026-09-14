@@ -4,6 +4,7 @@ import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid } from "./grid/fineGrid.js";
 import { getTimeWindow } from "./grid/extract.js";
 import { getGridBounds } from "./grid/bounds.js";
+import type { GridPoint, VictoriaGrid } from "./grid/bounds.js";
 import { WIND_GRID_TTL_MS } from "./constants.js";
 import { buildOpenMeteoParams, OPEN_METEO_API_KEY, OPEN_METEO_URL } from "./utils/openMeteo.js";
 import { buildLandTiles } from "./utils/gridTiles.js";
@@ -281,6 +282,10 @@ export async function fetchExtendedForecast(): Promise<void> {
   } catch (err) {
     console.error("Extended forecast: CRITICAL ERROR:", err);
     await setExtProgress('');
+    // Rethrow. Swallowing this is what let the scheduler write
+    // extendedForecastLastResult = "ok" on every failed run, so the admin panel
+    // reported a healthy fetch while site_extended_forecasts went five days stale.
+    throw err;
   } finally {
     extendedFetchInProgress = false;
   }
@@ -338,6 +343,15 @@ async function extractAllSiteExtendedForecasts(extendedGrid: ExtendedGrid): Prom
   console.log(`Extended forecast: Updated ${updated}/${sites.length} site forecasts`);
   if (skippedNoCoords.length > 0) console.warn(`Extended forecast: Skipped (no lat/lon): ${skippedNoCoords.join(', ')}`);
   if (skippedNullForecast.length > 0) console.warn(`Extended forecast: Skipped (null forecast — no grid match): ${skippedNullForecast.join(', ')}`);
+
+  // A total extraction failure used to be indistinguishable from success: the
+  // per-site catch above logs and continues, so "Updated 0/62" was just another
+  // console line while the run still reported ok. The outlook panel then decays
+  // one day at a time as getSiteExtendedForecast filters out past days, which is
+  // exactly how a five-day-old snapshot presented itself as a 3-day forecast.
+  if (updated === 0 && sites.length > 0) {
+    throw new Error(`Extended forecast: extracted 0/${sites.length} site forecasts — site_extended_forecasts NOT updated`);
+  }
 }
 
 function pickBestSlotIdx(slots: { windSpeed: number; windDirection: string }[], siteInfo?: { windSpeed: string | null; windDir: string | null }): number {
@@ -400,13 +414,17 @@ function pickBestSlotIdx(slots: { windSpeed: number; windDirection: string }[], 
   return bestIdx;
 }
 
-function buildSiteExtendedForecast(
+/** Exported for extendedForecast.test.mjs — not part of the module's API. */
+export function buildSiteExtendedForecast(
   siteId: string,
   siteLat: number,
   siteLon: number,
   extendedGrid: ExtendedGrid,
   existingHourlyJson?: string,
-  vicGrid?: any,
+  // Typed, not `any`: this is the fine (wind) grid, and reading a field it does
+  // not declare must be a compile error rather than a runtime throw swallowed
+  // by the per-site catch below.
+  vicGrid?: VictoriaGrid | null,
   siteInfo?: { windSpeed: string | null; windDir: string | null }
 ): SiteExtendedForecast | null {
   const nearest = findNearestExtendedPoint(extendedGrid, siteLat, siteLon);
@@ -424,9 +442,9 @@ function buildSiteExtendedForecast(
     } catch {}
   }
 
-  let vicNearestPoint: any = null;
+  let vicNearestPoint: GridPoint | null = null;
   let vicTimeWindow: { startIdx: number; selectedTimes: string[] } | null = null;
-  if (vicGrid?.points?.length > 0) {
+  if (vicGrid?.points?.length) {
     let bestDist = Infinity;
     for (const p of vicGrid.points) {
       const dlat = p.lat - siteLat;
@@ -479,7 +497,13 @@ function buildSiteExtendedForecast(
           cloudCoverLow: vicNearestPoint.hourly.cloud_cover_low[idx] ?? 0,
           visibility: vicNearestPoint.hourly.visibility[idx] ?? 0,
           cape: vicNearestPoint.hourly.cape[idx] ?? 0,
-          liftedIndex: vicNearestPoint.hourly.lifted_index[idx] ?? 0,
+          // The fine (wind) grid carries no lifted index — see GridPoint in
+          // grid/bounds.ts, where only ThermalPoint declares it. It did until
+          // 1815fb7 dropped the field ("not available on ecmwf_ifs"), and the
+          // read left behind here (`hourly.lifted_index[idx]`) threw for every
+          // site, silently freezing site_extended_forecasts for five days.
+          // 0 is the neutral value the sibling `?? 0` fields already use.
+          liftedIndex: 0,
           boundaryLayerHeight: vicNearestPoint.hourly.boundary_layer_height[idx] ?? 0,
         });
       }
@@ -865,12 +889,14 @@ export async function scheduleExtendedForecast(): Promise<void> {
   }
   if (!cached) {
     console.log("Extended forecast: No cached data found, triggering initial fetch in 60s...");
-    setTimeout(() => fetchExtendedForecast(), 60000);
+    // fetchExtendedForecast now rethrows, so these fire-and-forget calls must
+    // catch or the rejection is unhandled and takes the process down.
+    setTimeout(() => { void fetchExtendedForecast().catch(e => console.error("Extended forecast: initial fetch failed:", e)); }, 60000);
   } else {
     const age = Date.now() - new Date(cached.fetchedAt).getTime();
     if (age > 24 * 60 * 60 * 1000) {
       console.log("Extended forecast: Cached data is stale (>24h), triggering fetch in 60s...");
-      setTimeout(() => fetchExtendedForecast(), 60000);
+      setTimeout(() => { void fetchExtendedForecast().catch(e => console.error("Extended forecast: stale-cache refetch failed:", e)); }, 60000);
     }
   }
 }
