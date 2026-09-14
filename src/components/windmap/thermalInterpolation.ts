@@ -1,3 +1,29 @@
+/**
+ * A single interpolated thermal cell value, as the renderer receives it.
+ *
+ * All optional fields degrade gracefully: the renderer checks for presence
+ * before use and falls back to pre-TASK-036 behaviour when they are absent.
+ * Cloud fields (`cloud`, `cloudLow`) are absent on grids cached before
+ * TASK-036 — when they are undefined the grey overcast overlay is skipped and
+ * the full cumulus lattice is drawn, exactly matching today's behaviour.
+ *
+ * Naming note: `ccl` is the condensation level (m AGL, derived from T − Td).
+ * The cloud-cover fields are deliberately called `cloud` / `cloudLow` to avoid
+ * collision with the existing `ccl` abbreviation.
+ */
+export interface ThermalCellValue {
+  cape: number;
+  blh: number;
+  wstar?: number;
+  ccl?: number;
+  li?: number;
+  cin?: number;
+  /** Total cloud cover, %. Undefined on grids cached before TASK-036. */
+  cloud?: number;
+  /** Low cloud cover (below ~2 km), %. Undefined on grids cached before TASK-036. */
+  cloudLow?: number;
+}
+
 export interface ThermalGrid {
   lonMin: number;
   lonMax: number;
@@ -8,7 +34,7 @@ export interface ThermalGrid {
   ni: number;
   nj: number;
   times: string[];
-  data: ({ cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null)[][];
+  data: (ThermalCellValue | null)[][];
 }
 
 const epochCache = new WeakMap<string[], number[]>();
@@ -23,9 +49,9 @@ function getGridEpochs(times: string[]): number[] {
 
 function interpolateSpatial(
   lon: number, lat: number,
-  timeData: { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number }[],
+  timeData: ThermalCellValue[],
   grid: ThermalGrid,
-): { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null {
+): ThermalCellValue | null {
   const fi = (lon - grid.lonMin) / grid.deltaLon;
   const fj = (lat - grid.latMin) / grid.deltaLat;
   const i = Math.floor(fi);
@@ -62,28 +88,38 @@ function interpolateSpatial(
   // Gated separately: CCL comes from temperature and dew point, W* does not.
   // Tying them together hid cloud base on every grid, because W* is not yet
   // computed anywhere and is always undefined.
-  // li and cin follow the same pattern: only interpolate when all four corners
-  // have a value, otherwise leave undefined so the renderer degrades gracefully.
-  const hasWstar = c00.wstar !== undefined;
-  const hasCcl = c00.ccl !== undefined && c10.ccl !== undefined
-    && c01.ccl !== undefined && c11.ccl !== undefined;
-  const hasLi  = c00.li  !== undefined && c10.li  !== undefined
-    && c01.li  !== undefined && c11.li  !== undefined;
-  const hasCin = c00.cin !== undefined && c10.cin !== undefined
-    && c01.cin !== undefined && c11.cin !== undefined;
+  // li, cin, cloud, and cloudLow follow the same pattern: only interpolate when
+  // all four corners have a value, otherwise leave undefined so the renderer
+  // degrades gracefully. Cloud fields are absent on pre-TASK-036 grids, so
+  // every corner of every cell will be undefined until the next 5:26 am fetch —
+  // hasCloud* will be false, and the grey overlay will simply not appear, which
+  // is exactly today's behaviour.
+  const hasWstar   = c00.wstar    !== undefined;
+  const hasCcl     = c00.ccl      !== undefined && c10.ccl      !== undefined
+    && c01.ccl      !== undefined && c11.ccl      !== undefined;
+  const hasLi      = c00.li       !== undefined && c10.li       !== undefined
+    && c01.li       !== undefined && c11.li       !== undefined;
+  const hasCin     = c00.cin      !== undefined && c10.cin      !== undefined
+    && c01.cin      !== undefined && c11.cin      !== undefined;
+  const hasCloud   = c00.cloud    !== undefined && c10.cloud    !== undefined
+    && c01.cloud    !== undefined && c11.cloud    !== undefined;
+  const hasCloudLow = c00.cloudLow !== undefined && c10.cloudLow !== undefined
+    && c01.cloudLow !== undefined && c11.cloudLow !== undefined;
   return {
-    cape:  lerp(c00.cape, c10.cape, c01.cape, c11.cape),
-    blh:   lerp(c00.blh,  c10.blh,  c01.blh,  c11.blh),
-    wstar: hasWstar ? lerp(c00.wstar!, c10.wstar!, c01.wstar!, c11.wstar!) : undefined,
-    ccl:   hasCcl   ? lerp(c00.ccl!,   c10.ccl!,   c01.ccl!,   c11.ccl!)   : undefined,
-    li:    hasLi    ? lerp(c00.li!,    c10.li!,    c01.li!,    c11.li!)    : undefined,
-    cin:   hasCin   ? lerp(c00.cin!,   c10.cin!,   c01.cin!,   c11.cin!)   : undefined,
+    cape:     lerp(c00.cape,  c10.cape,  c01.cape,  c11.cape),
+    blh:      lerp(c00.blh,   c10.blh,   c01.blh,   c11.blh),
+    wstar:    hasWstar    ? lerp(c00.wstar!,    c10.wstar!,    c01.wstar!,    c11.wstar!)    : undefined,
+    ccl:      hasCcl      ? lerp(c00.ccl!,      c10.ccl!,      c01.ccl!,      c11.ccl!)      : undefined,
+    li:       hasLi       ? lerp(c00.li!,       c10.li!,       c01.li!,       c11.li!)       : undefined,
+    cin:      hasCin      ? lerp(c00.cin!,      c10.cin!,      c01.cin!,      c11.cin!)      : undefined,
+    cloud:    hasCloud    ? lerp(c00.cloud!,    c10.cloud!,    c01.cloud!,    c11.cloud!)    : undefined,
+    cloudLow: hasCloudLow ? lerp(c00.cloudLow!, c10.cloudLow!, c01.cloudLow!, c11.cloudLow!) : undefined,
   };
 }
 
 export function getThermalAt(
   lon: number, lat: number, time: number, grid: ThermalGrid,
-): { cape: number; blh: number; wstar?: number; ccl?: number; li?: number; cin?: number } | null {
+): ThermalCellValue | null {
   if (lon < grid.lonMin || lon > grid.lonMax || lat < grid.latMin || lat > grid.latMax) return null;
 
   const epochs = getGridEpochs(grid.times);
@@ -100,17 +136,25 @@ export function getThermalAt(
   const v1 = interpolateSpatial(lon, lat, grid.data[t1], grid);
   if (!v0 || !v1) return null;
 
-  const hasWstar = v0.wstar !== undefined && v1.wstar !== undefined;
-  const hasCcl = v0.ccl !== undefined && v1.ccl !== undefined;
-  const hasLi  = v0.li  !== undefined && v1.li  !== undefined;
-  const hasCin = v0.cin !== undefined && v1.cin !== undefined;
+  // Both time steps must have a field for the temporal lerp to be valid —
+  // absence at either step means "data not available" for this instant, not
+  // "lerp toward zero". Cloud fields are absent on pre-TASK-036 grids, so
+  // both will be undefined and the renderer degrades to today's behaviour.
+  const hasWstar    = v0.wstar    !== undefined && v1.wstar    !== undefined;
+  const hasCcl      = v0.ccl      !== undefined && v1.ccl      !== undefined;
+  const hasLi       = v0.li       !== undefined && v1.li       !== undefined;
+  const hasCin      = v0.cin      !== undefined && v1.cin      !== undefined;
+  const hasCloud    = v0.cloud    !== undefined && v1.cloud    !== undefined;
+  const hasCloudLow = v0.cloudLow !== undefined && v1.cloudLow !== undefined;
   return {
-    cape:  v0.cape  * (1 - dt) + v1.cape  * dt,
-    blh:   v0.blh   * (1 - dt) + v1.blh   * dt,
-    wstar: hasWstar ? v0.wstar! * (1 - dt) + v1.wstar! * dt : undefined,
-    ccl:   hasCcl   ? v0.ccl!   * (1 - dt) + v1.ccl!   * dt : undefined,
-    li:    hasLi    ? v0.li!    * (1 - dt) + v1.li!    * dt : undefined,
-    cin:   hasCin   ? v0.cin!   * (1 - dt) + v1.cin!   * dt : undefined,
+    cape:     v0.cape  * (1 - dt) + v1.cape  * dt,
+    blh:      v0.blh   * (1 - dt) + v1.blh   * dt,
+    wstar:    hasWstar    ? v0.wstar!    * (1 - dt) + v1.wstar!    * dt : undefined,
+    ccl:      hasCcl      ? v0.ccl!      * (1 - dt) + v1.ccl!      * dt : undefined,
+    li:       hasLi       ? v0.li!       * (1 - dt) + v1.li!       * dt : undefined,
+    cin:      hasCin      ? v0.cin!      * (1 - dt) + v1.cin!      * dt : undefined,
+    cloud:    hasCloud    ? v0.cloud!    * (1 - dt) + v1.cloud!    * dt : undefined,
+    cloudLow: hasCloudLow ? v0.cloudLow! * (1 - dt) + v1.cloudLow! * dt : undefined,
   };
 }
 

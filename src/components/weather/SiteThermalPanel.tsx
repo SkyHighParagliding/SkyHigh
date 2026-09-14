@@ -289,6 +289,18 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
               );
             })}
           </div>
+          <div className="flex items-center gap-1 mt-1.5 text-[6px] text-white/55">
+            <span className="text-[8px] leading-none">☁</span>
+            <span>Cumulus — density = coverage · size = depth</span>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 text-[6px] text-white/55">
+            <span className="text-[8px] leading-none">▨</span>
+            <span>Overcast sheet — plain = blue day</span>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 text-[6px] text-white/55">
+            <span className="text-[8px] leading-none">▲</span>
+            <span>Overdevelopment — hollow = watch · solid = likely</span>
+          </div>
         </div>
       )}
 

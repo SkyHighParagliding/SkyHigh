@@ -87,6 +87,9 @@ export async function getGridBounds(): Promise<GridBounds> {
  * Rows of this shape exist in production `wind_grid_data`. Fields may be added
  * (optionally) but never renamed, removed or nested differently, or every
  * cached grid becomes unreadable and the extraction helpers break.
+ *
+ * Adding a field? It must be optional (`field?: type`) so that production rows
+ * written before the field existed still deserialise cleanly.
  */
 export interface GridPoint {
   lat: number;
@@ -128,6 +131,13 @@ export interface ThermalPoint {
     /** Convective inhibition (J/kg). Tier-1 and tier-2 both carry this.
      *  seriesOf fills NaN for any missing entries. */
     convective_inhibition: number[];
+    // Optional from TASK-036 onward — both absent on all rows written before
+    // the next post-TASK-036 5:26 am thermal grid fetch. Any code reading these
+    // must treat absence as "data not available", never as zero cloud cover.
+    /** Total cloud cover, %. Absent on grids cached before TASK-036. */
+    cloud_cover?: number[];
+    /** Low cloud cover (below ~2 km), %. Absent on grids cached before TASK-036. */
+    cloud_cover_low?: number[];
   };
 }
 

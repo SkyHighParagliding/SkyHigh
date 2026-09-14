@@ -326,6 +326,14 @@ export interface ThermalCell {
   /** Convective inhibition (J/kg). Measures the energy cap that must be
    *  overcome before free convection begins. Tier-1 and tier-2. */
   cin?: number;
+  /** Total cloud cover, %. Undefined on grids cached before TASK-036; the
+   *  renderer treats absence as "data not available" and degrades to today's
+   *  behaviour (no grey overlay, full cumulus lattice). */
+  cloud?: number;
+  /** Low cloud cover (below ~2 km), %. Same provenance caveat as `cloud`.
+   *  Low cloud is the sheet that actually shades the ground — stratiform
+   *  overcast at altitude can have high total cover with negligible low cover. */
+  cloudLow?: number;
 }
 
 export interface ThermalOverlay {
@@ -508,8 +516,11 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
           // NaN → undefined: seriesOf fills NaN for hours where a provider had
           // no data. Letting NaN reach the client would silently break `!= null`
           // guards (NaN != null is true), so we normalise here at the boundary.
-          const liRaw  = point.hourly.lifted_index?.[timeIdx];
-          const cinRaw = point.hourly.convective_inhibition?.[timeIdx];
+          // This applies to all optional fields: li, cin, and the new cloud pair.
+          const liRaw       = point.hourly.lifted_index?.[timeIdx];
+          const cinRaw      = point.hourly.convective_inhibition?.[timeIdx];
+          const cloudRaw    = point.hourly.cloud_cover?.[timeIdx];
+          const cloudLowRaw = point.hourly.cloud_cover_low?.[timeIdx];
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
             blh,
@@ -517,8 +528,14 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
             // and full float precision inflates the payload for no visible gain.
             wstar: wstar === undefined ? undefined : Math.round(wstar * 100) / 100,
             ccl: hasTd ? computeCCL(t2m!, td2m!) : undefined,
-            li:  (liRaw  != null && !Number.isNaN(liRaw))  ? liRaw  : undefined,
-            cin: (cinRaw != null && !Number.isNaN(cinRaw)) ? cinRaw : undefined,
+            li:       (liRaw       != null && !Number.isNaN(liRaw))       ? liRaw       : undefined,
+            cin:      (cinRaw      != null && !Number.isNaN(cinRaw))      ? cinRaw      : undefined,
+            // cloud_cover and cloud_cover_low are absent on grids cached before
+            // TASK-036 (their arrays won't exist on old ThermalPoint rows). The
+            // optional-chained index already produces undefined in that case, but
+            // an explicit NaN guard here keeps the contract watertight.
+            cloud:    (cloudRaw    != null && !Number.isNaN(cloudRaw))    ? cloudRaw    : undefined,
+            cloudLow: (cloudLowRaw != null && !Number.isNaN(cloudLowRaw)) ? cloudLowRaw : undefined,
           });
         } else {
           timeStepData.push(null);

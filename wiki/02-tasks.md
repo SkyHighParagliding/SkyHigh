@@ -275,6 +275,34 @@ Deploy second instance of SkyHigh for different club.
 - **Acceptance Criteria:** Codebase supports multiple clubs with separate databases and branding. Second deployment (different club) works independently. Test white-label customization (name, logo, default wind map viewport).
 - **Status:** Backlog (depends on Phase 4 production deployment)
 
+### TASK-036 ✅ Thermal map — distinguish overcast from cumulus
+The thermal map drew cumulus glyphs almost everywhere, including under solid
+overcast. The cumulus gate (`ccl != null && blh - ccl >= 50`) is purely
+thermodynamic: it answers "if thermals are the cloud-maker, will they mark?" but
+is blind to advected stratiform cloud. Worse, its failure mode is *inverted* —
+`ccl = (T − Td) × 125`, so humid overcast gives a small spread, a low CCL, a
+large `blh − ccl`, and therefore the biggest, brightest glyphs exactly where the
+sky is solid grey. Spec: `wiki/prompts/TASK-036.md`.
+- **What changed:** Fetch `cloud_cover` + `cloud_cover_low` into the thermal grid
+  (free on the tiers already in use; both added as THERMAL_OPTIONAL so a NaN run
+  cannot veto the forecast axis, and as *optional* fields on `ThermalPoint` per
+  the persisted-shape rule). Two new overlay rasters drive three mutually
+  exclusive map states: plain = genuinely blue, white glyphs = cumulus (density
+  now encodes areal coverage, size/brightness still encode `blh − ccl` depth),
+  dark diagonal hatch = stratiform sheet. Overdevelopment triangles are
+  deliberately NOT suppressed by overcast. Help modal and both legends rewritten
+  — the shipped text claimed "plain areas are typically blue days", which was
+  false while plain meant "blue OR overcast".
+- **Acceptance Criteria:** Three states render distinctly from real grid data;
+  no cell is both hatched and stippled; a grid cached without cloud fields
+  degrades to pixel-identical output.
+- **Verified:** 2026-09-14 against real ECMWF data at 2026-09-14 13:00 Melbourne
+  (clear 1523 / cumulus 3240 / sheet 2733 cells). Hatch + zero glyphs confirmed
+  over the East Gippsland sheet; `tsc --noEmit` clean. Hatch was white at α 0.18
+  in the first revision — measured 1.15:1 against the sheet and needed a 6×
+  contrast stretch to see at all; changed to slate `90,96,106` at α 0.35 (~1.44:1).
+- **Status:** ✅ DONE
+
 ### TASK-035 ✅ Add cross-env to package.json dependencies
 `cross-env` is invoked via `npx` in the start script, causing Railway to download it fresh on every cold start.
 - **Completed:** 2026-05-20. Added `cross-env: ^7.0.3` to devDependencies. Changed both `npx cross-env` → `cross-env` in start and analyze scripts. Verified resolution via `node -e "require('cross-env')"`.
@@ -466,10 +494,10 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 ---
 
 **Task Summary:**
-- **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035 from Phase 4/5 + Review A–E, G
+- **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035, 036 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
 - **Backlog (4):** Tasks 030, 031, 032, TASK-SW-001 (service worker consolidation)
 - **Review deferred (1):** TASK-REVIEW-F (useWindPlayback hook extraction)
 
-Last updated: 2026-09-13
+Last updated: 2026-09-14

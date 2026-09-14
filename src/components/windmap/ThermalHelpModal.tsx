@@ -74,9 +74,14 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
           </section>
 
           <section>
-            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Cumulus Marks</div>
-            <p className="text-white/70">Small white cloud marks fill the areas where Cu Base (CCL) sits below BL Top (BLH) — meaning thermals are tall enough to reach their condensation level and form cumulus. The marks grow larger and brighter where the cloud layer is deeper (BLH − CCL). Plain areas are typically blue days: thermals exist but top out below condensation, leaving a clear sky. A blue day can still carry an overdevelopment warning (see below).</p>
-            <p className="text-white/50 mt-1.5">A small warning triangle marks overdevelopment risk — hollow (▲) for watch, solid (▲) for likely. The risk is judged from CAPE together with how unstable the air is higher up (Lifted Index or CIN), not from cloud thickness alone. Critically, the triangle can appear on a blue day with no cumulus at all — that is exactly when it is easiest to be caught out, because there is no visible cloud to warn you the atmosphere is loaded.</p>
+            <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">What the marks mean</div>
+            <p className="text-white/70">The map uses three states:</p>
+            <ul className="mt-1.5 space-y-1.5 text-white/70">
+              <li><span className="text-white/90 font-medium">Plain (no marks)</span> — a genuine blue day. Thermals exist but top out below condensation, leaving clear sky. No cumulus will form.</li>
+              <li><span className="text-white/90 font-medium">White cloud marks</span> — cumulus. Marks appear where Cu Base (CCL) sits below BL Top (BLH), meaning thermals are reaching their condensation level. Density shows how much of the sky they cover. Size and brightness show how deep the cloud layer is (BLH − CCL): bigger and brighter means a deeper, more energetic cloud layer.</li>
+              <li><span className="text-white/90 font-medium">Grey diagonal hatching</span> — stratiform overcast. A sheet of cloud, not thermic in origin, is shading the ground. Thermals are suppressed. No usable cumulus marks are shown underneath it, because there are none to find.</li>
+            </ul>
+            <p className="text-white/50 mt-1.5">A small warning triangle marks overdevelopment risk — hollow (▲) for watch, solid (▲) for likely. The risk is judged from CAPE together with how unstable the air is higher up (Lifted Index or CIN), not from cloud thickness alone. Critically, the triangle can appear on a plain blue day with no cumulus at all — and it also fires under a grey sheet. A loaded atmosphere hidden under solid overcast is the same trap as an uncapped blue day, arguably worse, because the grey gives you nothing visible to read. Either way, the absence of cu does not mean the atmosphere is calm.</p>
           </section>
 
           <section className="border-t border-white/10 pt-3 space-y-1.5">

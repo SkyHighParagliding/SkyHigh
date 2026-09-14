@@ -17,6 +17,16 @@
  * fallback tier cannot supply them the point is still kept, and w* will be
  * undefined for that point rather than discarding it.
  *
+ * Cloud cover:
+ *
+ * `cloud_cover` (total, %) and `cloud_cover_low` (below ~2 km, %) are fetched
+ * by the fine/wind grid (`fineGrid.ts`) but were never forwarded to clients —
+ * `gridToWindData` only emits {u, v}. This grid adds them so the thermal
+ * renderer can distinguish stratiform overcast (advected above the boundary
+ * layer, invisible to the BLH/CCL test) from genuine cumulus. Both fields live
+ * in THERMAL_OPTIONAL for the same reason as `lifted_index`: a run of NaN must
+ * not veto or shorten the forecast axis.
+ *
  * Overdevelopment signal:
  *
  * The OD triangle is driven by `lifted_index` + `cape`. ECMWF publishes no lifted
@@ -55,6 +65,9 @@ const THERMAL_VARIABLES: Variable[] = [
   // OD signal variables — deliberately optional (see module doc above).
   "lifted_index",
   "convective_inhibition",
+  // Cloud cover — deliberately optional (see module doc above).
+  "cloud_cover",
+  "cloud_cover_low",
 ];
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
@@ -67,8 +80,19 @@ const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
  *
  * `convective_inhibition` is non-finite on roughly a third to two-thirds of
  * Victoria points in the ECMWF bucket (2,294/6,173 measured 2026-09-13).
+ *
+ * `cloud_cover` and `cloud_cover_low` are new from TASK-036. They are
+ * supported on tiers 1 and 2 (the same ECMWF source the thermal grid already
+ * uses), but production rows cached before TASK-036 lack them — so they must
+ * live here rather than in THERMAL_REQUIRED, or every cached grid becomes
+ * invalid the moment the new code is deployed.
  */
-const THERMAL_OPTIONAL: Variable[] = ["lifted_index", "convective_inhibition"];
+const THERMAL_OPTIONAL: Variable[] = [
+  "lifted_index",
+  "convective_inhibition",
+  "cloud_cover",
+  "cloud_cover_low",
+];
 
 async function buildThermalPoints(): Promise<LatLon[]> {
   const bounds = await getGridBounds();
@@ -97,16 +121,21 @@ function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
       dew_point_2m: seriesOf(p, "dew_point_2m", n, gaps("dew_point_2m")),
       shortwave_radiation: seriesOf(p, "shortwave_radiation", n, gaps("shortwave_radiation")),
       soil_moisture_0_to_7cm: seriesOf(p, "soil_moisture_0_to_7cm", n, gaps("soil_moisture_0_to_7cm")),
-      // Both of these are declared in THERMAL_OPTIONAL: the orchestrator excluded
-      // them from the axis-coverage check so NaN values do not shorten or destroy
-      // the forecast. seriesOf emits NaN for missing hours (rather than throwing),
-      // which JSON.stringify turns into null on the wire; extract.ts normalises
-      // both null and NaN to undefined, so absence stays absence on the client.
+      // All four of these are declared in THERMAL_OPTIONAL: the orchestrator
+      // excluded them from the axis-coverage check so NaN values do not shorten
+      // or destroy the forecast. seriesOf emits NaN for missing hours (rather
+      // than throwing), which JSON.stringify turns into null on the wire;
+      // extract.ts normalises both null and NaN to undefined, so absence stays
+      // absence on the client.
       // lifted_index is available on tiers 1 and 2 (tier 2 derives it by parcel
       // ascent); convective_inhibition is non-finite on ~a third to two-thirds of
       // Victoria points in the ECMWF bucket.
+      // cloud_cover and cloud_cover_low were first fetched by this grid in
+      // TASK-036; any row stored before then will simply have no entry for them.
       lifted_index: seriesOf(p, "lifted_index", n, gaps("lifted_index")),
       convective_inhibition: seriesOf(p, "convective_inhibition", n, gaps("convective_inhibition")),
+      cloud_cover: seriesOf(p, "cloud_cover", n, gaps("cloud_cover")),
+      cloud_cover_low: seriesOf(p, "cloud_cover_low", n, gaps("cloud_cover_low")),
     },
   };
 }

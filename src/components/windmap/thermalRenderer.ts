@@ -6,6 +6,48 @@ import { isOnLand } from './landMask';
 import { drawRegistered } from './groundRegistration';
 
 // ---------------------------------------------------------------------------
+// Cloud-cover thresholds for overcast and cumulus density
+// ---------------------------------------------------------------------------
+
+/**
+ * Below this low-cloud percentage the sky reads as effectively clear — the
+ * cumulus glyph lattice is drawn at full density and no grey sheet appears.
+ * 12 % is roughly one-eighth cover: isolated puffs rather than a broken deck,
+ * consistent with BOM "few" (1–2 oktas ≈ 12.5–25 %).
+ */
+export const CU_CLOUD_MIN_PCT  = 12;  // % low cloud → below = blue, no glyphs
+
+/**
+ * At this low-cloud (or total-cover) percentage the grey overcast sheet begins
+ * to appear. 70 % is "broken" (5–7 oktas ≈ 62–87 %) — the sky is more
+ * covered than clear, and pilots on the ground would call it overcast.
+ */
+export const OVERCAST_MIN_PCT  = 70;  // % → sheet starts
+
+/**
+ * Above this the grey alpha saturates. 95 % is "overcast" (8 oktas minus a
+ * thin gap) — essentially no direct sun. The ramp from 70 → 95 gives a smooth
+ * visual transition rather than a hard cliff.
+ */
+export const OVERCAST_FULL_PCT = 95;  // % → sheet fully opaque
+
+/**
+ * Overcast strength (0–1, as written into `ThermalOverlayState.overcast`) above
+ * which a cell counts as "under the sheet".
+ *
+ * This single value decides two things that must agree: where cumulusField.ts
+ * draws the hatch, and where this file suppresses cumulus glyphs. They are the
+ * same threshold on purpose — the map promises three states that each mean one
+ * thing, and a cell that is both hatched and stippled reads as neither. Anything
+ * that changes this must change both behaviours together, which is exactly what
+ * sharing the constant enforces.
+ *
+ * 0.35 on the 70 → 95 % ramp works out at roughly 79 % low cloud: the point at
+ * which a deck stops being "scattered cumulus" and starts being a sheet.
+ */
+export const HATCH_MIN = 0.35;
+
+// ---------------------------------------------------------------------------
 // Overdevelopment risk signal
 // ---------------------------------------------------------------------------
 
@@ -147,8 +189,10 @@ export interface ThermalOverlayState {
    * Cumulus depth (blh − ccl) in metres for each overlay cell, pre-multiplied
    * by the edge-fade factor so the stipple follows the same soft boundary as
    * the heat ramp. Zero for any cell that is skipped (water, no data, blue
-   * day, or depth < 50 m). Read by cumulusField.ts without re-running
-   * getThermalAt — that is why it lives here rather than in a separate pass.
+   * day, overcast, or depth < 50 m). Read by cumulusField.ts without
+   * re-running getThermalAt — that is why it lives here rather than in a
+   * separate pass. Set to 0 under a heavy overcast sheet (overcast ≥ 1) so
+   * cumulusField.ts needs no knowledge of the overcast rule.
    */
   cumulusDepth: Float32Array;
   /**
@@ -156,9 +200,27 @@ export interface ThermalOverlayState {
    * Populated in the same per-cell loop as cumulusDepth (no second pass), but
    * deliberately NOT behind the cumulus gate: a hot blue day with high CAPE has
    * no cumulus to mark and is exactly when a pilot is most easily caught out.
+   * The OD triangle also fires under a grey overcast sheet — a loaded atmosphere
+   * under stratus is the same trap, arguably worse because the sky looks benign.
    * Read by cumulusField.ts, which draws a separate warning triangle for it.
    */
   odRisk: Uint8Array;
+  /**
+   * Grey overcast strength 0–1 per overlay cell, pre-multiplied by edgeFade.
+   * 0 = clear or pre-TASK-036 grid (degradation rule). Driven by the
+   * cloudLow and cloud fields from ThermalCellValue; see OVERCAST_MIN_PCT /
+   * OVERCAST_FULL_PCT for the ramp definition. Read by cumulusField.ts, which
+   * draws a diagonal hatch pattern over cells where this exceeds 0.35.
+   */
+  overcast: Float32Array;
+  /**
+   * Cumulus areal coverage 0–1 per overlay cell, drives glyph density in
+   * cumulusField.ts. Distinct from cumulusDepth, which is a vertical extent
+   * (BLH − CCL) used for glyph SIZE; this field is a FRACTION OF SKY AREA
+   * that glyphs should occupy. When cloudLow is undefined (pre-TASK-036 grid),
+   * defaults to 1.0 so the full lattice is drawn — exactly today's behaviour.
+   */
+  cuCoverage: Float32Array;
   /**
    * The transform in force when the raster was built. The raster is baked in
    * screen space, so it is only valid for this transform; drawing it under any
@@ -194,6 +256,13 @@ export function createThermalOverlay(width: number, height: number): ThermalOver
     cumulusDepth: new Float32Array(overlayW * overlayH),
     // Zero-initialised likewise: 0 = no OD risk, matching the type invariant.
     odRisk: new Uint8Array(overlayW * overlayH),
+    // Zero-initialised: 0 = no grey sheet. Cells not reached by the loop stay
+    // 0, which cumulusField.ts treats as "not overcast".
+    overcast: new Float32Array(overlayW * overlayH),
+    // Filled to 1.0 during rebuildThermalOverlay for pre-TASK-036 grids (see
+    // degradation rule): the fill happens before the loop and every cell that
+    // gets real data overwrites it. Zero-init here; fill(1) is called below.
+    cuCoverage: new Float32Array(overlayW * overlayH),
   };
 }
 
@@ -221,6 +290,9 @@ export function drawThermalOverlay(
   });
 }
 
+// Clamp a value to [0, 1].
+function clamp01(v: number): number { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
 function rebuildThermalOverlay(
   overlay: ThermalOverlayState,
   currentTransform: ZoomTransform,
@@ -228,11 +300,24 @@ function rebuildThermalOverlay(
   currentTime: number,
   grid: ThermalGrid,
 ) {
-  const { width: overlayW, height: overlayH, pixels, ctx, imageData, cumulusDepth, odRisk } = overlay;
-  // Zero both arrays up front; only cells with data and sufficient edgeFade are
-  // written below, so every skipped cell (water, no data, outside edge) stays 0.
+  const {
+    width: overlayW, height: overlayH, pixels, ctx, imageData,
+    cumulusDepth, odRisk, overcast: overcastArr, cuCoverage,
+  } = overlay;
+
+  // Zero thermal arrays up front; cells not written keep their zero.
   cumulusDepth.fill(0);
   odRisk.fill(0);
+  overcastArr.fill(0);
+
+  // Degradation rule: when cloud data is absent (pre-TASK-036 grids), every
+  // cell should appear with the full cumulus lattice — exactly today's
+  // behaviour. We default cuCoverage to 1 here; any cell with real cloudLow
+  // data will overwrite it with the derived value below. On a pre-TASK-036
+  // grid cloudLow is always undefined, so no cell ever overwrites 1.0, and
+  // cumulusField.ts sees a uniform full-density lattice, unchanged from before.
+  cuCoverage.fill(1);
+
   for (let oy = 0; oy < overlayH; oy++) {
     for (let ox = 0; ox < overlayW; ox++) {
       const px = ox * CELL + CELL / 2;
@@ -242,16 +327,14 @@ function rebuildThermalOverlay(
       const idx = (oy * overlayW + ox) * 4;
       if (!geo) { pixels[idx + 3] = 0; continue; }
       if (!isOnLand(geo[0], geo[1])) { pixels[idx + 3] = 0; continue; }
+
       const th = getThermalAt(geo[0], geo[1], currentTime, grid);
-      const ws = th ? effectiveWstar(th.wstar, th.cape) : 0;
-      if (!th || ws < 0.3) { pixels[idx + 3] = 0; continue; }
-      // Named lutIdx, not li: `li` now means Lifted Index on the thermal cell
-      // (see th.li below), and having both in one function invites a misread.
-      const lutIdx = wstarToLUTIndex(ws);
-      pixels[idx]     = thermalLUT[lutIdx * 4];
-      pixels[idx + 1] = thermalLUT[lutIdx * 4 + 1];
-      pixels[idx + 2] = thermalLUT[lutIdx * 4 + 2];
-      // Fade alpha within 1° lon / 0.5° lat of grid boundary to avoid hard rectangular clip
+      // No thermal data at all — clear the pixel, leave all rasters at 0.
+      if (!th) { pixels[idx + 3] = 0; continue; }
+
+      // Fade alpha within 1° lon / 0.5° lat of grid boundary to avoid a hard
+      // rectangular clip. Computed here (before the ws gate) because the grey
+      // overcast sheet and cuCoverage also need it.
       const edgeFade = Math.min(
         (geo[0] - grid.lonMin) / 1.0,
         (grid.lonMax - geo[0]) / 1.0,
@@ -259,29 +342,154 @@ function rebuildThermalOverlay(
         (grid.latMax - geo[1]) / 0.5,
         1.0,
       );
-      pixels[idx + 3] = Math.round(thermalLUT[lutIdx * 4 + 3] * Math.max(0, edgeFade));
+      const fade = Math.max(0, edgeFade);
 
-      // Cumulus depth and OD risk: both piggy-back on the existing getThermalAt
-      // result so we pay for the interpolation only once per cell.
-      // edgeFade gating is identical: no marks outside the grid footprint.
-      if (th.ccl != null && th.blh - th.ccl >= 50) {
-        cumulusDepth[oy * overlayW + ox] = (th.blh - th.ccl) * Math.max(0, edgeFade);
-      }
-
-      // OD risk is written for EVERY cell that survives the land + ws + edgeFade
-      // gates — not just the ones with a cumulus glyph. This recovers the "hot
-      // blue day" case: high CAPE, healthy boundary layer, but CCL above BLH so
-      // no cumulus forms. Measured against the live grid those cells represent
-      // ~207 additional OD warnings that would otherwise be silently dropped.
+      // -----------------------------------------------------------------
+      // Overcast sheet — computed for EVERY land cell with thermal data,
+      // BEFORE the ws gate. This is the key restructure: overcast regions
+      // commonly have low W* (the sun is blocked), so the old combined guard
+      // `if (!th || ws < 0.3) continue` would have zeroed alpha and skipped
+      // the grey, producing invisible sheets exactly where they most matter.
       //
-      // No extra boundary-layer floor is applied here. The ws < 0.3 gate above
-      // already excludes collapsed-BL cases (evening elevated instability, etc.):
-      // measured across the live grid it rejects 165 of 596 high-CAPE cells, and
-      // zero surviving cells had BLH below 300 m — a separate BLH threshold
-      // would be dead code. OD risk is also categorical (0/1/2), not a magnitude,
-      // so edgeFade multiplication would be wrong; zero-initialisation and the
-      // continue statements above already ensure edge cells read 0.
-      odRisk[oy * overlayW + ox] = computeOdRisk(th.cape, th.li, th.cin);
+      // Formula per the frozen contract:
+      //   overcastPct = max(cloudLow ?? 0, cloud >= 90 ? cloud : 0)
+      //
+      // The second term handles total-overcast reported at a high level (e.g.
+      // alto-stratus) that models don't always classify as "low" cloud — a
+      // ≥ 90 % total cover is a blocking sheet regardless of height.
+      //
+      // cuCoverage drives glyph density (an areal fraction), not size.
+      // When cloudLow is undefined the fill(1) above already gives 1.0, so
+      // we only write when real data is available.
+      // -----------------------------------------------------------------
+      const cellIdx = oy * overlayW + ox;
+
+      if (th.cloudLow !== undefined) {
+        const overcastPct = Math.max(
+          th.cloudLow,
+          (th.cloud !== undefined && th.cloud >= 90) ? th.cloud : 0,
+        );
+        const overcastRaw = clamp01(
+          (overcastPct - OVERCAST_MIN_PCT) / (OVERCAST_FULL_PCT - OVERCAST_MIN_PCT),
+        );
+        overcastArr[cellIdx] = overcastRaw * fade;
+
+        // cuCoverage: 0 below CU_CLOUD_MIN_PCT, 1 at OVERCAST_MIN_PCT.
+        // Uses cloudLow (the sky fraction where cumulus are actually forming)
+        // rather than total cover, which lumps in high cirrus.
+        cuCoverage[cellIdx] = clamp01(
+          (th.cloudLow - CU_CLOUD_MIN_PCT) / (OVERCAST_MIN_PCT - CU_CLOUD_MIN_PCT),
+        ) * fade;
+      }
+      // If cloudLow is still undefined (pre-TASK-036 grid), cuCoverage[cellIdx]
+      // keeps 1.0 from the fill above — degradation path, no change needed.
+
+      const ws = effectiveWstar(th.wstar, th.cape);
+
+      // -----------------------------------------------------------------
+      // Heat colour: only written when W* is meaningful. Low W* cells
+      // (sub-threshold, evening collapse, calm day) stay transparent for
+      // the heat channel, but may still show grey via the overcast sheet
+      // written above. This is the correct split: "grey + no heat" is a
+      // valid and common state (overcast calm day).
+      // -----------------------------------------------------------------
+      if (ws >= 0.3) {
+        // Named lutIdx, not li: `li` now means Lifted Index on the thermal
+        // cell (see th.li below), and having both in one function invites a
+        // misread.
+        const lutIdx = wstarToLUTIndex(ws);
+        const heatR = thermalLUT[lutIdx * 4];
+        const heatG = thermalLUT[lutIdx * 4 + 1];
+        const heatB = thermalLUT[lutIdx * 4 + 2];
+        const heatA = thermalLUT[lutIdx * 4 + 3] * fade;
+
+        // Overcast grey composite: rgb(150, 154, 160) blended over the LUT
+        // colour at strength `overcastArr[cellIdx] * 0.75`.
+        //
+        // The blend factor 0.75 is chosen against the heat STOPS table.
+        // The maximum LUT alpha is 232 (wstar ≥ 4) ≈ 0.91 coverage. At
+        // OVERCAST_FULL_PCT = 95 % cloud the sheet should visibly dominate
+        // the heat colour (it replaces solar input, after all), so 0.75
+        // gives grey ≈ 75 % opacity at saturation, still leaving a faint
+        // heat tint underneath — enough to tell pilots the boundary layer is
+        // still loaded even if thermals are weak. Lower values (0.5) washed
+        // out insufficiently; 1.0 erased the heat ramp entirely at high cloud.
+        const greyBlend = overcastArr[cellIdx] * 0.75;
+        const greyR = 150; const greyG = 154; const greyB = 160;
+
+        pixels[idx]     = Math.round(heatR + (greyR - heatR) * greyBlend);
+        pixels[idx + 1] = Math.round(heatG + (greyG - heatG) * greyBlend);
+        pixels[idx + 2] = Math.round(heatB + (greyB - heatB) * greyBlend);
+
+        // Alpha floor: the grey sheet must remain visible over pale basemaps
+        // (Carto light is near-white in rural Victoria) even when the heat
+        // ramp contributes little. The lowest non-zero heat stop is wstar=0.30
+        // → a=70/255 ≈ 27 %. An alpha of 90 (35 %) is just opaque enough for
+        // the grey to read as "something is here" without obscuring road labels.
+        // It sits between the 0.30 stop (70) and 0.80 stop (125) of the heat
+        // ramp, so it cannot be lower than anything the heat ramp would have
+        // painted on its own at these cloud levels.
+        const baseAlpha = Math.round(heatA);
+        const sheetFloor = greyBlend > 0 ? 90 : 0;
+        pixels[idx + 3] = Math.max(baseAlpha, sheetFloor);
+
+        // Cumulus depth: only written when there is a cumulus signal (BLH −
+        // CCL ≥ 50 m) AND the cell is not under the grey sheet. Under an
+        // overcast deck real cumulus cannot form regardless of what BLH − CCL
+        // says — the thermodynamic test is correct physics, but it cannot see
+        // advected stratus — so glyphs are suppressed at source here, and
+        // cumulusField.ts never needs to know the overcast rule.
+        //
+        // The threshold is HATCH_MIN, the same value that decides where the
+        // hatch is drawn, and it is shared rather than duplicated for a reason:
+        // glyphs and hatch must be mutually exclusive. The whole point of this
+        // task is three states that each mean one thing. Two independent
+        // thresholds would open a band where a cell is hatched AND stippled,
+        // which reads as neither.
+        //
+        // An earlier revision used `< 1.0` — full saturation. That was wrong
+        // twice over: it left glyphs drawing through the hatch across the
+        // entire 70–95 % band, and because this raster is pre-multiplied by
+        // `fade`, cells near the grid edge can never reach 1.0 at all, so
+        // suppression would have silently never fired there.
+        if (th.ccl != null && th.blh - th.ccl >= 50 && overcastArr[cellIdx] <= HATCH_MIN) {
+          cumulusDepth[cellIdx] = (th.blh - th.ccl) * fade;
+        }
+
+        // OD risk is written for EVERY cell that survives the land + ws ≥ 0.3
+        // gates — not just cells with cumulus, and NOT suppressed by overcast.
+        //
+        // Hard constraint 1: the triangle fires under a grey sheet. A loaded
+        // atmosphere under stratus is identical to a clear-sky OD scenario in
+        // its energy content; the visual difference is what makes it a trap.
+        // ThermalHelpModal.tsx explicitly promises pilots the triangle fires there.
+        //
+        // No extra BLH floor is applied here. The ws < 0.3 gate already excludes
+        // collapsed-BL cases: measured across the live grid it rejects 165 of 596
+        // high-CAPE cells, and zero surviving cells had BLH below 300 m — a
+        // separate BLH threshold would be dead code. edgeFade multiplication is
+        // wrong for a categorical variable; zero-init and the continue statements
+        // above already ensure edge cells read 0.
+        odRisk[cellIdx] = computeOdRisk(th.cape, th.li, th.cin);
+      } else {
+        // ws < 0.3: no heat colour, but overcast sheet is already written.
+        // Ensure the pixel alpha is nonzero if the grey sheet is visible so
+        // the composited grey renders correctly.
+        const sheetAlpha = overcastArr[cellIdx] > 0
+          ? Math.round(overcastArr[cellIdx] * 0.75 * 255)
+          : 0;
+
+        if (sheetAlpha > 0) {
+          // Paint pure grey (no heat tint to blend with).
+          pixels[idx]     = 150;
+          pixels[idx + 1] = 154;
+          pixels[idx + 2] = 160;
+          // Alpha floor of 90 applies here too — we want the sheet visible.
+          pixels[idx + 3] = Math.max(sheetAlpha, 90);
+        } else {
+          pixels[idx + 3] = 0;
+        }
+      }
     }
   }
   ctx.putImageData(imageData, 0, 0);

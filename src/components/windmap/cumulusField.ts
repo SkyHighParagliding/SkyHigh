@@ -1,5 +1,5 @@
 import type { ZoomTransform } from 'd3-zoom';
-import { CELL } from './thermalRenderer';
+import { CELL, HATCH_MIN } from './thermalRenderer';
 import type { ThermalOverlayState } from './thermalRenderer';
 import { drawRegistered } from './groundRegistration';
 
@@ -35,6 +35,50 @@ import { drawRegistered } from './groundRegistration';
 //
 // Staggering every second row by half the X pitch (brick / hex packing) stops
 // the glyphs reading as aligned columns while maintaining the tangent density.
+//
+// ── Density channel (TASK-036) ────────────────────────────────────────────────
+//
+// Before TASK-036 every lattice point in a cumulus region always drew a glyph.
+// That made "scattered cu" and "solid cu" indistinguishable — the lattice
+// looked equally full whether 20 % or 90 % of the sky was covered.
+//
+// The density channel encodes areal coverage from `overlay.cuCoverage` (a
+// Float32Array written by thermalRenderer.ts). The block MEAN of cuCoverage
+// over the lattice cell is converted to a draw probability:
+//
+//   p = 0.2 + 0.8 * meanCoverage
+//
+// A glyph is drawn only when a deterministic hash of the absolute lattice index
+// (i, j) falls below p. The 0.2 floor keeps marginal cumulus areas from going
+// completely blank (a scattered patch should always be visible). On pre-TASK-036
+// grids cuCoverage defaults to 1.0, so p = 1.0 and all glyphs draw — no change
+// in behaviour.
+//
+// Why MEAN for cuCoverage but MAX for cumulusDepth?
+//   cumulusDepth is a "don't miss a small patch" signal: a single overlay cell
+//   with non-zero depth means there is a real cloud somewhere in the block —
+//   the right error is to show it, so we take the maximum. cuCoverage is an
+//   areal fraction: a block that is 20 % covered in most cells and 90 % in one
+//   corner should draw as sparse, not dense. The mean accurately represents the
+//   typical coverage in the block; the max would bias the density estimate high.
+//
+// ── Hash stability ────────────────────────────────────────────────────────────
+//
+// The hash is keyed on the ABSOLUTE LATTICE INDICES (i, j) — the same integers
+// used for screen position. Because the lattice phase is welded to
+// currentTransform.x/y (see above), a given (i, j) maps to the same geographic
+// position at a given zoom. Hashing on (i, j) therefore means the same glyphs
+// survive a pan: no shimmer, no pop. Hashing on screen position would rehash
+// every frame as the transform changes.
+//
+// i and j CAN BE NEGATIVE (the loop starts below the visible origin so the
+// phase boundary is never on-screen). JavaScript's bitwise operators work on
+// signed 32-bit integers, which gives the correct mix arithmetic for negative
+// inputs, but the final `>>> 0` is mandatory to force unsigned before the
+// division — without it a negative hash would produce a negative float in
+// [−1, 0), which is always < p and would draw glyphs even where p is near zero.
+// The same negative-modulo trap that demands `((j % 2) + 2) % 2` for the stagger
+// also applies here; `>>> 0` is the definitive fix for the division case.
 const CU_SIZE = 2.25;                        // overall glyph size multiplier (~2.25× the original 2–3.8 px range)
 const CU_R_NOM = 3.8 * CU_SIZE;              // radius at max depth — the lattice is sized to this (~8.6 px)
 const GLYPH_X_SPACING = 2.7 * CU_R_NOM;     // ~23.1 px — cloud width so horizontal neighbours are tangent
@@ -46,6 +90,40 @@ const GLYPH_Y_SPACING = 1.2 * CU_R_NOM;     // ~10.3 px — cloud height so vert
 // widespread OD region at the denser cumulus spacing would become a solid wall
 // of triangles. 54 px keeps it legible as a caution layer rather than a texture.
 const OD_SPACING = 54; // px
+
+// ── Hatch parameters ──────────────────────────────────────────────────────────
+//
+// 45° diagonal lines in the overcast region convey "cloud sheet" — a different
+// visual language from the dot stipple of the cumulus glyphs. The grey heat
+// ramp underneath already expresses overcast intensity continuously; a second
+// intensity channel on the hatch would double-code the same signal and add
+// visual noise. Constant alpha is correct here.
+//
+// 8 px spacing and 1 px line weight reads as texture at arm's length. Too wide
+// (>12 px) becomes a grid pattern rather than cloud texture; too narrow (<5 px)
+// fills the region as a solid tone.
+//
+// The stroke is DARK, not white. The first revision used rgba(255,255,255,0.18),
+// which measured 1.15:1 against the fully-overcast sheet colour rgb(181,185,191)
+// — a 6× contrast stretch was needed to see the lines at all in a screenshot,
+// which means a pilot outdoors would never see them. White is the wrong family
+// anyway: the sheet is pale and the basemap is Carto Light, so lightening on
+// light has nowhere to go. HATCH_RGB at HATCH_ALPHA gives ~1.44:1 — legible as
+// shading without competing with the white cumulus glyphs, which keep lightness
+// as their exclusive channel.
+//
+// Hatch and glyphs never overlap: thermalRenderer.ts suppresses cumulus at the
+// same HATCH_MIN threshold used here, so a cell is hatched or stippled, never
+// both. The constant is imported rather than redeclared so the two cannot drift.
+//
+// The clip region is built from 6-px-wide CELL rects, so the edge is blocky.
+// That is accepted: the grey blur underneath is smooth and drawn with a 5 px
+// gaussian blur; the hatch adds texture inside a region already defined
+// visually by the colour ramp.
+const HATCH_SPACING   = 8;                     // px between parallel diagonal lines
+const HATCH_LINE_WIDTH = 1;                    // px stroke weight
+const HATCH_RGB       = '90,96,106';           // slate grey — darker than the sheet
+const HATCH_ALPHA     = 0.35;                  // constant — see note above
 
 export interface CumulusFieldState {
   canvas: HTMLCanvasElement;
@@ -105,13 +183,56 @@ function traceWarningTriangle(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.closePath();
 }
 
+// ── Deterministic hash ────────────────────────────────────────────────────────
+//
+// Maps any (i, j) integer pair — including negatives — to a value in [0, 1).
+// Uses a standard 32-bit integer mixing chain (the "finalise" step from
+// MurmurHash3) applied to i XOR'd with a shifted j. The chain is:
+//
+//   h  = i ^ (j * 2654435761)   — blend j using the golden-ratio multiplier
+//   h ^= h >>> 16
+//   h  = Math.imul(h, 0x85ebca6b)
+//   h ^= h >>> 13
+//   h  = Math.imul(h, 0xc2b2ae35)
+//   h ^= h >>> 16
+//   h >>> 0                      — MANDATORY: forces unsigned 32-bit
+//
+// Why Math.imul: JS's `*` on 32-bit ints spills into float territory for large
+// values; Math.imul is the 32-bit truncating multiply that the algorithm
+// requires. Both inputs to Math.imul must be 32-bit integers; j * 2654435761
+// is fine because the golden-ratio multiplier is a 32-bit constant and JS
+// bitwise coerces before Math.imul anyway.
+//
+// The `>>> 0` before the division is the definitive fix for negative indices:
+// bitwise XOR leaves a signed 32-bit result, which divided by 2^32 gives a
+// value in [−1, 0) for negative h. `>>> 0` reinterprets the bits as an
+// unsigned 32-bit integer before we divide, producing [0, 1) unconditionally.
+function latticeHash(i: number, j: number): number {
+  // Blend j into a single 32-bit seed, then avalanche.
+  let h = (i ^ Math.imul(j, 2654435761)) | 0;
+  h ^= h >>> 16;
+  h  = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h  = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 0x100000000;  // >>> 0 forces unsigned; then [0, 1)
+}
+
 // ─── rebuild (called once per thermal overlay rebuild) ────────────────────────
 
 /**
- * Redraws the cumulus canvas from `overlay.cumulusDepth`.
+ * Redraws the cumulus canvas from `overlay.cumulusDepth`, `overlay.cuCoverage`,
+ * and `overlay.overcast`.
  *
- * This is intentionally cheap: it only reads a Float32Array (no getThermalAt
- * calls) and traces small glyphs into an offscreen canvas. The heavy work
+ * Pass order:
+ *   1. Hatch pass — diagonal-line texture clipped to the overcast region, drawn
+ *      first so cumulus glyphs at the soft boundary sit on top.
+ *   2. Cumulus glyph pass — density-thinned by cuCoverage so areal coverage is
+ *      visually expressed as lattice density, not just glyph brightness.
+ *   3. OD warning triangle pass — drawn last so triangles sit above both layers.
+ *
+ * This is intentionally cheap: it only reads Float32Arrays (no getThermalAt
+ * calls) and traces small paths into an offscreen canvas. The heavy work
  * (spatial interpolation) already happened inside rebuildThermalOverlay — we
  * piggy-back on its result rather than paying for a second full pass.
  *
@@ -133,6 +254,61 @@ export function rebuildCumulusField(
 
   const { cumulusDepth, odRisk, width: overlayW, height: overlayH } = overlay;
 
+  // ── Pass 1: Hatch — drawn FIRST, under the cumulus glyphs ─────────────────
+  //
+  // Build a Path2D clip region from every overlay cell whose overcast strength
+  // exceeds the threshold. Each cell contributes one CELL×CELL axis-aligned
+  // rectangle in screen coordinates — `cx * CELL, cy * CELL` for cell (cx, cy).
+  //
+  // The blocky clip edge is accepted; the smooth grey ramp underneath already
+  // defines the overcast boundary cleanly, and the hatch is texture, not a border.
+  //
+  // `overcast` is a raster allocated by createThermalOverlay, so it is present
+  // on every overlay regardless of how old the underlying grid is. A grid cached
+  // before TASK-036 carries no cloud fields, but that degrades to an all-zero
+  // raster — no cell clears OVERCAST_THRESHOLD, hatchCellCount stays 0, and the
+  // pass below is skipped. Absence of cloud data is handled by the values, not
+  // by the raster going missing.
+  const hatchPath = new Path2D();
+  let hatchCellCount = 0;
+
+  for (let cy = 0; cy < overlayH; cy++) {
+    for (let cx = 0; cx < overlayW; cx++) {
+      if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) {
+        hatchPath.rect(cx * CELL, cy * CELL, CELL, CELL);
+        hatchCellCount++;
+      }
+    }
+  }
+
+  if (hatchCellCount > 0) {
+    ctx.save();
+    ctx.clip(hatchPath);
+
+    // Stroke 45° diagonal lines across the FULL viewport. The clip region
+    // restricts where ink lands; the lines themselves can be computed against
+    // the viewport bounding box, which is simpler and avoids edge gaps at the
+    // clip boundary.
+    //
+    // Parameterisation: lines of the form  y = x + c, where c ranges from
+    // -(height) to width. Stepping c by HATCH_SPACING * √2 puts the lines
+    // HATCH_SPACING apart measured perpendicularly, which is the spacing the
+    // eye actually reads — stepping c by HATCH_SPACING directly would leave
+    // them a factor of √2 too close.
+    const step = HATCH_SPACING * Math.SQRT2;
+
+    ctx.strokeStyle = `rgba(${HATCH_RGB},${HATCH_ALPHA})`;
+    ctx.lineWidth   = HATCH_LINE_WIDTH;
+    ctx.beginPath();
+    for (let c = -height; c <= width + step; c += step) {
+      ctx.moveTo(0,     c);
+      ctx.lineTo(width, c + width);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   // Absolute lattice indices covering the viewport, derived from the transform so
   // the lattice phase is welded to the ground. See the geometry comment at the
   // top of the file for the full derivation.
@@ -142,15 +318,13 @@ export function rebuildCumulusField(
   const j1 = Math.floor((height - currentTransform.y) / GLYPH_Y_SPACING) + 1;
 
   // Number of overlay cells spanned by one cumulus lattice step.
-  // Hoisted out of the loop: widening the pitch reduced the sample density, so
-  // a single centre-cell sample now misses small cumulus patches that happen to
-  // fall between lattice points. Taking the block maximum over the full lattice
-  // cell guarantees any cumulus present in the block draws a glyph — mirroring
-  // the same logic the OD triangle pass uses (see the long comment there).
+  // Used for both the block-MAX depth sample (existing) and the block-MEAN
+  // coverage sample (new — see density channel notes in the header).
   const cuXBlock = Math.max(1, Math.round(GLYPH_X_SPACING / CELL));
   const cuYBlock = Math.max(1, Math.round(GLYPH_Y_SPACING / CELL));
 
-  // ── Cumulus glyph pass ────────────────────────────────────────────────────
+  // ── Pass 2: Cumulus glyph pass ────────────────────────────────────────────
+  //
   // Glyphs are always white. The old `depth > 3000 m` proxy for OD colouring
   // has been removed; CAPE + LI/CIN signal is now shown as a separate triangle
   // glyph below rather than as a colour on the cloud mark.
@@ -162,6 +336,22 @@ export function rebuildCumulusField(
   // cell ever reached the 3000 m threshold — the branch was dead code.
   // CAPE + LI/CIN can see the deep instability directly, and the signal now
   // also fires on blue days (no cumulus), which the old proxy never could.
+  //
+  // Density thinning: each lattice point is drawn with probability
+  //   p = 0.2 + 0.8 * meanCoverage
+  // where meanCoverage is the block MEAN of overlay.cuCoverage over the lattice
+  // cell. MEAN (not MAX) because cuCoverage is an areal fraction: a block that
+  // is mostly sparse but has one dense cell should draw as sparse, not dense.
+  // Contrast with cumulusDepth, which takes block MAX because that is a
+  // "don't miss a small patch" rule — one cell with cloud depth means there IS
+  // cloud somewhere in the block; the right error for a hazard signal is to
+  // show it. Coverage is different: the right representation for 30 % sky
+  // coverage is 30 % density, not 90 % density because one corner was dense.
+  //
+  // The draw decision is deterministic: hash(i, j) < p. The hash is keyed on
+  // the absolute lattice indices so the same glyphs survive a pan without
+  // shimmering. See the hash notes in the header and the latticeHash() comment.
+  //
   for (let j = j0; j <= j1; j++) {
     // Brick / hex packing: stagger every second row right by half the X pitch.
     // This stops the glyphs reading as aligned columns (Windy uses the same
@@ -185,10 +375,15 @@ export function rebuildCumulusField(
       const cy = Math.floor(sy / CELL);
       if (cx < 0 || cx >= overlayW || cy < 0 || cy >= overlayH) continue;
 
-      // Block-maximum cumulus depth over the lattice cell.
-      let depth = 0;
+      // Block sample bounds — shared by both the depth and coverage passes.
       const x0 = Math.max(0, cx - (cuXBlock >> 1)), x1 = Math.min(overlayW - 1, cx + (cuXBlock >> 1));
       const y0 = Math.max(0, cy - (cuYBlock >> 1)), y1 = Math.min(overlayH - 1, cy + (cuYBlock >> 1));
+
+      // Block-MAXIMUM cumulus depth over the lattice cell.
+      // MAX because depth is a "don't miss a patch" signal: any cell with
+      // non-zero depth means real cloud is present in the block — we should
+      // draw a glyph to represent it.
+      let depth = 0;
       for (let by = y0; by <= y1; by++) {
         for (let bx = x0; bx <= x1; bx++) {
           const v = cumulusDepth[by * overlayW + bx];
@@ -196,6 +391,32 @@ export function rebuildCumulusField(
         }
       }
       if (depth <= 0) continue;
+
+      // Block-MEAN cuCoverage over the lattice cell — controls glyph density.
+      // MEAN because coverage is an areal fraction: a mostly-sparse block should
+      // draw as sparse even if one cell peaks high. See density channel notes.
+      //
+      // No absence check is needed. On a grid cached before TASK-036 the cloud
+      // fields are undefined, and thermalRenderer.ts fills this raster with 1.0
+      // for exactly that case — so the mean is 1, p is 1, and every glyph draws
+      // as it did before. Degradation lives in the values, not in a guard here.
+      let coverageSum = 0;
+      let coverageCount = 0;
+      for (let by = y0; by <= y1; by++) {
+        for (let bx = x0; bx <= x1; bx++) {
+          coverageSum += overlay.cuCoverage[by * overlayW + bx];
+          coverageCount++;
+        }
+      }
+      const meanCoverage = coverageCount > 0 ? coverageSum / coverageCount : 1.0;
+      // 0.2 floor: even marginal cumulus areas should always show at least
+      // a few glyphs — a completely blank region would look like blue sky,
+      // which is wrong when there IS some cloud cover.
+      const drawProb = 0.2 + 0.8 * Math.min(1, Math.max(0, meanCoverage));
+
+      // Deterministic draw decision: hash the absolute lattice indices (i, j).
+      // See latticeHash() and header notes for why (i, j), not screen position.
+      if (latticeHash(i, j) >= drawProb) continue;
 
       // Size and opacity both ramp with cloud depth, saturating at 1200 m.
       // Typical depths here run 100–400 m, so scaling against a rare 3000 m
@@ -210,8 +431,14 @@ export function rebuildCumulusField(
     }
   }
 
-  // ── OD warning triangle pass ──────────────────────────────────────────────
-  // Drawn AFTER all cumulus glyphs so the triangles sit on top.
+  // ── Pass 3: OD warning triangle pass ─────────────────────────────────────
+  //
+  // Drawn AFTER all cumulus glyphs and the hatch so the triangles sit on top.
+  // Hard constraint: triangles must still render INSIDE a grey overcast region.
+  // A loaded atmosphere under a grey sheet is the same OD trap — arguably worse,
+  // because the grey sky suppresses pilot awareness. Do NOT gate triangles on
+  // the overcast raster.
+  //
   // Uses the coarser OD_SPACING lattice so a widespread OD region reads as
   // a caution layer rather than a solid wall of symbols.
   // Draws into the same canvas, so the stale-transform affine correction
