@@ -4,12 +4,21 @@ import type { ThermalOverlayState } from './thermalRenderer';
 
 // ── Cumulus glyph lattice geometry ───────────────────────────────────────────
 //
-// The lattice is deliberately regular and anchored to SCREEN space, not to
-// degrees of lat/lon. An earlier version anchored it geographically so the
-// glyphs would stay welded to the ground during a pan; that made spacing a
-// function of zoom, which went coarse enough to read as a sparse grid of marks.
-// At a fixed screen pitch the field stays equally dense at every zoom, which is
-// what makes it read as cloud texture rather than as a grid.
+// The lattice PITCH is in screen pixels, not in degrees of lat/lon. An earlier
+// version anchored it geographically so the glyphs would stay welded to the
+// ground during a pan; that made spacing a function of zoom, which went coarse
+// enough to read as a sparse grid of marks. At a fixed screen pitch the field
+// stays equally dense at every zoom, which is what makes it read as cloud
+// texture rather than as a grid.
+//
+// The lattice PHASE is anchored to the d3-zoom transform translation. Lattice
+// points are computed as absolute indices relative to currentTransform.x/y so
+// that the same integer index always maps to the same geographic position at a
+// given zoom level. Under a pure pan from t to t′, the affine correction in
+// drawCumulusField carries any baked glyph exactly to the position a fresh
+// rebuild at t′ would place it — so pan produces no snap. Under a zoom, k
+// changes and the glyphs necessarily redistribute; that is inherent to a fixed
+// screen pitch and is accepted.
 //
 // Tangent packing: pitch is derived from the glyph's own dimensions at the
 // nominal (max-depth) radius so neighbouring glyphs just touch.
@@ -123,13 +132,13 @@ export function rebuildCumulusField(
 
   const { cumulusDepth, odRisk, width: overlayW, height: overlayH } = overlay;
 
-  const cols = Math.ceil(width  / GLYPH_X_SPACING);
-  const rows = Math.ceil(height / GLYPH_Y_SPACING);
-
-  // Half-step insets keep the lattice from hugging the canvas edge, using each
-  // axis's own pitch so the margin scales with glyph size on both axes.
-  const xInset = GLYPH_X_SPACING / 2;
-  const yInset = GLYPH_Y_SPACING / 2;
+  // Absolute lattice indices covering the viewport, derived from the transform so
+  // the lattice phase is welded to the ground. See the geometry comment at the
+  // top of the file for the full derivation.
+  const i0 = Math.floor((0      - currentTransform.x) / GLYPH_X_SPACING) - 1;
+  const i1 = Math.floor((width  - currentTransform.x) / GLYPH_X_SPACING) + 1;
+  const j0 = Math.floor((0      - currentTransform.y) / GLYPH_Y_SPACING) - 1;
+  const j1 = Math.floor((height - currentTransform.y) / GLYPH_Y_SPACING) + 1;
 
   // Number of overlay cells spanned by one cumulus lattice step.
   // Hoisted out of the loop: widening the pitch reduced the sample density, so
@@ -152,18 +161,24 @@ export function rebuildCumulusField(
   // cell ever reached the 3000 m threshold — the branch was dead code.
   // CAPE + LI/CIN can see the deep instability directly, and the signal now
   // also fires on blue days (no cumulus), which the old proxy never could.
-  for (let j = 0; j <= rows; j++) {
+  for (let j = j0; j <= j1; j++) {
     // Brick / hex packing: stagger every second row right by half the X pitch.
     // This stops the glyphs reading as aligned columns (Windy uses the same
     // idiom) while preserving the tangent horizontal density on each row.
-    const stagger = j % 2 === 1 ? GLYPH_X_SPACING / 2 : 0;
+    //
+    // IMPORTANT: j can be negative (phase-locked indices span below zero), and
+    // JavaScript's % operator returns negative results for negative operands.
+    // Using `j % 2` directly would flip the stagger sign for negative j,
+    // producing a visible seam at the origin row. The `((j % 2) + 2) % 2`
+    // expression is the standard non-negative modulo that is safe for all j.
+    const stagger = ((j % 2) + 2) % 2 === 1 ? GLYPH_X_SPACING / 2 : 0;
 
-    for (let i = 0; i <= cols; i++) {
-      const sx = xInset + i * GLYPH_X_SPACING + stagger;
-      const sy = yInset + j * GLYPH_Y_SPACING;
+    for (let i = i0; i <= i1; i++) {
+      const sx = i * GLYPH_X_SPACING + currentTransform.x + stagger;
+      const sy = j * GLYPH_Y_SPACING + currentTransform.y;
 
-      // Stagger can push the last glyph on an odd row beyond the canvas; skip it.
-      if (sx > width + GLYPH_X_SPACING) continue;
+      if (sx < -GLYPH_X_SPACING || sx > width  + GLYPH_X_SPACING) continue;
+      if (sy < -GLYPH_Y_SPACING || sy > height + GLYPH_Y_SPACING) continue;
 
       const cx = Math.floor(sx / CELL);
       const cy = Math.floor(sy / CELL);
@@ -200,18 +215,26 @@ export function rebuildCumulusField(
   // a caution layer rather than a solid wall of symbols.
   // Draws into the same canvas, so the stale-transform affine correction
   // applied in drawCumulusField covers both passes for free.
-  const odCols = Math.ceil(width  / OD_SPACING);
-  const odRows = Math.ceil(height / OD_SPACING);
-  const odInset = OD_SPACING / 2;
+
+  // Absolute lattice indices for the OD triangle pass, phase-locked to the
+  // transform translation by the same derivation as the cumulus pass above.
+  // OD_SPACING is a square lattice — no stagger, no asymmetric pitch.
+  const odI0 = Math.floor((0      - currentTransform.x) / OD_SPACING) - 1;
+  const odI1 = Math.floor((width  - currentTransform.x) / OD_SPACING) + 1;
+  const odJ0 = Math.floor((0      - currentTransform.y) / OD_SPACING) - 1;
+  const odJ1 = Math.floor((height - currentTransform.y) / OD_SPACING) + 1;
 
   // Number of overlay cells spanned by one lattice step, used to take the block
   // maximum below.
   const odBlock = Math.max(1, Math.round(OD_SPACING / CELL));
 
-  for (let j = 0; j <= odRows; j++) {
-    for (let i = 0; i <= odCols; i++) {
-      const sx = odInset + i * OD_SPACING;
-      const sy = odInset + j * OD_SPACING;
+  for (let j = odJ0; j <= odJ1; j++) {
+    for (let i = odI0; i <= odI1; i++) {
+      const sx = i * OD_SPACING + currentTransform.x;
+      const sy = j * OD_SPACING + currentTransform.y;
+
+      if (sx < -OD_SPACING || sx > width  + OD_SPACING) continue;
+      if (sy < -OD_SPACING || sy > height + OD_SPACING) continue;
 
       const cx = Math.floor(sx / CELL);
       const cy = Math.floor(sy / CELL);
