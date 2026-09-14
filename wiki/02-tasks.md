@@ -301,6 +301,17 @@ sky is solid grey. Spec: `wiki/prompts/TASK-036.md`.
   over the East Gippsland sheet; `tsc --noEmit` clean. Hatch was white at α 0.18
   in the first revision — measured 1.15:1 against the sheet and needed a 6×
   contrast stretch to see at all; changed to slate `90,96,106` at α 0.35 (~1.44:1).
+- **Follow-up fixes (2026-09-15, commit `2e3950f`):** Jon reported no visible
+  change on his phone. The feature was correct and deployed; the cause was
+  `Cache-Control: public, max-age=1800` on `/api/weather/thermal-overlay`, which
+  let his home-screen PWA serve a pre-`cloudLow` payload from disk cache for 30
+  minutes without revalidating — new renderer, old schema, `overcast` 0. Changed
+  to `no-cache` (the existing ETag makes an unchanged ~25 MB body a cheap 304).
+  Separately, the acceptance criterion "no cell is both hatched and stippled" was
+  **not actually met**: the glyph pass selected by block-MAX of `cumulusDepth`
+  over a 5×3 neighbourhood while suppression was per-cell, so 331 of 1371 glyphs
+  (24.1 %) drew on hatched cells. Now guarded on the anchor cell with the shared
+  `HATCH_MIN`. Both verified on live production at Mon 1 pm.
 - **Status:** ✅ DONE
 
 ### TASK-035 ✅ Add cross-env to package.json dependencies

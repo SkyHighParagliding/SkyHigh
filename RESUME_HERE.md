@@ -1,4 +1,4 @@
-# RESUME_HERE — Last updated: 2026-09-14 (session 60)
+# RESUME_HERE — Last updated: 2026-09-15 (session 60)
 
 ## Project: SkyHigh
 ## Status: Active
@@ -6,10 +6,60 @@
 ## Where I left off
 
 Session 60 shipped **TASK-036 — the thermal map now distinguishes an overcast
-sheet from cumulus** (commit `3389874`, local only). `origin/main` is **2 commits
-behind**: `3389874` and this session's `[SESSION-SUMMARY]`. (Session 59's notes
-below claimed `1b5bd4e`, `737cab0` and `92b49b2` were unpushed — they have since
-been pushed; `git log origin/main..main` is the authority, not the prose.)
+sheet from cumulus** — plus two follow-up fixes found when Jon reported the
+feature looked unchanged on his phone. **Everything is pushed**
+(`git log origin/main..main` is empty; that command is the authority, not this
+prose). Commits: `3389874`, `c322355`, `1985007`, `2e3950f`.
+
+### The "no visible change" hunt — read this before touching the thermal map
+
+Jon fetched thermal, restarted, and saw no difference. **The feature was
+correct and deployed the whole time.** The cause was one response header:
+
+```
+Cache-Control: public, max-age=1800     ← on /api/weather/thermal-overlay
+```
+
+`max-age` with no revalidation directive means the browser serves from disk
+cache for 30 minutes *without contacting the server*. The ETag existed but was
+only consulted after expiry. So his home-screen PWA ran the **new** renderer
+against an **old** payload that predated the `cloud_cover_low` field →
+`cloudLow` undefined → `overcast` 0 → no grey, no hatch, full cumulus lattice.
+Fresh Chrome and fresh Safari on the same phone rendered correctly; only the
+PWA, with its own separate cache, failed. Now `no-cache` (commit `2e3950f`),
+verified live 60 s after push.
+
+**Generalise this:** when a payload's *schema* can change, a plain `max-age` is
+a correctness bug, not a tuning choice — there is no way to bust it. Prefer
+`no-cache` + ETag.
+
+**The diagnostic that cracked it**, worth reusing: the background was
+*saturated orange* rather than grey-pulled. The grey composite and the hatch
+both read `overcast`, so "no grey either" proved the **input** was absent
+rather than the hatch drawing failing. Ask which single upstream value
+explains *all* the missing marks at once.
+
+**My process failure, recorded so it isn't repeated.** I twice claimed to have
+reproduced the failure on production. I had not — the Read tool downscales a
+1280 px screenshot to ~320 px, which erases 1 px hatch lines at 8 px spacing
+entirely. That sent me eliminating data, bundle, service workers and device
+differences at length when `curl -I` would have found it in one call. Crop
+small and upscale with sharp `kernel:'nearest'` before judging fine texture.
+
+### Second defect found during the same hunt
+
+The cumulus glyph pass selected lattice points by block-MAX of `cumulusDepth`
+over a 5×3 neighbourhood but never tested `overcast` at the lattice point,
+while `thermalRenderer.ts` suppresses depth **per cell**. Measured against the
+real production grid over the Victorian viewport at 13:00: **331 of 1371
+glyphs (24.1 %) were drawn on hatched cells** — breaking the very
+mutual-exclusivity invariant the shared `HATCH_MIN` exists to guarantee.
+
+Fixed in `cumulusField.ts` with one guard on the **anchor cell**:
+`if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) continue;`
+Anchor rather than a block statistic, because the anchor is exactly the cell
+the hatch is drawn into; a block mean would reintroduce the fuzziness being
+fixed. Verified before/after on live prod at Mon 1 pm around Ben More.
 
 **The defect Jon spotted.** Side by side with Windy at the same forecast hour,
 our map claimed cumulus almost everywhere on a day that was largely overcast.
@@ -168,6 +218,8 @@ density (trails cover 9.91% of both maps; mean darkening is only 24/255 against 
 orange stipple). The setpoints wiring was kept as correct coupling, not as a fix.
 
 ## Last completed task
+- TASK-036 follow-up fixes (thermal-overlay `no-cache` + glyph/hatch exclusivity),
+  commit `2e3950f` — completed 2026-09-15, pushed and verified live on production.
 - TASK-036 (thermal overcast vs cumulus), commit `3389874` — completed 2026-09-14.
 - Baked raster land mask (DECISION-013), commit `92b49b2` — completed 2026-09-14.
 - Wind/thermal map consolidation, steps 1–4 — completed 2026-09-14.
@@ -180,11 +232,17 @@ None. Clean tree apart from two long-standing unrelated modifications to
 (deliberately excluded from every commit this session — decide what to do with them).
 
 ## Next task to start
-**Decide whether to push** — `origin/main` is 2 commits behind (`3389874` and the
-session summary). Pushing `main` deploys to Railway production. Note the 7-day fix only reaches production once deployed,
-and after deploy the stale extended-forecast rows need
-`POST /api/weather/extended-forecast/fetch-now` (requireAuth — Jon triggers it, or
-wait for the 05:30 Melbourne cron).
+**Nothing is pending a push** — `origin/main` is level with `main` and the thermal
+work is live and verified. Still outstanding from earlier sessions: the stale
+extended-forecast rows need `POST /api/weather/extended-forecast/fetch-now`
+(requireAuth — Jon triggers it, or wait for the 05:30 Melbourne cron).
+
+**Session diagnostic artefacts to clean up** (all untracked, I created them; Jon
+to approve deletion): `prod-thermal-check.json` (**25 MB**), `prodchunks/` (124
+files), `prod-index.html`, `prod-index.js`, `chunks.txt`, `more.txt`, and the
+`diag-*.png` / `verify-*.png` / `phone-*.png` / `chrome-crop.png` /
+`safari-crop.png` / `t031-*.png` / `prod-mon1pm.png` images — on top of the
+~190 pre-existing untracked debugging PNGs.
 
 **Three files I could not delete** (the tool classifier blocks deletion; Jon to
 remove or grant permission): `tmp/gridTilesOld.ts`, `scripts/probe-coastline.tmp.mjs`,
@@ -212,6 +270,12 @@ Notification)**. Two smaller things are queued and ready if he'd rather clear th
 
 ## Open questions / blockers
 
+- **TASK-036 is a duplicate ID — again.** `wiki/02-tasks.md` now has *two*
+  `### TASK-036` headings: the thermal overcast work (line ~278) and **"Site
+  Scheduled Closure Calendar"** (line ~333). I renamed this work 031 → 036 last
+  session to dodge a collision with "Pilot XC Flight History Export" and landed
+  on another taken number. Renumbering touches ~9 source files, so I did **not**
+  do it silently — Jon to decide the ID, then sed it across the tree.
 - **Jon asked to be reminded** of these cleanups (still outstanding, do not action silently):
   - `CLAUDE.md` Section 0 and `wiki/00-overview.md` still claim **"white-label ready"**,
     which is no longer true and now actively contradicts DECISION-012.
