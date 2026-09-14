@@ -1,9 +1,50 @@
-# RESUME_HERE — Last updated: 2026-09-14 (session 58)
+# RESUME_HERE — Last updated: 2026-09-14 (session 59)
 
 ## Project: SkyHigh
 ## Status: Active
 
 ## Where I left off
+
+Session 59 replaced the **two hand-traced coastline polygons with one baked raster
+land mask** (commit `92b49b2`). Three commits are unpushed: `1b5bd4e`, `737cab0`,
+`92b49b2`.
+
+**The problem.** `interpolateSpatial` in `thermalInterpolation.ts` is *relaxed*
+bilinear — it returns a value if ANY of four corners is non-null, so the thermal
+field bleeds ~10 km offshore. The client mask is therefore load-bearing: it **is**
+the visible coastline. The old masks were two hand-traced rings (a 17-vertex
+Tasmania, a mainland ring that drifted inland along the Victorian state border),
+duplicated independently on client and server.
+
+**What replaced them.** `scripts/bake-land-mask.mjs` reads GEODATA COAST 100K 2004
+(Geoscience Australia, CC BY 4.0, `data/ga-coast/`, gitignored) with a hand-rolled
+`.shp`/`.dbf` reader, rasterises by even-odd scanline at 0.01° over
+139–151.5E / 44–33S (1250×1100), and emits `shared/landMask.generated.ts` —
+LEB128-varint RLE, base64, lazily decoded. One module, both trees. A second
+**coverage** mask is the land mask dilated 0.2° by exact Euclidean distance
+transform, so the server's fetch-point buffer is baked rather than a parameter.
+
+**Measured, not assumed.** Thermal fetch points 7,496 → 7,653 (+2.1%); fine
+2,722 → 2,788; extended 250 → 259. **Tile counts unchanged at 8/3/1, so the
+Open-Meteo request count is identical.** 211 points dropped, all water, zero land
+lost; 24 of the 112 gained are real land the old Tasmania ring cut off in the
+south-west. Bundle: the land mask ships only in the lazily-loaded `thermalRenderer`
+chunk (29,104 B raw / 11,369 B gzipped) and the coverage mask is tree-shaken out of
+the browser entirely.
+
+**Two bugs worth remembering.**
+- The bake failed one check on "Corner Inlet (water)" at (146.55, −38.78). The
+  *check* was wrong, not the mask — that point is inside SNAKE ISLAND (.shp record
+  7635). Both points are now in the table so the distinction stays documented.
+- `edt1d` dropped the spacing term from the parabola intersection, comparing a term
+  of order 1e-4 against one of order 1e6. Symptom: one-cell-wide vertical streaks of
+  spurious buffer trailing off the coast. **Only the PNG render caught it** — the
+  20-point spot-check table could not, and neither would random sampling. The
+  verifier was restructured to brute-force *every* one of the 105,420 band cells.
+
+Verification: 39/39 landmask assertions against the decoded artifact, exhaustive
+dilation check, `tsc --noEmit` clean, extendedForecast 12/12, gridPipeline 31,
+health 17, orchestrator 56, `npm run build` green. See **DECISION-013**.
 
 Session 58 consolidated the **wind map and thermal map onto one shared shell**.
 They were two near-duplicate canvases (~430 and ~374 lines) that had each grown
@@ -55,6 +96,7 @@ density (trails cover 9.91% of both maps; mean darkening is only 24/255 against 
 orange stipple). The setpoints wiring was kept as correct coupling, not as a fix.
 
 ## Last completed task
+- Baked raster land mask (DECISION-013), commit `92b49b2` — completed 2026-09-14.
 - Wind/thermal map consolidation, steps 1–4 — completed 2026-09-14.
 - TASK-TERRAIN-001/002/003 (wiki/02-tasks.md Phase 11) — Ground readout, client-side
   sampling, CC BY 4.0 attribution — completed 2026-09-13.
@@ -65,7 +107,15 @@ None. Clean tree apart from two long-standing unrelated modifications to
 (deliberately excluded from every commit this session — decide what to do with them).
 
 ## Next task to start
-**Decide whether to push the 4 commits** — nothing has gone to `origin/main` yet.
+**Decide whether to push** — `origin/main` is 3 commits behind (`1b5bd4e`,
+`737cab0`, `92b49b2`). Note the 7-day fix only reaches production once deployed,
+and after deploy the stale extended-forecast rows need
+`POST /api/weather/extended-forecast/fetch-now` (requireAuth — Jon triggers it, or
+wait for the 05:30 Melbourne cron).
+
+**Three files I could not delete** (the tool classifier blocks deletion; Jon to
+remove or grant permission): `tmp/gridTilesOld.ts`, `scripts/probe-coastline.tmp.mjs`,
+and the duplicate `.ga-coast/` directory (a full ~22 MB copy of `data/ga-coast/`).
 
 One judgement call is waiting on Jon: the wind flow reads faintly over the thermal
 heat field. The dial is `THERMAL_WIND_TRAIL_STYLE.opacityScale` in
