@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { select } from 'd3-selection';
 import type { GeoProjection } from 'd3-geo';
-import { createMapProjection, gridWorldExtent, gridWorldCenter, containScale } from './mapExtent';
+import { createMapProjection, gridWorldExtent, gridWorldCenter, coverScale } from './mapExtent';
 import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
 import type { ZoomTransform } from 'd3-zoom';
 import { tile as d3tile } from 'd3-tile';
@@ -150,16 +150,22 @@ export const MapCanvas = memo(function MapCanvas({
 
     // The grid rectangle in projected world coordinates. Computed before the
     // initial transform because minK bounds that transform too — see clampK.
-    // containScale is CONTAIN, not cover; the reasoning and the regression it
-    // fixes are documented in mapExtent.ts and pinned by mapExtent.test.mjs.
+    // coverScale is COVER, not contain, so the user can never zoom out past the
+    // edge of the data; the reasoning is documented in mapExtent.ts and pinned
+    // by mapExtent.test.mjs.
     const { tl: gridTL, br: gridBR, extW, extH } = gridWorldExtent(projection, bounds);
     const maxK = 256 * Math.pow(2, 20);
+
+    // A pathologically small rectangle could want a cover scale above the zoom
+    // ceiling, which would invert scaleExtent and throw. Cap it; the map is then
+    // zoomed as far in as it goes, which is the closest honest approximation.
+    const floorK = (w: number, h: number) => Math.min(coverScale(extW, extH, w, h), maxK);
 
     // Not const: the floor depends on the viewport, which changes without
     // remounting (phone rotation, window resize, expanding to fullscreen). The
     // ResizeObserver below recomputes it — otherwise the floor stays pinned to
     // whatever size the map happened to mount at.
-    let minK = containScale(extW, extH, width, height);
+    let minK = floorK(width, height);
 
     // d3-zoom clamps to scaleExtent on the first gesture, so an initial k outside
     // [minK, maxK] shows up as a jump the moment the user touches the map. Clamp
@@ -171,8 +177,9 @@ export const MapCanvas = memo(function MapCanvas({
     if (markers && markers.length > 1) {
       const savedK = savedZoom ? 256 * Math.pow(2, savedZoom) : fallbackZoomK;
 
-      // With no admin-configured default, open showing the whole configured area,
-      // centred in world space rather than on the mid-latitude — see gridWorldCenter.
+      // With no admin-configured default, open zoomed out as far as the data
+      // allows, centred in world space rather than on the mid-latitude — see
+      // gridWorldCenter.
       const useK = clampK(savedK || minK);
       const gridCenter = gridWorldCenter(projection, bounds);
       const centerPt =
@@ -297,7 +304,7 @@ export const MapCanvas = memo(function MapCanvas({
             // so the existing transform has to be pushed back through d3 rather
             // than left behind — d3 only re-applies scaleExtent on the next
             // gesture, which would show up as a jump on first touch.
-            minK = containScale(extW, extH, w, h);
+            minK = floorK(w, h);
             zoom.scaleExtent([minK, maxK]);
             if (transformRef.current.k < minK) {
               const center = gridWorldCenter(projection, bounds);

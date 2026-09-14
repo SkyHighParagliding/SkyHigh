@@ -1,13 +1,17 @@
 /**
- * The invariant: at the zoom-out floor, the whole configured grid rectangle is
- * visible — for EVERY rectangle shape the admin editor can produce and EVERY
+ * The invariant: at the zoom-out floor, the viewport shows ONLY data — it sits
+ * entirely inside the configured grid rectangle, with no blank map margin on any
+ * edge — for EVERY rectangle shape the admin editor can produce and EVERY
  * viewport the map is mounted in.
  *
- * This is swept rather than spot-checked on purpose. The bug it pins (cover
- * instead of contain) is invisible whenever the rectangle and the viewport
- * happen to share an aspect ratio, and it binds on *different axes* depending on
- * which way that ratio tips — a couple of hand-picked cases would have passed
- * while portrait mobile was losing 72% of the map.
+ * Note the direction. It is *not* "the whole rectangle is visible": whichever
+ * axis overflows is reached by panning, not by zooming out further.
+ *
+ * This is swept rather than spot-checked on purpose. The bug it pins (contain
+ * instead of cover) is invisible whenever the rectangle and the viewport happen
+ * to share an aspect ratio, and it leaves its dead margin on *different axes*
+ * depending on which way that ratio tips — a couple of hand-picked cases would
+ * have passed while portrait mobile showed 60% empty basemap.
  *
  * Run: npm run test:mapextent
  */
@@ -16,7 +20,7 @@ import {
   createMapProjection,
   gridWorldExtent,
   gridWorldCenter,
-  containScale,
+  coverScale,
 } from './mapExtent.ts';
 
 let passed = 0;
@@ -48,7 +52,7 @@ function toWorld(sx, sy, t) {
 /** The transform at the zoom floor, centred on the rectangle. */
 function flooredTransform(bounds, width, height) {
   const { extW, extH } = gridWorldExtent(projection, bounds);
-  const k = containScale(extW, extH, width, height);
+  const k = coverScale(extW, extH, width, height);
   const c = gridWorldCenter(projection, bounds);
   return { k, x: width / 2 - c[0] * k, y: height / 2 - c[1] * k };
 }
@@ -76,7 +80,7 @@ const VIEWPORTS = [
   { name: 'square', w: 800, h: 800 },
 ];
 
-console.log('\nZoom floor contains the whole rectangle:');
+console.log('\nZoom floor shows no blank map outside the rectangle:');
 for (const r of RECTS) {
   for (const v of VIEWPORTS) {
     const t = flooredTransform(r, v.w, v.h);
@@ -86,7 +90,8 @@ for (const r of RECTS) {
     // Tolerance relative to the rectangle: one part in a billion of its own size.
     const ex = extW * 1e-9;
     const ey = extH * 1e-9;
-    const ok = x0 <= tl[0] + ex && x1 >= br[0] - ex && y0 <= tl[1] + ey && y1 >= br[1] - ey;
+    // The viewport sits inside the rectangle — the containment runs the other way.
+    const ok = x0 >= tl[0] - ex && x1 <= br[0] + ex && y0 >= tl[1] - ey && y1 <= br[1] + ey;
     check(
       `${r.name} @ ${v.name}`,
       ok,
@@ -100,7 +105,7 @@ console.log('\nExactly one axis binds (the floor is tight, not slack):');
 for (const r of RECTS) {
   for (const v of VIEWPORTS) {
     const { extW, extH } = gridWorldExtent(projection, r);
-    const k = containScale(extW, extH, v.w, v.h);
+    const k = coverScale(extW, extH, v.w, v.h);
     // One of the two ratios must equal k, i.e. that axis fits edge to edge.
     const tight =
       Math.abs(k - v.w / extW) < 1e-9 || Math.abs(k - v.h / extH) < 1e-9;
@@ -108,25 +113,28 @@ for (const r of RECTS) {
   }
 }
 
-console.log('\nCover (the old behaviour) genuinely fails this invariant:');
+console.log('\nContain (the rejected behaviour) genuinely fails this invariant:');
 {
   // Guard against the test being vacuous: the thing it checks must be capable of
-  // failing. Reproduce the old `Math.max` and confirm it loses the rectangle.
+  // failing. Reproduce `Math.min` and confirm it leaves blank map on screen —
+  // the empty bands above and below the data in IMG_6447 / IMG_6449.
   const r = RECTS[0];
   const v = { w: 375, h: 733 };
   const { tl, br, extW, extH } = gridWorldExtent(projection, r);
-  const coverK = Math.max(v.w / extW, v.h / extH);
+  const containK = Math.min(v.w / extW, v.h / extH);
   const c = gridWorldCenter(projection, r);
-  const t = { k: coverK, x: v.w / 2 - c[0] * coverK, y: v.h / 2 - c[1] * coverK };
-  const [x0] = toWorld(0, 0, t);
-  const [x1] = toWorld(v.w, v.h, t);
-  const visiblePct = ((x1 - x0) / extW) * 100;
+  const t = { k: containK, x: v.w / 2 - c[0] * containK, y: v.h / 2 - c[1] * containK };
+  const [, y0] = toWorld(0, 0, t);
+  const [, y1] = toWorld(v.w, v.h, t);
+  const blankPct = ((y1 - y0 - extH) / (y1 - y0)) * 100;
   check(
-    'cover loses longitude on portrait',
-    x0 > tl[0] && x1 < br[0],
-    `cover shows ${visiblePct.toFixed(1)}% of longitude`,
+    'contain leaves blank map above and below on portrait',
+    y0 < tl[1] && y1 > br[1],
+    `contain leaves ${blankPct.toFixed(1)}% of the screen blank`,
   );
-  console.log(`  (cover showed ${visiblePct.toFixed(1)}% of longitude; contain shows 100%)`);
+  console.log(
+    `  (contain left ${blankPct.toFixed(1)}% of the screen height blank; cover leaves 0%)`,
+  );
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
