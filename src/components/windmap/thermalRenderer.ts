@@ -3,6 +3,7 @@ import type { GeoProjection } from 'd3-geo';
 import { getThermalAt, effectiveWstar } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import { isOnLand } from './landMask';
+import { drawRegistered } from './groundRegistration';
 
 // ---------------------------------------------------------------------------
 // Overdevelopment risk signal
@@ -212,18 +213,12 @@ export function drawThermalOverlay(
   overlay: ThermalOverlayState,
   currentTransform: ZoomTransform,
 ) {
-  const built = overlay.builtTransform;
-  if (!built) return; // Nothing rasterised yet — drawing garbage is worse than drawing nothing.
-
-  const s = currentTransform.k / built.k;
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.filter = 'blur(5px)';
-  ctx.translate(currentTransform.x - s * built.x, currentTransform.y - s * built.y);
-  ctx.scale(s, s);
-  ctx.drawImage(overlay.canvas, 0, 0, overlay.spanX, overlay.spanY);
-  ctx.restore();
+  drawRegistered(ctx, overlay.canvas, overlay.builtTransform, currentTransform, {
+    smoothing: true,
+    blurPx: 5,
+    width: overlay.spanX,
+    height: overlay.spanY,
+  });
 }
 
 function rebuildThermalOverlay(

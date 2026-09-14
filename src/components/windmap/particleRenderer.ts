@@ -3,6 +3,7 @@ import { getWindAt, speedLUT, speedKnotsToLUTIndex, interpolateSetpoint, zoomKTo
 import type { WindGrid } from './windInterpolation';
 import type { GeoProjection } from 'd3-geo';
 import type { ZoomTransform } from 'd3-zoom';
+import { drawRegistered } from './groundRegistration';
 
 export interface Particle {
   x: number;
@@ -243,18 +244,12 @@ export function drawSpeedOverlay(
   overlay: SpeedOverlayState,
   currentTransform: ZoomTransform,
 ) {
-  const built = overlay.builtTransform;
-  if (!built) return; // Nothing rasterised yet.
-
-  const s = currentTransform.k / built.k;
-  ctx.save();
-  ctx.globalAlpha = 0.5;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.translate(currentTransform.x - s * built.x, currentTransform.y - s * built.y);
-  ctx.scale(s, s);
-  ctx.drawImage(overlay.canvas, 0, 0, overlay.spanX, overlay.spanY);
-  ctx.restore();
+  drawRegistered(ctx, overlay.canvas, overlay.builtTransform, currentTransform, {
+    alpha: 0.5,
+    smoothing: true,
+    width: overlay.spanX,
+    height: overlay.spanY,
+  });
 }
 
 export function maybeRebuildOverlay(

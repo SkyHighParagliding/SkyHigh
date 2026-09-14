@@ -1,6 +1,7 @@
 import type { ZoomTransform } from 'd3-zoom';
 import { CELL } from './thermalRenderer';
 import type { ThermalOverlayState } from './thermalRenderer';
+import { drawRegistered } from './groundRegistration';
 
 // ── Cumulus glyph lattice geometry ───────────────────────────────────────────
 //
@@ -297,21 +298,7 @@ export function drawCumulusField(
   field: CumulusFieldState,
   currentTransform: ZoomTransform,
 ): void {
-  const built = field.builtTransform;
-  if (!built) return;
-
-  // Affine correction: same derivation as in drawThermalOverlay.
-  // A projected point p lands at k_b*p + t_b in the baked canvas and
-  // k_c*p + t_c on screen now.  Eliminating p:
-  //   screen_now = (k_c/k_b) * baked + (t_c - (k_c/k_b)*t_b)
-  const s  = currentTransform.k / built.k;
-  const dx = currentTransform.x - s * built.x;
-  const dy = currentTransform.y - s * built.y;
-
-  ctx.save();
-  // No blur filter — the stipple must stay crisp; blur is only for the heat ramp.
-  ctx.translate(dx, dy);
-  ctx.scale(s, s);
-  ctx.drawImage(field.canvas, 0, 0);
-  ctx.restore();
+  // No blur and no forced smoothing — the stipple must stay crisp; blur is only
+  // for the heat ramp. Natural size, so no width/height.
+  drawRegistered(ctx, field.canvas, field.builtTransform, currentTransform);
 }
