@@ -25,10 +25,10 @@ import type { ThermalOverlayState } from './thermalRenderer';
 //
 // Staggering every second row by half the X pitch (brick / hex packing) stops
 // the glyphs reading as aligned columns while maintaining the tangent density.
-const CU_SIZE = 3.0;                         // overall glyph size multiplier (~3× the original 2–3.8 px range)
-const CU_R_NOM = 3.8 * CU_SIZE;              // radius at max depth — the lattice is sized to this (~11.4 px)
-const GLYPH_X_SPACING = 2.7 * CU_R_NOM;     // ~30.8 px — cloud width so horizontal neighbours are tangent
-const GLYPH_Y_SPACING = 1.2 * CU_R_NOM;     // ~13.7 px — cloud height so vertical neighbours are tangent
+const CU_SIZE = 2.25;                        // overall glyph size multiplier (~2.25× the original 2–3.8 px range)
+const CU_R_NOM = 3.8 * CU_SIZE;              // radius at max depth — the lattice is sized to this (~8.6 px)
+const GLYPH_X_SPACING = 2.7 * CU_R_NOM;     // ~23.1 px — cloud width so horizontal neighbours are tangent
+const GLYPH_Y_SPACING = 1.2 * CU_R_NOM;     // ~10.3 px — cloud height so vertical neighbours are tangent
 
 // OD warning triangles are drawn on a coarser, independent lattice.
 // 54 px is deliberately NOT tied to the cumulus pitch: the OD layer is a
