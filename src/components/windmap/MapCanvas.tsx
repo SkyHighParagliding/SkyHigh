@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { select } from 'd3-selection';
-import { geoMercator } from 'd3-geo';
 import type { GeoProjection } from 'd3-geo';
+import { createMapProjection, gridWorldExtent, gridWorldCenter, containScale } from './mapExtent';
 import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
 import type { ZoomTransform } from 'd3-zoom';
 import { tile as d3tile } from 'd3-tile';
@@ -145,32 +145,45 @@ export const MapCanvas = memo(function MapCanvas({
     const { width, height } = canvasSizeRef.current;
     if (width === 0 || height === 0) return;
 
-    const projection = geoMercator()
-      .scale(1 / (2 * Math.PI))
-      .translate([0, 0]);
+    const projection = createMapProjection();
     projectionRef.current = projection;
+
+    // The grid rectangle in projected world coordinates. Computed before the
+    // initial transform because minK bounds that transform too — see clampK.
+    // containScale is CONTAIN, not cover; the reasoning and the regression it
+    // fixes are documented in mapExtent.ts and pinned by mapExtent.test.mjs.
+    const { tl: gridTL, br: gridBR, extW, extH } = gridWorldExtent(projection, bounds);
+    const maxK = 256 * Math.pow(2, 20);
+
+    // Not const: the floor depends on the viewport, which changes without
+    // remounting (phone rotation, window resize, expanding to fullscreen). The
+    // ResizeObserver below recomputes it — otherwise the floor stays pinned to
+    // whatever size the map happened to mount at.
+    let minK = containScale(extW, extH, width, height);
+
+    // d3-zoom clamps to scaleExtent on the first gesture, so an initial k outside
+    // [minK, maxK] shows up as a jump the moment the user touches the map. Clamp
+    // every initial transform through the same range instead.
+    const clampK = (k: number) => Math.min(maxK, Math.max(minK, k));
 
     let initialTransform: ReturnType<typeof zoomIdentity.translate>;
     const markers = siteMarkersRef.current;
     if (markers && markers.length > 1) {
-      let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : fallbackZoomK;
-      const useCenterLon = savedCenterLon ?? (bounds.lonMin + bounds.lonMax) / 2;
-      const useCenterLat = savedCenterLat ?? (bounds.latMin + bounds.latMax) / 2;
+      const savedK = savedZoom ? 256 * Math.pow(2, savedZoom) : fallbackZoomK;
 
-      if (!useK) {
-        const topLeft = projection([bounds.lonMin, bounds.latMax])!;
-        const bottomRight = projection([bounds.lonMax, bounds.latMin])!;
-        const geoW = Math.abs(bottomRight[0] - topLeft[0]);
-        const geoH = Math.abs(bottomRight[1] - topLeft[1]);
-        const fitK = Math.min(width / geoW, height / geoH) * 0.95;
-        useK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 20)));
-      }
-      const centerPt = projection([useCenterLon, useCenterLat])!;
+      // With no admin-configured default, open showing the whole configured area,
+      // centred in world space rather than on the mid-latitude — see gridWorldCenter.
+      const useK = clampK(savedK || minK);
+      const gridCenter = gridWorldCenter(projection, bounds);
+      const centerPt =
+        savedCenterLon != null && savedCenterLat != null
+          ? projection([savedCenterLon, savedCenterLat])!
+          : gridCenter;
       initialTransform = zoomIdentity
         .translate(width / 2 - centerPt[0] * useK, height / 2 - centerPt[1] * useK)
         .scale(useK);
     } else {
-      const initialK = 256 * Math.pow(2, singleSiteZoom);
+      const initialK = clampK(256 * Math.pow(2, singleSiteZoom));
       const sitePixel = projection([siteLon, siteLat])!;
       initialTransform = zoomIdentity
         .translate(width / 2 - sitePixel[0] * initialK, height / 2 - sitePixel[1] * initialK)
@@ -202,14 +215,6 @@ export const MapCanvas = memo(function MapCanvas({
 
     // Allocate layer resources
     let layerResources: any[] = layers.map(l => l.create?.(width, height));
-
-    const gridTL = projection([bounds.lonMin, bounds.latMax])!;
-    const gridBR = projection([bounds.lonMax, bounds.latMin])!;
-    const extW = Math.abs(gridBR[0] - gridTL[0]);
-    const extH = Math.abs(gridBR[1] - gridTL[1]);
-    const fitK = Math.max(width / extW, height / extH);
-    const minK = Math.max(fitK, 256 * Math.pow(2, 3));
-    const maxK = 256 * Math.pow(2, 20);
 
     // Prefetch the 3×3 block of z12 terrain tiles around the current map centre
     // so that the next user tap usually hits the local fast path in elevationPoint.ts.
@@ -286,6 +291,23 @@ export const MapCanvas = memo(function MapCanvas({
             // Dispose old layer resources and reallocate for new dimensions.
             layerResources.forEach((r, i) => layers[i].dispose?.(r));
             layerResources = layers.map(l => l.create?.(w, h));
+
+            // Re-fit the zoom floor to the new viewport. Growing the map lowers
+            // the floor; shrinking it raises the floor above the current scale,
+            // so the existing transform has to be pushed back through d3 rather
+            // than left behind — d3 only re-applies scaleExtent on the next
+            // gesture, which would show up as a jump on first touch.
+            minK = containScale(extW, extH, w, h);
+            zoom.scaleExtent([minK, maxK]);
+            if (transformRef.current.k < minK) {
+              const center = gridWorldCenter(projection, bounds);
+              d3Container.call(
+                (zoom as Parameters<typeof d3Container.call>[0]).transform,
+                zoomIdentity
+                  .translate(w / 2 - center[0] * minK, h / 2 - center[1] * minK)
+                  .scale(minK),
+              );
+            }
           }
         }
       }

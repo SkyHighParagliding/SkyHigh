@@ -16,7 +16,8 @@
     "lint:migrations": "node scripts/lint-migrations.mjs",
     "eval:search": "node scripts/eval-smart-search.mjs",
     "bake:landmask": "node scripts/bake-land-mask.mjs --bake --write",
-    "test:landmask": "node --import tsx/esm shared/landMask.test.mjs"
+    "test:landmask": "node --import tsx/esm shared/landMask.test.mjs",
+    "test:mapextent": "node --import tsx/esm src/components/windmap/mapExtent.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1034.0",
