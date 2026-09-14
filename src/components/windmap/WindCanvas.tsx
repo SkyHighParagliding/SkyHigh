@@ -1,21 +1,15 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { select } from 'd3-selection';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { zoomIdentity } from 'd3-zoom';
 import { geoMercator } from 'd3-geo';
-import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
-import { tile as d3tile } from 'd3-tile';
 import { DEFAULT_ZOOM_SETPOINTS } from '../windMapTypes';
-import { toMelbourneDate } from '@/utils/closureStatus';
 import type { ZoomSetpoints, SiteMarker } from '../windMapTypes';
 import { getWindAt } from './windInterpolation';
 import type { WindGrid } from './windInterpolation';
 import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRebuildOverlay, drawSpeedOverlay } from './particleRenderer';
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
 import { fetchElevationAt } from './elevationPoint';
-import { tileCoordsFor, prefetchTile } from './terrainTiles';
-
-const TILE_CACHE_MAX = 200;
-
-type TileResult = ReturnType<ReturnType<typeof d3tile>>;
+import { MapCanvas } from './MapCanvas';
+import type { MapLayer, MapPin } from './MapCanvas';
 
 interface WindCanvasProps {
   windGrid: WindGrid;
@@ -45,17 +39,10 @@ export const WindCanvas = memo(function WindCanvas({
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, siteStatus, siteUpcomingClosureDates,
 }: WindCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [crosshair, setCrosshair] = useState<{ x: number, y: number } | null>(null);
-  const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number, y: number } | null>(null);
-
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
   const zoomSetpointsRef = useRef(zoomSetpoints);
   zoomSetpointsRef.current = zoomSetpoints;
-  const pinnedCrosshairRef = useRef(pinnedCrosshair);
-  pinnedCrosshairRef.current = pinnedCrosshair;
   const onWindInfoChangeRef = useRef(onWindInfoChange);
   onWindInfoChangeRef.current = onWindInfoChange;
   // Ground elevation for the pinned point. The readout below re-emits at 10fps,
@@ -73,360 +60,128 @@ export const WindCanvas = memo(function WindCanvas({
   const currentTimeRef = useRef(currentTime);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
   const transformRef = useRef(zoomIdentity);
-  const initialTransformApplied = useRef(false);
-  const canvasSizeRef = useRef({ width: 0, height: 0 });
+
+  // pinnedCrosshair as React state to drive the readout layer trigger.
+  const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number; y: number } | null>(null);
+  const pinnedCrosshairRef = useRef(pinnedCrosshair);
+  pinnedCrosshairRef.current = pinnedCrosshair;
+
+  // Wind info throttle: update at most 10fps to avoid flooding parent state.
+  // Stored in a ref so it persists across the rAF loop without closure re-capture.
+  const lastWindInfoUpdateRef = useRef(0);
 
   useEffect(() => {
     currentTimeRef.current = currentTime;
   }, [currentTime]);
 
-  useEffect(() => {
-    if (!containerRef.current || !canvasRef.current) return;
-    const width = containerRef.current.clientWidth;
-    const height = containerRef.current.clientHeight;
-    canvasSizeRef.current = { width, height };
-    canvasRef.current.width = width;
-    canvasRef.current.height = height;
-    initialTransformApplied.current = false;
-    transformRef.current = zoomIdentity;
-  }, [sizeKey]);
+  const bounds = useMemo(() => {
+    const g = windGrid.wideGrid ?? windGrid;
+    return { lonMin: g.lonMin, lonMax: g.lonMax, latMin: g.latMin, latMax: g.latMax };
+  }, [windGrid]);
 
-  useEffect(() => {
-    if (!containerRef.current || !canvasRef.current || !windGrid) return;
-
-    const { width, height } = canvasSizeRef.current;
-    if (width === 0 || height === 0) return;
-
-    const projection = geoMercator()
-      .scale(1 / (2 * Math.PI))
-      .translate([0, 0]);
-    projectionRef.current = projection;
-
-    let initialTransform: ReturnType<typeof zoomIdentity.translate>;
-    const markers = siteMarkersRef.current;
-    if (markers && markers.length > 1) {
-      let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : initialZoomK;
-      const centerGrid = windGrid.wideGrid ?? windGrid;
-      const useCenterLon = savedCenterLon ?? (centerGrid.lonMin + centerGrid.lonMax) / 2;
-      const useCenterLat = savedCenterLat ?? (centerGrid.latMin + centerGrid.latMax) / 2;
-
-      if (!useK) {
-        const focusGrid = windGrid.wideGrid ?? windGrid;
-        const padding = 0;
-        const latRange = (focusGrid.latMax - focusGrid.latMin) * (1 + padding * 2);
-        const lonRange = (focusGrid.lonMax - focusGrid.lonMin) * (1 + padding * 2);
-        const topLeft = projection([focusGrid.lonMin - lonRange * padding, focusGrid.latMax + latRange * padding])!;
-        const bottomRight = projection([focusGrid.lonMax + lonRange * padding, focusGrid.latMin - latRange * padding])!;
-        const geoW = Math.abs(bottomRight[0] - topLeft[0]);
-        const geoH = Math.abs(bottomRight[1] - topLeft[1]);
-        const fitK = Math.min(width / geoW, height / geoH) * 0.95;
-        useK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 20)));
-      }
-      const centerPt = projection([useCenterLon, useCenterLat])!;
-      initialTransform = zoomIdentity
-        .translate(width / 2 - centerPt[0] * useK, height / 2 - centerPt[1] * useK)
-        .scale(useK);
-    } else {
-      const targetZoom = 9;
-      const initialK = 256 * Math.pow(2, targetZoom);
-      const sitePixel = projection([siteLon, siteLat])!;
-      initialTransform = zoomIdentity
-        .translate(width / 2 - sitePixel[0] * initialK, height / 2 - sitePixel[1] * initialK)
-        .scale(initialK);
-    }
-
-    if (!initialTransformApplied.current) {
-      transformRef.current = initialTransform;
-      initialTransformApplied.current = true;
-    }
-
-    const tileCache = new Map<string, HTMLImageElement>();
-    const loadTile = (key: string, url: string): HTMLImageElement | null => {
-      if (tileCache.has(key)) return tileCache.get(key)!;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onerror = () => tileCache.delete(key);
-      img.src = url;
-      if (tileCache.size >= TILE_CACHE_MAX) {
-        tileCache.delete(tileCache.keys().next().value!);
-      }
-      tileCache.set(key, img);
-      return null;
-    };
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let overlay = createSpeedOverlay(width, height);
-    let particles = createParticlePool(width, height);
-
-    const extentGrid = windGrid.wideGrid ?? windGrid;
-    const gridTL = projection([extentGrid.lonMin, extentGrid.latMax])!;
-    const gridBR = projection([extentGrid.lonMax, extentGrid.latMin])!;
-    const extW = Math.abs(gridBR[0] - gridTL[0]);
-    const extH = Math.abs(gridBR[1] - gridTL[1]);
-    const fitWidthK = width / extW;
-    const fitHeightK = height / extH;
-    const fitK = Math.max(fitWidthK, fitHeightK);
-    const minK = Math.max(fitK, 256 * Math.pow(2, 3));
-    const maxK = 256 * Math.pow(2, 20);
-
-    // Prefetch the 3×3 block of z12 terrain tiles around the current map centre
-    // so that the next user tap usually hits the local fast path in elevationPoint.ts.
-    // One z12 tile ≈ 9.6 × 7.5 km, so a 3×3 block covers ~29 × 22 km — more than
-    // any site-level view shows.  9 tiles × ~20 KB ≈ 180 KB per pan/zoom settle.
-    let prefetchTimer: ReturnType<typeof setTimeout> | null = null;
-    const schedulePrefetch = () => {
-      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
-      prefetchTimer = setTimeout(() => {
-        prefetchTimer = null;
-        const proj = projectionRef.current;
-        const t = transformRef.current;
-        const { width: cw, height: ch } = canvasSizeRef.current;
-        if (!proj || cw === 0 || ch === 0) return;
-        const screen = t.invert([cw / 2, ch / 2]);
-        const geo = proj.invert!(screen);
-        if (!geo) return;
-        const [lon, lat] = geo;
-        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-        const { x: cx, y: cy } = tileCoordsFor(lon, lat);
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            void prefetchTile(cx + dx, cy + dy);
-          }
+  const layers = useMemo((): MapLayer<any>[] => [
+    // Layer A: speed overlay (raster heatmap).
+    {
+      create: (w: number, h: number) => createSpeedOverlay(w, h),
+      dispose: (o: ReturnType<typeof createSpeedOverlay>) => {
+        if (o.rebuildTimeout) clearTimeout(o.rebuildTimeout);
+      },
+      draw: (c, o: ReturnType<typeof createSpeedOverlay>) => {
+        maybeRebuildOverlay(o, c.transform, c.transformRef, c.projection, currentTimeRef, windGrid);
+        drawSpeedOverlay(c.ctx, o, c.transform);
+      },
+    },
+    // Layer B: particle trails.
+    {
+      create: (w: number, h: number) => createParticlePool(w, h),
+      draw: (c, p: ReturnType<typeof createParticlePool>) => {
+        updateAndDrawParticles(c.ctx, p, c.width, c.height, c.transform, c.projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
+      },
+    },
+    // Layer C: site markers.
+    {
+      draw: (c) => {
+        const markersLocal = siteMarkersRef.current;
+        if (markersLocal && markersLocal.length > 0) {
+          drawSiteMarkers(c.ctx, markersLocal, c.transform, c.projection, c.todayStr);
+        } else {
+          drawSingleSiteMarker(c.ctx, c.transform, c.projection, siteLon, siteLat, c.todayStr, siteName, siteStatusRef.current, siteUpcomingClosureDatesRef.current);
         }
-      }, 300);
-    };
+      },
+    },
+    // Layer D: wind info readout — throttled to 10fps.
+    {
+      draw: (c) => {
+        // lastWindInfoUpdate lives in a ref so it survives re-renders without
+        // resetting mid-frame (matching the original per-effect-closure behaviour).
+        const now = performance.now();
+        if (pinnedCrosshairRef.current && now - lastWindInfoUpdateRef.current > 100) {
+          lastWindInfoUpdateRef.current = now;
+          const crosshair = pinnedCrosshairRef.current;
+          const inverted = c.transform.invert([crosshair.x, crosshair.y]);
+          const geo = c.projection.invert!(inverted);
+          if (geo) {
+            const wind = getWindAt(geo[0], geo[1], currentTimeRef.current, windGrid);
+            if (wind) {
+              const speedMs = Math.sqrt(wind[0] ** 2 + wind[1] ** 2);
+              let dir = (Math.atan2(-wind[0], -wind[1]) * 180) / Math.PI;
+              if (dir < 0) dir += 360;
 
-    const zoom = d3Zoom<HTMLDivElement, unknown>()
-      .scaleExtent([minK, maxK])
-      .translateExtent([[gridTL[0], gridTL[1]], [gridBR[0], gridBR[1]]])
-      .on('zoom', (event) => {
-        const t = event.transform;
-        transformRef.current = t;
-        onZoomChange(t.k);
+              // Dispatch one elevation lookup per pin position. Recording the key
+              // before the request resolves is what stops the render loop from
+              // firing a duplicate on every subsequent frame.
+              const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
+              if (elevationPinRef.current?.key !== pinKey) {
+                elevationPinRef.current = { key: pinKey };
+                const seq = ++elevationSeqRef.current;
+                fetchElevationAt(geo[0], geo[1]).then(metres => {
+                  // Ignore a superseded lookup so the pin can't show another point's ground.
+                  if (seq !== elevationSeqRef.current || metres === null) return;
+                  elevationPinRef.current = { key: pinKey, value: metres };
+                });
+              }
 
-        if (onTransformChange) {
-          const { width: cw, height: ch } = canvasSizeRef.current;
-          const inverted = projection.invert([(cw / 2 - t.x) / t.k, (ch / 2 - t.y) / t.k]);
-          if (inverted) {
-            onTransformChange(inverted[1], inverted[0], Math.log2(t.k / 256));
-          }
-        }
-        schedulePrefetch();
-      });
-
-    const d3Container = select(containerRef.current);
-    d3Container.call(zoom as Parameters<typeof d3Container.call>[0]);
-    d3Container.call((zoom as Parameters<typeof d3Container.call>[0]).transform, transformRef.current);
-
-    // Warm the initial view immediately (debounce fires after 300 ms so it
-    // doesn't race the first render frame).
-    schedulePrefetch();
-
-    // todayStr refreshed every minute — computed once outside the render loop
-    let todayStr = toMelbourneDate(new Date());
-    const todayInterval = setInterval(() => {
-      todayStr = toMelbourneDate(new Date());
-    }, 60_000);
-
-    // d3tile result cached until transform or canvas size changes
-    let lastTileKey = '';
-    let lastTiles: TileResult | null = null;
-
-    // Wind info throttle: update at most 10fps to avoid flooding parent state
-    let lastWindInfoUpdate = 0;
-
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const { width: w, height: h } = entry.contentRect;
-        if (w > 0 && h > 0 && canvasRef.current) {
-          // Guard: only reset canvas (which clears context state) when dimensions actually change (#3).
-          if (w !== canvasSizeRef.current.width || h !== canvasSizeRef.current.height) {
-            canvasSizeRef.current = { width: w, height: h };
-            canvasRef.current.width = w;
-            canvasRef.current.height = h;
-            // Rebuild overlay and particles for new dimensions; clear any pending rebuild timeout (#2).
-            if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
-            overlay = createSpeedOverlay(w, h);
-            particles = createParticlePool(w, h);
-          }
-        }
-      }
-    });
-    if (containerRef.current) resizeObserver.observe(containerRef.current);
-
-    let animationFrameId: number;
-
-    const render = () => {
-      const currentTransform = transformRef.current;
-      const { width: w, height: h } = canvasSizeRef.current;
-      if (w === 0 || h === 0) {
-        animationFrameId = requestAnimationFrame(render);
-        return;
-      }
-
-      const tileKey = `${w}|${h}|${currentTransform.k.toFixed(1)}|${currentTransform.x.toFixed(1)}|${currentTransform.y.toFixed(1)}`;
-      if (tileKey !== lastTileKey || !lastTiles) {
-        const tileLayout = d3tile()
-          .size([w, h])
-          .scale(currentTransform.k)
-          .translate([currentTransform.x, currentTransform.y]);
-        lastTiles = tileLayout();
-        lastTileKey = tileKey;
-      }
-      const tiles = lastTiles;
-
-      const dpr = window.devicePixelRatio || 1;
-
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillRect(0, 0, w, h);
-
-      for (const d of tiles) {
-        const tileKey2 = `${d[2]}/${d[0]}/${d[1]}`;
-        const url = `https://basemaps.cartocdn.com/rastertiles/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png?key=${import.meta.env.VITE_CARTO_API_KEY}`;
-        const img = loadTile(tileKey2, url);
-        if (img && img.complete && img.naturalWidth > 0) {
-          const x = (d[0] + tiles.translate[0]) * tiles.scale;
-          const y = (d[1] + tiles.translate[1]) * tiles.scale;
-          ctx.drawImage(img, x, y, tiles.scale, tiles.scale);
-        }
-      }
-
-      maybeRebuildOverlay(overlay, currentTransform, transformRef, projection, currentTimeRef, windGrid);
-      drawSpeedOverlay(ctx, overlay, currentTransform);
-
-      updateAndDrawParticles(ctx, particles, w, h, currentTransform, projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
-
-      const markersLocal = siteMarkersRef.current;
-      if (markersLocal && markersLocal.length > 0) {
-        drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr);
-      } else {
-        drawSingleSiteMarker(ctx, currentTransform, projection, siteLon, siteLat, todayStr, siteName, siteStatusRef.current, siteUpcomingClosureDatesRef.current);
-      }
-
-      // Wind info for pinned crosshair — throttled to 10fps
-      const now = performance.now();
-      if (pinnedCrosshairRef.current && now - lastWindInfoUpdate > 100) {
-        lastWindInfoUpdate = now;
-        const crosshair = pinnedCrosshairRef.current;
-        const inverted = currentTransform.invert([crosshair.x, crosshair.y]);
-        const geo = projection.invert!(inverted);
-        if (geo) {
-          const wind = getWindAt(geo[0], geo[1], currentTimeRef.current, windGrid);
-          if (wind) {
-            const speedMs = Math.sqrt(wind[0] ** 2 + wind[1] ** 2);
-            let dir = (Math.atan2(-wind[0], -wind[1]) * 180) / Math.PI;
-            if (dir < 0) dir += 360;
-
-            // Dispatch one elevation lookup per pin position. Recording the key
-            // before the request resolves is what stops the render loop from
-            // firing a duplicate on every subsequent frame.
-            const pinKey = `${geo[0].toFixed(4)},${geo[1].toFixed(4)}`;
-            if (elevationPinRef.current?.key !== pinKey) {
-              elevationPinRef.current = { key: pinKey };
-              const seq = ++elevationSeqRef.current;
-              fetchElevationAt(geo[0], geo[1]).then(metres => {
-                // Ignore a superseded lookup so the pin can't show another point's ground.
-                if (seq !== elevationSeqRef.current || metres === null) return;
-                elevationPinRef.current = { key: pinKey, value: metres };
+              onWindInfoChangeRef.current?.({
+                speed: speedMs * 1.94384,
+                direction: dir,
+                groundAmsl: elevationPinRef.current?.value,
               });
+            } else {
+              onWindInfoChangeRef.current?.(null);
             }
-
-            onWindInfoChangeRef.current?.({
-              speed: speedMs * 1.94384,
-              direction: dir,
-              groundAmsl: elevationPinRef.current?.value,
-            });
-          } else {
-            onWindInfoChangeRef.current?.(null);
           }
         }
-      }
+      },
+    },
+  ], [windGrid, siteLat, siteLon, siteName]);
 
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
-      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
-      clearInterval(todayInterval);
-      resizeObserver.disconnect();
-    };
-  }, [windGrid, siteLat, siteLon, siteName, onZoomChange, savedCenterLat, savedCenterLon, savedZoom, sizeKey, onTransformChange, initialZoomK]);
-
-  const handlePointer = (e: React.PointerEvent) => {
-    if (!containerRef.current) return;
-    if (e.pointerType === 'touch') return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  const handlePointerLeave = () => {
-    setCrosshair(null);
-  };
-
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setPinnedCrosshair({ x, y });
-
-    if (projectionRef.current && siteMarkersRef.current && onSiteClick) {
-      const currentTransform = transformRef.current;
-      for (const site of siteMarkersRef.current) {
-        const proj = projectionRef.current([site.lon, site.lat]);
-        if (!proj) continue;
-        const sp = currentTransform.apply(proj);
-        const dist = Math.sqrt((sp[0] - x) ** 2 + (sp[1] - y) ** 2);
-        if (dist < 12) {
-          onSiteClick(site, x, y);
-          return;
-        }
-      }
-    }
-  }, [onSiteClick]);
+  const handlePinChange = useCallback((pin: MapPin) => {
+    setPinnedCrosshair(pin);
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"
-      onPointerMove={handlePointer}
-      onPointerDown={handlePointer}
-      onPointerLeave={handlePointerLeave}
-      onClick={handleClick}
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      />
-      <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]" />
-
-      {crosshair && (
-        <div
-          className="absolute pointer-events-none"
-          style={{ left: crosshair.x, top: crosshair.y }}
-        >
-          <div className="absolute w-6 h-px bg-white/40 -left-3 top-0" />
-          <div className="absolute h-6 w-px bg-white/40 left-0 -top-3" />
-        </div>
-      )}
-
-      {pinnedCrosshair && (
-        <div
-          className="absolute pointer-events-none"
-          style={{ left: pinnedCrosshair.x, top: pinnedCrosshair.y }}
-        >
-          <div className="absolute w-3 h-px bg-sky-400/80 -left-1.5 top-0" />
-          <div className="absolute h-3 w-px bg-sky-400/80 left-0 -top-1.5" />
-        </div>
-      )}
-    </div>
+    <MapCanvas
+      bounds={bounds}
+      siteLat={siteLat}
+      siteLon={siteLon}
+      singleSiteZoom={9}
+      fallbackZoomK={initialZoomK}
+      siteMarkers={siteMarkers}
+      savedCenterLat={savedCenterLat}
+      savedCenterLon={savedCenterLon}
+      savedZoom={savedZoom}
+      sizeKey={sizeKey}
+      layers={layers}
+      onTransformChange={onTransformChange}
+      onZoomChange={onZoomChange}
+      onSiteClick={onSiteClick}
+      markerHitSuppressesPin={false}
+      onPinChange={handlePinChange}
+      projectionRef={projectionRef}
+      transformRef={transformRef}
+      containerClassName="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"
+      hoverCrosshairClassName="bg-white/40"
+      pinnedCrosshairClassName="bg-sky-400/80"
+    />
   );
 });

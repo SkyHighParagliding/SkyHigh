@@ -1,22 +1,15 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { select } from 'd3-selection';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { zoomIdentity } from 'd3-zoom';
 import { geoMercator } from 'd3-geo';
-import { zoom as d3Zoom, zoomIdentity } from 'd3-zoom';
-import { tile as d3tile } from 'd3-tile';
 import type { SiteMarker } from '../windMapTypes';
-import { toMelbourneDate } from '@/utils/closureStatus';
 import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import { fetchElevationAt } from './elevationPoint';
-import { tileCoordsFor, prefetchTile } from './terrainTiles';
 import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
 import { createCumulusField, rebuildCumulusField, drawCumulusField } from './cumulusField';
-import type { CumulusFieldState } from './cumulusField';
 import { drawSiteMarkers } from './siteMarkerRenderer';
-
-const TILE_CACHE_MAX = 200;
-
-type TileResult = ReturnType<ReturnType<typeof d3tile>>;
+import { MapCanvas } from './MapCanvas';
+import type { MapLayer, MapPin } from './MapCanvas';
 
 interface ThermalCanvasProps {
   thermalGrid: ThermalGrid;
@@ -39,15 +32,8 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange,
 }: ThermalCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [crosshair, setCrosshair] = useState<{ x: number; y: number } | null>(null);
-  const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number; y: number } | null>(null);
-
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
-  const pinnedCrosshairRef = useRef(pinnedCrosshair);
-  pinnedCrosshairRef.current = pinnedCrosshair;
   const onThermalInfoChangeRef = useRef(onThermalInfoChange);
   onThermalInfoChangeRef.current = onThermalInfoChange;
 
@@ -58,232 +44,47 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   const elevationForPinRef = useRef<{ key: string; value: number } | null>(null);
   const projectionRef = useRef<ReturnType<typeof geoMercator> | null>(null);
   const transformRef = useRef(zoomIdentity);
-  const initialTransformApplied = useRef(false);
-  const canvasSizeRef = useRef({ width: 0, height: 0 });
+
+  // pinnedCrosshair as React state so the useEffect below re-runs when the pin moves.
+  const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
 
-  useEffect(() => {
-    if (!containerRef.current || !canvasRef.current) return;
-    const width = containerRef.current.clientWidth;
-    const height = containerRef.current.clientHeight;
-    canvasSizeRef.current = { width, height };
-    canvasRef.current.width = width;
-    canvasRef.current.height = height;
-    initialTransformApplied.current = false;
-    transformRef.current = zoomIdentity;
-  }, [sizeKey]);
+  const bounds = useMemo(() => ({
+    lonMin: thermalGrid.lonMin,
+    lonMax: thermalGrid.lonMax,
+    latMin: thermalGrid.latMin,
+    latMax: thermalGrid.latMax,
+  }), [thermalGrid]);
 
-  useEffect(() => {
-    if (!containerRef.current || !canvasRef.current || !thermalGrid) return;
-
-    const { width, height } = canvasSizeRef.current;
-    if (width === 0 || height === 0) return;
-
-    const projection = geoMercator().scale(1 / (2 * Math.PI)).translate([0, 0]);
-    projectionRef.current = projection;
-
-    // Calculate initial transform to fit Victoria
-    let initialTransform: ReturnType<typeof zoomIdentity.translate>;
-    const markers = siteMarkersRef.current;
-    if (markers && markers.length > 1) {
-      let useK = savedZoom ? 256 * Math.pow(2, savedZoom) : undefined;
-      const useCenterLon = savedCenterLon ?? (thermalGrid.lonMin + thermalGrid.lonMax) / 2;
-      const useCenterLat = savedCenterLat ?? (thermalGrid.latMin + thermalGrid.latMax) / 2;
-
-      if (!useK) {
-        const tl = projection([thermalGrid.lonMin, thermalGrid.latMax])!;
-        const br = projection([thermalGrid.lonMax, thermalGrid.latMin])!;
-        const geoW = Math.abs(br[0] - tl[0]);
-        const geoH = Math.abs(br[1] - tl[1]);
-        const fitK = Math.min(width / geoW, height / geoH) * 0.95;
-        useK = Math.max(256 * Math.pow(2, 6), Math.min(fitK, 256 * Math.pow(2, 20)));
-      }
-      const centerPt = projection([useCenterLon, useCenterLat])!;
-      initialTransform = zoomIdentity
-        .translate(width / 2 - centerPt[0] * useK, height / 2 - centerPt[1] * useK)
-        .scale(useK);
-    } else {
-      const targetZoom = savedZoom ?? 9;
-      const initialK = 256 * Math.pow(2, targetZoom);
-      const sitePixel = projection([siteLon, siteLat])!;
-      initialTransform = zoomIdentity
-        .translate(width / 2 - sitePixel[0] * initialK, height / 2 - sitePixel[1] * initialK)
-        .scale(initialK);
-    }
-
-    if (!initialTransformApplied.current) {
-      transformRef.current = initialTransform;
-      initialTransformApplied.current = true;
-    }
-
-    const tileCache = new Map<string, HTMLImageElement>();
-    const loadTile = (key: string, url: string): HTMLImageElement | null => {
-      if (tileCache.has(key)) return tileCache.get(key)!;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onerror = () => tileCache.delete(key);
-      img.src = url;
-      if (tileCache.size >= TILE_CACHE_MAX) tileCache.delete(tileCache.keys().next().value!);
-      tileCache.set(key, img);
-      return null;
-    };
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let overlay = createThermalOverlay(width, height);
-    let field: CumulusFieldState = createCumulusField(width, height);
-
-    const gridTL = projection([thermalGrid.lonMin, thermalGrid.latMax])!;
-    const gridBR = projection([thermalGrid.lonMax, thermalGrid.latMin])!;
-    const extW = Math.abs(gridBR[0] - gridTL[0]);
-    const extH = Math.abs(gridBR[1] - gridTL[1]);
-    const fitK = Math.max(width / extW, height / extH);
-    const minK = Math.max(fitK, 256 * Math.pow(2, 3));
-    const maxK = 256 * Math.pow(2, 20);
-
-    // Prefetch the 3×3 block of z12 terrain tiles around the current map centre
-    // so that the next user tap usually hits the local fast path in elevationPoint.ts.
-    // One z12 tile ≈ 9.6 × 7.5 km, so a 3×3 block covers ~29 × 22 km — more than
-    // any site-level view shows.  9 tiles × ~20 KB ≈ 180 KB per pan/zoom settle.
-    let prefetchTimer: ReturnType<typeof setTimeout> | null = null;
-    const schedulePrefetch = () => {
-      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
-      prefetchTimer = setTimeout(() => {
-        prefetchTimer = null;
-        const proj = projectionRef.current;
-        const t = transformRef.current;
-        const { width: cw, height: ch } = canvasSizeRef.current;
-        if (!proj || cw === 0 || ch === 0) return;
-        const screen = t.invert([cw / 2, ch / 2]);
-        const geo = proj.invert!(screen);
-        if (!geo) return;
-        const [lon, lat] = geo;
-        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-        const { x: cx, y: cy } = tileCoordsFor(lon, lat);
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            void prefetchTile(cx + dx, cy + dy);
-          }
-        }
-      }, 300);
-    };
-
-    const zoom = d3Zoom<HTMLDivElement, unknown>()
-      .scaleExtent([minK, maxK])
-      .translateExtent([[gridTL[0], gridTL[1]], [gridBR[0], gridBR[1]]])
-      .on('zoom', (event) => {
-        const t = event.transform;
-        transformRef.current = t;
-        if (onTransformChange) {
-          const { width: cw, height: ch } = canvasSizeRef.current;
-          const inverted = projection.invert!([(cw / 2 - t.x) / t.k, (ch / 2 - t.y) / t.k]);
-          if (inverted) onTransformChange(inverted[1], inverted[0], Math.log2(t.k / 256));
-        }
-        schedulePrefetch();
-      });
-
-    const d3Container = select(containerRef.current);
-    d3Container.call(zoom as Parameters<typeof d3Container.call>[0]);
-    d3Container.call((zoom as Parameters<typeof d3Container.call>[0]).transform, transformRef.current);
-
-    // Warm the initial view immediately (debounce fires after 300 ms so it
-    // doesn't race the first render frame).
-    schedulePrefetch();
-
-    let todayStr = toMelbourneDate(new Date());
-    const todayInterval = setInterval(() => { todayStr = toMelbourneDate(new Date()); }, 60_000);
-
-    let lastTileKey = '';
-    let lastTiles: TileResult | null = null;
-
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const { width: w, height: h } = entry.contentRect;
-        if (w > 0 && h > 0 && canvasRef.current) {
-          if (w !== canvasSizeRef.current.width || h !== canvasSizeRef.current.height) {
-            canvasSizeRef.current = { width: w, height: h };
-            canvasRef.current.width = w;
-            canvasRef.current.height = h;
-            if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
-            overlay = createThermalOverlay(w, h);
-            field = createCumulusField(w, h);
-          }
-        }
-      }
-    });
-    if (containerRef.current) resizeObserver.observe(containerRef.current);
-
-    let animationFrameId: number;
-
-    const render = () => {
-      const currentTransform = transformRef.current;
-      const { width: w, height: h } = canvasSizeRef.current;
-      if (w === 0 || h === 0) { animationFrameId = requestAnimationFrame(render); return; }
-
-      const tileKey = `${w}|${h}|${currentTransform.k.toFixed(1)}|${currentTransform.x.toFixed(1)}|${currentTransform.y.toFixed(1)}`;
-      if (tileKey !== lastTileKey || !lastTiles) {
-        const tileLayout = d3tile()
-          .size([w, h])
-          .scale(currentTransform.k)
-          .translate([currentTransform.x, currentTransform.y]);
-        lastTiles = tileLayout();
-        lastTileKey = tileKey;
-      }
-      const tiles = lastTiles;
-      const dpr = window.devicePixelRatio || 1;
-
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillRect(0, 0, w, h);
-
-      for (const d of tiles) {
-        const tileKey2 = `${d[2]}/${d[0]}/${d[1]}`;
-        const url = `https://basemaps.cartocdn.com/rastertiles/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png?key=${import.meta.env.VITE_CARTO_API_KEY}`;
-        const img = loadTile(tileKey2, url);
-        if (img && img.complete && img.naturalWidth > 0) {
-          const x = (d[0] + tiles.translate[0]) * tiles.scale;
-          const y = (d[1] + tiles.translate[1]) * tiles.scale;
-          ctx.drawImage(img, x, y, tiles.scale, tiles.scale);
-        }
-      }
-
-      maybeRebuildThermalOverlay(overlay, currentTransform, transformRef, projection, currentTimeRef, thermalGrid);
-      drawThermalOverlay(ctx, overlay, currentTransform);
-
-      // Cumulus stipple sits above the heat raster but below the site markers so
-      // pilots see the texture without it obscuring the interactive pin targets.
-      rebuildCumulusField(field, overlay, currentTransform);
-      drawCumulusField(ctx, field, currentTransform);
-
-      const markersLocal = siteMarkersRef.current;
-      if (markersLocal && markersLocal.length > 0) {
-        drawSiteMarkers(ctx, markersLocal, currentTransform, projection, todayStr, true);
-      }
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      if (overlay.rebuildTimeout) clearTimeout(overlay.rebuildTimeout);
-      if (prefetchTimer !== null) clearTimeout(prefetchTimer);
-      clearInterval(todayInterval);
-      resizeObserver.disconnect();
-    };
-  }, [thermalGrid, siteLat, siteLon, onTransformChange, savedCenterLat, savedCenterLon, savedZoom, sizeKey]);
-
-  const handlePointer = (e: React.PointerEvent) => {
-    if (!containerRef.current) return;
-    if (e.pointerType === 'touch') return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setCrosshair({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  const handlePointerLeave = () => setCrosshair(null);
+  const layers = useMemo((): MapLayer<any>[] => [
+    // Layer 0: combined thermal overlay + cumulus stipple.
+    // The cumulus rebuild needs the overlay object, so they share one create() return value.
+    // Cumulus stipple sits above the heat raster but below the site markers so
+    // pilots see the texture without it obscuring the interactive pin targets.
+    {
+      create: (w: number, h: number) => ({
+        overlay: createThermalOverlay(w, h),
+        field: createCumulusField(w, h),
+      }),
+      dispose: (res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
+        if (res.overlay.rebuildTimeout) clearTimeout(res.overlay.rebuildTimeout);
+      },
+      draw: (c, res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
+        maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid);
+        drawThermalOverlay(c.ctx, res.overlay, c.transform);
+        rebuildCumulusField(res.field, res.overlay, c.transform);
+        drawCumulusField(c.ctx, res.field, c.transform);
+      },
+    },
+    // Layer 1: site markers.
+    {
+      draw: (c) => {
+        const m = siteMarkersRef.current;
+        if (m && m.length > 0) drawSiteMarkers(c.ctx, m, c.transform, c.projection, c.todayStr, true);
+      },
+    },
+  ], [thermalGrid]);
 
   // Recompute thermal info when the time slider moves (while a pin is active),
   // and fetch ground elevation asynchronously. A stale-response guard on
@@ -322,53 +123,31 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     });
   }, [currentTime, thermalGrid, pinnedCrosshair]);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Check for site marker hit first
-    if (projectionRef.current && siteMarkersRef.current && onSiteClick) {
-      const currentTransform = transformRef.current;
-      for (const site of siteMarkersRef.current) {
-        const proj = projectionRef.current([site.lon, site.lat]);
-        if (!proj) continue;
-        const sp = currentTransform.apply(proj);
-        const dist = Math.sqrt((sp[0] - x) ** 2 + (sp[1] - y) ** 2);
-        if (dist < 12) { onSiteClick(site, x, y); return; }
-      }
-    }
-
-    // Pin the crosshair — the useEffect above will compute thermal info once
-    setPinnedCrosshair({ x, y });
-  }, [onSiteClick]);
+  const handlePinChange = useCallback((pin: MapPin) => {
+    setPinnedCrosshair(pin);
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"
-      onPointerMove={handlePointer}
-      onPointerDown={handlePointer}
-      onPointerLeave={handlePointerLeave}
-      onClick={handleClick}
-    >
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-      <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]" />
-
-      {crosshair && (
-        <div className="absolute pointer-events-none" style={{ left: crosshair.x, top: crosshair.y }}>
-          <div className="absolute w-6 h-px bg-black/30 -left-3 top-0" />
-          <div className="absolute h-6 w-px bg-black/30 left-0 -top-3" />
-        </div>
-      )}
-
-      {pinnedCrosshair && (
-        <div className="absolute pointer-events-none" style={{ left: pinnedCrosshair.x, top: pinnedCrosshair.y }}>
-          <div className="absolute w-3 h-px bg-orange-500/80 -left-1.5 top-0" />
-          <div className="absolute h-3 w-px bg-orange-500/80 left-0 -top-1.5" />
-        </div>
-      )}
-    </div>
+    <MapCanvas
+      bounds={bounds}
+      siteLat={siteLat}
+      siteLon={siteLon}
+      singleSiteZoom={savedZoom ?? 9}
+      siteMarkers={siteMarkers}
+      savedCenterLat={savedCenterLat}
+      savedCenterLon={savedCenterLon}
+      savedZoom={savedZoom}
+      sizeKey={sizeKey}
+      layers={layers}
+      onTransformChange={onTransformChange}
+      onSiteClick={onSiteClick}
+      markerHitSuppressesPin={true}
+      onPinChange={handlePinChange}
+      projectionRef={projectionRef}
+      transformRef={transformRef}
+      containerClassName="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"
+      hoverCrosshairClassName="bg-black/30"
+      pinnedCrosshairClassName="bg-orange-500/80"
+    />
   );
 });
