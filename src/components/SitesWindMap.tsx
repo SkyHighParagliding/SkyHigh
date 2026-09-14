@@ -84,6 +84,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
   const [liveView, setLiveView] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
+  // Mirror of liveView in a ref. The canvases take the saved viewport as a prop
+  // that sits in their setup effect's dependency array, and that effect resets
+  // initialTransformApplied — so feeding live state in directly would re-run it
+  // on every pan and re-apply the transform in a loop. The ref lets us read the
+  // current viewport without making it a render-visible dependency.
+  const liveViewRef = useRef<{ lat: number; lon: number; zoom: number } | null>(null);
+  // Viewport captured at the moment of a wind/thermal toggle. Changes only on
+  // toggle, so the incoming canvas mounts where the outgoing one was, and the
+  // setup effect still runs exactly once per switch.
+  const [viewportSnapshot, setViewportSnapshot] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
   // lat/k for the scale bar, derived from onTransformChange (which fires on both
   // WindCanvas and ThermalCanvas). k = 256 * 2^zoomLevel.
   const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: -37.8, k: INITIAL_K });
@@ -93,6 +103,13 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const savedLat = settings.windMapDefaultLat ? parseFloat(String(settings.windMapDefaultLat)) : undefined;
   const savedLon = settings.windMapDefaultLon ? parseFloat(String(settings.windMapDefaultLon)) : undefined;
   const savedZoom = settings.windMapDefaultZoom ? parseFloat(String(settings.windMapDefaultZoom)) : undefined;
+
+  // What the canvases actually mount at: the viewport carried across the most
+  // recent wind/thermal toggle, falling back to the admin-configured default on
+  // first load (when no toggle has happened yet).
+  const viewLat = viewportSnapshot?.lat ?? savedLat;
+  const viewLon = viewportSnapshot?.lon ?? savedLon;
+  const viewZoom = viewportSnapshot?.zoom ?? savedZoom;
 
   const todayFetcher = useCallback(async (): Promise<WindGrid> => {
     const res = await fetch('/api/weather/wind-overlay/full');
@@ -128,6 +145,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   }, [viewMode, thermalGrid]);
 
   const handleViewModeChange = useCallback((mode: 'wind' | 'thermal') => {
+    // Carry the current viewport across the switch. The two canvases are mounted
+    // in an either/or ternary, so the incoming one would otherwise initialise
+    // from the admin default and throw away wherever the pilot had panned to.
+    if (liveViewRef.current) setViewportSnapshot(liveViewRef.current);
     setViewMode(mode);
     setSelectedSite(null);
     if (mode === 'thermal') setMapMode('today');
@@ -230,6 +251,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   );
 
   const handleTransformChange = useCallback((lat: number, lon: number, zoom: number) => {
+    liveViewRef.current = { lat, lon, zoom };
     setLiveView({ lat, lon, zoom });
     setMapTransform({ lat, k: 256 * Math.pow(2, zoom) });
   }, []);
@@ -331,9 +353,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 onSiteClick={handleSiteClick}
                 onThermalInfoChange={setThermalInfo}
                 sizeKey={canvasSizeKey}
-                savedCenterLat={savedLat}
-                savedCenterLon={savedLon}
-                savedZoom={savedZoom}
+                savedCenterLat={viewLat}
+                savedCenterLon={viewLon}
+                savedZoom={viewZoom}
                 onTransformChange={handleTransformChange}
               />
             </Suspense>
@@ -356,9 +378,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               onWindInfoChange={setSitesWindInfo}
               sizeKey={canvasSizeKey}
               initialZoomK={INITIAL_K}
-              savedCenterLat={savedLat}
-              savedCenterLon={savedLon}
-              savedZoom={savedZoom}
+              savedCenterLat={viewLat}
+              savedCenterLon={viewLon}
+              savedZoom={viewZoom}
               onTransformChange={handleTransformChange}
             />
           </Suspense>
