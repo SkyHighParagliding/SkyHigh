@@ -70,3 +70,21 @@ export const nextSpeed = (current: PlaySpeed): PlaySpeed =>
  * target. The tray is also lifted clear of the indicator — see WindMapScrubberTray.
  */
 export const TRAY_HANDLE_HEIGHT_PX = 32;
+
+/**
+ * Bottom offset for the map scale bar while the scrubber tray is COLLAPSED.
+ *
+ * A collapsed tray is not off-screen. It is pushed down by its own height less
+ * the handle and less the home-indicator inset, so what remains on screen is the
+ * handle *plus* the top `env(safe-area-inset-bottom)` of the control bar — and
+ * the first thing in that control bar, at the same left-3 the scale bar uses, is
+ * the play button. At a flat `bottom: 8` the scale bar therefore landed on top
+ * of the play button on any inset device, which is why it was unreadable there
+ * and looked fine in a desktop browser, where the inset is 0 and the whole tray
+ * really is off-screen.
+ *
+ * Clearing the handle clears the control bar behind it too, since the handle
+ * sits above it. 8px of breathing room on top of that.
+ */
+export const SCALE_BAR_BOTTOM_COLLAPSED =
+  `calc(${TRAY_HANDLE_HEIGHT_PX + 8}px + env(safe-area-inset-bottom, 0px))`;

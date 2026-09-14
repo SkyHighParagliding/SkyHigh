@@ -6,7 +6,7 @@ import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K } from './windMapTypes';
+import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, SCALE_BAR_BOTTOM_COLLAPSED } from './windMapTypes';
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
@@ -832,11 +832,13 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       </div>
 
       {/* Scale bar — visible in every INFO state except the bare-map off state.
-          Shifts up when the scrubber tray is open so the tray doesn't cover it. */}
+          Shifts up when the scrubber tray is open so the tray doesn't cover it,
+          and clears the handle plus home-indicator inset when it is collapsed —
+          see SCALE_BAR_BOTTOM_COLLAPSED. */}
       {showOverlay && (
         <div
           className="absolute left-3 z-30 transition-[bottom] duration-300 pointer-events-none"
-          style={{ bottom: trayOpen ? 104 : 8 }}
+          style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
         >
           <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
         </div>

@@ -5,7 +5,7 @@ import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { fetchWindGridCached } from '@/lib/windGridCache';
-import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS } from './windMapTypes';
+import { INITIAL_K, getCompassDirection, SPEED_LEGEND_CSS, SCALE_BAR_BOTTOM_COLLAPSED } from './windMapTypes';
 import { WindCanvas } from './windmap/WindCanvas';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 
@@ -143,10 +143,12 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
           </div>
         </div>
 
-        {/* Scale bar — bottom-left, clears the tray handle when closed and the full tray when open */}
+        {/* Scale bar — bottom-left, clears the tray handle when closed and the
+            full tray when open. The closed offset has to clear the home-indicator
+            inset as well; see SCALE_BAR_BOTTOM_COLLAPSED. */}
         <div
           className="absolute left-3 z-30 transition-[bottom] duration-300"
-          style={{ bottom: trayOpen ? 104 : 8 }}
+          style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
         >
           <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
         </div>
