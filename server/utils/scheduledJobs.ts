@@ -287,7 +287,9 @@ export async function startScheduledJobs() {
   // On startup: catch up if grid data is stale (server started after scheduled window)
   await startupGridCheck();
 
-  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am, Extended at 5:40am (Melbourne time)
+  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am (fixed crons below).
+  // Extended/7-Day runs at the schedExtendedForecastHour/Minute setting (default 5:30am),
+  // triggered by the hourly cron further down — not a fixed cron here.
   cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
   log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
 
