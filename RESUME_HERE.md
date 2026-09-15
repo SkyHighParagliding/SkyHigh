@@ -9,10 +9,13 @@
 current branch: chore/remove-multi-branding
 ```
 
-**Session 62 executed the entire de-brand (all 4 waves) and it is verified
-green — but NOT merged and NOT pushed.** `main` is untouched. The next step is
-**Jon's manual pass** on local dev, then merge to `main` + push (Railway
-auto-deploys `main`).
+**Session 62 executed the entire de-brand (all 4 waves) + the Admin/Forecast
+rebuild + the thermal coastal inset, all verified green. The branch is PUSHED to
+`origin/chore/remove-multi-branding` (backed up / reviewable) but NOT merged and
+NOT deployed** — `main` is untouched and Railway only auto-deploys `main`. The
+next step is **Jon's manual pass** on local dev, then merge to `main` (which
+deploys). A PR can be opened at
+https://github.com/SkyHighParagliding/SkyHigh/pull/new/chore/remove-multi-branding
 
 ## Where I left off
 
