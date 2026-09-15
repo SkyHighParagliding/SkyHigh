@@ -552,22 +552,4 @@ export class DemoSimulation {
   getPhase(): SimPhase {
     return this.phase;
   }
-
-  reset() {
-    this.elapsedSeconds = 0;
-    this.flightSeconds = 0;
-    this.nextTurnAt = this.settings.turnIntervalMin;
-    this.phase = 'waiting';
-    this.reachedMax = false;
-    this.segmentSeconds = 0;
-    this.lat = this.config.launchLat;
-    this.lon = this.config.launchLon;
-    this.altitude = this.config.launchElevation;
-    const offset = (Math.random() * 2 - 1) * this.config.headingRange;
-    this.heading = (this.config.headingCenter + offset + 360) % 360;
-    this.thermalDone = false;
-    this.thermal = null;
-    this.placeThermal();
-    this.startClimbSegment();
-  }
 }

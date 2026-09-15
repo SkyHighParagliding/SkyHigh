@@ -2,7 +2,7 @@ import createLogger from './logger.js';
 
 const log = createLogger('errors');
 
-export interface ApiError {
+interface ApiError {
   error: string;
   code?: string;
   status: number;

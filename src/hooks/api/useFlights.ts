@@ -3,7 +3,6 @@ import { api } from '@/lib/apiClient';
 import { toast } from 'sonner';
 
 import type { Flight, FlightDetail } from '@/types/api';
-export type { Flight, Breadcrumb, FlightDetail } from '@/types/api';
 
 export const flightKeys = {
   all: ['flights'] as const,

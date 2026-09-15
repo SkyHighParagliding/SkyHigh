@@ -108,20 +108,6 @@ export interface ExternalSite {
 
 // ===== API Response Types (also defined in src/hooks/api/*.ts — keep in sync) =====
 
-export interface NewsItem {
-  id: string;
-  title: string;
-  slug: string;
-  summary: string;
-  content: string;
-  author: string;
-  category: string;
-  published: boolean;
-  publishedAt: string;
-  date?: string;
-  image: string;
-}
-
 export interface PageData {
   slug: string;
   title: string;
@@ -131,16 +117,6 @@ export interface PageData {
   createdAt: string;
   updatedAt: string;
   lastUpdated?: string;
-}
-
-export interface PageAttachment {
-  id: string;
-  pageSlug: string;
-  originalFilename: string;
-  fileSize: number;
-  mimeType: string;
-  downloadCount: number;
-  uploadedAt: string;
 }
 
 export interface Flight {
@@ -171,21 +147,6 @@ export interface Breadcrumb {
 
 export interface FlightDetail extends Flight {
   breadcrumbs: Breadcrumb[];
-}
-
-export interface Competition {
-  id: string;
-  name: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  pilotRating: string;
-  rulesSummary: string;
-  registrationUrl: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface BusinessListing {
@@ -229,18 +190,3 @@ export interface PublicContact {
   [key: string]: unknown;
 }
 
-export interface XCSite {
-  id: string;
-  name: string;
-  lat: string;
-  lon: string;
-  useLiveWeather: string;
-  [key: string]: unknown;
-}
-
-export interface ClosureBanner {
-  siteId: string;
-  siteName: string;
-  firstDate: string;
-  lastDate: string;
-}
