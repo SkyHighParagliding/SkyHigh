@@ -30,8 +30,8 @@ export function LocationConsentBanner() {
     <div className="fixed bottom-4 left-4 right-4 z-[9999] mx-auto max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div className="rounded-xl border border-border bg-card p-4 shadow-lg">
         <div className="flex items-start gap-3">
-          <div className="rounded-full bg-sky/10 p-2 shrink-0">
-            <MapPin className="w-5 h-5 text-sky" />
+          <div className="rounded-full bg-accent/10 p-2 shrink-0">
+            <MapPin className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground">

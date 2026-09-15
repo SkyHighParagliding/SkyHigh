@@ -39,7 +39,7 @@ function SafetyOfficerCard({ officer, displayName }: { officer: SafetyOfficer; d
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <Card className="hover:shadow-md transition-shadow border-t-4 border-t-sky">
+    <Card className="hover:shadow-md transition-shadow border-t-4 border-t-accent">
       <CardContent className="pt-6 text-center flex flex-col items-center">
         {officer.photoUrl && (
           <img
@@ -48,8 +48,8 @@ function SafetyOfficerCard({ officer, displayName }: { officer: SafetyOfficer; d
             className="w-20 h-20 rounded-lg object-cover border-2 border-border mb-3"
           />
         )}
-        <h3 className="font-bold text-lg text-navy">{displayName}</h3>
-        <p className="text-sm text-sky font-medium mb-2">{officer.safetyOfficerType === 'SSO' ? 'SSO' : 'SO'}</p>
+        <h3 className="font-bold text-lg text-ink">{displayName}</h3>
+        <p className="text-sm text-accent font-medium mb-2">{officer.safetyOfficerType === 'SSO' ? 'SSO' : 'SO'}</p>
         
         <div className="mt-4 pt-4 border-t border-border-faint min-h-[60px] flex flex-col justify-center">
           {!revealed ? (
@@ -108,7 +108,7 @@ function EmergencySection({ section }: { section: SafetySection }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="prose prose-sm max-w-none text-foreground-label [&_strong]:text-navy [&_a]:text-red-600 [&_a:hover]:underline">
+        <div className="prose prose-sm max-w-none text-foreground-label [&_strong]:text-ink [&_a]:text-red-600 [&_a:hover]:underline">
           <MarkdownWithWidgets content={section.content} />
         </div>
         {section.linkUrl && (
@@ -126,13 +126,13 @@ function EmergencySection({ section }: { section: SafetySection }) {
 function RulesSection({ section }: { section: SafetySection }) {
   return (
     <div className="mb-16">
-      <h2 className="text-3xl font-bold text-navy mb-8 border-b pb-4">{section.title}</h2>
-      <div className="bg-card p-8 rounded-xl shadow-sm border text-foreground-label prose prose-sm max-w-none [&_strong]:text-navy">
+      <h2 className="text-3xl font-bold text-ink mb-8 border-b pb-4">{section.title}</h2>
+      <div className="bg-card p-8 rounded-xl shadow-sm border text-foreground-label prose prose-sm max-w-none [&_strong]:text-ink">
         <MarkdownWithWidgets content={section.content} />
       </div>
       {section.linkUrl && (
         <div className="mt-4">
-          <Link to={section.linkUrl} className="text-sky font-semibold hover:underline text-sm flex items-center">
+          <Link to={section.linkUrl} className="text-accent font-semibold hover:underline text-sm flex items-center">
             {section.linkLabel || "Learn More"} <ExternalLink className="w-3.5 h-3.5 ml-1" />
           </Link>
         </div>
@@ -144,13 +144,13 @@ function RulesSection({ section }: { section: SafetySection }) {
 function CustomSection({ section }: { section: SafetySection }) {
   return (
     <div className="mb-16">
-      <h2 className="text-3xl font-bold text-navy mb-8 border-b pb-4">{section.title}</h2>
-      <div className="bg-card p-8 rounded-xl shadow-sm border text-foreground-label prose prose-sm max-w-none [&_strong]:text-navy [&_a]:text-sky [&_a:hover]:underline">
+      <h2 className="text-3xl font-bold text-ink mb-8 border-b pb-4">{section.title}</h2>
+      <div className="bg-card p-8 rounded-xl shadow-sm border text-foreground-label prose prose-sm max-w-none [&_strong]:text-ink [&_a]:text-accent [&_a:hover]:underline">
         <MarkdownWithWidgets content={section.content} />
       </div>
       {section.linkUrl && (
         <div className="mt-4">
-          <Link to={section.linkUrl} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky text-white font-medium hover:bg-sky-light transition-colors text-sm">
+          <Link to={section.linkUrl} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white font-medium hover:bg-accent-hover transition-colors text-sm">
             {section.linkLabel || "Learn More"} <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -181,20 +181,20 @@ export function Safety() {
     }
   }, [loading, hash]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div></div>;
   const error = officersError || sectionsError;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {(error as Error).message}</div>;
 
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
         </Link>
         
         <div className="text-center mb-16">
-          <ShieldAlert className="w-16 h-16 text-orange mx-auto mb-6" />
-          <h1 className="text-4xl md:text-5xl font-extrabold text-navy mb-4 tracking-tight">Safety & Rules</h1>
+          <ShieldAlert className="w-16 h-16 text-accent mx-auto mb-6" />
+          <h1 className="text-4xl md:text-5xl font-extrabold text-ink mb-4 tracking-tight">Safety & Rules</h1>
           <p className="text-xl text-foreground-secondary max-w-3xl mx-auto font-light">
             Safety is our highest priority. Familiarize yourself with our club rules, emergency procedures, and contact our Safety Officers if you have any concerns.
           </p>
@@ -211,7 +211,7 @@ export function Safety() {
         })}
 
         <div className="mb-16">
-          <h2 id="safety-officer-directory" className="text-3xl font-bold text-navy mb-8 border-b pb-4">Safety Officer Directory</h2>
+          <h2 id="safety-officer-directory" className="text-3xl font-bold text-ink mb-8 border-b pb-4">Safety Officer Directory</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {officers.map((officer) => (

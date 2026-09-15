@@ -195,7 +195,7 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
   if (!weather || weather.error) {
     return (
       <div className="rounded-2xl p-8 flex flex-col items-center text-center min-h-[200px] justify-center" style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 8px 30px rgba(0,0,0,0.06)' }}>
-        <CloudSun className="h-12 w-12 text-sky mb-4" />
+        <CloudSun className="h-12 w-12 text-accent mb-4" />
         <h3 className="font-bold text-xl mb-2" style={{ color: '#1d1d1f' }}>{site.name}</h3>
         <p className="text-sm text-muted-foreground mb-4 italic">
           {weather?.error ? "No weather data available" : "Fetching observations..."}
@@ -228,7 +228,7 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
         </button>
       </div>
       <div className="flex-1 min-h-0">
-        <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky"></div></div>}>
+        <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
           <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} siteStatus={site.status} siteUpcomingClosureDates={site.upcomingClosureDates} fullscreen />
         </Suspense>
       </div>

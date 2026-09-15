@@ -30,7 +30,7 @@ export function SponsorCard({ name, logo, url, markdown }: SponsorCardProps) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold text-navy group-hover:text-amber-800 transition-colors">
+            <h3 className="text-xl font-bold text-ink group-hover:text-amber-800 transition-colors">
               {name}
             </h3>
             {url && (
@@ -48,7 +48,7 @@ export function SponsorCard({ name, logo, url, markdown }: SponsorCardProps) {
         </div>
 
         {markdown && (
-          <div className="prose prose-sm max-w-none text-foreground-secondary prose-headings:text-navy prose-a:text-amber-600 hover:prose-a:text-amber-800 prose-strong:text-navy">
+          <div className="prose prose-sm max-w-none text-foreground-secondary prose-headings:text-ink prose-a:text-amber-600 hover:prose-a:text-amber-800 prose-strong:text-ink">
             <LazyMarkdown variant="raw">
               {markdown}
             </LazyMarkdown>

@@ -145,24 +145,24 @@ export function AdminSafety() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 mb-6">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Admin Dashboard
           </Link>
         </div>
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-navy">Safety & Rules Page</h1>
+            <h1 className="text-3xl font-bold text-ink">Safety & Rules Page</h1>
             <p className="text-foreground-secondary mt-1">Manage the content sections shown on the public Safety & Rules page.</p>
           </div>
-          <Link to="/safety" target="_blank" className="inline-flex items-center gap-1 text-sm text-sky hover:text-sky-light">
+          <Link to="/safety" target="_blank" className="inline-flex items-center gap-1 text-sm text-accent hover:text-accent-hover">
             View Page <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="space-y-4">
           {sections.map((section, idx) => (
-            <Card key={section.id} className={`border-l-4 ${section.enabled ? "border-l-sky" : "border-l-gray-300"} ${!section.enabled ? "opacity-60" : ""}`}>
+            <Card key={section.id} className={`border-l-4 ${section.enabled ? "border-l-accent" : "border-l-gray-300"} ${!section.enabled ? "opacity-60" : ""}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -172,10 +172,10 @@ export function AdminSafety() {
                         type="text"
                         value={section.title}
                         onChange={e => updateField(section.id, "title", e.target.value)}
-                        className="text-lg font-bold text-navy bg-transparent border-b-2 border-sky focus:outline-none flex-1"
+                        className="text-lg font-bold text-ink bg-transparent border-b-2 border-accent focus:outline-none flex-1"
                       />
                     ) : (
-                      <CardTitle className="text-lg text-navy truncate">{section.title}</CardTitle>
+                      <CardTitle className="text-lg text-ink truncate">{section.title}</CardTitle>
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -186,13 +186,13 @@ export function AdminSafety() {
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleEnabled(section)} className="h-8 w-8 p-0">
-                      {section.enabled ? <Eye className="w-4 h-4 text-sky" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
+                      {section.enabled ? <Eye className="w-4 h-4 text-accent" /> : <EyeOff className="w-4 h-4 text-gray-400" />}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditingId(editingId === section.id ? null : section.id)}
-                      className={`h-8 px-3 text-xs ${editingId === section.id ? "bg-sky/10 text-sky" : ""}`}
+                      className={`h-8 px-3 text-xs ${editingId === section.id ? "bg-accent/10 text-accent" : ""}`}
                     >
                       {editingId === section.id ? "Collapse" : "Edit"}
                     </Button>
@@ -204,7 +204,7 @@ export function AdminSafety() {
                 <div className="flex items-center gap-2 mt-1 ml-8">
                   <span className="text-xs text-foreground-ghost bg-gray-100 px-2 py-0.5 rounded">{section.sectionType}</span>
                   {section.linkUrl && (
-                    <span className="text-xs text-sky">Links to: {section.linkUrl}</span>
+                    <span className="text-xs text-accent">Links to: {section.linkUrl}</span>
                   )}
                 </div>
               </CardHeader>
@@ -236,7 +236,7 @@ export function AdminSafety() {
                       value={section.content}
                       onChange={e => updateField(section.id, "content", e.target.value)}
                       rows={12}
-                      className="w-full px-4 py-3 border border-border rounded-lg font-mono text-sm bg-background resize-y focus:ring-2 focus:ring-sky/30 focus:border-sky"
+                      className="w-full px-4 py-3 border border-border rounded-lg font-mono text-sm bg-background resize-y focus:ring-2 focus:ring-accent/30 focus:border-accent"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -264,7 +264,7 @@ export function AdminSafety() {
                   <div className="flex justify-end">
                     <Button
                       onClick={() => saveSection(section)}
-                      className={`px-6 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                      className={`px-6 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                     >
                       {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved</> : <><Save className="w-4 h-4 mr-2" /> Save Section</>}
                     </Button>
@@ -276,13 +276,13 @@ export function AdminSafety() {
         </div>
 
         {!newSection ? (
-          <Button onClick={() => setNewSection(true)} className="mt-6 bg-sky hover:bg-sky-light text-white">
+          <Button onClick={() => setNewSection(true)} className="mt-6 bg-accent hover:bg-accent-hover text-white">
             <Plus className="w-4 h-4 mr-2" /> Add Section
           </Button>
         ) : (
           <Card className="mt-6 border-l-4 border-l-emerald-500">
             <CardHeader>
-              <CardTitle className="text-lg text-navy">New Section</CardTitle>
+              <CardTitle className="text-lg text-ink">New Section</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -366,7 +366,7 @@ export function AdminSafety() {
         {deleteId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-              <h3 className="text-lg font-bold text-navy mb-2">Delete Section?</h3>
+              <h3 className="text-lg font-bold text-ink mb-2">Delete Section?</h3>
               <p className="text-sm text-foreground-secondary mb-4">
                 This will permanently remove this section from the Safety & Rules page.
               </p>

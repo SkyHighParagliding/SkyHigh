@@ -48,10 +48,10 @@ export function CheckIn() {
     return (
       <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8 flex justify-center items-start">
         <div className="w-full max-w-2xl mt-8">
-          <Card className="shadow-lg border-t-4 border-t-sky text-center py-12">
+          <Card className="shadow-lg border-t-4 border-t-accent text-center py-12">
             <CardContent>
-              <Info className="w-16 h-16 text-sky mx-auto mb-6" />
-              <h2 className="text-3xl font-bold text-navy mb-4">Online Check-in is Currently Disabled</h2>
+              <Info className="w-16 h-16 text-accent mx-auto mb-6" />
+              <h2 className="text-3xl font-bold text-ink mb-4">Online Check-in is Currently Disabled</h2>
               <p className="text-foreground-secondary mb-8 max-w-md mx-auto">
                 The mandatory online check-in system is currently turned off. You do not need to check in online before flying at this time. Please ensure you still follow all site rules and safety guidelines.
               </p>
@@ -75,22 +75,22 @@ export function CheckIn() {
       <div className="w-full max-w-2xl mt-8">
         
         <div className="text-center mb-8">
-          <ShieldCheck className="w-16 h-16 text-navy mx-auto mb-4" />
-          <h1 className="text-3xl font-extrabold text-navy">Pilot Check-in</h1>
+          <ShieldCheck className="w-16 h-16 text-ink mx-auto mb-4" />
+          <h1 className="text-3xl font-extrabold text-ink">Pilot Check-in</h1>
           <p className="text-foreground-secondary mt-2">Mandatory safety check-in before flying.</p>
         </div>
 
         {/* Progress Bar */}
         <div className="flex items-center justify-center mb-8">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-navy text-white' : 'bg-gray-200 text-muted-foreground'}`}>1</div>
-          <div className={`h-1 w-16 ${step >= 2 ? 'bg-navy' : 'bg-gray-200'}`}></div>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-navy text-white' : 'bg-gray-200 text-muted-foreground'}`}>2</div>
-          <div className={`h-1 w-16 ${step >= 3 ? 'bg-navy' : 'bg-gray-200'}`}></div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-ink text-white' : 'bg-gray-200 text-muted-foreground'}`}>1</div>
+          <div className={`h-1 w-16 ${step >= 2 ? 'bg-ink' : 'bg-gray-200'}`}></div>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-ink text-white' : 'bg-gray-200 text-muted-foreground'}`}>2</div>
+          <div className={`h-1 w-16 ${step >= 3 ? 'bg-ink' : 'bg-gray-200'}`}></div>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= 3 ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-muted-foreground'}`}>3</div>
         </div>
 
         {step === 1 && (
-          <Card className="shadow-lg border-t-4 border-t-sky">
+          <Card className="shadow-lg border-t-4 border-t-accent">
             <CardHeader>
               <CardTitle>Select Location</CardTitle>
               <CardDescription>Where are you planning to fly today?</CardDescription>
@@ -103,7 +103,7 @@ export function CheckIn() {
                   {sites.map((site) => (
                     <label 
                       key={site.id} 
-                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${selectedSite === site.id ? 'border-sky bg-sky/5 ring-1 ring-sky' : 'hover:bg-background border-border-subtle'}`}
+                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${selectedSite === site.id ? 'border-accent bg-accent/5 ring-1 ring-accent' : 'hover:bg-background border-border-subtle'}`}
                     >
                       <input 
                         type="radio" 
@@ -111,11 +111,11 @@ export function CheckIn() {
                         value={site.id} 
                         checked={selectedSite === site.id}
                         onChange={(e) => setSelectedSite(e.target.value)}
-                        className="w-4 h-4 text-sky focus:ring-sky border-border"
+                        className="w-4 h-4 text-accent focus:ring-accent border-border"
                       />
                       <div className="ml-4 flex items-center">
-                        <MapPin className={`w-5 h-5 mr-2 ${selectedSite === site.id ? 'text-sky' : 'text-foreground-faint'}`} />
-                        <span className={`font-medium ${selectedSite === site.id ? 'text-navy' : 'text-foreground-label'}`}>{site.name}</span>
+                        <MapPin className={`w-5 h-5 mr-2 ${selectedSite === site.id ? 'text-accent' : 'text-foreground-faint'}`} />
+                        <span className={`font-medium ${selectedSite === site.id ? 'text-ink' : 'text-foreground-label'}`}>{site.name}</span>
                       </div>
                     </label>
                   ))}
@@ -135,9 +135,9 @@ export function CheckIn() {
         )}
 
         {step === 2 && (
-          <Card className="shadow-lg border-t-4 border-t-orange">
-            <CardHeader className="bg-orange/5 pb-4">
-              <CardTitle className="flex items-center text-orange-dark">
+          <Card className="shadow-lg border-t-4 border-t-accent">
+            <CardHeader className="bg-accent/5 pb-4">
+              <CardTitle className="flex items-center text-accent-hover">
                 <AlertTriangle className="w-6 h-6 mr-2" /> Site Rules & Hazards
               </CardTitle>
               <CardDescription className="text-foreground-label font-medium mt-2">
@@ -152,7 +152,7 @@ export function CheckIn() {
                   return (
                     <>
                       <div className="mb-4">
-                        <h4 className="font-bold text-navy mb-2">General Rules</h4>
+                        <h4 className="font-bold text-ink mb-2">General Rules</h4>
                         <p><strong>1. Membership:</strong> You must be a current financial member of SAFA and your club.</p>
                         <p><strong>2. Rating:</strong> Ensure you hold the appropriate rating for current conditions. If unsure, DO NOT FLY.</p>
                         <p><strong>3. Airspace:</strong> Be aware of local airspace restrictions. Maximum altitude limits apply.</p>
@@ -160,7 +160,7 @@ export function CheckIn() {
                       
                       {site.rules && site.rules.length > 0 && (
                         <div className="mb-4">
-                          <h4 className="font-bold text-navy mb-2">Site Specific Rules</h4>
+                          <h4 className="font-bold text-ink mb-2">Site Specific Rules</h4>
                           {site.rules.map((rule: string, idx: number) => (
                             <p key={idx}><strong>{idx + 1}.</strong> {rule}</p>
                           ))}
@@ -187,7 +187,7 @@ export function CheckIn() {
                   type="checkbox" 
                   checked={agreedToRules}
                   onChange={(e) => setAgreedToRules(e.target.checked)}
-                  className="mt-1 w-5 h-5 text-orange focus:ring-orange border-border rounded"
+                  className="mt-1 w-5 h-5 text-accent focus:ring-accent border-border rounded"
                 />
                 <span className="text-sm font-medium text-foreground">
                   I have read and understood the site rules and hazards. I confirm I hold the appropriate rating and am fit to fly.
@@ -214,14 +214,14 @@ export function CheckIn() {
               <div className="mx-auto w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600" />
               </div>
-              <h2 className="text-3xl font-bold text-navy mb-2">Check-in Successful</h2>
+              <h2 className="text-3xl font-bold text-ink mb-2">Check-in Successful</h2>
               <p className="text-foreground-secondary mb-8 max-w-md mx-auto">
                 You are checked in for {sites.find(s => s.id === selectedSite)?.name}. Have a safe and enjoyable flight!
               </p>
               
               <div className="bg-background p-4 rounded-lg inline-block text-left mb-8 border">
                 <p className="text-sm text-muted-foreground mb-1">Check-in ID</p>
-                <p className="font-mono font-bold text-navy text-lg">{checkinResult.id}</p>
+                <p className="font-mono font-bold text-ink text-lg">{checkinResult.id}</p>
                 <p className="text-xs text-foreground-faint mt-2">{new Date(checkinResult.timestamp).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
               </div>
 

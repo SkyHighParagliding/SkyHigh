@@ -13,8 +13,8 @@ export function GroundHandling() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-navy mb-2">Page Not Found</h1>
-          <Link to="/" className="text-sky hover:underline">Return Home</Link>
+          <h1 className="text-2xl font-bold text-ink mb-2">Page Not Found</h1>
+          <Link to="/" className="text-accent hover:underline">Return Home</Link>
         </div>
       </div>
     );

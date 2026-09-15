@@ -137,10 +137,10 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full p-4 border-2 border-dashed border-sky/30 rounded-lg hover:border-sky hover:bg-sky/5 transition-all text-left"
+                  className="w-full p-4 border-2 border-dashed border-accent/30 rounded-lg hover:border-accent hover:bg-accent/5 transition-all text-left"
                 >
                   <div className="flex items-center gap-2">
-                    <UploadIcon className="w-5 h-5 text-sky" />
+                    <UploadIcon className="w-5 h-5 text-accent" />
                     <span className="font-medium">Choose Files</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">or drag and drop</p>
@@ -167,7 +167,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
                   value={photographerName}
                   onChange={(e) => setPhotographerName(e.target.value)}
                   placeholder="e.g. Jane Smith"
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-sky"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
@@ -203,7 +203,7 @@ export function BulkUploadDialog({ open, onOpenChange, token, onAccept, maxImage
                   <div key={idx} className="flex items-start gap-2 text-sm p-1 rounded">
                     <div className="flex-shrink-0 mt-0.5">
                       {result.status === 'pending' && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />}
-                      {result.status === 'uploading' && <Loader2 className="w-4 h-4 text-sky animate-spin" />}
+                      {result.status === 'uploading' && <Loader2 className="w-4 h-4 text-accent animate-spin" />}
                       {result.status === 'done' && <Check className="w-4 h-4 text-emerald-600" />}
                       {result.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
                     </div>

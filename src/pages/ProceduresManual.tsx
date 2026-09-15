@@ -57,12 +57,12 @@ const ICON_MAP: Record<string, any> = {
 const ICON_OPTIONS = Object.keys(ICON_MAP);
 
 const COLOR_OPTIONS = [
-  { value: "text-navy", label: "Navy" },
+  { value: "text-ink", label: "Navy" },
   { value: "text-red-500", label: "Red" },
-  { value: "text-sky", label: "Sky Blue" },
+  { value: "text-accent", label: "Sky Blue" },
   { value: "text-emerald-500", label: "Green" },
   { value: "text-emerald-600", label: "Dark Green" },
-  { value: "text-orange", label: "Orange" },
+  { value: "text-accent", label: "Orange" },
   { value: "text-amber-600", label: "Amber" },
   { value: "text-purple-500", label: "Purple" },
   { value: "text-violet-600", label: "Violet" },
@@ -106,7 +106,7 @@ export function ProceduresManual() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   const [editForm, setEditForm] = useState<Procedure>({
-    id: "", title: "", icon: "ClipboardList", iconColor: "text-navy",
+    id: "", title: "", icon: "ClipboardList", iconColor: "text-ink",
     description: "", steps: [], sortOrder: 0
   });
 
@@ -156,8 +156,8 @@ export function ProceduresManual() {
   function getSearchResultIcon(type: string) {
     switch (type) {
       case "site": return <MapPin className="w-4 h-4 text-emerald-500" />;
-      case "asset": return <ClipboardList className="w-4 h-4 text-sky" />;
-      case "procedure": return <FileText className="w-4 h-4 text-navy" />;
+      case "asset": return <ClipboardList className="w-4 h-4 text-accent" />;
+      case "procedure": return <FileText className="w-4 h-4 text-ink" />;
       case "step": return <ListChecks className="w-4 h-4 text-purple-500" />;
       default: return <FileText className="w-4 h-4 text-foreground-faint" />;
     }
@@ -184,7 +184,7 @@ export function ProceduresManual() {
   function startAdd() {
     const maxSort = procedures.length > 0 ? Math.max(...procedures.map(p => p.sortOrder)) : 0;
     setEditForm({
-      id: "", title: "", icon: "ClipboardList", iconColor: "text-navy",
+      id: "", title: "", icon: "ClipboardList", iconColor: "text-ink",
       description: "", steps: [""], sortOrder: maxSort + 1
     });
     setShowAdd(true);
@@ -300,7 +300,7 @@ export function ProceduresManual() {
   if (loading) {
     return (
       <div className="bg-background min-h-screen py-12 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-sky border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -309,29 +309,29 @@ export function ProceduresManual() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Link>
-          <div className="flex items-center gap-2 text-navy font-bold">
+          <div className="flex items-center gap-2 text-ink font-bold">
             <ClipboardList className="w-5 h-5" />
             <span>Procedures Manual v2.0</span>
           </div>
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-navy mb-4">Club Procedures Manual</h1>
+          <h1 className="text-4xl font-extrabold text-ink mb-4">Club Procedures Manual</h1>
           <p className="text-lg text-foreground-secondary max-w-3xl mx-auto">
             Standard operating procedures for {clubName}. This manual covers safety protocols, site operations, governance, financial management, membership, equipment, events, stakeholder relations, and digital filing.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange/10 text-orange rounded-full text-sm font-medium">
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm font-medium">
             <AlertTriangle className="w-4 h-4" />
             Internal document — for committee and authorised personnel only
           </div>
         </div>
 
-        <div className="mb-10 p-6 bg-card rounded-2xl border border-sky/20 shadow-sm">
+        <div className="mb-10 p-6 bg-card rounded-2xl border border-accent/20 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-sky" />
+            <Sparkles className="w-5 h-5 text-accent" />
             <h2 className="text-sm font-bold text-foreground-faint uppercase tracking-widest">Smart Search</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
@@ -355,7 +355,7 @@ export function ProceduresManual() {
             <Button
               type="submit"
               disabled={searching || !searchQuery.trim()}
-              className="bg-navy hover:bg-navy/90 text-white"
+              className="bg-ink hover:bg-ink/90 text-white"
             >
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               <span className="ml-2 hidden sm:inline">{searching ? "Searching..." : "Search"}</span>
@@ -369,8 +369,8 @@ export function ProceduresManual() {
           {searchResults && (
             <div className="mt-6">
               {searchResults.summary && (
-                <div className="mb-4 p-4 bg-sky/5 border border-sky/20 rounded-xl">
-                  <p className="text-sm text-navy font-medium">{searchResults.summary}</p>
+                <div className="mb-4 p-4 bg-accent/5 border border-accent/20 rounded-xl">
+                  <p className="text-sm text-ink font-medium">{searchResults.summary}</p>
                 </div>
               )}
               {searchResults.results?.length > 0 ? (
@@ -392,7 +392,7 @@ export function ProceduresManual() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-navy text-sm group-hover:text-sky transition-colors">
+                            <span className="font-medium text-ink text-sm group-hover:text-accent transition-colors">
                               {result.title}
                             </span>
                             <span className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded">
@@ -407,7 +407,7 @@ export function ProceduresManual() {
                             <p className="text-xs text-foreground-faint mt-1 italic">{result.relevance}</p>
                           )}
                         </div>
-                        <ExternalLink className="w-3.5 h-3.5 text-foreground-ghost group-hover:text-sky flex-shrink-0 mt-1" />
+                        <ExternalLink className="w-3.5 h-3.5 text-foreground-ghost group-hover:text-accent flex-shrink-0 mt-1" />
                       </Tag>
                     );
                   })}
@@ -421,7 +421,7 @@ export function ProceduresManual() {
 
         {token && (
           <div className="mb-8 flex justify-end">
-            <Button onClick={startAdd} className="bg-navy hover:bg-navy/90 text-white">
+            <Button onClick={startAdd} className="bg-ink hover:bg-ink/90 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add New Section
             </Button>
           </div>
@@ -431,14 +431,14 @@ export function ProceduresManual() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
         )}
 
-        <div id="quick-nav" className="mb-10 p-6 bg-card rounded-2xl border border-sky/20 shadow-sm scroll-mt-24">
+        <div id="quick-nav" className="mb-10 p-6 bg-card rounded-2xl border border-accent/20 shadow-sm scroll-mt-24">
           <h2 className="text-sm font-bold text-foreground-faint uppercase tracking-widest mb-4">Quick Navigation</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {procedures.map((proc) => (
               <a
                 key={proc.id}
                 href={`#${proc.id}`}
-                className="flex items-center gap-2 p-3 rounded-lg hover:bg-sky/5 transition-colors text-sm text-foreground-label hover:text-navy font-medium"
+                className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/5 transition-colors text-sm text-foreground-label hover:text-ink font-medium"
               >
                 {getIcon(proc.icon, `w-5 h-5 ${proc.iconColor}`)}
                 {proc.title}
@@ -491,7 +491,7 @@ export function ProceduresManual() {
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-1/3 bg-card p-8 border-r border-border-faint">
                       <div className="mb-4">{getIcon(proc.icon, `w-6 h-6 ${proc.iconColor}`)}</div>
-                      <h2 className="text-2xl font-bold text-navy mb-4">{proc.title}</h2>
+                      <h2 className="text-2xl font-bold text-ink mb-4">{proc.title}</h2>
                       <p className="text-foreground-secondary text-sm mb-6 leading-relaxed">{proc.description}</p>
                       {token && (
                         <div className="flex flex-wrap gap-2">
@@ -499,7 +499,7 @@ export function ProceduresManual() {
                             variant="outline"
                             size="sm"
                             onClick={() => startEdit(proc)}
-                            className="text-sky border-sky hover:bg-sky/5"
+                            className="text-accent border-accent hover:bg-accent/5"
                           >
                             <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
                           </Button>
@@ -507,7 +507,7 @@ export function ProceduresManual() {
                             variant="outline"
                             size="sm"
                             onClick={() => handlePrint(proc)}
-                            className="text-navy border-navy/30 hover:bg-navy/5"
+                            className="text-ink border-ink/30 hover:bg-ink/5"
                           >
                             <Printer className="w-3.5 h-3.5 mr-1" /> Print
                           </Button>
@@ -547,7 +547,7 @@ export function ProceduresManual() {
                       <ul className="space-y-4">
                         {proc.steps.map((step, sIdx) => (
                           <li key={sIdx} className="flex gap-3">
-                            <div className="flex-shrink-0 w-6 h-6 bg-card rounded-full border border-border-subtle flex items-center justify-center text-xs font-bold text-navy shadow-sm">
+                            <div className="flex-shrink-0 w-6 h-6 bg-card rounded-full border border-border-subtle flex items-center justify-center text-xs font-bold text-ink shadow-sm">
                               {sIdx + 1}
                             </div>
                             <div>
@@ -555,7 +555,7 @@ export function ProceduresManual() {
                               {step.toLowerCase().includes("see the dedicated asset register section") && (
                                 <a
                                   href="#asset-register"
-                                  className="ml-2 inline-flex items-center gap-1 text-sm text-sky hover:text-navy font-medium transition-colors"
+                                  className="ml-2 inline-flex items-center gap-1 text-sm text-accent hover:text-ink font-medium transition-colors"
                                 >
                                   → To Asset Register
                                 </a>
@@ -568,7 +568,7 @@ export function ProceduresManual() {
                         <div className="mt-6 pt-4 border-t border-border-subtle">
                           <Link
                             to="/admin/connections#google-sheets"
-                            className="inline-flex items-center gap-1.5 text-sm text-sky hover:text-navy font-medium transition-colors"
+                            className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-ink font-medium transition-colors"
                           >
                             <Plug className="w-4 h-4" />
                             Manage Asset Register connection settings in API Settings →
@@ -578,7 +578,7 @@ export function ProceduresManual() {
                       <div className="mt-6 pt-4 border-t border-border-subtle">
                         <a
                           href="#quick-nav"
-                          className="inline-flex items-center gap-1.5 text-sm text-sky hover:text-navy font-medium transition-colors"
+                          className="inline-flex items-center gap-1.5 text-sm text-accent hover:text-ink font-medium transition-colors"
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                           Back to Quick Navigation
@@ -591,26 +591,26 @@ export function ProceduresManual() {
             </div>
           ))}
 
-          <Card className="bg-navy text-white p-8 border-none shadow-xl">
+          <Card className="bg-ink text-white p-8 border-none shadow-xl">
             <CardHeader className="p-0 mb-6">
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <Phone className="w-6 h-6 text-sky" />
+                <Phone className="w-6 h-6 text-accent" />
                 Emergency Contacts
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                <h4 className="font-bold mb-2 text-sky">Emergency Services</h4>
+                <h4 className="font-bold mb-2 text-accent">Emergency Services</h4>
                 <p className="text-2xl font-black">000</p>
                 <p className="text-sm text-foreground-faint mt-1">Police, Fire, Ambulance</p>
               </div>
               <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                <h4 className="font-bold mb-2 text-sky">SAFA</h4>
+                <h4 className="font-bold mb-2 text-accent">SAFA</h4>
                 <p className="text-lg font-bold">(03) 9336 7155</p>
                 <p className="text-sm text-foreground-faint mt-1">Sports Aviation Federation of Australia</p>
               </div>
               <div className="bg-white/5 p-5 rounded-xl border border-white/10">
-                <h4 className="font-bold mb-2 text-sky">Club Safety Officer</h4>
+                <h4 className="font-bold mb-2 text-accent">Club Safety Officer</h4>
                 <p className="text-sm text-gray-300">Refer to the Safety & Rules page for current contact details</p>
               </div>
             </CardContent>
@@ -642,8 +642,8 @@ interface ProcedureEditorProps {
 
 function ProcedureEditor({ form, setForm, onSave, onCancel, saving, error, isNew, saveSuccess, addStep, removeStep, updateStep, moveStep }: ProcedureEditorProps) {
   return (
-    <Card className="border-2 border-sky shadow-xl overflow-hidden">
-      <CardHeader className="bg-navy text-white p-6">
+    <Card className="border-2 border-accent shadow-xl overflow-hidden">
+      <CardHeader className="bg-ink text-white p-6">
         <CardTitle className="flex items-center gap-2 text-xl">
           {isNew ? <Plus className="w-5 h-5" /> : <Pencil className="w-5 h-5" />}
           {isNew ? "Add New Section" : `Editing: ${form.title}`}
@@ -716,7 +716,7 @@ function ProcedureEditor({ form, setForm, onSave, onCancel, saving, error, isNew
         <div>
           <div className="flex items-center justify-between mb-3">
             <Label className="text-sm font-medium text-foreground-label">Procedure Steps</Label>
-            <Button variant="outline" size="sm" onClick={addStep} className="text-sky border-sky">
+            <Button variant="outline" size="sm" onClick={addStep} className="text-accent border-accent">
               <Plus className="w-3.5 h-3.5 mr-1" /> Add Step
             </Button>
           </div>
@@ -727,14 +727,14 @@ function ProcedureEditor({ form, setForm, onSave, onCancel, saving, error, isNew
                   <button
                     onClick={() => moveStep(idx, 'up')}
                     disabled={idx === 0}
-                    className="text-foreground-faint hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="text-foreground-faint hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => moveStep(idx, 'down')}
                     disabled={idx === form.steps.length - 1}
-                    className="text-foreground-faint hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="text-foreground-faint hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
                   </button>
@@ -764,7 +764,7 @@ function ProcedureEditor({ form, setForm, onSave, onCancel, saving, error, isNew
           <Button
             onClick={onSave}
             disabled={saving}
-            className={saveSuccess ? "bg-emerald-600 hover:bg-emerald-600" : "bg-navy hover:bg-navy/90"}
+            className={saveSuccess ? "bg-emerald-600 hover:bg-emerald-600" : "bg-ink hover:bg-ink/90"}
           >
             {saveSuccess ? (
               <><Check className="w-4 h-4 mr-2" /> Saved</>

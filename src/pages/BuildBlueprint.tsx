@@ -57,7 +57,7 @@ const phases: Phase[] = [
         instruction: "Create a dynamic theming system where all colours, logos, and club identity are driven by a settings table in the database and applied at runtime via CSS variables. Every visual element must reference theme tokens, never hard-coded colours.",
         details: [
           "Database: settings table (key TEXT PK, value TEXT) — stores clubName, clubTagline, clubPrimaryColor, logoLight, logoDark, faviconUrl",
-          "CSS variable system: define semantic tokens in src/index.css using Tailwind @theme — --color-navy, --color-sky, --color-orange, --color-background, --color-foreground, --color-border, etc.",
+          "CSS variable system: define semantic tokens in src/index.css using Tailwind @theme — --color-ink, --color-accent, --color-accent, --color-background, --color-foreground, --color-border, etc.",
           "SettingsContext provider: wraps app, provides clubName, logos, colours to all components",
           "Logo system: on upload, auto-generate variants via sharp — nav (h=48), footer (h=64), favicon (32x32 + 192x192), splash (512x512). Store light/dark sets for use on dark and light backgrounds respectively.",
           "Dynamic PWA manifest: GET /manifest.json returns JSON with current club name, colours, and icon URLs from settings",
@@ -610,7 +610,7 @@ export function BuildBlueprint() {
       <div className="no-print fixed top-20 right-4 z-50">
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg shadow-lg hover:bg-navy-light transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg shadow-lg hover:bg-ink-muted transition-colors text-sm font-medium"
         >
           <Printer className="w-4 h-4" />
           Print / Save PDF
@@ -618,22 +618,22 @@ export function BuildBlueprint() {
       </div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8 print:mb-4">
-          <Link to="/admin" className="text-sm text-foreground-secondary hover:text-navy transition-colors flex items-center">
+          <Link to="/admin" className="text-sm text-foreground-secondary hover:text-ink transition-colors flex items-center">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Link>
-          <div className="flex items-center gap-2 text-navy font-bold">
+          <div className="flex items-center gap-2 text-ink font-bold">
             <FolderTree className="w-5 h-5" />
             <span>Build Blueprint v1.0</span>
           </div>
         </div>
 
         <div className="text-center mb-12 print:mb-6">
-          <h1 className="text-3xl font-extrabold text-navy mb-3 print:text-2xl">Build Blueprint</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-3 print:text-2xl">Build Blueprint</h1>
           <p className="text-foreground-secondary max-w-2xl mx-auto">
             A complete, ordered set of prompts to recreate the {clubName} platform from scratch.
             Branding is the foundation — all club identity is controlled from settings, not code.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-sky/10 rounded-full text-sm text-sky font-medium">
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm text-accent font-medium">
             <Cpu className="w-4 h-4" />
             {phases.length} Phases — {phases.reduce((sum, p) => sum + p.prompts.length, 0)} Prompts
           </div>
@@ -646,10 +646,10 @@ export function BuildBlueprint() {
               <a
                 key={phase.id}
                 href={`#${phase.id}`}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sky/5 transition-colors text-sm"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent/5 transition-colors text-sm"
               >
-                <span className="text-sky font-bold mr-1">{idx + 1}.</span>
-                <span className="text-navy font-medium">{phase.title.replace(`Phase ${idx + 1} — `, "")}</span>
+                <span className="text-accent font-bold mr-1">{idx + 1}.</span>
+                <span className="text-ink font-medium">{phase.title.replace(`Phase ${idx + 1} — `, "")}</span>
               </a>
             ))}
           </div>
@@ -673,11 +673,11 @@ export function BuildBlueprint() {
         {phases.map((phase, phaseIdx) => (
           <section key={phase.id} id={phase.id} className={`py-8 print:py-4 ${phaseIdx > 0 ? "border-t border-border-faint" : ""}`}>
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl font-black text-sky/20 print:text-xl">{String(phaseIdx + 1).padStart(2, "0")}</span>
-              <div className="w-8 h-8 rounded-lg bg-sky/10 flex items-center justify-center flex-shrink-0 text-sky">
+              <span className="text-2xl font-black text-accent/20 print:text-xl">{String(phaseIdx + 1).padStart(2, "0")}</span>
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-accent">
                 {phase.icon}
               </div>
-              <h2 className="text-xl font-bold text-navy print:text-lg">{phase.title}</h2>
+              <h2 className="text-xl font-bold text-ink print:text-lg">{phase.title}</h2>
             </div>
             <p className="text-sm text-foreground-secondary ml-[68px] mb-6 print:mb-3">{phase.summary}</p>
 
@@ -685,10 +685,10 @@ export function BuildBlueprint() {
               {phase.prompts.map((prompt, pIdx) => (
                 <div
                   key={pIdx}
-                  className="border border-border-faint rounded-lg overflow-hidden hover:border-sky/30 transition-all print:border-border-subtle"
+                  className="border border-border-faint rounded-lg overflow-hidden hover:border-accent/30 transition-all print:border-border-subtle"
                 >
-                  <div className="bg-gradient-to-r from-sky/5 to-transparent px-4 py-3 print:py-2 border-b border-border-faint">
-                    <h3 className="font-bold text-navy print:text-sm">{prompt.title}</h3>
+                  <div className="bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 print:py-2 border-b border-border-faint">
+                    <h3 className="font-bold text-ink print:text-sm">{prompt.title}</h3>
                   </div>
                   <div className="p-4 print:p-3">
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 print:p-3 mb-3 border border-slate-200 dark:border-slate-700">
@@ -697,7 +697,7 @@ export function BuildBlueprint() {
                     <ul className="space-y-1.5">
                       {prompt.details.map((d, dIdx) => (
                         <li key={dIdx} className="text-sm text-foreground-secondary print:text-xs flex items-start gap-2">
-                          <span className="text-sky mt-1 flex-shrink-0">•</span>
+                          <span className="text-accent mt-1 flex-shrink-0">•</span>
                           <span>{d}</span>
                         </li>
                       ))}
@@ -711,7 +711,7 @@ export function BuildBlueprint() {
 
         <div className="mt-12 border-t border-border-faint pt-8 print:mt-6 print:pt-4">
           <div className="bg-card border border-border-faint rounded-xl p-6 text-center">
-            <h2 className="text-lg font-bold text-navy mb-2">Rebuild Summary</h2>
+            <h2 className="text-lg font-bold text-ink mb-2">Rebuild Summary</h2>
             <p className="text-sm text-foreground-secondary mb-4">
               {phases.length} phases, {phases.reduce((sum, p) => sum + p.prompts.length, 0)} prompts covering the complete {clubName} platform.
               Execute in order — each phase builds on the previous. The branding system in Phase 1 ensures all club

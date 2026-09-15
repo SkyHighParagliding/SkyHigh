@@ -36,18 +36,18 @@ export function Page() {
             <div className="absolute inset-0">
               <img src={page.heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
             </div>
-            <div className="absolute inset-0 bg-navy/60" />
+            <div className="absolute inset-0 bg-ink/60" />
           </>
         )}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <Link to="/" className={`inline-flex items-center ${page.heroImage ? 'text-sky-300 hover:text-white' : 'text-sky hover:text-sky-700'} mb-6 font-medium transition-colors`}>
+          <Link to="/" className={`inline-flex items-center ${page.heroImage ? 'text-sky-300 hover:text-white' : 'text-accent hover:text-sky-700'} mb-6 font-medium transition-colors`}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </Link>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className={`text-4xl md:text-5xl font-extrabold tracking-tight ${page.heroImage ? '' : 'text-navy'}`}
+            className={`text-4xl md:text-5xl font-extrabold tracking-tight ${page.heroImage ? '' : 'text-ink'}`}
           >
             {page.title}
           </motion.h1>

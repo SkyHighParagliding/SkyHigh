@@ -110,7 +110,7 @@ export function VoiceMicButton({ onTranscript, variant = "light", disabled = fal
     ? "bg-red-500 text-white animate-pulse"
     : variant === "dark"
       ? "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
-      : "text-foreground-faint hover:text-sky hover:bg-muted";
+      : "text-foreground-faint hover:text-accent hover:bg-muted";
 
   return (
     <button

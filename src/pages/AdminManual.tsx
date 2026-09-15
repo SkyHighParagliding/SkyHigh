@@ -54,12 +54,12 @@ export function AdminManual() {
   const sections = [
     {
       title: "Manage Sites Page",
-      icon: <MapPin className="w-6 h-6 text-sky" />,
+      icon: <MapPin className="w-6 h-6 text-accent" />,
       link: "/admin/sites",
       category: "Content Management",
       description: "The central hub for importing, archiving, searching and managing all flying sites. Click 'Edit' on any site to open the Site Editor (covered in the next section).",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Flying Sites' from the Admin Dashboard. The page header shows a site count and the 'Add New Site' button (top-right).</span><Link to="/admin/sites" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Sites Admin <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Flying Sites' from the Admin Dashboard. The page header shows a site count and the 'Add New Site' button (top-right).</span><Link to="/admin/sites" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sites Admin <ExternalLink className="w-3 h-3" /></Link></span>,
         "Siteguide Version Banner: A colour-coded banner at the top shows the current siteguide.org.au version. Green = up to date. Orange = version has changed since last import. Click 'Check Now' to poll siteguide for updates. If you have previously run a manual import for the selected state (see 'Import Sites' below), and a new version is detected, the import starts automatically.",
         "Import Sites: Select a state/territory from the dropdown, then click 'Import Sites'. A progress bar shows each site being processed. Import archives your current sites before overwriting. Results show created, updated, unchanged, skipped, and errors for each site.",
         "Refresh Site List: Click the small 'Refresh site list' link below the state selector to re-fetch the master list of available sites from siteguide.org.au.",
@@ -74,7 +74,7 @@ export function AdminManual() {
     },
     {
       title: "Site Editor",
-      icon: <MapPin className="w-6 h-6 text-sky" />,
+      icon: <MapPin className="w-6 h-6 text-accent" />,
       link: "/admin/sites",
       category: "Content Management",
       description: "The full editing interface for an individual flying site — details, rules, hazards, weather stations, wind compass, QR codes and more.",
@@ -100,7 +100,7 @@ export function AdminManual() {
     },
     {
       title: "Home Page Management",
-      icon: <Home className="w-6 h-6 text-navy" />,
+      icon: <Home className="w-6 h-6 text-ink" />,
       link: "/admin/home",
       category: "Content Management",
       description: "Control the hero section, featured content, quick action cards, social media links, and widget tags.",
@@ -114,20 +114,20 @@ export function AdminManual() {
         "Paragliding Schools: Add school names and URLs — they display as button cards and are shuffled on each page load. Use {{schools}} in CMS pages to embed them.",
         "Telegram Groups: Add group names and invite URLs. Use {{telegram}} in CMS pages. When configured, the Community card shows group buttons instead of text.",
         "Custom Widget Tags: Create filtered subsets of Schools or Telegram groups for use on specific pages (e.g. {{vic_schools}}).",
-        <span className="flex flex-wrap items-center gap-2"><span>Photo Carousel: Toggle on/off in Site Features. When enabled, sub-options for auto-scroll and reverse direction appear. The carousel shows a scrolling strip of images from the Image Library.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>YouTube Carousel: Toggle on/off in Site Features. Same auto-scroll and reverse direction options. Displays YouTube video thumbnails in alternating large/small sizes.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Photo Carousel: Toggle on/off in Site Features. When enabled, sub-options for auto-scroll and reverse direction appear. The carousel shows a scrolling strip of images from the Image Library.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>YouTube Carousel: Toggle on/off in Site Features. Same auto-scroll and reverse direction options. Displays YouTube video thumbnails in alternating large/small sizes.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
         "SkyHigh Video Wall: All YouTube videos are automatically displayed on the public /video-wall page as a mosaic of thumbnails. Newest videos appear first. Each tile links to the YouTube video. Thumbnails cycle through 4 size variants for visual variety.",
         "Social Media Links: At the bottom of Home Page settings. Enter URLs for each platform — only those with a URL show as footer icons."
       ]
     },
     {
       title: "Dynamic Pages",
-      icon: <FileText className="w-6 h-6 text-orange" />,
+      icon: <FileText className="w-6 h-6 text-accent" />,
       link: "/admin/pages",
       category: "Content Management",
       description: "Manage content pages like 'About Us', 'New Pilots', and 'Visiting Pilots'.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Access via 'News, Events & Pages' on the Dashboard (Dynamic Pages tab).</span><Link to="/admin/pages" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Pages Admin <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Access via 'News, Events & Pages' on the Dashboard (Dynamic Pages tab).</span><Link to="/admin/pages" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Pages Admin <ExternalLink className="w-3 h-3" /></Link></span>,
         "Create pages with a unique page address (e.g. 'training-info') — accessible at /page/training-info.",
         "Content uses Markdown formatting. See the Markdown Guide section below.",
         "Image Toolbar: 'Library' opens a scrollable 3-column grid of all images in that category. Click any thumbnail to insert it at your cursor. Switch between Hero, Banner, Landscape Lg, Landscape Sm, and Portrait tabs to browse categories. 'Paste URL' inserts an external image. Both add the correct Markdown at your cursor.",
@@ -159,8 +159,8 @@ export function AdminManual() {
         "Reorder sections using the up/down arrows. Toggle visibility with the eye icon.",
         "Add optional Link URL and Link Label fields to create navigation links to other pages (e.g. /page/code-of-conduct).",
         "Click 'Add Section' to create new content areas. Delete sections with the trash icon.",
-        <span className="flex flex-wrap items-center gap-2"><span>The Safety Officer Directory is managed separately from Admin Contacts — officers with 'Safety Committee' role appear automatically.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Use dynamic pages (News, Events & Pages) to create linked pages like Code of Conduct or Complaints & Disciplinary, then link them from safety sections.</span><Link to="/admin/pages" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Pages Admin <ExternalLink className="w-3 h-3" /></Link></span>
+        <span className="flex flex-wrap items-center gap-2"><span>The Safety Officer Directory is managed separately from Admin Contacts — officers with 'Safety Committee' role appear automatically.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Use dynamic pages (News, Events & Pages) to create linked pages like Code of Conduct or Complaints & Disciplinary, then link them from safety sections.</span><Link to="/admin/pages" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Pages Admin <ExternalLink className="w-3 h-3" /></Link></span>
       ]
     },
     {
@@ -171,7 +171,7 @@ export function AdminManual() {
       description: "Monitor pilot check-ins and site usage.",
       steps: [
         "View recent check-ins and daily/total statistics.",
-        <span className="flex flex-wrap items-center gap-2"><span>Requires 'Online Check-in' to be enabled in Site Features on the Dashboard.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>
+        <span className="flex flex-wrap items-center gap-2"><span>Requires 'Online Check-in' to be enabled in Site Features on the Dashboard.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>
       ]
     },
     {
@@ -208,7 +208,7 @@ export function AdminManual() {
     },
     {
       title: "Join Page Settings",
-      icon: <LogIn className="w-6 h-6 text-navy" />,
+      icon: <LogIn className="w-6 h-6 text-ink" />,
       link: "/admin/join-settings",
       category: "Content Management",
       description: "Customise the public /join membership page — hero banner, TidyHQ signup link, membership tiers, and FAQs.",
@@ -222,7 +222,7 @@ export function AdminManual() {
     },
     {
       title: "Admin Search",
-      icon: <MessageCircle className="w-6 h-6 text-sky" />,
+      icon: <MessageCircle className="w-6 h-6 text-accent" />,
       link: "/admin",
       category: "Dashboard Settings",
       description: "Smart search across the entire platform — admin features, procedures, sites, pages, news, and Google Drive documents (including PDFs).",
@@ -235,7 +235,7 @@ export function AdminManual() {
     },
     {
       title: "Site Features",
-      icon: <Settings className="w-6 h-6 text-navy" />,
+      icon: <Settings className="w-6 h-6 text-ink" />,
       link: "/admin",
       category: "Dashboard Settings",
       description: "Toggle global features from the top of the Dashboard.",
@@ -257,16 +257,16 @@ export function AdminManual() {
         "Site List: XC sites are listed on the left, sorted by distance from the pilot's phone (closest first). Distance labels shown per site. Closed sites are excluded.",
         "QR Code Deep-links: Generate 'XC Maps' QR codes in the Site Editor — scanning takes pilots directly to the map centred on that site.",
         "Airspace Overlay: Toggle the 'Airspace' button to show CTA, CTR, and other airspace sectors from OpenAIP. The altitude slider filters sectors by floor height — defaults to ground level so all ground-level sectors are immediately visible.",
-        <span className="flex flex-wrap items-center gap-2"><span>Wind Field Layer: Toggle the 'Winds' button (below Airspace) to display an animated wind field overlay across the map. Uses IDW (Inverse Distance Weighting) interpolation from all live weather stations to visualise wind speed and direction as flowing streamlines. Colour scale matches the site wind arrows (green/yellow/orange/red). All visual parameters are configurable from Admin &gt; XC &gt; Wind Field Overlay — particle count, trail length, line width, opacity, speed scale, max speed, lifespan, interpolation range, fade distance, and IDW power. Defaults: 1200 particles, trail 12, influence 120 km, fade from 80 km.</span><Link to="/admin/xc" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open XC Settings <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Wind Field Layer: Toggle the 'Winds' button (below Airspace) to display an animated wind field overlay across the map. Uses IDW (Inverse Distance Weighting) interpolation from all live weather stations to visualise wind speed and direction as flowing streamlines. Colour scale matches the site wind arrows (green/yellow/orange/red). All visual parameters are configurable from Admin &gt; XC &gt; Wind Field Overlay — particle count, trail length, line width, opacity, speed scale, max speed, lifespan, interpolation range, fade distance, and IDW power. Defaults: 1200 particles, trail 12, influence 120 km, fade from 80 km.</span><Link to="/admin/xc" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open XC Settings <ExternalLink className="w-3 h-3" /></Link></span>,
         "Airspace Visibility: Sectors render with solid colour fills at 18% opacity. CTA is blue, CTR is red, Prohibited is dark red, Restricted is orange, Danger is yellow, and others have distinct colours. Tap any sector for details.",
         "Proximity Alerts: During flight recording, if the GPS track enters an airspace sector, that sector flashes at 35% opacity with a dashed border, an 880 Hz beep sounds, and haptic vibration triggers (5-second cooldown between alerts).",
         "Dismiss Alerts: While proximity alerts are active, a red 'Dismiss' button appears on the map. Tapping it mutes flashing, beeping, and haptic for the current sector(s). An orange 'Muted' badge shows while alerts are suppressed. Alerts automatically re-arm when the pilot exits the dismissed sector and enters a new airspace boundary.",
         "Airspace Toggle During Flight: Airspace auto-enables when flight recording starts but pilots can now toggle it off mid-flight using the Airspace button. Toggling off hides the overlay, altitude slider, and legend while flying.",
         "Configurable Proximity Threshold: Tap the shield icon on the map to cycle through 50, 100, 150, 200, or 250 ft proximity buffers. The threshold is saved per pilot.",
-        <span className="flex flex-wrap items-center gap-2"><span>GPS Flight Tracker: Pilots log in, tap 'Record', and the map tracks their position with a blue breadcrumb trail. Barometer altitude (GPS-calibrated, configurable sample count) is fused with GPS using a configurable weight, with a divergence guard that falls back to GPS-only if drift is too large. All smoothing parameters (EMA alpha, vertical speed alpha, baro fusion weight, calibration samples, max divergence) are tuneable from Admin &gt; Flight Tracker &gt; Signal Processing.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Landing Detection: Auto-stop now requires BOTH ground speed AND vertical speed to be below their thresholds for the configured duration. This prevents false landings when a pilot is thermalling in a tight circle (near-zero ground speed but significant climb/sink rate). All thresholds are configurable under Admin &gt; Flight Tracker &gt; Auto-Start / Auto-Stop.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Server Thresholds: Active pilot TTL, landed pilot TTL, phone stale threshold, and satellite max fix age are all configurable under Admin &gt; Flight Tracker &gt; Server-Side Thresholds. These control how long pilots remain on the live map and when the server falls back to satellite tracker polling.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Satellite Tracker Visibility: Each satellite tracker type (Garmin inReach, SPOT, ZOLEO) can be individually shown or hidden from the pilot settings dialog. Toggle these under Admin &gt; Flight Tracker &gt; Satellite Tracker Visibility. Hidden trackers don't appear in pilot profiles — useful for hiding untested integrations until ready.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>GPS Flight Tracker: Pilots log in, tap 'Record', and the map tracks their position with a blue breadcrumb trail. Barometer altitude (GPS-calibrated, configurable sample count) is fused with GPS using a configurable weight, with a divergence guard that falls back to GPS-only if drift is too large. All smoothing parameters (EMA alpha, vertical speed alpha, baro fusion weight, calibration samples, max divergence) are tuneable from Admin &gt; Flight Tracker &gt; Signal Processing.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Landing Detection: Auto-stop now requires BOTH ground speed AND vertical speed to be below their thresholds for the configured duration. This prevents false landings when a pilot is thermalling in a tight circle (near-zero ground speed but significant climb/sink rate). All thresholds are configurable under Admin &gt; Flight Tracker &gt; Auto-Start / Auto-Stop.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Server Thresholds: Active pilot TTL, landed pilot TTL, phone stale threshold, and satellite max fix age are all configurable under Admin &gt; Flight Tracker &gt; Server-Side Thresholds. These control how long pilots remain on the live map and when the server falls back to satellite tracker polling.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Satellite Tracker Visibility: Each satellite tracker type (Garmin inReach, SPOT, ZOLEO) can be individually shown or hidden from the pilot settings dialog. Toggle these under Admin &gt; Flight Tracker &gt; Satellite Tracker Visibility. Hidden trackers don't appear in pilot profiles — useful for hiding untested integrations until ready.</span><Link to="/admin/flight-tracker" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Flight Tracker <ExternalLink className="w-3 h-3" /></Link></span>,
         "Weather Stations: All XC sites with live weather show wind arrow markers on the map — blue for the selected site, dark for others. Wind data refreshes every 60 seconds.",
         "Mobile Site Selector: On phones, tap the site selector to open a full-height bottom sheet (85% of screen) that sits above the map. The list scrolls independently with a fixed header.",
         "Offline Tiles: Use the download button to cache map tiles for offline use when flying in areas without mobile reception.",
@@ -299,7 +299,7 @@ export function AdminManual() {
     },
     {
       title: "Weather Management",
-      icon: <Wind className="w-6 h-6 text-sky" />,
+      icon: <Wind className="w-6 h-6 text-accent" />,
       link: "/admin/weather",
       category: "Dashboard Settings",
       description: "Manage live weather scraping and the three pre-cached ECMWF wind grids that power the wind map and 7-day outlook. Open via the 'Weather Management' card on the Dashboard.",
@@ -323,7 +323,7 @@ export function AdminManual() {
     },
     {
       title: "AI Model Configuration",
-      icon: <Sparkles className="w-6 h-6 text-sky" />,
+      icon: <Sparkles className="w-6 h-6 text-accent" />,
       link: "/admin/ai-models",
       category: "Dashboard Settings",
       description: "Configure AI model fallback chains for text and image tasks.",
@@ -338,12 +338,12 @@ export function AdminManual() {
     },
     {
       title: "Public Smart Assistant",
-      icon: <MessageCircle className="w-6 h-6 text-sky" />,
+      icon: <MessageCircle className="w-6 h-6 text-accent" />,
       link: "/admin/connections",
       category: "Dashboard Settings",
       description: "The home page AI assistant that helps pilots find site info, weather, and club resources.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Settings are on the API Settings page in the Smart Assistant card.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Settings are on the API Settings page in the Smart Assistant card.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>,
         "The assistant answers questions about sites, ratings, weather, and hazards from the site database.",
         "Search Disclaimer: Add text that appears at the end of every reply. Leave blank to disable.",
         "Call-to-Action Message: A promotional message shown periodically in the chat. Set frequency (Off, every response, every 2nd–5th). Supports formatting — click 'Formatting help' for reference.",
@@ -352,7 +352,7 @@ export function AdminManual() {
     },
     {
       title: "Branding",
-      icon: <Settings className="w-6 h-6 text-sky" />,
+      icon: <Settings className="w-6 h-6 text-accent" />,
       link: "/admin/branding",
       category: "Dashboard Settings",
       description: "Configure club identity — name, tagline, logos, and PWA icon.",
@@ -365,7 +365,7 @@ export function AdminManual() {
     },
     {
       title: "Page View Analytics",
-      icon: <Activity className="w-6 h-6 text-sky" />,
+      icon: <Activity className="w-6 h-6 text-accent" />,
       link: "/admin/pageviews",
       category: "Dashboard Settings",
       description: "Track page views across the site.",
@@ -381,8 +381,8 @@ export function AdminManual() {
       category: "Dashboard Settings",
       description: "Admin login and user management.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Navigate to /admin to log in. Sessions persist until you sign out.</span><Link to="/admin" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Login <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Admin access is managed in the Admin Contact Directory — tick the 'Admin' role on any contact. Admins need a surname, phone, email, and password.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Navigate to /admin to log in. Sessions persist until you sign out.</span><Link to="/admin" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Login <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Admin access is managed in the Admin Contact Directory — tick the 'Admin' role on any contact. Admins need a surname, phone, email, and password.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
         "Logged-in admins see an 'Edit Site' link in map popups for quick access."
       ]
     },
@@ -398,7 +398,7 @@ export function AdminManual() {
         "File Actions (⋮ menu on each file): Download to your computer, Move to a different folder, Copy to another folder, or Delete. Move and Copy let you browse into nested folders to pick any destination.",
         "Nested folders: folders can contain subfolders to any depth (e.g. Safety > Incident Reports > 2026). Click a folder to drill in, use the breadcrumb trail to navigate back up. 'New Folder' works at any level.",
         "Click any document to open it in Google Drive. Use the search bar to find documents by name.",
-        <span className="flex flex-wrap items-center gap-2"><span>Google Drive connection is configured in API Settings. After updates, you may need to redeploy the Apps Script.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>
+        <span className="flex flex-wrap items-center gap-2"><span>Google Drive connection is configured in API Settings. After updates, you may need to redeploy the Apps Script.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>
       ]
     },
     {
@@ -429,7 +429,7 @@ export function AdminManual() {
         "Position field: Set automatically when a contact is added to a TidyHQ position group (e.g. President, Treasurer). Shown on the committee widget and About page.",
         "Password Reset: Use the 'Send Reset Email' button on any admin or committee contact.",
         "Filter by role or search by name. Import from TidyHQ to pre-fill contact details.",
-        <span className="flex flex-wrap items-center gap-2"><span>Contacts are available for linking in Project Management.</span><Link to="/admin/projects" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Projects <ExternalLink className="w-3 h-3" /></Link></span>
+        <span className="flex flex-wrap items-center gap-2"><span>Contacts are available for linking in Project Management.</span><Link to="/admin/projects" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Projects <ExternalLink className="w-3 h-3" /></Link></span>
       ]
     },
     {
@@ -441,17 +441,17 @@ export function AdminManual() {
       steps: [
         <span className="flex flex-wrap items-center gap-2">
           <span>Navigate: Admin Dashboard → Site Options → Safety Officer Login Prompt card.</span>
-          <Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">
+          <Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">
             Open Site Options <ExternalLink className="w-3 h-3" />
           </Link>
         </span>,
         "Auto-prompt On (default): When a user with SO or committee credentials opens the website within 500 metres of any flying site, they are shown a login popup automatically. After logging in, their session is bound to that site and they can open or close it temporarily.",
         "Auto-prompt Off: The proximity popup is completely suppressed. No login prompt appears for anyone — members, visitors, or SOs — regardless of location. This is the recommended setting if the automatic popup is inconvenient (e.g. you were near a site as a member of the public and didn't want to see the login dialog).",
-        <span className="flex flex-wrap items-center gap-2"><span>Manual SO login still works when auto-prompt is off: SOs and committee members navigate to /admin and log in using their credentials as normal. After logging in they will see a prompt to bind their session to a nearby site.</span><Link to="/admin" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Login <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Who can log in as SO: Only contacts with both 'Safety Committee' and 'SO Authorised' ticked in Admin Contacts. 'SO Authorised' is set manually per contact — it is not synced from TidyHQ.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Manual SO login still works when auto-prompt is off: SOs and committee members navigate to /admin and log in using their credentials as normal. After logging in they will see a prompt to bind their session to a nearby site.</span><Link to="/admin" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Login <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Who can log in as SO: Only contacts with both 'Safety Committee' and 'SO Authorised' ticked in Admin Contacts. 'SO Authorised' is set manually per contact — it is not synced from TidyHQ.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
         "SO session permissions: An SO session is locked to one specific site. The SO can mark that site as temporarily closed or reopen it. They cannot access any other admin area unless they also hold the Admin role.",
         "Proximity enforcement: The server independently verifies the user's GPS coordinates are within 500 m of the site when they log in. Turning off the auto-prompt does not disable this server-side check — manual SO logins are still proximity-verified.",
-        <span className="flex flex-wrap items-center gap-2"><span>To grant or revoke SO access: Edit the contact in Admin Contacts, tick or untick 'SO Authorised', then save. The change takes effect immediately on the next login attempt.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>
+        <span className="flex flex-wrap items-center gap-2"><span>To grant or revoke SO access: Edit the contact in Admin Contacts, tick or untick 'SO Authorised', then save. The change takes effect immediately on the next login attempt.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>
       ]
     },
     {
@@ -475,12 +475,12 @@ export function AdminManual() {
       category: "Management",
       description: "Manage club sponsors — logos, website links, and descriptions displayed on the home page and dedicated sponsors page.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Sponsors' from the Admin Dashboard (Content Management section).</span><Link to="/admin/sponsors" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Sponsors <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Sponsors' from the Admin Dashboard (Content Management section).</span><Link to="/admin/sponsors" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sponsors <ExternalLink className="w-3 h-3" /></Link></span>,
         "Add Sponsor: Click 'Add Sponsor'. Enter name (required), logo URL, website URL, and an optional markdown description.",
         "Edit: Click 'Edit' on any sponsor card to update details. Changes save immediately.",
         "Reorder: Use the sort order field to control display sequence. Lower numbers appear first.",
         "Delete: Click 'Delete' on a sponsor card — a confirmation dialog prevents accidental removal.",
-        <span className="flex flex-wrap items-center gap-2"><span>Home Page Card: When sponsors exist, an 'Our Sponsors' card becomes available in the Home Page card picker. Select it to show sponsor names on the home page.</span><Link to="/admin/home" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Home Settings <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Home Page Card: When sponsors exist, an 'Our Sponsors' card becomes available in the Home Page card picker. Select it to show sponsor names on the home page.</span><Link to="/admin/home" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Home Settings <ExternalLink className="w-3 h-3" /></Link></span>,
         "Public Sponsors Page: All sponsors are listed at /sponsors with their logos, links, and descriptions. Visitors reach this via the 'View Sponsors' link on the home card."
       ]
     },
@@ -491,7 +491,7 @@ export function AdminManual() {
       category: "Management",
       description: "Central control for all automated jobs — configure timing, enable/disable, and view cache settings.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Scheduled Tasks' from the Admin Dashboard (Integrations section).</span><Link to="/admin/scheduled-tasks" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Scheduled Tasks <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Go to 'Scheduled Tasks' from the Admin Dashboard (Integrations section).</span><Link to="/admin/scheduled-tasks" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Scheduled Tasks <ExternalLink className="w-3 h-3" /></Link></span>,
         "All times are Melbourne time (AEST/AEDT). The system checks once per hour whether any job is due to run.",
         "Site Guide Version Check: Checks if the SAFA site guide has a new version. If changed and auto-import is enabled, triggers a bulk site import. Default: 5:00 AM.",
         "7-Day Fetch: Downloads the 7-day weather forecast grid from Open-Meteo for all sites. Default: 5:40 AM.",
@@ -535,7 +535,7 @@ export function AdminManual() {
         "Slider Carousel: Click the gallery icon on slider images to toggle inclusion in the home page photo carousel.",
         "Generate Missing Slider Images: A repair button that appears automatically below the hero grid only when one or more hero images are missing their slider crops (Landscape Large, Landscape Small, or Portrait). Clicking it regenerates the missing sizes from the existing hero image. This can occur after an interrupted upload or a URL import that did not complete all sizes. The button is hidden when all slider images are present — no action is needed in normal operation.",
         "SkyHigh Image Wall: All library images are automatically displayed on the public /club-photos page in a mosaic layout. Newest images appear first. Images cycle through Hero → Banner → Landscape Large → Landscape Small → Portrait slots until every unique image is used. Community photo uploads also support photographer credit — enter a name in the upload dialog.",
-        <span className="flex flex-wrap items-center gap-2"><span>Using Images: Select them on Home Page settings (hero backgrounds) or Site Edit pages (site banners). Use the image toolbar in News/Pages to insert from the library.</span><Link to="/admin/home" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Home Settings <ExternalLink className="w-3 h-3" /></Link><Link to="/admin/sites" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Sites Admin <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Using Images: Select them on Home Page settings (hero backgrounds) or Site Edit pages (site banners). Use the image toolbar in News/Pages to insert from the library.</span><Link to="/admin/home" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Home Settings <ExternalLink className="w-3 h-3" /></Link><Link to="/admin/sites" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sites Admin <ExternalLink className="w-3 h-3" /></Link></span>,
         "Ideal Sizes: Hero backgrounds 1920×1080, site headers 1920×600, general content 1200×800. Images are auto-compressed on upload.",
         "Permanent Cloud Storage: All uploaded images are stored in Cloudflare R2 cloud storage (or namespaced local storage). They are organized into logical folders: images/sites/, images/hero/, images/sliders/, branding/, and submissions/. This structure ensures high performance and prevents data loss during system updates.",
         "Google Drive & Dropbox: Sharing links are auto-converted to direct image URLs when pasted into image fields."
@@ -543,18 +543,18 @@ export function AdminManual() {
     },
     {
       title: "Troubleshooting",
-      icon: <AlertCircle className="w-6 h-6 text-orange" />,
+      icon: <AlertCircle className="w-6 h-6 text-accent" />,
       link: "/admin",
       category: "Troubleshooting",
       description: "Common issues and how to diagnose them. Railway deployment logs are the primary diagnostic tool for server-side problems.",
       steps: [
         "Check Railway Logs: Go to railway.com → log in with the club's web@skyhighparagliding.org.au account → select the skyhigh project → click the web service → Deployments tab → click the active deployment → 'View Logs'. Logs update in real time and show all weather scraper activity, errors, and API calls.",
-        <span className="flex flex-wrap items-center gap-2"><span>Tide Chart Flat Line: The ECMWF weather grid data is stale. In Railway logs, look for 'extractSiteForecast: [datetime] not in grid — fine grid is stale'. Fix: go to Weather Management and click 'Fetch Now'. The chart recovers automatically after the next scraper cycle (15–30 min).</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Weather Data Stopped Updating: In Railway logs, check for 'Updated ECMWF forecasts for 0/X sites'. This means the ECMWF grid fetch is failing (usually rate limiting or a network timeout). Click 'Fetch Now' in Weather Management. If the problem persists, check Open-Meteo API status — the free tier has no auth and is sometimes temporarily unavailable.</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Tide Chart Flat Line: The ECMWF weather grid data is stale. In Railway logs, look for 'extractSiteForecast: [datetime] not in grid — fine grid is stale'. Fix: go to Weather Management and click 'Fetch Now'. The chart recovers automatically after the next scraper cycle (15–30 min).</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Weather Data Stopped Updating: In Railway logs, check for 'Updated ECMWF forecasts for 0/X sites'. This means the ECMWF grid fetch is failing (usually rate limiting or a network timeout). Click 'Fetch Now' in Weather Management. If the problem persists, check Open-Meteo API status — the free tier has no auth and is sometimes temporarily unavailable.</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
         "Images Not Loading: Check the Cloudflare R2 bucket at dash.cloudflare.com (log in with web@skyhighparagliding.org.au). The bucket is skyhigh-media. Verify CORS settings are still active (should allow GET from any origin). If the public URL returns 403, R2 public access may need to be re-enabled.",
         "Emails Not Sending: Go to resend.com → log in → check the dashboard for bounced or failed delivery events. Verify the domain skyhighparagliding.org.au is still Verified (green). If DKIM/SPF/DMARC records have been removed from Google Cloud DNS, domain verification will lapse and emails will fail.",
-        <span className="flex flex-wrap items-center gap-2"><span>TidyHQ Sync Not Updating Website: Go to Connections &amp; APIs → TidyHQ. Check the sync log for recent webhook events. If blank, check that the webhook URL is still registered in TidyHQ Admin → API → Webhooks. The webhook fires on membership changes, group changes, and contact updates.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>,
-        <span className="flex flex-wrap items-center gap-2"><span>Admin Login Not Working: If an admin can't log in and can't receive a password reset email (email failing), another admin can update the password directly via Admin Contacts → open the contact → enter a new password → Save.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>TidyHQ Sync Not Updating Website: Go to Connections &amp; APIs → TidyHQ. Check the sync log for recent webhook events. If blank, check that the webhook URL is still registered in TidyHQ Admin → API → Webhooks. The webhook fires on membership changes, group changes, and contact updates.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Admin Login Not Working: If an admin can't log in and can't receive a password reset email (email failing), another admin can update the password directly via Admin Contacts → open the contact → enter a new password → Save.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
         "Site not appearing after Save: Check the browser console for errors. The most common cause is a PostgreSQL type validation error from a partially edited field. Open the site again, check all fields are valid, and save.",
         "Deployment Failed on Railway: Go to railway.com → skyhigh project → Deployments tab. Click the failed deployment to see build logs. Common causes: npm install failure (check for package version conflicts), TypeScript compile error (the build command runs tsc), or a missing environment variable (Railway Variables tab).",
       ]
@@ -583,7 +583,7 @@ export function AdminManual() {
       category: "Reference",
       description: "Complete ordered set of prompts to recreate the entire platform from scratch.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Build Blueprint.</span><Link to="/build-blueprint" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Build Blueprint <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Build Blueprint.</span><Link to="/build-blueprint" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Build Blueprint <ExternalLink className="w-3 h-3" /></Link></span>,
         "Contains 13 phases and 35+ prompts covering every feature of the platform, ordered for efficient rebuilding.",
         "Phase 1 (Foundation & Branding) is designed first so all club identity — name, logo, tagline, and colour — is controlled from admin settings, not code.",
         "Architecture Principles section lists the 7 core design rules: branding-first, one library per concern, shared hooks, server-side validation, typed API, progressive enhancement, migration-based schema.",
@@ -599,7 +599,7 @@ export function AdminManual() {
       category: "Reference",
       description: "Complete PRD — product vision, user roles, all functional requirements, integrations, and non-functional standards.",
       steps: [
-        <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Product Requirements.</span><Link to="/product-spec" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Product Requirements <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Product Requirements.</span><Link to="/product-spec" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Product Requirements <ExternalLink className="w-3 h-3" /></Link></span>,
         "8 sections covering: Product Vision & Goals, User Roles, Public Website, Pilot Portal, Admin Portal, Integrations, Branding, and Non-Functional Requirements.",
         "Each section lists detailed bullet requirements for every feature area of the platform.",
         "Data Model section documents every PostgreSQL table and the data it stores.",
@@ -613,17 +613,17 @@ export function AdminManual() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Link>
-          <div className="flex items-center gap-2 text-navy font-bold">
+          <div className="flex items-center gap-2 text-ink font-bold">
             <Book className="w-5 h-5" />
             <span>Admin Manual v15.2</span>
           </div>
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-extrabold text-navy mb-4">Administrator User Manual</h1>
+          <h1 className="text-4xl font-extrabold text-ink mb-4">Administrator User Manual</h1>
           <p className="text-lg text-foreground-secondary max-w-3xl mx-auto">
             Quick reference for managing the {clubName} website. Each section links directly to the relevant admin page.
           </p>
@@ -691,7 +691,7 @@ export function AdminManual() {
               <span className="text-xs font-semibold text-foreground-faint uppercase tracking-wide">{group.label} — </span>
               {group.entries.map(([label, id], i) => (
                 <span key={id}>
-                  <a href={`#${id}`} className="text-sm text-sky hover:text-sky-light hover:underline">{label}</a>
+                  <a href={`#${id}`} className="text-sm text-accent hover:text-accent-hover hover:underline">{label}</a>
                   {i < group.entries.length - 1 && <span className="text-foreground-faint mx-1">·</span>}
                 </span>
               ))}
@@ -712,7 +712,7 @@ export function AdminManual() {
               <div className="flex flex-col md:flex-row">
                 <div className="md:w-1/3 bg-card p-8 border-r border-border-faint">
                   <div className="mb-4">{section.icon}</div>
-                  <h2 className="text-2xl font-bold text-navy mb-4">{section.title}</h2>
+                  <h2 className="text-2xl font-bold text-ink mb-4">{section.title}</h2>
                   <p className="text-foreground-secondary text-sm mb-6 leading-relaxed">
                     {section.description}
                   </p>
@@ -728,7 +728,7 @@ export function AdminManual() {
                   <ul className="space-y-4">
                     {section.steps.map((step, sIdx) => (
                       <li key={sIdx} className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-card rounded-full border border-border-subtle flex items-center justify-center text-xs font-bold text-navy shadow-sm">
+                        <div className="flex-shrink-0 w-6 h-6 bg-card rounded-full border border-border-subtle flex items-center justify-center text-xs font-bold text-ink shadow-sm">
                           {sIdx + 1}
                         </div>
                         <div className="text-foreground-label">{step}</div>
@@ -742,10 +742,10 @@ export function AdminManual() {
           );
           })}
 
-          <Card className="bg-navy text-white p-8 border-none shadow-xl">
+          <Card className="bg-ink text-white p-8 border-none shadow-xl">
             <CardHeader className="p-0 mb-6">
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <Settings className="w-6 h-6 text-sky" />
+                <Settings className="w-6 h-6 text-accent" />
                 Quick Tips
               </CardTitle>
             </CardHeader>
@@ -758,7 +758,7 @@ export function AdminManual() {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-orange flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-accent flex-shrink-0" />
                   <p className="text-sm text-gray-300">
                     <strong className="text-white">Errors:</strong> Errors appear inline where the action took place — no browser popups. Read the message and retry.
                   </p>
@@ -770,22 +770,22 @@ export function AdminManual() {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <Settings className="w-5 h-5 text-sky flex-shrink-0" />
+                  <Settings className="w-5 h-5 text-accent flex-shrink-0" />
                   <p className="text-sm text-gray-300">
-                    <strong className="text-white">Live Site:</strong> <a href="https://www.skyhighparagliding.org.au" target="_blank" rel="noopener noreferrer" className="text-sky underline">www.skyhighparagliding.org.au</a> — hosted on Railway, PostgreSQL database, images on Cloudflare R2. All credentials under the club's <code>web@skyhighparagliding.org.au</code> account.
+                    <strong className="text-white">Live Site:</strong> <a href="https://www.skyhighparagliding.org.au" target="_blank" rel="noopener noreferrer" className="text-accent underline">www.skyhighparagliding.org.au</a> — hosted on Railway, PostgreSQL database, images on Cloudflare R2. All credentials under the club's <code>web@skyhighparagliding.org.au</code> account.
                   </p>
                 </div>
               </div>
               <div className="bg-white/5 p-6 rounded-xl border border-white/10">
                 <h4 className="font-bold mb-3">Service Account Links</h4>
                 <div className="space-y-2 mb-4">
-                  <p className="text-xs text-gray-300"><strong className="text-white">Railway (hosting + logs):</strong> <a href="https://railway.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">railway.com</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">GitHub (source code):</strong> <a href="https://github.com/SkyHighParagliding" target="_blank" rel="noopener noreferrer" className="text-sky underline">github.com/SkyHighParagliding</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">Cloudflare R2 (images):</strong> <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">dash.cloudflare.com</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">Google Cloud DNS:</strong> <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">console.cloud.google.com</a> — Skyhigh DNS Service project</p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">Resend (email):</strong> <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">resend.com</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">TidyHQ:</strong> <a href="https://skyhigh.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">skyhigh.tidyhq.com</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">Google Workspace / Drive:</strong> <a href="https://workspace.google.com" target="_blank" rel="noopener noreferrer" className="text-sky underline">workspace.google.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Railway (hosting + logs):</strong> <a href="https://railway.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">railway.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">GitHub (source code):</strong> <a href="https://github.com/SkyHighParagliding" target="_blank" rel="noopener noreferrer" className="text-accent underline">github.com/SkyHighParagliding</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Cloudflare R2 (images):</strong> <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">dash.cloudflare.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Google Cloud DNS:</strong> <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">console.cloud.google.com</a> — Skyhigh DNS Service project</p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Resend (email):</strong> <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">resend.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">TidyHQ:</strong> <a href="https://skyhigh.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">skyhigh.tidyhq.com</a></p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">Google Workspace / Drive:</strong> <a href="https://workspace.google.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">workspace.google.com</a></p>
                 </div>
                 <p className="text-xs text-gray-400">All login credentials and recovery procedures are in the Credential Recovery document on Google Drive (01_Governance folder).</p>
               </div>

@@ -176,18 +176,18 @@ export function AdminPageEdit() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 mb-6">
-          <Link to="/admin/pages" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin/pages" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Pages
           </Link>
           <span className="text-foreground-ghost">|</span>
-          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-navy font-medium">
+          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-ink font-medium">
             Admin Dashboard
           </Link>
         </div>
 
-        <Card className="shadow-lg border-t-4 border-t-navy">
+        <Card className="shadow-lg border-t-4 border-t-ink">
           <CardHeader className="bg-card border-b pb-6">
-            <CardTitle className="text-2xl text-navy">
+            <CardTitle className="text-2xl text-ink">
               {isNew ? "Create New Page" : `Edit Page: ${formData.title}`}
             </CardTitle>
           </CardHeader>
@@ -196,7 +196,7 @@ export function AdminPageEdit() {
               <div className="flex justify-end">
                 <Button
                   type="submit"
-                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                 >
                   {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Page</>}
                 </Button>
@@ -209,7 +209,7 @@ export function AdminPageEdit() {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
                     required
                   />
                 </div>
@@ -223,7 +223,7 @@ export function AdminPageEdit() {
                       value={formData.slug}
                       onChange={handleChange}
                       placeholder="e.g. about-us"
-                      className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                 )}
@@ -245,7 +245,7 @@ export function AdminPageEdit() {
                     value={formData.content}
                     onChange={handleChange}
                     rows={15}
-                    className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky font-mono text-sm"
+                    className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent font-mono text-sm"
                     required
                   />
                   <div className="flex items-center gap-3 mt-1">
@@ -257,7 +257,7 @@ export function AdminPageEdit() {
               <div className="flex justify-end pt-6 border-t">
                 <Button
                   type="submit"
-                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                 >
                   {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Page</>}
                 </Button>
@@ -270,7 +270,7 @@ export function AdminPageEdit() {
           <div className="mt-6">
             <button
               onClick={() => setFlyoutOpen(!flyoutOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-t-xl bg-navy text-white font-medium text-sm hover:bg-navy-light transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-t-xl bg-ink text-white font-medium text-sm hover:bg-ink-muted transition-colors"
             >
               <div className="flex items-center gap-2">
                 <Paperclip className="w-4 h-4" />
@@ -281,13 +281,13 @@ export function AdminPageEdit() {
             {flyoutOpen && (
               <div className="bg-card border border-t-0 border-border rounded-b-xl shadow-lg">
                 <div
-                  className={`p-6 border-b border-border-faint transition-colors ${dragOver ? "bg-sky/10 border-sky" : ""}`}
+                  className={`p-6 border-b border-border-faint transition-colors ${dragOver ? "bg-accent/10 border-accent" : ""}`}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center gap-3 py-4">
-                    <Upload className={`w-8 h-8 ${dragOver ? "text-sky" : "text-muted-foreground"}`} />
+                    <Upload className={`w-8 h-8 ${dragOver ? "text-accent" : "text-muted-foreground"}`} />
                     <p className="text-sm text-foreground-secondary">
                       {uploading ? "Uploading..." : "Drag & drop files here, or"}
                     </p>
@@ -317,14 +317,14 @@ export function AdminPageEdit() {
                       <div key={att.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">
                         <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-navy truncate">{att.originalFilename}</p>
+                          <p className="text-sm font-medium text-ink truncate">{att.originalFilename}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatFileSize(att.fileSize)} · {att.downloadCount} downloads
                           </p>
                         </div>
                         <a
                           href={`/api/pages/${slug}/attachments/${att.id}/download`}
-                          className="p-1.5 rounded hover:bg-muted text-sky"
+                          className="p-1.5 rounded hover:bg-muted text-accent"
                           title="Download"
                         >
                           <Download className="w-4 h-4" />
@@ -357,7 +357,7 @@ export function AdminPageEdit() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Delete Attachment</h3>
+              <h3 className="text-xl font-bold text-ink">Delete Attachment</h3>
               <button onClick={() => setDeleteAttId(null)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>

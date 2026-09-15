@@ -141,9 +141,9 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-card rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b flex justify-between items-center bg-navy text-white">
+        <div className="p-6 border-b flex justify-between items-center bg-ink text-white">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-sky-light" />
+            <Sparkles className="w-6 h-6 text-accent-hover" />
             <h2 className="text-xl font-bold">Scrape Site Guide</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -156,8 +156,8 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
             (isProcessing || initialUrl) ? (
               <div className="max-w-xl mx-auto py-12 text-center space-y-6">
                 <div className="space-y-4 flex flex-col items-center justify-center h-full">
-                   <Loader2 className="w-16 h-16 text-sky animate-spin mb-4" />
-                   <h3 className="text-2xl font-bold text-navy">Processing Site Content</h3>
+                   <Loader2 className="w-16 h-16 text-accent animate-spin mb-4" />
+                   <h3 className="text-2xl font-bold text-ink">Processing Site Content</h3>
                    <p className="text-muted-foreground max-w-md">
                      Extracting and analyzing details from <br/>
                      <span className="font-mono text-xs bg-muted px-2 py-1 rounded mt-1 inline-block text-sky-600 truncate max-w-full">
@@ -179,7 +179,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
             ) : (
             <div className="max-w-xl mx-auto py-12 text-center space-y-6">
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-navy">Generate Site from URL</h3>
+                <h3 className="text-2xl font-bold text-ink">Generate Site from URL</h3>
                 <p className="text-muted-foreground">Paste a link to a site guide (e.g. from SAFA or VHPA) and Smart extraction will capture and re-paraphrase the details for you.</p>
               </div>
               
@@ -191,13 +191,13 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://siteguide.org.au/Sites/..."
-                  className="w-full p-4 border-2 border-border-faint rounded-xl focus:border-sky focus:ring-0 text-lg transition-all"
+                  className="w-full p-4 border-2 border-border-faint rounded-xl focus:border-accent focus:ring-0 text-lg transition-all"
                   disabled={isProcessing}
                 />
                 <Button 
                   onClick={() => handleGenerate()} 
                   disabled={isProcessing || !url}
-                  className="w-full py-6 text-lg bg-sky hover:bg-sky-light text-white rounded-xl shadow-lg shadow-sky/20 transition-all"
+                  className="w-full py-6 text-lg bg-accent hover:bg-accent-hover text-white rounded-xl shadow-lg shadow-accent/20 transition-all"
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
                   Generate Site Content
@@ -206,15 +206,15 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
               
               <div className="pt-8 grid grid-cols-3 gap-4 text-xs text-foreground-faint">
                 <div className="p-3 border rounded-lg">
-                  <div className="font-bold text-navy mb-1">1. Scrape</div>
+                  <div className="font-bold text-ink mb-1">1. Scrape</div>
                   Extracts raw text from the provided URL
                 </div>
                 <div className="p-3 border rounded-lg">
-                  <div className="font-bold text-navy mb-1">2. Process</div>
+                  <div className="font-bold text-ink mb-1">2. Process</div>
                   Gemini categorizes and paraphrases content
                 </div>
                 <div className="p-3 border rounded-lg">
-                  <div className="font-bold text-navy mb-1">3. Review</div>
+                  <div className="font-bold text-ink mb-1">3. Review</div>
                   Check and edit before saving to database
                 </div>
               </div>
@@ -222,9 +222,9 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
             )
           ) : (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-sky/5 p-4 rounded-xl border border-sky/20 flex items-center justify-between">
+              <div className="bg-accent/5 p-4 rounded-xl border border-accent/20 flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-navy">Smart Generation Complete</h3>
+                  <h3 className="font-bold text-ink">Smart Generation Complete</h3>
                   <p className="text-sm text-foreground-secondary">Review the extracted and paraphrased content below.</p>
                 </div>
                 
@@ -237,27 +237,27 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <div className="grid grid-cols-2 gap-4 bg-background p-4 rounded-xl border">
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">Name</div>
-                        <div className="font-medium text-navy">{aiResult.name}</div>
+                        <div className="font-medium text-ink">{aiResult.name}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">Type</div>
-                        <div className="font-medium text-navy">{aiResult.type}</div>
+                        <div className="font-medium text-ink">{aiResult.type}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">PG Rating</div>
-                        <div className="font-medium text-navy text-xs">{aiResult.pgRating || "—"}</div>
+                        <div className="font-medium text-ink text-xs">{aiResult.pgRating || "—"}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">HG Rating</div>
-                        <div className="font-medium text-navy text-xs">{aiResult.hgRating || "—"}</div>
+                        <div className="font-medium text-ink text-xs">{aiResult.hgRating || "—"}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">Wind</div>
-                        <div className="font-medium text-navy">{aiResult.windDir}</div>
+                        <div className="font-medium text-ink">{aiResult.windDir}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-foreground-faint uppercase">Coordinates</div>
-                        <div className="font-medium text-navy">
+                        <div className="font-medium text-ink">
                           {aiResult.lat != null ? Number(aiResult.lat).toFixed(4) : "—"}, {aiResult.lon != null ? Number(aiResult.lon).toFixed(4) : "—"}
                         </div>
                       </div>
@@ -269,7 +269,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <textarea 
                       value={aiResult.siteOverview}
                       onChange={(e) => setAiResult({...aiResult, siteOverview: e.target.value})}
-                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[150px] focus:ring-sky focus:border-sky"
+                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[150px] focus:ring-accent focus:border-accent"
                     />
                   </section>
 
@@ -349,7 +349,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <textarea 
                       value={aiResult.knownHazards?.join('\n')}
                       onChange={(e) => setAiResult({...aiResult, knownHazards: e.target.value.split('\n')})}
-                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-sky focus:border-sky"
+                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-accent focus:border-accent"
                     />
                   </section>
 
@@ -358,7 +358,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <textarea 
                       value={aiResult.siteRules?.join('\n')}
                       onChange={(e) => setAiResult({...aiResult, siteRules: e.target.value.split('\n')})}
-                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-sky focus:border-sky"
+                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-accent focus:border-accent"
                     />
                   </section>
 
@@ -367,7 +367,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <textarea 
                       value={aiResult.launchArea}
                       onChange={(e) => setAiResult({...aiResult, launchArea: e.target.value})}
-                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-sky focus:border-sky"
+                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-accent focus:border-accent"
                     />
                   </section>
 
@@ -376,7 +376,7 @@ export function AISiteGeneratorModal({ isOpen, onClose, onSave, initialUrl }: AI
                     <textarea 
                       value={aiResult.landingZones}
                       onChange={(e) => setAiResult({...aiResult, landingZones: e.target.value})}
-                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-sky focus:border-sky"
+                      className="w-full p-4 rounded-xl border shadow-sm text-sm text-foreground-label min-h-[100px] focus:ring-accent focus:border-accent"
                     />
                   </section>
 

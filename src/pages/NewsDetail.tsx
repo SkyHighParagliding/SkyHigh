@@ -34,11 +34,11 @@ export function NewsDetail() {
             <div className="absolute inset-0">
               <img src={item.heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
             </div>
-            <div className="absolute inset-0 bg-navy/60" />
+            <div className="absolute inset-0 bg-ink/60" />
           </>
         )}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <Link to="/news" className={`inline-flex items-center ${item.heroImage ? 'text-sky-300 hover:text-white' : 'text-sky hover:text-sky-700'} mb-6 font-medium transition-colors`}>
+          <Link to="/news" className={`inline-flex items-center ${item.heroImage ? 'text-sky-300 hover:text-white' : 'text-accent hover:text-sky-700'} mb-6 font-medium transition-colors`}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to News
           </Link>
           
@@ -47,7 +47,7 @@ export function NewsDetail() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className={`text-4xl md:text-5xl font-extrabold tracking-tight mb-6 ${item.heroImage ? '' : 'text-navy'}`}>{item.title}</h1>
+            <h1 className={`text-4xl md:text-5xl font-extrabold tracking-tight mb-6 ${item.heroImage ? '' : 'text-ink'}`}>{item.title}</h1>
             <div className={`flex flex-wrap items-center ${item.heroImage ? 'text-white/70' : 'text-slate-500'} space-x-6 text-sm md:text-base`}>
               <span className="flex items-center mb-2"><Calendar className="w-4 h-4 mr-2" /> {new Date(item.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               <span className="flex items-center mb-2"><User className="w-4 h-4 mr-2" /> {item.author}</span>

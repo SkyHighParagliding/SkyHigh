@@ -43,9 +43,9 @@ const TRAIT_DEFS: TraitDef[] = [
   { key: "cheap", label: "Low Cost", shortLabel: "Cheap", icon: <DollarSign className="w-3 h-3" />, color: "text-emerald-600", bg: "bg-emerald-50", description: "Lower token cost per request" },
   { key: "vision", label: "Vision", shortLabel: "Vision", icon: <Eye className="w-3 h-3" />, color: "text-blue-600", bg: "bg-blue-50", description: "Can analyse images and visual input" },
   { key: "image-gen", label: "Image Generation", shortLabel: "ImgGen", icon: <Image className="w-3 h-3" />, color: "text-pink-600", bg: "bg-pink-50", description: "Can generate and edit images" },
-  { key: "large-ctx", label: "Large Context", shortLabel: "LgCtx", icon: <BookOpen className="w-3 h-3" />, color: "text-sky", bg: "bg-sky/5", description: "1M+ token context window" },
+  { key: "large-ctx", label: "Large Context", shortLabel: "LgCtx", icon: <BookOpen className="w-3 h-3" />, color: "text-accent", bg: "bg-accent/5", description: "1M+ token context window" },
   { key: "legacy", label: "Legacy", shortLabel: "Old", icon: <Clock className="w-3 h-3" />, color: "text-muted-foreground", bg: "bg-muted", description: "Older model — may be deprecated soon" },
-  { key: "experimental", label: "Experimental", shortLabel: "Exp", icon: <Sparkles className="w-3 h-3" />, color: "text-orange", bg: "bg-orange/10", description: "Preview/experimental — may change without notice" },
+  { key: "experimental", label: "Experimental", shortLabel: "Exp", icon: <Sparkles className="w-3 h-3" />, color: "text-accent", bg: "bg-accent/10", description: "Preview/experimental — may change without notice" },
 ];
 
 function getModelTraits(name: string): TraitKey[] {
@@ -274,7 +274,7 @@ export function AdminAIModels() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-sky" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -283,10 +283,10 @@ export function AdminAIModels() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Link to="/admin" className="text-foreground-faint hover:text-navy transition-colors">
+          <Link to="/admin" className="text-foreground-faint hover:text-ink transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-navy">AI Model Configuration</h1>
+          <h1 className="text-2xl font-bold text-ink">AI Model Configuration</h1>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -296,7 +296,7 @@ export function AdminAIModels() {
               justSaved
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white scale-105"
                 : dirty
-                  ? "bg-navy hover:bg-navy-light text-white"
+                  ? "bg-ink hover:bg-ink-muted text-white"
                   : "bg-muted text-foreground-faint cursor-not-allowed"
             }`}
           >
@@ -342,13 +342,13 @@ export function AdminAIModels() {
         />
       </div>
 
-      <div ref={searchSectionRef} className={`border rounded-xl bg-card transition-colors ${replacing ? "border-sky ring-2 ring-sky/20" : "border-border-subtle"}`}>
+      <div ref={searchSectionRef} className={`border rounded-xl bg-card transition-colors ${replacing ? "border-accent ring-2 ring-accent/20" : "border-border-subtle"}`}>
         <div className="p-4 border-b border-border-faint flex items-center justify-between">
           <div>
             {replacing ? (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-navy">Replace: <span className="font-mono text-sky">{replacing.model}</span></h2>
+                  <h2 className="font-bold text-ink">Replace: <span className="font-mono text-accent">{replacing.model}</span></h2>
                   <button
                     onClick={() => setReplacing(null)}
                     className="text-xs text-foreground-faint hover:text-red-500 transition-colors flex items-center gap-1"
@@ -362,7 +362,7 @@ export function AdminAIModels() {
               </>
             ) : (
               <>
-                <h2 className="font-bold text-navy">Available Models from Google</h2>
+                <h2 className="font-bold text-ink">Available Models from Google</h2>
                 <p className="text-xs text-foreground-faint mt-0.5">Search the Gemini API for all currently available models</p>
               </>
             )}
@@ -371,7 +371,7 @@ export function AdminAIModels() {
             <button
               onClick={searchModels}
               disabled={searching}
-              className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy-light transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg text-sm font-medium hover:bg-ink-muted transition-colors disabled:opacity-50"
             >
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               {searching ? "Fetching..." : searchDone ? "Refresh List" : "Fetch Available Models"}
@@ -419,7 +419,7 @@ export function AdminAIModels() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Name..."
-                    className="w-36 pl-7 pr-2 py-1 border border-border-subtle rounded-md text-xs focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-36 pl-7 pr-2 py-1 border border-border-subtle rounded-md text-xs focus:ring-1 focus:ring-accent focus:border-accent"
                   />
                 </div>
                 <p className="text-xs text-foreground-faint flex-1">
@@ -443,7 +443,7 @@ export function AdminAIModels() {
                 const isFullMatch = matchCount > 0 && matchCount === (Array.isArray(activeTraitFilters) ? activeTraitFilters : []).length;
 
                 return (
-                  <div key={m.name} className={`px-4 py-3 flex items-center gap-3 transition-colors ${replacing ? "hover:bg-sky/5 cursor-pointer" : "hover:bg-background"} ${isFullMatch ? "bg-emerald-50/50" : matchCount > 0 ? "bg-amber-50/30" : ""}`}
+                  <div key={m.name} className={`px-4 py-3 flex items-center gap-3 transition-colors ${replacing ? "hover:bg-accent/5 cursor-pointer" : "hover:bg-background"} ${isFullMatch ? "bg-emerald-50/50" : matchCount > 0 ? "bg-amber-50/30" : ""}`}
                     onClick={replacing ? () => replaceModel(m.name) : undefined}
                   >
                     <div className="flex-1 min-w-0">
@@ -453,10 +453,10 @@ export function AdminAIModels() {
                             {matchCount}/{activeTraitFilters.length}
                           </span>
                         )}
-                        <span className="font-mono text-sm text-navy font-medium">{m.name}</span>
+                        <span className="font-mono text-sm text-ink font-medium">{m.name}</span>
                         <TraitBadges modelName={m.name} />
-                        {!replacing && inText && <span className="text-[10px] px-1.5 py-0.5 bg-sky/10 text-sky rounded font-bold">TEXT</span>}
-                        {!replacing && inImage && <span className="text-[10px] px-1.5 py-0.5 bg-orange/10 text-orange rounded font-bold">IMAGE</span>}
+                        {!replacing && inText && <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded font-bold">TEXT</span>}
+                        {!replacing && inImage && <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded font-bold">IMAGE</span>}
                       </div>
                       <p className="text-xs text-foreground-faint truncate">{m.displayName}{m.description ? ` — ${m.description}` : ""}</p>
                       {result && (
@@ -469,7 +469,7 @@ export function AdminAIModels() {
                       {replacing ? (
                         <button
                           onClick={(e) => { e.stopPropagation(); replaceModel(m.name); }}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold text-white bg-sky hover:bg-sky-light transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold text-white bg-accent hover:bg-accent-hover transition-colors"
                         >
                           <ArrowLeftRight className="w-3 h-3" /> Use This
                         </button>
@@ -478,7 +478,7 @@ export function AdminAIModels() {
                           <button
                             onClick={() => testModel(m.name, m.name.includes("image") ? "image" : "text")}
                             disabled={isTesting}
-                            className="p-1.5 rounded-md text-foreground-faint hover:text-sky hover:bg-sky/10 transition-colors disabled:opacity-50"
+                            className="p-1.5 rounded-md text-foreground-faint hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
                             title="Test model"
                           >
                             {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
@@ -486,7 +486,7 @@ export function AdminAIModels() {
                           {!inText && (
                             <button
                               onClick={() => addModel(m.name, "text")}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-sky hover:bg-sky/10 transition-colors"
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
                               title="Add to text chain"
                             >
                               <Plus className="w-3 h-3" /> Text
@@ -495,7 +495,7 @@ export function AdminAIModels() {
                           {!inImage && (
                             <button
                               onClick={() => addModel(m.name, "image")}
-                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-orange hover:bg-orange/10 transition-colors"
+                              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
                               title="Add to image chain"
                             >
                               <Plus className="w-3 h-3" /> Image
@@ -534,7 +534,7 @@ export function AdminAIModels() {
             justSaved
               ? "bg-emerald-500 hover:bg-emerald-600 text-white scale-105"
               : dirty
-                ? "bg-navy hover:bg-navy-light text-white"
+                ? "bg-ink hover:bg-ink-muted text-white"
                 : "bg-muted text-foreground-faint cursor-not-allowed"
           }`}
         >
@@ -568,17 +568,17 @@ function ModelChainPanel({
     <div className="border border-border-subtle rounded-xl bg-card">
       <div className="p-4 border-b border-border-faint flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${type === "text" ? "bg-sky/10 text-sky" : "bg-orange/10 text-orange"}`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${type === "text" ? "bg-accent/10 text-accent" : "bg-accent/10 text-accent"}`}>
             {icon}
           </div>
           <div>
-            <h3 className="font-bold text-navy text-sm">{title}</h3>
+            <h3 className="font-bold text-ink text-sm">{title}</h3>
             <p className="text-[11px] text-foreground-faint">Fallback chain — tried in order</p>
           </div>
         </div>
         <button
           onClick={onReset}
-          className="flex items-center gap-1 text-xs text-foreground-faint hover:text-navy transition-colors"
+          className="flex items-center gap-1 text-xs text-foreground-faint hover:text-ink transition-colors"
           title="Reset to defaults"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -592,21 +592,21 @@ function ModelChainPanel({
           const isBeingReplaced = replacingModel === model;
 
           return (
-            <div key={model} className={`px-4 py-3 flex items-center gap-2 group transition-colors ${isBeingReplaced ? "bg-sky/5 ring-1 ring-inset ring-sky/30" : ""}`}>
+            <div key={model} className={`px-4 py-3 flex items-center gap-2 group transition-colors ${isBeingReplaced ? "bg-accent/5 ring-1 ring-inset ring-accent/30" : ""}`}>
               <GripVertical className="w-4 h-4 text-foreground-ghost flex-shrink-0" />
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
                 idx === 0
-                  ? (type === "text" ? "bg-sky text-white" : "bg-orange text-white")
+                  ? (type === "text" ? "bg-accent text-white" : "bg-accent text-white")
                   : "bg-muted text-foreground-faint"
               }`}>
                 {idx + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 flex-wrap">
-                  <span className="font-mono text-sm text-navy">{model}</span>
+                  <span className="font-mono text-sm text-ink">{model}</span>
                   <TraitBadges modelName={model} compact />
                 </div>
-                {isBeingReplaced && <p className="text-xs text-sky font-medium animate-pulse mt-0.5">selecting replacement...</p>}
+                {isBeingReplaced && <p className="text-xs text-accent font-medium animate-pulse mt-0.5">selecting replacement...</p>}
                 {result && !isBeingReplaced && (
                   <p className={`text-xs mt-0.5 ${result.success ? "text-emerald-600" : "text-red-500"}`}>
                     {result.success ? (
@@ -620,7 +620,7 @@ function ModelChainPanel({
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => onReplace(model, idx)}
-                  className={`p-1 rounded transition-colors ${type === "text" ? "text-sky hover:bg-sky/10" : "text-orange hover:bg-orange/10"}`}
+                  className={`p-1 rounded transition-colors ${type === "text" ? "text-accent hover:bg-accent/10" : "text-accent hover:bg-accent/10"}`}
                   title="Replace with another model"
                 >
                   <ArrowLeftRight className="w-4 h-4" />
@@ -628,7 +628,7 @@ function ModelChainPanel({
                 <button
                   onClick={() => onMove(idx, "up")}
                   disabled={idx === 0}
-                  className="p-1 rounded text-foreground-faint hover:text-navy disabled:opacity-30"
+                  className="p-1 rounded text-foreground-faint hover:text-ink disabled:opacity-30"
                   title="Move up"
                 >
                   <ChevronUp className="w-4 h-4" />
@@ -636,7 +636,7 @@ function ModelChainPanel({
                 <button
                   onClick={() => onMove(idx, "down")}
                   disabled={idx === (Array.isArray(models) ? models : []).length - 1}
-                  className="p-1 rounded text-foreground-faint hover:text-navy disabled:opacity-30"
+                  className="p-1 rounded text-foreground-faint hover:text-ink disabled:opacity-30"
                   title="Move down"
                 >
                   <ChevronDown className="w-4 h-4" />
@@ -644,7 +644,7 @@ function ModelChainPanel({
                 <button
                   onClick={() => onTest(model)}
                   disabled={isTesting}
-                  className="p-1 rounded text-foreground-faint hover:text-sky disabled:opacity-50"
+                  className="p-1 rounded text-foreground-faint hover:text-accent disabled:opacity-50"
                   title="Test model"
                 >
                   {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}

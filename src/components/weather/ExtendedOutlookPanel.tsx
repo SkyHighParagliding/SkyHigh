@@ -326,7 +326,7 @@ export function ExtendedOutlookPanel({ site, hasExtended, extendedForecast, tide
               </>
             ) : (
               <div className="flex items-center justify-center h-24">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky" />
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent" />
               </div>
             )}
           </div>
@@ -380,12 +380,12 @@ function DayGrid({ days, site, iconMap, selectedDay, onSelectDay }: {
             className={cn(
               "flex flex-col items-center gap-0.5 py-1 rounded-lg flex-1 min-w-0 transition-all",
               isToday ? "bg-white/80" : "",
-              isSelected ? "ring-2 ring-sky/60" : ""
+              isSelected ? "ring-2 ring-accent/60" : ""
             )}
           >
             <span className={cn(
               "text-[12px] font-bold uppercase",
-              isToday ? "text-sky" : ""
+              isToday ? "text-accent" : ""
             )} style={!isToday ? { color: '#86868b' } : undefined}>
               {isToday ? 'Today' : day.dayName}
             </span>

@@ -7,14 +7,14 @@ import { useNews } from "@/hooks/api";
 export function News() {
   const { data: news = [], isLoading } = useNews();
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div></div>;
 
   return (
     <div className="bg-background min-h-screen pb-16">
       {/* Hero Section */}
       <div className="bg-white text-slate-900 py-16 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <Link to="/" className="inline-flex items-center text-sky hover:text-sky-700 mb-6 font-medium transition-colors">
+          <Link to="/" className="inline-flex items-center text-accent hover:text-sky-700 mb-6 font-medium transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </Link>
           <motion.div
@@ -22,7 +22,7 @@ export function News() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-navy">Club News & Events</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-ink">Club News & Events</h1>
             <p className="text-lg text-slate-600 max-w-3xl">
               Stay up to date with the latest announcements, event reports, and club updates.
             </p>
@@ -48,7 +48,7 @@ export function News() {
 
                       <span className="flex items-center"><User className="w-3 h-3 mr-1" /> {item.author}</span>
                     </div>
-                    <CardTitle className="text-xl text-navy group-hover:text-sky transition-colors line-clamp-2">
+                    <CardTitle className="text-xl text-ink group-hover:text-accent transition-colors line-clamp-2">
                       {item.title}
                     </CardTitle>
                   </CardHeader>
@@ -69,7 +69,7 @@ export function News() {
                         .trim()
                         .substring(0, 150)}...
                     </p>
-                    <div className="flex items-center text-sky font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                    <div className="flex items-center text-accent font-semibold text-sm group-hover:translate-x-1 transition-transform">
                       Read More <ChevronRight className="w-4 h-4 ml-1" />
                     </div>
                   </CardContent>
@@ -80,7 +80,7 @@ export function News() {
           {news.length === 0 && (
             <div className="col-span-full py-20 text-center">
               <Newspaper className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-navy mb-2">No news yet</h3>
+              <h3 className="text-xl font-bold text-ink mb-2">No news yet</h3>
               <p className="text-muted-foreground">Check back soon for updates!</p>
             </div>
           )}

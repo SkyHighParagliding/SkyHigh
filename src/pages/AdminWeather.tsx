@@ -40,8 +40,8 @@ function WindMapPreviewCard() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-navy">
-            <Activity className="w-5 h-5 mr-2 text-sky" />
+          <CardTitle className="flex items-center text-ink">
+            <Activity className="w-5 h-5 mr-2 text-accent" />
             Wind Map
           </CardTitle>
           <CardDescription>
@@ -72,7 +72,7 @@ function WindMapPreviewCard() {
             </button>
           </div>
           <div className="flex-1 min-h-0">
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky"></div></div>}>
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
               <WindMap siteId={previewSite.id} siteLat={previewSite.lat} siteLon={previewSite.lon} siteName={previewSite.name} fullscreen />
             </Suspense>
           </div>
@@ -175,7 +175,7 @@ function ProvenanceRow({ label, raw }: { label: string; raw: string | undefined 
         </div>
         {prov.bySource.map(s => (
           <div key={s.source} className="text-muted-foreground">
-            <span className="font-medium text-navy">{s.label}</span> — {s.points.toLocaleString()} points
+            <span className="font-medium text-ink">{s.label}</span> — {s.points.toLocaleString()} points
           </div>
         ))}
         {prov.mixedFamilies && (
@@ -382,11 +382,11 @@ export function AdminWeather() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Weather Management</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Weather Management</h1>
           <p className="text-muted-foreground">Manage weather data scraping and preview the wind map.</p>
         </div>
 
@@ -395,8 +395,8 @@ export function AdminWeather() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
-                    <Wind className="w-5 h-5 mr-2 text-sky" />
+                  <CardTitle className="flex items-center text-ink">
+                    <Wind className="w-5 h-5 mr-2 text-accent" />
                     Live Weather Data
                   </CardTitle>
                   <CardDescription>
@@ -435,7 +435,7 @@ export function AdminWeather() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm font-medium text-navy mb-3">Scraper Schedule</p>
+                <p className="text-sm font-medium text-ink mb-3">Scraper Schedule</p>
                 <div className="flex flex-wrap items-end gap-4">
                   <div className="flex flex-col gap-1">
                     <Label htmlFor="sched-start" className="text-xs text-muted-foreground">Start time</Label>
@@ -444,7 +444,7 @@ export function AdminWeather() {
                       value={schedStartHour}
                       onChange={e => setSchedStartHour(Number(e.target.value))}
                       disabled={schedContinuous}
-                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>{hourLabel(i)}</option>
@@ -458,7 +458,7 @@ export function AdminWeather() {
                       value={schedEndHour}
                       onChange={e => setSchedEndHour(Number(e.target.value))}
                       disabled={schedContinuous}
-                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       {Array.from({ length: 24 }, (_, i) => (
                         <option key={i} value={i}>{hourLabel(i)}</option>
@@ -471,7 +471,7 @@ export function AdminWeather() {
                       id="sched-continuous"
                       checked={schedContinuous}
                       onChange={e => setSchedContinuous(e.target.checked)}
-                      className="w-4 h-4 accent-sky cursor-pointer"
+                      className="w-4 h-4 accent-accent cursor-pointer"
                     />
                     <Label htmlFor="sched-continuous" className="text-sm cursor-pointer">Run continuously (24 hours)</Label>
                   </div>
@@ -492,8 +492,8 @@ export function AdminWeather() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
-                    <Wind className="w-5 h-5 mr-2 text-sky" />
+                  <CardTitle className="flex items-center text-ink">
+                    <Wind className="w-5 h-5 mr-2 text-accent" />
                     Grid Data
                   </CardTitle>
                   <CardDescription>
@@ -550,7 +550,7 @@ export function AdminWeather() {
                             size="sm"
                             onClick={() => handleGridFetch(endpoint, type)}
                             disabled={(anyActive && !isThisActive) || loadingType === 'liveWeather'}
-                            className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''} ${isThisActive ? 'ring-2 ring-sky' : ''}`}
+                            className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''} ${isThisActive ? 'ring-2 ring-accent' : ''}`}
                           >
                             <RefreshCw className={`w-4 h-4 ${isThisActive ? 'animate-spin' : ''}`} />
                             {isThisActive ? 'Fetching…' : label}
@@ -563,8 +563,8 @@ export function AdminWeather() {
                     {anyActive && (
                       <div className="mt-2 bg-muted/40 rounded-lg px-3 py-2 space-y-1">
                         <div className="flex items-center gap-2 text-xs">
-                          <RefreshCw className="w-3 h-3 animate-spin text-sky shrink-0" />
-                          <span className="font-semibold text-sky shrink-0">{activeType ? GRID_LABELS[activeType] : ''}</span>
+                          <RefreshCw className="w-3 h-3 animate-spin text-accent shrink-0" />
+                          <span className="font-semibold text-accent shrink-0">{activeType ? GRID_LABELS[activeType] : ''}</span>
                           <span className={`flex-1 font-mono truncate ${
                             activeProgress.toLowerCase().includes('failed') ? 'text-red-500' :
                             activeProgress.toLowerCase().includes('partial') ? 'text-amber-500' :

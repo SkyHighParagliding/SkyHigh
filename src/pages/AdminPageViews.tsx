@@ -27,11 +27,11 @@ export function AdminPageViews() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Page View Analytics</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Page View Analytics</h1>
           <p className="text-muted-foreground">Track how many times each page has been viewed.</p>
         </div>
 
@@ -39,8 +39,8 @@ export function AdminPageViews() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center text-navy">
-                  <BarChart3 className="w-5 h-5 mr-2 text-sky" />
+                <CardTitle className="flex items-center text-ink">
+                  <BarChart3 className="w-5 h-5 mr-2 text-accent" />
                   Page Views
                 </CardTitle>
                 <CardDescription>
@@ -77,10 +77,10 @@ export function AdminPageViews() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-muted border-b border-border-subtle">
-                    <th className="p-3 font-semibold text-navy text-sm">Page</th>
-                    <th className="p-3 font-semibold text-navy text-sm text-right">Views</th>
-                    <th className="p-3 font-semibold text-navy text-sm text-right">Last Viewed</th>
-                    <th className="p-3 font-semibold text-navy text-sm text-right">Actions</th>
+                    <th className="p-3 font-semibold text-ink text-sm">Page</th>
+                    <th className="p-3 font-semibold text-ink text-sm text-right">Views</th>
+                    <th className="p-3 font-semibold text-ink text-sm text-right">Last Viewed</th>
+                    <th className="p-3 font-semibold text-ink text-sm text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -89,15 +89,15 @@ export function AdminPageViews() {
                       <td className="p-3 text-sm">
                         <div className="flex items-center gap-2">
                           <Eye className="w-3 h-3 text-foreground-faint flex-shrink-0" />
-                          <span className={`font-medium ${pv.path.startsWith('/admin') ? 'text-orange' : 'text-navy'}`}>
+                          <span className={`font-medium ${pv.path.startsWith('/admin') ? 'text-accent' : 'text-ink'}`}>
                             {pv.path}
                           </span>
                           {pv.path.startsWith('/admin') && (
-                            <span className="text-[10px] bg-orange/10 text-orange px-1.5 py-0.5 rounded font-medium">admin</span>
+                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded font-medium">admin</span>
                           )}
                         </div>
                       </td>
-                      <td className="p-3 text-sm text-right font-bold text-navy">{pv.views.toLocaleString()}</td>
+                      <td className="p-3 text-sm text-right font-bold text-ink">{pv.views.toLocaleString()}</td>
                       <td className="p-3 text-sm text-right text-muted-foreground">
                         {new Date(pv.lastViewed).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>

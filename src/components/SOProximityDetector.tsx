@@ -186,8 +186,8 @@ export function SOProximityDetector() {
           <div className="bg-card p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-orange" />
-                <h3 className="text-lg font-bold text-navy">Safety Officer Login</h3>
+                <Shield className="w-5 h-5 text-accent" />
+                <h3 className="text-lg font-bold text-ink">Safety Officer Login</h3>
               </div>
               <button onClick={dismiss} className="p-1 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
@@ -195,7 +195,7 @@ export function SOProximityDetector() {
             </div>
 
             <p className="text-sm text-foreground-secondary mb-1">
-              You're near <span className="font-semibold text-navy">{nearestSite.name}</span>.
+              You're near <span className="font-semibold text-ink">{nearestSite.name}</span>.
             </p>
             <p className="text-xs text-muted-foreground mb-4">
               Log in with your Safety Officer credentials to manage this site.
@@ -212,7 +212,7 @@ export function SOProximityDetector() {
                 onChange={e => setLoginEmail(e.target.value)}
                 placeholder="Email"
                 autoComplete="username"
-                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent text-sm"
               />
               <input
                 type="password"
@@ -221,12 +221,12 @@ export function SOProximityDetector() {
                 placeholder="Password"
                 autoComplete="current-password"
                 onKeyDown={e => e.key === "Enter" && handleSOLogin()}
-                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                className="w-full p-2.5 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent text-sm"
               />
               <Button
                 onClick={handleSOLogin}
                 disabled={loginLoading}
-                className="w-full bg-navy hover:bg-navy-light text-white"
+                className="w-full bg-ink hover:bg-ink-muted text-white"
               >
                 <LogIn className="w-4 h-4 mr-2" />
                 {loginLoading ? "Logging in..." : "Log In"}
@@ -241,8 +241,8 @@ export function SOProximityDetector() {
           <div className="bg-card p-6 rounded-xl shadow-2xl max-w-sm w-full">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-orange" />
-                <h3 className="text-lg font-bold text-navy">Enter SO Mode</h3>
+                <Shield className="w-5 h-5 text-accent" />
+                <h3 className="text-lg font-bold text-ink">Enter SO Mode</h3>
               </div>
               <button onClick={dismiss} className="p-1 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
@@ -250,7 +250,7 @@ export function SOProximityDetector() {
             </div>
 
             <p className="text-sm text-foreground-secondary mb-1">
-              You're near <span className="font-semibold text-navy">{nearestSite.name}</span>.
+              You're near <span className="font-semibold text-ink">{nearestSite.name}</span>.
             </p>
             <p className="text-xs text-muted-foreground mb-4">
               Switch to Safety Officer mode for this site? Your session will be restricted to this site only.
@@ -271,7 +271,7 @@ export function SOProximityDetector() {
               <Button
                 onClick={handleBindSession}
                 disabled={loginLoading}
-                className="flex-1 bg-navy hover:bg-navy-light text-white"
+                className="flex-1 bg-ink hover:bg-ink-muted text-white"
               >
                 <Shield className="w-4 h-4 mr-2" />
                 {loginLoading ? "Binding..." : "Enter SO Mode"}

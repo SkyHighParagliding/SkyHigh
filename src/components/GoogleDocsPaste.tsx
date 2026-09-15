@@ -188,7 +188,7 @@ export function GoogleDocsPaste({ onInsert }: GoogleDocsPasteProps) {
       <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-sky" />
+            <FileText className="w-5 h-5 text-accent" />
             <h3 className="font-semibold text-lg">Paste from Google Docs</h3>
           </div>
           <button type="button" onClick={handleClose} className="text-muted-foreground hover:text-foreground">
@@ -198,9 +198,9 @@ export function GoogleDocsPaste({ onInsert }: GoogleDocsPasteProps) {
 
         <div className="flex-1 overflow-auto p-6 space-y-4">
           {!pasted ? (
-            <div className="border-2 border-dashed border-sky/40 rounded-xl p-12 text-center focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/20 transition-colors relative">
+            <div className="border-2 border-dashed border-accent/40 rounded-xl p-12 text-center focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-colors relative">
               <div className="pointer-events-none">
-                <ClipboardPaste className="w-12 h-12 text-sky/50 mx-auto mb-4" />
+                <ClipboardPaste className="w-12 h-12 text-accent/50 mx-auto mb-4" />
                 <p className="text-lg font-medium text-foreground mb-2">
                   Paste your Google Doc content here
                 </p>
@@ -259,7 +259,7 @@ export function GoogleDocsPaste({ onInsert }: GoogleDocsPasteProps) {
                   value={markdown}
                   onChange={(e) => setMarkdown(e.target.value)}
                   rows={16}
-                  className="w-full px-4 py-3 border border-border rounded-lg font-mono text-sm bg-background resize-y focus:ring-2 focus:ring-sky/30 focus:border-sky"
+                  className="w-full px-4 py-3 border border-border rounded-lg font-mono text-sm bg-background resize-y focus:ring-2 focus:ring-accent/30 focus:border-accent"
                   placeholder="Converted markdown will appear here..."
                 />
               )}
@@ -278,7 +278,7 @@ export function GoogleDocsPaste({ onInsert }: GoogleDocsPasteProps) {
             type="button"
             onClick={handleInsert}
             disabled={!markdown.trim()}
-            className="bg-navy hover:bg-navy-light text-white"
+            className="bg-ink hover:bg-ink-muted text-white"
           >
             <ClipboardPaste className="w-4 h-4 mr-2" />
             Insert Markdown

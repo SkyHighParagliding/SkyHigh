@@ -59,18 +59,18 @@ export function AdminImages() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <Link to="/admin" className="text-sky hover:text-sky-light text-sm flex items-center mb-6">
+        <Link to="/admin" className="text-accent hover:text-accent-hover text-sm flex items-center mb-6">
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
         </Link>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-navy flex items-center">
+          <h1 className="text-3xl font-bold text-ink flex items-center">
             <ImageIcon className="w-8 h-8 mr-3" /> Image Processing
           </h1>
           <Button
             type="button"
             onClick={handleSave}
             disabled={!hasUnsavedChanges && !justSaved}
-            className={`h-10 px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : hasUnsavedChanges ? "bg-navy hover:bg-navy-light" : "bg-muted cursor-not-allowed"} text-white`}
+            className={`h-10 px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : hasUnsavedChanges ? "bg-ink hover:bg-ink-muted" : "bg-muted cursor-not-allowed"} text-white`}
           >
             {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
           </Button>
@@ -115,12 +115,12 @@ export function AdminImages() {
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
                   placeholder="Paste image URL (Dropbox, Google Drive, direct link...)"
-                  className="flex-grow min-w-[200px] p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="flex-grow min-w-[200px] p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                 />
-                <Button type="button" onClick={handleAddUrl} disabled={!newImageUrl.trim() || !urlSiteName.trim() || processingUrl} className="bg-sky hover:bg-sky-light text-white">
+                <Button type="button" onClick={handleAddUrl} disabled={!newImageUrl.trim() || !urlSiteName.trim() || processingUrl} className="bg-accent hover:bg-accent-hover text-white">
                   {processingUrl ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</> : <><Plus className="w-4 h-4 mr-2" /> Add URL</>}
                 </Button>
-                <Button type="button" onClick={() => setIsEnhancerOpen(true)} className="bg-navy hover:bg-navy-light text-white">
+                <Button type="button" onClick={() => setIsEnhancerOpen(true)} className="bg-ink hover:bg-ink-muted text-white">
                   <Sparkles className="w-4 h-4 mr-2" /> Upload / Enhance
                 </Button>
               </div>
@@ -133,7 +133,7 @@ export function AdminImages() {
                       value={urlSiteName}
                       onChange={(e) => setUrlSiteName(e.target.value)}
                       placeholder="e.g. Mystic Launch, Ben Nevis"
-                      className="flex-grow p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                      className="flex-grow p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="flex gap-2 items-center">
@@ -144,7 +144,7 @@ export function AdminImages() {
                       onChange={(e) => setUrlPhotographerCredit(e.target.value)}
                       placeholder="e.g. Jane Smith Photography (optional)"
                       maxLength={60}
-                      className="flex-grow p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                      className="flex-grow p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                     />
                   </div>
                   {urlPhotographerCredit.trim() && (
@@ -153,7 +153,7 @@ export function AdminImages() {
                       <input type="range" min={5} max={50} value={urlWatermarkSize} onChange={(e) => setUrlWatermarkSize(parseInt(e.target.value, 10))} className="flex-grow h-1.5 accent-sky-500 min-w-[80px]" />
                       <div className="flex gap-0.5">
                         {(["bottom-left","bottom-center","bottom-right","top-left","top-center","top-right"] as const).map(p => (
-                          <button key={p} type="button" onClick={() => setUrlWatermarkPosition(p)} className={`text-[9px] px-1 py-0.5 rounded border ${urlWatermarkPosition === p ? "bg-sky text-white border-sky" : "border-border text-foreground-faint hover:border-sky/50"}`}>
+                          <button key={p} type="button" onClick={() => setUrlWatermarkPosition(p)} className={`text-[9px] px-1 py-0.5 rounded border ${urlWatermarkPosition === p ? "bg-accent text-white border-accent" : "border-border text-foreground-faint hover:border-accent/50"}`}>
                             {p === "bottom-right" ? "BR" : p === "bottom-left" ? "BL" : p === "bottom-center" ? "BC" : p === "top-right" ? "TR" : p === "top-left" ? "TL" : "TC"}
                           </button>
                         ))}
@@ -176,11 +176,11 @@ export function AdminImages() {
                     <button
                       type="button"
                       onClick={() => setUploadBranch("hero")}
-                      className="border-2 border-dashed border-sky/30 rounded-lg p-4 hover:border-sky hover:bg-sky/5 transition-all group text-left"
+                      className="border-2 border-dashed border-accent/30 rounded-lg p-4 hover:border-accent hover:bg-accent/5 transition-all group text-left"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-sky/10 rounded-lg flex items-center justify-center group-hover:bg-sky/20 transition-colors">
-                          <Sparkles className="w-4 h-4 text-sky" />
+                        <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                          <Sparkles className="w-4 h-4 text-accent" />
                         </div>
                         <span className="font-semibold text-sm text-foreground">Hero &amp; Banner</span>
                       </div>
@@ -561,7 +561,7 @@ export function AdminImages() {
                 <div className="bg-sky-50 border border-sky-200 rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-sky" />
+                      <Sparkles className="w-4 h-4 text-accent" />
                       <span className="text-sm font-semibold text-sky-800">Hero &amp; Banner</span>
                     </div>
                     <button type="button" onClick={() => { setUploadBranch(""); setHeroPreloadedImage(null); setSiteName(""); }} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
@@ -570,11 +570,11 @@ export function AdminImages() {
                   </div>
                   <p className="text-xs text-sky-700 mt-1 mb-2">Select an image to process with AI enhancer into fixed-size hero and banner variants.</p>
                   <div className="flex gap-2">
-                    <Button type="button" size="sm" className="text-xs bg-sky hover:bg-sky-light text-white" onClick={() => heroFileInputRef.current?.click()}>
+                    <Button type="button" size="sm" className="text-xs bg-accent hover:bg-accent-hover text-white" onClick={() => heroFileInputRef.current?.click()}>
                       <Upload className="w-3 h-3 mr-1" /> Choose File
                     </Button>
                     {images.filter(p => p.wide).length > 0 && (
-                      <Button type="button" size="sm" className="text-xs bg-sky hover:bg-sky-light text-white" onClick={() => setShowHeroPicker(p => !p)}>
+                      <Button type="button" size="sm" className="text-xs bg-accent hover:bg-accent-hover text-white" onClick={() => setShowHeroPicker(p => !p)}>
                         <ImageIcon className="w-3 h-3 mr-1" /> Choose Existing Hero
                       </Button>
                     )}
@@ -606,7 +606,7 @@ export function AdminImages() {
                 <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-sky" />
+                      <Sparkles className="w-4 h-4 text-accent" />
                       <span className="text-sm font-semibold text-sky-800">Hero &amp; Banner</span>
                     </div>
                     <button type="button" onClick={() => { setUploadBranch(""); setHeroPreloadedImage(null); setSiteName(""); }} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
@@ -627,7 +627,7 @@ export function AdminImages() {
                           value={siteName}
                           onChange={e => setSiteName(e.target.value)}
                           placeholder="e.g. Bright Mystic, Ben Nevis"
-                          className="w-full p-1.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-1.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                         />
                       </div>
                       <p className="text-[11px] text-sky-700">
@@ -639,7 +639,7 @@ export function AdminImages() {
                     <Button
                       type="button"
                       size="sm"
-                      className="text-xs bg-sky hover:bg-sky-light text-white"
+                      className="text-xs bg-accent hover:bg-accent-hover text-white"
                       disabled={!siteName.trim()}
                       onClick={() => {
                         setSubmissionForEnhancer(null);
@@ -728,7 +728,7 @@ export function AdminImages() {
                                 type="button"
                                 onClick={() => handleProcessSubmission(sub.id)}
                                 disabled={processingSubmission === sub.id}
-                                className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-sky hover:bg-sky hover:text-white disabled:opacity-50"
+                                className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-accent hover:bg-accent hover:text-white disabled:opacity-50"
                                 title="Process as Hero / Banner"
                               >
                                 {processingSubmission === sub.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
@@ -760,7 +760,7 @@ export function AdminImages() {
                           )}
                           {sub.photographerCredit && (
                             <div className="absolute bottom-7 left-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="bg-sky/80 text-white text-[9px] px-1.5 py-0.5 rounded truncate block">© {sub.photographerCredit}</span>
+                              <span className="bg-accent/80 text-white text-[9px] px-1.5 py-0.5 rounded truncate block">© {sub.photographerCredit}</span>
                             </div>
                           )}
                         </div>
@@ -893,20 +893,20 @@ export function AdminImages() {
         </Card>
 
         <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-sky/30" />
-          <span className="text-xs font-semibold text-sky uppercase tracking-wider flex items-center gap-1.5">
+          <div className="h-px flex-1 bg-accent/30" />
+          <span className="text-xs font-semibold text-accent uppercase tracking-wider flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5" /> Fixed Size Images
           </span>
-          <div className="h-px flex-1 bg-sky/30" />
+          <div className="h-px flex-1 bg-accent/30" />
         </div>
 
-        <Card className="mb-6 overflow-hidden border-sky/30">
+        <Card className="mb-6 overflow-hidden border-accent/30">
           <button type="button" onClick={() => toggleSection("fixedSize")} className="w-full text-left">
             <CardHeader className="py-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-sky/10 rounded-lg flex items-center justify-center">
-                    <ImageIcon className="w-4 h-4 text-sky" />
+                  <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-accent" />
                   </div>
                   <div>
                     <CardTitle className="text-base">Fixed Size Images</CardTitle>
@@ -958,7 +958,7 @@ export function AdminImages() {
                           type="button"
                           onClick={() => handleSetCategory(originalIndex, "coastal")}
                           title="Coastal"
-                          className={`w-6 h-6 rounded-md shadow-sm flex items-center justify-center transition-colors ${pair.category === "coastal" ? "bg-sky text-white" : "bg-white/90 text-foreground-faint hover:text-sky hover:bg-card"}`}
+                          className={`w-6 h-6 rounded-md shadow-sm flex items-center justify-center transition-colors ${pair.category === "coastal" ? "bg-accent text-white" : "bg-white/90 text-foreground-faint hover:text-accent hover:bg-card"}`}
                         >
                           <Waves className="w-3.5 h-3.5" />
                         </button>
@@ -980,7 +980,7 @@ export function AdminImages() {
                             setIsEnhancerOpen(true);
                           }}
                           title="Generate Banner & Sliders"
-                          className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-sky hover:bg-sky-50 hover:text-sky-700"
+                          className="w-6 h-6 bg-white/90 rounded-md shadow-sm flex items-center justify-center text-accent hover:bg-sky-50 hover:text-sky-700"
                         >
                           <Scissors className="w-3 h-3" />
                         </button>
@@ -1033,7 +1033,7 @@ export function AdminImages() {
                       )}
                       {pair.category && (
                         <div className="absolute top-1 left-1">
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center ${pair.category === "coastal" ? "bg-sky text-white" : "bg-emerald-500 text-white"}`}>
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center ${pair.category === "coastal" ? "bg-accent text-white" : "bg-emerald-500 text-white"}`}>
                             {pair.category === "coastal" ? <Waves className="w-3 h-3" /> : <Mountain className="w-3 h-3" />}
                           </div>
                         </div>
@@ -1060,7 +1060,7 @@ export function AdminImages() {
               type="button"
               onClick={handleGenerateAllSliders}
               disabled={generatingSliders}
-              className="bg-sky hover:bg-sky-light text-white"
+              className="bg-accent hover:bg-accent-hover text-white"
             >
               {generatingSliders ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : <><ImageIcon className="w-4 h-4 mr-2" /> Generate Missing Slider Images</>}
             </Button>
@@ -1106,7 +1106,7 @@ export function AdminImages() {
                           type="button"
                           onClick={() => handleSetCategory(originalIndex, "coastal")}
                           title="Coastal"
-                          className={`w-6 h-6 rounded-md shadow-sm flex items-center justify-center transition-colors ${pair.category === "coastal" ? "bg-sky text-white" : "bg-white/90 text-foreground-faint hover:text-sky hover:bg-card"}`}
+                          className={`w-6 h-6 rounded-md shadow-sm flex items-center justify-center transition-colors ${pair.category === "coastal" ? "bg-accent text-white" : "bg-white/90 text-foreground-faint hover:text-accent hover:bg-card"}`}
                         >
                           <Waves className="w-3.5 h-3.5" />
                         </button>
@@ -1312,8 +1312,8 @@ export function AdminImages() {
       {processingUrl && !isEnhancerOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-card rounded-2xl shadow-2xl p-8 text-center space-y-4">
-            <Loader2 className="w-10 h-10 text-sky mx-auto animate-spin" />
-            <p className="text-navy font-medium">Processing image...</p>
+            <Loader2 className="w-10 h-10 text-accent mx-auto animate-spin" />
+            <p className="text-ink font-medium">Processing image...</p>
           </div>
         </div>
       )}
@@ -1323,7 +1323,7 @@ export function AdminImages() {
           type="button"
           onClick={handleSave}
           disabled={!hasUnsavedChanges && !justSaved}
-          className={`h-10 px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : hasUnsavedChanges ? "bg-navy hover:bg-navy-light" : "bg-muted cursor-not-allowed"} text-white`}
+          className={`h-10 px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : hasUnsavedChanges ? "bg-ink hover:bg-ink-muted" : "bg-muted cursor-not-allowed"} text-white`}
         >
           {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
         </Button>

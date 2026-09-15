@@ -185,8 +185,8 @@ export function AdminSearchBox() {
 
   const typeColor = (type: string) => {
     const colors: Record<string, string> = {
-      "admin-page": "bg-sky/10 text-sky",
-      "procedure": "bg-orange/10 text-orange",
+      "admin-page": "bg-accent/10 text-accent",
+      "procedure": "bg-accent/10 text-accent",
       "site": "bg-emerald-50 text-emerald-600",
       "cms-page": "bg-violet-50 text-violet-600",
       "news": "bg-amber-50 text-amber-600",
@@ -212,7 +212,7 @@ export function AdminSearchBox() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Search features, pages, sites, procedures, documents..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                 />
                 {query && (
                   <button
@@ -231,7 +231,7 @@ export function AdminSearchBox() {
             <button
               onClick={handleSearch}
               disabled={loading || query.trim().length < 2}
-              className="w-full sm:w-auto px-4 py-2.5 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy-light disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+              className="w-full sm:w-auto px-4 py-2.5 bg-ink text-white rounded-lg text-sm font-medium hover:bg-ink-muted disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Search
@@ -241,7 +241,7 @@ export function AdminSearchBox() {
           <div className="mt-2">
             <button
               onClick={() => setShowPrompt(!showPrompt)}
-              className="text-xs text-sky hover:underline"
+              className="text-xs text-accent hover:underline"
             >
               {showPrompt ? "Hide Prompt" : "Edit Prompt"}
             </button>
@@ -251,13 +251,13 @@ export function AdminSearchBox() {
                   value={prompt || defaultPrompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={6}
-                  className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-accent focus:border-accent"
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-emerald-600">{promptSaveMsg}</span>
                   <button
                     onClick={handleSavePrompt}
-                    className="px-3 py-1 bg-sky text-white rounded text-xs font-medium hover:bg-sky-light"
+                    className="px-3 py-1 bg-accent text-white rounded text-xs font-medium hover:bg-accent-hover"
                   >
                     Save as default
                   </button>
@@ -277,9 +277,9 @@ export function AdminSearchBox() {
           <div className="border-t border-border-faint">
             <div className="px-4 py-3 bg-background">
               {displaySummary ? (
-                <div className="text-sm text-foreground-label prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-navy prose-em:text-sky prose-headings:text-navy prose-headings:text-sm prose-headings:mt-3 prose-headings:mb-1">
+                <div className="text-sm text-foreground-label prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-ink prose-em:text-accent prose-headings:text-ink prose-headings:text-sm prose-headings:mt-3 prose-headings:mb-1">
                   <LazyMarkdown>{displaySummary + (!loading || response ? (disclaimer ? "\n\n**" + disclaimer + "**" : "") : "")}</LazyMarkdown>
-                  {loading && !response && <span className="inline-block w-1.5 h-4 bg-sky/60 ml-0.5 animate-pulse align-middle" />}
+                  {loading && !response && <span className="inline-block w-1.5 h-4 bg-accent/60 ml-0.5 animate-pulse align-middle" />}
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -297,20 +297,20 @@ export function AdminSearchBox() {
                   <button
                     key={i}
                     onClick={() => handleNavigate(result.path)}
-                    className="w-full px-4 py-3 text-left hover:bg-sky/5 transition-colors flex items-start gap-3 group"
+                    className="w-full px-4 py-3 text-left hover:bg-accent/5 transition-colors flex items-start gap-3 group"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${typeColor(result.type)}`}>
                           {typeLabel(result.type)}
                         </span>
-                        <span className="text-sm font-medium text-navy group-hover:text-sky transition-colors truncate">
+                        <span className="text-sm font-medium text-ink group-hover:text-accent transition-colors truncate">
                           {result.title}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">{result.excerpt}</p>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-foreground-ghost group-hover:text-sky flex-shrink-0 mt-1" />
+                    <ExternalLink className="w-3.5 h-3.5 text-foreground-ghost group-hover:text-accent flex-shrink-0 mt-1" />
                   </button>
                 ))}
               </div>

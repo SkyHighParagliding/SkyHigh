@@ -140,7 +140,7 @@ export function AdminConnections() {
       id: "open-meteo",
       name: "Open-Meteo (ECMWF Forecasts)",
       icon: <Cloud className="w-6 h-6" />,
-      color: "border-t-sky",
+      color: "border-t-accent",
       description: "Provides wind speed, direction, and weather forecasts for all flying sites. Powers the weather cards and the animated wind map.",
       status: "free",
       statusLabel: "Active — Free API",
@@ -221,21 +221,21 @@ export function AdminConnections() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">API Settings</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">API Settings</h1>
           <p className="text-muted-foreground">
             All external services the {clubName} website connects to. Configure, monitor, and understand each integration from one place.
           </p>
         </div>
 
-        <div className="mb-6 p-4 rounded-lg border border-border-subtle bg-sky/5">
+        <div className="mb-6 p-4 rounded-lg border border-border-subtle bg-accent/5">
           <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-sky shrink-0 mt-0.5" />
+            <Info className="w-5 h-5 text-accent shrink-0 mt-0.5" />
             <div className="text-sm text-foreground-label">
-              <p className="font-medium text-navy mb-1">How this page works</p>
+              <p className="font-medium text-ink mb-1">How this page works</p>
               <p>
                 Each card below represents an external service. Green means it's active, amber means it needs setup,
                 and grey means it's planned for the future. Click any card to expand details, setup instructions,
@@ -257,9 +257,9 @@ export function AdminConnections() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="text-navy shrink-0 mt-0.5">{conn.icon}</div>
+                        <div className="text-ink shrink-0 mt-0.5">{conn.icon}</div>
                         <div className="min-w-0">
-                          <CardTitle className="text-navy text-lg">{conn.name}</CardTitle>
+                          <CardTitle className="text-ink text-lg">{conn.name}</CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">{conn.description}</p>
                         </div>
                       </div>
@@ -282,11 +282,11 @@ export function AdminConnections() {
                   <CardContent className="border-t border-border-subtle pt-4 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-navy">Cost:</span>{" "}
+                        <span className="font-semibold text-ink">Cost:</span>{" "}
                         <span className="text-foreground-label">{conn.cost}</span>
                       </div>
                       <div>
-                        <span className="font-semibold text-navy">How it connects:</span>{" "}
+                        <span className="font-semibold text-ink">How it connects:</span>{" "}
                         <span className="text-foreground-label">{conn.howItConnects}</span>
                       </div>
                     </div>
@@ -299,7 +299,7 @@ export function AdminConnections() {
                       <div className="flex items-center gap-2 text-sm">
                         <Plug className="w-4 h-4 text-foreground-faint" />
                         <span className="text-foreground-label">Also referenced in:</span>
-                        <Link to={conn.managedAt} className="text-sky hover:underline font-medium inline-flex items-center gap-1">
+                        <Link to={conn.managedAt} className="text-accent hover:underline font-medium inline-flex items-center gap-1">
                           {conn.managedAtLabel} <ExternalLink className="w-3 h-3" />
                         </Link>
                       </div>
@@ -307,7 +307,7 @@ export function AdminConnections() {
 
                     {conn.id === "google-drive" && (
                       <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                        <h4 className="font-semibold text-navy text-sm">Google Apps Script URL</h4>
+                        <h4 className="font-semibold text-ink text-sm">Google Apps Script URL</h4>
                         <p className="text-xs text-muted-foreground">
                           This URL connects the website to your Google Drive. Deploy a Google Apps Script web app from your Drive,
                           then paste its URL here.
@@ -325,7 +325,7 @@ export function AdminConnections() {
                                 size="sm"
                                 onClick={saveDriveScriptUrl}
                                 disabled={savingDriveScript}
-                                className="bg-navy hover:bg-navy/90 text-white"
+                                className="bg-ink hover:bg-ink/90 text-white"
                               >
                                 {savingDriveScript ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
                                 Save
@@ -389,11 +389,11 @@ export function AdminConnections() {
                         )}
 
                         <details className="text-xs text-muted-foreground">
-                          <summary className="cursor-pointer font-medium text-sky hover:text-navy">
+                          <summary className="cursor-pointer font-medium text-accent hover:text-ink">
                             Setup Instructions
                           </summary>
                           <ol className="mt-2 space-y-1.5 list-decimal list-inside text-foreground-label">
-                            <li>Go to <a href="https://script.google.com" target="_blank" rel="noopener noreferrer" className="text-sky hover:underline">script.google.com</a> and create a new project</li>
+                            <li>Go to <a href="https://script.google.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">script.google.com</a> and create a new project</li>
                             <li>Click the <strong>Script</strong> button above to view the bridge script, copy it, and paste it into the Apps Script editor (replacing any default code)</li>
                             <li>In the Apps Script editor, click <strong>+</strong> next to "Services" (left panel), find <strong>Drive API</strong>, ensure the Identifier is <strong>Drive</strong>, and click <strong>Add</strong> (v2 or v3 both work)</li>
                             <li>In the function dropdown (top toolbar), select <strong>_authoriseScopes</strong> and click <strong>Run</strong>. Accept the permissions when prompted. This grants access for PDF text extraction. (One-time step.)</li>
@@ -406,7 +406,7 @@ export function AdminConnections() {
 
                         {driveScriptUrl && (
                           <div className="border border-border-subtle rounded-lg p-4 space-y-3 mt-3">
-                            <h4 className="font-semibold text-navy text-sm flex items-center gap-2">
+                            <h4 className="font-semibold text-ink text-sm flex items-center gap-2">
                               <FolderOpen className="w-4 h-4" />
                               Drive Folder Setup
                             </h4>
@@ -420,7 +420,7 @@ export function AdminConnections() {
                                 size="sm"
                                 onClick={setupDriveFolders}
                                 disabled={settingUpFolders}
-                                className="bg-navy hover:bg-navy/90 text-white gap-1.5"
+                                className="bg-ink hover:bg-ink/90 text-white gap-1.5"
                               >
                                 {settingUpFolders ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderOpen className="w-3.5 h-3.5" />}
                                 {settingUpFolders ? "Setting up..." : "Setup Folders"}
@@ -440,7 +440,7 @@ export function AdminConnections() {
                                 {folderSetupResult.ok ? <Check className="w-3.5 h-3.5 inline mr-1" /> : <X className="w-3.5 h-3.5 inline mr-1" />}
                                 {folderSetupResult.message}
                                 {folderSetupResult.ok && folderSetupRootUrl && (
-                                  <a href={folderSetupRootUrl} target="_blank" rel="noopener noreferrer" className="text-sky hover:underline ml-1">
+                                  <a href={folderSetupRootUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline ml-1">
                                     Open in Drive <ExternalLink className="w-3 h-3 inline" />
                                   </a>
                                 )}
@@ -451,7 +451,7 @@ export function AdminConnections() {
 
                         {driveScriptUrl && (
                           <div className="border border-border-subtle rounded-lg p-4 space-y-3 mt-3">
-                            <h4 className="font-semibold text-navy text-sm flex items-center gap-2">
+                            <h4 className="font-semibold text-ink text-sm flex items-center gap-2">
                               <Database className="w-4 h-4" />
                               Document Index for AI Search
                             </h4>
@@ -465,7 +465,7 @@ export function AdminConnections() {
                                 size="sm"
                                 onClick={syncDocumentIndex}
                                 disabled={syncing}
-                                className="bg-navy hover:bg-navy/90 text-white gap-1.5"
+                                className="bg-ink hover:bg-ink/90 text-white gap-1.5"
                               >
                                 {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                                 {syncing ? "Syncing..." : "Sync Documents"}
@@ -500,7 +500,7 @@ export function AdminConnections() {
                             )}
                             {indexStatus && Array.isArray(indexStatus.documents) && indexStatus.documents.length > 0 && (
                               <details className="text-xs">
-                                <summary className="cursor-pointer font-medium text-sky hover:text-navy">
+                                <summary className="cursor-pointer font-medium text-accent hover:text-ink">
                                   Indexed Documents ({(Array.isArray(indexStatus?.documents) ? indexStatus!.documents : []).length})
                                 </summary>
                                 <div className="mt-2 space-y-1">
@@ -528,7 +528,7 @@ export function AdminConnections() {
                     {conn.id === "tidyhq" && (
                       <div className="space-y-4">
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                          <h4 className="font-semibold text-navy text-sm">Connection Requirements</h4>
+                          <h4 className="font-semibold text-ink text-sm">Connection Requirements</h4>
                           <p className="text-xs text-muted-foreground">
                             Two environment variables must be configured in Railway for TidyHQ to work.
                           </p>
@@ -555,7 +555,7 @@ export function AdminConnections() {
                               size="sm"
                               onClick={testTidyhqConnection}
                               disabled={testingTidyhq}
-                              className="bg-navy hover:bg-navy/90 text-white gap-1.5"
+                              className="bg-ink hover:bg-ink/90 text-white gap-1.5"
                             >
                               {testingTidyhq ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                               Test Connection
@@ -570,7 +570,7 @@ export function AdminConnections() {
                         </div>
 
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                          <h4 className="font-semibold text-navy text-sm">Webhook URL</h4>
+                          <h4 className="font-semibold text-ink text-sm">Webhook URL</h4>
                           <p className="text-xs text-muted-foreground">
                             Configure this URL in your TidyHQ webhook settings so group membership changes sync automatically.
                           </p>
@@ -592,11 +592,11 @@ export function AdminConnections() {
                         </div>
 
                         <details className="text-xs text-muted-foreground">
-                          <summary className="cursor-pointer font-medium text-sky hover:text-navy">
+                          <summary className="cursor-pointer font-medium text-accent hover:text-ink">
                             Setup Instructions
                           </summary>
                           <ol className="mt-2 space-y-1.5 list-decimal list-inside text-foreground-label">
-                            <li>Log into your <a href="https://www.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-sky hover:underline">TidyHQ admin portal</a></li>
+                            <li>Log into your <a href="https://www.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">TidyHQ admin portal</a></li>
                             <li>Go to <strong>Settings → Developers → API Access Tokens</strong> and create a new token</li>
                             <li>Copy the token and add it as <strong>TIDYHQ_ACCESS_TOKEN</strong> in Railway environment variables</li>
                             <li>Go to <strong>Settings → Developers → Webhooks</strong> and create a new webhook</li>
@@ -612,7 +612,7 @@ export function AdminConnections() {
                     {conn.id === "google-sheets" && (
                       <div className="space-y-4">
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                          <h4 className="font-semibold text-navy text-sm">Google Sheet URL</h4>
+                          <h4 className="font-semibold text-ink text-sm">Google Sheet URL</h4>
                           <p className="text-xs text-muted-foreground">
                             The URL of the Google Sheet used as the club's asset register.
                           </p>
@@ -625,7 +625,7 @@ export function AdminConnections() {
                                 className="text-sm"
                               />
                               <div className="flex gap-2">
-                                <Button size="sm" onClick={saveSheetUrl} disabled={savingSheet} className="bg-navy hover:bg-navy/90 text-white">
+                                <Button size="sm" onClick={saveSheetUrl} disabled={savingSheet} className="bg-ink hover:bg-ink/90 text-white">
                                   {savingSheet ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
                                   Save
                                 </Button>
@@ -635,7 +635,7 @@ export function AdminConnections() {
                           ) : (
                             <div className="flex items-center gap-3 flex-wrap">
                               {sheetUrl ? (
-                                <a href={sheetUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-sky hover:underline font-mono truncate max-w-[400px]">
+                                <a href={sheetUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline font-mono truncate max-w-[400px]">
                                   {sheetUrl}
                                 </a>
                               ) : (
@@ -662,7 +662,7 @@ export function AdminConnections() {
                         </div>
 
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                          <h4 className="font-semibold text-navy text-sm">Apps Script URL</h4>
+                          <h4 className="font-semibold text-ink text-sm">Apps Script URL</h4>
                           <p className="text-xs text-muted-foreground">
                             The deployed Web app URL from the Apps Script on your Asset Register sheet. This is separate from the Drive bridge script.
                           </p>
@@ -675,7 +675,7 @@ export function AdminConnections() {
                                 className="text-sm"
                               />
                               <div className="flex gap-2">
-                                <Button size="sm" onClick={saveAssetScriptUrl} disabled={savingAssetScript} className="bg-navy hover:bg-navy/90 text-white">
+                                <Button size="sm" onClick={saveAssetScriptUrl} disabled={savingAssetScript} className="bg-ink hover:bg-ink/90 text-white">
                                   {savingAssetScript ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
                                   Save
                                 </Button>
@@ -685,7 +685,7 @@ export function AdminConnections() {
                           ) : (
                             <div className="flex items-center gap-3 flex-wrap">
                               {assetScriptUrl ? (
-                                <span className="text-xs text-sky font-mono truncate max-w-[400px]">{assetScriptUrl}</span>
+                                <span className="text-xs text-accent font-mono truncate max-w-[400px]">{assetScriptUrl}</span>
                               ) : (
                                 <span className="text-xs text-foreground-faint italic">No Apps Script URL configured</span>
                               )}
@@ -722,7 +722,7 @@ export function AdminConnections() {
                         </div>
 
                         <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                          <h4 className="font-semibold text-navy text-sm">Setup Instructions</h4>
+                          <h4 className="font-semibold text-ink text-sm">Setup Instructions</h4>
                           <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
                             <li>Create a new Google Sheet (or use the tab templates below)</li>
                             <li>Set up 4 tabs: <strong className="text-foreground-label">ASSET REGISTER</strong>, <strong className="text-foreground-label">LOAN REGISTER</strong>, <strong className="text-foreground-label">CONDITION RATINGS</strong>, <strong className="text-foreground-label">INSPECTION FREQUENCIES</strong></li>
@@ -742,19 +742,19 @@ export function AdminConnections() {
 
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs text-muted-foreground">Tab templates (CSV):</span>
-                          <a href="/assets/template-asset-register.csv" download="ASSET REGISTER.csv" className="text-xs text-sky hover:text-navy font-medium flex items-center gap-1">
+                          <a href="/assets/template-asset-register.csv" download="ASSET REGISTER.csv" className="text-xs text-accent hover:text-ink font-medium flex items-center gap-1">
                             <Download className="w-3 h-3" /> Asset Register
                           </a>
                           <span className="text-foreground-faint">·</span>
-                          <a href="/assets/template-loan-register.csv" download="LOAN REGISTER.csv" className="text-xs text-sky hover:text-navy font-medium flex items-center gap-1">
+                          <a href="/assets/template-loan-register.csv" download="LOAN REGISTER.csv" className="text-xs text-accent hover:text-ink font-medium flex items-center gap-1">
                             <Download className="w-3 h-3" /> Loan Register
                           </a>
                           <span className="text-foreground-faint">·</span>
-                          <a href="/assets/template-condition-ratings.csv" download="CONDITION RATINGS.csv" className="text-xs text-sky hover:text-navy font-medium flex items-center gap-1">
+                          <a href="/assets/template-condition-ratings.csv" download="CONDITION RATINGS.csv" className="text-xs text-accent hover:text-ink font-medium flex items-center gap-1">
                             <Download className="w-3 h-3" /> Condition Ratings
                           </a>
                           <span className="text-foreground-faint">·</span>
-                          <a href="/assets/template-inspection-frequencies.csv" download="INSPECTION FREQUENCIES.csv" className="text-xs text-sky hover:text-navy font-medium flex items-center gap-1">
+                          <a href="/assets/template-inspection-frequencies.csv" download="INSPECTION FREQUENCIES.csv" className="text-xs text-accent hover:text-ink font-medium flex items-center gap-1">
                             <Download className="w-3 h-3" /> Inspection Frequencies
                           </a>
                         </div>
@@ -775,9 +775,9 @@ export function AdminConnections() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="text-navy shrink-0 mt-0.5"><Users className="w-6 h-6" /></div>
+                  <div className="text-ink shrink-0 mt-0.5"><Users className="w-6 h-6" /></div>
                   <div className="min-w-0">
-                    <CardTitle className="text-navy text-lg">TidyHQ Group Sync</CardTitle>
+                    <CardTitle className="text-ink text-lg">TidyHQ Group Sync</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
                       Configure group-to-role mappings for automatic webhook sync and view the sync log.
                       {tidyhqStatus && (
@@ -803,8 +803,8 @@ export function AdminConnections() {
             <CardContent className="border-t border-border-subtle pt-4 space-y-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-navy">Group → Role Mappings</h3>
-                  <Button onClick={openAddMappingModal} className="bg-navy hover:bg-navy-light text-white" size="sm">
+                  <h3 className="text-sm font-semibold text-ink">Group → Role Mappings</h3>
+                  <Button onClick={openAddMappingModal} className="bg-ink hover:bg-ink-muted text-white" size="sm">
                     <Plus className="w-3.5 h-3.5 mr-1" /> Add Mapping
                   </Button>
                 </div>
@@ -821,9 +821,9 @@ export function AdminConnections() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-muted border-b border-border-subtle">
-                          <th className="p-3 font-semibold text-navy text-sm">TidyHQ Group</th>
-                          <th className="p-3 font-semibold text-navy text-sm">Local Role Flag</th>
-                          <th className="p-3 font-semibold text-navy text-sm text-right">Actions</th>
+                          <th className="p-3 font-semibold text-ink text-sm">TidyHQ Group</th>
+                          <th className="p-3 font-semibold text-ink text-sm">Local Role Flag</th>
+                          <th className="p-3 font-semibold text-ink text-sm text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -855,7 +855,7 @@ export function AdminConnections() {
 
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-navy">Webhook Sync Log</h3>
+                  <h3 className="text-sm font-semibold text-ink">Webhook Sync Log</h3>
                   <Button variant="outline" size="sm" onClick={fetchWebhookLogs} className="gap-1">
                     <RefreshCw className="w-3.5 h-3.5" /> Refresh
                   </Button>
@@ -876,7 +876,7 @@ export function AdminConnections() {
                           {entry.action}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-navy">{entry.detail || entry.eventType}</p>
+                          <p className="text-sm text-ink">{entry.detail || entry.eventType}</p>
                           <div className="flex gap-4 text-xs text-muted-foreground mt-1">
                             {entry.localContactName && <span>Contact: {entry.localContactName}</span>}
                             {entry.tidyhqGroupName && <span>Group: {entry.tidyhqGroupName}</span>}
@@ -903,9 +903,9 @@ export function AdminConnections() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="text-navy shrink-0 mt-0.5"><ImageIcon className="w-6 h-6" /></div>
+                  <div className="text-ink shrink-0 mt-0.5"><ImageIcon className="w-6 h-6" /></div>
                   <div className="min-w-0">
-                    <CardTitle className="text-navy text-lg">Image Upload Settings</CardTitle>
+                    <CardTitle className="text-ink text-lg">Image Upload Settings</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
                       Configure limits for the bulk hero image uploader. Current limit: <strong>{bulkUploadLimit}</strong> image{bulkUploadLimit !== 1 ? "s" : ""} per batch.
                     </p>
@@ -929,7 +929,7 @@ export function AdminConnections() {
           {expandedCards.has("image-upload") && (
             <CardContent className="border-t border-border-subtle pt-4 space-y-5">
               <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-navy text-sm">Bulk Upload Limit</h4>
+                <h4 className="font-semibold text-ink text-sm">Bulk Upload Limit</h4>
                 <p className="text-xs text-muted-foreground">
                   Maximum number of images an admin can upload in a single bulk hero image upload. The server enforces this limit — requests exceeding it are rejected. Range: 1–999.
                 </p>
@@ -943,14 +943,14 @@ export function AdminConnections() {
                       const v = parseInt(e.target.value);
                       setBulkUploadLimitDraft(isNaN(v) ? 1 : Math.min(999, Math.max(1, v)));
                     }}
-                    className="w-24 px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-sky text-sm"
+                    className="w-24 px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-sm"
                   />
                   <span className="text-sm text-muted-foreground">images per batch</span>
                   <Button
                     size="sm"
                     onClick={saveBulkUploadLimit}
                     disabled={savingBulkLimit || bulkUploadLimitDraft === bulkUploadLimit}
-                    className="bg-navy hover:bg-navy/90 text-white gap-1.5"
+                    className="bg-ink hover:bg-ink/90 text-white gap-1.5"
                   >
                     {savingBulkLimit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     Save
@@ -970,7 +970,7 @@ export function AdminConnections() {
           )}
         </Card>
 
-        <Card id="conn-smart-assistant" className="overflow-hidden border-t-4 border-t-sky mt-4">
+        <Card id="conn-smart-assistant" className="overflow-hidden border-t-4 border-t-accent mt-4">
           <button
             onClick={() => toggleExpanded("smart-assistant")}
             className="w-full text-left"
@@ -978,9 +978,9 @@ export function AdminConnections() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="text-navy shrink-0 mt-0.5"><MessageCircle className="w-6 h-6" /></div>
+                  <div className="text-ink shrink-0 mt-0.5"><MessageCircle className="w-6 h-6" /></div>
                   <div className="min-w-0">
-                    <CardTitle className="text-navy text-lg">Smart Assistant</CardTitle>
+                    <CardTitle className="text-ink text-lg">Smart Assistant</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">Configure the Smart Search disclaimer, call-to-action message, committee contact link, and AI prompt for both public and admin searches.</p>
                   </div>
                 </div>
@@ -1007,7 +1007,7 @@ export function AdminConnections() {
                     type="checkbox"
                     checked={saEnabled}
                     onChange={(e) => { setSaEnabled(e.target.checked); markDirty(); }}
-                    className="w-4 h-4 accent-sky"
+                    className="w-4 h-4 accent-accent"
                   />
                   <span className="text-sm font-medium text-foreground-label">Enable public Smart Search</span>
                 </label>
@@ -1019,7 +1019,7 @@ export function AdminConnections() {
                 <p className="text-xs text-muted-foreground">Appended in bold to every Smart Search reply (public and admin). Leave blank to disable.</p>
                 <input
                   type="text"
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                   value={saDisclaimer}
                   onChange={(e) => { setSaDisclaimer(e.target.value); markDirty(); }}
                   placeholder="General information only. Consult SAFA/CASA docs and Site Rules."
@@ -1030,7 +1030,7 @@ export function AdminConnections() {
                 <label className="text-sm font-medium text-foreground-label">Committee Contact Page Link</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                   value={saCommitteeLink}
                   onChange={(e) => { setSaCommitteeLink(e.target.value); markDirty(); }}
                   placeholder="/page/committee"
@@ -1045,7 +1045,7 @@ export function AdminConnections() {
                   <MarkdownHelpLink compact />
                 </div>
                 <textarea
-                  className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm leading-relaxed"
+                  className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent text-sm leading-relaxed"
                   rows={3}
                   value={saCtaMessage}
                   onChange={(e) => { setSaCtaMessage(e.target.value); markDirty(); }}
@@ -1054,7 +1054,7 @@ export function AdminConnections() {
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Show every</label>
                   <select
-                    className="p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                    className="p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                     value={saCtaFrequency}
                     onChange={(e) => { setSaCtaFrequency(e.target.value); markDirty(); }}
                   >
@@ -1081,7 +1081,7 @@ export function AdminConnections() {
                   <div className="border-t border-border p-3 space-y-2">
                     <p className="text-xs text-muted-foreground">Controls the assistant's personality, capabilities, weather interpretation, and rating-first safety rules.</p>
                     <textarea
-                      className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm font-mono leading-relaxed"
+                      className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent text-sm font-mono leading-relaxed"
                       rows={10}
                       value={saPrompt || saDefaultPrompt}
                       onChange={(e) => { setSaPrompt(e.target.value); markDirty(); }}
@@ -1090,7 +1090,7 @@ export function AdminConnections() {
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => { setSaPrompt(saDefaultPrompt); markDirty(); }}
-                        className="text-xs text-orange hover:text-orange/80 font-medium transition-colors"
+                        className="text-xs text-accent hover:text-accent/80 font-medium transition-colors"
                       >
                         Reset to Default
                       </button>
@@ -1114,7 +1114,7 @@ export function AdminConnections() {
                   <div className="border-t border-border p-3 space-y-2">
                     <p className="text-xs text-muted-foreground">These rules run before any recommendation is made. Add new lines here to handle edge cases as they are discovered. Each rule should be a plain-English instruction (e.g. "- RULE NAME: If X, then Y").</p>
                     <textarea
-                      className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky text-sm font-mono leading-relaxed"
+                      className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent text-sm font-mono leading-relaxed"
                       rows={10}
                       value={saEligibilityRules || saDefaultEligibilityRules}
                       onChange={(e) => { setSaEligibilityRules(e.target.value); markDirty(); }}
@@ -1123,7 +1123,7 @@ export function AdminConnections() {
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => { setSaEligibilityRules(saDefaultEligibilityRules); markDirty(); }}
-                        className="text-xs text-orange hover:text-orange/80 font-medium transition-colors"
+                        className="text-xs text-accent hover:text-accent/80 font-medium transition-colors"
                       >
                         Reset to Default
                       </button>
@@ -1134,7 +1134,7 @@ export function AdminConnections() {
               </div>
 
               <div className="border border-border-subtle rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-navy text-sm flex items-center gap-2">
+                <h4 className="font-semibold text-ink text-sm flex items-center gap-2">
                   <Database className="w-4 h-4" />
                   Search Query Logging
                 </h4>
@@ -1148,7 +1148,7 @@ export function AdminConnections() {
                       type="checkbox"
                       checked={searchLogEnabled}
                       onChange={(e) => toggleSearchLogging(e.target.checked)}
-                      className="w-4 h-4 accent-sky"
+                      className="w-4 h-4 accent-accent"
                     />
                     <span className="text-sm font-medium text-foreground-label">Enable logging</span>
                   </label>
@@ -1175,7 +1175,7 @@ export function AdminConnections() {
                     <FileText className="w-3.5 h-3.5" />
                     Review Logs
                     {searchLogStats && searchLogStats.total > 0 && (
-                      <span className="ml-1 bg-sky/10 text-sky px-1.5 py-0.5 rounded text-xs font-medium">{searchLogStats.total}</span>
+                      <span className="ml-1 bg-accent/10 text-accent px-1.5 py-0.5 rounded text-xs font-medium">{searchLogStats.total}</span>
                     )}
                   </Button>
                   <Button
@@ -1219,7 +1219,7 @@ export function AdminConnections() {
               )}
 
               <div className="flex justify-end">
-                <Button onClick={saveSmartAssistant} className={`px-8 transition-all duration-300 ${saJustSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}>
+                <Button onClick={saveSmartAssistant} className={`px-8 transition-all duration-300 ${saJustSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}>
                   {saJustSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Smart Search Settings</>}
                 </Button>
               </div>
@@ -1233,11 +1233,11 @@ export function AdminConnections() {
           <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
-                <h3 className="font-semibold text-navy text-base">Google Drive Bridge Script</h3>
+                <h3 className="font-semibold text-ink text-base">Google Drive Bridge Script</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Copy this script and paste it into your Google Apps Script editor</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={copyDriveScript} className="gap-1.5 bg-navy hover:bg-navy/90 text-white">
+                <Button size="sm" onClick={copyDriveScript} className="gap-1.5 bg-ink hover:bg-ink/90 text-white">
                   {scriptCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   {scriptCopied ? "Copied" : "Copy Script"}
                 </Button>
@@ -1260,11 +1260,11 @@ export function AdminConnections() {
           <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
-                <h3 className="font-semibold text-navy text-base">Asset Register Apps Script</h3>
+                <h3 className="font-semibold text-ink text-base">Asset Register Apps Script</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Copy this script and paste it into your Google Apps Script editor</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={copyAssetScript} className="gap-1.5 bg-navy hover:bg-navy/90 text-white">
+                <Button size="sm" onClick={copyAssetScript} className="gap-1.5 bg-ink hover:bg-ink/90 text-white">
                   {assetScriptCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   {assetScriptCopied ? "Copied" : "Copy Script"}
                 </Button>
@@ -1286,7 +1286,7 @@ export function AdminConnections() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-navy">Add Group Mapping</h3>
+              <h3 className="text-xl font-bold text-ink">Add Group Mapping</h3>
               <button onClick={() => setShowAddMapping(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1299,14 +1299,14 @@ export function AdminConnections() {
                 <label className="block text-sm font-medium text-foreground-label mb-1">TidyHQ Group</label>
                 {loadingTidyhqGroups ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sky" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent" />
                     Loading groups from TidyHQ...
                   </div>
                 ) : (
                   <select
                     value={selectedGroupId}
                     onChange={e => setSelectedGroupId(e.target.value)}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   >
                     <option value="">Select a group...</option>
                     {(Array.isArray(tidyhqGroups) ? tidyhqGroups : []).map(g => (
@@ -1320,7 +1320,7 @@ export function AdminConnections() {
                 <select
                   value={selectedRole}
                   onChange={e => setSelectedRole(e.target.value)}
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                 >
                   <option value="">Select a role...</option>
                   {Object.entries(groupSyncRoleLabels).map(([key, label]) => (
@@ -1331,7 +1331,7 @@ export function AdminConnections() {
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={() => setShowAddMapping(false)}>Cancel</Button>
                 <Button
-                  className="bg-navy hover:bg-navy-light text-white"
+                  className="bg-ink hover:bg-ink-muted text-white"
                   onClick={handleAddMapping}
                   disabled={savingMapping}
                 >
@@ -1349,7 +1349,7 @@ export function AdminConnections() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-navy">Search Query Log</h2>
+                <h2 className="text-lg font-bold text-ink">Search Query Log</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {searchLogTotal} {searchLogTotal === 1 ? "entry" : "entries"} — public smart assistant queries
                 </p>
@@ -1379,7 +1379,7 @@ export function AdminConnections() {
                 <button
                   key={type}
                   onClick={() => fetchSearchLogs(1, type)}
-                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors capitalize ${searchLogType === type ? "bg-navy text-white" : "text-foreground-label hover:bg-muted"}`}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors capitalize ${searchLogType === type ? "bg-ink text-white" : "text-foreground-label hover:bg-muted"}`}
                 >
                   {type === "all" ? "All" : type === "public" ? "Public" : type === "admin" ? "Admin" : "⚑ Flagged"}
                 </button>
@@ -1390,7 +1390,7 @@ export function AdminConnections() {
             <div className="flex-1 overflow-y-auto">
               {loadingSearchLogs ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="w-6 h-6 animate-spin text-sky" />
+                  <Loader2 className="w-6 h-6 animate-spin text-accent" />
                 </div>
               ) : searchLogEntries.length === 0 ? (
                 <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
@@ -1400,10 +1400,10 @@ export function AdminConnections() {
                 <table className="w-full text-left border-collapse">
                   <thead className="sticky top-0 bg-muted z-10">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle w-40">Time</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle w-20">Type</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle">Query</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-navy border-b border-border-subtle">Response</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-ink border-b border-border-subtle w-40">Time</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-ink border-b border-border-subtle w-20">Type</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-ink border-b border-border-subtle">Query</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-ink border-b border-border-subtle">Response</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1420,7 +1420,7 @@ export function AdminConnections() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-1">
-                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${entry.search_type === "public" ? "bg-sky/10 text-sky" : "bg-purple-100 text-purple-700"}`}>
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${entry.search_type === "public" ? "bg-accent/10 text-accent" : "bg-purple-100 text-purple-700"}`}>
                                 {entry.search_type}
                               </span>
                               {entry.flagged && (
@@ -1430,7 +1430,7 @@ export function AdminConnections() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-navy max-w-xs">
+                          <td className="px-4 py-3 text-sm text-ink max-w-xs">
                             <p className={isExpanded ? "" : "line-clamp-2"}>{entry.query}</p>
                           </td>
                           <td className="px-4 py-3 text-xs text-foreground-label max-w-md">

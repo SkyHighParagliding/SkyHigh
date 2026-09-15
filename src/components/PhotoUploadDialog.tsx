@@ -69,7 +69,7 @@ export function PhotoUploadDialog({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div className="flex justify-between items-center p-4 border-b border-border">
-          <h2 className="text-lg font-bold text-navy">Upload Photo</h2>
+          <h2 className="text-lg font-bold text-ink">Upload Photo</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -87,7 +87,7 @@ export function PhotoUploadDialog({
               Select Image
             </label>
             <div
-              className="relative border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-sky hover:bg-sky/5 transition-colors"
+              className="relative border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <input
@@ -101,7 +101,7 @@ export function PhotoUploadDialog({
               <div className="space-y-2">
                 {file ? (
                   <>
-                    <Camera className="w-8 h-8 text-sky mx-auto" />
+                    <Camera className="w-8 h-8 text-accent mx-auto" />
                     <p className="text-sm font-medium text-foreground">{file.name}</p>
                     <p className="text-xs text-muted-foreground">Click to change</p>
                   </>
@@ -142,7 +142,7 @@ export function PhotoUploadDialog({
             <Button
               onClick={handleUpload}
               disabled={!file || isLoading}
-              className="flex-1 bg-navy hover:bg-navy-light text-white"
+              className="flex-1 bg-ink hover:bg-ink-muted text-white"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />

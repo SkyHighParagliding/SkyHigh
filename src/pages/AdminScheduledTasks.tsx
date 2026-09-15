@@ -173,7 +173,7 @@ export function AdminScheduledTasks() {
   if (loading) {
     return (
       <div className="bg-background min-h-screen py-12 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-sky" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
       </div>
     );
   }
@@ -182,17 +182,17 @@ export function AdminScheduledTasks() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link to="/admin" className="text-sky hover:underline text-sm flex items-center gap-1 mb-4">
+          <Link to="/admin" className="text-accent hover:underline text-sm flex items-center gap-1 mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold text-ink flex items-center gap-2">
                 <Clock className="w-8 h-8" /> Scheduled Tasks
               </h1>
               <p className="text-foreground-secondary mt-1">All times are Melbourne time (AEST/AEDT). Tasks run via an hourly check.</p>
             </div>
-            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-navy hover:bg-navy/90 text-white">
+            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-ink hover:bg-ink/90 text-white">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save All
             </Button>
@@ -200,9 +200,9 @@ export function AdminScheduledTasks() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-t-4 border-t-sky">
+          <Card className="border-t-4 border-t-accent">
             <CardHeader>
-              <CardTitle className="text-navy">Site Guide Version Check & Auto-Import</CardTitle>
+              <CardTitle className="text-ink">Site Guide Version Check & Auto-Import</CardTitle>
               <p className="text-sm text-muted-foreground">Checks if the SAFA site guide has a new version. If changed and auto-import is enabled, triggers a bulk site import.</p>
             </CardHeader>
             <CardContent>
@@ -221,7 +221,7 @@ export function AdminScheduledTasks() {
           <Card className="border-t-4 border-t-teal-500">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-navy">Zone Data Auto-Download</CardTitle>
+                <CardTitle className="text-ink">Zone Data Auto-Download</CardTitle>
                 {zoneDataVersion && (
                   <span className="text-xs font-medium bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">v{zoneDataVersion}</span>
                 )}
@@ -232,7 +232,7 @@ export function AdminScheduledTasks() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.autoDownloadZoneData !== "false"}
                   onChange={(e) => updateField("autoDownloadZoneData", e.target.checked ? "true" : "false")}
                 />
@@ -259,7 +259,7 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-indigo-500">
             <CardHeader>
-              <CardTitle className="text-navy">Extended Forecast Fetch</CardTitle>
+              <CardTitle className="text-ink">Extended Forecast Fetch</CardTitle>
               <p className="text-sm text-muted-foreground">Downloads the 7-day extended weather forecast grid from Open-Meteo for all Victoria sites.</p>
             </CardHeader>
             <CardContent>
@@ -277,14 +277,14 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-amber-500">
             <CardHeader>
-              <CardTitle className="text-navy">Image Submission Email Notifications</CardTitle>
+              <CardTitle className="text-ink">Image Submission Email Notifications</CardTitle>
               <p className="text-sm text-muted-foreground">Sends email to Social Media committee contacts when new image submissions are pending review.</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.submissionNotifyEnabled === "true"}
                   onChange={(e) => updateField("submissionNotifyEnabled", e.target.checked ? "true" : "false")}
                 />
@@ -300,7 +300,7 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-emerald-500">
             <CardHeader>
-              <CardTitle className="text-navy">Live Weather Scraper</CardTitle>
+              <CardTitle className="text-ink">Live Weather Scraper</CardTitle>
               <p className="text-sm text-muted-foreground">Each data source runs on its own independent schedule. Intervals are randomised between min and max to spread load. All sources sleep outside operating hours.</p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -370,14 +370,14 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-violet-500">
             <CardHeader>
-              <CardTitle className="text-navy">Google Drive Document Sync</CardTitle>
+              <CardTitle className="text-ink">Google Drive Document Sync</CardTitle>
               <p className="text-sm text-muted-foreground">Automatically syncs and indexes documents from Google Drive via the Apps Script bridge. Requires the Drive connection to be configured.</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.driveSyncEnabled === "true"}
                   onChange={(e) => updateField("driveSyncEnabled", e.target.checked ? "true" : "false")}
                 />
@@ -411,7 +411,7 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-gray-300">
             <CardHeader>
-              <CardTitle className="text-navy flex items-center gap-2">
+              <CardTitle className="text-ink flex items-center gap-2">
                 <Lock className="w-5 h-5 text-muted-foreground" /> Cache Timers
               </CardTitle>
               <p className="text-sm text-muted-foreground">Configure how long various data caches are retained before refreshing.</p>

@@ -224,7 +224,7 @@ export function WindCompass({ value, onChange, crossLeft = false, crossRight = f
                 y={ly}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className={`select-none ${isActive ? "fill-sky" : "fill-gray-400"} ${isCardinal ? "font-bold" : "font-medium"}`}
+                className={`select-none ${isActive ? "fill-accent" : "fill-gray-400"} ${isCardinal ? "font-bold" : "font-medium"}`}
                 fontSize={8}
               >
                 {dir}

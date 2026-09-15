@@ -170,13 +170,13 @@ export function AdminSponsors() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-ink mb-2 flex items-center gap-3">
                 <Handshake className="w-8 h-8 text-amber-600" />
                 Sponsors
               </h1>
@@ -204,7 +204,7 @@ export function AdminSponsors() {
         {showModal && !editingId && (
           <div className="mb-4 bg-card rounded-xl border-2 border-amber-400 shadow-md">
             <div className="px-5 py-3 bg-amber-100/60 border-b border-amber-200/60 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-navy">Add Sponsor</h3>
+              <h3 className="text-lg font-bold text-ink">Add Sponsor</h3>
               <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-amber-200/60 rounded-lg">
                 <X className="w-4 h-4 text-foreground-faint" />
               </button>
@@ -230,7 +230,7 @@ export function AdminSponsors() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-navy truncate">{s.name}</h3>
+                    <h3 className="text-lg font-bold text-ink truncate">{s.name}</h3>
                     {s.url && (
                       <a
                         href={s.url}
@@ -283,7 +283,7 @@ export function AdminSponsors() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-navy mb-3">Delete Sponsor</h3>
+            <h3 className="text-xl font-bold text-ink mb-3">Delete Sponsor</h3>
             <p className="text-foreground-secondary mb-4">
               Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This action cannot be undone.
             </p>

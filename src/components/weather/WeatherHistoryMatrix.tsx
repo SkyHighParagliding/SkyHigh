@@ -34,7 +34,7 @@ export const WeatherHistoryMatrix = memo(function WeatherHistoryMatrix({ buckets
           </tr>
         </thead>
         <tbody>
-          <tr className="border-t border-navy/10">
+          <tr className="border-t border-ink/10">
             <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Wind</td>
             {buckets.map(b => {
               const status = b.avgWind != null && b.avgDir != null
@@ -48,7 +48,7 @@ export const WeatherHistoryMatrix = memo(function WeatherHistoryMatrix({ buckets
               );
             })}
           </tr>
-          <tr className="border-t border-navy/10">
+          <tr className="border-t border-ink/10">
             <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Max Gust</td>
             {buckets.map(b => {
               const status = b.maxGust != null && b.avgDir != null
@@ -62,7 +62,7 @@ export const WeatherHistoryMatrix = memo(function WeatherHistoryMatrix({ buckets
               );
             })}
           </tr>
-          <tr className="border-t border-navy/10">
+          <tr className="border-t border-ink/10">
             <td className="text-left text-[10px] font-semibold text-foreground-faint uppercase tracking-widest pr-2 py-1.5 whitespace-nowrap">Avg Dir</td>
             {buckets.map(b => {
               const status = b.avgWind != null && b.avgDir != null

@@ -114,7 +114,7 @@ function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered
           ) : (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           )}
-          <span className="font-medium text-navy">
+          <span className="font-medium text-ink">
             Siteguide Version: {status?.currentVersion || "Unknown"}
           </span>
           {status?.lastCheck && (
@@ -506,16 +506,16 @@ export function AdminSites() {
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Link>
         
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-navy mb-2">Manage Sites</h1>
+            <h1 className="text-3xl font-extrabold text-ink mb-2">Manage Sites</h1>
             <p className="text-foreground-secondary">Add, edit, or remove flying site guides.</p>
           </div>
-          <Button onClick={() => navigate('/admin/sites/new')} className="bg-sky hover:bg-sky-light text-white">
+          <Button onClick={() => navigate('/admin/sites/new')} className="bg-accent hover:bg-accent-hover text-white">
             <Plus className="w-4 h-4 mr-2" /> Add New Site
           </Button>
         </div>
@@ -525,7 +525,7 @@ export function AdminSites() {
         <div className="mb-4 bg-card border border-border-subtle rounded-lg p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <select
-              className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-card"
+              className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-card"
               value={selectedState}
               onChange={(e) => {
                 setSelectedState(e.target.value);
@@ -541,7 +541,7 @@ export function AdminSites() {
               type="button"
               onClick={handleManualImport}
               disabled={!selectedState || bulkImporting}
-              className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedState && !bulkImporting ? 'bg-sky hover:bg-sky-light text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+              className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedState && !bulkImporting ? 'bg-accent hover:bg-accent-hover text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
             >
               {bulkImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Import Sites
@@ -557,7 +557,7 @@ export function AdminSites() {
               type="button"
               onClick={handleRefreshSites}
               disabled={isRefreshing}
-              className={`p-1 transition-colors text-xs flex items-center gap-1 ${isRefreshing ? 'text-emerald-500 cursor-not-allowed' : 'text-foreground-faint hover:text-sky'}`}
+              className={`p-1 transition-colors text-xs flex items-center gap-1 ${isRefreshing ? 'text-emerald-500 cursor-not-allowed' : 'text-foreground-faint hover:text-accent'}`}
               title="Refresh Site List from Siteguide.org.au"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -570,16 +570,16 @@ export function AdminSites() {
             )}
           </div>
           {bulkImporting && (
-            <div className="p-3 bg-sky/5 border border-sky/20 rounded-lg">
-              <div className="flex items-center gap-3 text-sm text-navy font-medium">
-                <Loader2 className="w-4 h-4 animate-spin text-sky shrink-0" />
+            <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
+              <div className="flex items-center gap-3 text-sm text-ink font-medium">
+                <Loader2 className="w-4 h-4 animate-spin text-accent shrink-0" />
                 <span className="flex-1">Importing sites{selectedState ? ` from ${selectedState}` : ''}... ({bulkTotal - bulkRemaining}/{bulkTotal})</span>
-                <span className="text-2xl font-bold text-sky tabular-nums">{bulkRemaining}</span>
+                <span className="text-2xl font-bold text-accent tabular-nums">{bulkRemaining}</span>
                 <span className="text-xs text-muted-foreground">remaining</span>
               </div>
               <div className="mt-2 w-full bg-muted rounded-full h-1.5">
                 <div
-                  className="bg-sky h-1.5 rounded-full transition-all duration-500"
+                  className="bg-accent h-1.5 rounded-full transition-all duration-500"
                   style={{ width: bulkTotal > 0 ? `${((bulkTotal - bulkRemaining) / bulkTotal) * 100}%` : '0%' }}
                 />
               </div>
@@ -611,13 +611,13 @@ export function AdminSites() {
 
         {archives.length > 0 && (
           <div className="mb-4 bg-card border border-border-subtle rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <div className="flex items-center gap-2 text-sm font-medium text-ink">
               <Archive className="w-4 h-4" />
               Restore from Archive
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
               <select
-                className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-card text-sm"
+                className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-card text-sm"
                 value={selectedArchive}
                 onChange={(e) => {
                   setSelectedArchive(e.target.value);
@@ -635,7 +635,7 @@ export function AdminSites() {
                 type="button"
                 onClick={handleViewDiff}
                 disabled={!selectedArchive || diffLoading}
-                className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedArchive && !diffLoading ? 'bg-sky hover:bg-sky/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+                className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedArchive && !diffLoading ? 'bg-accent hover:bg-accent/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
               >
                 {diffLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
                 View Changes
@@ -644,7 +644,7 @@ export function AdminSites() {
                 type="button"
                 onClick={() => setShowRestoreConfirm(true)}
                 disabled={!selectedArchive || restoring}
-                className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedArchive && !restoring ? 'bg-navy hover:bg-navy/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+                className={`sm:w-44 shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${selectedArchive && !restoring ? 'bg-ink hover:bg-ink/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
               >
                 {restoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                 Restore
@@ -660,7 +660,7 @@ export function AdminSites() {
 
         <div className="mb-4 bg-card border border-border-subtle rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <div className="flex items-center gap-2 text-sm font-medium text-ink">
               <Wind className="w-4 h-4" />
               Update WTF Wind Data
             </div>
@@ -668,7 +668,7 @@ export function AdminSites() {
               type="button"
               onClick={handleWtfCompare}
               disabled={wtfLoading}
-              className={`flex items-center gap-2 px-4 ${wtfLoading ? 'bg-muted text-foreground-faint cursor-not-allowed' : 'bg-sky hover:bg-sky-light text-white'}`}
+              className={`flex items-center gap-2 px-4 ${wtfLoading ? 'bg-muted text-foreground-faint cursor-not-allowed' : 'bg-accent hover:bg-accent-hover text-white'}`}
             >
               {wtfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Fetch & Compare
@@ -684,7 +684,7 @@ export function AdminSites() {
             <div className="space-y-3">
               <div className="flex gap-3 text-xs flex-wrap">
                 <span className="px-2 py-1 bg-muted rounded">WTF sites: {wtfData.wtfSiteCount}</span>
-                <span className="px-2 py-1 bg-sky/10 text-sky rounded font-medium">Matched: {wtfData.matchedCount}</span>
+                <span className="px-2 py-1 bg-accent/10 text-accent rounded font-medium">Matched: {wtfData.matchedCount}</span>
                 <span className={`px-2 py-1 rounded font-medium ${wtfData.changedCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>
                   {wtfData.changedCount > 0 ? `${wtfData.changedCount} differences` : 'All matched — no changes'}
                 </span>
@@ -697,7 +697,7 @@ export function AdminSites() {
                         type="checkbox"
                         checked={wtfShowAll}
                         onChange={() => setWtfShowAll(!wtfShowAll)}
-                        className="w-4 h-4 rounded border-border text-sky focus:ring-1 focus:ring-sky"
+                        className="w-4 h-4 rounded border-border text-accent focus:ring-1 focus:ring-accent"
                       />
                       Show all matches (including identical)
                     </label>
@@ -715,7 +715,7 @@ export function AdminSites() {
                                 const allSelected = changedIds.every((id: string) => wtfSelectedIds.has(id));
                                 setWtfSelectedIds(allSelected ? new Set() : new Set(changedIds));
                               }}
-                              className="w-4 h-4 rounded border-border text-sky focus:ring-1 focus:ring-sky"
+                              className="w-4 h-4 rounded border-border text-accent focus:ring-1 focus:ring-accent"
                             />
                           </th>
                           <th className="text-left p-2 font-medium text-foreground-faint">Site</th>
@@ -736,7 +736,7 @@ export function AdminSites() {
                                     type="checkbox"
                                     checked={wtfSelectedIds.has(c.siteId)}
                                     onChange={() => toggleWtfSite(c.siteId)}
-                                    className="w-4 h-4 rounded border-border text-sky focus:ring-1 focus:ring-sky"
+                                    className="w-4 h-4 rounded border-border text-accent focus:ring-1 focus:ring-accent"
                                   />
                                 )}
                               </td>
@@ -760,7 +760,7 @@ export function AdminSites() {
                         type="button"
                         onClick={handleWtfApply}
                         disabled={wtfApplying || wtfSelectedIds.size === 0}
-                        className={`flex items-center gap-2 px-4 ${!wtfApplying && wtfSelectedIds.size > 0 ? 'bg-navy hover:bg-navy/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+                        className={`flex items-center gap-2 px-4 ${!wtfApplying && wtfSelectedIds.size > 0 ? 'bg-ink hover:bg-ink/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
                       >
                         {wtfApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                         Apply {wtfSelectedIds.size} Update{wtfSelectedIds.size !== 1 ? 's' : ''}
@@ -793,7 +793,7 @@ export function AdminSites() {
               placeholder="Search sites by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
             />
           </div>
           <div className="flex items-center gap-3">
@@ -802,7 +802,7 @@ export function AdminSites() {
               id="hideClosedSites"
               checked={hideClosedSites}
               onChange={toggleHideClosedSites}
-              className="w-5 h-5 rounded border-border text-sky focus:ring-1 focus:ring-sky focus:border-sky cursor-pointer"
+              className="w-5 h-5 rounded border-border text-accent focus:ring-1 focus:ring-accent focus:border-accent cursor-pointer"
             />
             <label htmlFor="hideClosedSites" className="text-sm font-medium text-foreground-label cursor-pointer select-none">
               Hide closed sites
@@ -818,7 +818,7 @@ export function AdminSites() {
                 <div key={site.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <Link to={`/sites/${site.id}`} className="font-medium text-navy hover:text-sky transition-colors hover:underline">
+                      <Link to={`/sites/${site.id}`} className="font-medium text-ink hover:text-accent transition-colors hover:underline">
                         {site.name}
                       </Link>
                       <p className="text-sm text-foreground-secondary mt-0.5">{site.type}</p>
@@ -852,16 +852,16 @@ export function AdminSites() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-muted border-b border-border-subtle">
-                    <th className="p-4 font-semibold text-navy">Site Name</th>
-                    <th className="p-4 font-semibold text-navy">Type</th>
-                    <th className="p-4 font-semibold text-navy">Status</th>
-                    <th className="p-4 font-semibold text-navy text-right">Actions</th>
+                    <th className="p-4 font-semibold text-ink">Site Name</th>
+                    <th className="p-4 font-semibold text-ink">Type</th>
+                    <th className="p-4 font-semibold text-ink">Status</th>
+                    <th className="p-4 font-semibold text-ink text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sites.filter(site => site.name.toLowerCase().includes(searchQuery.toLowerCase())).map((site) => (
                     <tr key={site.id} className="border-b border-border-faint hover:bg-background">
-                      <td className="p-4 font-medium"><Link to={`/sites/${site.id}`} className="text-navy hover:text-sky transition-colors hover:underline">{site.name}</Link></td>
+                      <td className="p-4 font-medium"><Link to={`/sites/${site.id}`} className="text-ink hover:text-accent transition-colors hover:underline">{site.name}</Link></td>
                       <td className="p-4 text-foreground-secondary">{site.type}</td>
                       <td className="p-4">
                         {(() => {
@@ -901,7 +901,7 @@ export function AdminSites() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Confirm Deletion</h3>
+              <h3 className="text-xl font-bold text-ink">Confirm Deletion</h3>
               <button onClick={() => setSiteToDelete(null)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -951,8 +951,8 @@ export function AdminSites() {
       {showDiffModal && diffData && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-5 border-b bg-sky/5 flex items-center justify-between shrink-0">
-              <h3 className="text-lg font-bold text-navy">
+            <div className="p-5 border-b bg-accent/5 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-ink">
                 Changes: Archive {diffData.version} vs Current
               </h3>
               <button onClick={() => setShowDiffModal(false)} className="p-1 hover:bg-muted rounded">

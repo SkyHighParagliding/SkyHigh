@@ -130,7 +130,7 @@ export const WindCompass = memo(function WindCompass({ currentDir, idealDirs, di
   }), [ringColor]);
 
   return (
-    <div className="relative w-24 h-24 sm:w-40 sm:h-40 bg-white/60 rounded-full border border-sky/20 flex items-center justify-center shadow-[inset_0_4px_12px_rgba(0,0,0,0.25)]">
+    <div className="relative w-24 h-24 sm:w-40 sm:h-40 bg-white/60 rounded-full border border-accent/20 flex items-center justify-center shadow-[inset_0_4px_12px_rgba(0,0,0,0.25)]">
       <svg viewBox="0 0 50 50" className="w-full h-full">
         {ringSegments}
         
@@ -157,7 +157,7 @@ export const DayOutlookStatus = memo(function DayOutlookStatus({ speed, directio
     'Good': 'bg-emerald-500',
     'Light': 'bg-yellow-500',
     'Blown Out': 'bg-red-500',
-    'Cross': 'bg-orange',
+    'Cross': 'bg-accent',
     'Not Flyable': 'bg-red-500',
     'N/A': 'bg-gray-300',
   };

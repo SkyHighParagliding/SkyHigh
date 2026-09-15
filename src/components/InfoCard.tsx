@@ -22,7 +22,7 @@ function isSafeUrl(url: string): boolean {
   }
 }
 
-export function InfoCard({ icon, label, value, subValue, href, iconBgClass = "bg-sky/10", valueClass = "font-bold text-navy text-sm" }: InfoCardProps) {
+export function InfoCard({ icon, label, value, subValue, href, iconBgClass = "bg-accent/10", valueClass = "font-bold text-ink text-sm" }: InfoCardProps) {
   const text = String(value ?? "");
   const sub = subValue ? String(subValue) : undefined;
   const isLong = text.length >= LONG_TEXT_THRESHOLD || (sub && sub.length >= LONG_TEXT_THRESHOLD);
@@ -43,7 +43,7 @@ export function InfoCard({ icon, label, value, subValue, href, iconBgClass = "bg
       </>
     );
 
-    const cls = "col-span-2 bg-card p-4 rounded-2xl border border-sky/10 shadow-sm";
+    const cls = "col-span-2 bg-card p-4 rounded-2xl border border-accent/10 shadow-sm";
     if (safeHref) {
       return <a href={safeHref} target="_blank" rel="noopener noreferrer" className={`${cls} hover:bg-background transition-colors block`}>{inner}</a>;
     }
@@ -66,13 +66,13 @@ export function InfoCard({ icon, label, value, subValue, href, iconBgClass = "bg
 
     if (safeHref) {
       return (
-        <a href={safeHref} target="_blank" rel="noopener noreferrer" className="col-span-2 bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex items-start gap-3 hover:bg-background transition-colors group">
+        <a href={safeHref} target="_blank" rel="noopener noreferrer" className="col-span-2 bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex items-start gap-3 hover:bg-background transition-colors group">
           {inner}
         </a>
       );
     }
     return (
-      <div className="col-span-2 bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex items-start gap-3">
+      <div className="col-span-2 bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex items-start gap-3">
         {inner}
       </div>
     );
@@ -91,13 +91,13 @@ export function InfoCard({ icon, label, value, subValue, href, iconBgClass = "bg
 
   if (safeHref) {
     return (
-      <a href={safeHref} target="_blank" rel="noopener noreferrer" className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center hover:bg-background transition-colors group">
+      <a href={safeHref} target="_blank" rel="noopener noreferrer" className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-col items-center text-center hover:bg-background transition-colors group">
         {inner}
       </a>
     );
   }
   return (
-    <div className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center">
+    <div className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-col items-center text-center">
       {inner}
     </div>
   );

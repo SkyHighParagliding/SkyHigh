@@ -12,7 +12,7 @@ export function Sponsors() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
             <Handshake className="w-8 h-8 text-amber-600" />
           </div>
-          <h1 className="text-4xl font-extrabold text-navy mb-3">Our Sponsors</h1>
+          <h1 className="text-4xl font-extrabold text-ink mb-3">Our Sponsors</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             We're grateful to these partners who support our club and the paragliding community.
           </p>

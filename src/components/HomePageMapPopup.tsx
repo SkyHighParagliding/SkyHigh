@@ -46,7 +46,7 @@ export function HomePageMapContent() {
         ))}
       </div>
       <div className="flex-1 min-w-0 space-y-3 pt-1">
-        <p className="text-xs font-semibold text-navy mb-2">Admin Card Mapping</p>
+        <p className="text-xs font-semibold text-ink mb-2">Admin Card Mapping</p>
         {annotations.filter(a => a.admin !== "—").map((a, i) => (
           <div key={i} className="flex items-center gap-2">
             <span

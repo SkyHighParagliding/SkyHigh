@@ -207,7 +207,7 @@ export function Features() {
       <div className="no-print fixed top-20 right-4 z-50">
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg shadow-lg hover:bg-navy-light transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg shadow-lg hover:bg-ink-muted transition-colors text-sm font-medium"
         >
           <Printer className="w-4 h-4" />
           Print / Save PDF
@@ -216,10 +216,10 @@ export function Features() {
 
       <div className="max-w-4xl mx-auto px-6 py-12 print:py-6">
         <div className="text-center mb-10 print:mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky/10 text-sky rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-bold uppercase tracking-widest mb-4">
             Platform Overview
           </div>
-          <h1 className="text-3xl font-black text-navy mb-2 print:text-2xl">{clubName}</h1>
+          <h1 className="text-3xl font-black text-ink mb-2 print:text-2xl">{clubName}</h1>
           <p className="text-muted-foreground max-w-xl mx-auto print:text-sm">
             Club management platform with live weather, Smart tools, pilot safety, document management, and a full CMS.
           </p>
@@ -232,9 +232,9 @@ export function Features() {
               <a
                 key={cat.id}
                 href={`#${cat.id}`}
-                className="px-3 py-1.5 rounded-full bg-background hover:bg-sky/5 transition-colors text-sm text-navy font-medium no-print"
+                className="px-3 py-1.5 rounded-full bg-background hover:bg-accent/5 transition-colors text-sm text-ink font-medium no-print"
               >
-                <span className="text-sky font-bold mr-1">{idx + 1}.</span>
+                <span className="text-accent font-bold mr-1">{idx + 1}.</span>
                 {cat.title}
               </a>
             ))}
@@ -246,26 +246,26 @@ export function Features() {
         {categories.map((category, catIdx) => (
           <section key={category.id} id={category.id} className={`py-8 print:py-4 ${catIdx > 0 ? "category-section border-t border-border-faint" : ""}`}>
             <div className="flex items-baseline gap-3 mb-6 print:mb-3">
-              <span className="text-2xl font-black text-sky/20 print:text-xl">{String(catIdx + 1).padStart(2, "0")}</span>
-              <h2 className="text-xl font-bold text-navy print:text-lg">{category.title}</h2>
+              <span className="text-2xl font-black text-accent/20 print:text-xl">{String(catIdx + 1).padStart(2, "0")}</span>
+              <h2 className="text-xl font-bold text-ink print:text-lg">{category.title}</h2>
             </div>
 
             <div className="space-y-4 print:space-y-3">
               {category.features.map((feature, fIdx) => (
                 <div
                   key={fIdx}
-                  className="feature-card border border-border-faint rounded-lg p-4 print:p-3 hover:border-sky/30 transition-all print:border-border-subtle"
+                  className="feature-card border border-border-faint rounded-lg p-4 print:p-3 hover:border-accent/30 transition-all print:border-border-subtle"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-sky/10 flex items-center justify-center flex-shrink-0 text-sky">
+                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-accent">
                       {feature.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-navy mb-1.5 print:text-sm">{feature.title}</h3>
+                      <h3 className="font-bold text-ink mb-1.5 print:text-sm">{feature.title}</h3>
                       <ul className="space-y-1">
                         {feature.highlights.map((h, hIdx) => (
                           <li key={hIdx} className="text-sm text-foreground-secondary print:text-xs flex items-start gap-2">
-                            <span className="text-sky mt-1.5 flex-shrink-0">•</span>
+                            <span className="text-accent mt-1.5 flex-shrink-0">•</span>
                             <span>{h}</span>
                           </li>
                         ))}

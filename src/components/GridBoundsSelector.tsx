@@ -151,7 +151,7 @@ export function GridBoundsSelector({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-navy">Configure Grid Coverage Area</h2>
+            <h2 className="text-lg font-bold text-ink">Configure Grid Coverage Area</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Drag the corner handles to set the outer boundary used by all three grid fetches</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors">
@@ -163,7 +163,7 @@ export function GridBoundsSelector({
         <div className="flex-1 min-h-0 relative" style={{ minHeight: 360 }}>
           {loading ? (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
             </div>
           ) : (
             <MapContainer

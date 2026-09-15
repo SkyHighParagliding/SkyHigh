@@ -87,14 +87,14 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
         <button
           type="button"
           onClick={() => setMode("library")}
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-border-subtle text-foreground-secondary hover:border-sky hover:text-sky transition-colors"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-border-subtle text-foreground-secondary hover:border-accent hover:text-accent transition-colors"
         >
           <ImageIcon className="w-3 h-3" /> Library
         </button>
         <button
           type="button"
           onClick={() => setMode("url")}
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-border-subtle text-foreground-secondary hover:border-sky hover:text-sky transition-colors"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-border-subtle text-foreground-secondary hover:border-accent hover:text-accent transition-colors"
         >
           <Link2 className="w-3 h-3" /> Paste URL
         </button>
@@ -107,7 +107,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
         </button>
         <Link
           to="/admin/images"
-          className="flex items-center gap-1 text-xs px-2.5 py-1.5 text-foreground-faint hover:text-sky transition-colors ml-auto"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 text-foreground-faint hover:text-accent transition-colors ml-auto"
         >
           <ExternalLink className="w-3 h-3" /> Upload/Create/Manage Images
         </Link>
@@ -125,11 +125,11 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
     return (
       <div className="mb-2 border border-border-subtle rounded-lg p-4 bg-card space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-navy">Image Library</h4>
+          <h4 className="text-sm font-medium text-ink">Image Library</h4>
           <div className="flex items-center gap-3">
             <Link
               to="/admin/images"
-              className="flex items-center gap-1 text-[10px] text-foreground-faint hover:text-sky transition-colors"
+              className="flex items-center gap-1 text-[10px] text-foreground-faint hover:text-accent transition-colors"
             >
               <ExternalLink className="w-3 h-3" /> Upload/Create/Manage Images
             </Link>
@@ -142,7 +142,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
         {totalCount === 0 ? (
           <div className="text-center py-4">
             <p className="text-sm text-foreground-faint">No images in the library yet.</p>
-            <Link to="/admin/images" className="text-xs text-sky hover:underline mt-1 inline-block">Go to Image Library to upload</Link>
+            <Link to="/admin/images" className="text-xs text-accent hover:underline mt-1 inline-block">Go to Image Library to upload</Link>
           </div>
         ) : (
           <>
@@ -155,7 +155,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
                     type="button"
                     onClick={() => count > 0 && setLibraryTab(tab.key)}
                     disabled={count === 0}
-                    className={`text-xs px-2.5 py-1 rounded-t-md transition-colors ${activeTab === tab.key ? "bg-sky text-white" : count === 0 ? "text-foreground-faint/40 cursor-not-allowed" : "text-foreground-secondary hover:text-sky"}`}
+                    className={`text-xs px-2.5 py-1 rounded-t-md transition-colors ${activeTab === tab.key ? "bg-accent text-white" : count === 0 ? "text-foreground-faint/40 cursor-not-allowed" : "text-foreground-secondary hover:text-accent"}`}
                   >
                     {tab.label} ({count})
                   </button>
@@ -172,7 +172,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
                     key={img.src}
                     type="button"
                     onClick={() => handleLibrarySelect(img)}
-                    className="relative block w-full border border-border rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-sky hover:border-sky transition-all group"
+                    className="relative block w-full border border-border rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-accent hover:border-accent transition-all group"
                   >
                     <div className="w-full h-20">
                       <img
@@ -278,7 +278,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
   return (
     <div className="mb-2 border border-border-subtle rounded-lg p-4 bg-card space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-navy">Insert Image from URL</h4>
+        <h4 className="text-sm font-medium text-ink">Insert Image from URL</h4>
         <button type="button" onClick={resetState} className="text-foreground-faint hover:text-foreground-secondary">
           <X className="w-4 h-4" />
         </button>
@@ -291,7 +291,7 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
           value={altText}
           onChange={(e) => setAltText(e.target.value)}
           placeholder="Describe the image..."
-          className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+          className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
         />
       </div>
 
@@ -303,11 +303,11 @@ export function ContentImageToolbar({ onInsertMarkdown }: ContentImageToolbarPro
             value={urlValue}
             onChange={(e) => setUrlValue(e.target.value)}
             placeholder="https://example.com/image.jpg"
-            className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+            className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
           />
         </div>
         <div className="flex justify-end">
-          <Button type="button" size="sm" onClick={handleUrlInsert} disabled={!urlValue.trim()} className="bg-sky text-white text-xs">
+          <Button type="button" size="sm" onClick={handleUrlInsert} disabled={!urlValue.trim()} className="bg-accent text-white text-xs">
             Insert Image
           </Button>
         </div>

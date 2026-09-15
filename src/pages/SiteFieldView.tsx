@@ -64,7 +64,7 @@ export function SiteFieldView() {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-sky border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
         <p className="text-sm text-muted-foreground">Loading site info...</p>
       </div>
     </div>
@@ -74,7 +74,7 @@ export function SiteFieldView() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center">
         <p className="text-red-500 mb-4">{error || "Site not found"}</p>
-        <Link to="/sites" className="text-sky hover:underline text-sm">View all sites</Link>
+        <Link to="/sites" className="text-accent hover:underline text-sm">View all sites</Link>
       </div>
     </div>
   );
@@ -82,19 +82,19 @@ export function SiteFieldView() {
   const smallCards: React.ReactNode[] = [];
 
   if (isValid(site.windDir)) {
-    smallCards.push(<InfoCard key="winddir" icon={<Compass className="w-5 h-5 text-sky" />} label="Ideal Dir" value={site.windDir} />);
+    smallCards.push(<InfoCard key="winddir" icon={<Compass className="w-5 h-5 text-accent" />} label="Ideal Dir" value={site.windDir} />);
   }
 
   if (isValid(site.windSpeed)) {
-    smallCards.push(<InfoCard key="windspeed" icon={<Wind className="w-5 h-5 text-sky" />} label="Wind Range" value={site.windSpeed} />);
+    smallCards.push(<InfoCard key="windspeed" icon={<Wind className="w-5 h-5 text-accent" />} label="Wind Range" value={site.windSpeed} />);
   }
 
   if (site.pgRating) {
-    smallCards.push(<InfoCard key="pgrating" icon={<AlertTriangle className="w-5 h-5 text-sky" />} label="PG Rating" value={site.pgRating} />);
+    smallCards.push(<InfoCard key="pgrating" icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="PG Rating" value={site.pgRating} />);
   }
 
   if (site.hgRating) {
-    smallCards.push(<InfoCard key="hgrating" icon={<AlertTriangle className="w-5 h-5 text-sky" />} label="HG Rating" value={site.hgRating} />);
+    smallCards.push(<InfoCard key="hgrating" icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="HG Rating" value={site.hgRating} />);
   }
 
   if (isValid(site.emergencyMarker)) {
@@ -102,37 +102,37 @@ export function SiteFieldView() {
   }
 
   if (isValid(site.what3words)) {
-    smallCards.push(<InfoCard key="w3w" icon={<MapPin className="w-5 h-5 text-sky" />} label="What3Words" value={site.what3words} href={`https://what3words.com/${site.what3words.replace('///', '')}`} />);
+    smallCards.push(<InfoCard key="w3w" icon={<MapPin className="w-5 h-5 text-accent" />} label="What3Words" value={site.what3words} href={`https://what3words.com/${site.what3words.replace('///', '')}`} />);
   }
 
   if (isValid(site.siteContact)) {
-    smallCards.push(<InfoCard key="contact" icon={<Phone className="w-5 h-5 text-sky" />} label="Site Contact" value={site.siteContact} subValue={isValid(site.siteContactPhone) ? site.siteContactPhone : undefined} />);
+    smallCards.push(<InfoCard key="contact" icon={<Phone className="w-5 h-5 text-accent" />} label="Site Contact" value={site.siteContact} subValue={isValid(site.siteContactPhone) ? site.siteContactPhone : undefined} />);
   }
 
   if (site.hoodedPloversActive === "true") {
     const hasLink = isValid(site.hoodedPloversLink);
     smallCards.push(
       hasLink
-        ? <InfoCard key="plovers" icon={<Bird className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-orange/10" />
-        : <InfoCard key="plovers" icon={<Bird className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Check Signs" iconBgClass="bg-orange/10" valueClass="font-bold text-orange text-sm" />
+        ? <InfoCard key="plovers" icon={<Bird className="w-5 h-5 text-accent" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-accent/10" />
+        : <InfoCard key="plovers" icon={<Bird className="w-5 h-5 text-accent" />} label="Hooded Plovers" value="Check Signs" iconBgClass="bg-accent/10" valueClass="font-bold text-accent text-sm" />
     );
   }
 
   if (site.isXCSite === 'true' && settings.xcMapsEnabled) {
     smallCards.push(
-      <Link key="xc" to="/xc/maps" className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center hover:bg-sky/5 transition-colors">
-        <div className="bg-sky/10 p-2 rounded-xl mb-2">
-          <Map className="w-5 h-5 text-sky" />
+      <Link key="xc" to="/xc/maps" className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-col items-center text-center hover:bg-accent/5 transition-colors">
+        <div className="bg-accent/10 p-2 rounded-xl mb-2">
+          <Map className="w-5 h-5 text-accent" />
         </div>
         <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">XC</p>
-        <p className="font-bold text-navy text-sm">XC Map</p>
+        <p className="font-bold text-ink text-sm">XC Map</p>
       </Link>
     );
   }
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="bg-navy text-white px-4 py-4">
+      <div className="bg-ink text-white px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">{site.name}</h1>
@@ -161,8 +161,8 @@ export function SiteFieldView() {
         {weather && !weather.error && (
           <div className="space-y-2">
             <div className="flex items-center px-1">
-              <CloudSun className="w-4 h-4 text-sky mr-1.5" />
-              <h2 className="text-sm font-bold text-navy">Current Weather</h2>
+              <CloudSun className="w-4 h-4 text-accent mr-1.5" />
+              <h2 className="text-sm font-bold text-ink">Current Weather</h2>
             </div>
             <div className="scale-[0.92] origin-top">
               <WeatherCard weather={weather} site={site} distance={distance ? Number(distance) : undefined} />
@@ -171,9 +171,9 @@ export function SiteFieldView() {
         )}
 
         {site.hazards && site.hazards.length > 0 && (
-          <Card className="border-t-3 border-t-orange shadow-sm">
-            <CardHeader className="bg-orange/5 py-3 px-4">
-              <CardTitle className="flex items-center text-orange-dark text-sm">
+          <Card className="border-t-3 border-t-accent shadow-sm">
+            <CardHeader className="bg-accent/5 py-3 px-4">
+              <CardTitle className="flex items-center text-accent-hover text-sm">
                 <AlertTriangle className="w-4 h-4 mr-1.5" /> Known Hazards
               </CardTitle>
             </CardHeader>
@@ -181,7 +181,7 @@ export function SiteFieldView() {
               <ul className="space-y-1.5">
                 {site.hazards.map((hazard: string, index: number) => (
                   <li key={index} className="flex items-start gap-1.5">
-                    <span className="text-orange shrink-0 text-xs mt-0.5">•</span>
+                    <span className="text-accent shrink-0 text-xs mt-0.5">•</span>
                     <span className="text-xs text-foreground-label leading-relaxed">{hazard}</span>
                   </li>
                 ))}
@@ -192,8 +192,8 @@ export function SiteFieldView() {
 
         {site.rules && site.rules.length > 0 && (
           <Card className="shadow-sm">
-            <CardHeader className="bg-navy/5 py-3 px-4">
-              <CardTitle className="flex items-center text-navy text-sm">
+            <CardHeader className="bg-ink/5 py-3 px-4">
+              <CardTitle className="flex items-center text-ink text-sm">
                 <ShieldAlert className="w-4 h-4 mr-1.5" /> Site Rules
               </CardTitle>
             </CardHeader>
@@ -201,7 +201,7 @@ export function SiteFieldView() {
               <ul className="space-y-1.5">
                 {site.rules.map((rule: string, index: number) => (
                   <li key={index} className="flex items-start gap-1.5">
-                    <span className="text-navy shrink-0 font-bold text-xs">{index + 1}.</span>
+                    <span className="text-ink shrink-0 font-bold text-xs">{index + 1}.</span>
                     <span className="text-xs text-foreground-label leading-relaxed">{rule}</span>
                   </li>
                 ))}
@@ -212,7 +212,7 @@ export function SiteFieldView() {
 
         <Link
           to={`/sites/${id}`}
-          className="flex items-center justify-center gap-2 bg-sky hover:bg-sky-dark text-white font-medium py-3 rounded-xl transition-colors text-sm"
+          className="flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-medium py-3 rounded-xl transition-colors text-sm"
         >
           View Full Site Details <ArrowRight className="w-4 h-4" />
         </Link>

@@ -116,12 +116,12 @@ export function AdminLogin() {
   if (view === "forgot" || view === "first-time") {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-navy">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-ink">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-navy/10 rounded-full flex items-center justify-center mb-4">
-              <Mail className="w-8 h-8 text-navy" />
+            <div className="mx-auto w-16 h-16 bg-ink/10 rounded-full flex items-center justify-center mb-4">
+              <Mail className="w-8 h-8 text-ink" />
             </div>
-            <CardTitle className="text-2xl text-navy">
+            <CardTitle className="text-2xl text-ink">
               {view === "forgot" ? "Forgot Password?" : "First Time? Set Your Password"}
             </CardTitle>
             <p className="text-muted-foreground text-sm mt-1">
@@ -159,7 +159,7 @@ export function AdminLogin() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                     placeholder="your@email.com"
                     required
                     autoFocus
@@ -174,7 +174,7 @@ export function AdminLogin() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-navy hover:bg-navy-light text-white h-12 text-base"
+                  className="w-full bg-ink hover:bg-ink-muted text-white h-12 text-base"
                   disabled={loading}
                 >
                   {loading ? (
@@ -205,12 +205,12 @@ export function AdminLogin() {
   if (view === "provider-signup") {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-navy">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-ink">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-navy/10 rounded-full flex items-center justify-center mb-4">
-              <UserPlus className="w-8 h-8 text-navy" />
+            <div className="mx-auto w-16 h-16 bg-ink/10 rounded-full flex items-center justify-center mb-4">
+              <UserPlus className="w-8 h-8 text-ink" />
             </div>
-            <CardTitle className="text-2xl text-navy">Sign Up as Provider</CardTitle>
+            <CardTitle className="text-2xl text-ink">Sign Up as Provider</CardTitle>
             <p className="text-muted-foreground text-sm mt-1">
               Create a provider account to get started
             </p>
@@ -244,7 +244,7 @@ export function AdminLogin() {
                     type="text"
                     value={providerName}
                     onChange={(e) => setProviderName(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                     placeholder="Your full name"
                     required
                     autoFocus
@@ -257,7 +257,7 @@ export function AdminLogin() {
                     type="email"
                     value={providerEmail}
                     onChange={(e) => setProviderEmail(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                     placeholder="your@email.com"
                     required
                   />
@@ -265,7 +265,7 @@ export function AdminLogin() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-navy hover:bg-navy-light text-white h-12 text-base"
+                  className="w-full bg-ink hover:bg-ink-muted text-white h-12 text-base"
                   disabled={loading}
                 >
                   {loading ? (
@@ -296,12 +296,12 @@ export function AdminLogin() {
   if (view === "photo-upload") {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-sky">
+        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-accent">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-sky/10 rounded-full flex items-center justify-center mb-4">
-              <Camera className="w-8 h-8 text-sky" />
+            <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+              <Camera className="w-8 h-8 text-accent" />
             </div>
-            <CardTitle className="text-2xl text-navy">Update Your Photo</CardTitle>
+            <CardTitle className="text-2xl text-ink">Update Your Photo</CardTitle>
             <p className="text-muted-foreground text-sm mt-1">
               Upload a passport-style photo to your committee profile
             </p>
@@ -327,7 +327,7 @@ export function AdminLogin() {
                     type="email"
                     value={photoEmail}
                     onChange={(e) => setPhotoEmail(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                     placeholder="your@email.com"
                     disabled={showPhotoDialog}
                   />
@@ -339,7 +339,7 @@ export function AdminLogin() {
                     type="password"
                     value={photoPassword}
                     onChange={(e) => setPhotoPassword(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                     placeholder="Enter your password"
                     disabled={showPhotoDialog}
                   />
@@ -348,7 +348,7 @@ export function AdminLogin() {
                 <Button
                   onClick={() => setShowPhotoDialog(true)}
                   disabled={!photoEmail || !photoPassword || photoLoading}
-                  className="w-full bg-sky hover:bg-sky-dark text-white"
+                  className="w-full bg-accent hover:bg-accent-hover text-white"
                 >
                   <Camera className="w-4 h-4 mr-2" /> Select Photo
                 </Button>
@@ -379,12 +379,12 @@ export function AdminLogin() {
 
   return (
     <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-navy">
+      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-ink">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-16 h-16 bg-navy/10 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-8 h-8 text-navy" />
+          <div className="mx-auto w-16 h-16 bg-ink/10 rounded-full flex items-center justify-center mb-4">
+            <Lock className="w-8 h-8 text-ink" />
           </div>
-          <CardTitle className="text-2xl text-navy">Admin Login</CardTitle>
+          <CardTitle className="text-2xl text-ink">Admin Login</CardTitle>
           <p className="text-muted-foreground text-sm mt-1">Sign in to access the admin dashboard</p>
         </CardHeader>
         <CardContent>
@@ -406,7 +406,7 @@ export function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                 placeholder="your@email.com"
                 required
                 autoFocus
@@ -419,14 +419,14 @@ export function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 border border-border rounded-lg focus:ring-sky focus:border-sky"
+                className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
                 placeholder="Enter your password"
                 required
               />
               <div className="flex justify-end">
                 <button
                   type="button"
-                  className="text-xs text-sky hover:text-navy transition-colors"
+                  className="text-xs text-accent hover:text-ink transition-colors"
                   onClick={() => switchView("forgot")}
                   tabIndex={-1}
                 >
@@ -437,7 +437,7 @@ export function AdminLogin() {
 
             <Button
               type="submit"
-              className="w-full bg-navy hover:bg-navy-light text-white h-12 text-base"
+              className="w-full bg-ink hover:bg-ink-muted text-white h-12 text-base"
               disabled={loading}
             >
               {loading ? (
@@ -452,21 +452,21 @@ export function AdminLogin() {
             <div className="pt-2 border-t border-border space-y-2">
               <button
                 type="button"
-                className="w-full text-sm text-sky hover:text-navy transition-colors py-1"
+                className="w-full text-sm text-accent hover:text-ink transition-colors py-1"
                 onClick={() => switchView("first-time")}
               >
                 First time? Set your password
               </button>
               <button
                 type="button"
-                className="w-full text-sm text-muted-foreground hover:text-navy transition-colors py-1"
+                className="w-full text-sm text-muted-foreground hover:text-ink transition-colors py-1"
                 onClick={() => switchView("provider-signup")}
               >
                 Sign up as Provider
               </button>
               <button
                 type="button"
-                className="w-full text-sm text-muted-foreground hover:text-navy transition-colors py-1"
+                className="w-full text-sm text-muted-foreground hover:text-ink transition-colors py-1"
                 onClick={() => switchView("photo-upload")}
               >
                 <Camera className="w-3.5 h-3.5 inline mr-1" /> Update your photo

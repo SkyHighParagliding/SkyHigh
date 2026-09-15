@@ -98,16 +98,16 @@ export function AdminProjects() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy mb-2">Project Management</h1>
+              <h1 className="text-3xl font-extrabold text-ink mb-2">Project Management</h1>
               <p className="text-muted-foreground">Manage site works, stakeholder relationships, and land management projects.</p>
             </div>
-            <Button onClick={() => { setNewName(""); setShowModal(true); }} className="bg-sky hover:bg-navy text-white">
+            <Button onClick={() => { setNewName(""); setShowModal(true); }} className="bg-accent hover:bg-ink text-white">
               <Plus className="w-4 h-4 mr-2" />
               New Project
             </Button>
@@ -118,7 +118,7 @@ export function AdminProjects() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+            className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-accent focus:border-accent"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -129,7 +129,7 @@ export function AdminProjects() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "name" | "date")}
-            className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+            className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-accent focus:border-accent"
           >
             <option value="date">Sort by Date</option>
             <option value="name">Sort by Name</option>
@@ -156,7 +156,7 @@ export function AdminProjects() {
                 <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-teal-500">
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <CardTitle className="flex items-center text-navy group-hover:text-teal-600 transition-colors">
+                      <CardTitle className="flex items-center text-ink group-hover:text-teal-600 transition-colors">
                         <Briefcase className="w-5 h-5 mr-2 flex-shrink-0" />
                         {project.name}
                       </CardTitle>
@@ -207,7 +207,7 @@ export function AdminProjects() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-navy">New Project</h2>
+              <h2 className="text-xl font-bold text-ink">New Project</h2>
               <button onClick={() => setShowModal(false)} className="text-foreground-faint hover:text-foreground-secondary">
                 <X className="w-5 h-5" />
               </button>
@@ -220,13 +220,13 @@ export function AdminProjects() {
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createProject()}
                 placeholder="e.g. Ben Nevis Launch Repair"
-                className="w-full border border-border rounded-md px-3 py-2 focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full border border-border rounded-md px-3 py-2 focus:ring-1 focus:ring-accent focus:border-accent"
                 autoFocus
               />
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button onClick={createProject} disabled={!newName.trim() || creating} className="bg-sky hover:bg-navy text-white">
+              <Button onClick={createProject} disabled={!newName.trim() || creating} className="bg-accent hover:bg-ink text-white">
                 {creating ? "Creating..." : "Create Project"}
               </Button>
             </div>

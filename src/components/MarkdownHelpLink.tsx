@@ -20,7 +20,7 @@ export function MarkdownHelpLink({ compact = false }: { compact?: boolean }) {
         ref={linkRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="text-[11px] text-sky hover:text-navy transition-colors"
+        className="text-[11px] text-accent hover:text-ink transition-colors"
       >
         {open ? "Hide formatting" : "Formatting help"}
       </button>
@@ -31,7 +31,7 @@ export function MarkdownHelpLink({ compact = false }: { compact?: boolean }) {
         >
           <table className="w-full text-[11px] text-foreground-secondary leading-relaxed">
             <tbody>
-              <tr><td colSpan={2} className="pt-1 pb-0.5 text-[10px] font-bold text-navy uppercase tracking-wider">Basics</td></tr>
+              <tr><td colSpan={2} className="pt-1 pb-0.5 text-[10px] font-bold text-ink uppercase tracking-wider">Basics</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap"># Heading</td><td className="py-0.5">Main heading</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">## Subheading</td><td className="py-0.5">Sub heading</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">**bold**</td><td className="py-0.5">Bold text</td></tr>
@@ -43,12 +43,12 @@ export function MarkdownHelpLink({ compact = false }: { compact?: boolean }) {
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">&gt; quote</td><td className="py-0.5">Blockquote</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">---</td><td className="py-0.5">Horizontal line</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">{"text··↵"}</td><td className="py-0.5">New line (2 spaces + Enter)</td></tr>
-              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-navy uppercase tracking-wider">Styling</td></tr>
+              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-ink uppercase tracking-wider">Styling</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">{`->text<-`}</td><td className="py-0.5">Centre text</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">{`->>text<<-`}</td><td className="py-0.5">Right align</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">^^^text^^^</td><td className="py-0.5">Large text</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">::text::</td><td className="py-0.5">Photo caption</td></tr>
-              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-navy uppercase tracking-wider">Callout Boxes</td></tr>
+              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-ink uppercase tracking-wider">Callout Boxes</td></tr>
               <tr><td colSpan={2} className="py-1 text-[10px] text-foreground-faint">Put <span className="font-mono text-foreground">:::type</span> on its own line, then your text, then <span className="font-mono text-foreground">:::</span> on its own line to close:</td></tr>
               <tr><td colSpan={2} className="py-1">
                 <div className="font-mono text-[10px] bg-muted/60 rounded p-1.5 leading-relaxed">
@@ -60,7 +60,7 @@ export function MarkdownHelpLink({ compact = false }: { compact?: boolean }) {
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">:::highlight</td><td className="py-0.5"><span className="inline-block w-2 h-2 rounded-sm bg-amber-100 border border-amber-300 mr-1 align-middle"></span>Yellow</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">:::info</td><td className="py-0.5"><span className="inline-block w-2 h-2 rounded-sm bg-blue-100 border border-blue-300 mr-1 align-middle"></span>Blue</td></tr>
               <tr><td className="pr-2 font-mono text-foreground py-0.5 whitespace-nowrap">:::warning</td><td className="py-0.5"><span className="inline-block w-2 h-2 rounded-sm bg-red-100 border border-red-300 mr-1 align-middle"></span>Red</td></tr>
-              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-navy uppercase tracking-wider">Widgets</td></tr>
+              <tr><td colSpan={2} className="pt-2 pb-0.5 text-[10px] font-bold text-ink uppercase tracking-wider">Widgets</td></tr>
               <tr><td className="pr-2 font-mono py-0.5 whitespace-nowrap text-purple-600">{`{{schools}}`}</td><td className="py-0.5">Schools buttons</td></tr>
               <tr><td className="pr-2 font-mono py-0.5 whitespace-nowrap text-sky-600">{`{{telegram}}`}</td><td className="py-0.5">Telegram groups</td></tr>
               <tr><td className="pr-2 font-mono py-0.5 whitespace-nowrap text-emerald-600">{`{{committee}}`}</td><td className="py-0.5">Committee cards</td></tr>

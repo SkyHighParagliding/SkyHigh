@@ -5,13 +5,11 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 
-  --color-navy: #1d1d1f;
-  --color-navy-light: #424245;
-  --color-sky: #007aff;
-  --color-sky-light: #0063d1;
-  --color-orange: #007aff;
-  --color-orange-dark: #0063d1;
-  --color-sand: #f4f1ea;
+  --color-ink: #1d1d1f;
+  --color-ink-muted: #424245;
+  --color-accent: #007aff;
+  --color-accent-hover: #0063d1;
+  --color-cream: #f4f1ea;
 
   --color-hazard-low: #10b981;
   --color-hazard-medium: #f59e0b;
@@ -81,7 +79,7 @@
     @apply font-body text-foreground bg-background;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-bold text-navy;
+    @apply font-sans font-bold text-ink;
   }
   .prose img {
     margin-top: 1.5rem;

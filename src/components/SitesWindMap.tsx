@@ -406,7 +406,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             >
               &times;
             </button>
-            <div className="font-semibold text-navy text-sm">{selectedSite.site.name}</div>
+            <div className="font-semibold text-ink text-sm">{selectedSite.site.name}</div>
             {selectedSite.site.isSkyHighSite === 'true' && (
               <div className="text-[10px] text-emerald-600 font-medium">a {clubName} Site</div>
             )}
@@ -448,7 +448,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             )}
 
             <div className="flex items-center gap-3 mt-2">
-              <a href={`/sites/${selectedSite.site.id}`} className="text-xs font-medium text-sky hover:underline">
+              <a href={`/sites/${selectedSite.site.id}`} className="text-xs font-medium text-accent hover:underline">
                 View Site Guide &rarr;
               </a>
               {viewMode !== 'thermal' && (
@@ -464,7 +464,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             </div>
             {isAuthenticated && viewMode !== 'thermal' && (
               <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
-                <a href={`/admin/sites/${selectedSite.site.id}/edit`} className="text-xs font-medium text-orange hover:underline">
+                <a href={`/admin/sites/${selectedSite.site.id}/edit`} className="text-xs font-medium text-accent hover:underline">
                   Edit Site
                 </a>
               </div>

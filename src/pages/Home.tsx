@@ -131,9 +131,9 @@ export function Home() {
   }, [heroImages]);
 
   const colorMap: Record<string, { text: string; bg: string }> = {
-    sky: { text: 'text-sky', bg: 'bg-sky/10' },
-    orange: { text: 'text-orange', bg: 'bg-orange/10' },
-    navy: { text: 'text-navy', bg: 'bg-navy/10' },
+    sky: { text: 'text-accent', bg: 'bg-accent/10' },
+    orange: { text: 'text-accent', bg: 'bg-accent/10' },
+    navy: { text: 'text-ink', bg: 'bg-ink/10' },
     emerald: { text: 'text-emerald-600', bg: 'bg-emerald-600/10' },
     purple: { text: 'text-purple-600', bg: 'bg-purple-600/10' },
     pink: { text: 'text-pink-600', bg: 'bg-pink-600/10' },
@@ -144,8 +144,8 @@ export function Home() {
   const allCards: Record<string, any> = {
     sites: {
       id: 'sites',
-      icon: <MapPin className="h-8 w-8 text-sky" />,
-      iconBg: 'bg-sky/10',
+      icon: <MapPin className="h-8 w-8 text-accent" />,
+      iconBg: 'bg-accent/10',
       title: settings.homeCardSitesTitle || 'Flying Sites',
       desc: (
         <>
@@ -155,33 +155,33 @@ export function Home() {
       ),
       link: settings.homeCardSitesLink || '/sites',
       linkText: settings.homeCardSitesLinkText || 'View Sites',
-      linkColor: 'text-sky'
+      linkColor: 'text-accent'
     },
     safety: {
       id: 'safety',
-      icon: <ShieldAlert className="h-8 w-8 text-orange" />,
-      iconBg: 'bg-orange/10',
+      icon: <ShieldAlert className="h-8 w-8 text-accent" />,
+      iconBg: 'bg-accent/10',
       title: settings.homeCardSafetyTitle || 'Safety & Rules',
       desc: (
         <>
-          {settings.onlineCheckInEnabled && <span className="font-semibold text-orange block mb-1">Mandatory online check-in for all pilots.</span>}
+          {settings.onlineCheckInEnabled && <span className="font-semibold text-accent block mb-1">Mandatory online check-in for all pilots.</span>}
           <span className="block mb-1">{settings.homeBox2Desc || "Please see our Safety Guidelines. Review site rules, acknowledge hazards, and fly safely."}</span>
           <SafetyOfficerWidget />
         </>
       ),
       link: settings.homeCardSafetyLink || '/safety',
       linkText: settings.homeCardSafetyLinkText || 'Safety Guidelines',
-      linkColor: 'text-orange'
+      linkColor: 'text-accent'
     },
     community: {
       id: 'community',
-      icon: <Users className="h-8 w-8 text-navy" />,
-      iconBg: 'bg-navy/10',
+      icon: <Users className="h-8 w-8 text-ink" />,
+      iconBg: 'bg-ink/10',
       title: settings.homeCardCommunityTitle || 'Community',
       desc: settings.homeBox3Desc || "We regularly meet on the first Wednesday of each month. We fly whenever its on! Connect with local pilots and find mentors.",
       link: settings.homeCardCommunityLink || '/page/about',
       linkText: settings.homeCardCommunityLinkText || 'About Us',
-      linkColor: 'text-navy',
+      linkColor: 'text-ink',
       isCommunityCard: false
     },
     events: {
@@ -225,7 +225,7 @@ export function Home() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-block px-3 py-1.5 bg-navy/5 text-navy rounded-full text-xs font-semibold hover:bg-navy/10 transition-colors border border-navy/20"
+              className="inline-block px-3 py-1.5 bg-ink/5 text-ink rounded-full text-xs font-semibold hover:bg-ink/10 transition-colors border border-ink/20"
             >
               {group.name}
             </a>
@@ -394,12 +394,12 @@ export function Home() {
               referrerPolicy="no-referrer"
             />
           )}
-          <div className="absolute inset-0 bg-navy/60 mix-blend-multiply" style={{ zIndex: 2 }} />
+          <div className="absolute inset-0 bg-ink/60 mix-blend-multiply" style={{ zIndex: 2 }} />
         </div>
 
         {/* Alert Banner */}
         {settings.alertBannerEnabled && (
-          <div className={`relative z-40 bg-orange text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md mt-[56px] sm:mt-[76px]`}>
+          <div className={`relative z-40 bg-accent text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md mt-[56px] sm:mt-[76px]`}>
             <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
               <ShieldAlert className="w-5 h-5" />
               <span>{settings.alertBannerText || "Important update available."}</span>
@@ -566,7 +566,7 @@ export function Home() {
             <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--heading-color, #1d1d1f)' }}>Current Conditions</h2>
             <p className="max-w-2xl mx-auto text-[15px]" style={{ color: '#86868b' }}>
               {'Live weather at popular flying sites.'}<br />
-              <span className="text-orange font-semibold">{'Always check conditions yourself before flying.'}</span>
+              <span className="text-accent font-semibold">{'Always check conditions yourself before flying.'}</span>
             </p>
 
             {/* Weather Legend */}

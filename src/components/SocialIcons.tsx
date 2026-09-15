@@ -40,7 +40,7 @@ export function SocialIcons() {
           href={settings[s.key as keyof typeof settings] as string}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-foreground-faint hover:text-sky transition-colors"
+          className="text-foreground-faint hover:text-accent transition-colors"
           title={s.label}
         >
           {s.icon}

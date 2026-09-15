@@ -56,8 +56,8 @@ function TelegramWidget() {
   return (
     <div className="my-6 p-5 bg-sky-50/50 border border-sky-200 rounded-xl">
       <div className="flex items-center gap-2 mb-3">
-        <MessageCircle className="w-5 h-5 text-sky" />
-        <h3 className="text-lg font-bold text-navy">Telegram Groups</h3>
+        <MessageCircle className="w-5 h-5 text-accent" />
+        <h3 className="text-lg font-bold text-ink">Telegram Groups</h3>
       </div>
       <div className="flex flex-wrap gap-2">
         {groups.map((group) => (
@@ -66,7 +66,7 @@ function TelegramWidget() {
             href={group.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-3 py-1.5 bg-navy/5 text-navy rounded-full text-sm font-semibold hover:bg-navy/10 transition-colors border border-navy/20"
+            className="inline-block px-3 py-1.5 bg-ink/5 text-ink rounded-full text-sm font-semibold hover:bg-ink/10 transition-colors border border-ink/20"
           >
             {group.name}
           </a>
@@ -127,8 +127,8 @@ function CustomTagWidget({ tagName }: { tagName: string }) {
   return (
     <div className="my-6 p-5 bg-sky-50/50 border border-sky-200 rounded-xl">
       <div className="flex items-center gap-2 mb-3">
-        <MessageCircle className="w-5 h-5 text-sky" />
-        <h3 className="text-lg font-bold text-navy">Telegram Groups</h3>
+        <MessageCircle className="w-5 h-5 text-accent" />
+        <h3 className="text-lg font-bold text-ink">Telegram Groups</h3>
       </div>
       <div className="flex flex-wrap gap-2">
         {filtered.map((group) => (
@@ -137,7 +137,7 @@ function CustomTagWidget({ tagName }: { tagName: string }) {
             href={group.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-3 py-1.5 bg-navy/5 text-navy rounded-full text-sm font-semibold hover:bg-navy/10 transition-colors border border-navy/20"
+            className="inline-block px-3 py-1.5 bg-ink/5 text-ink rounded-full text-sm font-semibold hover:bg-ink/10 transition-colors border border-ink/20"
           >
             {group.name}
           </a>
@@ -238,7 +238,7 @@ function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember;
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <Card className="hover:shadow-md transition-shadow border-t-4 border-t-sky">
+    <Card className="hover:shadow-md transition-shadow border-t-4 border-t-accent">
       <CardContent className="pt-6 text-center flex flex-col items-center">
         {member.photoUrl && (
           <img
@@ -247,10 +247,10 @@ function CommitteeMemberCard({ member, displayName }: { member: CommitteeMember;
             className="w-20 h-20 rounded-lg object-cover border-2 border-border mb-3"
           />
         )}
-        <h3 className="font-bold text-lg text-navy">{displayName}</h3>
-        <p className="text-sm text-sky font-medium">{extractRole(member)}</p>
+        <h3 className="font-bold text-lg text-ink">{displayName}</h3>
+        <p className="text-sm text-accent font-medium">{extractRole(member)}</p>
         {member.organisation && (
-          <p className="text-sm text-sky font-medium mb-2">{member.organisation}</p>
+          <p className="text-sm text-accent font-medium mb-2">{member.organisation}</p>
         )}
 
         <div className="mt-4 pt-4 border-t border-border-faint min-h-[60px] flex flex-col justify-center">
@@ -319,7 +319,7 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
           return (
             <span
               key={member.id}
-              className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20"
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-white rounded-full text-xs font-medium border border-accent/20"
             >
               {displayName}
               <span className="text-white/70 font-normal">· {extractRole(member)}</span>
@@ -333,7 +333,7 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
     );
   }
 
-  if (loading) return <div className="my-6 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky"></div></div>;
+  if (loading) return <div className="my-6 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>;
   if (members.length === 0) return null;
 
   const sortedMembers = sortCommitteeMembers(members);
@@ -341,8 +341,8 @@ function CommitteeWidget({ compact }: { compact?: boolean }) {
   return (
     <div id="committee-members" className="my-8">
       <div className="flex items-center gap-2 mb-4">
-        <Users className="w-6 h-6 text-sky" />
-        <h3 className="text-2xl font-bold text-navy">Committee Members</h3>
+        <Users className="w-6 h-6 text-accent" />
+        <h3 className="text-2xl font-bold text-ink">Committee Members</h3>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {sortedMembers.map(member => (
@@ -490,7 +490,7 @@ export function MarkdownWithWidgets({ content, className, compact }: MarkdownWit
   if (!hasWidget && !hasScreenshot) {
     return (
       <div className={className}>
-        <div className="prose prose-lg max-w-none prose-headings:text-navy prose-a:text-sky hover:prose-a:text-sky-dark prose-img:rounded-xl prose-img:shadow-md">
+        <div className="prose prose-lg max-w-none prose-headings:text-ink prose-a:text-accent hover:prose-a:text-accent-hover prose-img:rounded-xl prose-img:shadow-md">
           <LazyMarkdown variant="sanitized">{processStyleSyntax(safeContent)}</LazyMarkdown>
         </div>
       </div>
@@ -515,7 +515,7 @@ export function MarkdownWithWidgets({ content, className, compact }: MarkdownWit
     const rendered = replaceScreenshotTags(safeContent);
     return (
       <div className={className}>
-        <div className="prose prose-lg max-w-none prose-headings:text-navy prose-a:text-sky hover:prose-a:text-sky-dark prose-img:rounded-xl prose-img:shadow-md">
+        <div className="prose prose-lg max-w-none prose-headings:text-ink prose-a:text-accent hover:prose-a:text-accent-hover prose-img:rounded-xl prose-img:shadow-md">
           <LazyMarkdown variant="sanitized">{processStyleSyntax(rendered)}</LazyMarkdown>
         </div>
       </div>
@@ -611,7 +611,7 @@ export function MarkdownWithWidgets({ content, className, compact }: MarkdownWit
         const text = chunk.lines.join("\n");
         if (!text.trim()) return null;
         return (
-          <div key={i} className="prose prose-lg max-w-none prose-headings:text-navy prose-a:text-sky hover:prose-a:text-sky-dark prose-img:rounded-xl prose-img:shadow-md">
+          <div key={i} className="prose prose-lg max-w-none prose-headings:text-ink prose-a:text-accent hover:prose-a:text-accent-hover prose-img:rounded-xl prose-img:shadow-md">
             <LazyMarkdown variant="sanitized">{processStyleSyntax(text)}</LazyMarkdown>
           </div>
         );
@@ -643,7 +643,7 @@ function SafetyOfficerWidget() {
         return (
           <span
             key={officer.id}
-            className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange/10 text-white rounded-full text-xs font-medium border border-orange/20"
+            className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-white rounded-full text-xs font-medium border border-accent/20"
           >
             {displayName}
             <span className="text-white/70 font-normal">· {role}</span>
@@ -670,7 +670,7 @@ function FlyingSitesWidget() {
       {selected.map(site => (
         <span
           key={site.id}
-          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/10 text-white rounded-full text-xs font-medium border border-sky/20"
+          className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-white rounded-full text-xs font-medium border border-accent/20"
         >
           {site.name}
         </span>

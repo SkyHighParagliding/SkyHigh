@@ -46,18 +46,18 @@ export function Sites() {
   const mappableSites = useMemo(() => sites.filter(s => s.lat && s.lon), [sites]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div></div>;
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div></div>;
   }
 
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
         </Link>
 
         <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-navy mb-4">Flying Sites</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-ink mb-4">Flying Sites</h1>
           <p className="text-lg text-foreground-secondary max-w-3xl mb-8">
             Explore our local flying sites. Always check current weather conditions, read the site rules, and ensure you have the appropriate rating before flying.
           </p>
@@ -92,7 +92,7 @@ export function Sites() {
             <input
               type="text"
               placeholder="Search sites by name..."
-              className="w-full pl-10 pr-3 h-12 rounded-xl border border-border-subtle bg-card text-sm focus:border-sky focus:ring-2 focus:ring-sky focus:outline-none shadow-sm placeholder:text-foreground-faint"
+              className="w-full pl-10 pr-3 h-12 rounded-xl border border-border-subtle bg-card text-sm focus:border-accent focus:ring-2 focus:ring-accent focus:outline-none shadow-sm placeholder:text-foreground-faint"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -116,7 +116,7 @@ export function Sites() {
           <button
             type="button"
             onClick={() => setFilterMenuOpen(!filterMenuOpen)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-subtle bg-card text-sm font-medium text-foreground-secondary hover:border-sky transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-subtle bg-card text-sm font-medium text-foreground-secondary hover:border-accent transition-colors shadow-sm"
           >
             <MenuIcon className="w-4 h-4" />
             <span>Filter: {filter}</span>
@@ -128,7 +128,7 @@ export function Sites() {
                   key={f}
                   type="button"
                   onClick={() => { setFilter(f); setFilterMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${filter === f ? "bg-navy text-white font-medium" : "text-foreground-secondary hover:bg-muted"}`}
+                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${filter === f ? "bg-ink text-white font-medium" : "text-foreground-secondary hover:bg-muted"}`}
                 >
                   {f}
                 </button>
@@ -140,7 +140,7 @@ export function Sites() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredSites.map((site) => (
             <Link key={site.id} to={`/sites/${site.id}`} className="group block">
-              <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 border-transparent hover:border-sky/30">
+              <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 border-transparent hover:border-accent/30">
                 <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300">
                   {site.image && site.image.trim() ? (
                     <img
@@ -184,7 +184,7 @@ export function Sites() {
                 </div>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-2">
-                    <h2 className="text-xl font-bold text-navy group-hover:text-sky transition-colors">{site.name}</h2>
+                    <h2 className="text-xl font-bold text-ink group-hover:text-accent transition-colors">{site.name}</h2>
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
@@ -207,19 +207,19 @@ export function Sites() {
                             <div className="flex flex-col gap-1 mb-2">
                               {pg && (
                                 <span className="inline-flex items-baseline gap-1.5 text-[11px] leading-tight">
-                                  <span className="font-semibold text-sky whitespace-nowrap">PG:</span>
+                                  <span className="font-semibold text-accent whitespace-nowrap">PG:</span>
                                   <span className="text-foreground-secondary">{pg}</span>
                                 </span>
                               )}
                               {hg && (
                                 <span className="inline-flex items-baseline gap-1.5 text-[11px] leading-tight">
-                                  <span className="font-semibold text-sky whitespace-nowrap">HG:</span>
+                                  <span className="font-semibold text-accent whitespace-nowrap">HG:</span>
                                   <span className="text-foreground-secondary">{hg}</span>
                                 </span>
                               )}
                             </div>
                           )}
-                          <div className="flex items-center justify-end text-sky font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                          <div className="flex items-center justify-end text-accent font-semibold text-sm group-hover:translate-x-1 transition-transform">
                             Details <ChevronRight className="w-4 h-4 ml-1" />
                           </div>
                         </>

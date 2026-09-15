@@ -130,7 +130,7 @@ export function AdminBranding() {
   const SaveButton = () => (
     <Button
       onClick={saveAll}
-      className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+      className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
     >
       {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
     </Button>
@@ -140,10 +140,10 @@ export function AdminBranding() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:underline text-sm mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:underline text-sm mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy">Branding</h1>
+          <h1 className="text-3xl font-extrabold text-ink">Branding</h1>
           <p className="text-foreground-secondary mt-1">Customise your club's identity — name, tagline, logos, and colour.</p>
         </div>
 
@@ -161,7 +161,7 @@ export function AdminBranding() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Type className="w-5 h-5 mr-2" />
                 Club Identity
               </CardTitle>
@@ -174,7 +174,7 @@ export function AdminBranding() {
                   value={clubName}
                   onChange={(e) => { setClubName(e.target.value); markDirty(); }}
                   placeholder="e.g. SkyHigh Paragliding Club"
-                  className="border border-border focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="border border-border focus:ring-1 focus:ring-accent focus:border-accent"
                 />
               </div>
               <div>
@@ -183,7 +183,7 @@ export function AdminBranding() {
                   value={clubTagline}
                   onChange={(e) => { setClubTagline(e.target.value); markDirty(); }}
                   placeholder="e.g. Soar above the rest"
-                  className="border border-border focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="border border-border focus:ring-1 focus:ring-accent focus:border-accent"
                 />
               </div>
             </CardContent>
@@ -191,7 +191,7 @@ export function AdminBranding() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <ImageIcon className="w-5 h-5 mr-2" />
                 Club Logos
               </CardTitle>
@@ -202,7 +202,7 @@ export function AdminBranding() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Sun className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-sm font-semibold text-navy">Light Logo</h3>
+                    <h3 className="text-sm font-semibold text-ink">Light Logo</h3>
                   </div>
                   {settings.clubLogoOriginal && (
                     <div className="p-3 bg-card border border-border-subtle rounded-lg">
@@ -250,7 +250,7 @@ export function AdminBranding() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Moon className="w-4 h-4 text-indigo-500" />
-                    <h3 className="text-sm font-semibold text-navy">Dark Logo</h3>
+                    <h3 className="text-sm font-semibold text-ink">Dark Logo</h3>
                   </div>
                   {settings.clubLogoDarkOriginal && (
                     <div className="p-3 bg-card border border-border-subtle rounded-lg">
@@ -302,7 +302,7 @@ export function AdminBranding() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Smartphone className="w-5 h-5 mr-2" />
                 Home Screen Icon
               </CardTitle>
@@ -362,7 +362,7 @@ export function AdminBranding() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Palette className="w-5 h-5 mr-2" />
                 Primary Colour
               </CardTitle>
@@ -380,7 +380,7 @@ export function AdminBranding() {
                   value={primaryColor}
                   onChange={(e) => { setPrimaryColor(e.target.value); markDirty(); }}
                   placeholder="#00a8e8"
-                  className="w-32 border border-border focus:ring-1 focus:ring-sky focus:border-sky font-mono text-sm"
+                  className="w-32 border border-border focus:ring-1 focus:ring-accent focus:border-accent font-mono text-sm"
                 />
                 {primaryColor && (
                   <Button

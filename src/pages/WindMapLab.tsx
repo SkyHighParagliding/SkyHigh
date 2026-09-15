@@ -91,13 +91,13 @@ export function WindMapLab() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light mb-4 font-medium">
+        <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover mb-4 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Link>
 
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-navy">Wind Map Lab</h1>
+            <h1 className="text-2xl font-extrabold text-ink">Wind Map Lab</h1>
             <div className="mt-1 inline-block bg-amber-100 text-amber-800 text-xs font-medium px-3 py-0.5 rounded-full">
               PROTOTYPE
             </div>
@@ -118,14 +118,14 @@ export function WindMapLab() {
 
         <div className="mt-3 bg-card border border-border-subtle rounded-xl overflow-hidden">
           <div
-            className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-navy hover:bg-background cursor-pointer"
+            className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-ink hover:bg-background cursor-pointer"
             onClick={() => setShowTuning(!showTuning)}
           >
             <span>Zoom Setpoint Tuning</span>
             <div className="flex items-center gap-3">
               <button
                 onClick={(e) => { e.stopPropagation(); resetDefaults(); }}
-                className="text-xs text-sky hover:underline"
+                className="text-xs text-accent hover:underline"
               >
                 Reset defaults
               </button>
@@ -140,7 +140,7 @@ export function WindMapLab() {
               <div className="grid grid-cols-3 gap-4">
                 {(["z0", "z5", "z10"] as const).map((zKey) => (
                   <div key={zKey} className="border border-border-subtle rounded-lg p-3">
-                    <div className="text-xs font-bold text-navy mb-2">
+                    <div className="text-xs font-bold text-ink mb-2">
                       {zKey === "z0" ? "Zoom 0 (max out)" : zKey === "z5" ? "Zoom 5 (mid)" : "Zoom 10 (max in)"}
                     </div>
                     <div className="space-y-1.5">

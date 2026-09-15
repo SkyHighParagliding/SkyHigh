@@ -258,7 +258,7 @@ export function AdminXC() {
             type="text"
             value={compForm.name}
             onChange={e => setCompForm(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. Summer XC Series"
           />
         </div>
@@ -268,7 +268,7 @@ export function AdminXC() {
             type="text"
             value={compForm.location}
             onChange={e => setCompForm(prev => ({ ...prev, location: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. Bright, Victoria"
           />
         </div>
@@ -280,7 +280,7 @@ export function AdminXC() {
             type="date"
             value={compForm.startDate}
             onChange={e => setCompForm(prev => ({ ...prev, startDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           />
         </div>
         <div>
@@ -289,7 +289,7 @@ export function AdminXC() {
             type="date"
             value={compForm.endDate}
             onChange={e => setCompForm(prev => ({ ...prev, endDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           />
         </div>
         <div>
@@ -297,7 +297,7 @@ export function AdminXC() {
           <select
             value={compForm.status}
             onChange={e => setCompForm(prev => ({ ...prev, status: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           >
             <option value="upcoming">Upcoming</option>
             <option value="active">Active</option>
@@ -312,7 +312,7 @@ export function AdminXC() {
             type="text"
             value={compForm.pilotRating}
             onChange={e => setCompForm(prev => ({ ...prev, pilotRating: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. PG3+ or All Levels"
           />
         </div>
@@ -322,7 +322,7 @@ export function AdminXC() {
             type="url"
             value={compForm.registrationUrl}
             onChange={e => setCompForm(prev => ({ ...prev, registrationUrl: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="https://example.com/register"
           />
         </div>
@@ -332,7 +332,7 @@ export function AdminXC() {
         <textarea
           value={compForm.description}
           onChange={e => setCompForm(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky font-mono text-sm bg-white"
+          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent font-mono text-sm bg-white"
           placeholder="Describe the competition..."
           rows={3}
         />
@@ -342,7 +342,7 @@ export function AdminXC() {
         <textarea
           value={compForm.rulesSummary}
           onChange={e => setCompForm(prev => ({ ...prev, rulesSummary: e.target.value }))}
-          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky font-mono text-sm bg-white"
+          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent font-mono text-sm bg-white"
           placeholder="e.g. GAP scoring, 3 valid tasks required..."
           rows={2}
         />
@@ -352,7 +352,7 @@ export function AdminXC() {
         <Button
           onClick={handleCompSave}
           disabled={compSaving}
-          className="bg-sky hover:bg-sky-light text-white"
+          className="bg-accent hover:bg-accent-hover text-white"
         >
           {compSaving ? "Saving..." : (compEditingId ? "Update Competition" : "Add Competition")}
         </Button>
@@ -364,7 +364,7 @@ export function AdminXC() {
     <Button
       onClick={saveAll}
       disabled={!isDirty && !justSaved}
-      className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white disabled:opacity-50`}
+      className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white disabled:opacity-50`}
     >
       {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
     </Button>
@@ -374,10 +374,10 @@ export function AdminXC() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link to="/admin" className="text-sky hover:underline text-sm flex items-center gap-1 mb-4">
+          <Link to="/admin" className="text-accent hover:underline text-sm flex items-center gap-1 mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold text-ink flex items-center gap-2">
             <Map className="w-8 h-8" /> XC (Cross-Country)
           </h1>
           <p className="text-foreground-secondary mt-1">Manage cross-country maps, airspace resources, and competitions from one place.</p>
@@ -396,13 +396,13 @@ export function AdminXC() {
 
         <div className="space-y-4">
 
-          <Card className="border-l-4 border-l-sky">
+          <Card className="border-l-4 border-l-accent">
             <button type="button" onClick={() => toggleSection("maps")} className="w-full text-left">
               <CardHeader className="flex flex-row items-center justify-between py-4">
                 <div className="flex items-center gap-3">
-                  <Map className="w-5 h-5 text-sky" />
+                  <Map className="w-5 h-5 text-accent" />
                   <div>
-                    <CardTitle className="text-navy text-lg">XC Maps</CardTitle>
+                    <CardTitle className="text-ink text-lg">XC Maps</CardTitle>
                     <p className="text-sm text-muted-foreground mt-0.5">Distance rings and bearing lines for cross-country planning.</p>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export function AdminXC() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={localMapsEnabled}
                       onChange={(e) => { setLocalMapsEnabled(e.target.checked); markDirty(); }}
                       disabled={settingsLoading}
@@ -435,7 +435,7 @@ export function AdminXC() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Page Content</h4>
+                  <h4 className="text-sm font-medium text-ink mb-2">Page Content</h4>
                   <p className="text-xs text-muted-foreground mb-3">
                     Customise the heading and description shown at the top of the XC Maps page.
                   </p>
@@ -444,7 +444,7 @@ export function AdminXC() {
                       <label className="block text-sm font-medium text-foreground-label mb-1">Title</label>
                       <input
                         type="text"
-                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-sky focus:border-sky"
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-accent focus:border-accent"
                         value={localMapsTitle}
                         onChange={(e) => { setLocalMapsTitle(e.target.value); markDirty(); }}
                         placeholder="XC Maps"
@@ -455,7 +455,7 @@ export function AdminXC() {
                     <div>
                       <label className="block text-sm font-medium text-foreground-label mb-1">Description</label>
                       <textarea
-                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-sky focus:border-sky min-h-[100px]"
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-accent focus:border-accent min-h-[100px]"
                         value={localMapsDescription}
                         onChange={(e) => { setLocalMapsDescription(e.target.value); markDirty(); }}
                         placeholder="XC distance rings, Bearing Lines, Switchable Airspace Overlay..."
@@ -468,7 +468,7 @@ export function AdminXC() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-3">Map Overlay Buttons</h4>
+                  <h4 className="text-sm font-medium text-ink mb-3">Map Overlay Buttons</h4>
                   <p className="text-xs text-muted-foreground mb-3">
                     Control which overlay toggle buttons appear on the XC Maps map view.
                   </p>
@@ -476,7 +476,7 @@ export function AdminXC() {
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                        className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                         checked={localMapAirspaceButton}
                         onChange={(e) => { setLocalMapAirspaceButton(e.target.checked); markDirty(); }}
                         disabled={settingsLoading}
@@ -488,7 +488,7 @@ export function AdminXC() {
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                        className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                         checked={localMapWindButton}
                         onChange={(e) => { setLocalMapWindButton(e.target.checked); markDirty(); }}
                         disabled={settingsLoading}
@@ -501,7 +501,7 @@ export function AdminXC() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Distance Rings</h4>
+                  <h4 className="text-sm font-medium text-ink mb-2">Distance Rings</h4>
                   <p className="text-xs text-muted-foreground mb-3">
                     Configure which distance rings appear on XC Maps. Up to 20 rings, each between 1–500 km.
                   </p>
@@ -537,7 +537,7 @@ export function AdminXC() {
                       onChange={e => setNewRingValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addRing(); } }}
                       placeholder="e.g. 5"
-                      className="w-24 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:ring-2 focus:ring-sky focus:border-sky outline-none"
+                      className="w-24 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm focus:ring-2 focus:ring-accent focus:border-accent outline-none"
                       disabled={ringDistances.length >= 20}
                     />
                     <span className="text-xs text-muted-foreground">km</span>
@@ -564,7 +564,7 @@ export function AdminXC() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">XC-Enabled Sites ({(Array.isArray(xcSites) ? xcSites : []).length})</h4>
+                  <h4 className="text-sm font-medium text-ink mb-2">XC-Enabled Sites ({(Array.isArray(xcSites) ? xcSites : []).length})</h4>
                   {xcSites.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {(Array.isArray(xcSites) ? xcSites : []).map(s => (
@@ -594,7 +594,7 @@ export function AdminXC() {
                 <div className="flex items-center gap-3">
                   <Wind className="w-5 h-5 text-emerald-500" />
                   <div>
-                    <CardTitle className="text-navy text-lg">Wind Field Overlay</CardTitle>
+                    <CardTitle className="text-ink text-lg">Wind Field Overlay</CardTitle>
                     <p className="text-sm text-muted-foreground mt-0.5">Tune the animated wind streamlines shown on XC Maps.</p>
                   </div>
                 </div>
@@ -604,88 +604,88 @@ export function AdminXC() {
             {expandedSections.has("windfield") && (
               <CardContent className="pt-0 pb-5 space-y-5">
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-3">Particle Density &amp; Appearance</h4>
+                  <h4 className="text-sm font-medium text-ink mb-3">Particle Density &amp; Appearance</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Particle Count</label>
                       <input type="number" min="100" max="5000" step="100" value={wfParticleCount}
                         onChange={e => { setWfParticleCount(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Number of animated streamline particles. Higher = denser but uses more CPU. Default: 1200</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Trail Length</label>
                       <input type="number" min="2" max="50" step="1" value={wfTrailLength}
                         onChange={e => { setWfTrailLength(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">How many frames each particle's trail extends. Longer = more visible lines. Default: 12</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Line Width (px)</label>
                       <input type="number" min="0.5" max="5" step="0.5" value={wfLineWidth}
                         onChange={e => { setWfLineWidth(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Stroke thickness of each streamline. Default: 1.5</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Opacity</label>
                       <input type="number" min="0.1" max="1" step="0.05" value={wfOpacity}
                         onChange={e => { setWfOpacity(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Max opacity of streamlines at full confidence. Lower = more subtle. Default: 0.7</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-3">Animation Speed</h4>
+                  <h4 className="text-sm font-medium text-ink mb-3">Animation Speed</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Speed Scale</label>
                       <input type="number" min="0.1" max="2" step="0.05" value={wfSpeedScale}
                         onChange={e => { setWfSpeedScale(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Multiplier for how fast particles move relative to wind speed. Default: 0.4</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Max Speed (px/frame)</label>
                       <input type="number" min="1" max="15" step="0.5" value={wfMaxParticleSpeed}
                         onChange={e => { setWfMaxParticleSpeed(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Cap on particle movement per frame to prevent streaking. Default: 4</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Particle Lifespan (frames)</label>
                       <input type="number" min="30" max="600" step="10" value={wfParticleMaxAge}
                         onChange={e => { setWfParticleMaxAge(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">How many frames before a particle respawns. Longer = steadier flow. Default: 180</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h4 className="text-sm font-medium text-navy mb-3">Interpolation Coverage</h4>
+                  <h4 className="text-sm font-medium text-ink mb-3">Interpolation Coverage</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Max Influence (km)</label>
                       <input type="number" min="10" max="300" step="10" value={wfMaxInfluenceKm}
                         onChange={e => { setWfMaxInfluenceKm(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Maximum distance a weather station can influence. Larger = wider coverage. Default: 120</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Fade Start (km)</label>
                       <input type="number" min="5" max="250" step="5" value={wfFadeStartKm}
                         onChange={e => { setWfFadeStartKm(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">Distance at which confidence begins fading. Must be less than Max Influence. Default: 80</p>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">IDW Power</label>
                       <input type="number" min="0.5" max="5" step="0.5" value={wfIdwPower}
                         onChange={e => { setWfIdwPower(e.target.value); markDirty(); }}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white text-sm" />
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white text-sm" />
                       <p className="text-xs text-muted-foreground mt-1">IDW exponent — higher values give nearby stations more weight. Default: 2</p>
                     </div>
                   </div>
@@ -694,7 +694,7 @@ export function AdminXC() {
                 <div className="border-t border-border pt-3">
                   <button
                     type="button"
-                    className="text-xs text-sky hover:underline"
+                    className="text-xs text-accent hover:underline"
                     onClick={() => {
                       setWfParticleCount("1200"); setWfTrailLength("12"); setWfMaxInfluenceKm("120");
                       setWfFadeStartKm("80"); setWfIdwPower("2"); setWfSpeedScale("0.4");
@@ -715,7 +715,7 @@ export function AdminXC() {
                 <div className="flex items-center gap-3">
                   <Wind className="w-5 h-5 text-cyan-500" />
                   <div>
-                    <CardTitle className="text-navy text-lg">Airspace Resources</CardTitle>
+                    <CardTitle className="text-ink text-lg">Airspace Resources</CardTitle>
                     <p className="text-sm text-muted-foreground mt-0.5">Airspace information, downloads, and reference links for XC pilots.</p>
                   </div>
                 </div>
@@ -733,7 +733,7 @@ export function AdminXC() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={localAirspaceEnabled}
                       onChange={(e) => { setLocalAirspaceEnabled(e.target.checked); markDirty(); }}
                       disabled={settingsLoading}
@@ -753,7 +753,7 @@ export function AdminXC() {
                   </p>
                   <Link
                     to="/admin/pages/airspace/edit"
-                    className="inline-flex items-center gap-1 text-sm font-medium text-sky hover:text-navy transition-colors"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-ink transition-colors"
                   >
                     Edit Airspace Page Content →
                   </Link>
@@ -768,7 +768,7 @@ export function AdminXC() {
                 <div className="flex items-center gap-3">
                   <Trophy className="w-5 h-5 text-indigo-500" />
                   <div>
-                    <CardTitle className="text-navy text-lg">Competitions</CardTitle>
+                    <CardTitle className="text-ink text-lg">Competitions</CardTitle>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Manage XC competitions and events. {(Array.isArray(competitions) ? competitions : []).length > 0 && `${(Array.isArray(competitions) ? competitions : []).length} competition${(Array.isArray(competitions) ? competitions : []).length === 1 ? '' : 's'} total.`}
                     </p>
@@ -788,7 +788,7 @@ export function AdminXC() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={localCompetitionsEnabled}
                       onChange={(e) => { setLocalCompetitionsEnabled(e.target.checked); markDirty(); }}
                       disabled={settingsLoading}
@@ -811,7 +811,7 @@ export function AdminXC() {
                         placeholder="Search competitions..."
                         value={compSearch}
                         onChange={e => setCompSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <Button onClick={openAddComp} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white ml-3">
@@ -822,7 +822,7 @@ export function AdminXC() {
                   {showCompForm && !compEditingId && (
                     <div className="mb-4 bg-card rounded-xl border-2 border-indigo-400 shadow-md">
                       <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-200/60 flex items-center justify-between">
-                        <h3 className="text-base font-bold text-navy">Add Competition</h3>
+                        <h3 className="text-base font-bold text-ink">Add Competition</h3>
                         <button onClick={() => setShowCompForm(false)} className="p-1.5 hover:bg-indigo-100 rounded-lg">
                           <X className="w-4 h-4 text-foreground-faint" />
                         </button>
@@ -838,7 +838,7 @@ export function AdminXC() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <h4 className="text-base font-bold text-navy truncate">{c.name}</h4>
+                                <h4 className="text-base font-bold text-ink truncate">{c.name}</h4>
                                 {statusBadge(c.status)}
                               </div>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-secondary">
@@ -847,7 +847,7 @@ export function AdminXC() {
                                 {c.pilotRating && <span>Rating: {c.pilotRating}</span>}
                               </div>
                               {c.registrationUrl && !(showCompForm && compEditingId === c.id) && (
-                                <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-sky hover:text-navy font-medium mt-1">
+                                <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:text-ink font-medium mt-1">
                                   Registration <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
@@ -858,7 +858,7 @@ export function AdminXC() {
                             <>
                               <button
                                 onClick={() => setCompPreviewId(compPreviewId === c.id ? null : c.id)}
-                                className="mt-2 text-xs text-sky hover:text-navy font-medium inline-flex items-center gap-1"
+                                className="mt-2 text-xs text-accent hover:text-ink font-medium inline-flex items-center gap-1"
                               >
                                 <Eye className="w-3 h-3" />
                                 {compPreviewId === c.id ? "Hide Details" : "Quick View"}
@@ -867,12 +867,12 @@ export function AdminXC() {
 
                               {compPreviewId === c.id && (
                                 <div className="mt-3 p-3 bg-indigo-50/50 border border-indigo-100 rounded-lg space-y-2 text-sm">
-                                  {c.description && <div><span className="font-medium text-navy">Description:</span> <span className="text-foreground-secondary">{c.description}</span></div>}
-                                  {c.rulesSummary && <div><span className="font-medium text-navy">Rules/Scoring:</span> <span className="text-foreground-secondary">{c.rulesSummary}</span></div>}
+                                  {c.description && <div><span className="font-medium text-ink">Description:</span> <span className="text-foreground-secondary">{c.description}</span></div>}
+                                  {c.rulesSummary && <div><span className="font-medium text-ink">Rules/Scoring:</span> <span className="text-foreground-secondary">{c.rulesSummary}</span></div>}
                                   {c.registrationUrl && (
                                     <div>
-                                      <span className="font-medium text-navy">Registration:</span>{" "}
-                                      <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="text-sky hover:text-navy underline">{c.registrationUrl}</a>
+                                      <span className="font-medium text-ink">Registration:</span>{" "}
+                                      <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-ink underline">{c.registrationUrl}</a>
                                     </div>
                                   )}
                                 </div>
@@ -924,7 +924,7 @@ export function AdminXC() {
       {compDeleteTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-navy mb-3">Delete Competition</h3>
+            <h3 className="text-xl font-bold text-ink mb-3">Delete Competition</h3>
             <p className="text-foreground-secondary mb-4">
               Are you sure you want to delete <strong>{compDeleteTarget.name}</strong>? This action cannot be undone.
             </p>

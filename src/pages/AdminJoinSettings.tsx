@@ -139,17 +139,17 @@ export function AdminJoinSettings() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link to="/admin" className="text-sky hover:underline text-sm flex items-center gap-1 mb-4">
+          <Link to="/admin" className="text-accent hover:underline text-sm flex items-center gap-1 mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold text-ink flex items-center gap-2">
                 <UserPlus className="w-8 h-8" /> Join Page Settings
               </h1>
               <p className="text-foreground-secondary mt-1">Configure the membership signup page content, tiers, and FAQ.</p>
             </div>
-            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-navy hover:bg-navy/90 text-white">
+            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-ink hover:bg-ink/90 text-white">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save All
             </Button>
@@ -157,9 +157,9 @@ export function AdminJoinSettings() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-t-4 border-t-sky">
+          <Card className="border-t-4 border-t-accent">
             <CardHeader>
-              <CardTitle className="text-navy">Hero Section</CardTitle>
+              <CardTitle className="text-ink">Hero Section</CardTitle>
               <p className="text-sm text-muted-foreground">Customise the title and subtitle displayed in the hero banner at the top of the Join page.</p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -175,7 +175,7 @@ export function AdminJoinSettings() {
               <div>
                 <label className="text-sm font-medium text-foreground-label block mb-1">Hero Subtitle</label>
                 <textarea
-                  className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-1 focus:ring-sky focus:border-sky bg-background"
+                  className="w-full p-2.5 border border-border rounded-lg text-sm focus:ring-1 focus:ring-accent focus:border-accent bg-background"
                   rows={2}
                   placeholder="Become part of our flying community..."
                   value={heroSubtitle}
@@ -187,7 +187,7 @@ export function AdminJoinSettings() {
 
           <Card className="border-t-4 border-t-blue-500">
             <CardHeader>
-              <CardTitle className="text-navy">TidyHQ Membership URL</CardTitle>
+              <CardTitle className="text-ink">TidyHQ Membership URL</CardTitle>
               <p className="text-sm text-muted-foreground">The URL that CTA buttons link to for membership signup. This should be your club's TidyHQ membership page.</p>
             </CardHeader>
             <CardContent>
@@ -204,7 +204,7 @@ export function AdminJoinSettings() {
             <CardHeader>
               <button onClick={() => setTiersOpen(!tiersOpen)} className="w-full flex items-center justify-between">
                 <div className="text-left">
-                  <CardTitle className="text-navy">Membership Tiers ({tiers.length || 'using defaults'})</CardTitle>
+                  <CardTitle className="text-ink">Membership Tiers ({tiers.length || 'using defaults'})</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">Define membership tiers with pricing and features. Leave empty to use default tiers.</p>
                 </div>
                 {tiersOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -243,7 +243,7 @@ export function AdminJoinSettings() {
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Description</label>
                       <textarea
-                        className="w-full p-2 border border-border rounded-lg text-sm focus:ring-1 focus:ring-sky bg-background"
+                        className="w-full p-2 border border-border rounded-lg text-sm focus:ring-1 focus:ring-accent bg-background"
                         rows={2}
                         placeholder="Full flying privileges at all club sites..."
                         value={tier.description}
@@ -270,7 +270,7 @@ export function AdminJoinSettings() {
                       ))}
                       <button
                         onClick={() => addFeature(ti)}
-                        className="text-xs text-sky hover:text-sky-dark font-medium inline-flex items-center gap-1 mt-1"
+                        className="text-xs text-accent hover:text-accent-hover font-medium inline-flex items-center gap-1 mt-1"
                       >
                         <Plus className="w-3 h-3" /> Add Feature
                       </button>
@@ -288,7 +288,7 @@ export function AdminJoinSettings() {
             <CardHeader>
               <button onClick={() => setFaqsOpen(!faqsOpen)} className="w-full flex items-center justify-between">
                 <div className="text-left">
-                  <CardTitle className="text-navy">FAQ Section ({faqs.length || 'using defaults'})</CardTitle>
+                  <CardTitle className="text-ink">FAQ Section ({faqs.length || 'using defaults'})</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">Add questions and answers shown on the Join page. Leave empty to use default FAQs.</p>
                 </div>
                 {faqsOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -316,7 +316,7 @@ export function AdminJoinSettings() {
                     <div>
                       <label className="block text-xs font-medium text-foreground-label mb-1">Answer</label>
                       <textarea
-                        className="w-full p-2 border border-border rounded-lg text-sm focus:ring-1 focus:ring-sky bg-background"
+                        className="w-full p-2 border border-border rounded-lg text-sm focus:ring-1 focus:ring-accent bg-background"
                         rows={3}
                         placeholder="Membership gives you access to..."
                         value={faq.a}
@@ -332,10 +332,10 @@ export function AdminJoinSettings() {
             )}
           </Card>
           <div className="flex items-center justify-between pt-2">
-            <Link to="/admin" className="text-sky hover:underline text-sm flex items-center gap-1">
+            <Link to="/admin" className="text-accent hover:underline text-sm flex items-center gap-1">
               <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </Link>
-            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-navy hover:bg-navy/90 text-white">
+            <Button onClick={handleSave} disabled={saving || !hasChanges} className="bg-ink hover:bg-ink/90 text-white">
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save All
             </Button>

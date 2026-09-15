@@ -81,7 +81,7 @@ export function ResetPassword() {
   if (status === "loading") {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ink" />
       </div>
     );
   }
@@ -122,7 +122,7 @@ export function ResetPassword() {
               Your password has been updated successfully. You can now log in with your new password.
             </p>
             <Link to={accountType === "pilot" ? "/" : "/admin"}>
-              <Button className="bg-navy hover:bg-navy-light text-white">
+              <Button className="bg-ink hover:bg-ink-muted text-white">
                 {accountType === "pilot" ? "Return to Site" : "Go to Admin Login"}
               </Button>
             </Link>
@@ -134,12 +134,12 @@ export function ResetPassword() {
 
   return (
     <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-navy">
+      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-ink">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-16 h-16 bg-navy/10 rounded-full flex items-center justify-center mb-4">
-            <KeyRound className="w-8 h-8 text-navy" />
+          <div className="mx-auto w-16 h-16 bg-ink/10 rounded-full flex items-center justify-center mb-4">
+            <KeyRound className="w-8 h-8 text-ink" />
           </div>
-          <CardTitle className="text-2xl text-navy">Set Your Password</CardTitle>
+          <CardTitle className="text-2xl text-ink">Set Your Password</CardTitle>
           <p className="text-muted-foreground text-sm mt-1">
             {name && <>Hi {name} — </>}choose a password for your account
           </p>
@@ -161,7 +161,7 @@ export function ResetPassword() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent"
                 placeholder="At least 6 characters"
                 required
                 minLength={6}
@@ -175,7 +175,7 @@ export function ResetPassword() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-3 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent"
                 placeholder="Re-enter your password"
                 required
               />
@@ -183,7 +183,7 @@ export function ResetPassword() {
 
             <Button
               type="submit"
-              className="w-full bg-navy hover:bg-navy-light text-white h-12 text-base"
+              className="w-full bg-ink hover:bg-ink-muted text-white h-12 text-base"
               disabled={submitting}
             >
               {submitting ? (

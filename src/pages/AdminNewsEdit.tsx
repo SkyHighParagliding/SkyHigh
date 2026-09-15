@@ -93,18 +93,18 @@ export function AdminNewsEdit() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 mb-6">
-          <Link to="/admin/pages" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin/pages" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to News & Pages
           </Link>
           <span className="text-foreground-ghost">|</span>
-          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-navy font-medium">
+          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-ink font-medium">
             Admin Dashboard
           </Link>
         </div>
 
-        <Card className="shadow-lg border-t-4 border-t-navy">
+        <Card className="shadow-lg border-t-4 border-t-ink">
           <CardHeader className="bg-card border-b pb-6">
-            <CardTitle className="text-2xl text-navy">
+            <CardTitle className="text-2xl text-ink">
               {isNew ? "Create News Item" : `Edit News: ${formData.title}`}
             </CardTitle>
           </CardHeader>
@@ -113,7 +113,7 @@ export function AdminNewsEdit() {
               <div className="flex justify-end">
                 <Button
                   type="submit"
-                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                 >
                   {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save News Item</>}
                 </Button>
@@ -127,7 +127,7 @@ export function AdminNewsEdit() {
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
                       required
                     />
                   </div>
@@ -138,7 +138,7 @@ export function AdminNewsEdit() {
                       name="date"
                       value={formData.date}
                       onChange={handleChange}
-                      className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
                       required
                     />
                   </div>
@@ -151,7 +151,7 @@ export function AdminNewsEdit() {
                     name="author"
                     value={formData.author}
                     onChange={handleChange}
-                    className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
                     required
                   />
                 </div>
@@ -170,7 +170,7 @@ export function AdminNewsEdit() {
                     value={formData.content}
                     onChange={handleChange}
                     rows={15}
-                    className="w-full p-2 border border-border rounded-md focus:ring-sky focus:border-sky font-mono text-sm"
+                    className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent font-mono text-sm"
                     required
                   />
                   <div className="flex items-center gap-3 mt-1">
@@ -182,7 +182,7 @@ export function AdminNewsEdit() {
               <div className="flex justify-end pt-6 border-t">
                 <Button
                   type="submit"
-                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                  className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                 >
                   {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save News Item</>}
                 </Button>

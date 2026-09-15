@@ -563,11 +563,11 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-border-faint">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sky/10 rounded-xl flex items-center justify-center">
-              {step === "crop-wizard" ? <Crop className="w-5 h-5 text-sky" /> : <Sparkles className="w-5 h-5 text-sky" />}
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+              {step === "crop-wizard" ? <Crop className="w-5 h-5 text-accent" /> : <Sparkles className="w-5 h-5 text-accent" />}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-navy">
+              <h2 className="text-lg font-bold text-ink">
                 {step === "crop-wizard" ? "Position Crop Areas" : "Smart Image Enhancer"}
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -601,7 +601,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
               {!sourcePreview ? (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-border-subtle rounded-xl p-8 text-center cursor-pointer hover:border-sky/50 hover:bg-sky/5 transition-colors"
+                  className="border-2 border-dashed border-border-subtle rounded-xl p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
                 >
                   <Upload className="w-12 h-12 text-foreground-ghost mx-auto" />
                   <p className="text-muted-foreground font-medium mt-3">Click to upload a photo</p>
@@ -657,7 +657,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                     <p className="text-xs text-muted-foreground">
                       {displayDims ? (getCropLayout()?.canDrag ? "Position the 16:9 crop area over the best part of your photo" : "Photo matches the target aspect ratio") : "Loading preview..."}
                     </p>
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs text-sky hover:underline">Change photo</button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs text-accent hover:underline">Change photo</button>
                   </div>
                 </div>
               )}
@@ -672,7 +672,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setRotation(0); }}
-                          className="text-xs text-sky hover:underline"
+                          className="text-xs text-accent hover:underline"
                         >Reset</button>
                       )}
                     </div>
@@ -685,7 +685,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                     value={rotation}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => { e.stopPropagation(); setRotation(parseFloat(e.target.value)); }}
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky"
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent"
                   />
                   <div className="flex justify-between text-[10px] text-foreground-faint">
                     <span>-10°</span>
@@ -703,7 +703,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                     value={imageName || ""}
                     onChange={(e) => onImageNameChange(e.target.value)}
                     placeholder="e.g. Mystic Launch, Ben Nevis, Stanwell Park"
-                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                   />
                   <p className="text-[10px] text-foreground-faint">Used in the filename for easy identification (e.g. hero-Mystic_Launch-1920x1080.jpg)</p>
                 </div>
@@ -721,7 +721,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                     }}
                     placeholder="e.g. Jane Smith Photography"
                     maxLength={60}
-                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                   />
                   <p className="text-[10px] text-foreground-faint">Adds a small watermark (© name) to the bottom-right of all generated images</p>
                   {photographerCredit.trim() && (
@@ -748,7 +748,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                 <button
                   type="button"
                   onClick={() => setShowPromptEditor(!showPromptEditor)}
-                  className="text-xs text-sky hover:underline"
+                  className="text-xs text-accent hover:underline"
                 >
                   {showPromptEditor ? "Hide Prompt" : "Edit Prompt"}
                 </button>
@@ -758,10 +758,10 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       rows={4}
-                      className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-sky focus:border-sky"
+                      className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-accent focus:border-accent"
                     />
                     <div className="flex justify-end">
-                      <Button type="button" size="sm" onClick={handleSavePrompt} className="bg-sky text-white text-xs">
+                      <Button type="button" size="sm" onClick={handleSavePrompt} className="bg-accent text-white text-xs">
                         Save as default
                       </Button>
                     </div>
@@ -774,7 +774,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                   type="button"
                   onClick={handleUseOriginal}
                   disabled={!sourceFile || (onImageNameChange != null && !(imageName || "").trim())}
-                  className="flex-1 h-12 text-base bg-navy hover:bg-navy-light text-white"
+                  className="flex-1 h-12 text-base bg-ink hover:bg-ink-muted text-white"
                 >
                   <ImageIcon className="w-5 h-5 mr-2" />
                   Use Original
@@ -783,7 +783,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                   type="button"
                   onClick={handleGenerate}
                   disabled={!sourceFile || (onImageNameChange != null && !(imageName || "").trim())}
-                  className="flex-1 bg-sky hover:bg-sky-light text-white h-12 text-base"
+                  className="flex-1 bg-accent hover:bg-accent-hover text-white h-12 text-base"
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
                   Smart Enhance
@@ -804,10 +804,10 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                           if (onImageNameChange && !imageName) onImageNameChange(extractedName);
                           enterCropWizard(src, extractedName);
                         }}
-                        className="relative border-2 border-border-subtle rounded-lg overflow-hidden aspect-video hover:border-sky transition-colors group text-left"
+                        className="relative border-2 border-border-subtle rounded-lg overflow-hidden aspect-video hover:border-accent transition-colors group text-left"
                       >
                         <img src={src} alt={`Hero ${i + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/40 transition-colors flex items-center justify-center">
+                        <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/40 transition-colors flex items-center justify-center">
                           <div className="text-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <Crop className="w-6 h-6 text-white mx-auto mb-1" />
                             <span className="text-white text-xs font-medium">Create Banner / Sliders</span>
@@ -823,8 +823,8 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
 
           {step === "generating" && (
             <div className="py-16 text-center space-y-4">
-              <Loader2 className="w-12 h-12 text-sky mx-auto animate-spin" />
-              <p className="text-navy font-medium">{processing ? "Resizing and optimising your photo..." : "Enhancing your photo..."}</p>
+              <Loader2 className="w-12 h-12 text-accent mx-auto animate-spin" />
+              <p className="text-ink font-medium">{processing ? "Resizing and optimising your photo..." : "Enhancing your photo..."}</p>
               <p className="text-sm text-foreground-faint">{processing ? "Creating optimised versions" : "This may take 15-30 seconds"}</p>
             </div>
           )}
@@ -837,13 +837,13 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                   <img src={sourcePreview} alt="Original" className="w-full rounded-lg object-cover h-48" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-sky mb-2 text-center">Smart Enhanced</p>
+                  <p className="text-sm font-medium text-accent mb-2 text-center">Smart Enhanced</p>
                   <img src={resultImage} alt="Enhanced" className="w-full rounded-lg object-cover h-48" />
                 </div>
               </div>
 
               <div className="bg-background rounded-lg p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-navy text-center">Accepting will create a 1920x1080 hero image, then guide you through positioning crops for banner, landscape and portrait sizes.</p>
+                <p className="font-medium text-ink text-center">Accepting will create a 1920x1080 hero image, then guide you through positioning crops for banner, landscape and portrait sizes.</p>
               </div>
 
               <div className="flex gap-3">
@@ -881,7 +881,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                   <div
                     key={s.key}
                     className={`h-1.5 flex-1 rounded-full transition-colors ${
-                      i < cropStepIndex ? "bg-emerald-400" : i === cropStepIndex ? "bg-sky" : "bg-border"
+                      i < cropStepIndex ? "bg-emerald-400" : i === cropStepIndex ? "bg-accent" : "bg-border"
                     }`}
                   />
                 ))}
@@ -979,7 +979,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                     step={0.01}
                     value={wizardZoom}
                     onChange={(e) => setWizardZoom(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky"
+                    className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent"
                   />
                   <div className="flex justify-between text-[10px] text-foreground-faint">
                     <span>Tight crop</span>
@@ -1002,8 +1002,8 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                         onClick={() => setWatermarkPosition(pos)}
                         className={`text-[10px] py-1 px-1.5 rounded border transition-colors ${
                           watermarkPosition === pos
-                            ? "bg-sky text-white border-sky"
-                            : "bg-background border-border text-foreground-secondary hover:border-sky/50"
+                            ? "bg-accent text-white border-accent"
+                            : "bg-background border-border text-foreground-secondary hover:border-accent/50"
                         }`}
                       >
                         {label}
@@ -1030,7 +1030,7 @@ export function AIImageEnhancerModal({ isOpen, onClose, onAccept, existingHeroIm
                 <Button
                   type="button"
                   onClick={handleWizardSave}
-                  className="flex-1 h-10 bg-navy hover:bg-navy-light text-white"
+                  className="flex-1 h-10 bg-ink hover:bg-ink-muted text-white"
                   disabled={wizardProcessing}
                 >
                   {wizardProcessing ? (

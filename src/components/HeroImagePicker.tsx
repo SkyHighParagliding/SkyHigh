@@ -40,7 +40,7 @@ export function HeroImagePicker({ value, onChange }: HeroImagePickerProps) {
         <label className="block text-sm font-medium text-foreground-label">Banner Image</label>
         <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: 120 }}>
           <img src={value} alt="Banner" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-navy/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-ink/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={() => onChange("")}
@@ -61,7 +61,7 @@ export function HeroImagePicker({ value, onChange }: HeroImagePickerProps) {
         <button
           type="button"
           onClick={() => setShowPicker(true)}
-          className="flex items-center gap-2 px-3 py-2 text-xs border border-dashed border-border-subtle rounded-lg text-foreground-secondary hover:border-sky hover:text-sky transition-colors w-full justify-center"
+          className="flex items-center gap-2 px-3 py-2 text-xs border border-dashed border-border-subtle rounded-lg text-foreground-secondary hover:border-accent hover:text-accent transition-colors w-full justify-center"
         >
           <ImageIcon className="w-4 h-4" /> Add a banner image to the header
         </button>
@@ -81,7 +81,7 @@ export function HeroImagePicker({ value, onChange }: HeroImagePickerProps) {
                   key={i}
                   type="button"
                   onClick={() => { onChange(img.src); setShowPicker(false); }}
-                  className="group relative rounded-md overflow-hidden border border-border hover:border-sky transition-colors"
+                  className="group relative rounded-md overflow-hidden border border-border hover:border-accent transition-colors"
                   title={img.label}
                 >
                   <div className="aspect-[16/5]">
@@ -103,7 +103,7 @@ export function HeroImagePicker({ value, onChange }: HeroImagePickerProps) {
             <button
               type="button"
               onClick={() => setShowUrlInput(true)}
-              className="flex items-center gap-1 text-xs text-sky hover:text-sky-700 transition-colors"
+              className="flex items-center gap-1 text-xs text-accent hover:text-sky-700 transition-colors"
             >
               <Link2 className="w-3 h-3" /> Or paste a URL
             </button>
@@ -114,12 +114,12 @@ export function HeroImagePicker({ value, onChange }: HeroImagePickerProps) {
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder="https://example.com/image.jpg"
-                className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
               <button
                 type="button"
                 onClick={() => { if (urlInput.trim()) { onChange(urlInput.trim()); setShowPicker(false); setUrlInput(""); setShowUrlInput(false); } }}
-                className="px-3 py-1.5 text-xs bg-sky text-white rounded-md hover:bg-sky-700 transition-colors"
+                className="px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-sky-700 transition-colors"
               >
                 Use
               </button>

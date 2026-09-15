@@ -77,12 +77,12 @@ export function AdminPublicContacts() {
     <div className="min-h-screen bg-background py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link to="/admin" className="text-sky hover:text-navy text-sm flex items-center gap-1 mb-4">
+          <Link to="/admin" className="text-accent hover:text-ink text-sm flex items-center gap-1 mb-4">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-navy">Public Contacts</h1>
+              <h1 className="text-2xl font-bold text-ink">Public Contacts</h1>
               <p className="text-sm text-foreground-secondary mt-1">
                 Manage pilot accounts for the flight tracker and public features.
               </p>

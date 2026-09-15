@@ -17,7 +17,7 @@ import type { MapLayer, MapPin } from './MapCanvas';
 /**
  * The wind map draws white trails over a black basemap. The thermal map's
  * basemap is pale grey and its ramp runs through warm oranges, so white
- * vanishes. A dark near-navy reads against both extremes, and the reduced
+ * vanishes. A dark near-ink reads against both extremes, and the reduced
  * opacity keeps the flow legible without competing with the heat field the
  * pilot is actually there to read.
  */

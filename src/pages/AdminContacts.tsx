@@ -528,13 +528,13 @@ export function AdminContacts() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy mb-2">Admin Contacts</h1>
+              <h1 className="text-3xl font-extrabold text-ink mb-2">Admin Contacts</h1>
               <p className="text-muted-foreground">Manage contacts, admin users, safety officers, and stakeholders in one place.</p>
             </div>
             <div className="flex gap-2">
@@ -568,7 +568,7 @@ export function AdminContacts() {
                   <Button variant="outline" onClick={() => { setShowTidyHQ(true); setTidySearch(""); setTidyResults([]); setTidyError(""); }}>
                     <Download className="w-4 h-4 mr-2" /> Imp from THQ
                   </Button>
-                  <Button onClick={openAdd} className="bg-navy hover:bg-navy-light text-white">
+                  <Button onClick={openAdd} className="bg-ink hover:bg-ink-muted text-white">
                     <Plus className="w-4 h-4 mr-2" /> Contact
                   </Button>
                 </>
@@ -585,13 +585,13 @@ export function AdminContacts() {
               placeholder="Search by name or organisation..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+              className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
             />
           </div>
           <select
             value={roleFilter}
             onChange={e => setRoleFilter(e.target.value)}
-            className="border border-border rounded-md px-3 py-2 focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+            className="border border-border rounded-md px-3 py-2 focus:ring-1 focus:ring-accent focus:border-accent text-sm"
           >
             <option value="all">All Contacts</option>
             {roleKeys.map(key => (
@@ -611,16 +611,16 @@ export function AdminContacts() {
                         type="checkbox"
                         checked={filtered.length > 0 && bulkSelectedIds.size === filtered.length}
                         onChange={toggleBulkSelectAll}
-                        className="rounded border-border text-sky focus:ring-sky"
+                        className="rounded border-border text-accent focus:ring-accent"
                       />
                     </th>
                   )}
-                  <th className="p-3 font-semibold text-navy text-sm w-[15%]">Name</th>
-                  <th className="p-3 font-semibold text-navy text-sm w-[14%]">Organisation</th>
-                  <th className="p-3 font-semibold text-navy text-sm w-[14%]">Phone</th>
-                  <th className="p-3 font-semibold text-navy text-sm w-[20%]">Email</th>
-                  <th className="p-3 font-semibold text-navy text-sm w-[12%]">Roles</th>
-                  {!bulkSelectMode && <th className="p-3 font-semibold text-navy text-sm text-right w-[15%]">Actions</th>}
+                  <th className="p-3 font-semibold text-ink text-sm w-[15%]">Name</th>
+                  <th className="p-3 font-semibold text-ink text-sm w-[14%]">Organisation</th>
+                  <th className="p-3 font-semibold text-ink text-sm w-[14%]">Phone</th>
+                  <th className="p-3 font-semibold text-ink text-sm w-[20%]">Email</th>
+                  <th className="p-3 font-semibold text-ink text-sm w-[12%]">Roles</th>
+                  {!bulkSelectMode && <th className="p-3 font-semibold text-ink text-sm text-right w-[15%]">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -632,12 +632,12 @@ export function AdminContacts() {
                           type="checkbox"
                           checked={bulkSelectedIds.has(c.id)}
                           onChange={() => toggleBulkSelect(c.id)}
-                          className="rounded border-border text-sky focus:ring-sky"
+                          className="rounded border-border text-accent focus:ring-accent"
                         />
                       </td>
                     )}
                     <td className="p-3">
-                      <div className="font-medium text-navy">{c.name}{c.surname ? ` ${c.surname}` : ""}</div>
+                      <div className="font-medium text-ink">{c.name}{c.surname ? ` ${c.surname}` : ""}</div>
                       {c.position && <div className="text-xs text-muted-foreground">{c.position}</div>}
                     </td>
                     <td className="p-3 text-foreground-label text-sm">{c.organisation || "—"}</td>
@@ -686,7 +686,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-navy">{editingId ? "Edit Contact" : "Add Contact"}</h3>
+              <h3 className="text-xl font-bold text-ink">{editingId ? "Edit Contact" : "Add Contact"}</h3>
               <button onClick={() => setShowModal(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -702,7 +702,7 @@ export function AdminContacts() {
                     type="text"
                     value={form.name}
                     onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder="First name"
                   />
                 </div>
@@ -714,7 +714,7 @@ export function AdminContacts() {
                     type="text"
                     value={form.surname}
                     onChange={e => setForm(prev => ({ ...prev, surname: e.target.value }))}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder="Surname"
                   />
                 </div>
@@ -725,7 +725,7 @@ export function AdminContacts() {
                   type="text"
                   value={form.organisation}
                   onChange={e => setForm(prev => ({ ...prev, organisation: e.target.value }))}
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   placeholder="Organisation name"
                 />
               </div>
@@ -738,7 +738,7 @@ export function AdminContacts() {
                     type="text"
                     value={form.phone}
                     onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder="Phone number"
                   />
                 </div>
@@ -750,7 +750,7 @@ export function AdminContacts() {
                     type="email"
                     value={form.email}
                     onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder="email@example.com"
                   />
                 </div>
@@ -780,7 +780,7 @@ export function AdminContacts() {
                                 setForm(prev => ({ ...prev, [key]: checked }));
                               }
                             }}
-                            className="rounded border-border text-sky focus:ring-sky"
+                            className="rounded border-border text-accent focus:ring-accent"
                           />
                           {roleLabels[key]}
                         </label>
@@ -807,7 +807,7 @@ export function AdminContacts() {
                             type="checkbox"
                             checked={form.fullNameDisplay}
                             onChange={e => setForm(prev => ({ ...prev, fullNameDisplay: e.target.checked }))}
-                            className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                            className="rounded border-border text-accent focus:ring-accent h-3.5 w-3.5"
                           />
                           Full Name Disp
                         </label>
@@ -816,7 +816,7 @@ export function AdminContacts() {
                             type="checkbox"
                             checked={form.photoAuthorised}
                             onChange={e => setForm(prev => ({ ...prev, photoAuthorised: e.target.checked }))}
-                            className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                            className="rounded border-border text-accent focus:ring-accent h-3.5 w-3.5"
                           />
                           Allow self-upload photo
                         </label>
@@ -827,7 +827,7 @@ export function AdminContacts() {
                                 type="checkbox"
                                 checked={form[field]}
                                 onChange={e => setForm(prev => ({ ...prev, [field]: e.target.checked }))}
-                                className="rounded border-border text-sky focus:ring-sky h-3.5 w-3.5"
+                                className="rounded border-border text-accent focus:ring-accent h-3.5 w-3.5"
                               />
                               {label}
                             </label>
@@ -854,7 +854,7 @@ export function AdminContacts() {
                         <select
                           value={form.safetyOfficerType || ""}
                           onChange={e => setForm(prev => ({ ...prev, safetyOfficerType: e.target.value || null }))}
-                          className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                         >
                           <option value="">Select Type...</option>
                           <option value="SSO">Senior Safety Officer (SSO)</option>
@@ -875,7 +875,7 @@ export function AdminContacts() {
                     type="text"
                     value={form.password}
                     onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder={editingId ? "Leave blank to keep current password" : "Optional — set password or use password reset later"}
                     autoComplete="new-password"
                   />
@@ -971,7 +971,7 @@ export function AdminContacts() {
                 <textarea
                   value={form.notes}
                   onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   rows={3}
                   placeholder="Any additional notes..."
                 />
@@ -979,7 +979,7 @@ export function AdminContacts() {
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
                 <Button
-                  className="bg-navy hover:bg-navy-light text-white"
+                  className="bg-ink hover:bg-ink-muted text-white"
                   onClick={handleSave}
                   disabled={saving}
                 >
@@ -1003,7 +1003,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-navy">Import from TidyHQ</h3>
+              <h3 className="text-xl font-bold text-ink">Import from TidyHQ</h3>
               <button onClick={() => setShowTidyHQ(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1015,10 +1015,10 @@ export function AdminContacts() {
                 value={tidySearch}
                 onChange={e => setTidySearch(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && searchTidyHQ()}
-                className="flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                 placeholder="Search by name..."
               />
-              <Button onClick={searchTidyHQ} disabled={tidySearching} className="bg-navy hover:bg-navy-light text-white">
+              <Button onClick={searchTidyHQ} disabled={tidySearching} className="bg-ink hover:bg-ink-muted text-white">
                 {tidySearching ? "Searching..." : "Search"}
               </Button>
             </div>
@@ -1033,7 +1033,7 @@ export function AdminContacts() {
                     className="p-3 border border-border-subtle rounded-lg hover:bg-sky-50 cursor-pointer transition-colors"
                     onClick={() => importTidyContact(tc)}
                   >
-                    <div className="font-medium text-navy">{tc.displayName}</div>
+                    <div className="font-medium text-ink">{tc.displayName}</div>
                     <div className="text-sm text-muted-foreground">
                       {tc.email && <span className="mr-4">{tc.email}</span>}
                       {tc.phone && <span>{tc.phone}</span>}
@@ -1053,7 +1053,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-navy">Quick Import from TidyHQ</h3>
+              <h3 className="text-xl font-bold text-ink">Quick Import from TidyHQ</h3>
               <button onClick={() => setShowQuickImport(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1076,7 +1076,7 @@ export function AdminContacts() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setQuickImportResult(null)}>Import Another</Button>
-                  <Button onClick={() => setShowQuickImport(false)} className="bg-navy hover:bg-navy-light text-white">Done</Button>
+                  <Button onClick={() => setShowQuickImport(false)} className="bg-ink hover:bg-ink-muted text-white">Done</Button>
                 </div>
               </div>
             ) : (
@@ -1086,7 +1086,7 @@ export function AdminContacts() {
                 </p>
                 <div className="flex flex-col gap-3">
                   <Button
-                    className="bg-navy hover:bg-navy-light text-white justify-start"
+                    className="bg-ink hover:bg-ink-muted text-white justify-start"
                     disabled={!!quickImporting}
                     onClick={() => handleQuickImport("143877", "Safety Committee")}
                   >
@@ -1097,7 +1097,7 @@ export function AdminContacts() {
                     )}
                   </Button>
                   <Button
-                    className="bg-navy hover:bg-navy-light text-white justify-start"
+                    className="bg-ink hover:bg-ink-muted text-white justify-start"
                     disabled={!!quickImporting}
                     onClick={() => handleQuickImport("139632", "Skyhigh Committee")}
                   >
@@ -1118,7 +1118,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-navy">
+              <h3 className="text-xl font-bold text-ink">
                 {importResult ? "Import Complete" : contactsLoaded ? `${groupContacts.length} Contacts from ${selectedGroupIds.size} Group${selectedGroupIds.size !== 1 ? "s" : ""}` : "Import from TidyHQ Group"}
               </h3>
               <button onClick={() => setShowGroupImport(false)} className="p-2 hover:bg-muted rounded-lg">
@@ -1152,7 +1152,7 @@ export function AdminContacts() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={() => setShowGroupImport(false)} className="bg-navy hover:bg-navy-light text-white">
+                  <Button onClick={() => setShowGroupImport(false)} className="bg-ink hover:bg-ink-muted text-white">
                     Done
                   </Button>
                 </div>
@@ -1162,11 +1162,11 @@ export function AdminContacts() {
                 <p className="text-sm text-muted-foreground mb-4">Select one or more TidyHQ groups to import contacts from.</p>
                 {loadingGroups ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
                   </div>
                 ) : loadingGroupContacts ? (
                   <div className="flex flex-col items-center justify-center py-8 gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
                     <p className="text-sm text-muted-foreground">Loading contacts from {selectedGroupIds.size} group{selectedGroupIds.size !== 1 ? "s" : ""}...</p>
                   </div>
                 ) : (
@@ -1175,16 +1175,16 @@ export function AdminContacts() {
                       {tidyGroups.map(group => (
                         <label
                           key={group.id}
-                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedGroupIds.has(String(group.id)) ? "border-sky bg-sky-50" : "border-border-subtle hover:bg-sky-50"}`}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedGroupIds.has(String(group.id)) ? "border-accent bg-sky-50" : "border-border-subtle hover:bg-sky-50"}`}
                         >
                           <input
                             type="checkbox"
                             checked={selectedGroupIds.has(String(group.id))}
                             onChange={() => toggleGroupSelection(group.id)}
-                            className="rounded border-border text-sky focus:ring-sky"
+                            className="rounded border-border text-accent focus:ring-accent"
                           />
                           <div className="flex-1">
-                            <div className="font-medium text-navy">{group.label}</div>
+                            <div className="font-medium text-ink">{group.label}</div>
                             {group.description && <div className="text-xs text-muted-foreground">{group.description}</div>}
                           </div>
                           <span className="text-sm text-muted-foreground">{group.size} members</span>
@@ -1198,7 +1198,7 @@ export function AdminContacts() {
                       <div className="flex justify-end gap-3">
                         <Button variant="outline" onClick={() => setShowGroupImport(false)}>Cancel</Button>
                         <Button
-                          className="bg-navy hover:bg-navy-light text-white"
+                          className="bg-ink hover:bg-ink-muted text-white"
                           onClick={loadSelectedGroupContacts}
                           disabled={selectedGroupIds.size === 0}
                         >
@@ -1217,7 +1217,7 @@ export function AdminContacts() {
 
                 {loadingGroupContacts ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
                   </div>
                 ) : (
                   <>
@@ -1230,7 +1230,7 @@ export function AdminContacts() {
                               type="checkbox"
                               checked={!!importRoles[key]}
                               onChange={e => setImportRoles(prev => ({ ...prev, [key]: e.target.checked }))}
-                              className="rounded border-border text-sky focus:ring-sky"
+                              className="rounded border-border text-accent focus:ring-accent"
                             />
                             {roleLabels[key]}
                           </label>
@@ -1240,7 +1240,7 @@ export function AdminContacts() {
                             type="checkbox"
                             checked={!!importRoles["isPosition"]}
                             onChange={e => setImportRoles(prev => ({ ...prev, isPosition: e.target.checked }))}
-                            className="rounded border-border text-sky focus:ring-sky"
+                            className="rounded border-border text-accent focus:ring-accent"
                           />
                           Position Title
                         </label>
@@ -1253,7 +1253,7 @@ export function AdminContacts() {
                           type="checkbox"
                           checked={selectedContactIds.size === groupContacts.length && groupContacts.length > 0}
                           onChange={toggleSelectAll}
-                          className="rounded border-border text-sky focus:ring-sky"
+                          className="rounded border-border text-accent focus:ring-accent"
                         />
                         Select All ({selectedContactIds.size}/{groupContacts.length})
                       </label>
@@ -1269,10 +1269,10 @@ export function AdminContacts() {
                             type="checkbox"
                             checked={selectedContactIds.has(tc.tidyhqId)}
                             onChange={() => toggleContactSelection(tc.tidyhqId)}
-                            className="rounded border-border text-sky focus:ring-sky"
+                            className="rounded border-border text-accent focus:ring-accent"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-navy text-sm">{tc.displayName}</div>
+                            <div className="font-medium text-ink text-sm">{tc.displayName}</div>
                             <div className="text-xs text-muted-foreground">
                               {tc.email && <span className="mr-3">{tc.email}</span>}
                               {tc.phone && <span>{tc.phone}</span>}
@@ -1295,7 +1295,7 @@ export function AdminContacts() {
                     <div className="flex justify-end gap-3">
                       <Button variant="outline" onClick={() => setShowGroupImport(false)}>Cancel</Button>
                       <Button
-                        className="bg-navy hover:bg-navy-light text-white"
+                        className="bg-ink hover:bg-ink-muted text-white"
                         onClick={handleGroupImport}
                         disabled={importing || selectedContactIds.size === 0}
                       >
@@ -1314,7 +1314,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Delete Contact</h3>
+              <h3 className="text-xl font-bold text-ink">Delete Contact</h3>
               <button onClick={() => { setDeleteTarget(null); setDeleteWarning(null); }} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1368,7 +1368,7 @@ export function AdminContacts() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Delete {bulkSelectedIds.size} Contacts</h3>
+              <h3 className="text-xl font-bold text-ink">Delete {bulkSelectedIds.size} Contacts</h3>
               <button onClick={() => setShowBulkConfirm(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1384,7 +1384,7 @@ export function AdminContacts() {
             <div className="mb-4 max-h-[200px] overflow-y-auto border border-border rounded-lg">
               {filtered.filter(c => bulkSelectedIds.has(c.id)).map(c => (
                 <div key={c.id} className="px-3 py-2 border-b border-border-faint last:border-0 text-sm">
-                  <span className="font-medium text-navy">{c.name}{c.surname ? ` ${c.surname}` : ""}</span>
+                  <span className="font-medium text-ink">{c.name}{c.surname ? ` ${c.surname}` : ""}</span>
                   {c.email && <span className="text-muted-foreground ml-2">({c.email})</span>}
                 </div>
               ))}

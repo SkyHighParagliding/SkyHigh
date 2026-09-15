@@ -26,7 +26,7 @@ export function UnsavedChangesModal({ blocker, onSave }: UnsavedChangesModalProp
             <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
             </div>
-            <h3 className="text-lg font-bold text-navy">Unsaved Changes</h3>
+            <h3 className="text-lg font-bold text-ink">Unsaved Changes</h3>
           </div>
           <button onClick={() => blocker.reset()} className="p-2 hover:bg-muted rounded-lg">
             <X className="w-5 h-5 text-foreground-faint" />
@@ -44,7 +44,7 @@ export function UnsavedChangesModal({ blocker, onSave }: UnsavedChangesModalProp
             Discard
           </Button>
           <Button
-            className="bg-navy hover:bg-navy-light text-white"
+            className="bg-ink hover:bg-ink-muted text-white"
             onClick={handleSaveAndLeave}
           >
             Save Changes

@@ -24,8 +24,8 @@ export function Events() {
     <div className="min-h-screen bg-background pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-navy mb-4 flex items-center justify-center gap-3">
-            <Calendar className="w-10 h-10 text-sky" /> Upcoming Events
+          <h1 className="text-4xl font-extrabold text-ink mb-4 flex items-center justify-center gap-3">
+            <Calendar className="w-10 h-10 text-accent" /> Upcoming Events
           </h1>
           <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
             Join us at our upcoming club events and fly-ins.
@@ -34,7 +34,7 @@ export function Events() {
 
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
           </div>
         ) : events.length > 0 ? (
           <>
@@ -65,15 +65,15 @@ export function Events() {
                           />
                         </div>
                       )}
-                      <CardHeader className="bg-sky/5 pb-4 flex-grow">
-                        <div className="flex items-center gap-2 text-sm text-sky font-bold mb-2">
+                      <CardHeader className="bg-accent/5 pb-4 flex-grow">
+                        <div className="flex items-center gap-2 text-sm text-accent font-bold mb-2">
                           <Calendar className="w-4 h-4" />
                           <span>
                             {startDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                             {!isSameDay && ` - ${endDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                           </span>
                         </div>
-                        <CardTitle className="text-xl text-navy group-hover:text-sky transition-colors line-clamp-2">
+                        <CardTitle className="text-xl text-ink group-hover:text-accent transition-colors line-clamp-2">
                           {typedEvent.name}
                         </CardTitle>
                         {typedEvent.location && (
@@ -90,7 +90,7 @@ export function Events() {
                             children={typedEvent.body || ''}
                           />
                         </div>
-                        <div className="mt-4 text-sky font-semibold text-sm group-hover:underline flex items-center">
+                        <div className="mt-4 text-accent font-semibold text-sm group-hover:underline flex items-center">
                           View Details &rarr;
                         </div>
                       </CardContent>
@@ -101,7 +101,7 @@ export function Events() {
             </div>
             <div className="text-center mt-16">
               <a href="https://skyhigh.tidyhq.com/public/schedule/events" target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="lg" className="border-sky text-sky hover:bg-sky hover:text-white">
+                <Button variant="outline" size="lg" className="border-accent text-accent hover:bg-accent hover:text-white">
                   View All Events on TidyHQ
                 </Button>
               </a>
@@ -113,7 +113,7 @@ export function Events() {
             <h3 className="text-xl font-bold text-foreground-label mb-2">No Upcoming Events</h3>
             <p className="text-muted-foreground mb-6">Check back later for new events and fly-ins.</p>
             <a href="https://skyhigh.tidyhq.com/public/schedule/events" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="border-sky text-sky hover:bg-sky hover:text-white">
+              <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
                 View Past Events
               </Button>
             </a>

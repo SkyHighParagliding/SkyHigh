@@ -124,7 +124,7 @@ export function SiteDetail() {
             No image available for {site.name}
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent" />
 
         {site.temporarilyClosed === 1 && (
           <div className="absolute top-0 left-0 w-full bg-amber-600/90 text-white text-center py-3 px-4 font-bold text-lg">
@@ -153,7 +153,7 @@ export function SiteDetail() {
             {isDualRole && (
               <Button
                 onClick={handleAdminDuties}
-                className="bg-navy hover:bg-navy-light text-white shadow-lg"
+                className="bg-ink hover:bg-ink-muted text-white shadow-lg"
                 size="lg"
               >
                 <Settings className="w-5 h-5 mr-2" /> Admin Duties
@@ -172,7 +172,7 @@ export function SiteDetail() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="bg-sky text-white border-none">{site.type}</Badge>
+                  <Badge variant="secondary" className="bg-accent text-white border-none">{site.type}</Badge>
                   {(() => {
                     const { isClosedToday, upcomingDates } = getClosureStatus(site);
                     const isPermanentlyClosed = site.status === 'closed';
@@ -220,7 +220,7 @@ export function SiteDetail() {
                   })()}
                   {user && !isSOView && (
                     <Link to={`/admin/sites/${site.id}/edit`}>
-                      <Badge className="bg-orange hover:bg-orange-dark text-white border-none cursor-pointer">
+                      <Badge className="bg-accent hover:bg-accent-hover text-white border-none cursor-pointer">
                         <Pencil className="w-3 h-3 mr-1" /> Edit Site
                       </Badge>
                     </Link>
@@ -249,9 +249,9 @@ export function SiteDetail() {
           {/* Main Info Column */}
           <div className="lg:col-span-2 space-y-10">
             {/* Description */}
-            <section className="bg-card p-8 rounded-3xl shadow-sm border border-sky/5">
-              <h2 className="text-2xl font-bold text-navy mb-4 flex items-center">
-                <Info className="w-6 h-6 mr-2 text-sky" /> Site Overview
+            <section className="bg-card p-8 rounded-3xl shadow-sm border border-accent/5">
+              <h2 className="text-2xl font-bold text-ink mb-4 flex items-center">
+                <Info className="w-6 h-6 mr-2 text-accent" /> Site Overview
               </h2>
               <div className="prose prose-gray max-w-none text-foreground-secondary leading-relaxed">
                 <p>{site.description}</p>
@@ -263,14 +263,14 @@ export function SiteDetail() {
               {/* Weather Tool */}
               <div className="md:col-span-2 space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <h2 className="text-xl font-bold text-navy flex items-center">
-                    <CloudSun className="w-5 h-5 mr-2 text-sky" /> Local Weather
+                  <h2 className="text-xl font-bold text-ink flex items-center">
+                    <CloudSun className="w-5 h-5 mr-2 text-accent" /> Local Weather
                   </h2>
                 </div>
 
                 <div className="scale-95 origin-top space-y-6">
                   {/* Weather Legend */}
-                  <div className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-wrap justify-center gap-x-6 gap-y-2">
+                  <div className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-wrap justify-center gap-x-6 gap-y-2">
                     <div className="flex items-center gap-2 text-[10px] text-foreground-secondary">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0"></span>
                       <span className="font-medium">Good Spd / Good Dir</span>
@@ -292,7 +292,7 @@ export function SiteDetail() {
                   {weather ? (
                     <WeatherCard weather={weather} site={site} distance={distance} />
                   ) : (
-                    <div className="bg-card p-8 rounded-3xl shadow-sm border border-sky/5 text-center text-muted-foreground">
+                    <div className="bg-card p-8 rounded-3xl shadow-sm border border-accent/5 text-center text-muted-foreground">
                       Weather data unavailable.
                     </div>
                   )}
@@ -302,34 +302,34 @@ export function SiteDetail() {
               {/* Site Information */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <h2 className="text-xl font-bold text-navy flex items-center">
-                    <Info className="w-5 h-5 mr-2 text-sky" /> Site Information
+                  <h2 className="text-xl font-bold text-ink flex items-center">
+                    <Info className="w-5 h-5 mr-2 text-accent" /> Site Information
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-4 grid-flow-dense">
-                    <InfoCard icon={<Compass className="w-5 h-5 text-sky" />} label="Ideal Dir" value={site.windDir} />
-                    <InfoCard icon={<Wind className="w-5 h-5 text-sky" />} label="Wind Range" value={site.windSpeed} />
+                    <InfoCard icon={<Compass className="w-5 h-5 text-accent" />} label="Ideal Dir" value={site.windDir} />
+                    <InfoCard icon={<Wind className="w-5 h-5 text-accent" />} label="Wind Range" value={site.windSpeed} />
                     {site.pgRating && (
-                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-sky" />} label="PG Rating" value={site.pgRating} />
+                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="PG Rating" value={site.pgRating} />
                     )}
                     {site.hgRating && (
-                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-sky" />} label="HG Rating" value={site.hgRating} />
+                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="HG Rating" value={site.hgRating} />
                     )}
-                    <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="Site Type" value={site.type} />
+                    <InfoCard icon={<MapPin className="w-5 h-5 text-accent" />} label="Site Type" value={site.type} />
                     {isValidField(site.siteContact) && (
-                      <InfoCard icon={<Info className="w-5 h-5 text-sky" />} label="Contact" value={site.siteContact} subValue={isValidField(site.siteContactPhone) ? site.siteContactPhone : undefined} />
+                      <InfoCard icon={<Info className="w-5 h-5 text-accent" />} label="Contact" value={site.siteContact} subValue={isValidField(site.siteContactPhone) ? site.siteContactPhone : undefined} />
                     )}
                     {isValidField(site.launchHeight) && (
-                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-sky rotate-90" />} label="Launch (AMSL)" value={site.launchHeight} />
+                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-accent rotate-90" />} label="Launch (AMSL)" value={site.launchHeight} />
                     )}
                     {isValidField(site.launchHeightHigh) && (
-                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-sky rotate-90" />} label="Landing (AMSL)" value={site.launchHeightHigh} />
+                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-accent rotate-90" />} label="Landing (AMSL)" value={site.launchHeightHigh} />
                     )}
                     {isValidField(site.launchHeight2) && (
-                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-sky rotate-90" />} label="Launch 2 (AMSL)" value={site.launchHeight2} />
+                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-accent rotate-90" />} label="Launch 2 (AMSL)" value={site.launchHeight2} />
                     )}
                     {isValidField(site.landingHeight2) && (
-                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-sky rotate-90" />} label="Landing 2 (AMSL)" value={site.landingHeight2} />
+                      <InfoCard icon={<ArrowLeft className="w-5 h-5 text-accent rotate-90" />} label="Landing 2 (AMSL)" value={site.landingHeight2} />
                     )}
                     {isValidField(site.emergencyMarker) && (
                       <InfoCard icon={<AlertTriangle className="w-5 h-5 text-red-500" />} label="Emergency" value={site.emergencyMarker} iconBgClass="bg-red-50" valueClass="font-bold text-red-600 text-sm" />
@@ -347,24 +347,24 @@ export function SiteDetail() {
                       </button>
                     )}
                     {isValidField(site.what3words) && (
-                      <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="What3Words" value={site.what3words} href={`https://what3words.com/${site.what3words.replace('///', '')}`} />
+                      <InfoCard icon={<MapPin className="w-5 h-5 text-accent" />} label="What3Words" value={site.what3words} href={`https://what3words.com/${site.what3words.replace('///', '')}`} />
                     )}
                     {(site.lat && site.lon) && (
-                      <InfoCard icon={<MapPin className="w-5 h-5 text-sky" />} label="Navigate" value="Directions" href={`https://www.google.com/maps?q=${site.lat},${site.lon}`} />
+                      <InfoCard icon={<MapPin className="w-5 h-5 text-accent" />} label="Navigate" value="Directions" href={`https://www.google.com/maps?q=${site.lat},${site.lon}`} />
                     )}
                     {isValidField(site.siteguideUrl) && (
-                      <InfoCard icon={<Info className="w-5 h-5 text-sky" />} label="Siteguide" value="View Info" href={site.siteguideUrl} />
+                      <InfoCard icon={<Info className="w-5 h-5 text-accent" />} label="Siteguide" value="View Info" href={site.siteguideUrl} />
                     )}
                     {isValidField(site.inductionFormUrl) && (
                       <button
                         onClick={() => { window.location.href = site.inductionFormUrl!; }}
-                        className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center hover:bg-background transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-sky"
+                        className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-col items-center text-center hover:bg-background transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent"
                       >
-                        <div className="bg-sky/10 p-2 rounded-xl mb-2">
-                          <ClipboardList className="w-5 h-5 text-sky" />
+                        <div className="bg-accent/10 p-2 rounded-xl mb-2">
+                          <ClipboardList className="w-5 h-5 text-accent" />
                         </div>
                         <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">Endorsement</p>
-                        <p className="font-bold text-navy text-sm">Complete Form</p>
+                        <p className="font-bold text-ink text-sm">Complete Form</p>
                       </button>
                     )}
                     {(() => {
@@ -379,7 +379,7 @@ export function SiteDetail() {
                       };
                       const slug = subpathMap[raw] || raw;
                       const stationUrl = `https://www.freeflightwx.com/${slug}/index.php`;
-                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Station" href={stationUrl} />;
+                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-accent" />} label="Weather" value="Weather Station" href={stationUrl} />;
                     })()}
                     {(() => {
                       const davisId = [site.liveStationId, site.liveStationIdAlt].find((id: string) => id?.startsWith('davis-'));
@@ -387,21 +387,21 @@ export function SiteDetail() {
                       const token = davisId.replace('davis-', '');
                       if (!/^[a-f0-9]{32}$/i.test(token)) return null;
                       const stationUrl = `https://www.weatherlink.com/embeddablePage/show/${token}/slim`;
-                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-sky" />} label="Weather" value="Weather Station" href={stationUrl} />;
+                      return <InfoCard icon={<CloudSun className="w-5 h-5 text-accent" />} label="Weather" value="Weather Station" href={stationUrl} />;
                     })()}
                     {site.hoodedPloversActive === "true" && isValidField(site.hoodedPloversLink) && (
-                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-orange/10" />
+                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="Hooded Plovers" value="Click Here" href={site.hoodedPloversLink} iconBgClass="bg-accent/10" />
                     )}
                     {site.hoodedPloversActive === "true" && !isValidField(site.hoodedPloversLink) && (
-                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-orange" />} label="Hooded Plovers" value="Check Signs" iconBgClass="bg-orange/10" valueClass="font-bold text-orange text-sm" />
+                      <InfoCard icon={<AlertTriangle className="w-5 h-5 text-accent" />} label="Hooded Plovers" value="Check Signs" iconBgClass="bg-accent/10" valueClass="font-bold text-accent text-sm" />
                     )}
                     {site.isXCSite === 'true' && settings.xcMapsEnabled && (
-                      <Link to="/xc/maps" className="bg-card p-4 rounded-2xl border border-sky/10 shadow-sm flex flex-col items-center text-center hover:bg-sky/5 transition-colors">
-                        <div className="bg-sky/10 p-2 rounded-xl mb-2">
-                          <Map className="w-5 h-5 text-sky" />
+                      <Link to="/xc/maps" className="bg-card p-4 rounded-2xl border border-accent/10 shadow-sm flex flex-col items-center text-center hover:bg-accent/5 transition-colors">
+                        <div className="bg-accent/10 p-2 rounded-xl mb-2">
+                          <Map className="w-5 h-5 text-accent" />
                         </div>
                         <p className="text-[10px] text-foreground-faint uppercase font-bold tracking-widest mb-1">XC</p>
-                        <p className="font-bold text-navy text-sm">XC Map</p>
+                        <p className="font-bold text-ink text-sm">XC Map</p>
                       </Link>
                     )}
                 </div>
@@ -411,7 +411,7 @@ export function SiteDetail() {
 
             {/* Launch & Landing */}
             <div className="grid sm:grid-cols-2 gap-6">
-              <Card className="border-l-4 border-l-sky">
+              <Card className="border-l-4 border-l-accent">
                 <CardHeader>
                   <CardTitle className="text-lg">Launch Area</CardTitle>
                 </CardHeader>
@@ -430,9 +430,9 @@ export function SiteDetail() {
             </div>
 
             {site.essentialInfoImages?.length > 0 && (
-              <section className="bg-card p-8 rounded-3xl shadow-sm border border-sky/5">
-                <h2 className="text-2xl font-bold text-navy mb-4 flex items-center">
-                  <Map className="w-6 h-6 mr-2 text-sky" /> Essential Site Info
+              <section className="bg-card p-8 rounded-3xl shadow-sm border border-accent/5">
+                <h2 className="text-2xl font-bold text-ink mb-4 flex items-center">
+                  <Map className="w-6 h-6 mr-2 text-accent" /> Essential Site Info
                 </h2>
                 <p className="text-sm text-muted-foreground mb-6">
                   Annotated site maps sourced from siteguide.org.au. Tap an image to view full size.
@@ -442,7 +442,7 @@ export function SiteDetail() {
                     <button
                       key={i}
                       onClick={() => { setEssentialImgIndex(i); setEssentialInfoOpen(true); }}
-                      className="rounded-2xl overflow-hidden border border-border-subtle hover:border-sky transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="rounded-2xl overflow-hidden border border-border-subtle hover:border-accent transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <img
                         src={img}
@@ -459,9 +459,9 @@ export function SiteDetail() {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Hazards */}
-            <Card className="border-t-4 border-t-orange shadow-md">
-              <CardHeader className="bg-orange/5 pb-4">
-                <CardTitle className="flex items-center text-orange-dark">
+            <Card className="border-t-4 border-t-accent shadow-md">
+              <CardHeader className="bg-accent/5 pb-4">
+                <CardTitle className="flex items-center text-accent-hover">
                   <AlertTriangle className="w-5 h-5 mr-2" /> Known Hazards
                 </CardTitle>
               </CardHeader>
@@ -469,7 +469,7 @@ export function SiteDetail() {
                 <ul className="space-y-3">
                   {(Array.isArray(site.hazards) ? site.hazards : []).map((hazard, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <span className="text-orange shrink-0">•</span>
+                      <span className="text-accent shrink-0">•</span>
                       <span className="text-sm text-foreground-label leading-relaxed">{hazard}</span>
                     </li>
                   ))}
@@ -479,16 +479,16 @@ export function SiteDetail() {
 
             {/* Rules */}
             <Card className="shadow-md">
-              <CardHeader className="bg-navy/5 pb-4">
-                <CardTitle className="flex items-center text-navy">
-                  <ShieldAlert className="w-5 h-5 mr-2 text-navy" /> Site Rules
+              <CardHeader className="bg-ink/5 pb-4">
+                <CardTitle className="flex items-center text-ink">
+                  <ShieldAlert className="w-5 h-5 mr-2 text-ink" /> Site Rules
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 <ul className="space-y-3">
                   {(Array.isArray(site.rules) ? site.rules : []).map((rule, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <span className="text-navy shrink-0 font-bold">{(index + 1).toString()}.</span>
+                      <span className="text-ink shrink-0 font-bold">{(index + 1).toString()}.</span>
                       <span className="text-sm text-foreground-label leading-relaxed">{rule}</span>
                     </li>
                   ))}

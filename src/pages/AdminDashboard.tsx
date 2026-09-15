@@ -20,7 +20,7 @@ export function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-extrabold text-navy mb-2">Admin Dashboard</h1>
+            <h1 className="text-3xl font-extrabold text-ink mb-2">Admin Dashboard</h1>
             <p className="text-foreground-secondary">Welcome back, {user?.name}. Manage all content across the {settings.clubName || 'SkyHigh'} website.</p>
           </div>
           <Button variant="outline" onClick={logout} className="text-muted-foreground hover:text-red-600 hover:border-red-200">
@@ -36,7 +36,7 @@ export function AdminDashboard() {
             <Link to="/admin/manual" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-600">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-600 transition-colors">
                     <Book className="w-6 h-6 mr-2" />
                     Admin Manual
                   </CardTitle>
@@ -45,9 +45,9 @@ export function AdminDashboard() {
               </Card>
             </Link>
             <Link to="/admin/procedures" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-orange">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-orange transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <ClipboardList className="w-6 h-6 mr-2" />
                     Procedures Manual
                   </CardTitle>
@@ -64,7 +64,7 @@ export function AdminDashboard() {
             <Link to="/admin/documents" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-indigo-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-indigo-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-indigo-500 transition-colors">
                     <FolderOpen className="w-6 h-6 mr-2" />
                     Documents
                   </CardTitle>
@@ -76,7 +76,7 @@ export function AdminDashboard() {
             <Link to="/admin/projects" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-teal-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-teal-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-teal-500 transition-colors">
                     <Briefcase className="w-6 h-6 mr-2" />
                     Projects
                   </CardTitle>
@@ -88,7 +88,7 @@ export function AdminDashboard() {
             <Link to="/admin/contacts" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-cyan-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-cyan-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-cyan-500 transition-colors">
                     <Contact2 className="w-6 h-6 mr-2" />
                     Admin Contacts
                   </CardTitle>
@@ -100,7 +100,7 @@ export function AdminDashboard() {
             <Link to="/admin/public-contacts" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-lime-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-lime-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-lime-500 transition-colors">
                     <UserPlus className="w-6 h-6 mr-2" />
                     Public Contacts
                   </CardTitle>
@@ -115,9 +115,9 @@ export function AdminDashboard() {
           <h2 className="text-sm font-semibold text-foreground-faint uppercase tracking-wider mb-3">Content Management</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link to="/admin/sites" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <MapPin className="w-6 h-6 mr-2" />
                     Flying Sites
                   </CardTitle>
@@ -127,9 +127,9 @@ export function AdminDashboard() {
             </Link>
 
             <Link to="/admin/home" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-navy">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-ink">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <Home className="w-6 h-6 mr-2" />
                     Home Page
                   </CardTitle>
@@ -141,7 +141,7 @@ export function AdminDashboard() {
             <Link to="/admin/images" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-500 transition-colors">
                     <ImageIcon className="w-6 h-6 mr-2" />
                     Images
                   </CardTitle>
@@ -151,9 +151,9 @@ export function AdminDashboard() {
             </Link>
 
             <Link to="/admin/pages" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-orange">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-orange transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <FileText className="w-6 h-6 mr-2" />
                     News, Events & Pages
                   </CardTitle>
@@ -165,7 +165,7 @@ export function AdminDashboard() {
             <Link to="/admin/safety" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-red-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-red-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-red-500 transition-colors">
                     <ShieldAlert className="w-6 h-6 mr-2" />
                     Safety & Rules
                   </CardTitle>
@@ -178,7 +178,7 @@ export function AdminDashboard() {
               <Link to="/admin/checkins" className="block group">
                 <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
                   <CardHeader>
-                    <CardTitle className="flex items-center text-navy group-hover:text-purple-500 transition-colors">
+                    <CardTitle className="flex items-center text-ink group-hover:text-purple-500 transition-colors">
                       <Activity className="w-6 h-6 mr-2" />
                       Check-ins
                     </CardTitle>
@@ -189,9 +189,9 @@ export function AdminDashboard() {
             )}
 
             <Link to="/admin/weather" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <Wind className="w-6 h-6 mr-2" />
                     Weather Management
                   </CardTitle>
@@ -203,7 +203,7 @@ export function AdminDashboard() {
             <Link to="/admin/forecast" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-500 transition-colors">
                     <BarChart3 className="w-6 h-6 mr-2" />
                     Forecast Features
                   </CardTitle>
@@ -215,7 +215,7 @@ export function AdminDashboard() {
             <Link to="/admin/ai-models" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-500 transition-colors">
                     <Cpu className="w-6 h-6 mr-2" />
                     AI Models
                   </CardTitle>
@@ -227,7 +227,7 @@ export function AdminDashboard() {
             <Link to="/admin/pageviews" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-violet-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-violet-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-violet-500 transition-colors">
                     <BarChart3 className="w-6 h-6 mr-2" />
                     Page Views
                   </CardTitle>
@@ -239,7 +239,7 @@ export function AdminDashboard() {
             <Link to="/admin/sponsors" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-amber-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-amber-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-amber-600 transition-colors">
                     <Handshake className="w-6 h-6 mr-2" />
                     Sponsors
                   </CardTitle>
@@ -251,7 +251,7 @@ export function AdminDashboard() {
             <Link to="/admin/business-directory" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-500 transition-colors">
                     <Store className="w-6 h-6 mr-2" />
                     Business Directory
                   </CardTitle>
@@ -267,9 +267,9 @@ export function AdminDashboard() {
           <h2 className="text-sm font-semibold text-foreground-faint uppercase tracking-wider mb-3">XC (Cross-Country)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link to="/admin/xc" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <MapPin className="w-6 h-6 mr-2" />
                     XC Settings
                   </CardTitle>
@@ -279,9 +279,9 @@ export function AdminDashboard() {
             </Link>
 
             <Link to="/admin/flight-tracker" className="block group">
-              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                     <Navigation className="w-6 h-6 mr-2" />
                     Flight Tracker
                   </CardTitle>
@@ -298,7 +298,7 @@ export function AdminDashboard() {
             <Link to="/admin/connections" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-blue-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-blue-500 transition-colors">
                     <Plug className="w-6 h-6 mr-2" />
                     API Settings
                   </CardTitle>
@@ -309,7 +309,7 @@ export function AdminDashboard() {
             <Link to="/admin/connections#tidyhq-group-sync" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-teal-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-teal-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-teal-500 transition-colors">
                     <Users className="w-6 h-6 mr-2" />
                     TidyHQ Group Sync
                   </CardTitle>
@@ -320,7 +320,7 @@ export function AdminDashboard() {
             <Link to="/admin/scheduled-tasks" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-violet-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-violet-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-violet-500 transition-colors">
                     <Clock className="w-6 h-6 mr-2" />
                     Scheduled Tasks
                   </CardTitle>
@@ -337,7 +337,7 @@ export function AdminDashboard() {
             <Link to="/admin/site-options" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-purple-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-purple-600 transition-colors">
                     <Settings className="w-6 h-6 mr-2" />
                     Site Options
                   </CardTitle>
@@ -349,7 +349,7 @@ export function AdminDashboard() {
             <Link to="/admin/branding" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-500 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-500 transition-colors">
                     <Palette className="w-6 h-6 mr-2" />
                     Branding & Templates
                   </CardTitle>
@@ -366,7 +366,7 @@ export function AdminDashboard() {
             <Link to="/features" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-slate-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-slate-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-slate-600 transition-colors">
                     <FileCode2 className="w-6 h-6 mr-2" />
                     Platform Overview
                   </CardTitle>
@@ -377,7 +377,7 @@ export function AdminDashboard() {
             <Link to="/tech-spec" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-slate-700">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-slate-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-slate-600 transition-colors">
                     <Wrench className="w-6 h-6 mr-2" />
                     Technical Specification
                   </CardTitle>
@@ -388,7 +388,7 @@ export function AdminDashboard() {
             <Link to="/build-blueprint" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-600">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-emerald-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-emerald-600 transition-colors">
                     <FolderOpen className="w-6 h-6 mr-2" />
                     Build Blueprint
                   </CardTitle>
@@ -399,7 +399,7 @@ export function AdminDashboard() {
             <Link to="/product-spec" className="block group">
               <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-indigo-600">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-navy group-hover:text-indigo-600 transition-colors">
+                  <CardTitle className="flex items-center text-ink group-hover:text-indigo-600 transition-colors">
                     <Target className="w-6 h-6 mr-2" />
                     Product Requirements
                   </CardTitle>

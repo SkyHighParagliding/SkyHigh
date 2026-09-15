@@ -58,7 +58,7 @@ function getMimeIcon(mimeType: string) {
   if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("csv")) return <FileSpreadsheet className="w-4 h-4 text-emerald-600" />;
   if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return <Presentation className="w-4 h-4 text-orange-500" />;
   if (mimeType.startsWith("video/")) return <Film className="w-4 h-4 text-purple-500" />;
-  if (mimeType.startsWith("audio/")) return <Music className="w-4 h-4 text-sky" />;
+  if (mimeType.startsWith("audio/")) return <Music className="w-4 h-4 text-accent" />;
   if (mimeType.includes("zip") || mimeType.includes("tar") || mimeType.includes("compressed")) return <Archive className="w-4 h-4 text-amber-600" />;
   if (mimeType.includes("pdf")) return <FileText className="w-4 h-4 text-red-500" />;
   return <File className="w-4 h-4 text-foreground-faint" />;
@@ -290,11 +290,11 @@ export function AdminDocuments() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Document Management</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Document Management</h1>
           <p className="text-muted-foreground">Club filing system aligned with the Procedures Manual folder structure.</p>
           <p className="text-sm italic text-foreground-secondary mt-2">The Google Drive takes 10-30 seconds to connect and populate the folders below.</p>
         </div>
@@ -316,7 +316,7 @@ export function AdminDocuments() {
             <input
               type="text"
               placeholder="Search documents across all categories..."
-              className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:ring-1 focus:ring-sky focus:border-sky"
+              className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:ring-1 focus:ring-accent focus:border-accent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -333,13 +333,13 @@ export function AdminDocuments() {
 
         {searching && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky mx-auto" />
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
           </div>
         )}
 
         {searchResults !== null && !searching && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-navy mb-3">
+            <h2 className="text-lg font-semibold text-ink mb-3">
               Search Results ({searchResults.length})
             </h2>
             {searchResults.length === 0 ? (
@@ -370,16 +370,16 @@ export function AdminDocuments() {
                   onClick={() => handleCategorySelect(cat.code)}
                   className="text-left w-full"
                 >
-                  <Card className={`h-full hover:shadow-lg transition-shadow border-t-4 ${CATEGORY_COLORS[cat.code] || "border-t-gray-400"} ${selectedCategory === cat.code ? "ring-2 ring-sky shadow-lg" : ""}`}>
+                  <Card className={`h-full hover:shadow-lg transition-shadow border-t-4 ${CATEGORY_COLORS[cat.code] || "border-t-gray-400"} ${selectedCategory === cat.code ? "ring-2 ring-accent shadow-lg" : ""}`}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center text-navy text-sm">
-                        <FolderOpen className="w-5 h-5 mr-2 text-sky flex-shrink-0" />
+                      <CardTitle className="flex items-center text-ink text-sm">
+                        <FolderOpen className="w-5 h-5 mr-2 text-accent flex-shrink-0" />
                         <span className="truncate">{cat.name.replace(/^\d+_/, `${cat.code} — `)}</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-navy">{cat.documentCount}</span>
+                        <span className="text-2xl font-bold text-ink">{cat.documentCount}</span>
                         <span className="text-xs text-muted-foreground">{cat.documentCount === 1 ? "document" : "documents"}</span>
                       </div>
                     </CardContent>
@@ -394,7 +394,7 @@ export function AdminDocuments() {
                 <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3 flex-wrap">
                   <button
                     onClick={() => { setSelectedCategory(null); setFolderPath([]); }}
-                    className="text-sky hover:text-navy transition-colors"
+                    className="text-accent hover:text-ink transition-colors"
                   >
                     Documents
                   </button>
@@ -403,7 +403,7 @@ export function AdminDocuments() {
                     <>
                       <button
                         onClick={() => handleNavigateToDepth(-1)}
-                        className="text-sky hover:text-navy transition-colors"
+                        className="text-accent hover:text-ink transition-colors"
                       >
                         {displayCatName}
                       </button>
@@ -413,23 +413,23 @@ export function AdminDocuments() {
                           {i < folderPath.length - 1 ? (
                             <button
                               onClick={() => handleNavigateToDepth(i)}
-                              className="text-sky hover:text-navy transition-colors"
+                              className="text-accent hover:text-ink transition-colors"
                             >
                               {segment}
                             </button>
                           ) : (
-                            <span className="text-navy font-medium">{segment}</span>
+                            <span className="text-ink font-medium">{segment}</span>
                           )}
                         </span>
                       ))}
                     </>
                   ) : (
-                    <span className="text-navy font-medium">{displayCatName}</span>
+                    <span className="text-ink font-medium">{displayCatName}</span>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                  <h2 className="text-lg font-semibold text-navy">
+                  <h2 className="text-lg font-semibold text-ink">
                     {folderPath.length > 0 ? folderPath[folderPath.length - 1] : displayCatName}
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -495,7 +495,7 @@ export function AdminDocuments() {
                             onChange={(e) => setNewFolderName(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); }}
                             placeholder="e.g. Flinders Golf Club"
-                            className="w-full p-2.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                            className="w-full p-2.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                             autoFocus
                           />
                           {newFolderError && (
@@ -518,7 +518,7 @@ export function AdminDocuments() {
                 {/* Subfolders grid */}
                 {loadingSubfolders ? (
                   <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky mx-auto" />
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent mx-auto" />
                   </div>
                 ) : subfolders.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-5">
@@ -528,11 +528,11 @@ export function AdminDocuments() {
                         onClick={() => handleSubfolderSelect(sf.name)}
                         className="text-left group"
                       >
-                        <Card className="hover:shadow-md transition-shadow hover:border-sky/50">
+                        <Card className="hover:shadow-md transition-shadow hover:border-accent/50">
                           <CardContent className="p-3 flex items-center gap-2.5">
                             <Folder className="w-8 h-8 text-amber-500 flex-shrink-0 group-hover:text-amber-600 transition-colors" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-navy truncate">{sf.name}</p>
+                              <p className="text-sm font-medium text-ink truncate">{sf.name}</p>
                               <p className="text-xs text-muted-foreground">{sf.fileCount} {sf.fileCount === 1 ? "file" : "files"}</p>
                             </div>
                           </CardContent>
@@ -545,7 +545,7 @@ export function AdminDocuments() {
                 {/* Files list */}
                 {loadingDocs ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky mx-auto" />
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto" />
                   </div>
                 ) : documents.length === 0 ? (
                   <Card>
@@ -638,12 +638,12 @@ function DocumentTable({
           <table className="w-full text-left border-collapse hidden sm:table">
             <thead>
               <tr className="bg-muted border-b border-border-subtle">
-                <th className="p-3 font-semibold text-navy text-sm">Name</th>
-                {showCategory && <th className="p-3 font-semibold text-navy text-sm">Category</th>}
-                <th className="p-3 font-semibold text-navy text-sm">Type</th>
-                <th className="p-3 font-semibold text-navy text-sm text-right">Size</th>
-                <th className="p-3 font-semibold text-navy text-sm text-right">Date</th>
-                <th className="p-3 font-semibold text-navy text-sm text-right">Actions</th>
+                <th className="p-3 font-semibold text-ink text-sm">Name</th>
+                {showCategory && <th className="p-3 font-semibold text-ink text-sm">Category</th>}
+                <th className="p-3 font-semibold text-ink text-sm">Type</th>
+                <th className="p-3 font-semibold text-ink text-sm text-right">Size</th>
+                <th className="p-3 font-semibold text-ink text-sm text-right">Date</th>
+                <th className="p-3 font-semibold text-ink text-sm text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -657,13 +657,13 @@ function DocumentTable({
                           href={doc.webViewLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sky hover:text-navy font-medium flex items-center gap-1"
+                          className="text-accent hover:text-ink font-medium flex items-center gap-1"
                         >
                           {doc.name}
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       ) : (
-                        <span className="font-medium text-navy">{doc.name}</span>
+                        <span className="font-medium text-ink">{doc.name}</span>
                       )}
                     </div>
                   </td>
@@ -707,13 +707,13 @@ function DocumentTable({
                           href={doc.webViewLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sky hover:text-navy font-medium text-sm flex items-center gap-1"
+                          className="text-accent hover:text-ink font-medium text-sm flex items-center gap-1"
                         >
                           <span className="truncate">{doc.name}</span>
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                         </a>
                       ) : (
-                        <span className="font-medium text-navy text-sm truncate block">{doc.name}</span>
+                        <span className="font-medium text-ink text-sm truncate block">{doc.name}</span>
                       )}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{getShortType(doc.mimeType)}</span>
@@ -789,7 +789,7 @@ function FileActions({
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="text-foreground-faint hover:text-navy transition-colors flex-shrink-0 p-1 rounded hover:bg-muted"
+        className="text-foreground-faint hover:text-ink transition-colors flex-shrink-0 p-1 rounded hover:bg-muted"
         title="File actions"
       >
         <MoreVertical className="w-4 h-4" />
@@ -919,18 +919,18 @@ function MoveCopyModal({
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-navy flex items-center gap-2">
-              {mode === "move" ? <Move className="w-5 h-5 text-sky" /> : <Copy className="w-5 h-5 text-sky" />}
+            <h3 className="text-lg font-bold text-ink flex items-center gap-2">
+              {mode === "move" ? <Move className="w-5 h-5 text-accent" /> : <Copy className="w-5 h-5 text-accent" />}
               {actionLabel} File
             </h3>
-            <button onClick={onClose} className="text-foreground-faint hover:text-navy">
+            <button onClick={onClose} className="text-foreground-faint hover:text-ink">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="mb-4 p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">File</p>
-            <p className="text-sm font-medium text-navy truncate">{fileName}</p>
+            <p className="text-sm font-medium text-ink truncate">{fileName}</p>
           </div>
 
           {success ? (
@@ -942,7 +942,7 @@ function MoveCopyModal({
             <>
               {!destCategory ? (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-navy mb-2">Pick a category</label>
+                  <label className="block text-sm font-medium text-ink mb-2">Pick a category</label>
                   <div className="grid grid-cols-1 gap-1.5 max-h-56 overflow-auto border border-border rounded-lg p-2">
                     {categories.map(cat => (
                       <button
@@ -960,24 +960,24 @@ function MoveCopyModal({
                 <>
                   <div className="mb-3">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground flex-wrap mb-2">
-                      <button onClick={() => { setDestCategory(null); setDestPath([]); }} className="text-sky hover:text-navy">All Categories</button>
+                      <button onClick={() => { setDestCategory(null); setDestPath([]); }} className="text-accent hover:text-ink">All Categories</button>
                       <ChevronRight className="w-3 h-3" />
                       {destPath.length > 0 ? (
                         <>
-                          <button onClick={() => handleNavigateUp(-1)} className="text-sky hover:text-navy">{destCatName}</button>
+                          <button onClick={() => handleNavigateUp(-1)} className="text-accent hover:text-ink">{destCatName}</button>
                           {destPath.map((seg, i) => (
                             <span key={i} className="flex items-center gap-1">
                               <ChevronRight className="w-3 h-3" />
                               {i < destPath.length - 1 ? (
-                                <button onClick={() => handleNavigateUp(i)} className="text-sky hover:text-navy">{seg}</button>
+                                <button onClick={() => handleNavigateUp(i)} className="text-accent hover:text-ink">{seg}</button>
                               ) : (
-                                <span className="font-medium text-navy">{seg}</span>
+                                <span className="font-medium text-ink">{seg}</span>
                               )}
                             </span>
                           ))}
                         </>
                       ) : (
-                        <span className="font-medium text-navy">{destCatName}</span>
+                        <span className="font-medium text-ink">{destCatName}</span>
                       )}
                     </div>
                   </div>
@@ -1017,7 +1017,7 @@ function MoveCopyModal({
                 <Button
                   onClick={handleSubmit}
                   disabled={!destCategory || saving}
-                  className="flex-1 bg-sky hover:bg-sky/90 text-white"
+                  className="flex-1 bg-accent hover:bg-accent/90 text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {saving ? `${actionLabel === "Move" ? "Moving" : "Copying"}…` : `${actionLabel} Here`}
@@ -1197,7 +1197,7 @@ function UploadModal({
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card z-10 rounded-t-xl sm:rounded-t-lg">
-          <h3 className="text-lg font-semibold text-navy">
+          <h3 className="text-lg font-semibold text-ink">
             Upload to {categoryName.replace(/^\d+_/, `${category} — `)}
           </h3>
           <button onClick={onClose} className="text-foreground-faint hover:text-foreground-secondary p-1">
@@ -1234,7 +1234,7 @@ function UploadModal({
                             setShowNewFolder(false);
                           }
                         }}
-                        className="flex-1 p-2.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky bg-card"
+                        className="flex-1 p-2.5 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent bg-card"
                       >
                         <option value="">Root of category (no subfolder)</option>
                         {availableSubfolders.map(s => (
@@ -1253,7 +1253,7 @@ function UploadModal({
                               onChange={(e) => setNewSubfolderName(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Enter") handleCreateSubfolder(); }}
                               placeholder="New folder name"
-                              className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                              className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                               autoFocus
                               list={isPhotoCategory ? "site-suggestions" : undefined}
                             />
@@ -1290,15 +1290,15 @@ function UploadModal({
               </div>
 
               {subfolder && (
-                <div className="mb-3 flex items-center gap-1.5 text-xs text-foreground-secondary bg-sky/5 border border-sky/20 rounded-md px-2.5 py-1.5">
+                <div className="mb-3 flex items-center gap-1.5 text-xs text-foreground-secondary bg-accent/5 border border-accent/20 rounded-md px-2.5 py-1.5">
                   <Folder className="w-3.5 h-3.5 text-amber-500" />
-                  Uploading to: <span className="font-medium text-navy">{subfolder}</span>
+                  Uploading to: <span className="font-medium text-ink">{subfolder}</span>
                 </div>
               )}
 
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  dragOver ? "border-sky bg-sky/5" : "border-border"
+                  dragOver ? "border-accent bg-accent/5" : "border-border"
                 }`}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
@@ -1308,12 +1308,12 @@ function UploadModal({
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2">
                       {getMimeIcon(selectedFile.type)}
-                      <span className="font-medium text-navy text-sm break-all">{selectedFile.name}</span>
+                      <span className="font-medium text-ink text-sm break-all">{selectedFile.name}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                     <button
                       onClick={() => { setSelectedFile(null); setCorrectedName(""); setNameApproved(false); setEditingName(false); }}
-                      className="text-xs text-sky hover:text-navy"
+                      className="text-xs text-accent hover:text-ink"
                     >
                       Choose different file
                     </button>
@@ -1352,7 +1352,7 @@ function UploadModal({
                     value={photoDescription}
                     onChange={(e) => setPhotoDescription(e.target.value)}
                     placeholder="e.g. Mystic Launch, John D, Club BBQ"
-                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                   />
                   <p className="text-[10px] text-foreground-faint">
                     Filename will be: <span className="font-mono text-foreground-secondary">{photoDescription.trim() ? buildPhotoFilename(selectedFile, photoDescription) : `${today}_Your_Description.ext`}</span>

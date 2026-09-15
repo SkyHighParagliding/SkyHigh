@@ -43,12 +43,12 @@ export function AdminPages() {
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-navy mb-2">News, Events & Dynamic Pages</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">News, Events & Dynamic Pages</h1>
           <p className="text-foreground-secondary">Manage all content pages and news articles.</p>
         </div>
 
@@ -57,7 +57,7 @@ export function AdminPages() {
             onClick={() => setTab("pages")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === "pages"
-                ? "border-navy text-navy"
+                ? "border-ink text-ink"
                 : "border-transparent text-muted-foreground hover:text-foreground-label hover:border-border"
             }`}
           >
@@ -67,7 +67,7 @@ export function AdminPages() {
             onClick={() => setTab("news")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === "news"
-                ? "border-navy text-navy"
+                ? "border-ink text-ink"
                 : "border-transparent text-muted-foreground hover:text-foreground-label hover:border-border"
             }`}
           >
@@ -78,7 +78,7 @@ export function AdminPages() {
         {tab === "pages" && (
           <>
             <div className="flex justify-end mb-4">
-              <Button onClick={() => navigate('/admin/pages/new')} className="bg-navy hover:bg-navy-light text-white">
+              <Button onClick={() => navigate('/admin/pages/new')} className="bg-ink hover:bg-ink-muted text-white">
                 <Plus className="w-4 h-4 mr-2" /> Add New Page
               </Button>
             </div>
@@ -88,16 +88,16 @@ export function AdminPages() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-muted border-b border-border-subtle">
-                        <th className="p-4 font-semibold text-navy">Title</th>
-                        <th className="p-4 font-semibold text-navy">Page Address</th>
-                        <th className="p-4 font-semibold text-navy">Last Updated</th>
-                        <th className="p-4 font-semibold text-navy text-right">Actions</th>
+                        <th className="p-4 font-semibold text-ink">Title</th>
+                        <th className="p-4 font-semibold text-ink">Page Address</th>
+                        <th className="p-4 font-semibold text-ink">Last Updated</th>
+                        <th className="p-4 font-semibold text-ink text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pages.map((page) => (
                         <tr key={page.slug} className="border-b border-border-faint hover:bg-background">
-                          <td className="p-4 font-medium text-navy">{page.title}</td>
+                          <td className="p-4 font-medium text-ink">{page.title}</td>
                           <td className="p-4 text-foreground-secondary">/{page.slug}</td>
                           <td className="p-4 text-muted-foreground text-sm">
                             {new Date(page.lastUpdated || page.updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -130,7 +130,7 @@ export function AdminPages() {
         {tab === "news" && (
           <>
             <div className="flex justify-end mb-4">
-              <Button onClick={() => navigate('/admin/news/new')} className="bg-navy hover:bg-navy-light text-white">
+              <Button onClick={() => navigate('/admin/news/new')} className="bg-ink hover:bg-ink-muted text-white">
                 <Plus className="w-4 h-4 mr-2" /> Add News Item
               </Button>
             </div>
@@ -140,16 +140,16 @@ export function AdminPages() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-muted border-b border-border-subtle">
-                        <th className="p-4 font-semibold text-navy">Title</th>
-                        <th className="p-4 font-semibold text-navy">Date</th>
-                        <th className="p-4 font-semibold text-navy">Author</th>
-                        <th className="p-4 font-semibold text-navy text-right">Actions</th>
+                        <th className="p-4 font-semibold text-ink">Title</th>
+                        <th className="p-4 font-semibold text-ink">Date</th>
+                        <th className="p-4 font-semibold text-ink">Author</th>
+                        <th className="p-4 font-semibold text-ink text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {news.map((item) => (
                         <tr key={item.id} className="border-b border-border-faint hover:bg-background">
-                          <td className="p-4 font-medium text-navy">{item.title}</td>
+                          <td className="p-4 font-medium text-ink">{item.title}</td>
                           <td className="p-4 text-foreground-secondary">{new Date(item.date || item.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                           <td className="p-4 text-foreground-secondary">{item.author}</td>
                           <td className="p-4 text-right space-x-2">
@@ -182,7 +182,7 @@ export function AdminPages() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Confirm Deletion</h3>
+              <h3 className="text-xl font-bold text-ink">Confirm Deletion</h3>
               <button onClick={() => setPageToDelete(null)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -203,7 +203,7 @@ export function AdminPages() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-navy">Confirm Deletion</h3>
+              <h3 className="text-xl font-bold text-ink">Confirm Deletion</h3>
               <button onClick={() => setNewsToDelete(null)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>

@@ -322,7 +322,7 @@ export function PublicSearchBox() {
     <div className="fixed inset-0 z-[9998] flex items-center justify-center p-3 sm:p-4 overflow-hidden">
       <div className="fixed inset-0 bg-black/60 sm:bg-black/40" onClick={handleClose} />
       <div
-        className="relative z-[9999] flex flex-col w-full max-h-[70dvh] h-[70dvh] sm:h-auto sm:max-h-[min(600px,85vh)] sm:w-[min(640px,calc(100vw-32px))] rounded-2xl bg-navy/95 backdrop-blur-lg border border-white/15 shadow-2xl overflow-hidden"
+        className="relative z-[9999] flex flex-col w-full max-h-[70dvh] h-[70dvh] sm:h-auto sm:max-h-[min(600px,85vh)] sm:w-[min(640px,calc(100vw-32px))] rounded-2xl bg-ink/95 backdrop-blur-lg border border-white/15 shadow-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">

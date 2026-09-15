@@ -31,7 +31,7 @@ export function BusinessDirectory() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function BusinessDirectory() {
   return (
     <div style={{ background: "var(--body-bg)" }} className="min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
         </Link>
 

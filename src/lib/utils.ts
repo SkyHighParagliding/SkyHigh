@@ -174,7 +174,7 @@ export function getWindStatus(windSpeed: number, windDirection: string, site: an
   if (isDirectionIdeal) {
     directionStatus = { label: "Good", color: "bg-emerald-500" };
   } else if (isCross) {
-    directionStatus = { label: "Cross", color: "bg-orange" };
+    directionStatus = { label: "Cross", color: "bg-accent" };
   } else {
     directionStatus = { label: "Not Flyable", color: "bg-red-500" };
   }

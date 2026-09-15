@@ -59,8 +59,8 @@ function FeatureToggle({ flag, value, onChange }: { flag: FeatureFlag; value: bo
     <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-semibold text-navy">{flag.label}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-sky/10 text-sky">{flag.stage}</span>
+          <span className="text-sm font-semibold text-ink">{flag.label}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent">{flag.stage}</span>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">{flag.description}</p>
       </div>
@@ -68,7 +68,7 @@ function FeatureToggle({ flag, value, onChange }: { flag: FeatureFlag; value: bo
         role="switch"
         aria-checked={value}
         onClick={() => onChange(!value)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 ${value ? 'bg-sky' : 'bg-muted'}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${value ? 'bg-accent' : 'bg-muted'}`}
       >
         <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
@@ -210,11 +210,11 @@ export function AdminForecast() {
 
         {/* Header */}
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Forecast &amp; Thermal Features</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Forecast &amp; Thermal Features</h1>
           <p className="text-muted-foreground">
             Control the SkyHigh meteogram and thermal map features. All features are off by default —
             enable them individually once each stage has been built and reviewed.
@@ -241,8 +241,8 @@ export function AdminForecast() {
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
-                    <ToggleLeft className="w-5 h-5 mr-2 text-sky" />
+                  <CardTitle className="flex items-center text-ink">
+                    <ToggleLeft className="w-5 h-5 mr-2 text-accent" />
                     Feature Switches
                   </CardTitle>
                   <CardDescription>
@@ -275,8 +275,8 @@ export function AdminForecast() {
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
-                    <Sliders className="w-5 h-5 mr-2 text-sky" />
+                  <CardTitle className="flex items-center text-ink">
+                    <Sliders className="w-5 h-5 mr-2 text-accent" />
                     Thermal Thresholds
                   </CardTitle>
                   <CardDescription>
@@ -297,7 +297,7 @@ export function AdminForecast() {
                 {THRESHOLD_FIELDS.map(field => (
                   <div key={field.key} className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-start py-3 border-b border-border last:border-0">
                     <div>
-                      <Label htmlFor={field.key} className="text-sm font-semibold text-navy block mb-0.5">
+                      <Label htmlFor={field.key} className="text-sm font-semibold text-ink block mb-0.5">
                         {field.label}
                       </Label>
                       <p className="text-xs text-muted-foreground leading-relaxed">{field.description}</p>
@@ -311,7 +311,7 @@ export function AdminForecast() {
                         max={field.max}
                         step={field.step}
                         onChange={e => setThresholds(prev => ({ ...prev, [field.key]: parseFloat(e.target.value) }))}
-                        className="w-24 border border-input rounded-md px-2 py-1.5 text-sm bg-background text-right focus:outline-none focus:ring-1 focus:ring-sky"
+                        className="w-24 border border-input rounded-md px-2 py-1.5 text-sm bg-background text-right focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                       <span className="text-xs text-muted-foreground w-12">{field.unit}</span>
                     </div>
@@ -326,8 +326,8 @@ export function AdminForecast() {
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
-                    <Monitor className="w-5 h-5 mr-2 text-sky" />
+                  <CardTitle className="flex items-center text-ink">
+                    <Monitor className="w-5 h-5 mr-2 text-accent" />
                     Display Settings
                   </CardTitle>
                   <CardDescription>
@@ -344,13 +344,13 @@ export function AdminForecast() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="coastal-default" className="text-sm font-semibold text-navy">Coastal site default tab</Label>
+                    <Label htmlFor="coastal-default" className="text-sm font-semibold text-ink">Coastal site default tab</Label>
                     <p className="text-xs text-muted-foreground">Which tab is selected by default on sites with a live weather station.</p>
                     <select
                       id="coastal-default"
                       value={coastalDefault}
                       onChange={e => setCoastalDefault(e.target.value)}
-                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="wind_history">Wind History</option>
                       <option value="meteogram">Meteogram</option>
@@ -359,13 +359,13 @@ export function AdminForecast() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="inland-default" className="text-sm font-semibold text-navy">Inland site default tab</Label>
+                    <Label htmlFor="inland-default" className="text-sm font-semibold text-ink">Inland site default tab</Label>
                     <p className="text-xs text-muted-foreground">Which tab is selected by default on sites without a live weather station.</p>
                     <select
                       id="inland-default"
                       value={inlandDefault}
                       onChange={e => setInlandDefault(e.target.value)}
-                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       <option value="meteogram">Meteogram</option>
                       <option value="7day">7-Day Forecast</option>
@@ -375,13 +375,13 @@ export function AdminForecast() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="thermal-hour" className="text-sm font-semibold text-navy">Thermal map default time</Label>
+                    <Label htmlFor="thermal-hour" className="text-sm font-semibold text-ink">Thermal map default time</Label>
                     <p className="text-xs text-muted-foreground">Where the time slider starts when the thermal map is first opened.</p>
                     <select
                       id="thermal-hour"
                       value={thermalDefaultHour}
                       onChange={e => setThermalDefaultHour(Number(e.target.value))}
-                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-sky"
+                      className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       {Array.from({ length: 14 }, (_, i) => i + 7).map(h => (
                         <option key={h} value={h}>{hourLabel(h)}</option>
@@ -390,7 +390,7 @@ export function AdminForecast() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label htmlFor="meteogram-height" className="text-sm font-semibold text-navy">Meteogram chart height</Label>
+                    <Label htmlFor="meteogram-height" className="text-sm font-semibold text-ink">Meteogram chart height</Label>
                     <p className="text-xs text-muted-foreground">Desktop chart height in pixels.</p>
                     <div className="flex items-center gap-2">
                       <input
@@ -401,7 +401,7 @@ export function AdminForecast() {
                         max={600}
                         step={20}
                         onChange={e => setMeteogramHeight(parseInt(e.target.value, 10))}
-                        className="w-24 border border-input rounded-md px-2 py-1.5 text-sm bg-background text-right focus:outline-none focus:ring-1 focus:ring-sky"
+                        className="w-24 border border-input rounded-md px-2 py-1.5 text-sm bg-background text-right focus:outline-none focus:ring-1 focus:ring-accent"
                       />
                       <span className="text-xs text-muted-foreground">px</span>
                     </div>
@@ -417,7 +417,7 @@ export function AdminForecast() {
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center text-navy">
+                  <CardTitle className="flex items-center text-ink">
                     <Clock className="w-5 h-5 mr-2 text-muted-foreground" />
                     <span className="text-muted-foreground">Schedule Settings</span>
                     <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Stage 3</span>
@@ -440,7 +440,7 @@ export function AdminForecast() {
                     id="sounding-hour"
                     value={soundingHour}
                     onChange={e => setSoundingHour(Number(e.target.value))}
-                    className="border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-sky opacity-60"
+                    className="border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent opacity-60"
                   >
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>{hourLabel(i)}</option>
@@ -453,7 +453,7 @@ export function AdminForecast() {
                     id="sounding-minute"
                     value={soundingMinute}
                     onChange={e => setSoundingMinute(Number(e.target.value))}
-                    className="border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-sky opacity-60"
+                    className="border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent opacity-60"
                   >
                     {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
                       <option key={m} value={m}>:{String(m).padStart(2, '0')}</option>

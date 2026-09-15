@@ -42,18 +42,18 @@ export function AdminHomeSettings() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 mb-6">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Link>
         </div>
 
-        <h1 className="text-3xl font-extrabold text-navy mb-8">Home Page Management</h1>
+        <h1 className="text-3xl font-extrabold text-ink mb-8">Home Page Management</h1>
 
         <form onSubmit={handleSubmit} onChange={markDirty} className="space-y-8">
           <div className="flex justify-end">
             <Button
               type="submit"
-              className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+              className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
               disabled={loading}
             >
               {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save All Settings</>}
@@ -80,13 +80,13 @@ export function AdminHomeSettings() {
           </Card>
 
           {/* Alert Banner Section */}
-          <Card className="border-t-4 border-t-orange overflow-hidden">
+          <Card className="border-t-4 border-t-accent overflow-hidden">
             <button type="button" onClick={() => toggleSection("alert")} className="w-full text-left">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <RefreshCw className="w-5 h-5 text-orange" /> Alert Banner
+                      <RefreshCw className="w-5 h-5 text-accent" /> Alert Banner
                     </CardTitle>
                     <CardDescription className="mt-1">Display an urgent notification at the very top of the home page.</CardDescription>
                   </div>
@@ -103,7 +103,7 @@ export function AdminHomeSettings() {
                     value="true" 
                     checked={formData.alertBannerEnabled === true}
                     onChange={() => setFormData(prev => ({ ...prev, alertBannerEnabled: true }))}
-                    className="w-4 h-4 text-orange focus:ring-orange"
+                    className="w-4 h-4 text-accent focus:ring-accent"
                   />
                   <span className="text-sm font-medium">Enabled</span>
                 </label>
@@ -114,7 +114,7 @@ export function AdminHomeSettings() {
                     value="false" 
                     checked={formData.alertBannerEnabled === false}
                     onChange={() => setFormData(prev => ({ ...prev, alertBannerEnabled: false }))}
-                    className="w-4 h-4 text-orange focus:ring-orange"
+                    className="w-4 h-4 text-accent focus:ring-accent"
                   />
                   <span className="text-sm font-medium">Disabled</span>
                 </label>
@@ -127,13 +127,13 @@ export function AdminHomeSettings() {
                   value={formData.alertBannerText} 
                   onChange={handleChange}
                   placeholder="e.g. Site maintenance at Flinders this weekend."
-                  className="w-full p-2 border rounded-md focus:ring-orange focus:border-orange"
+                  className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                 />
               </div>
             </CardContent>}
           </Card>
 
-          <Card className="border-t-4 border-t-sky overflow-hidden">
+          <Card className="border-t-4 border-t-accent overflow-hidden">
             <button type="button" onClick={() => toggleSection("hero")} className="w-full text-left">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
@@ -149,7 +149,7 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-muted/30">
                 <button type="button" onClick={() => toggleSection("herocontent")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     Content & Buttons
                   </h4>
                   {expandedSections.has("herocontent") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -163,7 +163,7 @@ export function AdminHomeSettings() {
                   name="homeHeroTitle" 
                   value={formData.homeHeroTitle} 
                   onChange={handleChange}
-                  className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                 />
               </div>
               <div className="space-y-2">
@@ -173,15 +173,15 @@ export function AdminHomeSettings() {
                   value={formData.homeHeroSubtitle} 
                   onChange={handleChange}
                   rows={3}
-                  className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                 />
               </div>
 
                   <div className="pt-4 border-t border-border/50">
-                    <h5 className="font-bold text-navy text-sm uppercase tracking-wider mb-3">Call to Action Buttons</h5>
+                    <h5 className="font-bold text-ink text-sm uppercase tracking-wider mb-3">Call to Action Buttons</h5>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4 border p-4 rounded-lg bg-background">
-                        <h4 className="font-bold text-navy text-sm uppercase tracking-wider">Primary Button (Orange)</h4>
+                        <h4 className="font-bold text-ink text-sm uppercase tracking-wider">Primary Button (Orange)</h4>
                         <div className="space-y-2">
                           <label className="text-xs font-medium text-muted-foreground">Button Text</label>
                           <input 
@@ -204,7 +204,7 @@ export function AdminHomeSettings() {
                         </div>
                       </div>
                       <div className="space-y-4 border p-4 rounded-lg bg-background">
-                        <h4 className="font-bold text-navy text-sm uppercase tracking-wider">Secondary Button (Outline)</h4>
+                        <h4 className="font-bold text-ink text-sm uppercase tracking-wider">Secondary Button (Outline)</h4>
                         <div className="space-y-2">
                           <label className="text-xs font-medium text-muted-foreground">Button Text</label>
                           <input 
@@ -233,18 +233,18 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-muted/30">
                 <button type="button" onClick={() => toggleSection("bgimages")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" /> Background Images
                   </h4>
                   {expandedSections.has("bgimages") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
                 {expandedSections.has("bgimages") && <div className="px-4 pb-4 space-y-6 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground pt-2">Select images from the library to use as hero backgrounds. <Link to="/admin/images" className="text-sky hover:underline" onClick={(e) => e.stopPropagation()}>Manage Image Library</Link></p>
+                  <p className="text-xs text-muted-foreground pt-2">Select images from the library to use as hero backgrounds. <Link to="/admin/images" className="text-accent hover:underline" onClick={(e) => e.stopPropagation()}>Manage Image Library</Link></p>
               {heroLibraryImages.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-foreground-faint mb-3">No images in the library yet.</p>
                   <Link to="/admin/images">
-                    <Button type="button" className="bg-navy hover:bg-navy-light text-white">
+                    <Button type="button" className="bg-ink hover:bg-ink-muted text-white">
                       <ImageIcon className="w-4 h-4 mr-2" /> Go to Image Library
                     </Button>
                   </Link>
@@ -255,11 +255,11 @@ export function AdminHomeSettings() {
                     {heroLibraryImages.map((url, index) => {
                       const isSelected = formData.homeHeroImages.includes(url);
                       return (
-                        <div key={index} onClick={() => toggleHeroImage(url)} className={`relative border-2 rounded-lg overflow-hidden bg-muted aspect-video cursor-pointer transition-all ${isSelected ? "border-sky ring-2 ring-sky/30" : "border-border-subtle hover:border-gray-400"}`}>
+                        <div key={index} onClick={() => toggleHeroImage(url)} className={`relative border-2 rounded-lg overflow-hidden bg-muted aspect-video cursor-pointer transition-all ${isSelected ? "border-accent ring-2 ring-accent/30" : "border-border-subtle hover:border-gray-400"}`}>
                           <img src={url} alt={`Library ${index + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
-                          {isSelected && <div className="absolute top-1 left-1 bg-sky text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Selected</div>}
+                          {isSelected && <div className="absolute top-1 left-1 bg-accent text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Selected</div>}
                           {formData.homeHeroImageMode === 'static' && isSelected && (
-                            <button type="button" onClick={(e) => { e.stopPropagation(); setStaticImage(formData.homeHeroImages.indexOf(url)); }} className={`absolute top-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "bg-orange text-white" : "bg-white/90 text-foreground-secondary hover:bg-orange/20"}`}>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setStaticImage(formData.homeHeroImages.indexOf(url)); }} className={`absolute top-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "bg-accent text-white" : "bg-white/90 text-foreground-secondary hover:bg-accent/20"}`}>
                               {formData.homeHeroStaticImageIndex === formData.homeHeroImages.indexOf(url) ? "Active" : "Set Active"}
                             </button>
                           )}
@@ -274,7 +274,7 @@ export function AdminHomeSettings() {
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <label className="text-base font-semibold text-navy">Display Mode</label>
+                    <label className="text-base font-semibold text-ink">Display Mode</label>
                     <p className="text-sm text-muted-foreground">Choose how images are served to visitors.</p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -285,7 +285,7 @@ export function AdminHomeSettings() {
                         value="static" 
                         checked={formData.homeHeroImageMode === 'static'}
                         onChange={handleChange}
-                        className="w-4 h-4 text-sky focus:ring-sky"
+                        className="w-4 h-4 text-accent focus:ring-accent"
                       />
                       <span className="text-sm font-medium">Static</span>
                     </label>
@@ -296,7 +296,7 @@ export function AdminHomeSettings() {
                         value="random" 
                         checked={formData.homeHeroImageMode === 'random'}
                         onChange={handleChange}
-                        className="w-4 h-4 text-sky focus:ring-sky"
+                        className="w-4 h-4 text-accent focus:ring-accent"
                       />
                       <span className="text-sm font-medium">Random on refresh</span>
                     </label>
@@ -308,8 +308,8 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-sky-50/30">
                 <button type="button" onClick={() => toggleSection("smartassistant")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-sky" /> Smart Assistant
+                  <h4 className="font-bold text-ink flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-accent" /> Smart Assistant
                   </h4>
                   {expandedSections.has("smartassistant") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
@@ -318,7 +318,7 @@ export function AdminHomeSettings() {
                     <p className="text-xs text-muted-foreground">Disclaimer, CTA message & prompt are configured in Connection settings.</p>
                     <Link
                       to="/admin/connections#smart-assistant"
-                      className="text-sm text-sky hover:text-navy font-medium inline-flex items-center gap-1 transition-colors shrink-0"
+                      className="text-sm text-accent hover:text-ink font-medium inline-flex items-center gap-1 transition-colors shrink-0"
                     >
                       Smart Assistant Settings <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
@@ -344,14 +344,14 @@ export function AdminHomeSettings() {
             </button>
             {expandedSections.has("quickcards") && <CardContent className="space-y-6 border-t border-border pt-4">
               <div className="space-y-4 border-b pb-6">
-                <h3 className="text-sm font-bold text-navy">Card Display Settings</h3>
+                <h3 className="text-sm font-bold text-ink">Card Display Settings</h3>
                 <div className="flex items-center gap-2 mb-4">
                   <input
                     type="checkbox"
                     id="homeCardsCycle"
                     checked={formData.homeCardsCycle}
                     onChange={(e) => setFormData(prev => ({ ...prev, homeCardsCycle: e.target.checked }))}
-                    className="rounded text-orange focus:ring-orange"
+                    className="rounded text-accent focus:ring-accent"
                   />
                   <label htmlFor="homeCardsCycle" className="text-sm font-medium text-foreground-label">
                     Cycle cards on page refresh
@@ -364,7 +364,7 @@ export function AdminHomeSettings() {
                     <select
                       value={formData.homeCardsCyclePinned}
                       onChange={(e) => setFormData(prev => ({ ...prev, homeCardsCyclePinned: e.target.value }))}
-                      className="w-full p-2 border rounded-md text-sm focus:ring-orange focus:border-orange"
+                      className="w-full p-2 border rounded-md text-sm focus:ring-accent focus:border-accent"
                     >
                       <option value="">None (all cards rotate)</option>
                       {cardOptions.map(card => (
@@ -385,26 +385,26 @@ export function AdminHomeSettings() {
                           checked={formData.homeCardsSelection.includes(card.id)}
                           onChange={() => toggleCardSelection(card.id)}
                           disabled={!formData.homeCardsSelection.includes(card.id) && formData.homeCardsSelection.length >= 3}
-                          className="rounded text-orange focus:ring-orange"
+                          className="rounded text-accent focus:ring-accent"
                         />
                         <span className="text-sm font-medium text-foreground-label">{card.label}</span>
                       </label>
                     ))}
                   </div>
                   {formData.homeCardsSelection.length < 3 && (
-                    <p className="text-xs text-orange">Please select exactly 3 cards.</p>
+                    <p className="text-xs text-accent">Please select exactly 3 cards.</p>
                   )}
                   <p className="text-xs text-muted-foreground italic">If the Events card is selected but no upcoming events exist, the site will automatically replace it with another card.</p>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-sm font-bold text-navy uppercase tracking-wider">Edit Individual Cards</h3>
+                <h3 className="text-sm font-bold text-ink uppercase tracking-wider">Edit Individual Cards</h3>
 
                 <div className="border rounded-lg bg-sky-50/30">
                   <button type="button" onClick={() => toggleSection("card_sites")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                    <h4 className="font-bold text-navy flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-sky"></span> Flying Sites Card
+                    <h4 className="font-bold text-ink flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-accent"></span> Flying Sites Card
                     </h4>
                     {expandedSections.has("card_sites") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </button>
@@ -433,8 +433,8 @@ export function AdminHomeSettings() {
 
                 <div className="border rounded-lg bg-orange-50/30">
                   <button type="button" onClick={() => toggleSection("card_safety")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                    <h4 className="font-bold text-navy flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-orange"></span> Safety & Rules Card
+                    <h4 className="font-bold text-ink flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-accent"></span> Safety & Rules Card
                     </h4>
                     {expandedSections.has("card_safety") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </button>
@@ -466,8 +466,8 @@ export function AdminHomeSettings() {
 
                 <div className="border rounded-lg bg-slate-50">
                   <button type="button" onClick={() => toggleSection("card_community")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                    <h4 className="font-bold text-navy flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-navy"></span> Community Card
+                    <h4 className="font-bold text-ink flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-ink"></span> Community Card
                     </h4>
                     {expandedSections.has("card_community") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </button>
@@ -496,7 +496,7 @@ export function AdminHomeSettings() {
 
                 <div className="border rounded-lg bg-purple-50/30">
                   <button type="button" onClick={() => toggleSection("card_committee")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                    <h4 className="font-bold text-navy flex items-center gap-2">
+                    <h4 className="font-bold text-ink flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-purple-600"></span> Your Committee
                     </h4>
                     {expandedSections.has("card_committee") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -529,7 +529,7 @@ export function AdminHomeSettings() {
 
                 <div className="border rounded-lg bg-emerald-50/30">
                   <button type="button" onClick={() => toggleSection("card_events")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                    <h4 className="font-bold text-navy flex items-center gap-2">
+                    <h4 className="font-bold text-ink flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full bg-emerald-600"></span> Upcoming Events Card
                     </h4>
                     {expandedSections.has("card_events") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -556,8 +556,8 @@ export function AdminHomeSettings() {
                 {customCards.map((cc, idx) => (
                   <div key={idx} className="border rounded-lg bg-background">
                     <button type="button" onClick={() => toggleSection(`card_custom_${idx}`)} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                      <h4 className="font-bold text-navy flex items-center gap-2">
-                        <Star className={`w-4 h-4 ${{sky:'text-sky',orange:'text-orange',navy:'text-navy',emerald:'text-emerald-600',purple:'text-purple-600',pink:'text-pink-600',red:'text-red-600',indigo:'text-indigo-600'}[cc.color] || 'text-sky'}`} />
+                      <h4 className="font-bold text-ink flex items-center gap-2">
+                        <Star className={`w-4 h-4 ${{sky:'text-accent',orange:'text-accent',navy:'text-ink',emerald:'text-emerald-600',purple:'text-purple-600',pink:'text-pink-600',red:'text-red-600',indigo:'text-indigo-600'}[cc.color] || 'text-accent'}`} />
                         {cc.title || 'Custom Card'}
                       </h4>
                       <div className="flex items-center gap-2">
@@ -611,7 +611,7 @@ export function AdminHomeSettings() {
                 <button
                   type="button"
                   onClick={addCustomCard}
-                  className="w-full border-2 border-dashed border-border rounded-lg p-4 text-muted-foreground hover:border-sky hover:text-sky transition-colors flex items-center justify-center gap-2"
+                  className="w-full border-2 border-dashed border-border rounded-lg p-4 text-muted-foreground hover:border-accent hover:text-accent transition-colors flex items-center justify-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
                   Add Custom Card
@@ -639,7 +639,7 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-purple-50/30">
                 <button type="button" onClick={() => toggleSection("schools")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     <GraduationCap className="w-4 h-4 text-purple-600" /> Paragliding Schools
                   </h4>
                   {expandedSections.has("schools") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -721,8 +721,8 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-sky-50/30">
                 <button type="button" onClick={() => toggleSection("telegram")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-sky" /> Telegram Groups
+                  <h4 className="font-bold text-ink flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-accent" /> Telegram Groups
                   </h4>
                   {expandedSections.has("telegram") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
@@ -776,7 +776,7 @@ export function AdminHomeSettings() {
                     <Button
                       type="button"
                       onClick={addTelegramGroup}
-                      className="bg-sky hover:bg-sky-light text-white"
+                      className="bg-accent hover:bg-accent-hover text-white"
                     >
                       <Plus className="w-4 h-4 mr-1" /> Add
                     </Button>
@@ -787,11 +787,11 @@ export function AdminHomeSettings() {
                   )}
 
                   {telegramGroups.length > 0 && (
-                    <div className="bg-sky/5 border border-sky/20 rounded-lg p-3">
-                      <p className="text-xs text-navy font-medium mb-2">Preview:</p>
+                    <div className="bg-accent/5 border border-accent/20 rounded-lg p-3">
+                      <p className="text-xs text-ink font-medium mb-2">Preview:</p>
                       <div className="flex flex-col gap-2 items-center">
                         {telegramGroups.map((group, i) => (
-                          <span key={i} className="inline-block px-3 py-1.5 bg-card text-navy rounded-full text-xs font-semibold border border-navy/20">
+                          <span key={i} className="inline-block px-3 py-1.5 bg-card text-ink rounded-full text-xs font-semibold border border-ink/20">
                             {group.name}
                           </span>
                         ))}
@@ -803,7 +803,7 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-amber-50/30">
                 <button type="button" onClick={() => toggleSection("widgettags")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     <Tags className="w-4 h-4 text-amber-600" /> Custom Widget Tags
                   </h4>
                   {expandedSections.has("widgettags") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -825,7 +825,7 @@ export function AdminHomeSettings() {
                             value={newTagName}
                             onChange={(e) => setNewTagName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
                             placeholder="tag_name"
-                            className="flex-1 p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                            className="flex-1 p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                           />
                           <div className="flex items-center gap-1 bg-card border border-border rounded-md px-2 text-sm text-muted-foreground">
                             <span>{"}}"}</span>
@@ -837,7 +837,7 @@ export function AdminHomeSettings() {
                             <button
                               type="button"
                               onClick={() => { setNewTagSource("telegram"); setNewTagSelection([]); }}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${newTagSource === "telegram" ? "bg-sky/10 border-sky text-sky" : "bg-card border-border text-muted-foreground hover:border-gray-400"}`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${newTagSource === "telegram" ? "bg-accent/10 border-accent text-accent" : "bg-card border-border text-muted-foreground hover:border-gray-400"}`}
                             >
                               <MessageCircle className="w-3.5 h-3.5" /> Telegram Groups
                             </button>
@@ -867,7 +867,7 @@ export function AdminHomeSettings() {
                                       setNewTagSelection(prev => prev.filter(n => n !== item.name));
                                     }
                                   }}
-                                  className="rounded border-border text-sky focus:ring-sky"
+                                  className="rounded border-border text-accent focus:ring-accent"
                                 />
                                 <span className="text-sm">{item.name}</span>
                               </label>
@@ -887,7 +887,7 @@ export function AdminHomeSettings() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <code className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-sm font-mono border border-amber-200">{`{{${tag.name}}}`}</code>
-                                  <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${tag.source === "school" ? "bg-purple-50 text-purple-600 border border-purple-200" : "bg-sky/10 text-sky border border-sky/20"}`}>
+                                  <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${tag.source === "school" ? "bg-purple-50 text-purple-600 border border-purple-200" : "bg-accent/10 text-accent border border-accent/20"}`}>
                                     {tag.source === "school" ? <><GraduationCap className="w-3 h-3" /> Schools</> : <><MessageCircle className="w-3 h-3" /> Telegram</>}
                                   </span>
                                   <button
@@ -900,7 +900,7 @@ export function AdminHomeSettings() {
                                   </button>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <button type="button" onClick={() => toggleEditTag(idx)} className="text-sky hover:text-sky-dark text-xs px-2 py-1 border border-sky/30 rounded hover:bg-sky/5">
+                                  <button type="button" onClick={() => toggleEditTag(idx)} className="text-accent hover:text-accent-hover text-xs px-2 py-1 border border-accent/30 rounded hover:bg-accent/5">
                                     {editingTagIdx === idx ? "Cancel" : "Edit"}
                                   </button>
                                   <button type="button" onClick={() => deleteCustomTag(idx)} className="text-red-500 hover:text-red-700 p-1">
@@ -922,12 +922,12 @@ export function AdminHomeSettings() {
                                             setEditTagSelection(prev => prev.filter(n => n !== item.name));
                                           }
                                         }}
-                                        className="rounded border-border text-sky focus:ring-sky"
+                                        className="rounded border-border text-accent focus:ring-accent"
                                       />
                                       <span className="text-sm">{item.name}</span>
                                     </label>
                                   ))}
-                                  <Button type="button" onClick={() => saveEditTag(idx)} disabled={editTagSelection.length === 0} className="bg-sky hover:bg-sky-light text-white text-xs w-full" size="sm"
+                                  <Button type="button" onClick={() => saveEditTag(idx)} disabled={editTagSelection.length === 0} className="bg-accent hover:bg-accent-hover text-white text-xs w-full" size="sm"
                                   >
                                     <Check className="w-3.5 h-3.5 mr-1" /> Save Changes
                                   </Button>
@@ -935,7 +935,7 @@ export function AdminHomeSettings() {
                               ) : (
                                 <div className="flex flex-wrap gap-1">
                                   {tag.items.map((name: string, i: number) => (
-                                    <span key={i} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${tag.source === "school" ? "bg-purple-50 text-purple-700 border border-purple-200" : "bg-sky/5 text-navy border border-navy/10"}`}>
+                                    <span key={i} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${tag.source === "school" ? "bg-purple-50 text-purple-700 border border-purple-200" : "bg-accent/5 text-ink border border-ink/10"}`}>
                                       {name}
                                     </span>
                                   ))}
@@ -954,7 +954,7 @@ export function AdminHomeSettings() {
           </Card>
 
           {/* Featured Site Section */}
-          <Card className="border-t-4 border-t-navy overflow-hidden">
+          <Card className="border-t-4 border-t-ink overflow-hidden">
             <button type="button" onClick={() => toggleSection("featured")} className="w-full text-left">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
@@ -973,7 +973,7 @@ export function AdminHomeSettings() {
                   name="featuredSiteId" 
                   value={formData.featuredSiteId} 
                   onChange={handleChange}
-                  className="w-full p-2 border rounded-md focus:ring-navy focus:border-navy"
+                  className="w-full p-2 border rounded-md focus:ring-ink focus:border-ink"
                 >
                   <option value="">None</option>
                   {sites.map(site => (
@@ -1004,7 +1004,7 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-red-50/30">
                 <button type="button" onClick={() => toggleSection("youtube")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     <Play className="w-4 h-4 text-red-500" /> YouTube Videos
                   </h4>
                   {expandedSections.has("youtube") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -1065,7 +1065,7 @@ export function AdminHomeSettings() {
                         value={ytChannelUrl}
                         onChange={(e) => setYtChannelUrl(e.target.value)}
                         placeholder="https://www.youtube.com/@channelname"
-                        className="flex-1 p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="flex-1 p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                       <Button
                         type="button"
@@ -1090,7 +1090,7 @@ export function AdminHomeSettings() {
 
               <div className="border rounded-lg bg-pink-50/30">
                 <button type="button" onClick={() => toggleSection("instagram")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-                  <h4 className="font-bold text-navy flex items-center gap-2">
+                  <h4 className="font-bold text-ink flex items-center gap-2">
                     <Share2 className="w-4 h-4 text-pink-500" /> Instagram Embeds
                   </h4>
                   {expandedSections.has("instagram") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -1193,7 +1193,7 @@ export function AdminHomeSettings() {
           <Button
             type="button"
             onClick={() => { const form = document.querySelector('form'); if (form) form.requestSubmit(); }}
-            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
             disabled={loading}
           >
             {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save All Settings</>}
@@ -1236,7 +1236,7 @@ function SocialMediaSubSection({ toggleSection, expandedSections }: { toggleSect
   return (
     <div className="border rounded-lg bg-blue-50/30">
       <button type="button" onClick={() => toggleSection("sociallinks")} className="w-full text-left px-4 py-3 flex items-center justify-between">
-        <h4 className="font-bold text-navy flex items-center gap-2">
+        <h4 className="font-bold text-ink flex items-center gap-2">
           <Share2 className="w-4 h-4 text-pink-500" /> Social Media Links
         </h4>
         {expandedSections.has("sociallinks") ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -1252,7 +1252,7 @@ function SocialMediaSubSection({ toggleSection, expandedSections }: { toggleSect
               </label>
               <input
                 type="url"
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                 value={socialForm[s.key] || ""}
                 onChange={(e) => setSocialForm(prev => ({ ...prev, [s.key]: e.target.value }))}
                 placeholder={`https://${s.label.toLowerCase().replace(/[^a-z]/g, '')}.com/...`}
@@ -1268,7 +1268,7 @@ function SocialMediaSubSection({ toggleSection, expandedSections }: { toggleSect
         )}
 
         <div className="flex justify-end">
-          <Button onClick={handleSave} className="bg-navy hover:bg-navy-light text-white" disabled={loading}>
+          <Button onClick={handleSave} className="bg-ink hover:bg-ink-muted text-white" disabled={loading}>
             <Save className="w-4 h-4 mr-2" /> Save Social Links
           </Button>
         </div>

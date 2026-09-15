@@ -58,10 +58,10 @@ export function Shop() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-sky/10 mb-4">
-            <ShoppingBag className="w-8 h-8 text-sky" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 mb-4">
+            <ShoppingBag className="w-8 h-8 text-accent" />
           </div>
-          <h1 className="text-4xl font-extrabold text-navy mb-3">Shop</h1>
+          <h1 className="text-4xl font-extrabold text-ink mb-3">Shop</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Browse our merchandise and products. Purchases are handled securely through TidyHQ.
           </p>
@@ -69,7 +69,7 @@ export function Shop() {
 
         {isLoading && (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky" />
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent" />
           </div>
         )}
 
@@ -113,7 +113,7 @@ export function Shop() {
                     </div>
                   )}
                   {product.category && (
-                    <div className="absolute top-2 left-2 bg-navy/80 text-white text-xs px-2 py-1 rounded">
+                    <div className="absolute top-2 left-2 bg-ink/80 text-white text-xs px-2 py-1 rounded">
                       {product.category}
                     </div>
                   )}
@@ -124,7 +124,7 @@ export function Shop() {
                   )}
                 </div>
                 <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-semibold text-navy text-lg mb-1">{product.name}</h3>
+                  <h3 className="font-semibold text-ink text-lg mb-1">{product.name}</h3>
                   {product.description && (
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-3 flex-1">
                       {product.description.replace(/<[^>]*>/g, "")}
@@ -132,7 +132,7 @@ export function Shop() {
                   )}
                   {!product.description && <div className="flex-1" />}
                   <div className="flex items-center justify-between mt-auto pt-3 border-t border-border-faint">
-                    <span className="text-xl font-bold text-navy">
+                    <span className="text-xl font-bold text-ink">
                       {formatPrice(product.price, product.currency)}
                     </span>
                     <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export function Shop() {
                       <a href={product.shopUrl} target="_blank" rel="noopener noreferrer">
                         <Button
                           size="sm"
-                          className="bg-sky hover:bg-sky-dark text-white"
+                          className="bg-accent hover:bg-accent-hover text-white"
                           disabled={product.stockStatus === "out_of_stock"}
                         >
                           Buy Now <ExternalLink className="w-3 h-3 ml-1" />

@@ -23,7 +23,7 @@ L.Icon.Default.mergeOptions({
 
 // Custom icon for weather stations
 const weatherStationIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-accent.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -102,16 +102,16 @@ export function AdminSiteEdit() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 mb-6">
-          <Link to="/admin/sites" className="inline-flex items-center text-sky hover:text-sky-light font-medium">
+          <Link to="/admin/sites" className="inline-flex items-center text-accent hover:text-accent-hover font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Manage Sites
           </Link>
           <span className="text-foreground-ghost">|</span>
-          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-navy font-medium">
+          <Link to="/admin" className="inline-flex items-center text-muted-foreground hover:text-ink font-medium">
             Admin Dashboard
           </Link>
         </div>
         
-        <h1 className="text-3xl font-extrabold text-navy mb-8">
+        <h1 className="text-3xl font-extrabold text-ink mb-8">
           {isNew ? "Add New Site" : `Edit Site: ${formData.name}`}
         </h1>
 
@@ -120,14 +120,14 @@ export function AdminSiteEdit() {
             <div className="flex flex-col items-end gap-2">
               <Button
                 type="submit"
-                className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
               >
                 {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Site</>}
               </Button>
               <Button
                 type="button"
                 onClick={handleSaveAndGo}
-                className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-sky hover:bg-sky-light"} text-white`}
+                className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-accent hover:bg-accent-hover"} text-white`}
               >
                 <Eye className="w-4 h-4 mr-2" /> Save &amp; Go To
               </Button>
@@ -142,7 +142,7 @@ export function AdminSiteEdit() {
                     <label className="text-sm font-medium text-foreground-label">Siteguide URL</label>
                     <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                       <select
-                        className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-card"
+                        className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-card"
                         value={selectedState}
                         onChange={(e) => {
                           setSelectedState(e.target.value);
@@ -157,7 +157,7 @@ export function AdminSiteEdit() {
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                       <select
-                        className="min-w-0 sm:max-w-[280px] flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-card truncate"
+                        className="min-w-0 sm:max-w-[280px] flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-card truncate"
                         onChange={(e) => {
                           const url = e.target.value;
                           if (!url) return;
@@ -191,7 +191,7 @@ export function AdminSiteEdit() {
                         type="button" 
                         onClick={handleAIStart}
                         disabled={!formData.siteguideUrl}
-                        className={`shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${formData.siteguideUrl ? 'bg-sky hover:bg-sky-light text-white' : 'bg-gray-200 text-foreground-faint cursor-not-allowed'}`}
+                        className={`shrink-0 flex items-center justify-center gap-2 px-4 whitespace-nowrap ${formData.siteguideUrl ? 'bg-accent hover:bg-accent-hover text-white' : 'bg-gray-200 text-foreground-faint cursor-not-allowed'}`}
                       >
                         <Sparkles className="w-4 h-4" />
                         Scrape Site Guide
@@ -199,7 +199,7 @@ export function AdminSiteEdit() {
                       <button
                         type="button"
                         onClick={() => setShowSitePromptEditor(!showSitePromptEditor)}
-                        className="text-xs text-sky hover:underline shrink-0"
+                        className="text-xs text-accent hover:underline shrink-0"
                       >
                         {showSitePromptEditor ? "Hide Prompt" : "Edit Prompt"}
                       </button>
@@ -239,7 +239,7 @@ export function AdminSiteEdit() {
                           type="button"
                           onClick={handleRefreshSites}
                           disabled={isRefreshing}
-                          className={`p-1 transition-colors text-xs flex items-center gap-1 ${isRefreshing ? 'text-emerald-500 cursor-not-allowed' : 'text-foreground-faint hover:text-sky'}`}
+                          className={`p-1 transition-colors text-xs flex items-center gap-1 ${isRefreshing ? 'text-emerald-500 cursor-not-allowed' : 'text-foreground-faint hover:text-accent'}`}
                           title="Refresh Site List from Siteguide.org.au"
                         >
                           <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -256,11 +256,11 @@ export function AdminSiteEdit() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">Siteguide Version:</span>
-                          <span className="text-xs font-medium text-navy bg-muted px-2 py-0.5 rounded">{formData.siteguideVersion || (liveSiteguideVersion ? liveSiteguideVersion : "—")}</span>
+                          <span className="text-xs font-medium text-ink bg-muted px-2 py-0.5 rounded">{formData.siteguideVersion || (liveSiteguideVersion ? liveSiteguideVersion : "—")}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">Last Scraped:</span>
-                          <span className="text-xs font-medium text-navy bg-muted px-2 py-0.5 rounded">
+                          <span className="text-xs font-medium text-ink bg-muted px-2 py-0.5 rounded">
                             {formData.siteguideScrapedAt
                               ? new Date(formData.siteguideScrapedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) + ", " + new Date(formData.siteguideScrapedAt).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: true })
                               : "Not yet scraped"}
@@ -282,7 +282,7 @@ export function AdminSiteEdit() {
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                           <select
-                            className="min-w-0 flex-1 p-1.5 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-card text-xs"
+                            className="min-w-0 flex-1 p-1.5 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-card text-xs"
                             value={selectedRestoreVersion}
                             onChange={(e) => {
                               setSelectedRestoreVersion(e.target.value);
@@ -301,7 +301,7 @@ export function AdminSiteEdit() {
                             size="sm"
                             onClick={handleViewSiteDiff}
                             disabled={!selectedRestoreVersion || siteDiffLoading}
-                            className={`shrink-0 text-xs ${selectedRestoreVersion && !siteDiffLoading ? 'bg-sky hover:bg-sky/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+                            className={`shrink-0 text-xs ${selectedRestoreVersion && !siteDiffLoading ? 'bg-accent hover:bg-accent/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
                           >
                             {siteDiffLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
                             Compare
@@ -311,7 +311,7 @@ export function AdminSiteEdit() {
                             size="sm"
                             onClick={handleRestoreSite}
                             disabled={!selectedRestoreVersion || isRestoring}
-                            className={`shrink-0 text-xs ${selectedRestoreVersion && !isRestoring ? 'bg-navy hover:bg-navy/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
+                            className={`shrink-0 text-xs ${selectedRestoreVersion && !isRestoring ? 'bg-ink hover:bg-ink/80 text-white' : 'bg-muted text-foreground-faint cursor-not-allowed'}`}
                           >
                             {isRestoring ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RotateCcw className="w-3 h-3 mr-1" />}
                             Restore
@@ -330,10 +330,10 @@ export function AdminSiteEdit() {
                           value={aiPrompt}
                           onChange={(e) => setAiPrompt(e.target.value)}
                           rows={6}
-                          className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-3 border border-border rounded-lg text-sm font-mono focus:ring-1 focus:ring-accent focus:border-accent"
                         />
                         <div className="flex justify-end">
-                          <Button type="button" size="sm" onClick={handleSavePrompt} className="bg-sky text-white text-xs">
+                          <Button type="button" size="sm" onClick={handleSavePrompt} className="bg-accent text-white text-xs">
                             Save as default
                           </Button>
                         </div>
@@ -348,7 +348,7 @@ export function AdminSiteEdit() {
                       value={formData.name} 
                       onChange={handleChange}
                       required
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
@@ -362,7 +362,7 @@ export function AdminSiteEdit() {
                             setFormData(prev => ({ ...prev, isSkyHighSite: e.target.checked ? "true" : "false" }));
                             markDirty();
                           }}
-                          className="w-4 h-4 rounded border-border text-sky focus:ring-sky cursor-pointer"
+                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
                         />
                         <label htmlFor="isSkyHighSite" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
                           Club Site
@@ -377,7 +377,7 @@ export function AdminSiteEdit() {
                             setFormData(prev => ({ ...prev, skipBulkImport: e.target.checked ? "true" : "false" }));
                             markDirty();
                           }}
-                          className="w-4 h-4 rounded border-border text-sky focus:ring-sky cursor-pointer"
+                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
                         />
                         <label htmlFor="skipBulkImport" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
                           Skip Import
@@ -392,7 +392,7 @@ export function AdminSiteEdit() {
                             setFormData(prev => ({ ...prev, isXCSite: e.target.checked ? "true" : "false" }));
                             markDirty();
                           }}
-                          className="w-4 h-4 rounded border-border text-sky focus:ring-sky cursor-pointer"
+                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
                         />
                         <label htmlFor="isXCSite" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
                           XC Site
@@ -405,7 +405,7 @@ export function AdminSiteEdit() {
                         name="type" 
                         value={formData.type} 
                         onChange={handleChange}
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       >
                         <option value="Coastal">Coastal</option>
                         <option value="Inland">Inland</option>
@@ -467,7 +467,7 @@ export function AdminSiteEdit() {
                           setFormData(prev => ({ ...prev, overrideHideClosed: e.target.checked ? "true" : "false" }));
                           markDirty();
                         }}
-                        className="w-4 h-4 rounded border-border text-sky focus:ring-sky cursor-pointer"
+                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
                       />
                       <label htmlFor="overrideHideClosed" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
                         Override Hide Closed Sites
@@ -479,7 +479,7 @@ export function AdminSiteEdit() {
                         name="hazardLevel" 
                         value={formData.hazardLevel} 
                         onChange={handleChange}
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -495,7 +495,7 @@ export function AdminSiteEdit() {
                       value={formData.pgRating} 
                       onChange={handleChange}
                       placeholder="e.g. PG4 | PG3 req PG5"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -506,7 +506,7 @@ export function AdminSiteEdit() {
                       value={formData.hgRating} 
                       onChange={handleChange}
                       placeholder="e.g. HG Int | HG Sup req HG Int"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
 
@@ -528,7 +528,7 @@ export function AdminSiteEdit() {
                           name="tideStationId"
                           value={formData.tideStationId}
                           onChange={handleChange}
-                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                         >
                           <option value="">Auto-detect nearest station</option>
                           {tideStations.map(s => (
@@ -543,7 +543,7 @@ export function AdminSiteEdit() {
                       <button
                         type="button"
                         onClick={() => setShowUnassignedText(!showUnassignedText)}
-                        className="text-xs text-sky hover:text-sky/80 inline-flex items-center gap-1"
+                        className="text-xs text-accent hover:text-accent/80 inline-flex items-center gap-1"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -557,7 +557,7 @@ export function AdminSiteEdit() {
                             value={formData.unassignedText}
                             onChange={handleChange}
                             rows={6}
-                            className="w-full p-2 text-xs border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky font-mono bg-card text-foreground"
+                            className="w-full p-2 text-xs border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent font-mono bg-card text-foreground"
                           />
                           <p className="text-xs text-foreground-faint mt-1">Text from the site guide that wasn't mapped to any field. You can edit or copy from here.</p>
                         </div>
@@ -573,7 +573,7 @@ export function AdminSiteEdit() {
                       value={formData.siteContact} 
                       onChange={handleChange}
                       placeholder="e.g. John Doe"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -584,7 +584,7 @@ export function AdminSiteEdit() {
                       value={formData.siteContactPhone} 
                       onChange={handleChange}
                       placeholder="e.g. 0400 000 000"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -596,7 +596,7 @@ export function AdminSiteEdit() {
                         value={formData.launchHeight} 
                         onChange={handleChange}
                         placeholder="e.g. 640 or 640m"
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <div className="space-y-2">
@@ -607,7 +607,7 @@ export function AdminSiteEdit() {
                         value={formData.launchHeightHigh} 
                         onChange={handleChange}
                         placeholder="e.g. 320 or 320m"
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <div className="space-y-2">
@@ -618,7 +618,7 @@ export function AdminSiteEdit() {
                         value={formData.launchHeight2} 
                         onChange={handleChange}
                         placeholder="e.g. 580 or 580m"
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <div className="space-y-2">
@@ -629,14 +629,14 @@ export function AdminSiteEdit() {
                         value={formData.landingHeight2} 
                         onChange={handleChange}
                         placeholder="e.g. 280 or 280m"
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                   </div>
                   <div className="md:col-span-2">
                     {(formData.launchHeight || formData.launchHeightHigh || formData.launchHeight2 || formData.landingHeight2) && (
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={formatHeights} className="px-3 py-2 text-xs bg-sky/10 text-sky rounded-md hover:bg-sky/20 transition-colors">
+                        <button type="button" onClick={formatHeights} className="px-3 py-2 text-xs bg-accent/10 text-accent rounded-md hover:bg-accent/20 transition-colors">
                           Format Heights
                         </button>
                         <span className="text-xs text-foreground-faint">Converts any value to "Xm / Y'" format — metres to nearest 1m, feet to nearest 10'</span>
@@ -651,7 +651,7 @@ export function AdminSiteEdit() {
                           type="checkbox"
                           checked={formData.hoodedPloversActive === "true"}
                           onChange={(e) => { handleChange({ target: { name: "hoodedPloversActive", value: e.target.checked ? "true" : "false" } } as any); }}
-                          className="w-4 h-4 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                          className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
                         />
                         <span className="text-sm text-foreground-secondary">Active</span>
                       </label>
@@ -661,7 +661,7 @@ export function AdminSiteEdit() {
                         value={formData.hoodedPloversLink} 
                         onChange={handleChange}
                         placeholder="Link (optional)"
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <p className="text-xs text-foreground-faint">Tick to show card. With link: "Click Here". Without link: "Check Signs".</p>
@@ -674,7 +674,7 @@ export function AdminSiteEdit() {
                       value={formData.emergencyMarker} 
                       onChange={handleChange}
                       placeholder="e.g. ESTA-123"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -685,7 +685,7 @@ export function AdminSiteEdit() {
                       value={formData.navigateTo} 
                       onChange={handleChange}
                       placeholder="Google Maps Link"
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -697,7 +697,7 @@ export function AdminSiteEdit() {
                         value={formData.what3words} 
                         onChange={handleChange}
                         placeholder="e.g. ///word.word.word"
-                        className="flex-1 p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="flex-1 p-2 border rounded-md focus:ring-accent focus:border-accent"
                       />
                       {formData.lat && formData.lon && (
                         <Button
@@ -710,7 +710,7 @@ export function AdminSiteEdit() {
                               window.open(`https://what3words.com/`, '_blank');
                             });
                           }}
-                          className="bg-sky hover:bg-sky-light text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
+                          className="bg-accent hover:bg-accent-hover text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
                         >
                           Look up
                         </Button>
@@ -726,7 +726,7 @@ export function AdminSiteEdit() {
                       value={formData.inductionFormUrl ?? ""}
                       onChange={handleChange}
                       placeholder="https://docs.google.com/forms/..."
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                     <p className="text-xs text-foreground-faint">Google Form URL. When set, an Endorsement card appears on the site page and navigates the user to the form.</p>
                   </div>
@@ -736,7 +736,7 @@ export function AdminSiteEdit() {
                       <input
                         type="text"
                         placeholder="e.g. -37.229874, 143.194699"
-                        className="flex-1 min-w-0 p-2 border rounded-md focus:ring-sky focus:border-sky bg-sky/5"
+                        className="flex-1 min-w-0 p-2 border rounded-md focus:ring-accent focus:border-accent bg-accent/5"
                         onPaste={(e) => {
                           let text = e.clipboardData.getData('text');
                           text = text.replace(/[\u2212\u2013\u2014]/g, '-');
@@ -763,7 +763,7 @@ export function AdminSiteEdit() {
                               : `https://www.google.com/maps/@-37.8136,144.9631,8z`;
                           window.open(url, '_blank');
                         }}
-                        className="bg-sky hover:bg-sky-light text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
+                        className="bg-accent hover:bg-accent-hover text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
                       >
                         <MapPin className="w-4 h-4" />
                         Google Maps
@@ -780,7 +780,7 @@ export function AdminSiteEdit() {
                         value={formData.lat} 
                         onChange={handleChange}
                         placeholder="e.g. -38.324"
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       />
                     </div>
                     <div className="space-y-2">
@@ -791,7 +791,7 @@ export function AdminSiteEdit() {
                         value={formData.lon} 
                         onChange={handleChange}
                         placeholder="e.g. 144.717"
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       />
                     </div>
                   </div>
@@ -805,18 +805,18 @@ export function AdminSiteEdit() {
                         value={formData.image} 
                         onChange={handleChange}
                         placeholder="Paste URL or select from library"
-                        className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="min-w-0 flex-1 p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                       />
                       <Button
                         type="button"
                         onClick={() => setShowBannerPicker(true)}
-                        className="bg-sky hover:bg-sky-light text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
+                        className="bg-accent hover:bg-accent-hover text-white flex items-center gap-2 px-4 whitespace-nowrap shrink-0"
                       >
                         <ImagePlus className="w-4 h-4" />
                         Select from Library
                       </Button>
                     </div>
-                    <p className="text-[10px] text-foreground-faint">Select a banner image from the <a href="/admin/images" target="_blank" className="text-sky hover:underline">Image Library</a>, or paste a direct URL.</p>
+                    <p className="text-[10px] text-foreground-faint">Select a banner image from the <a href="/admin/images" target="_blank" className="text-accent hover:underline">Image Library</a>, or paste a direct URL.</p>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground-label">Live Weather Enabled</label>
@@ -824,7 +824,7 @@ export function AdminSiteEdit() {
                       name="useLiveWeather" 
                       value={formData.useLiveWeather} 
                       onChange={handleChange}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     >
                       <option value="true">Enabled (Use Live if available)</option>
                       <option value="false">Disabled (Always use Forecast)</option>
@@ -839,7 +839,7 @@ export function AdminSiteEdit() {
                         <select 
                           value={searchRadius} 
                           onChange={(e) => setSearchRadius(e.target.value)}
-                          className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                          className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                         >
                           <option value="5">5 km</option>
                           <option value="10">10 km</option>
@@ -850,13 +850,13 @@ export function AdminSiteEdit() {
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground-label flex justify-between">
                           Live Weather Station
-                          {loadingStations && <span className="text-sky text-xs">Loading...</span>}
+                          {loadingStations && <span className="text-accent text-xs">Loading...</span>}
                         </label>
                         <select 
                           name="liveStationId" 
                           value={formData.liveStationId} 
                           onChange={handleChange}
-                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                           disabled={loadingStations || nearbyStations.length === 0}
                         >
                           <option value="">Select a station...</option>
@@ -875,7 +875,7 @@ export function AdminSiteEdit() {
                           <input
                             type="text"
                             placeholder="e.g. IFLINDER3, freeflightwx-mystic, bom-IDV60801-94846 or davis-<token>"
-                            className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                            className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 e.preventDefault();
@@ -889,7 +889,7 @@ export function AdminSiteEdit() {
                           />
                           <button
                             type="button"
-                            className="px-3 py-2 text-xs font-medium bg-sky text-white rounded-md hover:bg-sky-light transition-colors"
+                            className="px-3 py-2 text-xs font-medium bg-accent text-white rounded-md hover:bg-accent-hover transition-colors"
                             onClick={(e) => {
                               const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
                               const val = input?.value?.trim();
@@ -919,7 +919,7 @@ export function AdminSiteEdit() {
                           name="liveStationIdAlt" 
                           value={formData.liveStationIdAlt} 
                           onChange={handleChange}
-                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                           disabled={loadingStations || nearbyStations.length === 0}
                         >
                           <option value="">None (single station)</option>
@@ -938,7 +938,7 @@ export function AdminSiteEdit() {
                           <input
                             type="text"
                             placeholder="e.g. IFLINDER3, livewind-94868, bom-IDV60801-94846 or davis-<token>"
-                            className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                            className="flex-1 p-2 text-sm border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 e.preventDefault();
@@ -952,7 +952,7 @@ export function AdminSiteEdit() {
                           />
                           <button
                             type="button"
-                            className="px-3 py-2 text-xs font-medium bg-sky text-white rounded-md hover:bg-sky-light transition-colors"
+                            className="px-3 py-2 text-xs font-medium bg-accent text-white rounded-md hover:bg-accent-hover transition-colors"
                             onClick={(e) => {
                               const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
                               const val = input?.value?.trim();
@@ -1010,7 +1010,7 @@ export function AdminSiteEdit() {
                                 <div className="text-xs font-bold text-emerald-600 mt-1">Primary Station</div>
                               )}
                               {station.id === formData.liveStationIdAlt && (
-                                <div className="text-xs font-bold text-sky mt-1">Alternate Station</div>
+                                <div className="text-xs font-bold text-accent mt-1">Alternate Station</div>
                               )}
                             </Popup>
                           </Marker>
@@ -1044,7 +1044,7 @@ export function AdminSiteEdit() {
                         value={formData.windDir} 
                         onChange={handleChange}
                         placeholder="e.g. SE-ESE or S,SW"
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       />
                       <p className="text-[10px] text-foreground-faint">Use "-" for range (E-S = all between), "," for individual (E,S = only those two). No spaces. Auto-corrected on save.</p>
                     </div>
@@ -1056,7 +1056,7 @@ export function AdminSiteEdit() {
                         value={formData.windSpeed} 
                         onChange={handleChange}
                         placeholder="e.g. 10 - 18 knots"
-                        className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                       />
                       <p className="text-[10px] text-foreground-faint">Format: "10-18". Numbers only, no units. Auto-corrected on save.</p>
                     </div>
@@ -1072,7 +1072,7 @@ export function AdminSiteEdit() {
                               setFormData(prev => ({ ...prev, crossLeft: e.target.checked ? "true" : "false" }));
                               markDirty();
                             }}
-                            className="w-4 h-4 rounded text-orange focus:ring-orange"
+                            className="w-4 h-4 rounded text-accent focus:ring-accent"
                           />
                           <span className="text-xs font-medium text-foreground-secondary">Left Cross</span>
                         </label>
@@ -1084,7 +1084,7 @@ export function AdminSiteEdit() {
                               setFormData(prev => ({ ...prev, crossRight: e.target.checked ? "true" : "false" }));
                               markDirty();
                             }}
-                            className="w-4 h-4 rounded text-orange focus:ring-orange"
+                            className="w-4 h-4 rounded text-accent focus:ring-accent"
                           />
                           <span className="text-xs font-medium text-foreground-secondary">Right Cross</span>
                         </label>
@@ -1117,7 +1117,7 @@ export function AdminSiteEdit() {
                     value={formData.description} 
                     onChange={handleChange}
                     rows={3}
-                    className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1128,7 +1128,7 @@ export function AdminSiteEdit() {
                       value={formData.launch} 
                       onChange={handleChange}
                       rows={3}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1138,7 +1138,7 @@ export function AdminSiteEdit() {
                       value={formData.landing} 
                       onChange={handleChange}
                       rows={3}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                 </div>
@@ -1150,7 +1150,7 @@ export function AdminSiteEdit() {
                       value={formData.hazards} 
                       onChange={handleChange}
                       rows={4}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1160,7 +1160,7 @@ export function AdminSiteEdit() {
                       value={formData.rules} 
                       onChange={handleChange}
                       rows={4}
-                      className="w-full p-2 border rounded-md focus:ring-sky focus:border-sky"
+                      className="w-full p-2 border rounded-md focus:ring-accent focus:border-accent"
                     />
                   </div>
                 </div>
@@ -1178,14 +1178,14 @@ export function AdminSiteEdit() {
               <div className="flex flex-col items-end gap-2">
                 <Button
                   type="submit"
-                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
                 >
                   {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Site</>}
                 </Button>
                 <Button
                   type="button"
                   onClick={handleSaveAndGo}
-                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-sky hover:bg-sky-light"} text-white`}
+                  className={`transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-accent hover:bg-accent-hover"} text-white`}
                 >
                   <Eye className="w-4 h-4 mr-2" /> Save &amp; Go To
                 </Button>
@@ -1196,18 +1196,18 @@ export function AdminSiteEdit() {
 
         {!isNew && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-navy mb-4">QR Code</h2>
-            <Card className="border-t-4 border-t-sky">
+            <h2 className="text-2xl font-bold text-ink mb-4">QR Code</h2>
+            <Card className="border-t-4 border-t-accent">
               <CardHeader>
                 <div className="flex items-center justify-between gap-4">
-                  <CardTitle className="flex items-center text-navy">
+                  <CardTitle className="flex items-center text-ink">
                     <QrCode className="w-6 h-6 mr-2" />
                     Printable QR Code
                   </CardTitle>
                   <select
                     value={qrCodeType}
                     onChange={(e) => setQrCodeType(e.target.value as "info" | "checkin" | "xcmaps")}
-                    className="p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky text-sm"
+                    className="p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                   >
                     <option value="info">Site Info (Field View)</option>
                     <option value="checkin">Site Check-in</option>
@@ -1223,7 +1223,7 @@ export function AdminSiteEdit() {
                       {settings.qrCodeMode && settings.qrCodeMode !== "off" && (
                         <>
                           <br/>
-                          <span className="text-sky font-medium">
+                          <span className="text-accent font-medium">
                             Mode: {settings.qrCodeMode === "informative" ? "Informative" : settings.qrCodeMode}
                           </span>
                         </>
@@ -1257,7 +1257,7 @@ export function AdminSiteEdit() {
                         type="text" 
                         value={baseUrl} 
                         onChange={(e) => setBaseUrl(e.target.value)}
-                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                         placeholder="https://yourdomain.com"
                       />
                     </div>
@@ -1318,8 +1318,8 @@ export function AdminSiteEdit() {
             <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b border-border-faint">
                 <div>
-                  <h2 className="text-lg font-bold text-navy">Select Banner Image</h2>
-                  <p className="text-sm text-muted-foreground">Choose from the image library. <a href="/admin/images" target="_blank" className="text-sky hover:underline">Upload new images</a></p>
+                  <h2 className="text-lg font-bold text-ink">Select Banner Image</h2>
+                  <p className="text-sm text-muted-foreground">Choose from the image library. <a href="/admin/images" target="_blank" className="text-accent hover:underline">Upload new images</a></p>
                 </div>
                 <button onClick={() => setShowBannerPicker(false)} className="p-2 hover:bg-muted rounded-lg">
                   <X className="w-5 h-5 text-foreground-faint" />
@@ -1336,7 +1336,7 @@ export function AdminSiteEdit() {
                     return (
                       <div className="text-center py-8">
                         <p className="text-sm text-foreground-faint mb-3">No banner images in the library yet.</p>
-                        <a href="/admin/images" target="_blank" className="text-sky hover:underline text-sm">Go to Image Library to upload</a>
+                        <a href="/admin/images" target="_blank" className="text-accent hover:underline text-sm">Go to Image Library to upload</a>
                       </div>
                     );
                   }
@@ -1350,11 +1350,11 @@ export function AdminSiteEdit() {
                             setShowBannerPicker(false);
                             markDirty();
                           }}
-                          className={`relative border-2 rounded-lg overflow-hidden bg-muted aspect-[16/5] cursor-pointer transition-all hover:ring-2 hover:ring-sky/50 ${formData.image === url ? "border-sky ring-2 ring-sky/30" : "border-border-subtle"}`}
+                          className={`relative border-2 rounded-lg overflow-hidden bg-muted aspect-[16/5] cursor-pointer transition-all hover:ring-2 hover:ring-accent/50 ${formData.image === url ? "border-accent ring-2 ring-accent/30" : "border-border-subtle"}`}
                         >
                           <img src={url} alt={`Banner ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                           {formData.image === url && (
-                            <div className="absolute top-1 left-1 bg-sky text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Current</div>
+                            <div className="absolute top-1 left-1 bg-accent text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Current</div>
                           )}
                         </div>
                       ))}
@@ -1371,8 +1371,8 @@ export function AdminSiteEdit() {
       {showSiteDiffModal && siteDiffData && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-5 border-b bg-sky/5 flex items-center justify-between shrink-0">
-              <h3 className="text-lg font-bold text-navy">
+            <div className="p-5 border-b bg-accent/5 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-ink">
                 Compare: Archive {siteDiffData.version} vs Current
               </h3>
               <button onClick={() => setShowSiteDiffModal(false)} className="p-1 hover:bg-muted rounded">

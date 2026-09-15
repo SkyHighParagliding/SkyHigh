@@ -575,7 +575,7 @@ export function ProductSpec() {
       <div className="no-print fixed top-20 right-4 z-50">
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg shadow-lg hover:bg-navy-light transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg shadow-lg hover:bg-ink-muted transition-colors text-sm font-medium"
         >
           <Printer className="w-4 h-4" />
           Print / Save PDF
@@ -584,10 +584,10 @@ export function ProductSpec() {
 
       <div className="max-w-4xl mx-auto px-6 py-12 print:py-6">
         <div className="text-center mb-10 print:mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-navy/10 text-navy rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-ink/10 text-ink rounded-full text-xs font-bold uppercase tracking-widest mb-4">
             Product Requirements Document
           </div>
-          <h1 className="text-3xl font-black text-navy mb-2 print:text-2xl">{clubName}</h1>
+          <h1 className="text-3xl font-black text-ink mb-2 print:text-2xl">{clubName}</h1>
           <p className="text-muted-foreground max-w-xl mx-auto print:text-sm">
             Complete product requirements — vision, user roles, functional features, integrations, and non-functional standards.
           </p>
@@ -600,9 +600,9 @@ export function ProductSpec() {
               <a
                 key={cat.id}
                 href={`#${cat.id}`}
-                className="px-3 py-1.5 rounded-full bg-background hover:bg-navy/5 transition-colors text-sm text-navy font-medium no-print"
+                className="px-3 py-1.5 rounded-full bg-background hover:bg-ink/5 transition-colors text-sm text-ink font-medium no-print"
               >
-                <span className="text-navy/40 font-bold mr-1">{idx + 1}.</span>
+                <span className="text-ink/40 font-bold mr-1">{idx + 1}.</span>
                 {cat.title}
               </a>
             ))}
@@ -618,31 +618,31 @@ export function ProductSpec() {
             className={`py-8 print:py-4 ${catIdx > 0 ? "spec-section border-t border-border-faint" : ""}`}
           >
             <div className="flex items-baseline gap-3 mb-6 print:mb-3">
-              <span className="text-2xl font-black text-navy/20 print:text-xl">
+              <span className="text-2xl font-black text-ink/20 print:text-xl">
                 {String(catIdx + 1).padStart(2, "0")}
               </span>
-              <h2 className="text-xl font-bold text-navy print:text-lg">{category.title}</h2>
+              <h2 className="text-xl font-bold text-ink print:text-lg">{category.title}</h2>
             </div>
 
             <div className="space-y-4 print:space-y-3">
               {category.items.map((item, iIdx) => (
                 <div
                   key={iIdx}
-                  className="spec-item border border-border-faint rounded-lg p-4 print:p-3 hover:border-navy/30 transition-all print:border-border-subtle"
+                  className="spec-item border border-border-faint rounded-lg p-4 print:p-3 hover:border-ink/30 transition-all print:border-border-subtle"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-navy/10 flex items-center justify-center flex-shrink-0 text-navy">
+                    <div className="w-8 h-8 rounded-lg bg-ink/10 flex items-center justify-center flex-shrink-0 text-ink">
                       {item.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-navy mb-1.5 print:text-sm">{item.title}</h3>
+                      <h3 className="font-bold text-ink mb-1.5 print:text-sm">{item.title}</h3>
                       <ul className="space-y-1">
                         {item.details.map((d, dIdx) => (
                           <li
                             key={dIdx}
                             className="text-sm text-foreground-secondary print:text-xs flex items-start gap-2"
                           >
-                            <span className="text-navy/50 mt-1.5 flex-shrink-0">•</span>
+                            <span className="text-ink/50 mt-1.5 flex-shrink-0">•</span>
                             <span>{d}</span>
                           </li>
                         ))}

@@ -15,25 +15,25 @@ export function AdminCheckins() {
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/admin" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
+        <Link to="/admin" className="inline-flex items-center text-accent hover:text-accent-hover mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Link>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Check-in Metrics</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Check-in Metrics</h1>
           <p className="text-foreground-secondary">View statistics and recent pilot check-ins.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-t-4 border-t-sky">
+          <Card className="border-t-4 border-t-accent">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Check-ins</p>
-                  <p className="text-3xl font-bold text-navy">{stats?.total || 0}</p>
+                  <p className="text-3xl font-bold text-ink">{stats?.total || 0}</p>
                 </div>
-                <div className="p-3 bg-sky/10 rounded-full">
-                  <Activity className="w-6 h-6 text-sky" />
+                <div className="p-3 bg-accent/10 rounded-full">
+                  <Activity className="w-6 h-6 text-accent" />
                 </div>
               </div>
             </CardContent>
@@ -44,7 +44,7 @@ export function AdminCheckins() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Today's Check-ins</p>
-                  <p className="text-3xl font-bold text-navy">{stats?.today || 0}</p>
+                  <p className="text-3xl font-bold text-ink">{stats?.today || 0}</p>
                 </div>
                 <div className="p-3 bg-emerald-100 rounded-full">
                   <Calendar className="w-6 h-6 text-emerald-600" />
@@ -58,7 +58,7 @@ export function AdminCheckins() {
           <div className="lg:col-span-1 space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-navy">
+                <CardTitle className="flex items-center text-ink">
                   <MapPin className="w-5 h-5 mr-2" /> Check-ins by Site
                 </CardTitle>
               </CardHeader>
@@ -67,7 +67,7 @@ export function AdminCheckins() {
                   {(Array.isArray(stats?.bySite) ? stats.bySite : []).map((site: any) => (
                     <div key={site.siteName} className="flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground-label">{site.siteName}</span>
-                      <span className="text-sm font-bold text-navy bg-muted px-2 py-1 rounded-full">{site.count}</span>
+                      <span className="text-sm font-bold text-ink bg-muted px-2 py-1 rounded-full">{site.count}</span>
                     </div>
                   ))}
                   {(!stats?.bySite || stats.bySite.length === 0) && (
@@ -81,7 +81,7 @@ export function AdminCheckins() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-navy">
+                <CardTitle className="flex items-center text-ink">
                   <Users className="w-5 h-5 mr-2" /> Recent Check-ins
                 </CardTitle>
                 <CardDescription>The 100 most recent pilot check-ins across all sites.</CardDescription>
@@ -99,7 +99,7 @@ export function AdminCheckins() {
                     <tbody>
                       {(recentCheckins || []).map((checkin) => (
                         <tr key={checkin.id} className="border-b hover:bg-background">
-                          <td className="px-4 py-3 font-mono font-medium text-navy">{checkin.id}</td>
+                          <td className="px-4 py-3 font-mono font-medium text-ink">{checkin.id}</td>
                           <td className="px-4 py-3 text-foreground-label">{checkin.siteName}</td>
                           <td className="px-4 py-3 text-muted-foreground">{new Date(checkin.timestamp).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
                         </tr>

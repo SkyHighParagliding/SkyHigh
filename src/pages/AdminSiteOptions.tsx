@@ -13,14 +13,14 @@ export function AdminSiteOptions() {
           <Link to="/admin" className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Site Options</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Site Options</h1>
           <p className="text-foreground-secondary">Manage feature visibility, check-in settings, and homepage components.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <QrCode className="w-6 h-6 mr-2" />
                 Check-in & QR Codes
               </CardTitle>
@@ -32,7 +32,7 @@ export function AdminSiteOptions() {
                   <input
                     id="online-checkin-toggle"
                     type="checkbox"
-                    className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                    className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                     checked={settings.onlineCheckInEnabled}
                     onChange={(e) => updateSettings({ onlineCheckInEnabled: e.target.checked }).catch(() => {})}
                     disabled={loading}
@@ -49,7 +49,7 @@ export function AdminSiteOptions() {
                 <label htmlFor="qr-code-mode" className="block text-sm font-medium text-foreground-label mb-1.5">QR Code Site Cards</label>
                 <select
                   id="qr-code-mode"
-                  className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                   value={settings.qrCodeMode || "off"}
                   onChange={(e) => updateSettings({ qrCodeMode: e.target.value }).catch(() => {})}
                   disabled={loading}
@@ -69,7 +69,7 @@ export function AdminSiteOptions() {
 
           <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-amber-500">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Shield className="w-6 h-6 mr-2" />
                 Safety Officer Login Prompt
               </CardTitle>
@@ -81,7 +81,7 @@ export function AdminSiteOptions() {
                   <input
                     id="so-proximity-prompt-toggle"
                     type="checkbox"
-                    className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                    className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                     checked={settings.soProximityPromptEnabled !== "false"}
                     onChange={(e) => updateSettings({ soProximityPromptEnabled: e.target.checked ? "true" : "false" }).catch(() => {})}
                     disabled={loading}
@@ -97,9 +97,9 @@ export function AdminSiteOptions() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-orange">
+          <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-accent">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Star className="w-6 h-6 mr-2" />
                 Home Page Options
               </CardTitle>
@@ -110,7 +110,7 @@ export function AdminSiteOptions() {
                 <input
                   id="featured-site-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.featuredSiteEnabled}
                   onChange={(e) => updateSettings({ featuredSiteEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}
@@ -123,7 +123,7 @@ export function AdminSiteOptions() {
                 <input
                   id="photo-slider-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.photoSliderEnabled}
                   onChange={(e) => updateSettings({ photoSliderEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}
@@ -137,7 +137,7 @@ export function AdminSiteOptions() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={settings.photoSliderAutoScroll}
                       onChange={(e) => updateSettings({ photoSliderAutoScroll: e.target.checked }).catch(() => {})}
                       disabled={loading}
@@ -147,7 +147,7 @@ export function AdminSiteOptions() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={settings.photoSliderReverse}
                       onChange={(e) => updateSettings({ photoSliderReverse: e.target.checked }).catch(() => {})}
                       disabled={loading}
@@ -160,7 +160,7 @@ export function AdminSiteOptions() {
                 <input
                   id="youtube-carousel-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.youtubeCarouselEnabled}
                   onChange={(e) => updateSettings({ youtubeCarouselEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}
@@ -174,7 +174,7 @@ export function AdminSiteOptions() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={settings.youtubeCarouselAutoScroll}
                       onChange={(e) => updateSettings({ youtubeCarouselAutoScroll: e.target.checked }).catch(() => {})}
                       disabled={loading}
@@ -184,7 +184,7 @@ export function AdminSiteOptions() {
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
                       checked={settings.youtubeCarouselReverse}
                       onChange={(e) => updateSettings({ youtubeCarouselReverse: e.target.checked }).catch(() => {})}
                       disabled={loading}
@@ -198,7 +198,7 @@ export function AdminSiteOptions() {
 
           <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Flag className="w-6 h-6 mr-2" />
                 Ground Handling Map
               </CardTitle>
@@ -209,7 +209,7 @@ export function AdminSiteOptions() {
                 <input
                   id="ground-handling-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={settings.groundHandlingEnabled}
                   onChange={(e) => updateSettings({ groundHandlingEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}
@@ -223,7 +223,7 @@ export function AdminSiteOptions() {
               </p>
 
               <div className="border-t border-border-faint pt-4">
-                <h4 className="text-sm font-semibold text-navy mb-2">Edit Map Sites</h4>
+                <h4 className="text-sm font-semibold text-ink mb-2">Edit Map Sites</h4>
                 <p className="text-xs text-muted-foreground mb-3">
                   The ground handling map is a Google My Maps. To add, edit, or remove sites, open the map editor directly in Google Maps.
                 </p>
@@ -239,7 +239,7 @@ export function AdminSiteOptions() {
               </div>
 
               <div className="border-t border-border-faint pt-4">
-                <h4 className="text-sm font-semibold text-navy mb-2">How to Add a New Site</h4>
+                <h4 className="text-sm font-semibold text-ink mb-2">How to Add a New Site</h4>
                 <ol className="text-xs text-muted-foreground space-y-2 list-decimal list-inside">
                   <li>
                     Open the{" "}
@@ -247,7 +247,7 @@ export function AdminSiteOptions() {
                       href="https://www.google.com/maps/d/edit?mid=12KBoOkwtN3J9IR97C7RqUwM1ajNR7Lxu&usp=sharing"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sky hover:underline font-medium"
+                      className="text-accent hover:underline font-medium"
                     >
                       Map Editor
                     </a>{" "}
@@ -265,7 +265,7 @@ export function AdminSiteOptions() {
                   href="/ground-handling"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-sky hover:text-sky-light transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   View public ground handling page
@@ -276,7 +276,7 @@ export function AdminSiteOptions() {
 
           <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <Store className="w-6 h-6 mr-2" />
                 Business Directory
               </CardTitle>
@@ -287,7 +287,7 @@ export function AdminSiteOptions() {
                 <input
                   id="business-directory-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={!!settings.businessDirectoryEnabled}
                   onChange={(e) => updateSettings({ businessDirectoryEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}
@@ -303,9 +303,9 @@ export function AdminSiteOptions() {
           </Card>
 
           <Link to="/admin/branding" className="block group">
-            <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky">
+            <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-accent">
               <CardHeader>
-                <CardTitle className="flex items-center text-navy group-hover:text-sky transition-colors">
+                <CardTitle className="flex items-center text-ink group-hover:text-accent transition-colors">
                   <Palette className="w-6 h-6 mr-2" />
                   Branding & Templates
                 </CardTitle>
@@ -316,7 +316,7 @@ export function AdminSiteOptions() {
 
           <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
             <CardHeader>
-              <CardTitle className="flex items-center text-navy">
+              <CardTitle className="flex items-center text-ink">
                 <UserPlus className="w-6 h-6 mr-2" />
                 Join Page
               </CardTitle>
@@ -327,7 +327,7 @@ export function AdminSiteOptions() {
                 <input
                   id="join-page-toggle"
                   type="checkbox"
-                  className="w-5 h-5 text-sky focus:ring-sky border-border rounded cursor-pointer"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
                   checked={!!settings.joinPageEnabled}
                   onChange={(e) => updateSettings({ joinPageEnabled: e.target.checked }).catch(() => {})}
                   disabled={loading}

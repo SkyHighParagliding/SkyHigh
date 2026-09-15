@@ -141,7 +141,7 @@ export function AdminCompetitions() {
             type="text"
             value={form.name}
             onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. Summer XC Series"
           />
         </div>
@@ -151,7 +151,7 @@ export function AdminCompetitions() {
             type="text"
             value={form.location}
             onChange={e => setForm(prev => ({ ...prev, location: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. Bright, Victoria"
           />
         </div>
@@ -163,7 +163,7 @@ export function AdminCompetitions() {
             type="date"
             value={form.startDate}
             onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           />
         </div>
         <div>
@@ -172,7 +172,7 @@ export function AdminCompetitions() {
             type="date"
             value={form.endDate}
             onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           />
         </div>
         <div>
@@ -180,7 +180,7 @@ export function AdminCompetitions() {
           <select
             value={form.status}
             onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
           >
             <option value="upcoming">Upcoming</option>
             <option value="active">Active</option>
@@ -195,7 +195,7 @@ export function AdminCompetitions() {
             type="text"
             value={form.pilotRating}
             onChange={e => setForm(prev => ({ ...prev, pilotRating: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="e.g. PG3+ or All Levels"
           />
         </div>
@@ -205,7 +205,7 @@ export function AdminCompetitions() {
             type="url"
             value={form.registrationUrl}
             onChange={e => setForm(prev => ({ ...prev, registrationUrl: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky bg-white"
+            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
             placeholder="https://example.com/register"
           />
         </div>
@@ -215,7 +215,7 @@ export function AdminCompetitions() {
         <textarea
           value={form.description}
           onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky font-mono text-sm bg-white"
+          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent font-mono text-sm bg-white"
           placeholder="Describe the competition..."
           rows={3}
         />
@@ -225,7 +225,7 @@ export function AdminCompetitions() {
         <textarea
           value={form.rulesSummary}
           onChange={e => setForm(prev => ({ ...prev, rulesSummary: e.target.value }))}
-          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky font-mono text-sm bg-white"
+          className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent font-mono text-sm bg-white"
           placeholder="e.g. GAP scoring, 3 valid tasks required..."
           rows={2}
         />
@@ -235,7 +235,7 @@ export function AdminCompetitions() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-sky hover:bg-sky-light text-white"
+          className="bg-accent hover:bg-accent-hover text-white"
         >
           {saving ? "Saving..." : (editingId ? "Update Competition" : "Add Competition")}
         </Button>
@@ -247,19 +247,19 @@ export function AdminCompetitions() {
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy mb-2 flex items-center gap-3">
-                <Trophy className="w-8 h-8 text-sky" />
+              <h1 className="text-3xl font-extrabold text-ink mb-2 flex items-center gap-3">
+                <Trophy className="w-8 h-8 text-accent" />
                 XC Competitions
               </h1>
               <p className="text-muted-foreground">Manage cross-country competitions and events.</p>
             </div>
-            <Button onClick={openAdd} className="bg-sky hover:bg-sky-light text-white">
+            <Button onClick={openAdd} className="bg-accent hover:bg-accent-hover text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Competition
             </Button>
           </div>
@@ -273,15 +273,15 @@ export function AdminCompetitions() {
               placeholder="Search competitions..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+              className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
             />
           </div>
         </div>
 
         {showForm && !editingId && (
-          <div className="mb-4 bg-card rounded-xl border-2 border-sky shadow-md">
+          <div className="mb-4 bg-card rounded-xl border-2 border-accent shadow-md">
             <div className="px-5 py-3 bg-sky-100/60 border-b border-sky-200/60 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-navy">Add Competition</h3>
+              <h3 className="text-lg font-bold text-ink">Add Competition</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 hover:bg-sky-200/60 rounded-lg">
                 <X className="w-4 h-4 text-foreground-faint" />
               </button>
@@ -292,12 +292,12 @@ export function AdminCompetitions() {
 
         <div className="grid grid-cols-1 gap-4">
           {filtered.map(c => (
-            <div key={c.id} className={`bg-card rounded-xl border ${showForm && editingId === c.id ? 'border-2 border-sky shadow-md' : 'border-sky-200/60 shadow-sm hover:shadow-md'} transition-shadow`}>
+            <div key={c.id} className={`bg-card rounded-xl border ${showForm && editingId === c.id ? 'border-2 border-accent shadow-md' : 'border-sky-200/60 shadow-sm hover:shadow-md'} transition-shadow`}>
               <div className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-navy truncate">{c.name}</h3>
+                      <h3 className="text-lg font-bold text-ink truncate">{c.name}</h3>
                       {statusBadge(c.status)}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-foreground-secondary mt-1">
@@ -310,7 +310,7 @@ export function AdminCompetitions() {
                         href={c.registrationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-sky hover:text-navy font-medium mt-1"
+                        className="inline-flex items-center gap-1 text-xs text-accent hover:text-ink font-medium mt-1"
                       >
                         Registration <ExternalLink className="w-3 h-3" />
                       </a>
@@ -322,7 +322,7 @@ export function AdminCompetitions() {
                   <>
                     <button
                       onClick={() => setPreviewId(previewId === c.id ? null : c.id)}
-                      className="mt-2 text-xs text-sky hover:text-navy font-medium inline-flex items-center gap-1"
+                      className="mt-2 text-xs text-accent hover:text-ink font-medium inline-flex items-center gap-1"
                     >
                       <Eye className="w-3 h-3" />
                       {previewId === c.id ? "Hide Details" : "Quick View"}
@@ -332,15 +332,15 @@ export function AdminCompetitions() {
                     {previewId === c.id && (
                       <div className="mt-3 p-4 bg-sky-50/50 border border-sky-100 rounded-lg space-y-2 text-sm">
                         {c.description && (
-                          <div><span className="font-medium text-navy">Description:</span> <span className="text-foreground-secondary">{c.description}</span></div>
+                          <div><span className="font-medium text-ink">Description:</span> <span className="text-foreground-secondary">{c.description}</span></div>
                         )}
                         {c.rulesSummary && (
-                          <div><span className="font-medium text-navy">Rules/Scoring:</span> <span className="text-foreground-secondary">{c.rulesSummary}</span></div>
+                          <div><span className="font-medium text-ink">Rules/Scoring:</span> <span className="text-foreground-secondary">{c.rulesSummary}</span></div>
                         )}
                         {c.registrationUrl && (
                           <div>
-                            <span className="font-medium text-navy">Registration:</span>{" "}
-                            <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="text-sky hover:text-navy underline">
+                            <span className="font-medium text-ink">Registration:</span>{" "}
+                            <a href={c.registrationUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-ink underline">
                               {c.registrationUrl}
                             </a>
                           </div>
@@ -364,7 +364,7 @@ export function AdminCompetitions() {
                   </>
                 )}
               </div>
-              <div className={`h-1 bg-gradient-to-r from-sky via-sky-light to-sky opacity-60 ${!(showForm && editingId === c.id) ? 'rounded-b-xl' : ''}`} />
+              <div className={`h-1 bg-gradient-to-r from-accent via-accent-hover to-accent opacity-60 ${!(showForm && editingId === c.id) ? 'rounded-b-xl' : ''}`} />
               {showForm && editingId === c.id && renderForm()}
             </div>
           ))}
@@ -372,7 +372,7 @@ export function AdminCompetitions() {
             <div className="col-span-2 text-center py-12 text-muted-foreground">
               {search ? "No competitions match your search." : (
                 <div>
-                  <Trophy className="w-12 h-12 mx-auto mb-3 text-sky/40" />
+                  <Trophy className="w-12 h-12 mx-auto mb-3 text-accent/40" />
                   <p className="text-lg">No competitions yet.</p>
                   <p className="text-sm mt-1">Click "Add Competition" to get started.</p>
                 </div>
@@ -385,7 +385,7 @@ export function AdminCompetitions() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-navy mb-3">Delete Competition</h3>
+            <h3 className="text-xl font-bold text-ink mb-3">Delete Competition</h3>
             <p className="text-foreground-secondary mb-4">
               Are you sure you want to delete <strong>{deleteTarget.name}</strong>? This action cannot be undone.
             </p>

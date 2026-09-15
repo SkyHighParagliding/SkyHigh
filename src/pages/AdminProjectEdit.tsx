@@ -115,7 +115,7 @@ function getMimeIcon(mimeType: string) {
   if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType.includes("csv")) return <FileSpreadsheet className="w-4 h-4 text-emerald-600" />;
   if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return <Presentation className="w-4 h-4 text-orange-500" />;
   if (mimeType.startsWith("video/")) return <Film className="w-4 h-4 text-purple-500" />;
-  if (mimeType.startsWith("audio/")) return <Music className="w-4 h-4 text-sky" />;
+  if (mimeType.startsWith("audio/")) return <Music className="w-4 h-4 text-accent" />;
   if (mimeType.includes("zip") || mimeType.includes("tar") || mimeType.includes("compressed")) return <Archive className="w-4 h-4 text-amber-600" />;
   if (mimeType.includes("pdf")) return <FileText className="w-4 h-4 text-red-500" />;
   return <File className="w-4 h-4 text-foreground-faint" />;
@@ -190,7 +190,7 @@ function ContactPicker({
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => query.trim() && results.length > 0 && setShowDropdown(true)}
           placeholder="Search contacts by name or organisation..."
-          className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+          className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
         />
       </div>
       {showDropdown && results.length > 0 && (
@@ -206,7 +206,7 @@ function ContactPicker({
               }}
               className="w-full text-left px-4 py-2.5 hover:bg-background border-b border-border-faint last:border-0"
             >
-              <div className="font-medium text-navy text-sm">{c.name}</div>
+              <div className="font-medium text-ink text-sm">{c.name}</div>
               {c.organisation && (
                 <div className="text-xs text-muted-foreground">{c.organisation}</div>
               )}
@@ -231,9 +231,9 @@ function ContactCard({
     <div className="flex items-start justify-between bg-background border border-border-subtle rounded-lg p-3">
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-navy text-sm">{contact.name}</span>
+          <span className="font-medium text-ink text-sm">{contact.name}</span>
           {roleBadge && (
-            <span className="px-2 py-0.5 rounded text-xs font-medium bg-sky/10 text-sky">
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent">
               {roleBadge}
             </span>
           )}
@@ -545,7 +545,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
         {!isDialog && (
           <Link
             to="/admin/projects"
-            className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4"
+            className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Projects
@@ -558,7 +558,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="text-3xl font-extrabold text-navy bg-transparent border-none outline-none w-full focus:ring-0 p-0 placeholder-gray-300"
+                className="text-3xl font-extrabold text-ink bg-transparent border-none outline-none w-full focus:ring-0 p-0 placeholder-gray-300"
                 placeholder="Project Name"
               />
             </div>
@@ -571,7 +571,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                className="border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-accent focus:border-accent"
               >
                 {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -596,7 +596,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
           <Button
             onClick={handleSave}
             disabled={saving}
-            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
           >
             {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Project</>}
           </Button>
@@ -604,7 +604,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-navy text-lg">Project Details</CardTitle>
+            <CardTitle className="text-ink text-lg">Project Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -616,7 +616,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 placeholder="Project description..."
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
             </div>
             <div>
@@ -626,7 +626,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
               <select
                 value={relatedSiteId}
                 onChange={(e) => setRelatedSiteId(e.target.value)}
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               >
                 <option value="">No site selected</option>
                 {sites.map((s) => (
@@ -659,7 +659,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
 
         <Card className="mb-6">
           <CardHeader className="cursor-pointer select-none" onClick={() => toggleSection('parksVic')}>
-            <CardTitle className="text-navy text-lg flex items-center justify-between">
+            <CardTitle className="text-ink text-lg flex items-center justify-between">
               Parks Victoria
               <ChevronDown className={`w-5 h-5 text-foreground-faint transition-transform duration-200 ${expandedSections.parksVic ? 'rotate-180' : ''}`} />
             </CardTitle>
@@ -697,7 +697,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                   <button
                     type="button"
                     onClick={() => setShowPvExpectationsEdit(!showPvExpectationsEdit)}
-                    className="text-xs text-sky hover:underline mt-1"
+                    className="text-xs text-accent hover:underline mt-1"
                   >
                     {showPvExpectationsEdit ? "Hide Editor" : "Edit Expectations"}
                   </button>
@@ -707,7 +707,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                         value={pvExpectations}
                         onChange={(e) => setPvExpectations(e.target.value)}
                         rows={4}
-                        className="w-full p-3 border border-border rounded-lg text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                        className="w-full p-3 border border-border rounded-lg text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                         placeholder="Parks Victoria expectations..."
                       />
                       <div className="flex items-center justify-between">
@@ -715,7 +715,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                         <button
                           type="button"
                           onClick={handleSavePvDefaults}
-                          className="px-3 py-1 bg-sky text-white rounded text-xs font-medium hover:bg-sky-light"
+                          className="px-3 py-1 bg-accent text-white rounded text-xs font-medium hover:bg-accent-hover"
                         >
                           Save as default for new projects
                         </button>
@@ -729,7 +729,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
 
         <Card className="mb-6">
           <CardHeader className="cursor-pointer select-none" onClick={() => toggleSection('stakeholder')}>
-            <CardTitle className="text-navy text-lg flex items-center justify-between">
+            <CardTitle className="text-ink text-lg flex items-center justify-between">
               Stakeholder Notes
               <ChevronDown className={`w-5 h-5 text-foreground-faint transition-transform duration-200 ${expandedSections.stakeholder ? 'rotate-180' : ''}`} />
             </CardTitle>
@@ -744,7 +744,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 onChange={(e) => setWorksRequired(e.target.value)}
                 rows={3}
                 placeholder="Describe works required..."
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
             </div>
 
@@ -757,7 +757,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 onChange={(e) => setContractorNotes(e.target.value)}
                 rows={3}
                 placeholder="Contractor notes..."
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
               <div className="mt-2">
                 <ContactPicker
@@ -788,7 +788,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 onChange={(e) => setLandownerNotes(e.target.value)}
                 rows={3}
                 placeholder="Landowner notes..."
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
               <div className="mt-2">
                 <ContactPicker
@@ -819,7 +819,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 onChange={(e) => setStakeholderNotes(e.target.value)}
                 rows={3}
                 placeholder="Other stakeholder notes..."
-                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
               />
               <div className="mt-2">
                 <ContactPicker
@@ -845,7 +845,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
 
         <Card className="mb-6">
           <CardHeader className="cursor-pointer select-none" onClick={() => toggleSection('costing')}>
-            <CardTitle className="text-navy text-lg flex items-center justify-between">
+            <CardTitle className="text-ink text-lg flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
                 Costing Approval
@@ -863,7 +863,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                   type="text"
                   value={estimatedBudget}
                   onChange={(e) => setEstimatedBudget(e.target.value)}
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   placeholder="e.g. $5,000"
                 />
               </div>
@@ -875,7 +875,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                   type="text"
                   value={fundingSource}
                   onChange={(e) => setFundingSource(e.target.value)}
-                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                  className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   placeholder="e.g. Club funds, Parks Vic grant, etc."
                 />
               </div>
@@ -886,7 +886,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
             </div>
 
             <div className="border-t border-border-faint pt-4">
-              <h4 className="text-sm font-semibold text-navy mb-3">Financial Approval</h4>
+              <h4 className="text-sm font-semibold text-ink mb-3">Financial Approval</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground-label mb-1">
@@ -896,7 +896,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                     type="text"
                     value={approvedBy}
                     onChange={(e) => setApprovedBy(e.target.value)}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                     placeholder="Name of person who approved"
                   />
                 </div>
@@ -908,7 +908,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                     type="date"
                     value={approvalDate}
                     onChange={(e) => setApprovalDate(e.target.value)}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-sky focus:border-sky"
+                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                   />
                 </div>
               </div>
@@ -919,7 +919,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-navy text-lg">Documents</CardTitle>
+              <CardTitle className="text-ink text-lg">Documents</CardTitle>
               <Button
                 size="sm"
                 onClick={() => {
@@ -942,19 +942,19 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-muted border-b border-border-subtle">
-                      <th className="p-3 font-semibold text-navy text-sm">
+                      <th className="p-3 font-semibold text-ink text-sm">
                         Name
                       </th>
-                      <th className="p-3 font-semibold text-navy text-sm">
+                      <th className="p-3 font-semibold text-ink text-sm">
                         Source
                       </th>
-                      <th className="p-3 font-semibold text-navy text-sm text-right">
+                      <th className="p-3 font-semibold text-ink text-sm text-right">
                         Size
                       </th>
-                      <th className="p-3 font-semibold text-navy text-sm text-right">
+                      <th className="p-3 font-semibold text-ink text-sm text-right">
                         Date
                       </th>
-                      <th className="p-3 font-semibold text-navy text-sm text-right">
+                      <th className="p-3 font-semibold text-ink text-sm text-right">
                         Actions
                       </th>
                     </tr>
@@ -973,13 +973,13 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                                 href={doc.webViewLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sky hover:text-navy font-medium flex items-center gap-1"
+                                className="text-accent hover:text-ink font-medium flex items-center gap-1"
                               >
                                 {doc.name}
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             ) : (
-                              <span className="font-medium text-navy">
+                              <span className="font-medium text-ink">
                                 {doc.name}
                               </span>
                             )}
@@ -990,7 +990,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                             className={`px-2 py-0.5 rounded text-xs font-medium ${
                               doc.linked
                                 ? "bg-muted text-foreground-secondary"
-                                : "bg-sky/10 text-sky"
+                                : "bg-accent/10 text-accent"
                             }`}
                           >
                             {doc.linked ? "linked" : "uploaded"}
@@ -1050,7 +1050,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
           <Button
             onClick={handleSave}
             disabled={saving}
-            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-navy hover:bg-navy-light"} text-white`}
+            className={`px-8 transition-all duration-300 ${justSaved ? "bg-emerald-500 hover:bg-emerald-600 scale-105" : "bg-ink hover:bg-ink-muted"} text-white`}
           >
             {justSaved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : <><Save className="w-4 h-4 mr-2" /> Save Project</>}
           </Button>
@@ -1060,7 +1060,7 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-navy mb-2">Delete Project</h3>
+            <h3 className="text-xl font-bold text-ink mb-2">Delete Project</h3>
             <p className="text-foreground-secondary mb-6">
               Are you sure you want to delete <strong>{name}</strong>? This will
               remove the project and all its links. Documents in Google Drive
@@ -1257,7 +1257,7 @@ function DocumentModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold text-navy">Add Document</h3>
+          <h3 className="text-lg font-semibold text-ink">Add Document</h3>
           <button
             onClick={onClose}
             className="text-foreground-faint hover:text-foreground-secondary"
@@ -1270,7 +1270,7 @@ function DocumentModal({
           <button
             className={`flex-1 py-2.5 text-sm font-medium text-center border-b-2 transition-colors ${
               tab === "upload"
-                ? "border-sky text-sky"
+                ? "border-accent text-accent"
                 : "border-transparent text-muted-foreground hover:text-foreground-label"
             }`}
             onClick={() => setTab("upload")}
@@ -1281,7 +1281,7 @@ function DocumentModal({
           <button
             className={`flex-1 py-2.5 text-sm font-medium text-center border-b-2 transition-colors ${
               tab === "link"
-                ? "border-sky text-sky"
+                ? "border-accent text-accent"
                 : "border-transparent text-muted-foreground hover:text-foreground-label"
             }`}
             onClick={() => setTab("link")}
@@ -1308,7 +1308,7 @@ function DocumentModal({
                 <>
                   <div
                     className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      dragOver ? "border-sky bg-sky/5" : "border-border"
+                      dragOver ? "border-accent bg-accent/5" : "border-border"
                     }`}
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1321,7 +1321,7 @@ function DocumentModal({
                       <div className="space-y-2">
                         <div className="flex items-center justify-center gap-2">
                           {getMimeIcon(selectedFile.type)}
-                          <span className="font-medium text-navy">
+                          <span className="font-medium text-ink">
                             {selectedFile.name}
                           </span>
                         </div>
@@ -1330,7 +1330,7 @@ function DocumentModal({
                         </p>
                         <button
                           onClick={() => { setSelectedFile(null); setCorrectedName(""); setNameApproved(false); setEditingName(false); }}
-                          className="text-xs text-sky hover:text-navy"
+                          className="text-xs text-accent hover:text-ink"
                         >
                           Choose different file
                         </button>
@@ -1486,12 +1486,12 @@ function DocumentModal({
                       value={linkQuery}
                       onChange={(e) => setLinkQuery(e.target.value)}
                       placeholder="Search Google Drive..."
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-sky focus:border-sky"
+                      className="w-full pl-10 pr-4 py-2 border border-border rounded-md text-sm focus:ring-1 focus:ring-accent focus:border-accent"
                     />
                   </div>
                   {linkSearching && (
                     <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sky mx-auto" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent mx-auto" />
                     </div>
                   )}
                   {!linkSearching && linkResults.length > 0 && (
@@ -1504,7 +1504,7 @@ function DocumentModal({
                           className="w-full text-left px-4 py-3 hover:bg-background border-b border-border-faint last:border-0 flex items-center gap-2"
                         >
                           {getMimeIcon(file.mimeType)}
-                          <span className="text-sm font-medium text-navy truncate">
+                          <span className="text-sm font-medium text-ink truncate">
                             {file.name}
                           </span>
                         </button>

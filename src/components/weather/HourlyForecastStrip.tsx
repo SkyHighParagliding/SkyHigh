@@ -42,7 +42,7 @@ export function HourlyForecastStrip({ windowedForecasts, site, onShowWindMap }: 
           const fSpdColor = fStatus.speedStatus.label === 'Good' ? '#10b981' : fStatus.speedStatus.label === 'Light' ? '#eab308' : '#ef4444';
           return (
             <div key={idx} className="flex flex-col items-center flex-1">
-              <span className={cn("text-[12px] font-medium mb-1", isCurrentHour ? "text-sky font-bold" : "")} style={!isCurrentHour ? { color: '#86868b' } : undefined}>{hourStr}</span>
+              <span className={cn("text-[12px] font-medium mb-1", isCurrentHour ? "text-accent font-bold" : "")} style={!isCurrentHour ? { color: '#86868b' } : undefined}>{hourStr}</span>
               <span className="text-[14px] font-bold" style={{ color: fDirColor }}>{f.windDirection}</span>
               <span className="text-[14px] font-bold" style={{ color: fSpdColor }}>{Math.round(f.windSpeed)}</span>
             </div>

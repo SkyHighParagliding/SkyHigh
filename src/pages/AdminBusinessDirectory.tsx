@@ -250,13 +250,13 @@ export function AdminBusinessDirectory() {
     <div className={`bg-background min-h-screen py-12 ${flyoutOpen ? 'pb-[420px]' : ''}`}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <Link to="/admin" className="inline-flex items-center text-sky hover:text-navy transition-colors mb-4">
+          <Link to="/admin" className="inline-flex items-center text-accent hover:text-ink transition-colors mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Dashboard
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-navy mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-ink mb-2 flex items-center gap-3">
                 <Store className="w-8 h-8 text-emerald-600" />
                 Business Directory
               </h1>
@@ -299,7 +299,7 @@ export function AdminBusinessDirectory() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-navy truncate">{l.businessName}</h3>
+                      <h3 className="text-lg font-bold text-ink truncate">{l.businessName}</h3>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                         {l.category}
                       </span>
@@ -386,7 +386,7 @@ export function AdminBusinessDirectory() {
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t-2 border-emerald-400 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] transform transition-transform duration-300 ease-out">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="py-3 flex items-center justify-between border-b border-emerald-200/40">
-              <h3 className="text-lg font-bold text-navy flex items-center gap-2">
+              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <ChevronUp className="w-4 h-4 text-emerald-500" />
                 Add Business Listing
               </h3>
@@ -414,7 +414,7 @@ export function AdminBusinessDirectory() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-navy mb-3">Delete Listing</h3>
+            <h3 className="text-xl font-bold text-ink mb-3">Delete Listing</h3>
             <p className="text-foreground-secondary mb-4">
               Are you sure you want to delete <strong>{deleteTarget.businessName}</strong>? This action cannot be undone.
             </p>

@@ -106,7 +106,7 @@ export function ClosureDatePicker({ selectedDates, onChange, disabled = false }:
                   ? 'bg-red-500 text-white hover:bg-red-600 font-bold'
                   : '',
                 isToday && !isSelected
-                  ? 'ring-1 ring-sky font-semibold'
+                  ? 'ring-1 ring-accent font-semibold'
                   : '',
               ].filter(Boolean).join(' ')}
             >
