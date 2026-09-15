@@ -1,0 +1,62 @@
+{
+  "_note": "Wave 4 token/class rename map. Values are UNCHANGED by any rename; only names change. Used by the §4a value-based verification. See tasks/debrand/PLAN.md §5 Wave 4 and §8.",
+  "cssVars": {
+    "_rule_tmpl": "deterministic: strip the 'tmpl-' prefix, keep the rest",
+    "--tmpl-header-bg": "--header-bg",
+    "--tmpl-header-text": "--header-text",
+    "--tmpl-header-border": "--header-border",
+    "--tmpl-header-blur": "--header-blur",
+    "--tmpl-nav-hover": "--nav-hover",
+    "--tmpl-body-bg": "--body-bg",
+    "--tmpl-card-bg": "--card-bg",
+    "--tmpl-card-border": "--card-border",
+    "--tmpl-card-radius": "--card-radius",
+    "--tmpl-card-shadow": "--card-shadow",
+    "--tmpl-card-hover-shadow": "--card-hover-shadow",
+    "--tmpl-card-blur": "--card-blur",
+    "--tmpl-section-bg": "--section-bg",
+    "--tmpl-accent": "--accent",
+    "--tmpl-accent-hover": "--accent-hover",
+    "--tmpl-accent-text": "--accent-text",
+    "--tmpl-footer-bg": "--footer-bg",
+    "--tmpl-footer-text": "--footer-text",
+    "--tmpl-footer-border": "--footer-border",
+    "--tmpl-input-bg": "--input-bg",
+    "--tmpl-input-border": "--input-border",
+    "--tmpl-input-focus-ring": "--input-focus-ring",
+    "--tmpl-heading-color": "--heading-color",
+    "--tmpl-font-heading": "--font-heading",
+    "--tmpl-font-body": "--font-body-face",
+    "--tmpl-badge-bg": "--badge-bg",
+    "--tmpl-badge-text": "--badge-text",
+    "--tmpl-mobile-menu-bg": "--mobile-menu-bg"
+  },
+  "palette": {
+    "_note": "Legacy Tailwind @theme palette -> accurate semantic names. sky and orange share #007aff and collapse to a single accent token.",
+    "--color-sky": "--color-accent",
+    "--color-sky-light": "--color-accent-hover",
+    "--color-orange": "--color-accent",
+    "--color-orange-dark": "--color-accent-hover",
+    "--color-navy": "--color-ink",
+    "--color-navy-light": "--color-ink-muted",
+    "--color-sand": "--color-cream"
+  },
+  "utilityClasses": {
+    "_note": "Tailwind utility class stems (apply across bg/text/border/ring/from/to/via/fill/stroke and hover:/group-hover: variants). Word-boundary regex per family.",
+    "sky": "accent",
+    "sky-light": "accent-hover",
+    "orange": "accent",
+    "orange-dark": "accent-hover",
+    "navy": "ink",
+    "navy-light": "ink-muted",
+    "sand": "cream"
+  },
+  "values": {
+    "_note": "Canonical Wonderful White values each new token must resolve to after Wave 4. The §4a check asserts these are byte-identical to the pre-Wave-4 computed values.",
+    "--color-accent": "#007aff",
+    "--color-accent-hover": "#0063d1",
+    "--color-ink": "#1d1d1f",
+    "--color-ink-muted": "#424245",
+    "--color-cream": "#f4f1ea"
+  }
+}
