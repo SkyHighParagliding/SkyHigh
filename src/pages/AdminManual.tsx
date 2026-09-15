@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ArrowLeft, 
@@ -30,14 +30,50 @@ import {
   Trophy,
   LogIn,
   Target,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
+
+// Flattens a manual step (plain string or JSX span with nested links) to plain
+// text so the keyword search can match against it.
+function nodeText(node: ReactNode): string {
+  if (node == null || node === false || node === true) return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join(" ");
+  if (typeof node === "object" && "props" in node && (node as { props?: { children?: ReactNode } }).props) {
+    return nodeText((node as { props: { children?: ReactNode } }).props.children);
+  }
+  return "";
+}
+
+// Returns a snippet of `text` windowed around the first match of `q`, with every
+// occurrence of `q` wrapped in a highlight mark.
+function highlightSnippet(text: string, q: string): ReactNode {
+  const lc = text.toLowerCase();
+  const first = lc.indexOf(q);
+  if (first === -1) return text;
+  const start = Math.max(0, first - 60);
+  const end = Math.min(text.length, first + q.length + 120);
+  const clip = (start > 0 ? "… " : "") + text.slice(start, end) + (end < text.length ? " …" : "");
+  const clipLc = clip.toLowerCase();
+  const parts: ReactNode[] = [];
+  let i = 0;
+  for (let j = clipLc.indexOf(q, 0); j !== -1; j = clipLc.indexOf(q, i)) {
+    if (j > i) parts.push(clip.slice(i, j));
+    parts.push(<mark key={j} className="bg-accent/20 text-ink rounded px-0.5">{clip.slice(j, j + q.length)}</mark>);
+    i = j + q.length;
+  }
+  parts.push(clip.slice(i));
+  return parts;
+}
 
 export function AdminManual() {
   const location = useLocation();
   const { settings } = useSettings();
   const clubName = settings.clubName || 'SkyHigh';
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (location.hash) {
@@ -609,6 +645,27 @@ export function AdminManual() {
     }
   ];
 
+  // Keyword search: substring match (case-insensitive) across each section's
+  // title, description and steps. Returns matching sections with highlighted
+  // snippets and the same anchor slug the section Card uses below.
+  const q = query.trim().toLowerCase();
+  const results = q.length >= 2
+    ? sections.flatMap((section) => {
+        const slug = section.title.toLowerCase().replace(/\s+/g, "-");
+        const desc = section.description || "";
+        const titleHit = section.title.toLowerCase().includes(q);
+        const snippets: string[] = [];
+        if (desc.toLowerCase().includes(q)) snippets.push(desc);
+        for (const step of (section.steps || [])) {
+          const t = nodeText(step);
+          if (t.toLowerCase().includes(q)) snippets.push(t);
+        }
+        if (!titleHit && snippets.length === 0) return [];
+        return [{ title: section.title, slug, titleHit, snippets }];
+      })
+    : [];
+  const totalHits = results.reduce((n, r) => n + r.snippets.length + (r.titleHit ? 1 : 0), 0);
+
   return (
     <div className="bg-background min-h-screen py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -627,6 +684,67 @@ export function AdminManual() {
           <p className="text-lg text-foreground-secondary max-w-3xl mx-auto">
             Quick reference for managing the {clubName} website. Each section links directly to the relevant admin page.
           </p>
+        </div>
+
+        {/* Keyword search */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="w-4 h-4 text-foreground-faint absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search the manual — e.g. 'ground', 'weather', 'tide'"
+              aria-label="Search the manual"
+              className="w-full rounded-xl border border-border-subtle bg-card pl-10 pr-10 py-3 text-sm text-ink placeholder:text-foreground-faint shadow-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-faint hover:text-ink"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {q.length >= 2 && (
+            <div className="mt-3 bg-card border border-border-subtle rounded-xl p-4 shadow-sm">
+              {results.length === 0 ? (
+                <p className="text-sm text-foreground-secondary">
+                  No matches for “{query}”. Try a shorter keyword (e.g. “hand” for ground handling).
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-foreground-faint mb-3">
+                    {results.length} section{results.length > 1 ? "s" : ""} · {totalHits} match{totalHits > 1 ? "es" : ""}
+                  </p>
+                  <div className="space-y-3">
+                    {results.map((r) => (
+                      <a
+                        key={r.slug}
+                        href={`#${r.slug}`}
+                        onClick={() => setQuery("")}
+                        className="block rounded-lg border border-border-faint p-3 hover:border-accent hover:bg-accent/5 transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-accent">{r.title}</span>
+                        {r.snippets.slice(0, 3).map((sn, i) => (
+                          <p key={i} className="text-xs text-foreground-secondary mt-1 leading-relaxed">
+                            {highlightSnippet(sn, q)}
+                          </p>
+                        ))}
+                        {r.snippets.length > 3 && (
+                          <p className="text-[11px] text-foreground-faint mt-1">+{r.snippets.length - 3} more on this page</p>
+                        )}
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Index */}
