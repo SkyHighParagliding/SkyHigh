@@ -261,15 +261,17 @@ Ensure no hardcoded admins in production.
 
 Long-term feature requests. No timeline committed.
 
-### TASK-030 ⬜ Siteguide Version Change Email Notification
+### TASK-030 ✅ Siteguide Version Change Email Notification
 Email admin when site guide version changes on siteguide.org.au.
 - **Acceptance Criteria:** Cron job checks siteguide.org.au every day. On version change, send email to site contacts. Log notification in admin dashboard.
-- **Status:** Backlog
+- **Status:** ✅ DONE — 2026-09-15
+- **Outcome:** The daily cron (`scheduledJobs.ts`, `schedSiteguideHour/Minute`, default 05:00 Melbourne), change detection, and DB logging (`siteguide_version_checks`, surfaced via `GET /api/sites/siteguide-version-check/status`) already existed. The **missing email** was added: `notifySiteguideVersionChange()` in `server/utils/siteguideVersionCheck.ts` emails admins (from `contacts.isAdmin`) plus the configurable `siteguideAlertRecipients` setting (default `jonpamment@gmail.com`) via Resend, called from the scheduled change branch before the auto zone-download + re-import. Best-effort — a send failure is logged, never throws. `tsc --noEmit` clean.
+- **Not runtime-verified:** no real email sent (needs `RESEND_API_KEY` + a live version change); mirrors the proven `gridAlerts.ts` send path.
 
-### TASK-031 ⬜ Pilot XC Flight History Export
+### TASK-031 ✅ Pilot XC Flight History Export
 Pilots can export their XC flight history as CSV or GPX.
 - **Acceptance Criteria:** Pilot page with download button. Exports all flights submitted by that pilot. CSV includes distance, date, landing zone. GPX includes track (if available).
-- **Status:** Backlog
+- **Status:** ✅ DONE — 2026-06-03. `GET /api/flights/export?format=csv|gpx` in `server/routes/flights.ts`; "Export All" menu in `src/pages/FlightHistory.tsx`.
 
 ### TASK-036 ✅ Thermal map — distinguish overcast from cumulus
 The thermal map drew cumulus glyphs almost everywhere, including under solid
@@ -505,7 +507,7 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 - **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035, 036 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
-- **Backlog (3):** Tasks 030, 031, 032
-- **Done 2026-09-15:** TASK-SW-001 (service worker consolidation), TASK-REVIEW-F (useWindPlayback hook — was already implemented)
+- **Backlog (0):** none outstanding — Task 030 (siteguide email) done 2026-09-15; Task 031 (XC export, `GET /api/flights/export`) done 2026-06-03; Task 032 (closure calendar) done 2026-05-21
+- **Done 2026-09-15:** TASK-030 (siteguide version-change email), TASK-SW-001 (service worker consolidation), TASK-REVIEW-F (useWindPlayback hook — was already implemented)
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15

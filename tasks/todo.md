@@ -1,12 +1,16 @@
-# Current Tasks — Last updated: 2026-09-05
+# Current Tasks — Last updated: 2026-09-15
 
-> **1 incomplete task remain.** Pick from this list when resuming.
+> **No incomplete backlog tasks remain.** See wiki/02-tasks.md for the full log.
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## ✅ Done
 
 ### TASK-030 — Siteguide Version Change Email Notification
-- **Completed:** 2026-09-05 (session 47)
+- **Completed:** 2026-09-15. NOTE: an earlier "done session 47" mark was wrong — the
+  cron/detection/DB-log/auto-import existed but the **email was never wired**.
+  Added `notifySiteguideVersionChange()` (`server/utils/siteguideVersionCheck.ts`,
+  called from `scheduledJobs.ts` change branch): emails admins + the
+  `siteguideAlertRecipients` setting via Resend. Best-effort, never throws.
 
 ### Smart Search manual-test issues — Fixed
 - **Completed:** 2026-09-05 (session 47)

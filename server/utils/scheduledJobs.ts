@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import createLogger from "./logger.js";
-import { runVersionCheck } from "./siteguideVersionCheck.js";
+import { runVersionCheck, notifySiteguideVersionChange } from "./siteguideVersionCheck.js";
 import { sendEmail } from "./email.js";
 import { query, queryOne, execute } from "../pg.js";
 import { cleanExpiredSessions } from "../middleware/auth.js";
@@ -317,6 +317,10 @@ export async function startScheduledJobs() {
           log.error(`Scheduled version check encountered error: ${result.error}`);
         } else if (result.changed) {
           log.info(`Scheduled version check: version CHANGED from ${result.previousVersion} to ${result.detectedVersion}`);
+
+          // Email admins about the change first, before the (slower, fallible)
+          // zone download + re-import run. Best-effort; never throws.
+          await notifySiteguideVersionChange(result.previousVersion, result.detectedVersion);
 
           const autoZoneDownload = await getSetting("autoDownloadZoneData", "true");
           if (autoZoneDownload !== "false") {

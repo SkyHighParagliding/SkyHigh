@@ -1,7 +1,86 @@
 import { query, queryOne, execute } from "../pg.js";
 import createLogger from "./logger.js";
+import { sendEmail } from "./email.js";
 
 const log = createLogger("siteguide-version-check");
+
+// Notification recipients: current admins plus a configurable comma-separated
+// extra list (mirrors the gridAlerts pattern, kept independently configurable
+// so whoever curates the site data still gets these if they stop being admin).
+const ALERT_RECIPIENTS_KEY = "siteguideAlertRecipients";
+const DEFAULT_ALERT_RECIPIENTS = "jonpamment@gmail.com";
+
+async function resolveAlertRecipients(): Promise<string[]> {
+  const admins = await query<{ email: string }>(
+    `SELECT email FROM contacts WHERE "isAdmin" = 1 AND email IS NOT NULL AND email != ''`
+  );
+  const extraRow = await queryOne<{ value: string }>(
+    "SELECT value FROM settings WHERE key = $1",
+    [ALERT_RECIPIENTS_KEY]
+  );
+  const extra = (extraRow?.value ?? DEFAULT_ALERT_RECIPIENTS)
+    .split(",").map(e => e.trim()).filter(Boolean);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const email of [...admins.map(a => a.email), ...extra]) {
+    const key = email.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(email);
+  }
+  return out;
+}
+
+/**
+ * Email admins when siteguide.org.au publishes a new version. Called from the
+ * daily scheduled version check on the change branch, alongside the automatic
+ * zone-data download and re-import. Best-effort: a send failure is logged, never
+ * thrown, so it cannot block the import pipeline.
+ */
+export async function notifySiteguideVersionChange(
+  previousVersion: string | null,
+  detectedVersion: string | null
+): Promise<void> {
+  try {
+    const recipients = await resolveAlertRecipients();
+    if (recipients.length === 0) {
+      log.error("Siteguide version changed but no alert recipients are configured");
+      return;
+    }
+
+    const subject = `Siteguide updated: ${previousVersion ?? "?"} → ${detectedVersion ?? "?"}`;
+    const html = `
+      <div style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
+        <h2 style="margin:0 0 8px">Siteguide has a new version</h2>
+        <p style="margin:0 0 16px;color:#444">
+          The site guide at <a href="https://siteguide.org.au/About">siteguide.org.au</a>
+          changed from <strong>${previousVersion ?? "unknown"}</strong> to
+          <strong>${detectedVersion ?? "unknown"}</strong>.
+        </p>
+        <p style="margin:0 0 4px"><strong>What happens automatically</strong></p>
+        <p style="margin:0 0 16px;color:#444">
+          If enabled, SkyHigh downloads the refreshed airspace/zone data and re-imports
+          sites for the last imported state. Review the results in
+          Admin → Sites → Siteguide Import, and check the version-check status panel.
+        </p>
+        <p style="margin:0;color:#888;font-size:12px">
+          Automated notification from the daily siteguide version check.
+        </p>
+      </div>`;
+
+    const results = await Promise.all(
+      recipients.map(async to => {
+        const res = await sendEmail({ to, subject, html });
+        if (!res.success) log.error(`Siteguide change alert to ${to} failed — ${res.error}`);
+        return res.success;
+      })
+    );
+    log.info(`Siteguide change alert emailed to ${results.filter(Boolean).length}/${recipients.length} recipients`);
+  } catch (err: any) {
+    log.error(`Siteguide change notification failed: ${err.message}`);
+  }
+}
 
 export interface VersionCheckResult {
   id: number;

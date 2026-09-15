@@ -69,7 +69,18 @@ code (see "Deferred, by choice" below).
 - **TASK-REVIEW-F DONE (already):** `useWindPlayback.ts` was already extracted
   and consumed by both wind-map components — the deferred note was stale. Marked
   done in wiki, no code change needed.
-- Carried smaller items (unchanged): deferred R2 terrain-tile mirror.
+- **TASK-030 DONE 2026-09-15:** siteguide version-change email. Everything but
+  the email already existed (daily cron, change detection, DB log surfaced at
+  `GET /api/sites/siteguide-version-check/status`, auto zone-download + import).
+  Added `notifySiteguideVersionChange()` in `siteguideVersionCheck.ts` — emails
+  admins + the `siteguideAlertRecipients` setting (default jonpamment@gmail.com)
+  via Resend, called from the scheduled change branch. Best-effort, never
+  throws. Not runtime-verified (needs `RESEND_API_KEY` + a real version bump).
+- Also reconciled stale doc state: Tasks 031 (XC export) and 032 (closure
+  calendar) were already implemented but still marked Backlog — now marked done.
+  The backlog is empty.
+- Carried smaller items (unchanged): deferred R2 terrain-tile mirror. Larger
+  candidate: SkyHigh RASP meteogram (Phase 1 buildable now).
 - **Never authenticate to production using `DEFAULT_ADMINS`** from the local
   `.env`. Jon performs privileged prod actions himself via the admin UI.
 

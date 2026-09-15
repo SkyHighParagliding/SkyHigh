@@ -15,7 +15,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, PostgreSQL (dev + prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** Session 57 completed the Ground AMSL readout across all four map surfaces and moved terrain elevation to client-side terrarium-tile sampling (commit `8e6f39e`) — see DECISION-011. Next: TASK-030 (Siteguide Version Change Email Notification). TASK-SW-001 (service-worker consolidation) completed 2026-09-15. Queued smaller item: the deferred R2 terrain-tile mirror.  
+**Current Focus:** Session 57 completed the Ground AMSL readout across all four map surfaces and moved terrain elevation to client-side terrarium-tile sampling (commit `8e6f39e`) — see DECISION-011. All backlog tasks (030 siteguide email, 031 XC export, 032 closure calendar) and TASK-SW-001 (service-worker consolidation) are complete as of 2026-09-15. Queued smaller item: the deferred R2 terrain-tile mirror. Larger candidate: SkyHigh RASP meteogram (Phase 1 buildable now).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
