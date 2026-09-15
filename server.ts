@@ -157,14 +157,24 @@ async function startServer() {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    // geolocation=(self): the club map, "sites near me" and safety-officer
+    // proximity all need the browser Geolocation API on our own origin. mic/camera
+    // stay denied (no feature uses getUserMedia).
+    res.setHeader('Permissions-Policy', 'geolocation=(self), microphone=(), camera=()');
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",  // unsafe-inline needed for React/Vite — replace with nonces when feasible
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      // s3.amazonaws.com: terrarium elevation tiles fetched client-side for the
+      // Ground AMSL readout (terrainTiles.ts). basemaps.cartocdn.com: CARTO wind/
+      // thermal basemap tiles (also prefetched by the tile service worker).
+      "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com",
+      // frame-src: legitimate third-party embeds — Google My Maps (Ground Handling
+      // page) and Instagram post embeds (Insta Wall). Without this, default-src
+      // 'self' blocks them. YouTube is not framed (thumbnails + links only).
+      "frame-src 'self' https://www.google.com https://www.instagram.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
