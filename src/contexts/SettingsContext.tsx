@@ -387,6 +387,15 @@ function buildSettings(data: Record<string, any>): Settings {
     windMapDefaultZoom: data.windMapDefaultZoom,
     bulkUploadLimit: data.bulkUploadLimit || "20",
     featureThermalMap: data.featureThermalMap,
+    // Thermal map tuning (Admin → Forecast). Passed through so the renderer can
+    // read them; each is optional and the renderer falls back to its own default
+    // when unset. See DEFAULT_THERMAL_TUNING in windmap/thermalRenderer.ts.
+    thermalClearSkyCloudPct: data.thermalClearSkyCloudPct,
+    thermalOvercastOnsetPct: data.thermalOvercastOnsetPct,
+    thermalOvercastFullPct: data.thermalOvercastFullPct,
+    thermalMinWstar: data.thermalMinWstar,
+    thermalStormCapeGate: data.thermalStormCapeGate,
+    thermalMapDefaultHour: data.thermalMapDefaultHour,
   };
 }
 
