@@ -48,7 +48,7 @@ export function createParticlePool(width: number, height: number): Particle[] {
  *
  * The wind map uses the default (white trails over a black basemap).
  * The thermal map needs dark trails because white is invisible against
- * its pale grey CARTO basemap and warm-accent heat raster.
+ * its pale grey CARTO basemap and warm-orange heat raster.
  */
 export interface ParticleTrailStyle {
   /** CSS-style RGB triple, e.g. '255, 255, 255'. Defaults to white. */

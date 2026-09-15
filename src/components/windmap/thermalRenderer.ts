@@ -460,7 +460,7 @@ function rebuildThermalOverlay(
         // gates — not just cells with cumulus, and NOT suppressed by overcast.
         //
         // Hard constraint 1: the triangle fires under a grey sheet. A loaded
-        // atmosphere under stratus is identical to a clear-accent OD scenario in
+        // atmosphere under stratus is identical to a clear-sky OD scenario in
         // its energy content; the visual difference is what makes it a trap.
         // ThermalHelpModal.tsx explicitly promises pilots the triangle fires there.
         //
