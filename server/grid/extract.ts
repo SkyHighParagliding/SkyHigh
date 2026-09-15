@@ -11,6 +11,13 @@ import { fromZonedTime } from "date-fns-tz";
 import createLogger from "../utils/logger.js";
 import { getWeatherCodeSummary, degreesToDirection } from "../weather-utils.js";
 import type { GridPoint, ThermalPoint, ThermalVictoriaGrid, VictoriaGrid } from "./bounds.js";
+import { FORECAST_DAYS } from "./pipeline.js";
+
+/** Hours the wind/thermal MAP overlays expose on the slider — the full fetched
+ *  window (FORECAST_DAYS × 24, from 05:00). The site-point forecast/tide window
+ *  keeps the 36 h default. Computed at each call (not module load) so it is
+ *  immune to import-order edge cases. */
+const mapWindowHours = () => FORECAST_DAYS * 24;
 
 const log = createLogger("grid:extract");
 
@@ -35,10 +42,13 @@ export function clearOverlayCaches(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Selects the 36-hour render window starting at 05:00 Melbourne today.
- * Falls back to index 0 when the grid does not reach today (stale data).
+ * Selects a render window of `windowHours` hourly steps starting at 05:00
+ * Melbourne today (default 36 h for the site-point forecast / tide window; the
+ * map overlays pass the full fetched window, MAP_WINDOW_HOURS). Falls back to
+ * index 0 when the grid does not reach today (stale data). `slice` naturally
+ * caps at the end of the grid, so overshooting the last stored hour is harmless.
  */
-export function getTimeWindow(allTimes: string[]): { startIdx: number; selectedTimes: string[] } {
+export function getTimeWindow(allTimes: string[], windowHours = 36): { startIdx: number; selectedTimes: string[] } {
   const now = new Date();
   const melbourneFormatter = new Intl.DateTimeFormat("en-AU", {
     timeZone: "Australia/Melbourne",
@@ -53,7 +63,7 @@ export function getTimeWindow(allTimes: string[]): { startIdx: number; selectedT
   let startIdx = allTimes.findIndex(t => t >= todayStr);
   if (startIdx === -1) startIdx = 0;
 
-  return { startIdx, selectedTimes: allTimes.slice(startIdx, startIdx + 36) };
+  return { startIdx, selectedTimes: allTimes.slice(startIdx, startIdx + windowHours) };
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +295,7 @@ export function extractFullWindGrid(grid: VictoriaGrid): WindOverlay | null {
     return cachedFullWindOverlay as WindOverlay;
   }
 
-  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
+  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time, mapWindowHours());
   const result = gridToWindData(grid.points, grid.delta, startIdx, selectedTimes);
 
   cachedFullWindOverlay = result;
@@ -306,7 +316,7 @@ export function extractWindParticles(grid: VictoriaGrid, siteLat: number, siteLo
   const firstPoint = relevantPoints[0];
   if (!firstPoint.hourly?.time) return null;
 
-  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
+  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time, mapWindowHours());
   return gridToWindData(relevantPoints, grid.delta, startIdx, selectedTimes);
 }
 
@@ -447,7 +457,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
     return cachedThermalOverlay as ThermalOverlay;
   }
 
-  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time);
+  const { startIdx, selectedTimes } = getTimeWindow(firstPoint.hourly.time, mapWindowHours());
 
   // The overlay is addressed by the renderer as a uniform lattice: it computes a
   // cell index from (lon - lonMin) / deltaLon. So ni and nj must come from the
