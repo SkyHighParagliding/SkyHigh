@@ -26,6 +26,7 @@ import type {
 } from "../types.js";
 import { uvToSpeedDir } from "../types.js";
 import { currentAxisOrigin, toMelbourneLocal } from "../time.js";
+import { makeSemaphore } from "./s3ReadCommon.js";
 
 // ---------------------------------------------------------------------------
 // Unit conversion constants
@@ -247,29 +248,6 @@ function computeBbox(points: LatLon[]): Bbox {
 // ---------------------------------------------------------------------------
 // Melbourne local time formatting
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Concurrency limiter
-// ---------------------------------------------------------------------------
-
-function makeSemaphore(limit: number) {
-  let running = 0;
-  const queue: Array<() => void> = [];
-
-  return async function <T>(fn: () => Promise<T>): Promise<T> {
-    if (running >= limit) {
-      await new Promise<void>((resolve) => queue.push(resolve));
-    }
-    running++;
-    try {
-      return await fn();
-    } finally {
-      running--;
-      const next = queue.shift();
-      if (next) next();
-    }
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Provider implementation
