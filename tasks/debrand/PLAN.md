@@ -148,6 +148,61 @@ but **every value is unchanged**. Verify by *value*, not by key:
 
 ---
 
+## 4b. Review gates
+
+§4/§4a prove the code still *works*; a review gate proves the *diff is clean* — no
+dead branches left behind, no orphaned imports, no leftover template archaeology,
+no regression smuggled in. Both run at every stage. **Verification passing is not
+a substitute for the review, and neither substitutes for Jon's manual pass**
+(`memory/feedback.md`, 2026-07-03).
+
+### Three layers, escalating with risk
+
+1. **Orchestrator read (every wave).** I read each agent's diff directly and
+   cross-check it against the §7 file inventory and the wave's task list. Nothing
+   merges into the working tree on faith.
+2. **`fallow check_changed` (every wave).** Automated changed-code risk + dead-code
+   analysis on the wave's diff.
+3. **Fresh reviewer sub-agent (high-risk diffs only).** A **new** sub-agent that
+   did **not** write the code — a reviewer rationalises nothing the author did.
+   It receives: the relevant PLAN.md section(s), the two traps (§3), the diff, and
+   an instruction to report findings only (never edit). Used on:
+   - **Wave 1 Agent A** — the `@theme` rewrite (Trap 2) + `activeLogos` collapse.
+   - **Wave 4.2** — the 135 audited `orange` sites (Cross-dot regression class),
+     reviewed **line by line**.
+   - **Wave 4.3** — the ~2100-site palette rename; reviewer confirms the regex hit
+     only class stems, not substrings (`skyline`, `navygate`, `sandbox`, …), and
+     that no value drifted.
+
+Lower-risk diffs (Agent E docs; Wave 2 B/C/D; Wave 4.1, 4.4) get layers 1–2 only,
+unless layer 1 surfaces something that warrants escalating to a fresh reviewer.
+
+### Per-stage gate
+
+| Stage | Correctness | Code review |
+|---|---|---|
+| After Wave 1 | §4 token-diff, `tsc`, build | Layers 1+2 on both agents; **layer 3 on Agent A** |
+| After Wave 2 | §4, `tsc`, build | Layers 1+2 on B/C/D independently (disjoint files) |
+| Wave 3 | full §4 + **Jon manual pass** | Consolidated gate — hold + commit before Wave 4 |
+| After Wave 4.1 | §4a, `tsc`, build | Layers 1+2 |
+| After Wave 4.2 | §4a, `tsc`, build | **Layer 3, line by line** |
+| After Wave 4.3 | §4a, `tsc`, build | **Layer 3** + manual sweep (Home/SiteDetail/admin) |
+| After Wave 4.4 | §4a, `tsc`, build, final grep (§5) | Layers 1+2 |
+| End | full §4a + **Jon manual pass** | — |
+
+A reviewer finding is resolved before the stage is called done: fix, re-verify
+(§4/§4a), and re-review the fix. Loop until clean. **No wave is dispatched while
+the previous wave's gate is open.**
+
+### Caveat
+
+No automated review catches a *visual* regression — a subtly wrong token value
+recolours pixels while the diff reads perfectly clean. Layers 1–3 gate structure
+and correctness; Jon's manual pass at Wave 3 and at the end gates appearance. It
+is the real gate, not the green checks.
+
+---
+
 ## 5. Dispatch plan
 
 File ownership is disjoint per agent (CLAUDE.md §8 concurrency rule).
