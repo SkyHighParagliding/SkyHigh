@@ -27,6 +27,13 @@ import type {
 import { pointKey, uvToSpeedDir } from "../types.js";
 import { currentAxisOrigin, toMelbourneLocal } from "../time.js";
 import { fetchEcmwfLiftedIndex } from "./ecmwfLiftedIndex.js";
+import {
+  READ_PARALLELISM,
+  IO_SIZE_MAX,
+  IO_SIZE_MERGE,
+  makeSemaphore,
+  withSlowDownRetry,
+} from "./s3ReadCommon.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -41,65 +48,9 @@ const MS_TO_KNOTS = 1.943844;
  *  cold HEAD on every orchestrator call is pointless noise. */
 const AVAILABILITY_CACHE_MS = 3 * 60 * 1000; // 3 minutes
 
-/** Bounded parallelism for row-by-row reads. The spike found P=20 is safe
- *  without triggering S3 SlowDown. Exported so ecmwfLiftedIndex.ts can share
- *  the same discipline without duplicating the constant. */
-export const READ_PARALLELISM = 20;
-
-/** HTTP reader tuning, matching the spike. Exported for ecmwfLiftedIndex.ts. */
-export const IO_SIZE_MAX  = BigInt(512 * 1024); // 512 KB per HTTP range request
-export const IO_SIZE_MERGE = BigInt(128 * 1024); // merge adjacent chunks within 128 KB
-
-
-// ---------------------------------------------------------------------------
-// Concurrency limiter (reused by both providers)
-// ---------------------------------------------------------------------------
-
-/** Exported so ecmwfLiftedIndex.ts can share the same concurrency limiter. */
-export function makeSemaphore(limit: number) {
-  let running = 0;
-  const queue: Array<() => void> = [];
-
-  return async function run<T>(fn: () => Promise<T>): Promise<T> {
-    if (running >= limit) {
-      await new Promise<void>(resolve => queue.push(resolve));
-    }
-    running++;
-    try {
-      return await fn();
-    } finally {
-      running--;
-      queue.shift()?.();
-    }
-  };
-}
-
-// ---------------------------------------------------------------------------
-// S3 SlowDown retry
-// ---------------------------------------------------------------------------
-
-/** Retries fn up to maxAttempts when the S3 returns a SlowDown error.
- *  Uses exponential backoff with jitter. Does NOT retry on AbortError.
- *  Exported so ecmwfLiftedIndex.ts can reuse the same retry discipline. */
-export async function withSlowDownRetry<T>(
-  fn: () => Promise<T>,
-  maxAttempts = 4,
-): Promise<T> {
-  let delay = 500;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if ((err as { name?: string }).name === "AbortError") throw err;
-      if (!msg.includes("SlowDown") || attempt === maxAttempts) throw err;
-      await new Promise(r => setTimeout(r, delay + Math.random() * 200));
-      delay *= 2;
-    }
-  }
-  // TypeScript: unreachable, but satisfies exhaustive flow
-  throw new Error("withSlowDownRetry: exhausted");
-}
+// Shared S3 read primitives (READ_PARALLELISM, IO_SIZE_MAX/MERGE,
+// makeSemaphore, withSlowDownRetry) live in ./s3ReadCommon.ts — a leaf module —
+// to avoid an import cycle with ecmwfLiftedIndex.ts.
 
 // ---------------------------------------------------------------------------
 // ECMWF IFS — O1280 Reduced Gaussian Grid

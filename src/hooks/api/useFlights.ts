@@ -2,11 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/apiClient';
 import { toast } from 'sonner';
 
-import type { Flight, FlightDetail } from '@/types/api';
+import type { Flight } from '@/types/api';
 
 export const flightKeys = {
   all: ['flights'] as const,
-  detail: (id: string) => ['flights', id] as const,
 };
 
 export function useFlights(token: string | null) {
@@ -14,14 +13,6 @@ export function useFlights(token: string | null) {
     queryKey: flightKeys.all,
     queryFn: () => api.get<Flight[]>('/api/flights', token),
     enabled: !!token,
-  });
-}
-
-export function useFlight(flightId: string | null, token: string | null) {
-  return useQuery<FlightDetail>({
-    queryKey: flightKeys.detail(flightId ?? ''),
-    queryFn: () => api.get<FlightDetail>(`/api/flights/${flightId}`, token),
-    enabled: !!flightId && !!token,
   });
 }
 

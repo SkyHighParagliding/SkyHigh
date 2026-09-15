@@ -37,7 +37,7 @@ import {
   IO_SIZE_MERGE,
   withSlowDownRetry,
   makeSemaphore,
-} from "./openMeteoS3.js";
+} from "./s3ReadCommon.js";
 import { dewpointFromRH, liftParcel } from "../parcel.js";
 
 // ---------------------------------------------------------------------------
