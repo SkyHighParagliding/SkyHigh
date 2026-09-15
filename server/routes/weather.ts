@@ -14,6 +14,7 @@ import { getGridBounds } from "../grid/bounds.js";
 import { getElevationAt as getElevationAtPoint } from "../grid/elevationPoint.js";
 import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches, FINE_GRID_CACHE_KEY } from "../grid/fineGrid.js";
 import { fetchThermalGrid, getCachedThermalGrid, THERMAL_GRID_CACHE_KEY } from "../grid/thermalGrid.js";
+import { buildSiteMeteogram } from "../grid/siteMeteogram.js";
 import { getGridFetchStatus, cancelGridFetch } from "../grid/pipeline.js";
 import { extractFullWindGrid, extractThermalGrid, extractWindParticles } from "../grid/extract.js";
 import { runThermalGridFetch } from "../utils/scheduledJobs.js";
@@ -981,6 +982,41 @@ router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
   }
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.json(forecast);
+}));
+
+// Per-site meteogram time series (thermal band + ceiling from the thermal grid,
+// wind/precip from the fine grid). Public — the site weather panel is public.
+router.get("/:siteId/meteogram", asyncHandler(async (req, res) => {
+  const site = await queryOne<{ lat: number | string | null; lon: number | string | null; launchHeight: number | string | null }>(
+    `SELECT lat, lon, "launchHeight" FROM sites WHERE id = $1`,
+    [req.params.siteId]
+  );
+  // Coordinates may be stored as text in this schema — coerce and validate.
+  const lat = Number(site?.lat);
+  const lon = Number(site?.lon);
+  if (!site || !Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return res.status(404).json({ error: "Site not found or has no coordinates" });
+  }
+
+  // launchHeight is a display string in this schema, e.g. "496m / 1627'" — pull
+  // the metres value. Falls back to a plain numeric parse, else null.
+  let launch: number | null = null;
+  const lh = site.launchHeight;
+  if (typeof lh === "number" && Number.isFinite(lh)) {
+    launch = lh;
+  } else if (typeof lh === "string") {
+    const m = lh.match(/(-?\d+(?:\.\d+)?)\s*m/i);
+    const n = m ? parseFloat(m[1]) : parseFloat(lh);
+    if (Number.isFinite(n)) launch = n;
+  }
+
+  const meteogram = await buildSiteMeteogram(req.params.siteId, lat, lon, launch);
+  if (!meteogram) return res.status(503).json({ error: "Meteogram data temporarily unavailable" });
+
+  // no-cache + ETag: the payload schema can grow (Phase 2 soundings), so never
+  // pin a stale shape in the client cache — same policy as thermal-overlay.
+  res.setHeader('Cache-Control', 'no-cache');
+  res.json(meteogram);
 }));
 
 router.post("/scrape-now", asyncHandler(async (req, res) => {

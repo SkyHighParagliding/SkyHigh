@@ -45,6 +45,10 @@ export function AdminForecast() {
   const [thermalMapOn, setThermalMapOn] = useState(false);
   const [flagSaving, setFlagSaving] = useState(false);
 
+  // Meteogram chart on/off — gates the [Chart] view inside the site thermal panel.
+  const [meteogramOn, setMeteogramOn] = useState(false);
+  const [meteogramSaving, setMeteogramSaving] = useState(false);
+
   // Thresholds
   const [thresholds, setThresholds] = useState<Record<string, number>>({});
   const [thresholdsSaving, setThresholdsSaving] = useState(false);
@@ -56,6 +60,7 @@ export function AdminForecast() {
   // Load from settings
   useEffect(() => {
     setThermalMapOn(settings.featureThermalMap === "true");
+    setMeteogramOn(settings.featureMeteogram === "true");
 
     const t: Record<string, number> = {};
     for (const field of THRESHOLD_FIELDS) {
@@ -78,6 +83,20 @@ export function AdminForecast() {
       setThermalMapOn(!next);
     } finally {
       setFlagSaving(false);
+    }
+  };
+
+  const handleSaveMeteogram = async (next: boolean) => {
+    setMeteogramOn(next);
+    setMeteogramSaving(true);
+    try {
+      await updateSettings({ featureMeteogram: next ? "true" : "false" });
+      toast.success(next ? "Meteogram chart enabled" : "Meteogram chart disabled");
+    } catch {
+      toast.error("Failed to save");
+      setMeteogramOn(!next);
+    } finally {
+      setMeteogramSaving(false);
     }
   };
 
@@ -169,6 +188,26 @@ export function AdminForecast() {
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 ${thermalMapOn ? 'bg-accent' : 'bg-muted'}`}
                 >
                   <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${thermalMapOn ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {/* Meteogram chart flag — the [Chart] view inside the site thermal panel. */}
+              <div className="flex items-start justify-between gap-4 py-1 mt-3 pt-3 border-t border-border-faint">
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-semibold text-ink">Enable the meteogram chart</span>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                    Adds a [Chart] view beside [Map] on the site thermal panel — a time-vs-altitude
+                    plot of the ceiling, thermal strength, surface wind and cloud. Same daily grid data.
+                  </p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={meteogramOn}
+                  disabled={meteogramSaving}
+                  onClick={() => handleSaveMeteogram(!meteogramOn)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 ${meteogramOn ? 'bg-accent' : 'bg-muted'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${meteogramOn ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
             </CardContent>

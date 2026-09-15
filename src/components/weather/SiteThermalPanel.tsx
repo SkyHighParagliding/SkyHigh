@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
-import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info, Map as MapIcon, LineChart } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { MapScaleBar } from '../windmap/MapScaleBar';
 import { cn } from '@/lib/utils';
@@ -43,6 +45,26 @@ function getMelbHour(isoStr: string): number {
 }
 
 export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
+  const { settings } = useSettings();
+  const meteogramEnabled = settings.featureMeteogram === 'true';
+  const [thermalView, setThermalView] = useState<'map' | 'chart'>('map');
+
+  // Per-site meteogram series (lazy — fetched the first time the chart is shown).
+  const [meteogram, setMeteogram] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
+  const [meteogramLoading, setMeteogramLoading] = useState(false);
+  const [meteogramError, setMeteogramError] = useState<string | null>(null);
+  useEffect(() => {
+    if (thermalView !== 'chart' || meteogram || meteogramLoading || !site?.id) return;
+    setMeteogramLoading(true);
+    fetch(`/api/weather/${site.id}/meteogram`)
+      .then(res => res.ok ? res.json() : Promise.reject(`HTTP ${res.status}`))
+      .then((data: { hours: MeteogramHour[]; launchElevation: number | null }) => {
+        setMeteogram(data);
+        setMeteogramLoading(false);
+      })
+      .catch(e => { setMeteogramError(String(e)); setMeteogramLoading(false); });
+  }, [thermalView, meteogram, meteogramLoading, site?.id]);
+
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -325,6 +347,26 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {meteogramEnabled && (
+              <div className="flex items-center rounded-md overflow-hidden border border-border-faint mr-0.5">
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('map'); }}
+                  className={cn('flex items-center gap-1 px-1.5 py-1 text-[10px] font-semibold transition-colors',
+                    thermalView === 'map' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:bg-muted')}
+                  title="Map view"
+                >
+                  <MapIcon className="w-3 h-3" /> Map
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('chart'); }}
+                  className={cn('flex items-center gap-1 px-1.5 py-1 text-[10px] font-semibold transition-colors',
+                    thermalView === 'chart' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:bg-muted')}
+                  title="Chart view (meteogram)"
+                >
+                  <LineChart className="w-3 h-3" /> Chart
+                </button>
+              </div>
+            )}
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
               className="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-0.5"
@@ -347,8 +389,25 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           </div>
         </div>
 
-        {mapArea(false)}
-        {sliderContent}
+        {meteogramEnabled && thermalView === 'chart' ? (
+          meteogramLoading ? (
+            <div className="h-[300px] flex flex-col items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-500 mb-1" />
+              <span className="text-xs text-gray-500">Loading meteogram…</span>
+            </div>
+          ) : meteogramError || !meteogram ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <span className="text-xs text-red-500">Failed to load meteogram</span>
+            </div>
+          ) : (
+            <SiteMeteogramChart hours={meteogram.hours} launchElevation={meteogram.launchElevation} />
+          )
+        ) : (
+          <>
+            {mapArea(false)}
+            {sliderContent}
+          </>
+        )}
       </div>
 
       {/* Fullscreen portal */}
@@ -428,7 +487,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         document.body
       )}
 
-      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} />}
+      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} variant={meteogramEnabled && thermalView === 'chart' ? 'chart' : 'map'} />}
     </>
   );
 }

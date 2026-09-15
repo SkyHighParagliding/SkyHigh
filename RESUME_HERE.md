@@ -1,11 +1,32 @@
 # RESUME_HERE — Last updated: 2026-09-15 (session 63)
 
 ## Project: SkyHigh
-## Status: Active — on `main`, everything below is deployed to production
+## Status: Active — on `main`. Meteogram Stage 1 committed (flag-gated, review OK)
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## ✅ Meteogram Stage 1 — committed, flag-gated (default OFF)
+
+Reviewed with Jon on-device 2026-09-15 (dev server over LAN) and committed. Inert
+in prod until `featureMeteogram` is enabled in Admin → Forecast. Full spec:
+`wiki/future/meteogram-plan.md`.
+
+- `server/grid/siteMeteogram.ts` — `buildSiteMeteogram`: thermal-grid
+  ceiling/Cu-base/band + fine-grid wind/precip, no new fetch.
+- `server/routes/weather.ts` — `GET /:siteId/meteogram` (parses `launchHeight`
+  display string like "798m / 2618'" to metres).
+- `src/components/weather/SiteMeteogramChart.tsx` — SVG chart: BL Top + Cu Base
+  lines, per-hour W* band (matches map), launch line, sky-icon row, wind row
+  (speed/compass), crosshair, unit toggle (m/ft via useUnits).
+- `SiteThermalPanel.tsx` — `[Map]/[Chart]` toggle + chart-variant help modal.
+- `ThermalHelpModal.tsx` — `variant='chart'` explainer.
+- `AdminForecast.tsx` — `featureMeteogram` switch. `SettingsContext.tsx` — expose
+  the key (it uses an allow-list; forgetting this silently hides the toggle).
+
+Next: Stage 1b (flying-window bar, novice mode, tap-to-explain, 7-day strip),
+then Stage 2 (pressure-level soundings → 2D stability background + wind barbs).
 
 Session 63 was a **fallow-driven dead-code cleanup**. PR #1 (branch
 `cleanup/dead-code-session63`, now deleted) was merged to `main` (`dc809fc`)

@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
+export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => void; variant?: 'map' | 'chart' }) {
   return createPortal(
     <div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
@@ -12,12 +12,28 @@ export function ThermalHelpModal({ onClose }: { onClose: () => void }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
-          <h3 className="text-white font-bold text-sm tracking-wide">Reading the Thermal Map</h3>
+          <h3 className="text-white font-bold text-sm tracking-wide">{variant === 'chart' ? 'Reading the Meteogram' : 'Reading the Thermal Map'}</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="px-5 py-4 space-y-4 text-[11px] leading-relaxed">
+
+          {variant === 'chart' && (
+            <section>
+              <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">What the chart shows</div>
+              <p className="text-white/70">The meteogram is this <span className="text-white/90">one site</span> through the day: time runs left→right (10am–8pm), altitude runs bottom→top.</p>
+              <ul className="mt-1.5 space-y-1 text-white/70">
+                <li><span className="text-white/90 font-medium">Dashed black line (BL Top)</span> — how high thermals reach each hour.</li>
+                <li><span style={{ color: '#38bdf8' }} className="font-medium">Sky-blue line (Cu Base)</span> — cloud base, shown only when cumulus form (below BL Top). When present it is your <em>effective</em> ceiling — you top out at cloudbase, not BL Top.</li>
+                <li><span className="text-white/90 font-medium">Blue dashed line</span> — launch height, so the gap above it is your working altitude.</li>
+                <li><span className="text-white/90 font-medium">Coloured band</span> — thermal strength that hour (same colours as the map, see below).</li>
+                <li><span className="text-white/90 font-medium">Sky row</span> — ☁ cumulus · ▨ overcast · 🌧 rain · · clear.</li>
+                <li><span className="text-white/90 font-medium">Wind row</span> — surface wind each hour: speed in knots over the compass direction it blows <em>from</em> (e.g. 14 / NNW).</li>
+              </ul>
+              <p className="text-white/50 mt-1.5">Tap and drag across the chart for a readout at any hour. Tap the <span className="text-white/70">m/ft</span> label to switch units.</p>
+            </section>
+          )}
 
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Strength</div>
