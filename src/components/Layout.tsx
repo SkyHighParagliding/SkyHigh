@@ -1,8 +1,8 @@
 ﻿import { Outlet } from "react-router-dom";
 import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
-import { WonderfulHeader } from "@/templates/wonderful-white/WonderfulHeader";
-import { WonderfulFooter } from "@/templates/wonderful-white/WonderfulFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export function Layout() {
   const { settings, lightLogos } = useSettings();
@@ -46,7 +46,7 @@ export function Layout() {
       themeColor.name = "theme-color";
       document.head.appendChild(themeColor);
     }
-    themeColor.content = settings.clubPrimaryColor || "#00a8e8";
+    themeColor.content = settings.clubPrimaryColor || "#007aff";
 
     let mobileCapable = document.querySelector("meta[name='mobile-web-app-capable']") as HTMLMetaElement;
     if (!mobileCapable) {
@@ -67,11 +67,11 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--body-bg)" }}>
-      <WonderfulHeader />
+      <SiteHeader />
       <main className="flex-grow flex flex-col pt-[56px] sm:pt-[76px]">
         <Outlet />
       </main>
-      <WonderfulFooter />
+      <SiteFooter />
     </div>
   );
 }

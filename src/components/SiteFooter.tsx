@@ -3,7 +3,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SocialIcons } from "@/components/SocialIcons";
 
-export function WonderfulFooter() {
+export function SiteFooter() {
   const { settings, darkLogos } = useSettings();
   const { user, isSoSession } = useAuth();
   const clubName = settings.clubName || "SkyHigh";

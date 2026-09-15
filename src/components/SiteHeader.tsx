@@ -5,7 +5,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavDropdown, MobileNavGroup, type NavItem } from "@/components/NavDropdown";
 
-export function WonderfulHeader() {
+export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const { settings, lightLogos, darkLogos } = useSettings();
