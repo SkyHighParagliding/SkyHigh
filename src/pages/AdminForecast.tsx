@@ -31,6 +31,7 @@ const THRESHOLD_FIELDS: ThresholdField[] = [
   { key: "thermalOvercastFullPct",  label: "Full overcast",                 description: "Cloud % at which the grey sheet reaches full strength. The ramp runs from onset to here. Maps to OVERCAST_FULL_PCT.",              defaultVal: 95,  unit: "%",    min: 70,  max: 100,  step: 1 },
   { key: "thermalMinWstar",         label: "Minimum thermal strength shown", description: "W* (updraft velocity, m/s) below which no heat colour is painted. Cells below this can still show grey when overcast.",            defaultVal: 0.3, unit: "m/s",  min: 0,   max: 2,    step: 0.1 },
   { key: "thermalStormCapeGate",    label: "Storm-risk CAPE gate",          description: "CAPE (J/kg) floor below which the overdevelopment warning triangle never appears, regardless of the stability indices.",          defaultVal: 500, unit: "J/kg", min: 100, max: 2000, step: 50 },
+  { key: "thermalRainOffMm",        label: "Rain — no-fly threshold",       description: "Precipitation (mm/hr) at or above which an hour is marked NOT flyable (grey) on the meteogram fly bar, and a rain overlay is drawn on the thermal map. Lighter rain below this shows amber/watch, not off.", defaultVal: 1, unit: "mm/hr", min: 0.1, max: 5, step: 0.1 },
 ];
 
 const THERMAL_DEFAULT_HOUR = 12;

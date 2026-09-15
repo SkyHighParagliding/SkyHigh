@@ -25,8 +25,23 @@ in prod until `featureMeteogram` is enabled in Admin → Forecast. Full spec:
 - `AdminForecast.tsx` — `featureMeteogram` switch. `SettingsContext.tsx` — expose
   the key (it uses an allow-list; forgetting this silently hides the toggle).
 
-Next: Stage 1b (flying-window bar, novice mode, tap-to-explain, 7-day strip),
-then Stage 2 (pressure-level soundings → 2D stability background + wind barbs).
+### Stage 1b (partial) + rain awareness — shipped to prod 2026-09-15
+
+- **Flying-window bar** on the chart (green/amber/grey per hour) + wired the
+  cumulus/overcast/storm thresholds to the existing Admin → Forecast keys.
+- **Rain, chart:** softened the fly-bar rain gate — real rain (≥ `thermalRainOffMm`,
+  new admin key, default 1 mm/hr) = grey; light/showery rain or high precip
+  probability = amber. Trace drizzle no longer greys a good hour.
+- **Rain, MAP (NOT flag-gated — live on the thermal map):** added `precipitation`
+  to the **thermal grid** (thermalGrid/bounds/extract/thermalInterpolation, same
+  optional-field pattern as the TASK-036 cloud fields) and a translucent blue
+  **rain wash** in `thermalRenderer.ts` (fades in from 0.1 mm/hr, saturates at
+  `thermalRainOffMm`). Degrades to no-wash until the thermal grid refetches.
+  **⚠️ Requires a Thermal grid refetch to populate precip** (cron 5:26am or manual
+  "Fetch now"). Only the thermal grid changed; wind/7-day grids untouched.
+
+Still TODO in 1b: novice mode, tap-to-explain, 7-day strip, mobile key-stats.
+Then Stage 2 (pressure-level soundings → 2D stability background + wind barbs).
 
 Session 63 was a **fallow-driven dead-code cleanup**. PR #1 (branch
 `cleanup/dead-code-session63`, now deleted) was merged to `main` (`dc809fc`)

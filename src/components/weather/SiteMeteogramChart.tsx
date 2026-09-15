@@ -24,22 +24,58 @@ export interface MeteogramHour {
 const FLYING_HOUR_START = 10;
 const FLYING_HOUR_END = 20;
 
-// Cumulus / rain thresholds (Phase 1 defaults; Admin-tunable keys exist for later).
-const CU_LOW_CLOUD_PCT = 30;
-const OVERCAST_PCT = 70;
-const RAIN_MM = 0.1;
-
+// A rain glyph shows on the sky row from this trace amount; whole-hour "no-fly"
+// uses the Admin-tunable rainOffMm instead (trace drizzle shouldn't ground you).
+const LIGHT_RAIN_MM = 0.1;
+const RAIN_PROB_MARGINAL = 50; // precip probability (%) that flags showery/marginal
 const CU_COLOR = '#38bdf8'; // Cu Base (cloud base) line — sky blue, distinct from BL Top + launch
+
+// Flying-window working-height cutoffs (m above launch). Hardcoded defaults for
+// Stage 1b; candidates for their own Admin keys later.
+const FLY_OFF_BELOW = 250;
+const FLY_GOOD_ABOVE = 600;
+
+// Tunables, from Admin → Forecast (fall back to the map's defaults). Reusing the
+// map's keys keeps the chart and map consistent.
+export interface MeteogramThresholds {
+  clearSkyPct: number;   // low-cloud % below which sky reads clear
+  overcastPct: number;   // low-cloud % at/above which it's an overcast sheet
+  stormCape: number;     // CAPE (J/kg) at/above which overdevelopment risk flags
+  minWstar: number;      // W* below which there is no usable lift
+  rainOffMm: number;     // precip (mm/hr) at/above which the hour is no-fly
+}
+const DEFAULT_THRESHOLDS: MeteogramThresholds = { clearSkyPct: 12, overcastPct: 70, stormCape: 500, minWstar: 0.3, rainOffMm: 1 };
+
+type FlyState = 'good' | 'marginal' | 'off';
+const FLY_COLOR: Record<FlyState, string> = { good: '#22c55e', marginal: '#f59e0b', off: '#cbd5e1' };
+
+/** Classify how flyable an hour is, for the flying-window bar. */
+function flyState(s: MeteogramHour, thr: MeteogramThresholds): FlyState {
+  const precip = s.precip ?? 0;
+  if (precip >= thr.rainOffMm) return 'off';                             // real rain
+  if (effectiveWstar(s.wstar ?? undefined, s.cape ?? 0) < thr.minWstar) return 'off'; // no lift
+  const blh = s.blh ?? 0;
+  // Cumulus caps the climb: effective working height is the lower of BL top and Cu base.
+  const workingHeight = (s.ccl !== null && s.ccl < blh) ? s.ccl : blh;
+  if (workingHeight < FLY_OFF_BELOW) return 'off';
+  const overcast = s.cloudLow !== null && s.cloudLow >= thr.overcastPct;
+  const storm = s.cape !== null && s.cape >= thr.stormCape;
+  const showery = precip >= LIGHT_RAIN_MM || (s.precipProb ?? 0) >= RAIN_PROB_MARGINAL;
+  if (overcast || storm || showery || workingHeight < FLY_GOOD_ABOVE) return 'marginal';
+  return 'good';
+}
 
 // Layout, CSS px (no viewBox — 1 SVG unit = 1 px). Rows top→bottom:
 // altitude plot · sky-icon strip · wind strip · time labels.
 const PAD_L = 44;
 const PAD_R = 16;
-const PAD_T = 18;
-const SVG_H = 308;
+const PAD_T = 34;   // room for the flying-window bar + unit label above the plot
+const SVG_H = 324;
 const PAD_B = 22;   // time labels
 const WIND_H = 26;  // surface wind strip
 const SKY_H = 16;   // cloud / rain icon strip
+const FLY_Y = 6;    // flying-window bar top
+const FLY_H = 6;    // flying-window bar height
 
 function getMelbHour(iso: string): number {
   return parseInt(
@@ -68,9 +104,11 @@ function degToCompass(deg: number): string {
 export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   hours,
   launchElevation,
+  thresholds = DEFAULT_THRESHOLDS,
 }: {
   hours: MeteogramHour[];
   launchElevation: number | null;
+  thresholds?: MeteogramThresholds;
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
   const [svgW, setSvgW] = useState(480);
@@ -214,6 +252,18 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         {units === 'imperial' ? 'ft AMSL' : 'm AMSL'}
       </text>
 
+      {/* Flying-window bar — per-hour flyability across the top. */}
+      <text x={PAD_L - 5} y={FLY_Y + FLY_H} textAnchor="end" style={{ ...axisStyle, fontSize: '8px' }}>fly</text>
+      {slots.map((s, i) => {
+        const half = spanW / (n - 1) / 2;
+        const left = Math.max(PAD_L, toX(i) - half);
+        const right = Math.min(PAD_L + PLOT_W, toX(i) + half);
+        return (
+          <rect key={`fly-${i}`} x={left} y={FLY_Y} width={Math.max(0, right - left)} height={FLY_H}
+            fill={FLY_COLOR[flyState(s, thresholds)]} opacity={0.9} />
+        );
+      })}
+
       {/* Thermal-strength band: per-hour column ground→ceiling, coloured by W*
           (identical mapping to the thermal map). */}
       {slots.map((s, i) => {
@@ -289,9 +339,9 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
       </text>
       {slots.map((s, i) => {
         const x = toX(i);
-        const rain = s.precip !== null && s.precip >= RAIN_MM;
-        const overcast = s.cloudLow !== null && s.cloudLow >= OVERCAST_PCT;
-        const cumulus = !overcast && s.cloudLow !== null && s.cloudLow >= CU_LOW_CLOUD_PCT;
+        const rain = s.precip !== null && s.precip >= LIGHT_RAIN_MM;
+        const overcast = s.cloudLow !== null && s.cloudLow >= thresholds.overcastPct;
+        const cumulus = !overcast && s.cloudLow !== null && s.cloudLow >= thresholds.clearSkyPct;
         const glyph = rain ? '🌧' : overcast ? '▨' : cumulus ? '☁' : '·';
         return (
           <text key={`sky-${i}`} x={x} y={skyTop + SKY_H - 3} textAnchor="middle"

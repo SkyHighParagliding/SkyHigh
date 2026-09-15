@@ -22,6 +22,8 @@ export interface ThermalCellValue {
   cloud?: number;
   /** Low cloud cover (below ~2 km), %. Undefined on grids cached before TASK-036. */
   cloudLow?: number;
+  /** Precipitation, mm/hr. Undefined on grids cached before it was added. */
+  precip?: number;
 }
 
 export interface ThermalGrid {
@@ -105,6 +107,8 @@ function interpolateSpatial(
     && c01.cloud    !== undefined && c11.cloud    !== undefined;
   const hasCloudLow = c00.cloudLow !== undefined && c10.cloudLow !== undefined
     && c01.cloudLow !== undefined && c11.cloudLow !== undefined;
+  const hasPrecip  = c00.precip   !== undefined && c10.precip   !== undefined
+    && c01.precip   !== undefined && c11.precip   !== undefined;
   return {
     cape:     lerp(c00.cape,  c10.cape,  c01.cape,  c11.cape),
     blh:      lerp(c00.blh,   c10.blh,   c01.blh,   c11.blh),
@@ -114,6 +118,7 @@ function interpolateSpatial(
     cin:      hasCin      ? lerp(c00.cin!,      c10.cin!,      c01.cin!,      c11.cin!)      : undefined,
     cloud:    hasCloud    ? lerp(c00.cloud!,    c10.cloud!,    c01.cloud!,    c11.cloud!)    : undefined,
     cloudLow: hasCloudLow ? lerp(c00.cloudLow!, c10.cloudLow!, c01.cloudLow!, c11.cloudLow!) : undefined,
+    precip:   hasPrecip   ? lerp(c00.precip!,   c10.precip!,   c01.precip!,   c11.precip!)   : undefined,
   };
 }
 
@@ -146,6 +151,7 @@ export function getThermalAt(
   const hasCin      = v0.cin      !== undefined && v1.cin      !== undefined;
   const hasCloud    = v0.cloud    !== undefined && v1.cloud    !== undefined;
   const hasCloudLow = v0.cloudLow !== undefined && v1.cloudLow !== undefined;
+  const hasPrecip   = v0.precip   !== undefined && v1.precip   !== undefined;
   return {
     cape:     v0.cape  * (1 - dt) + v1.cape  * dt,
     blh:      v0.blh   * (1 - dt) + v1.blh   * dt,
@@ -155,6 +161,7 @@ export function getThermalAt(
     cin:      hasCin      ? v0.cin!      * (1 - dt) + v1.cin!      * dt : undefined,
     cloud:    hasCloud    ? v0.cloud!    * (1 - dt) + v1.cloud!    * dt : undefined,
     cloudLow: hasCloudLow ? v0.cloudLow! * (1 - dt) + v1.cloudLow! * dt : undefined,
+    precip:   hasPrecip   ? v0.precip!   * (1 - dt) + v1.precip!   * dt : undefined,
   };
 }
 

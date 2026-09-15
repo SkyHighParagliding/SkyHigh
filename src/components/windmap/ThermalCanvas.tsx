@@ -78,7 +78,8 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     overcastFullPct:  numOr(settings.thermalOvercastFullPct,  DEFAULT_THERMAL_TUNING.overcastFullPct),
     minWstar:         numOr(settings.thermalMinWstar,         DEFAULT_THERMAL_TUNING.minWstar),
     stormCapeGate:    numOr(settings.thermalStormCapeGate,    DEFAULT_THERMAL_TUNING.stormCapeGate),
-  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate]);
+    rainOffMm:        numOr(settings.thermalRainOffMm,        DEFAULT_THERMAL_TUNING.rainOffMm),
+  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate, settings.thermalRainOffMm]);
   const tuningRef = useRef(tuning);
   tuningRef.current = tuning;
 

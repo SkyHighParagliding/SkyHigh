@@ -344,6 +344,9 @@ export interface ThermalCell {
    *  Low cloud is the sheet that actually shades the ground — stratiform
    *  overcast at altitude can have high total cover with negligible low cover. */
   cloudLow?: number;
+  /** Precipitation, mm/hr. Optional; absent on grids cached before it was added.
+   *  Drives the translucent blue rain wash on the thermal map. */
+  precip?: number;
 }
 
 export interface ThermalOverlay {
@@ -531,6 +534,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
           const cinRaw      = point.hourly.convective_inhibition?.[timeIdx];
           const cloudRaw    = point.hourly.cloud_cover?.[timeIdx];
           const cloudLowRaw = point.hourly.cloud_cover_low?.[timeIdx];
+          const precipRaw   = point.hourly.precipitation?.[timeIdx];
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
             blh,
@@ -546,6 +550,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
             // an explicit NaN guard here keeps the contract watertight.
             cloud:    (cloudRaw    != null && !Number.isNaN(cloudRaw))    ? cloudRaw    : undefined,
             cloudLow: (cloudLowRaw != null && !Number.isNaN(cloudLowRaw)) ? cloudLowRaw : undefined,
+            precip:   (precipRaw   != null && !Number.isNaN(precipRaw))   ? precipRaw   : undefined,
           });
         } else {
           timeStepData.push(null);

@@ -138,6 +138,8 @@ export interface ThermalPoint {
     cloud_cover?: number[];
     /** Low cloud cover (below ~2 km), %. Absent on grids cached before TASK-036. */
     cloud_cover_low?: number[];
+    /** Precipitation, mm/hr. Optional; absent on grids cached before it was added. */
+    precipitation?: number[];
   };
 }
 

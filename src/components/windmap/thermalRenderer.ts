@@ -69,6 +69,8 @@ export interface ThermalTuning {
   minWstar: number;
   /** CAPE (J/kg) floor below which overdevelopment risk is never flagged. Was the `cape < 500` gate. */
   stormCapeGate: number;
+  /** Precip (mm/hr) at which the blue rain wash saturates. Lighter rain fades in below it. */
+  rainOffMm: number;
 }
 
 export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
@@ -77,7 +79,15 @@ export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
   overcastFullPct: OVERCAST_FULL_PCT,
   minWstar: 0.3,
   stormCapeGate: 500,
+  rainOffMm: 1,
 };
+
+// Rain wash: a translucent blue over cells with meaningful precip. Fades in from
+// this floor and saturates at tuning.rainOffMm, so light rain reads faint and
+// real rain reads solid — and it composites over heat/grey/transparent alike.
+const RAIN_WASH_MIN_MM = 0.1;
+const RAIN_WASH_MAX_ALPHA = 0.5;
+const RAIN_WASH_RGB = [56, 118, 209] as const;
 
 // ---------------------------------------------------------------------------
 // Overdevelopment risk signal
@@ -523,6 +533,27 @@ function rebuildThermalOverlay(
           pixels[idx + 3] = 0;
         }
       }
+
+      // Rain wash — composited last so it sits over heat, grey, or bare basemap.
+      // Applied regardless of the W* gate: rain usually means little/no lift, so
+      // gating it on W* would hide it exactly where it matters most.
+      if (th.precip !== undefined && th.precip >= RAIN_WASH_MIN_MM && fade > 0) {
+        const span = Math.max(0.1, tuning.rainOffMm - RAIN_WASH_MIN_MM);
+        const wash = clamp01((th.precip - RAIN_WASH_MIN_MM) / span);
+        const a = wash * RAIN_WASH_MAX_ALPHA * fade;
+        if (a > 0) {
+          // Source-over: rain (straight-alpha `a`) over the current straight-alpha pixel.
+          const curA = pixels[idx + 3] / 255;
+          const outA = a + curA * (1 - a);
+          if (outA > 0) {
+            const k = curA * (1 - a);
+            pixels[idx]     = Math.round((RAIN_WASH_RGB[0] * a + pixels[idx]     * k) / outA);
+            pixels[idx + 1] = Math.round((RAIN_WASH_RGB[1] * a + pixels[idx + 1] * k) / outA);
+            pixels[idx + 2] = Math.round((RAIN_WASH_RGB[2] * a + pixels[idx + 2] * k) / outA);
+            pixels[idx + 3] = Math.round(outA * 255);
+          }
+        }
+      }
     }
   }
   ctx.putImageData(imageData, 0, 0);
@@ -543,7 +574,7 @@ export function maybeRebuildThermalOverlay(
   // Fold the tuning into the cache key so a settings change forces a rebuild
   // (otherwise the map keeps the raster it baked with the old thresholds until
   // the next pan/zoom/time change).
-  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}`;
+  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}_${tuning.rainOffMm}`;
   const transformKey = `${currentTransform.k.toFixed(1)}_${currentTransform.x.toFixed(0)}_${currentTransform.y.toFixed(0)}_${tuningKey}`;
   const curTime = currentTimeRef.current;
   if (transformKey !== overlay.cachedTransformKey || curTime !== overlay.cachedTime) {

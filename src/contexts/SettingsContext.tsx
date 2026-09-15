@@ -396,6 +396,7 @@ function buildSettings(data: Record<string, any>): Settings {
     thermalOvercastFullPct: data.thermalOvercastFullPct,
     thermalMinWstar: data.thermalMinWstar,
     thermalStormCapeGate: data.thermalStormCapeGate,
+    thermalRainOffMm: data.thermalRainOffMm,
     thermalMapDefaultHour: data.thermalMapDefaultHour,
   };
 }

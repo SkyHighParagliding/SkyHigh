@@ -36,6 +36,12 @@ interface SiteThermalPanelProps {
 const FLYING_HOUR_START = 10;
 const FLYING_HOUR_END = 20;
 
+/** Parse a string setting to a finite number, else the default (handles 0 correctly). */
+function numSetting(v: unknown, d: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) && v !== '' && v != null ? n : d;
+}
+
 function getMelbHour(isoStr: string): number {
   return parseInt(
     new Date(isoStr).toLocaleTimeString('en-AU', {
@@ -400,7 +406,17 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
               <span className="text-xs text-red-500">Failed to load meteogram</span>
             </div>
           ) : (
-            <SiteMeteogramChart hours={meteogram.hours} launchElevation={meteogram.launchElevation} />
+            <SiteMeteogramChart
+              hours={meteogram.hours}
+              launchElevation={meteogram.launchElevation}
+              thresholds={{
+                clearSkyPct: numSetting(settings.thermalClearSkyCloudPct, 12),
+                overcastPct: numSetting(settings.thermalOvercastOnsetPct, 70),
+                stormCape: numSetting(settings.thermalStormCapeGate, 500),
+                minWstar: numSetting(settings.thermalMinWstar, 0.3),
+                rainOffMm: numSetting(settings.thermalRainOffMm, 1),
+              }}
+            />
           )
         ) : (
           <>

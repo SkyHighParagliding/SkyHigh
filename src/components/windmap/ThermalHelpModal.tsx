@@ -24,6 +24,7 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
               <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">What the chart shows</div>
               <p className="text-white/70">The meteogram is this <span className="text-white/90">one site</span> through the day: time runs left→right (10am–8pm), altitude runs bottom→top.</p>
               <ul className="mt-1.5 space-y-1 text-white/70">
+                <li><span className="font-medium"><span style={{ color: '#22c55e' }}>■</span> <span style={{ color: '#f59e0b' }}>■</span> <span style={{ color: '#cbd5e1' }}>■</span> Flying-window bar</span> (top) — at-a-glance flyability each hour: green = on, amber = marginal (storm risk, overcast, or low ceiling), grey = off (no lift, rain, or ground-hugging).</li>
                 <li><span className="text-white/90 font-medium">Dashed black line (BL Top)</span> — how high thermals reach each hour.</li>
                 <li><span style={{ color: '#38bdf8' }} className="font-medium">Sky-blue line (Cu Base)</span> — cloud base, shown only when cumulus form (below BL Top). When present it is your <em>effective</em> ceiling — you top out at cloudbase, not BL Top.</li>
                 <li><span className="text-white/90 font-medium">Blue dashed line</span> — launch height, so the gap above it is your working altitude.</li>

@@ -68,6 +68,8 @@ const THERMAL_VARIABLES: Variable[] = [
   // Cloud cover — deliberately optional (see module doc above).
   "cloud_cover",
   "cloud_cover_low",
+  // Precipitation — optional; drives the rain wash on the thermal map.
+  "precipitation",
 ];
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
@@ -92,6 +94,7 @@ const THERMAL_OPTIONAL: Variable[] = [
   "convective_inhibition",
   "cloud_cover",
   "cloud_cover_low",
+  "precipitation",
 ];
 
 async function buildThermalPoints(): Promise<LatLon[]> {
@@ -136,6 +139,7 @@ function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
       convective_inhibition: seriesOf(p, "convective_inhibition", n, gaps("convective_inhibition")),
       cloud_cover: seriesOf(p, "cloud_cover", n, gaps("cloud_cover")),
       cloud_cover_low: seriesOf(p, "cloud_cover_low", n, gaps("cloud_cover_low")),
+      precipitation: seriesOf(p, "precipitation", n, gaps("precipitation")),
     },
   };
 }
