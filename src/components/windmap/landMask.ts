@@ -27,4 +27,44 @@
  * across the tree into shared/.
  */
 
-export { isOnLand } from "../../../shared/landMask.generated";
+import { isOnLand } from "../../../shared/landMask.generated";
+
+export { isOnLand };
+
+/**
+ * Thermal paint clip: land, inset ~1.5 km from the coastline.
+ *
+ * `isOnLand` is the exact Mean-High-Water coastline, but the thermal overlay
+ * should not paint the immediate coast or near-shore water. Open water has no
+ * daytime surface heating, and the sea breeze suppresses thermals in the coastal
+ * strip, so W* there is meaningless — painting it (and the cumulus glyphs riding
+ * on it) reads as "the coast is working" when it almost never is. Two effects
+ * also push the *visible* heat seaward of the true shore: the render blur
+ * (`drawThermalOverlay` uses blurPx 5) smears the edge ~5 px into the water, and
+ * a shoreline cell rounds to land at 0.01°. Insetting the paint boundary inland
+ * cancels both so the heat lands on, or just inside, the coast.
+ *
+ * Implemented as an erosion: a point counts as paintable only if it and eight
+ * points on a 1.5 km circle around it are all land — i.e. it is at least 1.5 km
+ * from the nearest coast in every sampled direction. Exactness beyond this is
+ * pointless because the 5 px blur softens the boundary anyway. ~9 O(1) mask
+ * lookups per land cell per rebuild; water cells short-circuit on the first.
+ */
+const THERMAL_INSET_KM = 1.5;
+const KM_PER_DEG_LAT = 110.574;
+const KM_PER_DEG_LON_EQUATOR = 111.320;
+// Eight unit offsets (east, north) evenly spaced around a circle.
+const RING = Array.from({ length: 8 }, (_, k) => {
+  const a = (k * Math.PI) / 4;
+  return [Math.cos(a), Math.sin(a)] as const;
+});
+
+export function isThermalLand(lon: number, lat: number): boolean {
+  if (!isOnLand(lon, lat)) return false;
+  const dLat = THERMAL_INSET_KM / KM_PER_DEG_LAT;
+  const dLon = THERMAL_INSET_KM / (KM_PER_DEG_LON_EQUATOR * Math.cos((lat * Math.PI) / 180));
+  for (const [east, north] of RING) {
+    if (!isOnLand(lon + east * dLon, lat + north * dLat)) return false;
+  }
+  return true;
+}

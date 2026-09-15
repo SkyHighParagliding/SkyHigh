@@ -2,7 +2,7 @@ import type { ZoomTransform } from 'd3-zoom';
 import type { GeoProjection } from 'd3-geo';
 import { getThermalAt, effectiveWstar } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
-import { isOnLand } from './landMask';
+import { isThermalLand } from './landMask';
 import { drawRegistered } from './groundRegistration';
 
 // ---------------------------------------------------------------------------
@@ -359,7 +359,7 @@ function rebuildThermalOverlay(
       const geo = projection.invert!(inverted);
       const idx = (oy * overlayW + ox) * 4;
       if (!geo) { pixels[idx + 3] = 0; continue; }
-      if (!isOnLand(geo[0], geo[1])) { pixels[idx + 3] = 0; continue; }
+      if (!isThermalLand(geo[0], geo[1])) { pixels[idx + 3] = 0; continue; }
 
       const th = getThermalAt(geo[0], geo[1], currentTime, grid);
       // No thermal data at all — clear the pixel, leave all rasters at 0.
