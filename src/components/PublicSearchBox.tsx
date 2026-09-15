@@ -121,6 +121,8 @@ export function PublicSearchBox() {
   const responseCountRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const pendingRequestRef = useRef<string | null>(null);
+  const [reportingIndex, setReportingIndex] = useState<number | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   useEffect(() => {
     fetch("/api/settings")
@@ -288,13 +290,15 @@ export function PublicSearchBox() {
     }
   }, [query, loading, messages, ctaFrequency, ctaMessage]);
 
-  const handleFlag = useCallback(async (query: string, msgIndex: number) => {
+  const handleFlag = useCallback(async (query: string, msgIndex: number, reason: string) => {
     setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: true } : m));
+    setReportingIndex(null);
+    setReportReason("");
     try {
       const res = await fetch("/api/search-logs/flag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, reason: reason.trim() }),
       });
       if (!res.ok) {
         setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, flagged: false } : m));
@@ -316,6 +320,8 @@ export function PublicSearchBox() {
     setStreamingText("");
     responseCountRef.current = 0;
     pendingRequestRef.current = null;
+    setReportingIndex(null);
+    setReportReason("");
   }
 
   const chatPanel = isOpen ? createPortal(
@@ -366,18 +372,51 @@ export function PublicSearchBox() {
                   {msg.role === "assistant" ? renderMarkdown(msg.text) : msg.text}
                 </div>
                 {msg.role === "assistant" && !msg.isCta && msg.query && (
-                  <button
-                    onClick={() => !msg.flagged && handleFlag(msg.query!, i)}
-                    className={`self-start flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-colors ${
-                      msg.flagged
-                        ? "border-red-500/50 text-red-400 cursor-default"
-                        : "border-white/20 text-white/60 hover:border-red-500/60 hover:text-red-400"
-                    }`}
-                    title={msg.flagged ? "Reported" : "Report incorrect response"}
-                  >
-                    <ThumbsDown className="w-3.5 h-3.5" />
-                    {msg.flagged ? "Reported" : "Report incorrect response"}
-                  </button>
+                  msg.flagged ? (
+                    <span
+                      className="self-start flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border border-red-500/50 text-red-400"
+                      title="Thanks — this answer has been reported for review"
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" />
+                      Reported — thank you
+                    </span>
+                  ) : reportingIndex === i ? (
+                    <div className="self-start w-full max-w-xs flex flex-col gap-1.5 mt-0.5">
+                      <textarea
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        placeholder="Optional: what was wrong with this answer?"
+                        rows={2}
+                        maxLength={1000}
+                        autoFocus
+                        className="w-full resize-none bg-white/10 text-white placeholder-white/40 text-xs rounded-lg px-2.5 py-2 border border-white/15 focus:border-red-400/50 focus:ring-1 focus:ring-red-400/30 focus:outline-none transition-all"
+                      />
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleFlag(msg.query!, i, reportReason)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border border-red-500/60 text-red-300 hover:bg-red-500/15 transition-colors"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                          Submit report
+                        </button>
+                        <button
+                          onClick={() => { setReportingIndex(null); setReportReason(""); }}
+                          className="text-xs px-3 py-1 rounded-full border border-white/20 text-white/60 hover:text-white/80 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setReportingIndex(i); setReportReason(""); }}
+                      className="self-start flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border border-white/20 text-white/60 hover:border-red-500/60 hover:text-red-400 transition-colors"
+                      title="Report incorrect response"
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" />
+                      Report incorrect response
+                    </button>
+                  )
                 )}
               </div>
               {msg.role === "user" && (

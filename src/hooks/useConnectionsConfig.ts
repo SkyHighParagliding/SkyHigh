@@ -90,7 +90,7 @@ export function useConnectionsConfig() {
   const [searchLogEnabled, setSearchLogEnabled] = useState(false);
   const [searchLogStats, setSearchLogStats] = useState<{ total: number; sizeMb: number; oldestAt: string | null; warningMb: number } | null>(null);
   const [showSearchLogs, setShowSearchLogs] = useState(false);
-  const [searchLogEntries, setSearchLogEntries] = useState<{ id: number; search_type: string; query: string; response: string; created_at: string; flagged: boolean }[]>([]);
+  const [searchLogEntries, setSearchLogEntries] = useState<{ id: number; search_type: string; query: string; response: string; created_at: string; flagged: boolean; flag_reason: string | null }[]>([]);
   const [searchLogPage, setSearchLogPage] = useState(1);
   const [searchLogTotal, setSearchLogTotal] = useState(0);
   const [searchLogPages, setSearchLogPages] = useState(1);

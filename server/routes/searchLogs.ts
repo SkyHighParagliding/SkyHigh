@@ -14,7 +14,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
 
   const flaggedOnly = req.query.flagged === "true";
   const baseCount = "SELECT COUNT(*) as total FROM search_logs";
-  const baseData = "SELECT id, search_type, query, response, created_at, flagged FROM search_logs";
+  const baseData = "SELECT id, search_type, query, response, created_at, flagged, flag_reason FROM search_logs";
 
   const conditions: string[] = [];
   const params: any[] = [];
@@ -65,8 +65,10 @@ router.post("/toggle", requireAuth, asyncHandler(async (req, res) => {
 
 // POST /api/search-logs/flag — no auth, public pilots flag bad answers by query text
 router.post("/flag", asyncHandler(async (req, res) => {
-  const { query: q } = req.body;
+  const { query: q, reason } = req.body;
   if (!q || typeof q !== "string") return res.status(400).json({ error: "query required" });
+
+  const cleanReason = typeof reason === "string" ? reason.trim().slice(0, 1000) : "";
 
   const row = await queryOne<{ id: number }>(
     "SELECT id FROM search_logs WHERE query = $1 AND search_type = 'public' ORDER BY created_at DESC LIMIT 1",
@@ -74,7 +76,10 @@ router.post("/flag", asyncHandler(async (req, res) => {
   );
   if (!row) return res.status(404).json({ error: "log entry not found" });
 
-  await execute("UPDATE search_logs SET flagged = TRUE WHERE id = $1", [row.id]);
+  await execute(
+    "UPDATE search_logs SET flagged = TRUE, flag_reason = $2 WHERE id = $1",
+    [row.id, cleanReason || null]
+  );
   res.json({ ok: true, id: row.id });
 }));
 

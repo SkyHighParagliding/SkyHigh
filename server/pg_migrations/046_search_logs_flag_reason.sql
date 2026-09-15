@@ -1,0 +1,1 @@
+ALTER TABLE search_logs ADD COLUMN IF NOT EXISTS flag_reason TEXT;

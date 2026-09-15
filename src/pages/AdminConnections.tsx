@@ -1435,6 +1435,12 @@ export function AdminConnections() {
                           </td>
                           <td className="px-4 py-3 text-xs text-foreground-label max-w-md">
                             <p className={isExpanded ? "whitespace-pre-wrap" : "line-clamp-3"}>{entry.response}</p>
+                            {entry.flagged && entry.flag_reason && (
+                              <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-red-700">
+                                <span className="font-medium">Reported reason:</span>{" "}
+                                <span className={isExpanded ? "whitespace-pre-wrap" : "line-clamp-2"}>{entry.flag_reason}</span>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
