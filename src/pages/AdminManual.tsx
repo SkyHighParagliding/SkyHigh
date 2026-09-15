@@ -257,6 +257,20 @@ export function AdminManual() {
       ]
     },
     {
+      title: "Ground Handling Map",
+      icon: <MapPin className="w-6 h-6 text-accent" />,
+      link: "/admin/site-options",
+      category: "Content Management",
+      description: "The public /ground-handling page — an embedded Google My Maps of pilot-recommended ground-handling spots. The page is switched on/off in Site Options; the map content itself lives in Google My Maps, not in SkyHigh.",
+      steps: [
+        <span className="flex flex-wrap items-center gap-2"><span>Show / hide the page: Toggle 'Ground Handling' in Site Features on Site Options. When on, it appears in the Pilots nav menu and at /ground-handling; when off, it is hidden from the public site (the map content is untouched either way).</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>Add, move or remove spots: The map is a Google My Maps, not edited inside SkyHigh. On the Site Options 'Ground Handling Map' card, use the 'open the map editor directly in Google Maps' link — you must be signed in to a Google account that has edit access to the map. Changes you save in Google Maps appear on the site automatically (no import or publish step in SkyHigh).</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
+        "Who can edit: Edit rights are controlled in Google My Maps' own Share settings, not in SkyHigh. Keep at least one club Google account as an owner/editor of the map so it can still be maintained if a committee member moves on.",
+        "How pilots use it: The page embeds the map read-only. Tap a marker to read its description, tap the directions icon to open it in Google Maps, or use 'Open full screen map' (best on mobile).",
+        "If the map shows blank or 'blocked': usually a content-blocker or privacy extension in the viewer's browser (Google My Maps embeds are a common target) — try another browser or disable shields to confirm. The site's security policy already allows the Google Maps embed.",
+      ]
+    },
+    {
       title: "Admin Search",
       icon: <MessageCircle className="w-6 h-6 text-accent" />,
       link: "/admin",
@@ -766,6 +780,7 @@ export function AdminManual() {
                 ["Competitions", "competitions"],
                 ["Join Page Settings", "join-page-settings"],
                 ["Image Processing", "image-processing"],
+                ["Ground Handling Map", "ground-handling-map"],
               ],
             },
             {
