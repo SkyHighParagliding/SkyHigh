@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file — registered at runtime via navigator.serviceWorker.register('/sw.js'), not imported.
 // CARTO CDN tiles are blocked by CARTO's CORS policy when fetched via the
 // Fetch API (Sec-Fetch-Dest: empty). They only load correctly as native
 // <img> elements (Sec-Fetch-Dest: image). Attempting to intercept and
