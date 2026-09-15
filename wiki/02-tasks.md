@@ -71,12 +71,13 @@ Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:
 - **What:** Manual "Fetch Now" buttons were fire-and-forget — `xGridLastRun` settings keys were never updated after manual fetches, and errors were silently swallowed. Fixed: routes now await the fetch and write `LastRun`/`LastResult` on success/failure. Settings endpoint now derives grid last-run timestamps directly from `wind_grid_data.updatedAt` and `extended_wind_grids.computedAt` — the definitive source of truth regardless of trigger type.
 - **Acceptance Criteria:** Admin panel timestamps update after manual fetch. Errors surface as red toast.
 
-### TASK-REVIEW-F ⬜ useWindPlayback Hook (Optional)
-- **Status:** ⬜ TODO (deferrable — all Critical/High/Medium issues resolved by A–E)
+### TASK-REVIEW-F ✅ useWindPlayback Hook (Optional)
+- **Status:** ✅ DONE — verified 2026-09-15 (already implemented in an earlier session; the deferred note was stale)
 - **Prerequisites:** A, B, C, D
 - **Estimated effort:** M-L (~40% daily / ~8% weekly at Sonnet)
 - **What:** Extract playback state (`isPlaying`, `speed`, `currentTime`, interval effect) into `src/hooks/useWindPlayback.ts`. Further reduces duplication between the two wind map components.
 - **Acceptance Criteria:** Playback and scrubber function correctly. `tsc --noEmit` clean.
+- **Outcome:** `src/hooks/useWindPlayback.ts` exists and is consumed by both `WindMapProto.tsx` and `SitesWindMap.tsx` (identical destructure of `currentTime/isPlaying/playSpeed/togglePlay/cycleSpeed/…`). The `setInterval`/`nextSpeed`/`formatWindMapTime` internals live only in the hook — no duplication remains.
 
 ## Phase 1: Security Hardening (✅ All Complete)
 
@@ -465,17 +466,18 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
   - Full attribution notice visible in the thermal map help panel.
   - Short credit visible in the wind map legend, with full notice on hover.
 
-### TASK-SW-001 ⬜ Consolidate sw.js and sw-tiles.js into a single service worker
-- **Status:** ⬜ BACKLOG
+### TASK-SW-001 ✅ Consolidate sw.js and sw-tiles.js into a single service worker
+- **Status:** ✅ DONE — 2026-09-15
 - **Prerequisites:** TASK-TERRAIN-001
 - **Estimated effort:** S
-- **Description:** `public/sw.js` (registered by `src/main.tsx` at scope `/`) and `public/sw-tiles.js` (registered by `src/hooks/useXCMapState.ts` at the same scope `/`) compete for the same service worker scope. Only one can be active at a time; on pages where `sw.js` wins, its activate handler clears all caches. This means terrain tiles are not persistently cached between sessions on most pages — they rely solely on the in-memory LRU cache in `terrainTiles.ts`. Merging both service workers into one would allow terrain tiles (and other tile layers) to persist across sessions. Currently harmless due to the in-memory cache and prefetch, but worth consolidating.
+- **Description:** `public/sw.js` (registered by `src/main.tsx` at scope `/`) and `public/sw-tiles.js` (registered by `src/hooks/useXCMapState.ts` at the same scope `/`) competed for the same service worker scope. Only one can be active at a time; on pages where `sw.js` won, its activate handler cleared **all** caches — wiping the `skyhigh-offline-tiles` cache that the flight-tracker prefetch (`src/lib/tileCache.ts`) had populated. So offline tiles silently re-downloaded once per session on most pages.
+- **Resolution:** Merged the tile-caching fetch handler into `public/sw.js` and changed its activate handler to preserve `skyhigh-offline-tiles` while still deleting the legacy `carto-tiles-v1` (and any other stale) cache. Removed the `/sw-tiles.js` registration from `useXCMapState.ts` and deleted `public/sw-tiles.js`. `sw.js` is now the single `/`-scope worker registered once in `main.tsx`. The CARTO-exclusion caveat is preserved (CARTO tiles must load as `<img>`, never intercepted). `tsc --noEmit` clean.
 - **Acceptance Criteria:**
-  - Single service worker registered at scope `/` in `src/main.tsx`.
-  - All tile-caching logic from `sw-tiles.js` merged into `sw.js`.
-  - `src/hooks/useXCMapState.ts` no longer registers `sw-tiles.js`.
-  - Offline map tiles continue to work on XC Maps.
-  - Terrain tiles persist in the service worker cache across page loads.
+  - ✅ Single service worker registered at scope `/` in `src/main.tsx`.
+  - ✅ All tile-caching logic from `sw-tiles.js` merged into `sw.js`.
+  - ✅ `src/hooks/useXCMapState.ts` no longer registers `sw-tiles.js`.
+  - ✅ Offline map tiles continue to work on XC Maps.
+  - ✅ Terrain tiles persist in the service worker cache across page loads (activate no longer wipes the tile cache).
 
 ---
 
@@ -503,7 +505,7 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 - **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035, 036 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
-- **Backlog (4):** Tasks 030, 031, 032, TASK-SW-001 (service worker consolidation)
-- **Review deferred (1):** TASK-REVIEW-F (useWindPlayback hook extraction)
+- **Backlog (3):** Tasks 030, 031, 032
+- **Done 2026-09-15:** TASK-SW-001 (service worker consolidation), TASK-REVIEW-F (useWindPlayback hook — was already implemented)
 
 Last updated: 2026-09-14

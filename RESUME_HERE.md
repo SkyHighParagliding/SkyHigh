@@ -60,8 +60,16 @@ code (see "Deferred, by choice" below).
   inside their own file — removing the `export` keyword is pure cosmetics, not
   dead code. Deliberately not doing a blanket sweep (git-blame noise, mild
   risk, some intentional). Consciously accepted, not a TODO.
-- Carried smaller items (unchanged): TASK-SW-001 (consolidate the two `/`-scope
-  service workers); deferred R2 terrain-tile mirror.
+- **TASK-SW-001 DONE 2026-09-15:** consolidated the two `/`-scope service
+  workers into a single `public/sw.js` (merged the tile-caching fetch handler;
+  activate now preserves `skyhigh-offline-tiles` instead of wiping all caches;
+  deleted `public/sw-tiles.js` and its `useXCMapState.ts` registration). The
+  real bug was `sw.js`'s activate wiping the prefetched offline tile cache on
+  every non-XC page. CARTO-exclusion caveat preserved.
+- **TASK-REVIEW-F DONE (already):** `useWindPlayback.ts` was already extracted
+  and consumed by both wind-map components — the deferred note was stale. Marked
+  done in wiki, no code change needed.
+- Carried smaller items (unchanged): deferred R2 terrain-tile mirror.
 - **Never authenticate to production using `DEFAULT_ADMINS`** from the local
   `.env`. Jon performs privileged prod actions himself via the admin UI.
 

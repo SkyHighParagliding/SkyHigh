@@ -35,15 +35,14 @@
 
 ---
 
-## 🔵 Low Priority / Deferred
+## ✅ Done (continued)
+
+### TASK-SW-001 — Consolidate the two `/`-scope service workers
+- **Completed:** 2026-09-15
+- **What changed:** Merged `sw-tiles.js`'s tile-caching fetch handler into `public/sw.js` (now the single `/`-scope worker, registered once in `main.tsx`). Its activate handler preserves `skyhigh-offline-tiles` and only clears legacy caches (was wiping ALL caches — the real bug). Deleted `public/sw-tiles.js` and its `useXCMapState.ts` registration. CARTO-exclusion caveat preserved.
 
 ### TASK-REVIEW-F — useWindPlayback Hook Extraction
-- **Effort:** M (2–3 hours)
-- **What:** Extract shared playback state from `WindMapProto.tsx` and `SitesWindMap.tsx` into `src/hooks/useWindPlayback.ts`
-- **Shared state:** `isPlaying`, `playSpeed`, `currentTime`, `playIntervalRef` with `setInterval` effect, `cycleSpeed()` using `nextSpeed()`, `formatWindMapTime()`
-- **Non-critical:** ~30–40 lines duplicated. Review tasks A–E already addressed perf concerns.
-- **Pick up when:** Touching wind map code — refactor as you go.
-- **Files:** `src/components/WindMapProto.tsx`, `src/components/SitesWindMap.tsx`, new `src/hooks/useWindPlayback.ts`
+- **Completed:** already done in an earlier session (verified 2026-09-15). `src/hooks/useWindPlayback.ts` exists and both `WindMapProto.tsx` + `SitesWindMap.tsx` consume it; no duplication remains. The deferred note was stale.
 
 ---
 

@@ -15,10 +15,7 @@ type: wiki
 ## Public Static Files (`public/`)
 
 ### `public/sw.js`
-Main service worker. Registered by `src/main.tsx` at scope `/`. Handles offline page caching for the PWA. Its activate handler deletes all caches on version change. **Does not have a fetch handler for terrain tiles** — see limitation note under `sw-tiles.js`.
-
-### `public/sw-tiles.js`
-Tile-caching service worker used by the XC map (`src/hooks/useXCMapState.ts`). Registered at scope `/`, the same scope as `sw.js`. Only one registration can own a scope at a time, so on pages where `sw.js` is the active controller, terrain tiles bypass the tile cache and rely on the in-memory LRU cache in `terrainTiles.ts` instead. Consolidating the two service workers into one is a known open follow-up (see TASK-SW-001 in wiki/02-tasks.md).
+The single `/`-scope service worker, registered once by `src/main.tsx`. Caches map tiles (OSM / OpenTopoMap / ArcGIS + AWS terrarium elevation) into the `skyhigh-offline-tiles` cache and serves them on fetch; the flight-tracker offline prefetch (`src/lib/tileCache.ts`) writes the same cache directly. Its activate handler deletes stale caches (e.g. the legacy `carto-tiles-v1`) but **preserves `skyhigh-offline-tiles`**. **Does not intercept CARTO CDN tiles** — CARTO's CORS policy requires they load as native `<img>` elements, so the fetch predicate deliberately excludes them (WindCanvas has its own in-memory CARTO cache). Consolidated from the former `sw.js` + `sw-tiles.js` pair on 2026-09-15 (TASK-SW-001); the two used to fight for the `/` scope and `sw.js` wiped the tile cache on activate.
 
 ---
 

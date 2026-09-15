@@ -306,11 +306,10 @@ export function useXCMapState() {
     }).catch(() => {});
   }, [selectedSite, settings.flightTrackerEnabled, settings.ftOfflineTileRadius, settings.ftOfflineZoomMin, settings.ftOfflineZoomMax, settings.ftOfflineLayers]);
 
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw-tiles.js').catch(() => {});
-    }
-  }, []);
+  // Tile-caching service worker is registered once for all pages in
+  // src/main.tsx (/sw.js). It used to be registered separately here as
+  // /sw-tiles.js, but two workers at the same "/" scope fought — see the header
+  // comment in public/sw.js. No per-page registration needed anymore.
 
   const ringLegend = useMemo(() => {
     const DEFAULT = [10, 20, 50, 100];
