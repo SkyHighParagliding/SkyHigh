@@ -1,11 +1,29 @@
-# RESUME_HERE — Last updated: 2026-09-15 (session 63)
+# RESUME_HERE — Last updated: 2026-09-16 (session 64)
 
 ## Project: SkyHigh
-## Status: Active — on `main`. Meteogram Stage 1 committed (flag-gated, review OK)
+## Status: Active — on `main`. Meteogram Stage 1 + rain + thermal-map cleanup live.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## Session 64 (2026-09-16) — thermal-map / site-panel cleanup (pushed)
+
+All in `SiteThermalPanel` + the thermal renderer, reviewed on-device:
+- Removed the pinch-to-zoom hint; legend is now a tap-to-toggle **"Key"** pill
+  that expands to a readable panel and matches the map: SVG cumulus glyph (port
+  of `traceCumulus`), grey swatch = overcast, blue swatch = rain, drawn hollow/
+  solid OD triangles.
+- Tapped-point ✕ now **fully dismisses** — added `clearPinRef` (MapCanvas) +
+  `dismissRef` (ThermalCanvas) so the ✕ clears the pin, not just the box (the
+  render loop was repainting it). Tapped-point box shows a **Rain** line with
+  drizzle/rain/showers typing (`src/lib/precip.ts`, weather_code).
+- New **Admin → Forecast** opacity knobs: `thermalHatchOpacity` (0 hides the
+  screen-space hatch that "walks" on pan), `thermalOvercastOpacity`,
+  `thermalRainWashOpacity` — all in `ThermalTuning`.
+- Cumulus glyph **depth cap 1200 m → 600 m** so size/brightness visibly track
+  cloud depth in the normal 100–400 m band (was ~1 px, imperceptible).
+- Admin `admin@example.com` dev password reset to `devadmin` (dev DB only).
 
 ## ✅ Meteogram Stage 1 — committed, flag-gated (default OFF)
 

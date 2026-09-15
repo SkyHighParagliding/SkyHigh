@@ -33,6 +33,9 @@ interface ThermalCanvasProps {
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
   onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null) => void;
+  /** Filled with a function that dismisses the tapped-point readout (clears the
+   *  pin so the render loop stops repainting it, and emits null). */
+  dismissRef?: React.MutableRefObject<(() => void) | null>;
   sizeKey?: number;
   savedCenterLat?: number;
   savedCenterLon?: number;
@@ -52,7 +55,7 @@ interface ThermalCanvasProps {
 
 export const ThermalCanvas = memo(function ThermalCanvas({
   thermalGrid, currentTime, siteLat, siteLon,
-  siteMarkers, onSiteClick, onThermalInfoChange,
+  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
 }: ThermalCanvasProps) {
@@ -79,7 +82,10 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     minWstar:         numOr(settings.thermalMinWstar,         DEFAULT_THERMAL_TUNING.minWstar),
     stormCapeGate:    numOr(settings.thermalStormCapeGate,    DEFAULT_THERMAL_TUNING.stormCapeGate),
     rainOffMm:        numOr(settings.thermalRainOffMm,        DEFAULT_THERMAL_TUNING.rainOffMm),
-  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate, settings.thermalRainOffMm]);
+    hatchOpacity:     numOr(settings.thermalHatchOpacity,     DEFAULT_THERMAL_TUNING.hatchOpacity),
+    overcastOpacity:  numOr(settings.thermalOvercastOpacity,  DEFAULT_THERMAL_TUNING.overcastOpacity),
+    rainWashOpacity:  numOr(settings.thermalRainWashOpacity,  DEFAULT_THERMAL_TUNING.rainWashOpacity),
+  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate, settings.thermalRainOffMm, settings.thermalHatchOpacity, settings.thermalOvercastOpacity, settings.thermalRainWashOpacity]);
   const tuningRef = useRef(tuning);
   tuningRef.current = tuning;
 
@@ -126,7 +132,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       draw: (c, res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
         maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid, tuningRef.current);
         drawThermalOverlay(c.ctx, res.overlay, c.transform);
-        rebuildCumulusField(res.field, res.overlay, c.transform);
+        rebuildCumulusField(res.field, res.overlay, c.transform, tuningRef.current.hatchOpacity);
         drawCumulusField(c.ctx, res.field, c.transform);
       },
     };
@@ -218,6 +224,18 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     lastThermalInfoUpdateRef.current = 0;
   }, []);
 
+  // MapCanvas fills this with its pin-clear; the dismiss below chains all three
+  // pieces of pin state: the readout ref (stops the render loop repainting), the
+  // panel readout (emit null), and the visual crosshair (MapCanvas state).
+  const mapClearPinRef = useRef<(() => void) | null>(null);
+  if (dismissRef) {
+    dismissRef.current = () => {
+      pinnedCrosshairRef.current = null;
+      onThermalInfoChangeRef.current?.(null);
+      mapClearPinRef.current?.();
+    };
+  }
+
   return (
     <MapCanvas
       bounds={bounds}
@@ -234,6 +252,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       onSiteClick={onSiteClick}
       markerHitSuppressesPin={true}
       onPinChange={handlePinChange}
+      clearPinRef={mapClearPinRef}
       projectionRef={projectionRef}
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"

@@ -75,6 +75,10 @@ interface MapCanvasProps {
    *  false the pin is set first and the hit-test runs after (wind). */
   markerHitSuppressesPin?: boolean;
   onPinChange?: (pin: MapPin) => void;
+  /** MapCanvas fills this with a function that clears the pinned crosshair, so a
+   *  consumer's own "dismiss" affordance (e.g. an ✕ on the readout box) can drop
+   *  the pin — otherwise the pin persists and the readout keeps repainting. */
+  clearPinRef?: React.MutableRefObject<(() => void) | null>;
   /** Filled in by MapCanvas so consumers can invert screen coords themselves. */
   projectionRef?: React.MutableRefObject<GeoProjection | null>;
   transformRef?: React.MutableRefObject<ZoomTransform>;
@@ -174,6 +178,7 @@ export const MapCanvas = memo(function MapCanvas({
   onSiteClick,
   markerHitSuppressesPin,
   onPinChange,
+  clearPinRef,
   projectionRef: projectionRefProp,
   transformRef: transformRefProp,
   containerClassName,
@@ -184,6 +189,13 @@ export const MapCanvas = memo(function MapCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [crosshair, setCrosshair] = useState<{ x: number; y: number } | null>(null);
   const [pinnedCrosshair, setPinnedCrosshair] = useState<{ x: number; y: number } | null>(null);
+
+  // Expose a pin-clear to consumers (e.g. the ✕ on the thermal readout box).
+  useEffect(() => {
+    if (!clearPinRef) return;
+    clearPinRef.current = () => setPinnedCrosshair(null);
+    return () => { clearPinRef.current = null; };
+  }, [clearPinRef]);
 
   // Always call useRef — pick the prop version if provided, otherwise use the
   // internal fallback. This keeps the hook call count stable.

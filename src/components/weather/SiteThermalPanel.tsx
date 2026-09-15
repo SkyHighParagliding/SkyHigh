@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info, Map as MapIcon, LineChart } from 'lucide-react';
@@ -78,6 +78,8 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const [sliderIndex, setSliderIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+  const dismissThermalInfoRef = useRef<(() => void) | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
   // lat/k from onTransformChange; fall back to site lat and a sensible default zoom.
   const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: site?.lat ?? -37.8, k: 256 * Math.pow(2, 8) });
@@ -220,6 +222,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             savedZoom={fullscreen ? 7 : 8}
             sizeKey={fullscreen ? 2 : 1}
             onThermalInfoChange={setThermalInfo}
+            dismissRef={dismissThermalInfoRef}
             siteMarkers={launchMarker}
             onTransformChange={handleTransformChange}
           />
@@ -239,31 +242,31 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       {thermalInfo && (() => {
         const s = getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape));
         return (
-          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2.5 py-1.5 z-10 min-w-[110px]">
-            <div className="flex items-start justify-between gap-2">
+          <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 z-10 min-w-[120px]">
+            <div className="flex items-start justify-between gap-2.5">
               <div className="space-y-0.5">
-                <div className="text-[8px] text-white/45 uppercase tracking-wide font-mono">Tapped point</div>
-                {s && <div className="text-[11px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
+                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
+                {s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
                 {thermalInfo.blh > 0 && (
-                  <div className="text-[9px] text-white/70 font-mono">BL Top <Altitude metres={thermalInfo.blh} step={100} /></div>
+                  <div className="text-[10px] text-white/75">BL Top <Altitude metres={thermalInfo.blh} step={100} /></div>
                 )}
                 {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                  <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
+                  <div className={cn('text-[10px]', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75')}>
                     Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                   </div>
                 )}
                 {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                  <div className="text-[9px] text-sky-300 font-mono">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                  <div className="text-[10px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
                 )}
                 {typeof thermalInfo.groundAmsl === 'number' && (
-                  <div className="text-[9px] text-white/70 font-mono">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /></div>
+                  <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /></div>
                 )}
               </div>
               <button
-                onClick={(e) => { e.stopPropagation(); setThermalInfo(null); }}
-                className="text-white/40 hover:text-white/80 transition-colors shrink-0 mt-0.5"
+                onClick={(e) => { e.stopPropagation(); setThermalInfo(null); dismissThermalInfoRef.current?.(); }}
+                className="text-white/50 hover:text-white/80 transition-colors shrink-0 mt-0.5"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -283,18 +286,25 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         </div>
       )}
 
-      {/* Legend */}
-      {thermalGrid && (
-        <div className="absolute bottom-2 left-2 bg-black/55 backdrop-blur-sm rounded px-2 py-1 pointer-events-none">
-          <div className="text-[7px] text-white/60 font-mono uppercase tracking-wide mb-0.5">Thermal Strength</div>
-          <div className="h-1.5 w-24 rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
+      {/* Legend — collapsed to a swatch pill on this small map; tap to expand to a
+          readable panel, tap the panel to hide. The pinch-to-zoom hint was
+          removed as self-evident. */}
+      {thermalGrid && (showLegend ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowLegend(false); }}
+          className="absolute bottom-2 left-2 z-10 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100%-1rem)]"
+          title="Tap to hide legend"
+        >
+          <div className="flex items-center justify-between gap-2.5 mb-1">
+            <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Thermal Strength</span>
+            <X className="w-3.5 h-3.5 text-white/50 shrink-0" />
+          </div>
+          <div className="h-2.5 w-44 max-w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
           {/* Labels pinned to their true W* threshold position so they stay
               aligned with the gradient when the ramp changes. */}
-          <div className="relative mt-0.5 h-[9px] text-[6px] text-white/45 font-mono">
+          <div className="relative mt-1 h-[13px] w-44 max-w-full text-[10px] text-white/60 font-mono">
             {(
               [
-                // Three labels only: this bar is w-24 at 6px type, so a fourth
-                // collides. No 'None' — nothing is painted below W* 0.3.
                 { label: 'Weak',   wstar: 0.3 },
                 { label: 'Good',   wstar: 1.5 },
                 { label: 'Strong', wstar: 2.5 },
@@ -315,27 +325,44 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
               );
             })}
           </div>
-          <div className="flex items-center gap-1 mt-1.5 text-[6px] text-white/55">
-            <span className="text-[8px] leading-none">☁</span>
-            <span>Cumulus — density = coverage · size = depth</span>
+          <div className="mt-2 space-y-1.5 text-[10px] text-white/75 leading-snug">
+            <div className="flex items-center gap-2">
+              {/* Same shape the map draws (traceCumulus): three domes on a flat base. */}
+              <span className="w-[22px] flex justify-center shrink-0">
+                <svg width="22" height="16" viewBox="0 0 16 11">
+                  <path fill="white" d="M2.52 9 A2.48 2.48 0 0 1 7.48 9 L4.8 7.4 A3.2 3.2 0 0 1 11.2 7.4 L9 8.8 A2.2 2.2 0 0 1 13.4 8.8 L2.52 9 Z" />
+                </svg>
+              </span>
+              <span>Cumulus — density = coverage · size &amp; brightness = depth</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(150,154,160)' }} /></span>
+              <span>Overcast — grey sheet, thermals suppressed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>
+              <span>Rain — deeper blue = heavier</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span>Overdevelopment:</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="none" stroke="white" strokeWidth="1.2" /></svg>
+              <span className="text-white/60">watch</span>
+              <span className="text-white/35">·</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="white" /></svg>
+              <span className="text-white/60">likely</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 mt-0.5 text-[6px] text-white/55">
-            <span className="text-[8px] leading-none">▨</span>
-            <span>Overcast sheet — plain = blue day</span>
-          </div>
-          <div className="flex items-center gap-1 mt-0.5 text-[6px] text-white/55">
-            <span className="text-[8px] leading-none">▲</span>
-            <span>Overdevelopment — hollow = watch · solid = likely</span>
-          </div>
-        </div>
-      )}
-
-      {/* Hint */}
-      {thermalGrid && (
-        <div className="absolute bottom-2 right-2 bg-black/55 backdrop-blur-sm rounded px-2 py-1 pointer-events-none">
-          <span className="text-[7px] text-white/70 font-mono">Scroll / pinch to zoom</span>
-        </div>
-      )}
+        </button>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowLegend(true); }}
+          className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors"
+          title="Show legend"
+        >
+          <span className="h-2 w-8 rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
+          <span className="text-[11px] text-white/80 font-medium">Key</span>
+        </button>
+      ))}
     </div>
   );
 

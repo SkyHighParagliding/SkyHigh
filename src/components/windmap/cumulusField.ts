@@ -243,9 +243,11 @@ export function rebuildCumulusField(
   field: CumulusFieldState,
   overlay: ThermalOverlayState,
   currentTransform: ZoomTransform,
+  hatchOpacity: number = HATCH_ALPHA,
 ): void {
-  // Only rebuild when the thermal overlay has actually changed.
-  const newKey = `${overlay.cachedTransformKey}|${overlay.cachedTime}`;
+  // Only rebuild when the thermal overlay has actually changed — hatchOpacity is
+  // folded in so an Admin change to it forces a fresh hatch pass.
+  const newKey = `${overlay.cachedTransformKey}|${overlay.cachedTime}|${hatchOpacity}`;
   if (newKey === field.cachedKey) return;
   field.cachedKey = newKey;
 
@@ -272,7 +274,8 @@ export function rebuildCumulusField(
   const hatchPath = new Path2D();
   let hatchCellCount = 0;
 
-  for (let cy = 0; cy < overlayH; cy++) {
+  // hatchOpacity 0 disables the hatch entirely (Admin setting) — skip the build.
+  for (let cy = 0; hatchOpacity > 0 && cy < overlayH; cy++) {
     for (let cx = 0; cx < overlayW; cx++) {
       if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) {
         hatchPath.rect(cx * CELL, cy * CELL, CELL, CELL);
@@ -297,7 +300,7 @@ export function rebuildCumulusField(
     // them a factor of √2 too close.
     const step = HATCH_SPACING * Math.SQRT2;
 
-    ctx.strokeStyle = `rgba(${HATCH_RGB},${HATCH_ALPHA})`;
+    ctx.strokeStyle = `rgba(${HATCH_RGB},${hatchOpacity})`;
     ctx.lineWidth   = HATCH_LINE_WIDTH;
     ctx.beginPath();
     for (let c = -height; c <= width + step; c += step) {
@@ -429,10 +432,12 @@ export function rebuildCumulusField(
       // See latticeHash() and header notes for why (i, j), not screen position.
       if (latticeHash(i, j) >= drawProb) continue;
 
-      // Size and opacity both ramp with cloud depth, saturating at 1200 m.
-      // Typical depths here run 100–400 m, so scaling against a rare 3000 m
-      // case would crush every ordinary day into the bottom of the range.
-      const t = Math.min(1, depth / 1200);
+      // Size and opacity both ramp with cloud depth, saturating at 600 m.
+      // Typical depths run 100–400 m; the earlier 1200 m cap crushed that whole
+      // band into a ~1 px size change that read as no change at all. Saturating
+      // at 600 m spreads the ordinary range across most of the size/opacity ramp
+      // so depth is actually visible (deep-cloud days > 600 m simply top out).
+      const t = Math.min(1, depth / 600);
       const r = (2.0 + t * 1.8) * CU_SIZE;
       const alpha = 0.6 + t * 0.35;
 

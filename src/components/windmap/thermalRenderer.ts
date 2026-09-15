@@ -71,6 +71,12 @@ export interface ThermalTuning {
   stormCapeGate: number;
   /** Precip (mm/hr) at which the blue rain wash saturates. Lighter rain fades in below it. */
   rainOffMm: number;
+  /** Overcast diagonal-hatch opacity, 0–1. 0 hides the hatch entirely (grey ramp only). */
+  hatchOpacity: number;
+  /** Grey overcast wash max opacity, 0–1, at full overcast. */
+  overcastOpacity: number;
+  /** Blue rain wash max opacity, 0–1, at the no-fly rain rate. */
+  rainWashOpacity: number;
 }
 
 export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
@@ -80,13 +86,15 @@ export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
   minWstar: 0.3,
   stormCapeGate: 500,
   rainOffMm: 1,
+  hatchOpacity: 0.35,
+  overcastOpacity: 0.75,
+  rainWashOpacity: 0.5,
 };
 
 // Rain wash: a translucent blue over cells with meaningful precip. Fades in from
 // this floor and saturates at tuning.rainOffMm, so light rain reads faint and
 // real rain reads solid — and it composites over heat/grey/transparent alike.
 const RAIN_WASH_MIN_MM = 0.1;
-const RAIN_WASH_MAX_ALPHA = 0.5;
 const RAIN_WASH_RGB = [56, 118, 209] as const;
 
 // ---------------------------------------------------------------------------
@@ -457,7 +465,7 @@ function rebuildThermalOverlay(
         // heat tint underneath — enough to tell pilots the boundary layer is
         // still loaded even if thermals are weak. Lower values (0.5) washed
         // out insufficiently; 1.0 erased the heat ramp entirely at high cloud.
-        const greyBlend = overcastArr[cellIdx] * 0.75;
+        const greyBlend = overcastArr[cellIdx] * tuning.overcastOpacity;
         const greyR = 150; const greyG = 154; const greyB = 160;
 
         pixels[idx]     = Math.round(heatR + (greyR - heatR) * greyBlend);
@@ -519,7 +527,7 @@ function rebuildThermalOverlay(
         // Ensure the pixel alpha is nonzero if the grey sheet is visible so
         // the composited grey renders correctly.
         const sheetAlpha = overcastArr[cellIdx] > 0
-          ? Math.round(overcastArr[cellIdx] * 0.75 * 255)
+          ? Math.round(overcastArr[cellIdx] * tuning.overcastOpacity * 255)
           : 0;
 
         if (sheetAlpha > 0) {
@@ -540,7 +548,7 @@ function rebuildThermalOverlay(
       if (th.precip !== undefined && th.precip >= RAIN_WASH_MIN_MM && fade > 0) {
         const span = Math.max(0.1, tuning.rainOffMm - RAIN_WASH_MIN_MM);
         const wash = clamp01((th.precip - RAIN_WASH_MIN_MM) / span);
-        const a = wash * RAIN_WASH_MAX_ALPHA * fade;
+        const a = wash * tuning.rainWashOpacity * fade;
         if (a > 0) {
           // Source-over: rain (straight-alpha `a`) over the current straight-alpha pixel.
           const curA = pixels[idx + 3] / 255;
@@ -574,7 +582,7 @@ export function maybeRebuildThermalOverlay(
   // Fold the tuning into the cache key so a settings change forces a rebuild
   // (otherwise the map keeps the raster it baked with the old thresholds until
   // the next pan/zoom/time change).
-  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}_${tuning.rainOffMm}`;
+  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}_${tuning.rainOffMm}_${tuning.hatchOpacity}_${tuning.overcastOpacity}_${tuning.rainWashOpacity}`;
   const transformKey = `${currentTransform.k.toFixed(1)}_${currentTransform.x.toFixed(0)}_${currentTransform.y.toFixed(0)}_${tuningKey}`;
   const curTime = currentTimeRef.current;
   if (transformKey !== overlay.cachedTransformKey || curTime !== overlay.cachedTime) {
