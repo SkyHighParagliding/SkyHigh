@@ -101,23 +101,20 @@ excluded from commits — still undecided what to do with them.
    collapse) and Agent E (documentation) in parallel.
 4. Then Wave 2 (agents B/C/D), then Wave 3 (verify → rectify → loop).
 
-### .env / 1Password
+### .env / 1Password — RESOLVED (session 62)
 
-The draw script is **not** in this repo — it lives at:
+The session-61 "draw hung / no `.env`" blocker is **stale**. As of session 62 the
+`SessionStart` hook reports `.env` present and up to date (38 lines), and the dev
+server boots against it. **The live-verification harness is proven:** `npm run dev`
+(Vite 5173 / Express 3001) up, Chrome via Playwright loads the app,
+`data-template=wonderful-white`, and all 39 `:root` tokens match
+`baseline-tokens.json` with **zero deviation**. Only console error is a harmless
+pre-existing `favicon.ico` 404. See PLAN.md §4c for the per-wave live-check
+protocol; baseline shot at `tasks/debrand/live-before-home-1280.png`.
 
-```
-C:\Users\User\Documents\CodeFolder\Ai System Projects\scripts\draw-env.ps1
-```
-
-Session 61 tried to run it and it **hung** on `op user get --me`, which wants a
-1Password desktop unlock/biometric approval that a tool call cannot satisfy.
-Jon should run it himself so the prompt lands in his own terminal:
-
-```
-! & "C:\Users\User\Documents\CodeFolder\Ai System Projects\scripts\draw-env.ps1" -Path "C:\Users\User\Documents\CodeFolder\Ai Coding Projects\SkyHigh"
-```
-
-No `.env` was created, so there is nothing to wipe. `op` CLI is v2.34.0 and on PATH.
+If `.env` ever goes missing again, the draw script lives at
+`C:\Users\User\Documents\CodeFolder\Ai System Projects\scripts\draw-env.ps1` and
+must be run by Jon (it needs a 1Password biometric a tool call can't satisfy).
 
 ## Open questions / blockers
 

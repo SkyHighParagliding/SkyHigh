@@ -203,6 +203,32 @@ is the real gate, not the green checks.
 
 ---
 
+## 4c. Live behavioral check (dev server + Chrome) — run after every wave
+
+Jon's directive (2026-09-15): verify against the **running app**, not just the
+built CSS harness. The dev server is a valid environment — its DB is in the same
+Wonderful White state as production (`data-template=wonderful-white`, 39/39 tokens
+match `baseline-tokens.json`, verified live this session with zero deviation).
+
+After every wave, with `npm run dev` up (Vite 5173 / Express 3001):
+
+1. **Token diff, live.** `browser_evaluate` `getComputedStyle(:root)` for all 39
+   (post-Wave-4: value-mapped per §4a). Zero deviation.
+2. **Console clean.** `browser_console_messages` level=error. Baseline is exactly
+   **one** pre-existing error — `favicon.ico` 404 — captured before any change.
+   Any *new* error fails the gate.
+3. **Visual sweep.** Screenshot at 1280 (desktop) and 390 (mobile) of the pages
+   the wave touched; hero + scrolled for header/logo changes. Compare to
+   `live-before-*.png`. Crop native-res for any fine detail (feedback.md,
+   2026-09-15 — Read downscales full-page shots).
+4. **Behavior.** For interactive changes (AdminBranding card removal, weather
+   `variant` drop) actually click through the flow in Chrome, not just load it.
+
+Baseline artifacts captured this session: `live-before-home-1280.png`, and the
+39-token live-match result above.
+
+---
+
 ## 5. Dispatch plan
 
 File ownership is disjoint per agent (CLAUDE.md §8 concurrency rule).
