@@ -45,10 +45,10 @@ code (see "Deferred, by choice" below).
 
 ## Next / open items
 
-- **Prod smoke test (Jon):** when the deploy is live, verify **Admin →
-  Documents** — categories list, open a category (file listing), one upload +
-  delete. That exercises the Apps Script bridge, the one live path the Drive
-  refactor sat next to. Everything else is covered by `tsc` + `npm test`.
+- **Prod smoke test — DONE (Jon, 2026-09-15):** Admin → Documents verified
+  working on production after deploy. The Drive refactor (Apps Script bridge,
+  googleapis half removed) is confirmed live. Nothing outstanding from the
+  cleanup.
 - **Deferred, by choice (from the cleanup):**
   - **DO (small):** `nomadsGfs.ts` has its own local `makeSemaphore` duplicate —
     now that `s3ReadCommon.ts` exists it should import from there. Verified
