@@ -70,6 +70,8 @@ const THERMAL_VARIABLES: Variable[] = [
   "cloud_cover_low",
   // Precipitation — optional; drives the rain wash on the thermal map.
   "precipitation",
+  // WMO weather code — optional; distinguishes drizzle / rain / showers / snow.
+  "weather_code",
 ];
 
 const THERMAL_REQUIRED: Variable[] = ["cape", "boundary_layer_height"];
@@ -95,6 +97,7 @@ const THERMAL_OPTIONAL: Variable[] = [
   "cloud_cover",
   "cloud_cover_low",
   "precipitation",
+  "weather_code",
 ];
 
 async function buildThermalPoints(): Promise<LatLon[]> {
@@ -140,6 +143,7 @@ function buildThermalPoint(p: MergedPoint, time: string[]): ThermalPoint {
       cloud_cover: seriesOf(p, "cloud_cover", n, gaps("cloud_cover")),
       cloud_cover_low: seriesOf(p, "cloud_cover_low", n, gaps("cloud_cover_low")),
       precipitation: seriesOf(p, "precipitation", n, gaps("precipitation")),
+      weather_code: seriesOf(p, "weather_code", n, gaps("weather_code")),
     },
   };
 }

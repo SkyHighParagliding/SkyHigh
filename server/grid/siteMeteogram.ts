@@ -44,6 +44,8 @@ export interface MeteogramHour {
   precip: number | null;
   /** Precipitation probability, %. */
   precipProb: number | null;
+  /** WMO weather code — distinguishes drizzle / rain / showers / snow. */
+  weatherCode: number | null;
 }
 
 export interface SiteMeteogram {
@@ -117,6 +119,7 @@ export async function buildSiteMeteogram(
       windDir: hasFine ? num(fineHourly!.wind_direction_10m[fi!]) : null,
       precip: hasFine ? num(fineHourly!.precipitation[fi!]) : null,
       precipProb: hasFine ? num(fineHourly!.precipitation_probability[fi!]) : null,
+      weatherCode: hasFine ? num(fineHourly!.weather_code[fi!]) : null,
     };
   });
 

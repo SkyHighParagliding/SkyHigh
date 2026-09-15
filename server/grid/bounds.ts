@@ -140,6 +140,8 @@ export interface ThermalPoint {
     cloud_cover_low?: number[];
     /** Precipitation, mm/hr. Optional; absent on grids cached before it was added. */
     precipitation?: number[];
+    /** WMO weather code. Optional; absent on grids cached before it was added. */
+    weather_code?: number[];
   };
 }
 

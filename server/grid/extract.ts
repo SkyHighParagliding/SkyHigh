@@ -347,6 +347,9 @@ export interface ThermalCell {
   /** Precipitation, mm/hr. Optional; absent on grids cached before it was added.
    *  Drives the translucent blue rain wash on the thermal map. */
   precip?: number;
+  /** WMO weather code. Optional; distinguishes drizzle / rain / showers / snow.
+   *  Categorical — must be nearest-sampled, never interpolated. */
+  weatherCode?: number;
 }
 
 export interface ThermalOverlay {
@@ -535,6 +538,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
           const cloudRaw    = point.hourly.cloud_cover?.[timeIdx];
           const cloudLowRaw = point.hourly.cloud_cover_low?.[timeIdx];
           const precipRaw   = point.hourly.precipitation?.[timeIdx];
+          const wcRaw       = point.hourly.weather_code?.[timeIdx];
           timeStepData.push({
             cape: point.hourly.cape[timeIdx] ?? 0,
             blh,
@@ -551,6 +555,7 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
             cloud:    (cloudRaw    != null && !Number.isNaN(cloudRaw))    ? cloudRaw    : undefined,
             cloudLow: (cloudLowRaw != null && !Number.isNaN(cloudLowRaw)) ? cloudLowRaw : undefined,
             precip:   (precipRaw   != null && !Number.isNaN(precipRaw))   ? precipRaw   : undefined,
+            weatherCode: (wcRaw    != null && !Number.isNaN(wcRaw))       ? wcRaw       : undefined,
           });
         } else {
           timeStepData.push(null);

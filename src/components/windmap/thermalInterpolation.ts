@@ -24,6 +24,8 @@ export interface ThermalCellValue {
   cloudLow?: number;
   /** Precipitation, mm/hr. Undefined on grids cached before it was added. */
   precip?: number;
+  /** WMO weather code. Categorical — nearest-sampled, never interpolated. */
+  weatherCode?: number;
 }
 
 export interface ThermalGrid {
@@ -119,6 +121,8 @@ function interpolateSpatial(
     cloud:    hasCloud    ? lerp(c00.cloud!,    c10.cloud!,    c01.cloud!,    c11.cloud!)    : undefined,
     cloudLow: hasCloudLow ? lerp(c00.cloudLow!, c10.cloudLow!, c01.cloudLow!, c11.cloudLow!) : undefined,
     precip:   hasPrecip   ? lerp(c00.precip!,   c10.precip!,   c01.precip!,   c11.precip!)   : undefined,
+    // Categorical: take the nearest corner's code, never a blend of two codes.
+    weatherCode: (dx < 0.5 ? (dy < 0.5 ? c00 : c01) : (dy < 0.5 ? c10 : c11)).weatherCode,
   };
 }
 
@@ -162,6 +166,8 @@ export function getThermalAt(
     cloud:    hasCloud    ? v0.cloud!    * (1 - dt) + v1.cloud!    * dt : undefined,
     cloudLow: hasCloudLow ? v0.cloudLow! * (1 - dt) + v1.cloudLow! * dt : undefined,
     precip:   hasPrecip   ? v0.precip!   * (1 - dt) + v1.precip!   * dt : undefined,
+    // Categorical: take the nearer time step's code, never a blend.
+    weatherCode: dt < 0.5 ? v0.weatherCode : v1.weatherCode,
   };
 }
 

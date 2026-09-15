@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolation';
 import { useUnits } from '@/hooks/useUnits';
 import { metresToFeet } from '@/lib/units';
+import { precipDescription } from '@/lib/precip';
 
 // One hour of the per-site meteogram, as returned by GET /api/weather/:id/meteogram.
 export interface MeteogramHour {
@@ -18,6 +19,7 @@ export interface MeteogramHour {
   windDir: number | null;
   precip: number | null;
   precipProb: number | null;
+  weatherCode: number | null;
 }
 
 // Flying window in Melbourne local hours — matches SiteThermalPanel's slider.
@@ -399,7 +401,12 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         if (crossSlot.ccl !== null && crossSlot.blh !== null && crossSlot.ccl < crossSlot.blh) {
           rows.splice(2, 0, ['Cu base', formatAltitude(useAmsl ? crossSlot.ccl + groundAmsl : crossSlot.ccl, 100), CU_COLOR]);
         }
-        const tipW = 158;
+        if (crossSlot.precip !== null && crossSlot.precip >= LIGHT_RAIN_MM) {
+          rows.push(['Rain', precipDescription(crossSlot.precip, crossSlot.weatherCode), '#38bdf8']);
+        }
+        // Size to content — the rain description can be long ("Moderate showers · …").
+        const maxValLen = Math.max(...rows.map(r => r[1].length));
+        const tipW = Math.max(158, Math.round(80 + maxValLen * 5.6));
         const tipX = x > PAD_L + PLOT_W - tipW - 8 ? x - tipW - 6 : x + 6;
         const tipH = rows.length * 15 + 8;
         return (

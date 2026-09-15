@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info, Map as MapIcon, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
+import { precipDescription } from '@/lib/precip';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { MapScaleBar } from '../windmap/MapScaleBar';
 import { cn } from '@/lib/utils';
@@ -77,7 +78,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const [sliderIndex, setSliderIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
   // lat/k from onTransformChange; fall back to site lat and a sensible default zoom.
   const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: site?.lat ?? -37.8, k: 256 * Math.pow(2, 8) });
   const handleTransformChange = useCallback((lat: number, _lon: number, zoomLevel: number) => {
@@ -250,6 +251,9 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                   <div className={cn('text-[9px] font-mono', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/70')}>
                     Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
                   </div>
+                )}
+                {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                  <div className="text-[9px] text-sky-300 font-mono">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
                 )}
                 {typeof thermalInfo.groundAmsl === 'number' && (
                   <div className="text-[9px] text-white/70 font-mono">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /></div>

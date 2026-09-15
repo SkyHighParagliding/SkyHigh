@@ -13,6 +13,7 @@ import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
 import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from './windmap/thermalRenderer';
+import { precipDescription } from '@/lib/precip';
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
@@ -38,7 +39,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; groundAmsl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
@@ -715,6 +716,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                       <span className="text-white/60">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
                     </>
                   )}
+                  {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                    <>
+                      <span className="text-white/40">|</span>
+                      <span className="text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</span>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2">
@@ -758,6 +765,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                       )}
                     </div>
                   ) : null}
+                  {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                    <div className="text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                  )}
                 </div>
               ) : (
                 <div className="flex lg:hidden items-center gap-2">
