@@ -134,13 +134,13 @@ No `.env` was created, so there is nothing to wipe. `op` CLI is v2.34.0 and on P
   - Stale extended-forecast rows need `POST /api/weather/extended-forecast/fetch-now`
     (requireAuth — Jon triggers it, or wait for the 05:30 Melbourne cron).
   - `GridBoundsSelector.tsx` still says "Fine 0.15°" after the Fine → Wind rename.
-  - ~190 untracked debugging PNGs in the repo root, plus `prod-thermal-check.json`
-    (**25 MB**), `prodchunks/` (124 files), `prod-index.html`, `prod-index.js`,
-    `chunks.txt`, `more.txt`, `idx.json`, `cumulus-preview.html`, `force-thermal.mts`.
-    Jon to approve deletion.
-  - Three files the tool classifier blocks me from deleting: `tmp/gridTilesOld.ts`,
-    `scripts/probe-coastline.tmp.mjs`, and the duplicate `.ga-coast/` directory
-    (~22 MB copy of `data/ga-coast/`).
+  - ~~Untracked debugging PNGs + scratch files in the repo root~~ — **DONE
+    (session 62):** 242 scratch items removed via targeted `git clean`, plus the
+    72M `.ga-coast/` duplicate of `data/ga-coast/` and `tmp/gridTilesOld.ts` /
+    `scripts/probe-coastline.tmp.mjs`. Preserved: the 3 PDFs and the empty
+    documented dirs (`.config/`, `wiki/decisions/`, `screenshots-test/`). Working
+    tree now only carries the two `siteguide_*` edits and two untracked PDFs
+    (Inductions Links, Smart Search Log — Jon chose to keep).
   - `FORECAST_DAYS = 2` conflicts with the "7-Day" naming and `RETAIN_DAYS = 7`;
     `convective_inhibition` is missing on a large fraction of ECMWF points while
     `lifted_index` is fully present, so the overdevelopment weighting may lean on
