@@ -7,7 +7,9 @@ import { getThermalAt } from './thermalInterpolation';
 import type { ThermalGrid } from './thermalInterpolation';
 import type { WindGrid } from './windInterpolation';
 import { fetchElevationAt } from './elevationPoint';
-import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay } from './thermalRenderer';
+import { createThermalOverlay, maybeRebuildThermalOverlay, drawThermalOverlay, DEFAULT_THERMAL_TUNING } from './thermalRenderer';
+import type { ThermalTuning } from './thermalRenderer';
+import { useSettings } from '@/contexts/SettingsContext';
 import { createCumulusField, rebuildCumulusField, drawCumulusField } from './cumulusField';
 import { createParticlePool, updateAndDrawParticles } from './particleRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
@@ -63,6 +65,23 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   const zoomSetpointsRef = useRef(zoomSetpoints);
   zoomSetpointsRef.current = zoomSetpoints;
 
+  // Admin-tunable thermal thresholds (Admin → Forecast). Each falls back to the
+  // renderer default, so an unset setting reproduces today's map exactly. Held
+  // in a ref so the per-frame draw closure reads the latest without rebuilding
+  // the layer list. Folded into the overlay cache key inside
+  // maybeRebuildThermalOverlay, so a changed value forces a rebuild on reload.
+  const { settings } = useSettings();
+  const numOr = (v: unknown, d: number) => { const n = parseFloat(String(v)); return Number.isFinite(n) ? n : d; };
+  const tuning = useMemo<ThermalTuning>(() => ({
+    clearSkyCloudPct: numOr(settings.thermalClearSkyCloudPct, DEFAULT_THERMAL_TUNING.clearSkyCloudPct),
+    overcastOnsetPct: numOr(settings.thermalOvercastOnsetPct, DEFAULT_THERMAL_TUNING.overcastOnsetPct),
+    overcastFullPct:  numOr(settings.thermalOvercastFullPct,  DEFAULT_THERMAL_TUNING.overcastFullPct),
+    minWstar:         numOr(settings.thermalMinWstar,         DEFAULT_THERMAL_TUNING.minWstar),
+    stormCapeGate:    numOr(settings.thermalStormCapeGate,    DEFAULT_THERMAL_TUNING.stormCapeGate),
+  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate]);
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
   const currentTimeRef = useRef(currentTime);
   // Monotonically increasing counter — used to discard stale elevation responses.
   const elevationSeqRef = useRef(0);
@@ -104,7 +123,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         if (res.overlay.rebuildTimeout) clearTimeout(res.overlay.rebuildTimeout);
       },
       draw: (c, res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
-        maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid);
+        maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid, tuningRef.current);
         drawThermalOverlay(c.ctx, res.overlay, c.transform);
         rebuildCumulusField(res.field, res.overlay, c.transform);
         drawCumulusField(c.ctx, res.field, c.transform);

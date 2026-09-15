@@ -48,6 +48,38 @@ export const OVERCAST_FULL_PCT = 95;  // % → sheet fully opaque
 export const HATCH_MIN = 0.35;
 
 // ---------------------------------------------------------------------------
+// Admin-tunable thermal parameters
+// ---------------------------------------------------------------------------
+
+/**
+ * The subset of render constants exposed on the Admin → Forecast page. Every
+ * field defaults to the hardcoded constant it replaces, so an unset (or absent)
+ * setting reproduces today's map exactly — the tuning only diverges once an
+ * admin deliberately changes a value. Read from settings in ThermalCanvas and
+ * threaded into rebuildThermalOverlay; NOT read per-pixel.
+ */
+export interface ThermalTuning {
+  /** % low cloud below which the sky reads clear (full cumulus lattice). Was CU_CLOUD_MIN_PCT. */
+  clearSkyCloudPct: number;
+  /** % cover at which the grey overcast sheet begins. Was OVERCAST_MIN_PCT. */
+  overcastOnsetPct: number;
+  /** % cover at which the grey sheet saturates. Was OVERCAST_FULL_PCT. */
+  overcastFullPct: number;
+  /** Minimum W* (m/s) at which heat colour is painted. Was the `ws >= 0.3` gate. */
+  minWstar: number;
+  /** CAPE (J/kg) floor below which overdevelopment risk is never flagged. Was the `cape < 500` gate. */
+  stormCapeGate: number;
+}
+
+export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
+  clearSkyCloudPct: CU_CLOUD_MIN_PCT,
+  overcastOnsetPct: OVERCAST_MIN_PCT,
+  overcastFullPct: OVERCAST_FULL_PCT,
+  minWstar: 0.3,
+  stormCapeGate: 500,
+};
+
+// ---------------------------------------------------------------------------
 // Overdevelopment risk signal
 // ---------------------------------------------------------------------------
 
@@ -83,10 +115,10 @@ export type OdRisk = 0 | 1 | 2;
  *     pilots in the help modal. 800 J/kg is a blunt upper flag. Not equivalent
  *     to the upper rungs — kept only so the signal is never absent.
  */
-export function computeOdRisk(cape: number, li?: number, cin?: number): OdRisk {
-  // Below 500 J/kg CAPE the atmosphere does not have enough energy for deep
-  // convection regardless of what the stability indices say.
-  if (cape < 500) return 0;
+export function computeOdRisk(cape: number, li?: number, cin?: number, capeGate = 500): OdRisk {
+  // Below the CAPE gate (default 500 J/kg) the atmosphere does not have enough
+  // energy for deep convection regardless of what the stability indices say.
+  if (cape < capeGate) return 0;
 
   // Rung 1: Lifted Index (primary signal, tier-1 and tier-2).
   if (li != null && !Number.isNaN(li)) {
@@ -299,6 +331,7 @@ function rebuildThermalOverlay(
   projection: GeoProjection,
   currentTime: number,
   grid: ThermalGrid,
+  tuning: ThermalTuning = DEFAULT_THERMAL_TUNING,
 ) {
   const {
     width: overlayW, height: overlayH, pixels, ctx, imageData,
@@ -370,15 +403,15 @@ function rebuildThermalOverlay(
           (th.cloud !== undefined && th.cloud >= 90) ? th.cloud : 0,
         );
         const overcastRaw = clamp01(
-          (overcastPct - OVERCAST_MIN_PCT) / (OVERCAST_FULL_PCT - OVERCAST_MIN_PCT),
+          (overcastPct - tuning.overcastOnsetPct) / (tuning.overcastFullPct - tuning.overcastOnsetPct),
         );
         overcastArr[cellIdx] = overcastRaw * fade;
 
-        // cuCoverage: 0 below CU_CLOUD_MIN_PCT, 1 at OVERCAST_MIN_PCT.
+        // cuCoverage: 0 below clearSkyCloudPct, 1 at overcastOnsetPct.
         // Uses cloudLow (the sky fraction where cumulus are actually forming)
         // rather than total cover, which lumps in high cirrus.
         cuCoverage[cellIdx] = clamp01(
-          (th.cloudLow - CU_CLOUD_MIN_PCT) / (OVERCAST_MIN_PCT - CU_CLOUD_MIN_PCT),
+          (th.cloudLow - tuning.clearSkyCloudPct) / (tuning.overcastOnsetPct - tuning.clearSkyCloudPct),
         ) * fade;
       }
       // If cloudLow is still undefined (pre-TASK-036 grid), cuCoverage[cellIdx]
@@ -393,7 +426,7 @@ function rebuildThermalOverlay(
       // written above. This is the correct split: "grey + no heat" is a
       // valid and common state (overcast calm day).
       // -----------------------------------------------------------------
-      if (ws >= 0.3) {
+      if (ws >= tuning.minWstar) {
         // Named lutIdx, not li: `li` now means Lifted Index on the thermal
         // cell (see th.li below), and having both in one function invites a
         // misread.
@@ -470,7 +503,7 @@ function rebuildThermalOverlay(
         // separate BLH threshold would be dead code. edgeFade multiplication is
         // wrong for a categorical variable; zero-init and the continue statements
         // above already ensure edge cells read 0.
-        odRisk[cellIdx] = computeOdRisk(th.cape, th.li, th.cin);
+        odRisk[cellIdx] = computeOdRisk(th.cape, th.li, th.cin, tuning.stormCapeGate);
       } else {
         // ws < 0.3: no heat colour, but overcast sheet is already written.
         // Ensure the pixel alpha is nonzero if the grey sheet is visible so
@@ -505,21 +538,26 @@ export function maybeRebuildThermalOverlay(
   projection: GeoProjection,
   currentTimeRef: { current: number },
   grid: ThermalGrid,
+  tuning: ThermalTuning = DEFAULT_THERMAL_TUNING,
 ) {
-  const transformKey = `${currentTransform.k.toFixed(1)}_${currentTransform.x.toFixed(0)}_${currentTransform.y.toFixed(0)}`;
+  // Fold the tuning into the cache key so a settings change forces a rebuild
+  // (otherwise the map keeps the raster it baked with the old thresholds until
+  // the next pan/zoom/time change).
+  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}`;
+  const transformKey = `${currentTransform.k.toFixed(1)}_${currentTransform.x.toFixed(0)}_${currentTransform.y.toFixed(0)}_${tuningKey}`;
   const curTime = currentTimeRef.current;
   if (transformKey !== overlay.cachedTransformKey || curTime !== overlay.cachedTime) {
     const now = performance.now();
     if (now - overlay.lastRebuild > REBUILD_MIN_INTERVAL) {
-      rebuildThermalOverlay(overlay, currentTransform, projection, curTime, grid);
+      rebuildThermalOverlay(overlay, currentTransform, projection, curTime, grid, tuning);
       overlay.cachedTransformKey = transformKey;
       overlay.cachedTime = curTime;
       overlay.lastRebuild = now;
       if (overlay.rebuildTimeout) { clearTimeout(overlay.rebuildTimeout); overlay.rebuildTimeout = null; }
     } else if (!overlay.rebuildTimeout) {
       overlay.rebuildTimeout = setTimeout(() => {
-        rebuildThermalOverlay(overlay, transformRef.current, projection, currentTimeRef.current, grid);
-        overlay.cachedTransformKey = `${transformRef.current.k.toFixed(1)}_${transformRef.current.x.toFixed(0)}_${transformRef.current.y.toFixed(0)}`;
+        rebuildThermalOverlay(overlay, transformRef.current, projection, currentTimeRef.current, grid, tuning);
+        overlay.cachedTransformKey = `${transformRef.current.k.toFixed(1)}_${transformRef.current.x.toFixed(0)}_${transformRef.current.y.toFixed(0)}_${tuningKey}`;
         overlay.cachedTime = currentTimeRef.current;
         overlay.lastRebuild = performance.now();
         overlay.rebuildTimeout = null;

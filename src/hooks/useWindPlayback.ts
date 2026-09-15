@@ -27,6 +27,14 @@ export interface UseWindPlaybackResult {
 export function useWindPlayback(
   mapMode: 'today' | '7day',
   todayFetcher: () => Promise<WindGrid>,
+  /**
+   * Optional default hour (0–23, Melbourne local) for the initial slider
+   * position. When set, the slider opens at today-at-this-hour (clamped to the
+   * forecast range) instead of "now". Undefined reproduces the original "now,
+   * else forecast start" behaviour exactly. Wired from the admin thermal-map
+   * default-hour setting.
+   */
+  defaultHour?: number,
 ): UseWindPlaybackResult {
   const [windGrid, setWindGrid] = useState<WindGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +49,11 @@ export function useWindPlayback(
   // closure never invokes the wrong fetcher even if deps fire from a previous render.
   const todayFetcherRef = useRef(todayFetcher);
   todayFetcherRef.current = todayFetcher;
+
+  // Read inside the load effect without adding to its deps (a changed default
+  // hour must not trigger a grid re-fetch — it only matters at initial load).
+  const defaultHourRef = useRef(defaultHour);
+  defaultHourRef.current = defaultHour;
 
   // Pre-computed bounds cached when grid loads — avoids string parsing inside the
   // setInterval callback on every playback tick (#8).
@@ -70,7 +83,14 @@ export function useWindPlayback(
           gridBoundsRef.current = { start, end };
           setWindGrid(data);
           const now = Date.now();
-          setCurrentTime(now >= start && now <= end ? now : start);
+          let target = now >= start && now <= end ? now : start;
+          const dh = defaultHourRef.current;
+          if (dh != null && Number.isFinite(dh)) {
+            const d = new Date();
+            d.setHours(dh, 0, 0, 0);
+            target = Math.min(Math.max(d.getTime(), start), end);
+          }
+          setCurrentTime(target);
         } else {
           setError('Invalid wind data');
         }

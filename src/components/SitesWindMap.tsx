@@ -126,7 +126,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     currentTime, isPlaying, trayOpen, toggleTray,
     playSpeed, timeStep, forecastStart, forecastEnd,
     formattedTime, handleSliderChange, togglePlay, cycleSpeed,
-  } = useWindPlayback(mapMode, todayFetcher);
+  } = useWindPlayback(
+    mapMode,
+    todayFetcher,
+    // Admin-set default opening hour for the site forecast map (Admin → Forecast).
+    // Only applied when explicitly set; unset keeps the original "now" behaviour.
+    settings.thermalMapDefaultHour !== undefined && settings.thermalMapDefaultHour !== ''
+      ? parseInt(String(settings.thermalMapDefaultHour), 10)
+      : undefined,
+  );
 
   // Lazy-load thermal grid when user switches to thermal mode
   useEffect(() => {
