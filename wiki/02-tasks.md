@@ -336,7 +336,7 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 ## Phase 9: Closure Calendar (✅ Complete)
 
-### TASK-036 ✅ Site Scheduled Closure Calendar
+### TASK-032 ✅ Site Scheduled Closure Calendar
 
 - **Status:** ✅ DONE — 2026-05-21
 - **Prerequisites:** Phase 1–3 (security hardening complete)

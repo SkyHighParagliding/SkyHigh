@@ -49,19 +49,19 @@ code (see "Deferred, by choice" below).
   working on production after deploy. The Drive refactor (Apps Script bridge,
   googleapis half removed) is confirmed live. Nothing outstanding from the
   cleanup.
-- **Deferred, by choice (from the cleanup):**
-  - **DO (small):** `nomadsGfs.ts` has its own local `makeSemaphore` duplicate —
-    now that `s3ReadCommon.ts` exists it should import from there. Verified
-    identical; ~5-line dedup. Worth doing to close the loop.
-  - **SKIP (accepted):** ~33 fallow "unused-export" items are symbols used only
-    inside their own file — removing the `export` keyword is pure cosmetics, not
-    dead code. Deliberately not doing a blanket sweep (git-blame noise, mild
-    risk, some intentional). Consciously accepted, not a TODO.
-- Carried smaller items (unchanged): `TASK-036` is a **duplicate ID** in
-  `wiki/02-tasks.md` (thermal work vs "Site Scheduled Closure Calendar") — pick
-  one and rename; `GridBoundsSelector.tsx` still says "Fine 0.15°" after the
-  Fine→Wind rename; TASK-SW-001 (consolidate the two `/`-scope service workers);
-  deferred R2 terrain-tile mirror.
+- **Resolved 2026-09-15 (three small wins):**
+  - `nomadsGfs.ts` `makeSemaphore` dedup was **already done** (commit `2df34da`)
+    — it imports from `s3ReadCommon.js`, no local duplicate remains. Verified.
+  - `TASK-036` **duplicate ID** fixed: the Closure Calendar task renamed to
+    `TASK-032` (the free ID); thermal-map `TASK-036` kept its ID (memory +
+    `wiki/prompts/TASK-036.md` + code comments all reference it).
+  - `GridBoundsSelector.tsx` stale label fixed: "Fine 0.15°" → "Wind 0.15°".
+- **SKIP (accepted):** ~33 fallow "unused-export" items are symbols used only
+  inside their own file — removing the `export` keyword is pure cosmetics, not
+  dead code. Deliberately not doing a blanket sweep (git-blame noise, mild
+  risk, some intentional). Consciously accepted, not a TODO.
+- Carried smaller items (unchanged): TASK-SW-001 (consolidate the two `/`-scope
+  service workers); deferred R2 terrain-tile mirror.
 - **Never authenticate to production using `DEFAULT_ADMINS`** from the local
   `.env`. Jon performs privileged prod actions himself via the admin UI.
 
