@@ -637,6 +637,52 @@ command is in the bake script's header.
 
 ---
 
+## DECISION-014: Permanently Remove the Multi-Template / White-Label System
+
+**Date:** 2026-09-15
+**Owner:** Jon Pamment
+**Status:** In progress (Waves 1–2 landed on branch `chore/remove-multi-branding`; Waves 3–4 pending)
+
+### Context
+SkyHigh shipped a runtime multi-template engine (`TemplateContext.tsx` + `templates/registry.ts`)
+that injected 39 CSS custom properties onto `:root` at load, switchable between "Classic" and
+"Wonderful White" via an `activeTemplate` DB setting, with per-template light/dark logo modes
+(`logoMode_*`) and a Classic/Apple `variant` prop threaded through the weather components. In
+practice SkyHigh is one club on Wonderful White; Classic was never used in production. The dead
+engine carried real cost: doubled component branches, an `--color-orange` token remapped to blue
+that already caused one visual regression (the Cross legend dot, `memory/feedback.md` 2026-09-05),
+and in-app/wiki docs that falsely advertised white-label capability — contradicting DECISION-012,
+which already records that white-label was dropped.
+
+### Options considered
+- **A — Leave it.** Zero effort, but keeps dead branches, the misleading docs, and the orange=blue
+  trap live.
+- **B — Behavioral de-brand only.** Freeze Wonderful White as static CSS and delete the engine, but
+  keep the `--tmpl-*` token names, the `orange`=blue palette, and the `templates/wonderful-white/`
+  tree. Working single-club site, but the code still reads as de-branded-from-a-template.
+- **C — Native single-club.** ✅ **Chosen by Jon.** B plus a cosmetic normalization pass so the code
+  reads as if written for one club from day one: rename `--tmpl-*` → semantic tokens, collapse the
+  `orange`=blue tell, full palette rewrite (`sky`/`navy`/`sand` → `accent`/`ink`/`cream`), and move
+  `Wonderful*` components into `components/`.
+
+### Chosen: C
+Executed in waves with a per-wave gate (token-diff vs `tasks/debrand/baseline-tokens.json`, `tsc`,
+fresh-reviewer code review, and a live dev-server + Chrome check). Waves 1–2 (behavioral de-brand)
+verified zero pixel change: 39/39 `:root` tokens match the production baseline with `TemplateContext`
+deleted. Kept deliberately: club identity settings (`clubName`, tagline, logo uploads, PWA icon),
+`server/routes/branding.ts`, both light and dark logo sets (WW uses the light logo over the hero and
+the dark one once scrolled / in the footer), and `clubPrimaryColor` (a no-op today).
+
+### Reversibility
+Easy while unmerged. Revert points: tag `pre-debrand-2026-09-15`, branch
+`backup/pre-debrand-2026-09-15`; `git checkout main` fully reverts. Nothing pushed.
+
+**Confirms / supersedes:** Extends DECISION-012's note that white-label was dropped. The
+GPL-2.0-only `@openmeteo/file-reader` acceptance in DECISION-012 still rests on SkyHigh being
+hosted-only and never distributed — unchanged by this removal.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |

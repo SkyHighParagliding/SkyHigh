@@ -4,7 +4,6 @@ import { getWindStatus, cn } from '@/lib/utils';
 interface HourlyForecastStripProps {
   windowedForecasts: any[];
   site: any;
-  forecastSubtitle?: string;
   onShowWindMap: () => void;
 }
 

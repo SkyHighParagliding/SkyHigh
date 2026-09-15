@@ -43,7 +43,7 @@ const TOGGLE_HIDE_STYLE = {
   width: "100%",
 };
 
-// Maps getWindStatus label → hex color for both apple and classic variants
+// Maps getWindStatus label → hex color
 const STATUS_COLOR: Record<string, string> = {
   Good: '#10b981',
   Light: '#eab308',

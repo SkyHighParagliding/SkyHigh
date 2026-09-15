@@ -498,7 +498,6 @@ export function Home() {
         </div>
       </section>
 
-
       {/* Featured Site Section */}
       {settings.featuredSiteEnabled && featuredSite && (
         <section className="py-24 overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
