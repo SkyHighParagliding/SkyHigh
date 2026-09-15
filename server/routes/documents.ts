@@ -5,38 +5,23 @@ import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { invalidateSearchCaches } from "../utils/searchCacheInvalidation.js";
-import {
-  isDriveConnected,
-  uploadFile,
-  listFiles,
-  deleteFile,
-  searchFiles,
-  CATEGORY_FOLDERS,
-  ensureFolderStructure,
-  getAppScriptUrl,
-} from "../googleDrive.js";
+import { CATEGORY_FOLDERS, getAppScriptUrl } from "../googleDrive.js";
 
 const router = Router();
 const log = createLogger("document-index");
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
-function generateId() {
-  return `doc-${Math.random().toString(36).substr(2, 9)}`;
-}
-
 router.get("/status", requireAuth, asyncHandler(async (req, res) => {
-  const driveApiConnected = await isDriveConnected();
   const settingRow = await queryOne<{ value: string }>(
     `SELECT value FROM settings WHERE key = 'drive_appscript_url'`
   );
   const appScriptConnected = !!(settingRow?.value);
-  res.json({ connected: driveApiConnected || appScriptConnected });
+  res.json({ connected: appScriptConnected });
 }));
 
 router.get("/categories", requireAuth, asyncHandler(async (req, res) => {
-  const driveApiConnected = await isDriveConnected();
   const appScriptUrl = await getAppScriptUrl();
-  const connected = driveApiConnected || !!appScriptUrl;
+  const connected = !!appScriptUrl;
 
   if (appScriptUrl) {
     try {
@@ -258,17 +243,6 @@ router.get("/search", requireAuth, asyncHandler(async (req, res) => {
   res.json(documents);
 }));
 
-router.get("/drive-search", requireAuth, asyncHandler(async (req, res) => {
-  const connected = await isDriveConnected();
-  if (!connected) {
-    return res.status(503).json({ error: "Google Drive not connected" });
-  }
-  const q = req.query.q as string;
-  if (!q) return res.json([]);
-  const files = await searchFiles(q);
-  res.json(files);
-}));
-
 router.post("/upload", requireAuth, upload.single("file"), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file provided" });
@@ -316,34 +290,7 @@ router.post("/upload", requireAuth, upload.single("file"), asyncHandler(async (r
     }
   }
 
-  const connected = await isDriveConnected();
-  if (!connected) {
-    return res.status(503).json({ error: "Google Drive not connected. Connect Google Drive to enable file uploads." });
-  }
-
-  const folderMap = await ensureFolderStructure();
-  if (!folderMap || !folderMap[category]) {
-    return res.status(500).json({ error: "Could not find or create the target Drive folder" });
-  }
-
-  const folderId = folderMap[category];
-  const result = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, folderId);
-  if (!result) {
-    return res.status(500).json({ error: "Failed to upload file to Google Drive" });
-  }
-
-  const id = generateId();
-  await execute(
-    `INSERT INTO documents (id, "driveFileId", name, "mimeType", size, category, "driveFolderId", "webViewLink", "uploadedBy")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [id, result.id, result.name, req.file.mimetype, req.file.size, category, folderId, result.webViewLink, (req as any).user?.name || "admin"]
-  );
-
-  const doc = await queryOne<any>(
-    `SELECT * FROM documents WHERE id = $1`,
-    [id]
-  );
-  res.status(201).json(doc);
+  return res.status(503).json({ error: "Google Drive not connected. Connect Google Drive to enable file uploads." });
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
@@ -370,13 +317,6 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
       }
     }
     return res.status(404).json({ error: "Document not found" });
-  }
-
-  if (doc.driveFileId) {
-    const connected = await isDriveConnected();
-    if (connected) {
-      await deleteFile(doc.driveFileId);
-    }
   }
 
   await transaction(async (client) => {

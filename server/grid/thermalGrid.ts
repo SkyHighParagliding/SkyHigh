@@ -161,5 +161,3 @@ export function fetchThermalGrid(force = false): Promise<ThermalVictoriaGrid> {
 export function getCachedThermalGrid(): Promise<ThermalVictoriaGrid | null> {
   return getCachedGrid(THERMAL_GRID);
 }
-
-export { computeCCL } from "./extract.js";

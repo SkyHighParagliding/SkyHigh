@@ -17,7 +17,14 @@
     "eval:search": "node scripts/eval-smart-search.mjs",
     "bake:landmask": "node scripts/bake-land-mask.mjs --bake --write",
     "test:landmask": "node --import tsx/esm shared/landMask.test.mjs",
-    "test:mapextent": "node --import tsx/esm src/components/windmap/mapExtent.test.mjs"
+    "test:mapextent": "node --import tsx/esm src/components/windmap/mapExtent.test.mjs",
+    "test:extended": "node --import tsx/esm server/extendedForecast.test.mjs",
+    "test:extract": "node --import tsx/esm server/grid/extract.test.mjs",
+    "test:pipeline": "node --import tsx/esm server/grid/gridPipeline.test.mjs",
+    "test:health": "node --import tsx/esm server/grid/health.test.mjs",
+    "test:orchestrator": "node --import tsx/esm server/grid/orchestrator.test.mjs",
+    "test:grib2": "node --import tsx/esm server/grid/grib2.test.mjs",
+    "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1034.0",

@@ -111,18 +111,6 @@ export function useBusinessDirectoryMutation() {
   ]);
 }
 
-export function useAdminNews() {
-  const { token } = useAuth();
-  return useQuery({
-    queryKey: adminCrudKeys.news(),
-    queryFn: () => api.get<Array<{
-      id: string; title: string; slug: string; summary: string;
-      content: string; author: string; category: string;
-      published: boolean; publishedAt: string; image: string;
-    }>>('/api/news', token),
-  });
-}
-
 export function useNewsMutation() {
   return useCrudMutation('/api/news', 'News item', [
     adminCrudKeys.news(),

@@ -3,14 +3,7 @@ import multer from "multer";
 import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import {
-  isDriveConnected,
-  uploadFile,
-  createFolder,
-  deleteFile,
-  ensureFolderStructure,
-  getAppScriptUrl,
-} from "../googleDrive.js";
+import { getAppScriptUrl } from "../googleDrive.js";
 import createLogger from "../utils/logger.js";
 
 const log = createLogger("projects");
@@ -193,44 +186,7 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
     }
   }
 
-  const connected = await isDriveConnected();
-  if (!connected) {
-    return res.status(503).json({ error: "Google Drive not connected. Connect Google Drive to enable file uploads." });
-  }
-
-  let folderId = project.driveFolderId;
-  if (!folderId) {
-    const folderMap = await ensureFolderStructure();
-    const projectsParent = folderMap?.["08"];
-    if (!projectsParent) {
-      return res.status(500).json({ error: "Could not find Projects folder in Drive" });
-    }
-    folderId = await createFolder(safeName, projectsParent);
-    if (!folderId) {
-      return res.status(500).json({ error: "Failed to create project folder in Drive" });
-    }
-    await execute("UPDATE projects SET \"driveFolderId\" = $1 WHERE id = $2", [folderId, req.params.id]);
-  }
-
-  const result = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, folderId);
-  if (!result) {
-    return res.status(500).json({ error: "Failed to upload file to Google Drive" });
-  }
-
-  const docId = `doc-${Math.random().toString(36).substr(2, 9)}`;
-  await transaction(async (client) => {
-    await client.query(
-      "INSERT INTO documents (id, \"driveFileId\", name, \"mimeType\", size, category, \"driveFolderId\", \"webViewLink\", \"uploadedBy\") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-      [docId, result.id, result.name, req.file!.mimetype, req.file!.size, "08", folderId, result.webViewLink, (req as any).user?.name || "admin"]
-    );
-    await client.query(
-      "INSERT INTO project_documents (\"projectId\", \"documentId\", linked) VALUES ($1, $2, 0)",
-      [req.params.id, docId]
-    );
-  });
-
-  const doc = await queryOne<any>("SELECT * FROM documents WHERE id = $1", [docId]);
-  res.status(201).json(doc);
+  return res.status(503).json({ error: "Google Drive not connected. Connect Google Drive to enable file uploads." });
 }));
 
 router.get("/:id/documents/drive", requireAuth, asyncHandler(async (req, res) => {
@@ -337,12 +293,7 @@ router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res
         log.error("Apps Script delete failed:", err.message);
       }
     } else {
-      const connected = await isDriveConnected();
-      if (connected) {
-        driveDeleted = await deleteFile(docToDelete.driveFileId);
-      } else {
-        driveDeleted = true;
-      }
+      driveDeleted = true;
     }
     if (!driveDeleted) {
       log.warn(`Drive file ${docToDelete.driveFileId} may not have been deleted — removing local record anyway`);

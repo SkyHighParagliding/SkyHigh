@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file — spawned by eval-smart-search.mjs via filename string, not imported.
 /**
  * eval-smart-search-units.ts
  *

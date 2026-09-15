@@ -44,21 +44,6 @@ export function parseDavisStationId(stationId: string): { token: string } | null
   return { token: match[1].toLowerCase() };
 }
 
-/** Extracts the station token from a pasted WeatherLink embeddable page URL. */
-export function parseDavisEmbedUrl(url: string): { token: string } | null {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
-    if (parsed.hostname !== "weatherlink.com" && parsed.hostname !== "www.weatherlink.com") return null;
-    // .../embeddablePage/show/{token}/slim  or  .../embeddablePage/getData/{token}
-    const match = parsed.pathname.match(/\/embeddablePage\/(?:show|getData)\/([a-f0-9]{32})/i);
-    if (!match) return null;
-    return { token: match[1].toLowerCase() };
-  } catch {
-    return null;
-  }
-}
-
 // windUnits is a per-station display preference, so the payload's units vary by station.
 const TO_KNOTS: Record<string, number> = {
   "knots": 1,

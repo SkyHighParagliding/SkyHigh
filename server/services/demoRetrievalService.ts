@@ -17,7 +17,6 @@ export class DemoRetrievalService implements RetrievalService {
   private broadcastTimer: ReturnType<typeof setTimeout> | null = null;
   private dutyPilotPosition: { pilotId: string; name: string; lat: number; lon: number; updatedAt: number } | null = null;
   flightService: { flights: Map<string, any>; livePilots: Map<string, any> } | null = null;
-  demoTokens: Record<string, Pilot> = {};
 
   async requestRetrieval(pilot: Pilot, lat: number | null, lon: number | null, _flightId?: string | null): Promise<{ ok: boolean; alreadyExists?: boolean; alreadyActive?: boolean }> {
     const hasActive = Array.from(this.retrievals.values()).some(
