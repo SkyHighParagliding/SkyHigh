@@ -1,30 +1,61 @@
-# RESUME_HERE — Last updated: 2026-09-15 (session 61)
+# RESUME_HERE — Last updated: 2026-09-15 (session 62)
 
 ## Project: SkyHigh
 ## Status: Active
 
-## ⚠️ READ FIRST — you are NOT on `main`
+## ⚠️ READ FIRST — you are NOT on `main`, and nothing is pushed
 
 ```
 current branch: chore/remove-multi-branding
 ```
 
-Session 61 was **research and planning only. No application code has been
-changed.** The branch contains one commit adding planning artifacts under
-`tasks/debrand/`. `main` is untouched and still level with `origin/main`.
-
-**Before doing anything else, read `tasks/debrand/PLAN.md` in full.** It is the
-executable spec for this work — scope decisions, two traps that will silently
-wreck the design, the agent dispatch plan, and the shared contract. This file is
-only the orientation layer.
+**Session 62 executed the entire de-brand (all 4 waves) and it is verified
+green — but NOT merged and NOT pushed.** `main` is untouched. The next step is
+**Jon's manual pass** on local dev, then merge to `main` + push (Railway
+auto-deploys `main`).
 
 ## Where I left off
 
-Jon asked to **remove the multi-template / white-label system** so SkyHigh is
-permanently a single-organisation site on the **Wonderful White** design, and to
-strip the associated documentation. Session 61 did the research, captured a
-verification baseline, created revert points, and wrote the plan. Execution
-starts next session.
+The multi-template / white-label system is **fully removed** and SkyHigh now
+reads as a native single-organisation app on the Wonderful White design. All
+four waves of `tasks/debrand/PLAN.md` are done, each gated by token-diff + tsc +
+fresh-reviewer code review + live Chrome check:
+
+- **Waves 1–2** (`6feed11`) — behavioral de-brand: deleted `TemplateContext`,
+  `registry.ts`, `WeatherCardClassic`; froze Wonderful White as static CSS;
+  removed `activeTemplate`/`isGlass`/`variant`/`logoMode_*`; AdminBranding
+  template card gone; migration `045_drop_template_settings.sql`. Zero pixel
+  change proven (39/39 tokens match production baseline).
+- **Wave 3** (`414f850`) — fresh-review PASS + 3 nits fixed + DECISION-014.
+- **Wave 4.1** (`682fe52`) — `--tmpl-*` tokens → semantic names.
+- **Wave 4.3** (`0dc99e2`) — palette rewrite: `sky`+`orange`→`accent`,
+  `navy`→`ink`, `navy-light`→`ink-muted`, `sand`→`cream` (~1988 sites, verified
+  deterministic script). Built-in Tailwind `sky-500`/`orange-500` left intact.
+- **Wave 4.4** (`bdc89bf`) — `Wonderful{Header,Footer}` → `components/Site{Header,
+  Footer}`; `src/templates/` deleted; kept `clubPrimaryColor` (now the PWA
+  theme-color setting, fallback fixed `#00a8e8`→`#007aff`).
+- **Wave 4 review** (`697dfcd`) — fresh reviewer caught 4 regex false positives
+  (BLOCKER: a Leaflet marker URL `-orange.png`→`-accent.png`; 3 comment nits);
+  all fixed + re-verified.
+
+Final state verified: `tsc` clean, `vite build` succeeds, built CSS has the new
+semantic tokens and zero custom `--color-sky/navy/orange/sand`, source grep finds
+no `--tmpl-`/`Wonderful`/`activeTemplate`/`isGlass`/`useTemplate`/`TemplateContext`/
+`templates/`, live runtime tokens + real element colours correct, console clean,
+Home renders identically on desktop + mobile. Proof shots:
+`tasks/debrand/FINAL-home-1280.png`, `FINAL-home-390.png`.
+
+### NEXT: Jon's manual pass, then merge
+
+The real gate (per `memory/feedback.md`) is Jon's manual test. Suggested spots:
+admin **Branding** page (template card gone, logos/colour still save), the
+**weather-station map pin** on Admin → Site Edit (the reverted `-orange.png`
+marker), any **hover** states (8 previously-broken `sky-dark` hovers now darken —
+intended, flag), and a general colour sweep. Then `git checkout main && git merge
+chore/remove-multi-branding` and push. Revert if needed: `git checkout main`
+(tag `pre-debrand-2026-09-15`, branch `backup/pre-debrand-2026-09-15`).
+
+### Original planning context (session 61) below for reference
 
 ### The finding that shapes the whole job
 
