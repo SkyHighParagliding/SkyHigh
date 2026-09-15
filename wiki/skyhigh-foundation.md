@@ -8,9 +8,9 @@
 
 ## Project Identity
 
-**SkyHigh** is a white-label club management platform for Australian paragliding and hang gliding clubs.
+**SkyHigh** is a club management platform for Australian paragliding and hang gliding clubs.
 
-**Purpose**: Consolidate fragmented club infrastructure (weather, site guides, safety, content, pilot tracking) into a single hosted platform that any club can customize via admin UI without code changes.
+**Purpose**: Consolidate fragmented club infrastructure (weather, site guides, safety, content, pilot tracking) into a single hosted platform. Club identity (name, logo, tagline, colour) is configurable via the admin UI without code changes.
 
 **Target**: Club administrators, active pilots, visiting pilots, duty pilots, retrieval drivers, safety officers, general public.
 
@@ -99,7 +99,7 @@
 
 **settings** (key-value config)
 - key (PK TEXT), value (TEXT)
-- Examples: clubName, clubTagline, clubPrimaryColor, clubLogo*, templateId, photoSliderEnabled, etc.
+- Examples: clubName, clubTagline, clubPrimaryColor, clubLogo*, photoSliderEnabled, etc.
 
 **contacts** (committee, safety officers, contractors, Parks Vic)
 - id (PK), name, surname, email, phone, notes, roles (isAdmin, isCommittee, isSafetyCommittee, isContractor, isParksVic), display flags, position
@@ -299,70 +299,19 @@ const { mutate, isPending, error } = useMutation({
 
 ---
 
-## Branding & Theming System (White-Label)
+## Branding & Theming System
 
 **Core Principle**: Every color, logo, and text label comes from the `settings` table. Zero hard-coded club names.
 
 ### CSS Variable System
 
-In `src/index.css`:
-```css
-@theme {
-  --color-navy: #1a2b3c;
-  --color-sky: #00a8e8;
-  --color-orange: #ff6b35;
-  --color-sand: #f4f1ea;
-  --tmpl-header-bg: var(--color-navy);
-  --tmpl-accent: var(--color-sky);
-  --tmpl-footer-bg: var(--color-navy);
-}
-```
-
-### Template Registry
-
-In `src/templates/registry.ts`:
-```typescript
-export const templates = {
-  'classic': {
-    name: 'Classic',
-    tokens: {
-      headerBg: 'var(--color-navy)',
-      accent: 'var(--color-sky)',
-      footerBg: 'var(--color-navy)',
-      logoMode: 'dark'
-    }
-  },
-  'wonderful-white': {
-    name: 'Wonderful White',
-    tokens: { ... }
-  }
-};
-```
-
-### Dynamic Brand Application
-
-In `src/contexts/TemplateContext.tsx`:
-```typescript
-export function TemplateProvider({ children }) {
-  const [activeTemplate, setActiveTemplate] = useState(settings.templateId);
-  
-  useEffect(() => {
-    const template = templates[activeTemplate];
-    Object.entries(template.tokens).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(`--tmpl-${key}`, value);
-    });
-  }, [activeTemplate]);
-  
-  return <TemplateContext.Provider value={{ ... }}>{children}</TemplateContext.Provider>;
-}
-```
+Theme tokens are declared statically in `src/index.css :root` using Tailwind `@theme` and `--tmpl-*` custom properties. No runtime template switching.
 
 ### What Gets Branded
 
 - **Text**: `clubName`, `clubTagline` from settings
 - **Colors**: Primary color from `clubPrimaryColor` setting
-- **Logos**: Light/dark variants stored in `image_library`, resolved at runtime
-- **Template**: Hero section, header/footer variants, form styling
+- **Logos**: Light and dark variants stored via the branding upload pipeline, resolved at runtime from `SettingsContext` (`lightLogos` / `darkLogos`)
 
 **Golden Rule**: If you hardcoded it, remove it and move it to settings.
 

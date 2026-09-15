@@ -159,10 +159,10 @@ Cross-Site Request Forgery token. Generated per session; required in POST/PUT/DE
 Per-IP request quota. Public endpoints limited to 100 req/min. Mutation endpoints (login, submit) limited to 10 req/min. Prevents abuse and DOS attacks.
 
 ### Club
-Administrative grouping. Not fully multi-tenant yet (Phase 5 future). Single club per deployment; club name/logo customizable for white-labelling.
+The single organisation that operates a SkyHigh deployment. Club identity (name, logo, tagline, colour) is configurable from admin settings.
 
 ### RLS (Row-Level Security)
-PostgreSQL feature (not yet implemented) to restrict data access by club or role. Future enhancement for multi-club support.
+PostgreSQL feature (not currently implemented) to restrict data access by role.
 
 ### Magic Numbers
 Hardcoded numeric constants (e.g., grid cleanup age = 7 days, default pagination limit = 50). Being centralized in `constants.ts` (Phase 3, TASK-023).

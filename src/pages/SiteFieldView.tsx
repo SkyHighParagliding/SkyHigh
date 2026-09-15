@@ -21,8 +21,7 @@ const isValid = (value: string | undefined | null) => {
 
 export function SiteFieldView() {
   const { id } = useParams();
-  const { settings, activeLogos, loading: settingsLoading } = useSettings();
-  const isGlass = settings.activeTemplate === 'wonderful-white';
+  const { settings, lightLogos, loading: settingsLoading } = useSettings();
   const [distance, setDistance] = useState<string | null>(null);
 
   const { data: site, isLoading: loading, error: siteError } = useQuery({
@@ -148,7 +147,7 @@ export function SiteFieldView() {
               <span className="text-white/60 text-xs">{site.type}</span>
             </div>
           </div>
-          <img src={activeLogos.nav || "/logo-light.png"} alt={settings.clubName || "SkyHigh"} className="h-10 w-auto opacity-80 ml-3 shrink-0" />
+          <img src={lightLogos.nav || "/logo-light.png"} alt={settings.clubName || "SkyHigh"} className="h-10 w-auto opacity-80 ml-3 shrink-0" />
         </div>
       </div>
 
@@ -166,7 +165,7 @@ export function SiteFieldView() {
               <h2 className="text-sm font-bold text-navy">Current Weather</h2>
             </div>
             <div className="scale-[0.92] origin-top">
-              <WeatherCard weather={weather} site={site} distance={distance ? Number(distance) : undefined} variant={isGlass ? 'apple' : 'classic'} />
+              <WeatherCard weather={weather} site={site} distance={distance ? Number(distance) : undefined} />
             </div>
           </div>
         )}

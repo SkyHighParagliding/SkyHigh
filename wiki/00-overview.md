@@ -8,7 +8,7 @@ type: wiki
 
 ## Mission
 
-SkyHigh is a **white-labellable club management platform for Australian paragliding and hang gliding clubs**. It combines real-time weather data, live GPS flight tracking, pilot retrieval coordination, administrative CMS, and AI-powered content management into one integrated system.
+SkyHigh is a **club management platform for Australian paragliding and hang gliding clubs**. It combines real-time weather data, live GPS flight tracking, pilot retrieval coordination, administrative CMS, and AI-powered content management into one integrated system.
 
 Built for **club committees** (not individual pilots) to manage site information, track members' XC flights, coordinate emergency retrieval, publish weather updates, and maintain documentation.
 
@@ -55,7 +55,7 @@ Built for **club committees** (not individual pilots) to manage site information
 ## What SkyHigh IS
 
 ✅ A **club management platform** — operated by a single club's committee  
-✅ **White-label ready** — club name, logo, and branding can be customized per deployment  
+✅ **Configurable identity** — club name, logo, and branding are set through admin settings, no code changes required  
 ✅ **Real-time** — SSE for live retrieval chat, live wind data updates  
 ✅ **Offline-friendly** — frontend works without server (cached data, localStorage settings)  
 ✅ **Mobile-first** — responsive design, works on phones and tablets  
@@ -71,7 +71,7 @@ Built for **club committees** (not individual pilots) to manage site information
 ❌ A **logbook** — pilots manage their own flight history externally; SkyHigh just tracks XC submissions  
 ❌ An **e-commerce platform** — no memberships, donations, or merchandise sales (TidyHQ handles membership)  
 ❌ A **weather forecasting tool** — displays live ECMWF wind; does not generate forecasts  
-❌ **Multi-tenant SaaS** — one deployment = one club; no central operator managing 100 clubs  
+❌ **Multi-tenant SaaS** — one deployment = one club  
 ❌ A **replacement for Procedures Manual** — aids in creation and distribution but doesn't enforce compliance  
 ❌ An **emergency alert system** — no SMS/push notifications; uses SSE (browser-based) for retrieval chat  
 
@@ -128,7 +128,6 @@ These have been explicitly decided **not** to build:
 - Automatic emergency escalation (human-triggered only)
 - Weather forecasting (display only)
 - Integration with other LMS systems
-- Multi-club management from single deployment
 
 ---
 

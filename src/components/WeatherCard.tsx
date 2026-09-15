@@ -8,13 +8,12 @@ const WindMap = lazy(() => import('./WindMap'));
 
 import type { TideData } from './weather/types';
 import { WeatherCardApple } from './weather/WeatherCardApple';
-import { WeatherCardClassic } from './weather/WeatherCardClassic';
 
 const WEATHER_ICON_MAP: Record<string, LucideIcon> = {
   Sun, CloudSun, Cloud, Cloudy: Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Snowflake, Wind, Thermometer,
 };
 
-export function WeatherCard({ weather, site, distance, variant = 'classic' }: { weather: any; site: any; distance?: number | string; variant?: 'classic' | 'apple' }) {
+export function WeatherCard({ weather, site, distance }: { weather: any; site: any; distance?: number | string }) {
   const [showWindMap, setShowWindMap] = useState(false);
   const [showAlt, setShowAlt] = useState(false);
   const [extendedForecast, setExtendedForecast] = useState<any>(null);
@@ -195,12 +194,9 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
 
   if (!weather || weather.error) {
     return (
-      <div className={variant === 'apple'
-        ? "rounded-2xl p-8 flex flex-col items-center text-center min-h-[200px] justify-center"
-        : "border rounded-2xl p-8 flex flex-col items-center text-center hover:shadow-lg transition-all bg-sky/5 border-sky/20 min-h-[300px] justify-center"
-      } style={variant === 'apple' ? { background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 8px 30px rgba(0,0,0,0.06)' } : undefined}>
+      <div className="rounded-2xl p-8 flex flex-col items-center text-center min-h-[200px] justify-center" style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 8px 30px rgba(0,0,0,0.06)' }}>
         <CloudSun className="h-12 w-12 text-sky mb-4" />
-        <h3 className={variant === 'apple' ? "font-bold text-xl mb-2" : "font-bold text-navy text-xl mb-2"} style={variant === 'apple' ? { color: '#1d1d1f' } : undefined}>{site.name}</h3>
+        <h3 className="font-bold text-xl mb-2" style={{ color: '#1d1d1f' }}>{site.name}</h3>
         <p className="text-sm text-muted-foreground mb-4 italic">
           {weather?.error ? "No weather data available" : "Fetching observations..."}
         </p>
@@ -252,8 +248,5 @@ export function WeatherCard({ weather, site, distance, variant = 'classic' }: { 
     setShowWindMap, windMapPortal, IconComponent, WEATHER_ICON_MAP,
   };
 
-  if (variant === 'apple') {
-    return <WeatherCardApple {...renderProps} />;
-  }
-  return <WeatherCardClassic {...renderProps} />;
+  return <WeatherCardApple {...renderProps} />;
 }

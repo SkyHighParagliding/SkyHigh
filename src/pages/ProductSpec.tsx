@@ -28,10 +28,10 @@ const categories: SpecCategory[] = [
         icon: <Target className="w-5 h-5" />,
         title: "Product Purpose",
         details: [
-          "A white-label club management platform built specifically for Australian free-flight clubs (paragliding and hang gliding).",
+          "A club management platform built specifically for Australian free-flight clubs (paragliding and hang gliding).",
           "Solves the problem of fragmented club infrastructure — weather, site guides, safety, content management, pilot tracking, and administration in a single hosted platform.",
-          "Designed for non-technical club administrators: all configuration is through the admin UI; no code changes are needed to brand, customise, or operate the platform.",
-          "Open enough to support any free-flight club in any Australian state or territory via the white-label branding system.",
+          "Designed for non-technical club administrators: all configuration is through the admin UI; no code changes are needed to customise or operate the platform.",
+          "Club identity — name, logo, tagline, and colour — is configurable from admin settings.",
         ],
       },
       {
@@ -55,7 +55,7 @@ const categories: SpecCategory[] = [
           "Progressive Web App (PWA): pilots can install to their phone home screen for native-app feel.",
           "Real-time features: live weather polling, GPS flight tracking, pilot messaging, and retrieval board.",
           "Offline capability: map tiles can be downloaded for use in areas without mobile reception.",
-          "White-label ready from foundation: all club identity (name, logo, tagline, colour, template) is controlled from admin settings with no code changes.",
+          "All club identity (name, logo, tagline, colour) is controlled from admin settings with no code changes.",
           "Self-contained: runs on Railway (PostgreSQL + app server) with Cloudflare R2 for media and all integrations configured via environment variables.",
         ],
       },
@@ -403,17 +403,16 @@ const categories: SpecCategory[] = [
   },
   {
     id: "branding",
-    title: "White-Label & Branding Requirements",
+    title: "Branding Requirements",
     items: [
       {
         icon: <Palette className="w-5 h-5" />,
         title: "Club Identity",
         details: [
           "Club name and tagline configurable from Admin > Branding. Used throughout the site via {{clubName}} template tag.",
-          "Light logo and dark logo: separate uploads for use on light and dark backgrounds. Five size variants auto-generated.",
+          "Light logo: used in the header when the hero image is visible (dark backdrop). Five size variants auto-generated.",
+          "Dark logo: used in the header once scrolled past the hero and in the footer (white/light backdrop). Five size variants auto-generated.",
           "PWA icon: custom home screen icon (512×512px recommended), separate from the main logo.",
-          "Primary colour override: hex code or colour picker overrides the template accent colour.",
-          "Template selection: 'Classic' (navy & orange) or 'Wonderful White' (Apple-inspired frosted glass). Each template assigns logo variant automatically.",
         ],
       },
       {

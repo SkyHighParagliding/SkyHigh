@@ -43,7 +43,6 @@ export function SiteDetail() {
   const [closureLoading, setClosureLoading] = useState(false);
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const { settings } = useSettings();
-  const isGlass = settings.activeTemplate === 'wonderful-white';
   const { user, token, isSoSession, soSiteId, setSoSession, logout } = useAuth();
 
   useEffect(() => {
@@ -291,7 +290,7 @@ export function SiteDetail() {
                   </div>
 
                   {weather ? (
-                    <WeatherCard weather={weather} site={site} distance={distance} variant={isGlass ? 'apple' : 'classic'} />
+                    <WeatherCard weather={weather} site={site} distance={distance} />
                   ) : (
                     <div className="bg-card p-8 rounded-3xl shadow-sm border border-sky/5 text-center text-muted-foreground">
                       Weather data unavailable.

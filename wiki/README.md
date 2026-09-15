@@ -29,7 +29,7 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 ## Files in This Wiki
 
 ### [00-overview.md](00-overview.md)
-**What SkyHigh is:** Australian paragliding/hang gliding club management platform, white-label ready.  
+**What SkyHigh is:** Australian paragliding/hang gliding club management platform for a single organisation.  
 **6 primary goals:** Site directory, XC tracking, pilot retrieval, admin CMS, TidyHQ sync, AI tools.  
 **What it is NOT:** Booking platform, social network, logbook, e-commerce, multi-tenant SaaS.  
 **In-scope and out-of-scope feature lists.**
@@ -46,7 +46,7 @@ Welcome to the SkyHigh project wiki. This folder contains the **intra-session sh
 - **Phase 2 — Wind Map & Weather (✅ complete):** Grid caching, scheduled jobs, startup catch-up, Open-Meteo key, manual trigger, bulk hero upload, admin default view, cache pagination bypass
 - **Phase 3 — Short-Term Hardening (⬜ TODO):** JSON.parse guards, pagination, structured logging, Zod validation, constants, DB indexes, token hardening
 - **Phase 4 — Production Deployment (⬜ TODO):** PostgreSQL, R2, CSRF Redis, admin hardening
-- **Phase 5 — Feature Backlog (⬜):** Siteguide email, pilot export, NOTAM overlay, multi-club white-label test
+- **Phase 5 — Feature Backlog (⬜):** Siteguide email, pilot export, NOTAM overlay
 
 ### [03-decisions-log.md](03-decisions-log.md)
 **7 documented architectural decisions:**

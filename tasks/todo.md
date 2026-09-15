@@ -54,17 +54,3 @@
 
 ---
 
-## 🟣 Large / Strategic
-
-### TASK-032 — Multi-Club White-Label Test
-- **Effort:** L (1–2 days)
-- **What:** Deploy second independent instance for a different club; prove white-labellability
-- **Infrastructure exists:** Branding engine (`server/routes/branding.ts`, `SettingsContext.tsx`), admin panel for club name/logo/colors, custom home page, wind map viewport
-- **Needs:**
-  1. Second Railway project + PostgreSQL database
-  2. Same codebase, different `DATABASE_URL` + club name
-  3. Customize branding through admin panel
-  4. Different domain (e.g., `anotherclub.org.au`)
-  5. Verify no data leakage between deployments
-- **Risk:** May be hardcoded "SkyHigh" references that should pull from settings
-- **Files:** Multiple — full codebase audit for hardcoded strings

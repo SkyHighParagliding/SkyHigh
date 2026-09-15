@@ -351,17 +351,16 @@ export function AdminManual() {
       ]
     },
     {
-      title: "Branding & Templates",
+      title: "Branding",
       icon: <Settings className="w-6 h-6 text-sky" />,
       link: "/admin/branding",
       category: "Dashboard Settings",
-      description: "White-label your club — logos, colours, and visual template.",
+      description: "Configure club identity — name, tagline, logos, and PWA icon.",
       steps: [
         "Club Identity: Set your club name and tagline. Use {{clubName}} in CMS content to insert it dynamically.",
-        "Logos: Upload Light and Dark versions (PNG, JPEG, SVG, WebP). Five size variants are auto-generated. Assign logos to templates using the Light/Dark toggle.",
+        "Light Logo: Displayed in the header when scrolled over the hero image (dark backdrop). Upload PNG, JPEG, SVG, or WebP. Five size variants are auto-generated.",
+        "Dark Logo: Displayed in the header once scrolled past the hero and in the footer (white/light backdrop). Upload the same formats; five size variants are auto-generated.",
         "PWA Icon: Upload a custom icon that appears when a user adds the site to their phone's home screen (Progressive Web App). A square image of 512×512px or larger is recommended. Displayed separately from the main logo.",
-        "Template: Choose 'Classic' (navy & orange) or 'Wonderful White' (Apple-inspired frosted glass).",
-        "Primary Colour: Override the accent colour with a hex code or colour picker. 'Reset to default' reverts to the template's built-in colour."
       ]
     },
     {
@@ -586,7 +585,7 @@ export function AdminManual() {
       steps: [
         <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Build Blueprint.</span><Link to="/build-blueprint" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Build Blueprint <ExternalLink className="w-3 h-3" /></Link></span>,
         "Contains 13 phases and 35+ prompts covering every feature of the platform, ordered for efficient rebuilding.",
-        "Phase 1 (Foundation & Branding) is designed first so the entire app is white-label ready — any club can rebrand by changing settings, not code.",
+        "Phase 1 (Foundation & Branding) is designed first so all club identity — name, logo, tagline, and colour — is controlled from admin settings, not code.",
         "Architecture Principles section lists the 7 core design rules: branding-first, one library per concern, shared hooks, server-side validation, typed API, progressive enhancement, migration-based schema.",
         "Each prompt has an instruction (what to build) and bullet-point details (exactly how to build it, including table schemas, API endpoints, and component names).",
         "Quick Navigation at the top lets you jump to any phase. Print-friendly formatting for offline reference.",
@@ -601,7 +600,7 @@ export function AdminManual() {
       description: "Complete PRD — product vision, user roles, all functional requirements, integrations, and non-functional standards.",
       steps: [
         <span className="flex flex-wrap items-center gap-2"><span>Access from Admin Dashboard → Specifications → Product Requirements.</span><Link to="/product-spec" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-navy text-white rounded hover:bg-navy-light transition-colors">Open Product Requirements <ExternalLink className="w-3 h-3" /></Link></span>,
-        "8 sections covering: Product Vision & Goals, User Roles, Public Website, Pilot Portal, Admin Portal, Integrations, White-Label, and Non-Functional Requirements.",
+        "8 sections covering: Product Vision & Goals, User Roles, Public Website, Pilot Portal, Admin Portal, Integrations, Branding, and Non-Functional Requirements.",
         "Each section lists detailed bullet requirements for every feature area of the platform.",
         "Data Model section documents every PostgreSQL table and the data it stores.",
         "Non-Functional section covers mobile/offline, security, performance, automation, and documentation requirements.",
@@ -660,7 +659,7 @@ export function AdminManual() {
                 ["Weather Management", "weather-management"],
                 ["AI Model Configuration", "ai-model-configuration"],
                 ["Public Smart Assistant", "public-smart-assistant"],
-                ["Branding & Templates", "branding-&-templates"],
+                ["Branding", "branding"],
                 ["Page View Analytics", "page-view-analytics"],
                 ["Admin Authentication", "admin-authentication"],
               ],

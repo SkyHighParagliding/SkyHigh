@@ -150,7 +150,7 @@ Core setup, database schema, API patterns, branding system.
 
 ### Platform Overview
 
-**SkyHigh** is a white-label club management system for Australian paragliding/hang gliding clubs.
+**SkyHigh** is a club management system for Australian paragliding/hang gliding clubs.
 
 **Features**:
 - Live multi-source weather with wind grids and 7-day forecasts
@@ -164,7 +164,7 @@ Core setup, database schema, API patterns, branding system.
 - AI-powered site generator (scrape any URL) and smart assistant
 - TidyHQ membership sync, Google Drive integration, satellite tracker fallback
 - Complete admin suite with feature toggles and scheduled jobs
-- White-label branding (no code changes needed to customize for any club)
+- Configurable club identity (name, logo, tagline, colour) via admin settings
 
 ### Tech Stack
 

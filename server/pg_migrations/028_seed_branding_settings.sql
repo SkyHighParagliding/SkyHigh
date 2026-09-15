@@ -12,4 +12,8 @@ INSERT INTO settings (key, value) VALUES ('clubLogoNav', '') ON CONFLICT (key) D
 INSERT INTO settings (key, value) VALUES ('clubLogoFooter', '') ON CONFLICT (key) DO NOTHING;
 INSERT INTO settings (key, value) VALUES ('clubLogoFavicon', '') ON CONFLICT (key) DO NOTHING;
 INSERT INTO settings (key, value) VALUES ('clubLogoSplash', '') ON CONFLICT (key) DO NOTHING;
+-- NOTE: activeTemplate and logoMode_* are no longer seeded here — the template
+-- engine has been removed (see migration 045). The INSERT below is retained
+-- for idempotency on existing databases that ran this migration before the
+-- engine was stripped; migration 045 deletes the row on next apply.
 INSERT INTO settings (key, value) VALUES ('activeTemplate', 'wonderful-white') ON CONFLICT (key) DO NOTHING;

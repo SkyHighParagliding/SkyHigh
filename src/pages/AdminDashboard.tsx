@@ -392,7 +392,7 @@ export function AdminDashboard() {
                     <FolderOpen className="w-6 h-6 mr-2" />
                     Build Blueprint
                   </CardTitle>
-                  <CardDescription>Ordered prompts to recreate the entire platform from scratch — white-label ready.</CardDescription>
+                  <CardDescription>Ordered prompts to recreate the entire platform from scratch.</CardDescription>
                 </CardHeader>
               </Card>
             </Link>

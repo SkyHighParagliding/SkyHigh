@@ -106,7 +106,6 @@ interface Settings {
   pwaIcon192?: string;
   pwaIcon512?: string;
   customWidgetTags?: string;
-  activeTemplate?: string;
   joinPageEnabled?: boolean;
   joinTidyhqUrl?: string;
   joinTiers?: string;
@@ -186,15 +185,6 @@ function resolveDarkLogos(s: Settings): LogoSet {
   };
 }
 
-function resolveActiveLogos(s: Settings): LogoSet {
-  const template = s.activeTemplate || "classic";
-  const mode = (s as any)[`logoMode_${template}`] || "light";
-  if (mode === "dark" && s.clubLogoDarkOriginal) {
-    return resolveDarkLogos(s);
-  }
-  return resolveLightLogos(s);
-}
-
 type LogoSet = { nav: string; footer: string; favicon: string; splash: string };
 
 interface SettingsContextType {
@@ -202,7 +192,6 @@ interface SettingsContextType {
   updateSettings: (newSettings: Record<string, string | boolean>) => Promise<void>;
   refreshSettings: () => Promise<void>;
   loading: boolean;
-  activeLogos: LogoSet;
   lightLogos: LogoSet;
   darkLogos: LogoSet;
   /** Unix ms timestamp of the last successful /api/settings read. Null until first load. */
@@ -238,7 +227,6 @@ const SettingsContext = createContext<SettingsContextType>({
   updateSettings: async () => {},
   refreshSettings: async () => {},
   loading: true,
-  activeLogos: emptyLogos,
   lightLogos: emptyLogos,
   darkLogos: emptyLogos,
   settingsFetchedAt: null,
@@ -349,7 +337,6 @@ function buildSettings(data: Record<string, any>): Settings {
     pwaIcon192: cleanString(data.pwaIcon192) || "",
     pwaIcon512: cleanString(data.pwaIcon512) || "",
     customWidgetTags: data.customWidgetTags || "",
-    activeTemplate: data.activeTemplate || "classic",
     groundHandlingEnabled: data.groundHandlingEnabled === "true",
     xcMapsEnabled: data.xcMapsEnabled === "true",
     xcMapsTitle: data.xcMapsTitle || "",
@@ -400,7 +387,6 @@ function buildSettings(data: Record<string, any>): Settings {
     windMapDefaultZoom: data.windMapDefaultZoom,
     bulkUploadLimit: data.bulkUploadLimit || "20",
     featureThermalMap: data.featureThermalMap,
-    ...Object.fromEntries(Object.entries(data).filter(([k]) => k.startsWith("logoMode_")).map(([k, v]) => [k, v || "light"])),
   };
 }
 
@@ -463,7 +449,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     updateSettings,
     refreshSettings,
     loading,
-    activeLogos: resolveActiveLogos(settings),
     lightLogos: resolveLightLogos(settings),
     darkLogos: resolveDarkLogos(settings),
     settingsFetchedAt,

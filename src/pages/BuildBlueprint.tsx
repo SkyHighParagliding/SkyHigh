@@ -27,7 +27,7 @@ const phases: Phase[] = [
     id: "foundation",
     icon: <Layers className="w-5 h-5" />,
     title: "Phase 1 — Project Foundation & Branding System",
-    summary: "Set up the monorepo, install core packages, and build a branding-first theming engine so every component adapts to any club's identity.",
+    summary: "Set up the monorepo, install core packages, and build a branding-first theming engine so every component reflects the club's identity.",
     prompts: [
       {
         title: "1.1 — Scaffold the Project",
@@ -54,16 +54,14 @@ const phases: Phase[] = [
       },
       {
         title: "1.3 — Build the Branding & Theming Engine",
-        instruction: "Create a dynamic theming system where all colours, logos, and club identity are driven by a settings table in the database and applied at runtime via CSS variables. This is the foundation for white-labelling — every visual element must reference theme tokens, never hard-coded colours.",
+        instruction: "Create a dynamic theming system where all colours, logos, and club identity are driven by a settings table in the database and applied at runtime via CSS variables. Every visual element must reference theme tokens, never hard-coded colours.",
         details: [
-          "Database: settings table (key TEXT PK, value TEXT) — stores clubName, clubTagline, clubPrimaryColor, logoLight, logoDark, faviconUrl, templateId",
+          "Database: settings table (key TEXT PK, value TEXT) — stores clubName, clubTagline, clubPrimaryColor, logoLight, logoDark, faviconUrl",
           "CSS variable system: define semantic tokens in src/index.css using Tailwind @theme — --color-navy, --color-sky, --color-orange, --color-background, --color-foreground, --color-border, etc.",
-          "Template registry (src/templates/registry.ts): define named themes (e.g. 'Classic', 'Wonderful White') each mapping --tmpl-header-bg, --tmpl-accent, --tmpl-footer-bg, --tmpl-logo-mode etc.",
-          "TemplateContext provider: reads active templateId from settings, injects --tmpl-* tokens onto document root at runtime so entire UI re-skins instantly",
           "SettingsContext provider: wraps app, provides clubName, logos, colours to all components",
-          "Logo system: on upload, auto-generate variants via sharp — nav (h=48), footer (h=64), favicon (32x32 + 192x192), splash (512x512). Store light/dark sets.",
+          "Logo system: on upload, auto-generate variants via sharp — nav (h=48), footer (h=64), favicon (32x32 + 192x192), splash (512x512). Store light/dark sets for use on dark and light backgrounds respectively.",
           "Dynamic PWA manifest: GET /manifest.json returns JSON with current club name, colours, and icon URLs from settings",
-          "Admin Branding page: club name, tagline, primary colour picker, logo uploads (light/dark), template selector with live preview",
+          "Admin Branding page: club name, tagline, logo uploads (light/dark), PWA icon upload",
         ],
       },
       {
@@ -74,7 +72,7 @@ const phases: Phase[] = [
           "Migration runner: reads server/pg_migrations/ directory, tracks applied migrations in schema_migrations table, runs pending migrations in order on boot",
           "Migration files: 001_full_schema.sql (base tables), subsequent numbered files for additions",
           "Support transactions via AsyncLocalStorage for multi-statement atomic operations",
-          "Settings table seeded with default values on first run (clubName, templateId, etc.)",
+          "Settings table seeded with default values on first run (clubName, clubTagline, etc.)",
         ],
       },
     ],
@@ -212,7 +210,7 @@ const phases: Phase[] = [
         details: [
           "WindCompass: SVG animated compass needle, ideal wind sectors as coloured arcs, current wind direction/speed readout, status ring (flyable/marginal/unflyable)",
           "TidesGauge: fetches BOM tide data, shows current tide level, high/low times, animated gauge",
-          "WeatherCard: compact card showing temp, wind, humidity with Classic and Apple-style variants",
+          "WeatherCard: compact card showing temp, wind, humidity with Apple-style design",
           "All components accept siteId prop and fetch their own data via React Query hooks",
         ],
       },
@@ -485,10 +483,9 @@ const phases: Phase[] = [
     prompts: [
       {
         title: "11.1 — Layout Shell & Navigation",
-        instruction: "Build the main layout component with a responsive header, mobile hamburger menu, footer, and route-based page rendering. The header and footer must adapt to the active template and club branding.",
+        instruction: "Build the main layout component with a responsive header, mobile hamburger menu, footer, and route-based page rendering. The header and footer must reflect club branding from settings.",
         details: [
           "Layout component: header, main content (Outlet), footer — all theme-aware via CSS variables",
-          "Template-specific headers: swap between Classic header and variant headers (e.g. WonderfulHeader) based on active templateId",
           "Navigation: desktop horizontal nav with dropdown groups (Sites, XC, Community), mobile slide-out menu",
           "NavDropdown component: reusable dropdown with hover/click support and animated transitions",
           "Footer: club name, logo (light/dark variant), sponsor logos, quick links",
@@ -634,7 +631,7 @@ export function BuildBlueprint() {
           <h1 className="text-3xl font-extrabold text-navy mb-3 print:text-2xl">Build Blueprint</h1>
           <p className="text-foreground-secondary max-w-2xl mx-auto">
             A complete, ordered set of prompts to recreate the {clubName} platform from scratch.
-            Designed as a white-label system — branding is the foundation, so any club can make it their own.
+            Branding is the foundation — all club identity is controlled from settings, not code.
           </p>
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-sky/10 rounded-full text-sm text-sky font-medium">
             <Cpu className="w-4 h-4" />
@@ -661,7 +658,7 @@ export function BuildBlueprint() {
         <div className="mb-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 print:p-4">
           <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-200 uppercase tracking-wider mb-3">Architecture Principles</h2>
           <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-100">
-            <li className="flex items-start gap-2"><span className="text-amber-600 mt-1 flex-shrink-0">1.</span><span><strong>Branding-first:</strong> Every colour, logo, and text label comes from the settings database. Hard-coded club names or colours are never acceptable.</span></li>
+            <li className="flex items-start gap-2"><span className="text-amber-600 mt-1 flex-shrink-0">1.</span><span><strong>Settings-first:</strong> Every colour, logo, and text label comes from the settings database. Hard-coded club names or colours are never acceptable.</span></li>
             <li className="flex items-start gap-2"><span className="text-amber-600 mt-1 flex-shrink-0">2.</span><span><strong>One library per concern:</strong> React Query for data, Framer Motion for animation, Sharp for images. No redundant packages.</span></li>
             <li className="flex items-start gap-2"><span className="text-amber-600 mt-1 flex-shrink-0">3.</span><span><strong>Shared hooks over repeated code:</strong> useAdminForm, useAdminList, useUnsavedChanges — every admin page uses the same patterns.</span></li>
             <li className="flex items-start gap-2"><span className="text-amber-600 mt-1 flex-shrink-0">4.</span><span><strong>Server-side validation always:</strong> Zod schemas on every endpoint. Client validation is convenience, server validation is security.</span></li>
@@ -717,8 +714,8 @@ export function BuildBlueprint() {
             <h2 className="text-lg font-bold text-navy mb-2">Rebuild Summary</h2>
             <p className="text-sm text-foreground-secondary mb-4">
               {phases.length} phases, {phases.reduce((sum, p) => sum + p.prompts.length, 0)} prompts covering the complete {clubName} platform.
-              Execute in order — each phase builds on the previous. The branding system in Phase 1 ensures the entire app
-              is white-label ready from the first line of code.
+              Execute in order — each phase builds on the previous. The branding system in Phase 1 ensures all club
+              identity is driven from settings from the first line of code.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-xs text-foreground-faint">
               <span>React 19 + Vite 6</span>

@@ -25,7 +25,6 @@ function fmtMelbTime(isoStr: string): string {
 
 interface SiteThermalPanelProps {
   site: any;
-  variant: 'apple' | 'classic';
   onBack: (target: 'history' | 'outlook') => void;
   hasExtended: boolean;
   hasLiveWeather: boolean;
@@ -43,7 +42,7 @@ function getMelbHour(isoStr: string): number {
   );
 }
 
-export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
+export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,17 +114,12 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
     return [{ id: site.id ?? 'site', name: site.name ?? '', lat: site.lat, lon: site.lon, status: site.status, type: site.type }];
   }, [site?.id, site?.name, site?.lat, site?.lon, site?.status, site?.type]);
 
-  const isApple = variant === 'apple';
-  const panelClass = isApple ? 'rounded-xl p-3' : 'bg-navy/5 rounded-2xl p-3 sm:p-4 border border-navy/10';
-  const panelStyle = isApple ? { background: '#f5f5f7' } : undefined;
-  const headerClass = isApple
-    ? 'text-[10px] font-semibold uppercase tracking-widest'
-    : 'text-[8px] sm:text-[10px] font-bold text-foreground-faint uppercase tracking-widest';
-  const headerStyle = isApple ? { color: '#86868b' } : undefined;
-  const btnClass = isApple
-    ? 'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors hover:opacity-80'
-    : 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-semibold bg-navy text-white hover:bg-navy/90 transition-colors';
-  const btnStyle = isApple ? { background: '#0071e3', color: '#fff' } : undefined;
+  const panelClass = 'rounded-xl p-3';
+  const panelStyle = { background: '#f5f5f7' };
+  const headerClass = 'text-[10px] font-semibold uppercase tracking-widest';
+  const headerStyle = { color: '#86868b' };
+  const btnClass = 'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors hover:opacity-80';
+  const btnStyle = { background: '#0071e3', color: '#fff' };
 
   const sliderContent = flyingSlots.length > 1 && (
     <div className="mt-2 px-1">
@@ -323,7 +317,7 @@ export function SiteThermalPanel({ site, variant, onBack, hasExtended, hasLiveWe
     <>
       <div className={panelClass} style={panelStyle}>
         {/* Header */}
-        <div className={cn('flex items-center justify-between', isApple ? 'mb-2' : 'mb-2 sm:mb-3')}>
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className={headerClass} style={headerStyle}>Thermal Forecast</span>
             {dateLabel && (

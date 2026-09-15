@@ -19,7 +19,6 @@ const SiteDetail = lazy(() => import("./pages/SiteDetail").then(m => ({ default:
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { PilotAuthProvider } from "./contexts/PilotAuthContext";
-import { TemplateProvider } from "./contexts/TemplateContext";
 import { AdminRoute } from "./components/AdminRoute";
 const SOProximityDetector = lazy(() => import("./components/SOProximityDetector").then(m => ({ default: m.SOProximityDetector })));
 
@@ -167,7 +166,6 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
     <SettingsProvider>
-      <TemplateProvider>
       <AuthProvider>
         <PilotAuthProvider>
         <Router>
@@ -258,7 +256,6 @@ export default function App() {
         </Router>
         </PilotAuthProvider>
       </AuthProvider>
-      </TemplateProvider>
     </SettingsProvider>
     <Toaster position="top-right" richColors closeButton duration={3000} />
     </QueryClientProvider>

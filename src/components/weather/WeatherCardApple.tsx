@@ -115,7 +115,6 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
       <HourlyForecastStrip
         windowedForecasts={windowedForecasts}
         site={site}
-        variant="apple"
         onShowWindMap={() => setShowWindMap(true)}
       />
 
@@ -134,7 +133,6 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         nextReadingMs={nextReadingMs}
         forecastWindowStartMs={forecastWindowStartMs}
         forecastWindowEndMs={forecastWindowEndMs}
-        variant="apple"
         iconMap={iconMap}
       />
 

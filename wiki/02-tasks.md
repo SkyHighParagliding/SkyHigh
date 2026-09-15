@@ -270,11 +270,6 @@ Pilots can export their XC flight history as CSV or GPX.
 - **Acceptance Criteria:** Pilot page with download button. Exports all flights submitted by that pilot. CSV includes distance, date, landing zone. GPX includes track (if available).
 - **Status:** Backlog
 
-### TASK-032 ⬜ Multi-Club White-Label Test
-Deploy second instance of SkyHigh for different club.
-- **Acceptance Criteria:** Codebase supports multiple clubs with separate databases and branding. Second deployment (different club) works independently. Test white-label customization (name, logo, default wind map viewport).
-- **Status:** Backlog (depends on Phase 4 production deployment)
-
 ### TASK-036 ✅ Thermal map — distinguish overcast from cumulus
 The thermal map drew cumulus glyphs almost everywhere, including under solid
 overcast. The cumulus gate (`ccl != null && blh - ccl >= 50`) is purely

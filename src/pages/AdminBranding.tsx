@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Upload, Trash2, Palette, Type, Image as ImageIcon, LayoutTemplate, Check, AlertCircle, Sun, Moon, Save, Smartphone } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Palette, Type, Image as ImageIcon, Check, AlertCircle, Sun, Moon, Save, Smartphone } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTemplateList } from "@/templates/registry";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { api } from "@/lib/apiClient";
@@ -16,26 +15,20 @@ export function AdminBranding() {
   const { token } = useAuth();
   const [clubName, setClubName] = useState("");
   const [clubTagline, setClubTagline] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [primaryColor, setPrimaryColor] = useState("");
   const [uploadingLight, setUploadingLight] = useState(false);
   const [uploadingDark, setUploadingDark] = useState(false);
   const [uploadingPwa, setUploadingPwa] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [logoModeSaved, setLogoModeSaved] = useState<string | null>(null);
   const fileLightRef = useRef<HTMLInputElement>(null);
   const fileDarkRef = useRef<HTMLInputElement>(null);
   const filePwaRef = useRef<HTMLInputElement>(null);
-  const { isDirty, markDirty, blocker, saving, justSaved, saveError, setSaveError, save } = useAdminForm({ successMessage: "Branding saved" });
+  const { markDirty, blocker, justSaved, saveError, setSaveError, save } = useAdminForm({ successMessage: "Branding saved" });
 
   useEffect(() => {
     setClubName(settings.clubName || "SkyHigh");
     setClubTagline(settings.clubTagline || "");
   }, [settings.clubName, settings.clubTagline]);
-
-  useEffect(() => {
-    setSelectedTemplate(settings.activeTemplate || "classic");
-  }, [settings.activeTemplate]);
 
   useEffect(() => {
     setPrimaryColor(settings.clubPrimaryColor || "");
@@ -46,11 +39,10 @@ export function AdminBranding() {
       await updateSettings({
         clubName,
         clubTagline,
-        activeTemplate: selectedTemplate,
         clubPrimaryColor: primaryColor,
       });
     });
-  }, [clubName, clubTagline, selectedTemplate, primaryColor, updateSettings, save]);
+  }, [clubName, clubTagline, primaryColor, updateSettings, save]);
 
   async function handleResetColor() {
     setSaveError("");
@@ -135,20 +127,6 @@ export function AdminBranding() {
     } catch {}
   }
 
-  async function handleLogoModeChange(templateId: string, mode: string) {
-    setSaveError("");
-    setLogoModeSaved(templateId);
-    try {
-      await updateSettings({ [`logoMode_${templateId}`]: mode });
-      setTimeout(() => setLogoModeSaved(null), 2000);
-    } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : String(err));
-      setLogoModeSaved(null);
-    }
-  }
-
-  const templateList = getTemplateList();
-
   const SaveButton = () => (
     <Button
       onClick={saveAll}
@@ -165,8 +143,8 @@ export function AdminBranding() {
           <Link to="/admin" className="inline-flex items-center text-sky hover:underline text-sm mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-extrabold text-navy">Branding & Templates</h1>
-          <p className="text-foreground-secondary mt-1">Customise your club's identity and visual template.</p>
+          <h1 className="text-3xl font-extrabold text-navy">Branding</h1>
+          <p className="text-foreground-secondary mt-1">Customise your club's identity — name, tagline, logos, and colour.</p>
         </div>
 
         {saveError && (
@@ -217,7 +195,7 @@ export function AdminBranding() {
                 <ImageIcon className="w-5 h-5 mr-2" />
                 Club Logos
               </CardTitle>
-              <CardDescription>Upload light and dark versions of your logo. Assign which version each template uses below.</CardDescription>
+              <CardDescription>Upload light and dark versions of your logo. The light logo is used over the hero; the dark logo is used in the footer and in the header once scrolled past the hero.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -385,88 +363,10 @@ export function AdminBranding() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-navy">
-                <LayoutTemplate className="w-5 h-5 mr-2" />
-                Visual Template
-              </CardTitle>
-              <CardDescription>Choose the overall look and feel of your site, and assign which logo each template uses.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {templateList.map((tmpl) => {
-                  const isSelected = selectedTemplate === tmpl.id;
-                  const currentLogoMode = (settings as any)[`logoMode_${tmpl.id}`] || "light";
-                  const hasLight = !!settings.clubLogoOriginal;
-                  const hasDark = !!settings.clubLogoDarkOriginal;
-                  return (
-                    <div key={tmpl.id} className="space-y-2">
-                      <button
-                        onClick={() => { setSelectedTemplate(tmpl.id); markDirty(); }}
-                        className={`relative text-left p-4 rounded-xl border-2 transition-all w-full ${
-                          isSelected
-                            ? "border-sky bg-sky/5 shadow-md"
-                            : "border-border hover:border-sky/40 hover:shadow-sm"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-sky flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white" />
-                          </div>
-                        )}
-                        <div
-                          className="w-full h-24 rounded-lg mb-3 border"
-                          style={{
-                            background: tmpl.id === "classic"
-                              ? "linear-gradient(135deg, #1a2b3c 0%, #1a2b3c 50%, #ff6b35 50%, #ff6b35 100%)"
-                              : "linear-gradient(135deg, #f5f5f7 0%, #ffffff 50%, #007aff 50%, #007aff 100%)",
-                          }}
-                        />
-                        <h3 className="font-semibold text-navy text-sm">{tmpl.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{tmpl.description}</p>
-                      </button>
-                      {(hasLight || hasDark) && (
-                        <div className="flex items-center gap-2 px-2">
-                          <span className="text-xs text-foreground-faint font-medium whitespace-nowrap">Logo:</span>
-                          <div className="flex rounded-lg border border-border overflow-hidden">
-                            <button
-                              onClick={() => handleLogoModeChange(tmpl.id, "light")}
-                              disabled={!hasLight}
-                              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
-                                currentLogoMode === "light"
-                                  ? "bg-sky text-white"
-                                  : "bg-card text-foreground-secondary hover:bg-sky/10"
-                              } ${!hasLight ? "opacity-40 cursor-not-allowed" : ""}`}
-                            >
-                              <Sun className="w-3 h-3" /> Light
-                            </button>
-                            <button
-                              onClick={() => handleLogoModeChange(tmpl.id, "dark")}
-                              disabled={!hasDark}
-                              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-border ${
-                                currentLogoMode === "dark"
-                                  ? "bg-sky text-white"
-                                  : "bg-card text-foreground-secondary hover:bg-sky/10"
-                              } ${!hasDark ? "opacity-40 cursor-not-allowed" : ""}`}
-                            >
-                              <Moon className="w-3 h-3" /> Dark
-                            </button>
-                          </div>
-                          {logoModeSaved === tmpl.id && <span className="text-xs text-emerald-600 flex items-center gap-1"><Check className="w-3 h-3" /> Saved</span>}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-navy">
                 <Palette className="w-5 h-5 mr-2" />
                 Primary Colour
               </CardTitle>
-              <CardDescription>Override the accent colour used across the site. Leave blank to use the template default.</CardDescription>
+              <CardDescription>Override the accent colour used across the site. Leave blank to use the site default.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">

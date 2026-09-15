@@ -28,7 +28,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Scheduled closure calendar: `site_closure_dates` table, unified admin calendar UI (replaces Status dropdown), auto-generated home-page banners 7 days before closure — see DECISION-008
 - 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009
 - Ground elevation is sampled client-side from AWS terrarium tiles (no API key), with the server route retained as fallback — see DECISION-011. The Geoscience Australia CC BY 4.0 attribution is a licence obligation; do not remove it.
-- `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future white-label or source release must revisit that decision first.
+- `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future source release must revisit that decision first.
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
@@ -38,7 +38,7 @@ SkyHigh is an Australian paragliding/hang gliding club management platform — a
 - **Member management** via TidyHQ integration (automated role sync, contacts, shop products)
 - **Admin CMS** with deep-linked modals, bulk operations, document management via Google Drive
 - **Smart image processing** with AI enhancement, watermarking, and auto-variant generation
-- **White-label ready** for other clubs with customizable branding and PWA support
+- **Single-organisation** — permanently Wonderful White design; club identity (name, logo, tagline, colour) configured via admin settings
 
 Recently hardened (7 critical security fixes) and optimized (wind map: 10x faster via caching, database: indexed for production). Uses pure PostgreSQL everywhere (dev via Docker, prod via Railway).
 

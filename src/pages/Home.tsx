@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, ShieldAlert, Users, Users2, CloudSun, Calendar, Star, GraduationCap, Handshake } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -13,7 +12,6 @@ import { useUpcomingEvents, useSponsors, useSite, useHomeSites, useClosureBanner
 
 export function Home() {
   const { settings } = useSettings();
-  const isGlass = settings.activeTemplate === 'wonderful-white';
   const [heroImages, setHeroImages] = useState<string[]>([]);
   const [heroLayerA, setHeroLayerA] = useState("");
   const [heroLayerB, setHeroLayerB] = useState("");
@@ -365,7 +363,7 @@ export function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section data-hero className={`relative flex flex-col ${isGlass ? 'min-h-[100vh] -mt-[56px] sm:-mt-[76px]' : 'h-[80vh]'}`}>
+      <section data-hero className={`relative flex flex-col min-h-[100vh] -mt-[56px] sm:-mt-[76px]`}>
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {heroLayerA && (
@@ -401,7 +399,7 @@ export function Home() {
 
         {/* Alert Banner */}
         {settings.alertBannerEnabled && (
-          <div className={`relative z-40 bg-orange text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md ${isGlass ? 'mt-[56px] sm:mt-[76px]' : ''}`}>
+          <div className={`relative z-40 bg-orange text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md mt-[56px] sm:mt-[76px]`}>
             <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
               <ShieldAlert className="w-5 h-5" />
               <span>{settings.alertBannerText || "Important update available."}</span>
@@ -414,7 +412,7 @@ export function Home() {
           const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
           const label = b.firstDate === b.lastDate ? fmt(b.firstDate) : `${fmt(b.firstDate)} – ${fmt(b.lastDate)}`;
           return (
-            <div key={b.siteId} className={`relative z-40 bg-blue-600 text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md ${!settings.alertBannerEnabled && idx === 0 && isGlass ? 'mt-[56px] sm:mt-[76px]' : ''}`}>
+            <div key={b.siteId} className={`relative z-40 bg-blue-600 text-white py-3 px-4 text-center font-bold text-sm sm:text-base shadow-md ${!settings.alertBannerEnabled && idx === 0 ? 'mt-[56px] sm:mt-[76px]' : ''}`}>
               <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
                 <ShieldAlert className="w-5 h-5" />
                 <span>{b.siteName} — Closed {label}</span>
@@ -424,7 +422,7 @@ export function Home() {
         })}
 
         {/* Hero Content */}
-        <div className={`relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto flex-1 flex flex-col justify-center ${isGlass ? 'min-h-screen min-h-[100dvh] pt-[80px] sm:pt-[76px] pb-0 sm:pb-6 md:pb-8 lg:pb-0' : ''}`}>
+        <div className={`relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto flex-1 flex flex-col justify-center min-h-screen min-h-[100dvh] pt-[80px] sm:pt-[76px] pb-0 sm:pb-6 md:pb-8 lg:pb-0`}>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg leading-tight">
             {(settings.homeHeroTitle || "Welcome to the SkyHigh Paragliding Club!").replace(/\{\{clubName\}\}/g, settings.clubName || 'SkyHigh')}
           </h1>
@@ -447,148 +445,62 @@ export function Home() {
         </div>
 
         {/* Glass cards inside hero (Wonderful White) */}
-        {isGlass && (
-          <div className="relative z-10 px-4 sm:px-6 lg:px-8 pb-12 -mt-[75px] sm:-mt-[80px] lg:-mt-[85px] xl:-mt-[90px]">
-            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
-              {displayedCards.map((card) => {
-                const isStaticCard = card.isSchoolsCard || card.isCommunityCard;
-                const CardWrapper = card.isExternal ? 'a' : isStaticCard ? 'div' : Link;
-                const wrapperProps = card.isExternal
-                  ? { href: card.link, target: "_blank", rel: "noopener noreferrer" }
-                  : isStaticCard ? {} : { to: card.link };
-
-                return (
-                  <CardWrapper key={card.id} {...wrapperProps as any} className="group block">
-                    <div
-                      className="h-full min-h-[220px] p-5 transition-all duration-300 group-hover:-translate-y-1"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        borderRadius: '1rem',
-                        border: '1px solid rgba(255,255,255,0.18)',
-                        boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
-                      }}
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                          {React.cloneElement(card.icon as React.ReactElement<any>, { className: 'h-5 w-5 text-white' })}
-                        </div>
-                      </div>
-                      <h3 className="text-[15px] font-semibold text-white mb-1.5">{card.title}</h3>
-                      <div className="text-[13px] text-white/70 leading-relaxed [&_a]:text-white/80 [&_a]:bg-white/10 [&_a]:border-white/20 [&_a]:hover:bg-white/20">
-                        {card.id === 'events' && events.length > 0 ? (
-                          <div className="flex flex-col gap-1.5">
-                            {events[0].image_url && (
-                              <div className="w-full mb-1 rounded-lg overflow-hidden">
-                                <img src={events[0].image_url} alt={events[0].name} className="w-full h-auto object-contain" referrerPolicy="no-referrer" loading="lazy" />
-                              </div>
-                            )}
-                            <p className="font-medium text-white/90">{events[0].name || "Upcoming Event"}</p>
-                            {(events[0].start_at_iso || events[0].start_at) && (
-                              <p className="text-white/60">{new Date(events[0].start_at_iso || events[0].start_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                            )}
-                          </div>
-                        ) : card.isCommitteeCard && typeof card.desc === 'string' ? (
-                          <MarkdownWithWidgets content={card.desc} className="text-[13px]" compact />
-                        ) : card.desc}
-                      </div>
-                    </div>
-                  </CardWrapper>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Quick Actions / Value Prop (Classic only) */}
-      {!isGlass && (
-      <section className="py-16" style={{ background: 'var(--tmpl-section-bg, var(--color-sand))' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 -mt-24 relative z-20">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 pb-12 -mt-[75px] sm:-mt-[80px] lg:-mt-[85px] xl:-mt-[90px]">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
             {displayedCards.map((card) => {
-              if (card.isSchoolsCard || card.isCommunityCard) {
-                return (
-                  <div key={card.id} className="block">
-                    <Card className="h-full border flex flex-col" style={{
-                      background: 'var(--tmpl-card-bg)',
-                      borderRadius: 'var(--tmpl-card-radius)',
-                      boxShadow: 'var(--tmpl-card-shadow)',
-                      borderColor: 'var(--tmpl-card-border)',
-                    }}>
-                      <CardHeader className="text-center pb-2">
-                        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${card.iconBg}`}>
-                          {card.icon}
-                        </div>
-                        <CardTitle className="text-xl">{card.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-center text-foreground-secondary flex-grow flex flex-col">
-                        <div className="min-h-[4.5rem] flex-grow">
-                          {card.isCommitteeCard && typeof card.desc === 'string' ? (
-                            <MarkdownWithWidgets content={card.desc} className="text-sm" compact />
-                          ) : card.desc}
-                        </div>
-                        {card.link && card.linkText && (
-                          <Link to={card.link} className={`inline-block mt-4 font-semibold ${card.linkColor} text-xs hover:underline`}>
-                            {card.linkText}
-                          </Link>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                );
-              }
-
-              const CardWrapper = card.isExternal ? 'a' : Link;
-              const wrapperProps = card.isExternal 
-                ? { href: card.link, target: "_blank", rel: "noopener noreferrer", className: "block group" }
-                : { to: card.link, className: "block group" };
+              const isStaticCard = card.isSchoolsCard || card.isCommunityCard;
+              const CardWrapper = card.isExternal ? 'a' : isStaticCard ? 'div' : Link;
+              const wrapperProps = card.isExternal
+                ? { href: card.link, target: "_blank", rel: "noopener noreferrer" }
+                : isStaticCard ? {} : { to: card.link };
 
               return (
-                <CardWrapper key={card.id} {...wrapperProps as any}>
-                  <Card className="h-full border group-hover:-translate-y-1 transition-transform duration-300 flex flex-col" style={{
-                      background: 'var(--tmpl-card-bg)',
-                      borderRadius: 'var(--tmpl-card-radius)',
-                      boxShadow: 'var(--tmpl-card-shadow)',
-                      borderColor: 'var(--tmpl-card-border)',
-                    }}>
-                    <CardHeader className="text-center pb-2">
-                      <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${card.iconBg}`}>
-                        {card.icon}
+                <CardWrapper key={card.id} {...wrapperProps as any} className="group block">
+                  <div
+                    className="h-full min-h-[220px] p-5 transition-all duration-300 group-hover:-translate-y-1"
+                    style={{
+                      background: 'rgba(255,255,255,0.12)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      borderRadius: '1rem',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                        {React.cloneElement(card.icon as React.ReactElement<any>, { className: 'h-5 w-5 text-white' })}
                       </div>
-                      <CardTitle className="text-xl group-hover:text-sky transition-colors">{card.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center text-foreground-secondary flex-grow flex flex-col">
-                      <div className="min-h-[4.5rem] flex-grow">
-                        {card.id === 'events' && events.length > 0 ? (
-                          <div className="text-left mt-2 flex flex-col h-full">
-                            {events[0].image_url && (
-                              <div className="w-full mb-2 rounded overflow-hidden">
-                                <img src={events[0].image_url} alt={events[0].name} className="w-full h-auto object-contain" referrerPolicy="no-referrer" loading="lazy" />
-                              </div>
-                            )}
-                            <p className="font-semibold text-foreground line-clamp-1">{events[0].name || "Upcoming Event"}</p>
-                            {(events[0].start_at_iso || events[0].start_at) && <p className="text-sm text-muted-foreground">{new Date(events[0].start_at_iso || events[0].start_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
-                          </div>
-                        ) : card.desc}
-                      </div>
-                      <div className={`inline-block mt-4 font-semibold group-hover:underline ${card.linkColor}`}>
-                        {card.linkText} &rarr;
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <h3 className="text-[15px] font-semibold text-white mb-1.5">{card.title}</h3>
+                    <div className="text-[13px] text-white/70 leading-relaxed [&_a]:text-white/80 [&_a]:bg-white/10 [&_a]:border-white/20 [&_a]:hover:bg-white/20">
+                      {card.id === 'events' && events.length > 0 ? (
+                        <div className="flex flex-col gap-1.5">
+                          {events[0].image_url && (
+                            <div className="w-full mb-1 rounded-lg overflow-hidden">
+                              <img src={events[0].image_url} alt={events[0].name} className="w-full h-auto object-contain" referrerPolicy="no-referrer" loading="lazy" />
+                            </div>
+                          )}
+                          <p className="font-medium text-white/90">{events[0].name || "Upcoming Event"}</p>
+                          {(events[0].start_at_iso || events[0].start_at) && (
+                            <p className="text-white/60">{new Date(events[0].start_at_iso || events[0].start_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          )}
+                        </div>
+                      ) : card.isCommitteeCard && typeof card.desc === 'string' ? (
+                        <MarkdownWithWidgets content={card.desc} className="text-[13px]" compact />
+                      ) : card.desc}
+                    </div>
+                  </div>
                 </CardWrapper>
               );
             })}
           </div>
         </div>
       </section>
-      )}
+
 
       {/* Featured Site Section */}
       {settings.featuredSiteEnabled && featuredSite && (
-        isGlass ? (
         <section className="py-24 overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-center gap-16">
@@ -634,88 +546,32 @@ export function Home() {
             </div>
           </div>
         </section>
-        ) : (
-        <section className="py-20 bg-navy text-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col lg:flex-row items-center gap-12">
-              <div className="lg:w-1/2 space-y-6">
-                <div className="inline-block px-3 py-1 bg-sky text-white text-xs font-bold rounded uppercase tracking-widest">
-                  Featured Site
-                </div>
-                <h2 className="text-4xl font-bold tracking-tight text-orange">{featuredSite.name}</h2>
-                <p className="text-gray-300 text-lg leading-relaxed line-clamp-4">
-                  {featuredSite.description || ""}
-                </p>
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg">
-                    <CloudSun className="w-5 h-5 text-sky" />
-                    <span className="text-sm font-medium">{featuredSite.windDir || "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg">
-                    <ShieldAlert className="w-5 h-5 text-orange" />
-                    <span className="text-sm font-medium">{featuredSite.pgRating || featuredSite.hgRating || "See site guide"}</span>
-                  </div>
-                </div>
-                <Link to={`/sites/${featuredSite.id}`} className="inline-block pt-4">
-                  <Button variant="orange" size="lg">
-                    View Site Guide
-                  </Button>
-                </Link>
-              </div>
-              <div className="lg:w-1/2 relative">
-                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-gradient-to-br from-slate-300 to-slate-400">
-                  {featuredSite.image && featuredSite.image.trim() ? (
-                    <img
-                      src={featuredSite.image}
-                      alt={featuredSite.name}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-500 font-medium">
-                      No image
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-6 -right-6 bg-sky p-6 rounded-2xl shadow-xl hidden md:block">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Site Type</p>
-                  <p className="text-xl font-bold">{featuredSite.type || "Site"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        )
       )}
 
       {settings.photoSliderEnabled && (
-        <section className="overflow-hidden" style={{ background: isGlass ? 'var(--tmpl-body-bg, #f5f5f7)' : '#1e293b', paddingTop: 25 }}>
+        <section className="overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)', paddingTop: 25 }}>
           <PhotoSlider reverse={settings.photoSliderReverse} autoScroll={settings.photoSliderAutoScroll} />
         </section>
       )}
 
       {settings.youtubeCarouselEnabled && (
-        <section className="overflow-hidden" style={{ background: isGlass ? 'var(--tmpl-body-bg, #f5f5f7)' : '#1e293b', paddingTop: 25 }}>
+        <section className="overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)', paddingTop: 25 }}>
           <YouTubeCarousel reverse={settings.youtubeCarouselReverse} autoScroll={settings.youtubeCarouselAutoScroll} />
         </section>
       )}
 
       {/* Live Weather / Conditions Preview */}
-      <section className={isGlass ? "py-24" : "py-20 bg-sand"} style={isGlass ? { background: 'var(--tmpl-body-bg, #f5f5f7)' } : undefined}>
+      <section className="py-24" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className={isGlass ? "text-3xl font-bold mb-3" : "text-3xl font-bold text-navy mb-4"} style={isGlass ? { color: 'var(--tmpl-heading-color, #1d1d1f)' } : undefined}>Current Conditions</h2>
-            <p className={isGlass ? "max-w-2xl mx-auto text-[15px]" : "text-foreground-secondary max-w-2xl mx-auto"} style={isGlass ? { color: '#86868b' } : undefined}>
-              {isGlass ? 'Live weather at popular flying sites.' : 'A quick glance at our most popular sites.'}<br />
-              <span className="text-orange font-semibold">{isGlass ? 'Always check conditions yourself before flying.' : 'Always perform your own weather check before flying.'}</span>
+            <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--tmpl-heading-color, #1d1d1f)' }}>Current Conditions</h2>
+            <p className="max-w-2xl mx-auto text-[15px]" style={{ color: '#86868b' }}>
+              {'Live weather at popular flying sites.'}<br />
+              <span className="text-orange font-semibold">{'Always check conditions yourself before flying.'}</span>
             </p>
 
             {/* Weather Legend */}
-            <div className={isGlass
-              ? "mt-6 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-[12px]"
-              : "mt-8 mb-10 flex flex-wrap justify-center gap-x-8 gap-y-4 text-[11px] text-muted-foreground bg-card p-4 rounded-2xl border border-border-subtle shadow-sm w-full"
-            } style={isGlass ? { color: '#86868b' } : undefined}>
+            <div className="mt-6 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-[12px]" style={{ color: '#86868b' }}>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span className="font-medium">Good Spd / Good Dir</span>
@@ -735,14 +591,13 @@ export function Home() {
             </div>
           </div>
 
-          <div className={isGlass ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {sites.slice(0, parseInt(String(settings?.homeWeatherCardCount ?? "6")) || 6).map(site => (
               <Link key={site.id} to={`/sites/${site.id}`} className="block transition-transform hover:-translate-y-1">
-                <WeatherCard 
-                  weather={weatherData[site.id]} 
-                  site={site} 
+                <WeatherCard
+                  weather={weatherData[site.id]}
+                  site={site}
                   distance={distances[site.id]}
-                  variant={isGlass ? 'apple' : 'classic'}
                 />
               </Link>
             ))}
