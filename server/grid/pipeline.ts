@@ -42,7 +42,11 @@ const COMPLETENESS_THRESHOLD = 0.8;
 /** Days of history retained in wind_grid_data per base key. */
 const RETAIN_DAYS = 7;
 
-const FORECAST_DAYS = 2;
+// 3 local days from Melbourne midnight (~72 h). Drives both the Wind (0.15°) and
+// Thermal (0.09°) grid fetches. Raising this multiplies Open-Meteo request volume
+// linearly (rate-limited by volume), so it is deliberately modest; the map slider
+// spans whatever range the stored grid holds, so this is the only lever needed.
+const FORECAST_DAYS = 3;
 
 /** The persisted grid shape for a kind: an envelope plus an array of points. */
 export type PersistedGrid<P> = GridEnvelope & { points: P[] };

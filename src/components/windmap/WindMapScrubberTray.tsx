@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Play, Pause, FastForward, ChevronUp } from 'lucide-react';
 import { TRAY_HANDLE_HEIGHT_PX } from '../windMapTypes';
 import type { PlaySpeed } from '../windMapTypes';
@@ -23,6 +24,28 @@ export function WindMapScrubberTray({
   currentTime, forecastStart, forecastEnd, timeStep, onTimeChange,
   playSpeed, onSpeedCycle, formattedTime, mapMode,
 }: WindMapScrubberTrayProps) {
+  // One label per whole day the slider spans, positioned at that day's start:
+  // "Today", then the short weekday name (Melbourne). Makes the multi-day window
+  // legible — you can see at a glance which day the slider is over.
+  const dayMarkers = useMemo(() => {
+    const span = forecastEnd - forecastStart;
+    if (!(span > 0)) return [];
+    const DAY = 24 * 60 * 60 * 1000;
+    const markers: { frac: number; label: string }[] = [];
+    for (let i = 0; i * DAY < span; i++) {
+      const t = forecastStart + i * DAY;
+      // +3h keeps the weekday lookup safely inside the local day across DST edges.
+      const label = i === 0
+        ? 'Today'
+        : new Date(t + 3 * 60 * 60 * 1000).toLocaleDateString('en-AU', {
+            weekday: 'short',
+            timeZone: 'Australia/Melbourne',
+          });
+      markers.push({ frac: (t - forecastStart) / span, label });
+    }
+    return markers;
+  }, [forecastStart, forecastEnd]);
+
   return (
     <div
       className="absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-in-out"
@@ -63,17 +86,33 @@ export function WindMapScrubberTray({
               ? <Pause aria-hidden="true" className="w-3.5 h-3.5 fill-current" />
               : <Play aria-hidden="true" className="w-3.5 h-3.5 fill-current ml-0.5" />}
           </button>
-          <input
-            type="range"
-            min={forecastStart}
-            max={forecastEnd}
-            step={timeStep}
-            value={currentTime}
-            onChange={onTimeChange}
-            aria-label="Timeline"
-            aria-valuetext={formattedTime}
-            className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
-          />
+          <div className="flex-1 min-w-0">
+            <input
+              type="range"
+              min={forecastStart}
+              max={forecastEnd}
+              step={timeStep}
+              value={currentTime}
+              onChange={onTimeChange}
+              aria-label="Timeline"
+              aria-valuetext={formattedTime}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
+            />
+            {dayMarkers.length > 1 && (
+              <div className="relative h-3 mt-1 select-none" aria-hidden="true">
+                {dayMarkers.map((m, i) => (
+                  <span
+                    key={i}
+                    className="absolute top-0 flex items-center text-[8px] font-mono uppercase tracking-wide text-white/55 whitespace-nowrap"
+                    style={{ left: `${m.frac * 100}%` }}
+                  >
+                    <span className="inline-block w-px h-1.5 bg-white/25 mr-0.5" />
+                    {m.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={onSpeedCycle}
             className="p-1 rounded hover:bg-white/5 transition-colors text-sky-500 shrink-0"
