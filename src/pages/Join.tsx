@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ExternalLink, Check, ChevronDown, ChevronUp, Users, Shield, Award, Heart, HelpCircle } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -145,11 +145,11 @@ export function Join() {
             <span className="inline-block text-[12px] font-semibold tracking-widest uppercase text-blue-300 mb-4">Membership</span>
             <h1
               className="text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight mb-6"
-              style={{ fontFamily: "var(--tmpl-font-heading)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {heroTitle}
             </h1>
-            <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-8" style={{ fontFamily: "var(--tmpl-font-body)" }}>
+            <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed mb-8" style={{ fontFamily: "var(--font-body-face)" }}>
               {heroSubtitle}
             </p>
             <a
@@ -208,7 +208,7 @@ export function Join() {
             transition={{ duration: 0.5, delay: 0.25 }}
           >
             <div className="text-center mb-10">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3" style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3" style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}>
                 Membership Tiers
               </h2>
               <p className="text-[15px]" style={{ color: "#6e6e73" }}>Choose the membership that's right for you.</p>
@@ -272,7 +272,7 @@ export function Join() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4" style={{ background: "rgba(0,122,255,0.1)", color: "#007aff" }}>
                 <HelpCircle className="w-6 h-6" />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3" style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3" style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}>
                 Frequently Asked Questions
               </h2>
             </div>
@@ -305,7 +305,7 @@ export function Join() {
                 boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
               }}
             >
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4" style={{ fontFamily: "var(--tmpl-font-heading)" }}>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-heading)" }}>
                 Ready to fly with us?
               </h2>
               <p className="text-white/70 mb-6 text-[15px]">

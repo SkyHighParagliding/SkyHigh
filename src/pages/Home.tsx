@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, ShieldAlert, Users, Users2, CloudSun, Calendar, Star, GraduationCap, Handshake } from "lucide-react";
@@ -500,28 +500,28 @@ export function Home() {
 
       {/* Featured Site Section */}
       {settings.featuredSiteEnabled && featuredSite && (
-        <section className="py-24 overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
+        <section className="py-24 overflow-hidden" style={{ background: 'var(--body-bg, #f5f5f7)' }}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-center gap-16">
               <div className="lg:w-1/2 space-y-5">
-                <div className="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest" style={{ background: 'var(--tmpl-accent)', color: '#fff' }}>
+                <div className="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest" style={{ background: 'var(--accent)', color: '#fff' }}>
                   Featured Site
                 </div>
-                <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--tmpl-heading-color)' }}>{featuredSite.name}</h2>
+                <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--heading-color)' }}>{featuredSite.name}</h2>
                 <p className="text-[15px] leading-relaxed line-clamp-4" style={{ color: '#86868b' }}>
                   {featuredSite.description || ""}
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--tmpl-heading-color)' }}>
-                    <CloudSun className="w-4 h-4" style={{ color: 'var(--tmpl-accent)' }} />
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--heading-color)' }}>
+                    <CloudSun className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                     <span>{featuredSite.windDir || "—"}</span>
                   </div>
-                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--tmpl-heading-color)' }}>
-                    <ShieldAlert className="w-4 h-4" style={{ color: 'var(--tmpl-accent)' }} />
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium border" style={{ borderColor: 'rgba(0,0,0,0.1)', color: 'var(--heading-color)' }}>
+                    <ShieldAlert className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                     <span>{featuredSite.pgRating || featuredSite.hgRating || "See site guide"}</span>
                   </div>
                 </div>
-                <Link to={`/sites/${featuredSite.id}`} className="inline-flex items-center gap-1 pt-2 text-[15px] font-medium hover:underline" style={{ color: 'var(--tmpl-accent)' }}>
+                <Link to={`/sites/${featuredSite.id}`} className="inline-flex items-center gap-1 pt-2 text-[15px] font-medium hover:underline" style={{ color: 'var(--accent)' }}>
                   View Site Guide <span className="text-lg">→</span>
                 </Link>
               </div>
@@ -548,22 +548,22 @@ export function Home() {
       )}
 
       {settings.photoSliderEnabled && (
-        <section className="overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)', paddingTop: 25 }}>
+        <section className="overflow-hidden" style={{ background: 'var(--body-bg, #f5f5f7)', paddingTop: 25 }}>
           <PhotoSlider reverse={settings.photoSliderReverse} autoScroll={settings.photoSliderAutoScroll} />
         </section>
       )}
 
       {settings.youtubeCarouselEnabled && (
-        <section className="overflow-hidden" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)', paddingTop: 25 }}>
+        <section className="overflow-hidden" style={{ background: 'var(--body-bg, #f5f5f7)', paddingTop: 25 }}>
           <YouTubeCarousel reverse={settings.youtubeCarouselReverse} autoScroll={settings.youtubeCarouselAutoScroll} />
         </section>
       )}
 
       {/* Live Weather / Conditions Preview */}
-      <section className="py-24" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
+      <section className="py-24" style={{ background: 'var(--body-bg, #f5f5f7)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--tmpl-heading-color, #1d1d1f)' }}>Current Conditions</h2>
+            <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--heading-color, #1d1d1f)' }}>Current Conditions</h2>
             <p className="max-w-2xl mx-auto text-[15px]" style={{ color: '#86868b' }}>
               {'Live weather at popular flying sites.'}<br />
               <span className="text-orange font-semibold">{'Always check conditions yourself before flying.'}</span>

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+﻿import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -114,7 +114,7 @@ export function WonderfulHeader() {
                   key={link.name}
                   item={link}
                   className="text-[16px] font-light tracking-[0.01em] transition-all whitespace-nowrap opacity-80 hover:opacity-100 inline-flex items-center"
-                  style={{ color: textColor, fontFamily: "var(--tmpl-font-body)", transition: "color 0.3s ease" }}
+                  style={{ color: textColor, fontFamily: "var(--font-body-face)", transition: "color 0.3s ease" }}
                   dropdownBg={dropdownBg}
                   dropdownBorder={dropdownBorder}
                   dropdownTextColor={textColor}
@@ -126,7 +126,7 @@ export function WonderfulHeader() {
                   key={link.name}
                   to={link.path!}
                   className="text-[16px] font-light tracking-[0.01em] transition-all whitespace-nowrap opacity-80 hover:opacity-100"
-                  style={{ color: textColor, fontFamily: "var(--tmpl-font-body)", transition: "color 0.3s ease" }}
+                  style={{ color: textColor, fontFamily: "var(--font-body-face)", transition: "color 0.3s ease" }}
                 >
                   {link.name}
                 </Link>
@@ -139,7 +139,7 @@ export function WonderfulHeader() {
               <Link
                 to="/check-in"
                 className="text-[11px] font-medium px-3.5 py-1 rounded-full text-white transition-opacity hover:opacity-90"
-                style={{ background: "var(--tmpl-accent)" }}
+                style={{ background: "var(--accent)" }}
               >
                 Check-in
               </Link>
@@ -181,7 +181,7 @@ export function WonderfulHeader() {
               <Link
                 to="/check-in"
                 className="block px-3 py-2 text-[15px] font-semibold rounded-lg text-white text-center mt-2"
-                style={{ background: "var(--tmpl-accent)" }}
+                style={{ background: "var(--accent)" }}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Online Check-in

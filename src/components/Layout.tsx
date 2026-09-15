@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+﻿import { Outlet } from "react-router-dom";
 import { useEffect } from "react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { WonderfulHeader } from "@/templates/wonderful-white/WonderfulHeader";
@@ -66,7 +66,7 @@ export function Layout() {
   }, [clubName, lightLogos.favicon, settings.pwaIcon192, settings.clubPrimaryColor]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--tmpl-body-bg)" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--body-bg)" }}>
       <WonderfulHeader />
       <main className="flex-grow flex flex-col pt-[56px] sm:pt-[76px]">
         <Outlet />

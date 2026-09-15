@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Phone, Mail, Globe, Store, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,7 @@ export function BusinessDirectory() {
   }
 
   return (
-    <div style={{ background: "var(--tmpl-body-bg)" }} className="min-h-screen py-12">
+    <div style={{ background: "var(--body-bg)" }} className="min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link to="/" className="inline-flex items-center text-sky hover:text-sky-light mb-6 font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
@@ -46,13 +46,13 @@ export function BusinessDirectory() {
         <div className="mb-10">
           <h1
             className="text-4xl md:text-5xl font-extrabold mb-4"
-            style={{ color: "var(--tmpl-heading-color)", fontFamily: "var(--tmpl-font-heading)" }}
+            style={{ color: "var(--heading-color)", fontFamily: "var(--font-heading)" }}
           >
             Business Directory
           </h1>
           <p
             className="text-lg max-w-3xl mb-8"
-            style={{ color: "#86868b", fontFamily: "var(--tmpl-font-body)" }}
+            style={{ color: "#86868b", fontFamily: "var(--font-body-face)" }}
           >
             Products and services offered by our club members. Support your fellow pilots by checking out their businesses.
           </p>
@@ -94,12 +94,12 @@ export function BusinessDirectory() {
                 key={listing.id}
                 className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
                 style={{
-                  background: "var(--tmpl-card-bg)",
-                  border: "1px solid var(--tmpl-card-border)",
-                  borderRadius: "var(--tmpl-card-radius)",
-                  boxShadow: "var(--tmpl-card-shadow)",
-                  backdropFilter: "var(--tmpl-card-blur)",
-                  WebkitBackdropFilter: "var(--tmpl-card-blur)",
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--card-border)",
+                  borderRadius: "var(--card-radius)",
+                  boxShadow: "var(--card-shadow)",
+                  backdropFilter: "var(--card-blur)",
+                  WebkitBackdropFilter: "var(--card-blur)",
                 }}
               >
                 <div className="p-6">
@@ -119,7 +119,7 @@ export function BusinessDirectory() {
                       >
                         <span
                           className="text-xl font-extrabold"
-                          style={{ color: "var(--tmpl-accent)", opacity: 0.7 }}
+                          style={{ color: "var(--accent)", opacity: 0.7 }}
                         >
                           {listing.businessName.charAt(0).toUpperCase()}
                         </span>
@@ -128,7 +128,7 @@ export function BusinessDirectory() {
                     <div className="flex-1 min-w-0">
                       <h3
                         className="text-lg font-bold truncate"
-                        style={{ color: "var(--tmpl-heading-color)", fontFamily: "var(--tmpl-font-heading)" }}
+                        style={{ color: "var(--heading-color)", fontFamily: "var(--font-heading)" }}
                       >
                         {listing.businessName}
                       </h3>
@@ -144,8 +144,8 @@ export function BusinessDirectory() {
                     <Badge
                       className="text-xs px-2.5 py-0.5"
                       style={{
-                        background: "var(--tmpl-badge-bg)",
-                        color: "var(--tmpl-badge-text)",
+                        background: "var(--badge-bg)",
+                        color: "var(--badge-text)",
                       }}
                     >
                       {listing.category}
@@ -155,18 +155,18 @@ export function BusinessDirectory() {
                   {listing.description && (
                     <p
                       className="text-sm mb-4 line-clamp-3"
-                      style={{ color: "#6e6e73", fontFamily: "var(--tmpl-font-body)" }}
+                      style={{ color: "#6e6e73", fontFamily: "var(--font-body-face)" }}
                     >
                       {listing.description}
                     </p>
                   )}
 
-                  <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--tmpl-card-border)" }}>
+                  <div className="space-y-2 pt-3 border-t" style={{ borderColor: "var(--card-border)" }}>
                     {listing.phone && (
                       <a
                         href={`tel:${listing.phone}`}
                         className="flex items-center gap-2 text-sm transition-colors hover:opacity-80"
-                        style={{ color: "var(--tmpl-accent)" }}
+                        style={{ color: "var(--accent)" }}
                       >
                         <Phone className="w-3.5 h-3.5 shrink-0" />
                         <span>{listing.phone}</span>
@@ -176,7 +176,7 @@ export function BusinessDirectory() {
                       <a
                         href={`mailto:${listing.email}`}
                         className="flex items-center gap-2 text-sm transition-colors hover:opacity-80"
-                        style={{ color: "var(--tmpl-accent)" }}
+                        style={{ color: "var(--accent)" }}
                       >
                         <Mail className="w-3.5 h-3.5 shrink-0" />
                         <span>{listing.email}</span>
@@ -188,7 +188,7 @@ export function BusinessDirectory() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm transition-colors hover:opacity-80"
-                        style={{ color: "var(--tmpl-accent)" }}
+                        style={{ color: "var(--accent)" }}
                       >
                         <Globe className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{listing.websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 @theme {
@@ -42,34 +42,34 @@
 }
 
 :root {
-  --tmpl-header-bg: rgba(134,134,139,0.92);
-  --tmpl-header-text: #ffffff;
-  --tmpl-header-border: rgba(255,255,255,0.1);
-  --tmpl-header-blur: blur(20px) saturate(180%);
-  --tmpl-nav-hover: #007aff;
-  --tmpl-body-bg: #f5f5f7;
-  --tmpl-card-bg: rgba(255,255,255,0.65);
-  --tmpl-card-border: rgba(255,255,255,0.3);
-  --tmpl-card-radius: 1.25rem;
-  --tmpl-card-shadow: 0 4px 24px rgba(0,0,0,0.06);
-  --tmpl-card-hover-shadow: 0 8px 40px rgba(0,0,0,0.10);
-  --tmpl-card-blur: blur(20px) saturate(180%);
-  --tmpl-section-bg: #f5f5f7;
-  --tmpl-accent: #007aff;
-  --tmpl-accent-hover: #0063d1;
-  --tmpl-accent-text: #ffffff;
-  --tmpl-footer-bg: #ffffff;
-  --tmpl-footer-text: #86868b;
-  --tmpl-footer-border: rgba(0,0,0,0.06);
-  --tmpl-input-bg: #f5f5f7;
-  --tmpl-input-border: rgba(0,0,0,0.06);
-  --tmpl-input-focus-ring: #007aff;
-  --tmpl-heading-color: #1d1d1f;
-  --tmpl-font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  --tmpl-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --tmpl-badge-bg: #007aff;
-  --tmpl-badge-text: #ffffff;
-  --tmpl-mobile-menu-bg: rgba(134,134,139,0.95);
+  --header-bg: rgba(134,134,139,0.92);
+  --header-text: #ffffff;
+  --header-border: rgba(255,255,255,0.1);
+  --header-blur: blur(20px) saturate(180%);
+  --nav-hover: #007aff;
+  --body-bg: #f5f5f7;
+  --card-bg: rgba(255,255,255,0.65);
+  --card-border: rgba(255,255,255,0.3);
+  --card-radius: 1.25rem;
+  --card-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --card-hover-shadow: 0 8px 40px rgba(0,0,0,0.10);
+  --card-blur: blur(20px) saturate(180%);
+  --section-bg: #f5f5f7;
+  --accent: #007aff;
+  --accent-hover: #0063d1;
+  --accent-text: #ffffff;
+  --footer-bg: #ffffff;
+  --footer-text: #86868b;
+  --footer-border: rgba(0,0,0,0.06);
+  --input-bg: #f5f5f7;
+  --input-border: rgba(0,0,0,0.06);
+  --input-focus-ring: #007aff;
+  --heading-color: #1d1d1f;
+  --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --font-body-face: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --badge-bg: #007aff;
+  --badge-text: #ffffff;
+  --mobile-menu-bg: rgba(134,134,139,0.95);
 }
 
 @layer base {

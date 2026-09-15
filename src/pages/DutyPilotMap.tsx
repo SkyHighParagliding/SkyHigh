@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo, memo, type TouchEvent as ReactTouchEvent } from 'react';
+﻿import { useState, useEffect, useCallback, useRef, useMemo, memo, type TouchEvent as ReactTouchEvent } from 'react';
 import { useUnits } from '@/hooks/useUnits';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Car, MapPin, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Plus, Minus, Map as MapIcon, MessageCircle, Users, Navigation, X as XIcon, Shield } from 'lucide-react';
@@ -446,7 +446,7 @@ export function DutyPilotMap() {
 
   if (!pilot) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--tmpl-body-bg, #f5f5f7)' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--body-bg, #f5f5f7)' }}>
         <div className="max-w-md w-full p-8 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(20px)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           <Shield className="w-12 h-12 text-teal-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2" style={{ color: '#1d1d1f' }}>Duty Pilot</h2>

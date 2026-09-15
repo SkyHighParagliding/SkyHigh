@@ -1,4 +1,4 @@
-import {
+﻿import {
   Server, Database, Globe, Key, Package, FileCode2, Cpu, Layers, Shield, HardDrive,
   Network, Plug, Cloud, Eye, Palette, Type, FolderTree, GitBranch, Terminal,
   Printer, Settings, Lock, Code2, MonitorSmartphone, Boxes, Workflow, FileJson, Cog, Wrench, Search
@@ -588,7 +588,7 @@ const categories: SpecCategory[] = [
           "Hazard colours: low (#10b981), medium (#f59e0b), high (#ef4444)",
           "Fonts: Montserrat (headings, font-sans), Roboto (body, font-body)",
           "Input pattern: border border-border with focus:ring-1 focus:ring-sky focus:border-sky",
-          "Theme tokens use --tmpl-* CSS custom properties declared statically in src/index.css :root",
+          "Theme tokens use --* CSS custom properties declared statically in src/index.css :root",
           "Branding settings: clubName, clubTagline, clubPrimaryColor, clubLogo* (5 light variants), clubLogoDark* (5 dark variants)",
           "Dual logo upload pipeline: POST /api/branding/logo (light) and POST /api/branding/logo-dark — multer (5MB max) + sharp Lanczos3 → nav, footer, favicon, splash, original stored in /uploads/branding/. lightLogos used in the header over the hero (dark backdrop); darkLogos used in the footer and header once scrolled past the hero (white backdrop).",
           "{{clubName}} token in CMS page content and hero settings resolved at render time by Page.tsx and Home.tsx",

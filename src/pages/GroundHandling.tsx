@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 
@@ -30,13 +30,13 @@ export function GroundHandling() {
         <div className="mb-6">
           <h1
             className="text-4xl md:text-5xl font-extrabold mb-4"
-            style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading, 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif)" }}
+            style={{ color: "#1d1d1f", fontFamily: "var(--font-heading, 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif)" }}
           >
             Ground Handling Sites
           </h1>
           <p
             className="text-lg max-w-3xl mb-4"
-            style={{ color: "#86868b", fontFamily: "var(--tmpl-font-body, 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif)" }}
+            style={{ color: "#86868b", fontFamily: "var(--font-body-face, 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif)" }}
           >
             This map is created by paragliding pilots to help find the best nearby ground handling locations.
             Select a location, read the description, and click the directions icon to open it in Google Maps.
@@ -78,7 +78,7 @@ export function GroundHandling() {
 
         <p
           className="text-sm mt-4 text-center"
-          style={{ color: "#aeaeb2", fontFamily: "var(--tmpl-font-body, 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif)" }}
+          style={{ color: "#aeaeb2", fontFamily: "var(--font-body-face, 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif)" }}
         >
           Star the map to see it in your Google Maps app. For mobile, open the map in full-screen.
         </p>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Trophy, MapPin, Calendar, ExternalLink, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -30,7 +30,7 @@ export function XCCompetitions() {
   };
 
   return (
-    <div style={{ background: "var(--tmpl-body-bg)", minHeight: "100vh" }}>
+    <div style={{ background: "var(--body-bg)", minHeight: "100vh" }}>
       <div
         data-hero
         className="relative overflow-hidden py-20 sm:py-28"
@@ -47,13 +47,13 @@ export function XCCompetitions() {
           <Trophy className="w-12 h-12 mx-auto mb-4 text-white/80" />
           <h1
             className="text-4xl sm:text-5xl font-semibold tracking-tight text-white mb-3"
-            style={{ fontFamily: "var(--tmpl-font-heading)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             XC Competitions
           </h1>
           <p
             className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto"
-            style={{ fontFamily: "var(--tmpl-font-body)" }}
+            style={{ fontFamily: "var(--font-body-face)" }}
           >
             Cross-country flying competitions, seasonal series, and beginner-friendly events.
           </p>
@@ -68,7 +68,7 @@ export function XCCompetitions() {
             <section>
               <h2
                 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8"
-                style={{ color: "var(--tmpl-heading-color)", fontFamily: "var(--tmpl-font-heading)" }}
+                style={{ color: "var(--heading-color)", fontFamily: "var(--font-heading)" }}
               >
                 {upcoming.some(c => c.status === "active") ? "Current & Upcoming" : "Upcoming Competitions"}
               </h2>
@@ -77,12 +77,12 @@ export function XCCompetitions() {
                 <div
                   className="text-center py-12 rounded-2xl"
                   style={{
-                    background: "var(--tmpl-card-bg)",
-                    border: "1px solid var(--tmpl-card-border)",
-                    backdropFilter: "var(--tmpl-card-blur)",
-                    WebkitBackdropFilter: "var(--tmpl-card-blur)",
-                    borderRadius: "var(--tmpl-card-radius)",
-                    boxShadow: "var(--tmpl-card-shadow)",
+                    background: "var(--card-bg)",
+                    border: "1px solid var(--card-border)",
+                    backdropFilter: "var(--card-blur)",
+                    WebkitBackdropFilter: "var(--card-blur)",
+                    borderRadius: "var(--card-radius)",
+                    boxShadow: "var(--card-shadow)",
                   }}
                 >
                   <Trophy className="w-10 h-10 mx-auto mb-3 text-[#86868b]/40" />
@@ -96,12 +96,12 @@ export function XCCompetitions() {
                       key={c.id}
                       className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1"
                       style={{
-                        background: "var(--tmpl-card-bg)",
-                        border: "1px solid var(--tmpl-card-border)",
-                        backdropFilter: "var(--tmpl-card-blur)",
-                        WebkitBackdropFilter: "var(--tmpl-card-blur)",
-                        borderRadius: "var(--tmpl-card-radius)",
-                        boxShadow: "var(--tmpl-card-shadow)",
+                        background: "var(--card-bg)",
+                        border: "1px solid var(--card-border)",
+                        backdropFilter: "var(--card-blur)",
+                        WebkitBackdropFilter: "var(--card-blur)",
+                        borderRadius: "var(--card-radius)",
+                        boxShadow: "var(--card-shadow)",
                       }}
                     >
                       {c.status === "active" && (
@@ -111,7 +111,7 @@ export function XCCompetitions() {
                         <div className="flex items-start justify-between gap-2 mb-3">
                           <h3
                             className="text-xl font-semibold tracking-tight"
-                            style={{ color: "var(--tmpl-heading-color)", fontFamily: "var(--tmpl-font-heading)" }}
+                            style={{ color: "var(--heading-color)", fontFamily: "var(--font-heading)" }}
                           >
                             {c.name}
                           </h3>
@@ -144,7 +144,7 @@ export function XCCompetitions() {
                         </div>
 
                         {c.description && (
-                          <p className="text-sm text-[#1d1d1f]/70 leading-relaxed mb-4" style={{ fontFamily: "var(--tmpl-font-body)" }}>
+                          <p className="text-sm text-[#1d1d1f]/70 leading-relaxed mb-4" style={{ fontFamily: "var(--font-body-face)" }}>
                             {c.description}
                           </p>
                         )}
@@ -161,7 +161,7 @@ export function XCCompetitions() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white transition-opacity hover:opacity-90"
-                            style={{ background: "var(--tmpl-accent)" }}
+                            style={{ background: "var(--accent)" }}
                           >
                             Register <ExternalLink className="w-3.5 h-3.5" />
                           </a>
@@ -178,7 +178,7 @@ export function XCCompetitions() {
                 <button
                   onClick={() => setArchiveOpen(!archiveOpen)}
                   className="flex items-center gap-2 text-xl sm:text-2xl font-semibold tracking-tight mb-6 group"
-                  style={{ color: "var(--tmpl-heading-color)", fontFamily: "var(--tmpl-font-heading)" }}
+                  style={{ color: "var(--heading-color)", fontFamily: "var(--font-heading)" }}
                 >
                   Past Competitions ({past.length})
                   {archiveOpen ? <ChevronUp className="w-5 h-5 text-[#86868b]" /> : <ChevronDown className="w-5 h-5 text-[#86868b]" />}
@@ -191,11 +191,11 @@ export function XCCompetitions() {
                         key={c.id}
                         className="flex items-center justify-between gap-4 p-4 transition-all"
                         style={{
-                          background: "var(--tmpl-card-bg)",
-                          border: "1px solid var(--tmpl-card-border)",
-                          backdropFilter: "var(--tmpl-card-blur)",
-                          WebkitBackdropFilter: "var(--tmpl-card-blur)",
-                          borderRadius: "var(--tmpl-card-radius)",
+                          background: "var(--card-bg)",
+                          border: "1px solid var(--card-border)",
+                          backdropFilter: "var(--card-blur)",
+                          WebkitBackdropFilter: "var(--card-blur)",
+                          borderRadius: "var(--card-radius)",
                           opacity: 0.85,
                         }}
                       >

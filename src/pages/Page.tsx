@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+﻿import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { motion } from "motion/react";
 import { MarkdownWithWidgets } from "@/components/ContentWidgets";
@@ -75,7 +75,7 @@ export function Page() {
               boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
             }}
           >
-            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2" style={{ fontFamily: "var(--tmpl-font-heading)" }}>
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-heading)" }}>
               Ready to join {settings.clubName || 'the club'}?
             </h3>
             <p className="text-white/70 mb-5 text-[14px]">

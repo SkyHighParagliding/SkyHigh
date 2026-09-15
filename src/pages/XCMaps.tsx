@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from 'react';
+﻿import { useMemo, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Compass, ChevronDown, X, Layers, Maximize, Minimize, Shield, Car, CheckCircle, Monitor, Clock, BellOff, Wind, Plus, Minus, Navigation, Map as MapIcon, User } from 'lucide-react';
 import { XCMap } from '@/components/XCMap';
@@ -213,7 +213,7 @@ export function XCMaps() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--tmpl-body-bg)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--body-bg)' }}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#007aff]" />
       </div>
     );
@@ -221,7 +221,7 @@ export function XCMaps() {
 
   if (sites.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--tmpl-body-bg)' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--body-bg)' }}>
         <div
           className="max-w-md w-full p-8 rounded-2xl text-center"
           style={{
@@ -246,7 +246,7 @@ export function XCMaps() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--tmpl-body-bg)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--body-bg)' }}>
       <style>{`
         .fullscreen-map {
           position: fixed !important;
@@ -315,7 +315,7 @@ export function XCMaps() {
         <div className="mb-8">
           <h1
             className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-2"
-            style={{ color: '#1d1d1f', fontFamily: 'var(--tmpl-font-heading)' }}
+            style={{ color: '#1d1d1f', fontFamily: 'var(--font-heading)' }}
           >
             {settings.xcMapsTitle || "XC Maps"}
           </h1>
@@ -989,7 +989,7 @@ export function XCMaps() {
                 >
                   <h2
                     className="text-xl font-bold mb-3"
-                    style={{ color: '#1d1d1f', fontFamily: 'var(--tmpl-font-heading)' }}
+                    style={{ color: '#1d1d1f', fontFamily: 'var(--font-heading)' }}
                   >
                     {selectedSite.name}
                   </h2>

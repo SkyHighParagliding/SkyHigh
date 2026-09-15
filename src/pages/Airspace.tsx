@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom";
+﻿import { Link, Navigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Download, ExternalLink, Shield, Map, Radio, FileText, ArrowLeft } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -25,7 +25,7 @@ export function Airspace() {
 
   if (settingsLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--tmpl-body-bg)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--body-bg)" }}>
         <div className="animate-pulse text-[#86868b] text-lg">Loading...</div>
       </div>
     );
@@ -63,7 +63,7 @@ export function Airspace() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--tmpl-body-bg)" }}>
+    <div className="min-h-screen" style={{ background: "var(--body-bg)" }}>
       <div data-hero className="relative overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0">
           <div
@@ -88,19 +88,19 @@ export function Airspace() {
             <Link
               to="/"
               className="inline-flex items-center text-white/60 hover:text-white mb-6 text-[14px] transition-colors"
-              style={{ fontFamily: "var(--tmpl-font-body)" }}
+              style={{ fontFamily: "var(--font-body-face)" }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
             </Link>
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4"
-              style={{ fontFamily: "var(--tmpl-font-heading)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Airspace Resources
             </h1>
             <p
               className="text-lg sm:text-xl text-white/70 max-w-2xl"
-              style={{ fontFamily: "var(--tmpl-font-body)" }}
+              style={{ fontFamily: "var(--font-body-face)" }}
             >
               Essential airspace information and tools for safe cross-country flying in Victorian airspace.
             </p>
@@ -124,13 +124,13 @@ export function Airspace() {
         >
           <h2
             className="text-2xl font-semibold mb-3"
-            style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}
+            style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}
           >
             Understanding Airspace
           </h2>
           <div
             className="text-[15px] leading-relaxed space-y-3"
-            style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-body)" }}
+            style={{ color: "#1d1d1f", fontFamily: "var(--font-body-face)" }}
           >
             <p>
               As paraglider and hang glider pilots, we share the sky with other aviation. Understanding controlled airspace
@@ -152,7 +152,7 @@ export function Airspace() {
         >
           <h2
             className="text-2xl font-semibold mb-5"
-            style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}
+            style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}
           >
             Key Tools & Resources
           </h2>
@@ -186,7 +186,7 @@ export function Airspace() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3
                         className="text-[17px] font-semibold"
-                        style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}
+                        style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}
                       >
                         {resource.title}
                       </h3>
@@ -194,7 +194,7 @@ export function Airspace() {
                     </div>
                     <p
                       className="text-[14px] leading-relaxed"
-                      style={{ color: "#86868b", fontFamily: "var(--tmpl-font-body)" }}
+                      style={{ color: "#86868b", fontFamily: "var(--font-body-face)" }}
                     >
                       {resource.description}
                     </p>
@@ -221,7 +221,7 @@ export function Airspace() {
           >
             <h2
               className="text-2xl font-semibold mb-5"
-              style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}
+              style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}
             >
               Downloads
             </h2>
@@ -245,7 +245,7 @@ export function Airspace() {
                   <div className="flex-1 min-w-0">
                     <p
                       className="text-[15px] font-medium truncate"
-                      style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-body)" }}
+                      style={{ color: "#1d1d1f", fontFamily: "var(--font-body-face)" }}
                     >
                       {att.originalFilename}
                     </p>
@@ -305,13 +305,13 @@ export function Airspace() {
             <div>
               <h3
                 className="text-[17px] font-semibold mb-1"
-                style={{ color: "#1d1d1f", fontFamily: "var(--tmpl-font-heading)" }}
+                style={{ color: "#1d1d1f", fontFamily: "var(--font-heading)" }}
               >
                 Important Reminder
               </h3>
               <p
                 className="text-[14px] leading-relaxed"
-                style={{ color: "#86868b", fontFamily: "var(--tmpl-font-body)" }}
+                style={{ color: "#86868b", fontFamily: "var(--font-body-face)" }}
               >
                 Always check NOTAMs and airspace status before every XC flight. Airspace boundaries and restrictions
                 can change at short notice. It is each pilot's responsibility to ensure they are flying legally
