@@ -376,28 +376,37 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
     <>
       <div className={panelClass} style={panelStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className={headerClass} style={headerStyle}>Thermal Forecast</span>
-            {dateLabel && (
-              <span className="text-[8px] text-muted-foreground font-mono truncate">{dateLabel} · ECMWF</span>
-            )}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          {/* Two rows, each baseline-aligned: title word + its date part sit on
+              one baseline. Fixed-width title column keeps the date/ECMWF left
+              edges aligned even though THERMAL and FORECAST differ in width. */}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className={cn(headerClass, 'w-[72px] shrink-0')} style={headerStyle}>Thermal</span>
+              {dateLabel && <span className="text-[8px] text-muted-foreground font-mono truncate">{dateLabel}</span>}
+            </div>
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className={cn(headerClass, 'w-[72px] shrink-0')} style={headerStyle}>Forecast</span>
+              {dateLabel && <span className="text-[8px] text-muted-foreground font-mono">ECMWF</span>}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {meteogramEnabled && (
-              <div className="flex items-center rounded-md overflow-hidden border border-border-faint mr-0.5">
+              <div className="flex items-center rounded-md bg-black/10 p-0.5 gap-0.5 mr-0.5">
+                {/* Segmented switch: a grey track behind both segments makes it
+                    read as one control; only the active segment is amber. */}
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('map'); }}
-                  className={cn('flex items-center gap-1 px-1.5 py-1 text-[10px] font-semibold transition-colors',
-                    thermalView === 'map' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:bg-muted')}
+                  className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
+                    thermalView === 'map' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:text-ink')}
                   title="Map view"
                 >
                   <MapIcon className="w-3 h-3" /> Map
                 </button>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('chart'); }}
-                  className={cn('flex items-center gap-1 px-1.5 py-1 text-[10px] font-semibold transition-colors',
-                    thermalView === 'chart' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:bg-muted')}
+                  className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
+                    thermalView === 'chart' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:text-ink')}
                   title="Chart view (meteogram)"
                 >
                   <LineChart className="w-3 h-3" /> Chart
