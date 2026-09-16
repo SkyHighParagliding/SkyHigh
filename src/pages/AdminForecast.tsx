@@ -53,6 +53,10 @@ export function AdminForecast() {
   const [meteogramOn, setMeteogramOn] = useState(false);
   const [meteogramSaving, setMeteogramSaving] = useState(false);
 
+  // Interactive SkewT on/off — gates the [SkewT] action in the tapped-point box.
+  const [skewtOn, setSkewtOn] = useState(false);
+  const [skewtSaving, setSkewtSaving] = useState(false);
+
   // Thresholds
   const [thresholds, setThresholds] = useState<Record<string, number>>({});
   const [thresholdsSaving, setThresholdsSaving] = useState(false);
@@ -65,6 +69,7 @@ export function AdminForecast() {
   useEffect(() => {
     setThermalMapOn(settings.featureThermalMap === "true");
     setMeteogramOn(settings.featureMeteogram === "true");
+    setSkewtOn(settings.featureSkewT === "true");
 
     const t: Record<string, number> = {};
     for (const field of THRESHOLD_FIELDS) {
@@ -101,6 +106,20 @@ export function AdminForecast() {
       setMeteogramOn(!next);
     } finally {
       setMeteogramSaving(false);
+    }
+  };
+
+  const handleSaveSkewt = async (next: boolean) => {
+    setSkewtOn(next);
+    setSkewtSaving(true);
+    try {
+      await updateSettings({ featureSkewT: next ? "true" : "false" });
+      toast.success(next ? "Interactive SkewT enabled" : "Interactive SkewT disabled");
+    } catch {
+      toast.error("Failed to save");
+      setSkewtOn(!next);
+    } finally {
+      setSkewtSaving(false);
     }
   };
 
@@ -212,6 +231,27 @@ export function AdminForecast() {
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 ${meteogramOn ? 'bg-accent' : 'bg-muted'}`}
                 >
                   <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${meteogramOn ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {/* Interactive SkewT flag — the [SkewT] action in the thermal tapped-point box. */}
+              <div className="flex items-start justify-between gap-4 py-1 mt-3 pt-3 border-t border-border-faint">
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-semibold text-ink">Enable the interactive SkewT</span>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                    Adds a [SkewT] action to the thermal tapped-point box — a vertical sounding for
+                    that point/time with a draggable trigger temperature that projects thermal top and
+                    cloudbase. Fetches a per-point ECMWF sounding on demand.
+                  </p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={skewtOn}
+                  disabled={skewtSaving}
+                  onClick={() => handleSaveSkewt(!skewtOn)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 ${skewtOn ? 'bg-accent' : 'bg-muted'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition-transform ${skewtOn ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
             </CardContent>

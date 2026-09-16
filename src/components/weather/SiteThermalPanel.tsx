@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { PointMeteogramModal } from './PointMeteogramModal';
+import { SkewTModal } from './SkewTModal';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from '@/components/AirspaceRange';
@@ -65,9 +66,10 @@ function getMelbHour(isoStr: string): number {
 export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
   const { settings } = useSettings();
   const meteogramEnabled = settings.featureMeteogram === 'true';
-  // Point-aware Chart: the tapped point (lat/lon + ground) opens the meteogram in
-  // a full-screen modal. The launch is just a point. Null = closed.
+  const skewtEnabled = settings.featureSkewT === 'true';
+  // Point-aware Chart / SkewT: the tapped point opens a full-screen modal. Null = closed.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
+  const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
 
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -379,6 +381,15 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                       <LineChart className="w-3 h-3" /> Chart
                     </button>
                   )}
+                  {skewtEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime }); }}
+                      className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
+                      title="SkewT sounding for this point + time"
+                    >
+                      <ChartLine className="w-3 h-3" /> SkewT
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleAllAirspace(); }}
                     className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
@@ -566,6 +577,17 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
           onClose={() => setChartPoint(null)}
+        />
+      )}
+
+      {/* Interactive SkewT popup — the sounding for the tapped point + time. */}
+      {skewtPoint && (
+        <SkewTModal
+          lat={skewtPoint.lat}
+          lon={skewtPoint.lon}
+          groundAmsl={skewtPoint.ground}
+          time={skewtPoint.time}
+          onClose={() => setSkewtPoint(null)}
         />
       )}
     </>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine } from 'lucide-react';
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
+import { SkewTModal } from './weather/SkewTModal';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
@@ -41,8 +42,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const containerRef = useRef<HTMLDivElement>(null);
   const isThermalEnabled = settings.featureThermalMap === 'true';
   const meteogramEnabled = settings.featureMeteogram === 'true';
-  // Point-aware Chart: tapped point (lat/lon + ground) opens the meteogram modal.
+  const skewtEnabled = settings.featureSkewT === 'true';
+  // Point-aware Chart / SkewT: tapped point opens a full-screen modal.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
+  const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
@@ -622,6 +625,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                           <LineChart className="w-3 h-3" /> Chart
                         </button>
                       )}
+                      {skewtEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                        <button
+                          onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
+                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                          title="SkewT sounding for this point + time"
+                        >
+                          <ChartLine className="w-3 h-3" /> SkewT
+                        </button>
+                      )}
                       <button
                         onClick={() => toggleAllAirspace()}
                         className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
@@ -811,6 +823,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
           onClose={() => setChartPoint(null)}
+        />
+      )}
+
+      {/* Interactive SkewT popup — the sounding for the tapped point + time. */}
+      {skewtPoint && (
+        <SkewTModal
+          lat={skewtPoint.lat}
+          lon={skewtPoint.lon}
+          groundAmsl={skewtPoint.ground}
+          time={skewtPoint.time}
+          onClose={() => setSkewtPoint(null)}
         />
       )}
     </div>
