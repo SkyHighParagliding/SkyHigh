@@ -107,10 +107,13 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   hours,
   launchElevation,
   thresholds = DEFAULT_THRESHOLDS,
+  groundLabel = 'Launch',
 }: {
   hours: MeteogramHour[];
   launchElevation: number | null;
   thresholds?: MeteogramThresholds;
+  /** Label for the ground reference line — "Launch" at a site, "Ground" for an arbitrary point. */
+  groundLabel?: string;
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
   const [svgW, setSvgW] = useState(480);
@@ -296,7 +299,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
           <line x1={PAD_L} y1={toY(groundAmsl)} x2={PAD_L + PLOT_W} y2={toY(groundAmsl)}
             stroke="#0071e3" strokeWidth={1} strokeDasharray="6,3" opacity={0.7} />
           <text x={PAD_L + 2} y={toY(groundAmsl) - 3} style={{ ...axisStyle, fill: '#0071e3', fontWeight: 700 }}>
-            Launch
+            {groundLabel}
           </text>
         </>
       )}

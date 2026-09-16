@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart } from 'lucide-react';
+import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
@@ -39,6 +40,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const isAdmin = !!user?.isAdmin;
   const containerRef = useRef<HTMLDivElement>(null);
   const isThermalEnabled = settings.featureThermalMap === 'true';
+  const meteogramEnabled = settings.featureMeteogram === 'true';
+  // Point-aware Chart: tapped point (lat/lon + ground) opens the meteogram modal.
+  const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
@@ -606,14 +610,26 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         )}
                       </>
                     )}
-                    {/* Airspace ON: the box lists the stack overhead. OFF reverts + clears any drawn sector. */}
-                    <button
-                      onClick={() => toggleAllAirspace()}
-                      className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white pt-1 mt-0.5 border-t border-white/10"
-                      title="List the airspace stack under the pin"
-                    >
-                      Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
-                    </button>
+                    {/* Point actions. Chart opens the meteogram for this point; Airspace
+                        ON lists the stack (OFF reverts + clears any drawn sector). */}
+                    <div className="flex items-center gap-3 pt-1 mt-0.5 border-t border-white/10">
+                      {meteogramEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                        <button
+                          onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
+                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                          title="Thermal forecast chart for this point"
+                        >
+                          <LineChart className="w-3 h-3" /> Chart
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleAllAirspace()}
+                        className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                        title="List the airspace stack under the pin"
+                      >
+                        Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div className="text-[11px] text-white/50">Tap map for a reading</div>
@@ -787,6 +803,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
       {/* Thermal help modal */}
       {showThermalHelp && <ThermalHelpModal onClose={() => setShowThermalHelp(false)} />}
+
+      {/* Point-aware Chart popup — the meteogram for the tapped point. */}
+      {chartPoint && (
+        <PointMeteogramModal
+          lat={chartPoint.lat}
+          lon={chartPoint.lon}
+          groundAmsl={chartPoint.ground}
+          onClose={() => setChartPoint(null)}
+        />
+      )}
     </div>
   );
 }

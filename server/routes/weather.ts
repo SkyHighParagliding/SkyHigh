@@ -15,6 +15,7 @@ import { getElevationAt as getElevationAtPoint } from "../grid/elevationPoint.js
 import { fetchFineGrid, getCachedFineGrid, clearFineGridCaches, FINE_GRID_CACHE_KEY } from "../grid/fineGrid.js";
 import { fetchThermalGrid, getCachedThermalGrid, THERMAL_GRID_CACHE_KEY } from "../grid/thermalGrid.js";
 import { buildSiteMeteogram } from "../grid/siteMeteogram.js";
+import { fetchPointSounding } from "../grid/pointSounding.js";
 import { getGridFetchStatus, cancelGridFetch } from "../grid/pipeline.js";
 import { extractFullWindGrid, extractThermalGrid, extractWindParticles } from "../grid/extract.js";
 import { runThermalGridFetch } from "../utils/scheduledJobs.js";
@@ -982,6 +983,40 @@ router.get("/:siteId/extended-forecast", asyncHandler(async (req, res) => {
   }
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.json(forecast);
+}));
+
+// Point meteogram: the same series as the site meteogram but for an arbitrary
+// tapped point (lat/lon), with an optional ground elevation (m AMSL) for the
+// ceiling axis. Powers the thermal map's tap-a-point → Chart popup (the launch
+// is just a point). buildSiteMeteogram samples purely by lat/lon, so no site row
+// is needed. Public. Registered before /:siteId/meteogram (distinct path anyway).
+router.get("/meteogram/point", asyncHandler(async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lon = Number(req.query.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    return res.status(400).json({ error: "Valid lat and lon query params are required" });
+  }
+  const groundRaw = Number(req.query.ground);
+  const ground = Number.isFinite(groundRaw) ? groundRaw : null;
+
+  const meteogram = await buildSiteMeteogram("point", lat, lon, ground);
+  if (!meteogram) return res.status(503).json({ error: "Meteogram data temporarily unavailable" });
+  res.setHeader('Cache-Control', 'no-cache');
+  res.json(meteogram);
+}));
+
+// Per-point vertical sounding (pressure-level temp/dewpoint/wind/height) for the
+// interactive SkewT. One Open-Meteo ecmwf_ifs025 call, cached. Public.
+router.get("/sounding/point", asyncHandler(async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lon = Number(req.query.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    return res.status(400).json({ error: "Valid lat and lon query params are required" });
+  }
+  const sounding = await fetchPointSounding(lat, lon);
+  if (!sounding) return res.status(503).json({ error: "Sounding data temporarily unavailable" });
+  res.setHeader("Cache-Control", "no-cache");
+  res.json(sounding);
 }));
 
 // Per-site meteogram time series (thermal band + ceiling from the thermal grid,

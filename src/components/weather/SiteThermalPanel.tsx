@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
-import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, Map as MapIcon, LineChart } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
-import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
+import { PointMeteogramModal } from './PointMeteogramModal';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from '@/components/AirspaceRange';
@@ -65,23 +65,9 @@ function getMelbHour(isoStr: string): number {
 export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: SiteThermalPanelProps) {
   const { settings } = useSettings();
   const meteogramEnabled = settings.featureMeteogram === 'true';
-  const [thermalView, setThermalView] = useState<'map' | 'chart'>('map');
-
-  // Per-site meteogram series (lazy — fetched the first time the chart is shown).
-  const [meteogram, setMeteogram] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
-  const [meteogramLoading, setMeteogramLoading] = useState(false);
-  const [meteogramError, setMeteogramError] = useState<string | null>(null);
-  useEffect(() => {
-    if (thermalView !== 'chart' || meteogram || meteogramLoading || !site?.id) return;
-    setMeteogramLoading(true);
-    fetch(`/api/weather/${site.id}/meteogram`)
-      .then(res => res.ok ? res.json() : Promise.reject(`HTTP ${res.status}`))
-      .then((data: { hours: MeteogramHour[]; launchElevation: number | null }) => {
-        setMeteogram(data);
-        setMeteogramLoading(false);
-      })
-      .catch(e => { setMeteogramError(String(e)); setMeteogramLoading(false); });
-  }, [thermalView, meteogram, meteogramLoading, site?.id]);
+  // Point-aware Chart: the tapped point (lat/lon + ground) opens the meteogram in
+  // a full-screen modal. The launch is just a point. Null = closed.
+  const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
 
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,12 +269,16 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             siteLon={site.lon}
             savedZoom={fullscreen ? 7 : 8}
             sizeKey={fullscreen ? 2 : 1}
-            onThermalInfoChange={setThermalInfo}
-            dismissRef={dismissThermalInfoRef}
+            // When fullscreen, BOTH the embedded and the portal canvas are mounted.
+            // Only the visible one may drive the shared readout / scale bar —
+            // otherwise their two pins fight over `thermalInfo` at 10fps and the
+            // data box oscillates. `active` = this canvas matches the view state.
+            onThermalInfoChange={fullscreen === isFullscreen ? setThermalInfo : undefined}
+            dismissRef={fullscreen === isFullscreen ? dismissThermalInfoRef : undefined}
             airspaceFeature={shownAirspace}
             allAirspace={showAllAirspace ? zones : null}
             siteMarkers={launchMarker}
-            onTransformChange={handleTransformChange}
+            onTransformChange={fullscreen === isFullscreen ? handleTransformChange : undefined}
           />
         </Suspense>
       ) : null}
@@ -376,14 +366,27 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                     )}
                   </>
                 )}
-                {/* Airspace ON: the box lists the stack overhead. OFF reverts + clears any drawn sector. */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleAllAirspace(); }}
-                  className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white pt-1 mt-0.5 border-t border-white/10"
-                  title="List the airspace stack under the pin"
-                >
-                  Airspace <span className={cn('font-semibold', showAllAirspace ? 'text-sky-300' : 'text-white/40')}>{showAllAirspace ? 'ON' : 'OFF'}</span>
-                </button>
+                {/* Point actions. Chart opens the meteogram for this point (launch
+                    is just a point). Airspace ON lists the stack; OFF reverts + clears
+                    any drawn sector. */}
+                <div className="flex items-center gap-3 pt-1 mt-0.5 border-t border-white/10">
+                  {meteogramEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl }); }}
+                      className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
+                      title="Thermal forecast chart for this point"
+                    >
+                      <LineChart className="w-3 h-3" /> Chart
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleAllAirspace(); }}
+                    className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
+                    title="List the airspace stack under the pin"
+                  >
+                    Airspace <span className={cn('font-semibold', showAllAirspace ? 'text-sky-300' : 'text-white/40')}>{showAllAirspace ? 'ON' : 'OFF'}</span>
+                  </button>
+                </div>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); setThermalInfo(null); dismissThermalInfoRef.current?.(); }}
@@ -516,28 +519,6 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {meteogramEnabled && (
-              <div className="flex items-center rounded-md bg-black/10 p-0.5 gap-0.5 mr-0.5">
-                {/* Segmented switch: a grey track behind both segments makes it
-                    read as one control; only the active segment is amber. */}
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('map'); }}
-                  className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
-                    thermalView === 'map' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:text-ink')}
-                  title="Map view"
-                >
-                  <MapIcon className="w-3 h-3" /> Map
-                </button>
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setThermalView('chart'); }}
-                  className={cn('flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors',
-                    thermalView === 'chart' ? 'bg-amber-500 text-white' : 'text-muted-foreground hover:text-ink')}
-                  title="Chart view (meteogram)"
-                >
-                  <LineChart className="w-3 h-3" /> Chart
-                </button>
-              </div>
-            )}
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
               className="text-muted-foreground/50 hover:text-muted-foreground transition-colors p-0.5"
@@ -560,32 +541,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           </div>
         </div>
 
-        {meteogramEnabled && thermalView === 'chart' ? (
-          meteogramLoading ? (
-            <div className="h-[300px] flex flex-col items-center justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-amber-500 mb-1" />
-              <span className="text-xs text-gray-500">Loading meteogram…</span>
-            </div>
-          ) : meteogramError || !meteogram ? (
-            <div className="h-[300px] flex items-center justify-center">
-              <span className="text-xs text-red-500">Failed to load meteogram</span>
-            </div>
-          ) : (
-            <SiteMeteogramChart
-              hours={meteogram.hours}
-              launchElevation={meteogram.launchElevation}
-              thresholds={{
-                clearSkyPct: numSetting(settings.thermalClearSkyCloudPct, 12),
-                overcastPct: numSetting(settings.thermalOvercastOnsetPct, 70),
-                stormCape: numSetting(settings.thermalStormCapeGate, 500),
-                minWstar: numSetting(settings.thermalMinWstar, 0.3),
-                rainOffMm: numSetting(settings.thermalRainOffMm, 1),
-              }}
-            />
-          )
-        ) : (
-          mapArea(false)
-        )}
+        {mapArea(false)}
       </div>
 
       {/* Fullscreen portal — identical chrome to the embedded map (Key, readout,
@@ -601,7 +557,17 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         document.body
       )}
 
-      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} variant={meteogramEnabled && thermalView === 'chart' ? 'chart' : 'map'} />}
+      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} variant="map" />}
+
+      {/* Point-aware Chart popup — the meteogram for the tapped point. */}
+      {chartPoint && (
+        <PointMeteogramModal
+          lat={chartPoint.lat}
+          lon={chartPoint.lon}
+          groundAmsl={chartPoint.ground}
+          onClose={() => setChartPoint(null)}
+        />
+      )}
     </>
   );
 }
