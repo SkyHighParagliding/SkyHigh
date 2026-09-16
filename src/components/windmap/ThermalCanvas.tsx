@@ -13,6 +13,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { createCumulusField, rebuildCumulusField, drawCumulusField } from './cumulusField';
 import { createParticlePool, updateAndDrawParticles } from './particleRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
+import { getAirspaceColor } from '@/lib/xcMapUtils';
 import { MapCanvas } from './MapCanvas';
 import type { MapLayer, MapPin } from './MapCanvas';
 
@@ -32,10 +33,13 @@ interface ThermalCanvasProps {
   siteLon: number;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null) => void;
+  onThermalInfoChange?: (info: { cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null) => void;
   /** Filled with a function that dismisses the tapped-point readout (clears the
    *  pin so the render loop stops repainting it, and emits null). */
   dismissRef?: React.MutableRefObject<(() => void) | null>;
+  /** A single airspace GeoJSON feature to outline on the map (the conflicting
+   *  sector the pilot tapped), or null to draw none. */
+  airspaceFeature?: GeoJSON.Feature | null;
   sizeKey?: number;
   savedCenterLat?: number;
   savedCenterLon?: number;
@@ -55,12 +59,14 @@ interface ThermalCanvasProps {
 
 export const ThermalCanvas = memo(function ThermalCanvas({
   thermalGrid, currentTime, siteLat, siteLon,
-  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef,
+  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, airspaceFeature,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
 }: ThermalCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
+  const airspaceRef = useRef(airspaceFeature);
+  airspaceRef.current = airspaceFeature;
   const onThermalInfoChangeRef = useRef(onThermalInfoChange);
   onThermalInfoChangeRef.current = onThermalInfoChange;
   // Held in a ref, as WindCanvas does, so retuning the setpoints does not
@@ -151,6 +157,41 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       },
     };
 
+    // Airspace outline — a single conflicting sector the pilot tapped. No-op
+    // when none is set. Projected geo→screen the same way as the readout inverse.
+    const airspace: MapLayer<any> = {
+      draw: (c) => {
+        const f = airspaceRef.current;
+        if (!f?.geometry) return;
+        const rings: number[][][] = [];
+        if (f.geometry.type === 'Polygon') rings.push(...(f.geometry.coordinates as number[][][]));
+        else if (f.geometry.type === 'MultiPolygon') for (const poly of f.geometry.coordinates as number[][][][]) rings.push(...poly);
+        else return;
+        const colors = getAirspaceColor((f.properties as any)?.typeName);
+        const { ctx } = c;
+        ctx.save();
+        ctx.beginPath();
+        for (const ring of rings) {
+          let started = false;
+          for (const coord of ring) {
+            const proj = c.projection([coord[0], coord[1]] as [number, number]);
+            if (!proj) continue;
+            const [x, y] = c.transform.apply(proj);
+            if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+        }
+        ctx.fillStyle = colors.fill;
+        ctx.globalAlpha = 0.22;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = colors.stroke;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.restore();
+      },
+    };
+
     // Layer last: site markers — always on top so pins remain interactive.
     const markers: MapLayer<any> = {
       draw: (c) => {
@@ -190,7 +231,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         const cached = known?.key === pinKey ? known.value : undefined;
 
         // Emit immediately so the panel never blocks on the network.
-        onThermalInfoChangeRef.current?.({ ...th, groundAmsl: cached });
+        onThermalInfoChangeRef.current?.({ ...th, groundAmsl: cached, lat: geo[1], lon: geo[0] });
         if (cached !== undefined || elevationRequestedKeyRef.current === pinKey) return;
 
         elevationRequestedKeyRef.current = pinKey;
@@ -205,13 +246,14 @@ export const ThermalCanvas = memo(function ThermalCanvas({
           // terrain tile resolves in a microtask, so without this the ground
           // line would blink empty for a full throttle window on every pin
           // position — which, while panning, is most of the time.
-          onThermalInfoChangeRef.current?.({ ...th, groundAmsl });
+          onThermalInfoChangeRef.current?.({ ...th, groundAmsl, lat: geo[1], lon: geo[0] });
         });
       },
     };
 
     const l: MapLayer<any>[] = [heatAndCumulus];
     if (showWind && windGrid) l.push(windLayer);
+    l.push(airspace);
     l.push(markers);
     l.push(readout);
     return l;

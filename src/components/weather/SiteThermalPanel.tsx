@@ -5,6 +5,7 @@ import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer,
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
 import { precipDescription } from '@/lib/precip';
+import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { MapScaleBar } from '../windmap/MapScaleBar';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,12 @@ interface SiteThermalPanelProps {
 // Only show slots within flying hours (10am–8pm Melbourne time), today only
 const FLYING_HOUR_START = 10;
 const FLYING_HOUR_END = 20;
+
+const M_TO_FT = 3.280839895;
+// Types to ignore for the airspace warning: wide info regions that always
+// contain you (FIR/OCA) or low-relevance sectors — NOT the controlled/restricted
+// airspace, which is exactly what we must flag.
+const AIRSPACE_WARN_SKIP = new Set(['FIR', 'OCA', 'OTHER', 'TIZ', 'GLIDING_SECTOR', 'WAVE_WINDOW']);
 
 /** Parse a string setting to a finite number, else the default (handles 0 correctly). */
 function numSetting(v: unknown, d: number): number {
@@ -80,7 +87,34 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const [showHelp, setShowHelp] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const dismissThermalInfoRef = useRef<(() => void) | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
+
+  // Airspace zones (same GeoJSON the XC map uses) for the conflict warning.
+  const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null);
+  // The conflicting sector to draw on the map, set by tapping a red bracket.
+  const [shownAirspace, setShownAirspace] = useState<GeoJSON.Feature | null>(null);
+  useEffect(() => {
+    fetch('/api/sites/xc/airspace')
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: GeoJSON.FeatureCollection) => setZones(data))
+      .catch(() => {});
+  }, []);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
+
+  // Conflict check is heavy (point-in-polygon over ~1800 sectors), so memoise on
+  // the tapped point + altitudes rather than recomputing on every throttled emit.
+  const airspaceConflicts = useMemo(() => {
+    const t = thermalInfo;
+    if (!t || t.lat == null || t.lon == null || typeof t.groundAmsl !== 'number' || !zones) {
+      return { bl: null, cu: null };
+    }
+    const blFt = (t.blh + t.groundAmsl) * M_TO_FT;
+    const cuFt = t.ccl !== undefined ? (t.ccl + t.groundAmsl) * M_TO_FT : null;
+    return {
+      bl: t.blh > 0 ? airspaceAt(t.lat, t.lon, blFt, zones, AIRSPACE_WARN_SKIP) : null,
+      cu: cuFt != null ? airspaceAt(t.lat, t.lon, cuFt, zones, AIRSPACE_WARN_SKIP) : null,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thermalInfo?.lat, thermalInfo?.lon, thermalInfo?.blh, thermalInfo?.ccl, thermalInfo?.groundAmsl, zones]);
   // lat/k from onTransformChange; fall back to site lat and a sensible default zoom.
   const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: site?.lat ?? -37.8, k: 256 * Math.pow(2, 8) });
   const handleTransformChange = useCallback((lat: number, _lon: number, zoomLevel: number) => {
@@ -223,6 +257,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             sizeKey={fullscreen ? 2 : 1}
             onThermalInfoChange={setThermalInfo}
             dismissRef={dismissThermalInfoRef}
+            airspaceFeature={shownAirspace}
             siteMarkers={launchMarker}
             onTransformChange={handleTransformChange}
           />
@@ -241,25 +276,56 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       {/* Tapped-point info overlay */}
       {thermalInfo && (() => {
         const s = getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape));
+        // Mirror the renderer's overcast rule so the readout agrees with the grey
+        // sheet: a solid low-cloud deck suppresses thermals, so don't claim "Good
+        // thermals" under it. overcastPct = max(cloudLow, total≥90 ? total : 0).
+        const overcastPct = Math.max(thermalInfo.cloudLow ?? 0, (thermalInfo.cloud ?? 0) >= 90 ? (thermalInfo.cloud ?? 0) : 0);
+        const overcast = thermalInfo.cloudLow !== undefined && overcastPct >= numSetting(settings.thermalOvercastOnsetPct, 70);
+
+        // BL Top / Cu Base are AGL; add ground to show AMSL (what airspace uses).
+        const gm = thermalInfo.groundAmsl;
+        const hasGround = typeof gm === 'number';
+        const blhAmslM = hasGround ? thermalInfo.blh + gm! : null;
+        const cclAmslM = (hasGround && thermalInfo.ccl !== undefined) ? thermalInfo.ccl + gm! : null;
+        const blConflict = airspaceConflicts.bl;
+        const cuConflict = airspaceConflicts.cu;
+        const toggleAS = (f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f);
+
         return (
           <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 z-10 min-w-[120px]">
             <div className="flex items-start justify-between gap-2.5">
               <div className="space-y-0.5">
                 <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
-                {s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>}
+                {overcast
+                  ? <div className="text-[12px] font-bold leading-tight text-white/70">Overcast — suppressed</div>
+                  : (s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>)}
                 {thermalInfo.blh > 0 && (
-                  <div className="text-[10px] text-white/75">BL Top <Altitude metres={thermalInfo.blh} step={100} /></div>
+                  <div className="text-[10px] text-white/75">
+                    BL Top {hasGround
+                      ? <><Altitude metres={blhAmslM!} step={100} /> AMSL</>
+                      : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
+                    {blConflict && (
+                      <button onClick={(e) => { e.stopPropagation(); toggleAS(blConflict.feature); }}
+                        className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(blConflict)})</button>
+                    )}
+                  </div>
                 )}
                 {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
                   <div className={cn('text-[10px]', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75')}>
-                    Cu Base <Altitude metres={thermalInfo.ccl} step={100} />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                    Cu Base {hasGround && cclAmslM != null
+                      ? <><Altitude metres={cclAmslM} step={100} /> AMSL</>
+                      : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                    {cuConflict && (
+                      <button onClick={(e) => { e.stopPropagation(); toggleAS(cuConflict.feature); }}
+                        className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(cuConflict)})</button>
+                    )}
                   </div>
                 )}
                 {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
                   <div className="text-[10px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
                 )}
                 {typeof thermalInfo.groundAmsl === 'number' && (
-                  <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /></div>
+                  <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
                 )}
               </div>
               <button

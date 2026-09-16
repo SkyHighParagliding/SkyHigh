@@ -1,0 +1,102 @@
+// Airspace conflict check for the thermal map readout. Given a point and an
+// altitude (ft AMSL), find the airspace whose floor that altitude busts —
+// i.e. climbing to that height would put a pilot inside controlled/restricted
+// airspace. Data is the same GeoJSON the XC map uses (GET /api/sites/xc/zones),
+// where each feature carries lowerFt/upperFt (ft AMSL, 0 = GND), typeName,
+// icaoClass and name.
+//
+// Floors are treated as ft AMSL, matching the XC map's own comparison. If any
+// source sector is actually AGL/flight-level this would be off — spot-check a
+// known CTA against the XC map.
+
+// The airspace dataset mixes low ground obstacles (powerlines, towers labelled
+// DANGER at 0–100 ft) in with real airspace. A glider thermalling to cloudbase
+// isn't "busting airspace" by being above a powerline, so ignore anything whose
+// ceiling is below this — real controlled/restricted airspace sits far higher.
+const MIN_AIRSPACE_CEILING_FT = 500;
+
+export interface AirspaceConflict {
+  name: string;
+  icaoClass: string;
+  typeName: string;
+  lowerFt: number;
+  upperFt: number;
+  feature: GeoJSON.Feature;
+}
+
+/** Ray-cast point-in-ring. Ring coords are GeoJSON [lng, lat]. */
+function ringContains(ring: number[][], lng: number, lat: number): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+      (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/** Polygon = outer ring minus holes. */
+function polygonContains(rings: number[][][], lng: number, lat: number): boolean {
+  if (!rings.length || !ringContains(rings[0], lng, lat)) return false;
+  for (let k = 1; k < rings.length; k++) {
+    if (ringContains(rings[k], lng, lat)) return false; // inside a hole
+  }
+  return true;
+}
+
+function featureContains(f: GeoJSON.Feature, lng: number, lat: number): boolean {
+  const g = f.geometry;
+  if (!g) return false;
+  if (g.type === 'Polygon') return polygonContains(g.coordinates as number[][][], lng, lat);
+  if (g.type === 'MultiPolygon') return (g.coordinates as number[][][][]).some(p => polygonContains(p, lng, lat));
+  return false;
+}
+
+/**
+ * The most relevant airspace the altitude busts at (lat, lon): the one with the
+ * LOWEST floor at or below `altitudeFt` (the first you'd hit climbing). Null when
+ * clear. `disabledTypes` skips the same categories the XC map hides by default.
+ */
+export function airspaceAt(
+  lat: number,
+  lon: number,
+  altitudeFt: number,
+  zones: GeoJSON.FeatureCollection | null | undefined,
+  disabledTypes?: Set<string>,
+): AirspaceConflict | null {
+  if (!zones?.features || !Number.isFinite(altitudeFt)) return null;
+  let best: AirspaceConflict | null = null;
+  for (const f of zones.features) {
+    const p: any = f.properties || {};
+    if (disabledTypes && disabledTypes.has(p.typeName)) continue;
+    const upper = p.upperFt ?? Infinity;
+    if (upper < MIN_AIRSPACE_CEILING_FT) continue; // ground obstacle, not airspace
+    const lower = p.lowerFt ?? 0;
+    if (lower > altitudeFt) continue; // altitude never reaches this floor
+    if (f.bbox) {
+      const [minLng, minLat, maxLng, maxLat] = f.bbox as number[];
+      if (lon < minLng || lon > maxLng || lat < minLat || lat > maxLat) continue;
+    }
+    if (!featureContains(f, lon, lat)) continue;
+    if (!best || lower < best.lowerFt) {
+      best = {
+        name: String(p.name ?? 'Airspace'),
+        icaoClass: String(p.icaoClass ?? ''),
+        typeName: String(p.typeName ?? ''),
+        lowerFt: lower,
+        upperFt: p.upperFt ?? Infinity,
+        feature: f,
+      };
+    }
+  }
+  return best;
+}
+
+/** Short bracket label — specific ICAO class when classified, else the sector. */
+export function airspaceLabel(c: AirspaceConflict): string {
+  if (/^[A-G]$/i.test(c.icaoClass)) return `Class ${c.icaoClass.toUpperCase()}`;
+  if (c.name && c.name.length <= 14) return c.name;
+  return c.typeName || 'Airspace';
+}

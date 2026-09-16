@@ -39,7 +39,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
+  // Mirror the renderer's overcast rule so the tapped-point strength label agrees
+  // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
+  const thermalOvercast = !!thermalInfo && thermalInfo.cloudLow !== undefined
+    && Math.max(thermalInfo.cloudLow, (thermalInfo.cloud ?? 0) >= 90 ? thermalInfo.cloud! : 0) >= (Number(settings.thermalOvercastOnsetPct) || 70);
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
@@ -687,8 +691,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               {/* Desktop: single row (lg+) */}
               {thermalInfo ? (
                 <div className="hidden lg:flex items-center gap-2">
-                  <span className="font-bold" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
-                    {getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
+                  <span className="font-bold" style={{ color: thermalOvercast ? '#9aa0aa' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
+                    {thermalOvercast ? 'Overcast' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
                   </span>
                   <span className="text-white/40">|</span>
                   {thermalInfo.wstar !== undefined ? (
@@ -733,8 +737,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 <div className="flex lg:hidden flex-col gap-1">
                   {/* Row 1: Strength | W-star/CAPE | BL */}
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
-                      {getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
+                    <span className="font-bold" style={{ color: thermalOvercast ? '#9aa0aa' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
+                      {thermalOvercast ? 'Overcast' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
                     </span>
                     <span className="text-white/40">|</span>
                     {thermalInfo.wstar !== undefined ? (
