@@ -481,6 +481,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           formattedTime={formattedTime}
           mapMode={mapMode}
           modeToggle={viewMode === 'wind' ? sitesModeToggle : undefined}
+          insetBottom={isFullscreen}
         />
       </div>
 

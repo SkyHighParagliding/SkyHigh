@@ -21,12 +21,19 @@ interface WindMapScrubberTrayProps {
   modeToggle?: ReactNode;
   /** Optional summary (e.g. the launch site's current reading) shown in the bottom row. */
   readout?: ReactNode;
+  /**
+   * True only when the tray sits at the actual screen bottom (fullscreen), where
+   * the iOS home-indicator inset matters. In embedded maps the tray is mid-page,
+   * so the inset must NOT be applied — otherwise the collapsed tray is lifted by
+   * the inset amount and the control bar peeks above the map's bottom edge.
+   */
+  insetBottom?: boolean;
 }
 
 export function WindMapScrubberTray({
   trayOpen, onToggle, isPlaying, onPlayToggle,
   currentTime, forecastStart, forecastEnd, timeStep, onTimeChange,
-  playSpeed, onSpeedCycle, formattedTime, mapMode, modeToggle, readout,
+  playSpeed, onSpeedCycle, formattedTime, mapMode, modeToggle, readout, insetBottom = false,
 }: WindMapScrubberTrayProps) {
   // One label per whole day the slider spans, positioned at that day's start:
   // "Today", then the short weekday name (Melbourne). Makes the multi-day window
@@ -54,15 +61,23 @@ export function WindMapScrubberTray({
     <div
       className="absolute bottom-0 left-0 right-0 z-20 transition-transform duration-300 ease-in-out"
       style={{
-        // Collapsed, the tray is pushed down by its own height less the handle
-        // AND less the home-indicator inset. Without the inset term the handle
-        // lands inside iOS's bottom gesture strip, where the system swipe claims
-        // every touch and the tray simply cannot be opened. The strip below the
-        // handle is then filled by the top of the control bar, so the tray still
-        // reads as flush with the screen edge.
+        // Collapsed, the tray is pushed down by its own height less the handle,
+        // so only the handle tab remains visible.
+        //
+        // At the screen bottom (fullscreen, insetBottom) we also subtract the
+        // home-indicator inset: without it the handle lands inside iOS's bottom
+        // gesture strip, where the system swipe claims every touch and the tray
+        // can't be opened; the strip below the handle is then filled by the top
+        // of the control bar so it still reads as flush.
+        //
+        // Embedded (mid-page), the inset is NOT at the map's bottom edge, so
+        // subtracting it would wrongly lift the collapsed tray and expose the
+        // control bar — hence the gate.
         transform: trayOpen
           ? 'translateY(0)'
-          : `translateY(calc(100% - ${TRAY_HANDLE_HEIGHT_PX}px - env(safe-area-inset-bottom, 0px)))`,
+          : insetBottom
+            ? `translateY(calc(100% - ${TRAY_HANDLE_HEIGHT_PX}px - env(safe-area-inset-bottom, 0px)))`
+            : `translateY(calc(100% - ${TRAY_HANDLE_HEIGHT_PX}px))`,
       }}
     >
       <div className="flex justify-center">
@@ -77,7 +92,7 @@ export function WindMapScrubberTray({
       </div>
       <div
         className="bg-black/85 border-t border-white/10 px-3 pt-2 pb-2"
-        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: insetBottom ? 'max(0.5rem, env(safe-area-inset-bottom, 0px))' : '0.5rem' }}
         inert={!trayOpen}
       >
         <div className="flex items-center gap-3">

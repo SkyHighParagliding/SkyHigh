@@ -199,6 +199,7 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
           formattedTime={formattedTime}
           mapMode={mapMode}
           modeToggle={modeToggle}
+          insetBottom={fullscreen}
         />
       </div>
     </div>

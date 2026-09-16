@@ -216,7 +216,9 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const btnClass = 'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors hover:opacity-80';
   const btnStyle = { background: '#0071e3', color: '#fff' };
 
-  const scrubberTray = flyingSlots.length > 1 && (
+  // insetBottom only when the tray is at the real screen bottom (fullscreen);
+  // embedded it's mid-page, so the iOS inset must not lift the collapsed tray.
+  const scrubberTray = (fullscreen: boolean) => flyingSlots.length > 1 && (
     <WindMapScrubberTray
       trayOpen={trayOpen}
       onToggle={toggleTray}
@@ -231,6 +233,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       onSpeedCycle={cycleSpeed}
       formattedTime={formattedTime}
       mapMode="today"
+      insetBottom={fullscreen}
     />
   );
 
@@ -447,7 +450,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
 
       {/* Time scrubber — pull-out tray (identical to the picker), embedded and
           fullscreen. */}
-      {scrubberTray}
+      {scrubberTray(fullscreen)}
     </div>
   );
 
