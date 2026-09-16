@@ -565,6 +565,31 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
     data.push(timeStepData);
   }
 
+  // Fill isolated missing wstar/ccl by vertical interpolation. A provider can drop
+  // a single latitude row of an input (e.g. temperature_2m missing at one lat
+  // leaves BOTH wstar and ccl undefined across that whole row) — which renders as
+  // a pale horizontal band on the thermal map. These fields are spatially smooth,
+  // so when a cell is empty but both its N/S neighbours have a value, the mean is
+  // a faithful fill. Only fills when both neighbours are present (isolated gaps),
+  // never a large hole. Runs once per grid build (the overlay is cached).
+  for (let t = 0; t < data.length; t++) {
+    const layer = data[t];
+    for (let j = 1; j < nj - 1; j++) {
+      for (let i = 0; i < ni; i++) {
+        const cell = layer[j * ni + i];
+        if (!cell) continue;
+        if (cell.wstar === undefined) {
+          const a = layer[(j - 1) * ni + i]?.wstar, b = layer[(j + 1) * ni + i]?.wstar;
+          if (a !== undefined && b !== undefined) cell.wstar = Math.round((a + b) * 50) / 100;
+        }
+        if (cell.ccl === undefined) {
+          const a = layer[(j - 1) * ni + i]?.ccl, b = layer[(j + 1) * ni + i]?.ccl;
+          if (a !== undefined && b !== undefined) cell.ccl = Math.round((a + b) / 2);
+        }
+      }
+    }
+  }
+
   const result: ThermalOverlay = {
     lonMin: parseFloat(lonMin.toFixed(4)),
     lonMax: parseFloat(lonMax.toFixed(4)),
