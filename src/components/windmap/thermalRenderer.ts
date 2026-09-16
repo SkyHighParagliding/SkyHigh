@@ -32,6 +32,15 @@ export const OVERCAST_MIN_PCT  = 70;  // % → sheet starts
 export const OVERCAST_FULL_PCT = 95;  // % → sheet fully opaque
 
 /**
+ * Minimum alpha (0–255) painted for any visible overcast sheet, so that where
+ * the readout says "reduced"/"suppressed" the grey actually reads on pale
+ * basemaps. Raised from 90 → 115 (35 % → 45 %) after Jon found near-onset grey
+ * imperceptible. Still below the 0.80 heat stop (125), so it never out-paints
+ * what the heat ramp would have drawn on its own.
+ */
+export const OVERCAST_SHEET_ALPHA_FLOOR = 115;
+
+/**
  * Overcast strength (0–1, as written into `ThermalOverlayState.overcast`) above
  * which a cell counts as "under the sheet".
  *
@@ -481,7 +490,7 @@ function rebuildThermalOverlay(
         // ramp, so it cannot be lower than anything the heat ramp would have
         // painted on its own at these cloud levels.
         const baseAlpha = Math.round(heatA);
-        const sheetFloor = greyBlend > 0 ? 90 : 0;
+        const sheetFloor = greyBlend > 0 ? OVERCAST_SHEET_ALPHA_FLOOR : 0;
         pixels[idx + 3] = Math.max(baseAlpha, sheetFloor);
 
         // Cumulus depth: only written when there is a cumulus signal (BLH −
@@ -535,8 +544,8 @@ function rebuildThermalOverlay(
           pixels[idx]     = 150;
           pixels[idx + 1] = 154;
           pixels[idx + 2] = 160;
-          // Alpha floor of 90 applies here too — we want the sheet visible.
-          pixels[idx + 3] = Math.max(sheetAlpha, 90);
+          // Same alpha floor as the heat branch — we want the sheet visible.
+          pixels[idx + 3] = Math.max(sheetAlpha, OVERCAST_SHEET_ALPHA_FLOOR);
         } else {
           pixels[idx + 3] = 0;
         }

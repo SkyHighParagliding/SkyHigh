@@ -15,7 +15,7 @@ import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolation';
 import { nextSpeed } from '../windMapTypes';
 import type { SiteMarker, PlaySpeed } from '../windMapTypes';
-import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from '../windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, HATCH_MIN } from '../windmap/thermalRenderer';
 
 const ThermalCanvas = lazy(() =>
   import('../windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas }))
@@ -292,7 +292,14 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         // sheet: a solid low-cloud deck suppresses thermals, so don't claim "Good
         // thermals" under it. overcastPct = max(cloudLow, total≥90 ? total : 0).
         const overcastPct = Math.max(thermalInfo.cloudLow ?? 0, (thermalInfo.cloud ?? 0) >= 90 ? (thermalInfo.cloud ?? 0) : 0);
-        const overcast = thermalInfo.cloudLow !== undefined && overcastPct >= numSetting(settings.thermalOvercastOnsetPct, 70);
+        const overcastOnset = numSetting(settings.thermalOvercastOnsetPct, 70);
+        const overcastFull = numSetting(settings.thermalOvercastFullPct, 95);
+        const overcast = thermalInfo.cloudLow !== undefined && overcastPct >= overcastOnset;
+        // Grade the label to the same ramp the grey sheet draws (onset→full): a
+        // broken deck near onset reads "reduced" (grey is still faint), only a
+        // solid sheet (past HATCH_MIN of the ramp) reads "suppressed".
+        const overcastRaw = Math.min(1, Math.max(0, (overcastPct - overcastOnset) / Math.max(1, overcastFull - overcastOnset)));
+        const overcastLabel = overcastRaw >= HATCH_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
 
         // BL Top / Cu Base are AGL; add ground to show AMSL (what airspace uses).
         const gm = thermalInfo.groundAmsl;
@@ -309,7 +316,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
               <div className="space-y-0.5">
                 <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
                 {overcast
-                  ? <div className="text-[12px] font-bold leading-tight text-white/70">Overcast — suppressed</div>
+                  ? <div className="text-[12px] font-bold leading-tight text-white/70">{overcastLabel}</div>
                   : (s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>)}
                 {thermalInfo.blh > 0 && (
                   <div className="text-[10px] text-white/75">
@@ -420,8 +427,8 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
               <span>Cumulus — density = coverage · size &amp; brightness = depth</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(150,154,160)' }} /></span>
-              <span>Overcast — grey sheet, thermals suppressed</span>
+              <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: 'linear-gradient(90deg, rgba(150,154,160,0.3), rgb(150,154,160))' }} /></span>
+              <span>Overcast — deeper grey = more low cloud; thermals suppressed</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>

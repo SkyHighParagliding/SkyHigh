@@ -12,7 +12,7 @@ import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
-import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from './windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, HATCH_MIN } from './windmap/thermalRenderer';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
 
@@ -45,8 +45,16 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
   // Mirror the renderer's overcast rule so the tapped-point strength label agrees
   // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
-  const thermalOvercast = !!thermalInfo && thermalInfo.cloudLow !== undefined
-    && Math.max(thermalInfo.cloudLow, (thermalInfo.cloud ?? 0) >= 90 ? thermalInfo.cloud! : 0) >= (Number(settings.thermalOvercastOnsetPct) || 70);
+  const overcastOnsetPct = Number(settings.thermalOvercastOnsetPct) || 70;
+  const overcastFullPct = Number(settings.thermalOvercastFullPct) || 95;
+  const overcastPct = thermalInfo && thermalInfo.cloudLow !== undefined
+    ? Math.max(thermalInfo.cloudLow, (thermalInfo.cloud ?? 0) >= 90 ? thermalInfo.cloud! : 0)
+    : 0;
+  const thermalOvercast = !!thermalInfo && thermalInfo.cloudLow !== undefined && overcastPct >= overcastOnsetPct;
+  // Grade the label to the grey ramp (onset→full): "reduced" near onset where the
+  // grey is faint, "suppressed" only past HATCH_MIN (a solid sheet).
+  const overcastRaw = Math.min(1, Math.max(0, (overcastPct - overcastOnsetPct) / Math.max(1, overcastFullPct - overcastOnsetPct)));
+  const thermalOvercastLabel = overcastRaw >= HATCH_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
@@ -542,7 +550,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 thermalInfo ? (
                   <>
                     {thermalOvercast
-                      ? <div className="text-[12px] font-bold leading-tight text-white/70">Overcast — suppressed</div>
+                      ? <div className="text-[12px] font-bold leading-tight text-white/70">{thermalOvercastLabel}</div>
                       : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
                     {thermalInfo.blh > 0 && (
                       <div className="text-[11px] text-white/75">
@@ -672,8 +680,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   <span>Cumulus — density = coverage · size &amp; brightness = depth</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(150,154,160)' }} /></span>
-                  <span>Overcast — grey sheet, thermals suppressed</span>
+                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: 'linear-gradient(90deg, rgba(150,154,160,0.3), rgb(150,154,160))' }} /></span>
+                  <span>Overcast — deeper grey = more low cloud; thermals suppressed</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>
