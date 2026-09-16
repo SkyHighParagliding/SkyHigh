@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
-export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => void; variant?: 'map' | 'chart' }) {
+export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => void; variant?: 'map' | 'chart' | 'skewt' }) {
   return createPortal(
     <div
       className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
@@ -12,7 +12,7 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
-          <h3 className="text-white font-bold text-sm tracking-wide">{variant === 'chart' ? 'Reading the Meteogram' : 'Reading the Thermal Map'}</h3>
+          <h3 className="text-white font-bold text-sm tracking-wide">{variant === 'skewt' ? 'Reading the SkewT' : variant === 'chart' ? 'Reading the Meteogram' : 'Reading the Thermal Map'}</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white/80 transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -36,6 +36,61 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
             </section>
           )}
 
+          {variant === 'skewt' && (
+            <>
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">What the SkewT shows</div>
+                <p className="text-white/70">A vertical slice of the atmosphere <span className="text-white/90">above the point you tapped</span>, at the scrubber's time. Height runs up the side (capped near a paraglider's ~10,000&nbsp;ft ceiling — the useless high air is trimmed off). Three lines run diagonally:</p>
+                <ul className="mt-1.5 space-y-1 text-white/70">
+                  <li><span style={{ color: '#e03131' }} className="font-medium">Red — air temperature</span> at each height.</li>
+                  <li><span style={{ color: '#2f9e44' }} className="font-medium">Green — dewpoint</span> (moisture). The <span className="text-white/90">gap between red and green is how dry the air is</span>: wide = dry (blue thermals), touching = saturated (cloud).</li>
+                  <li><span style={{ color: '#f08c00' }} className="font-medium">Orange dashed — the parcel</span>: a bubble of air released from the ground and allowed to rise. This <em>is</em> the thermal.</li>
+                </ul>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">The one rule that matters</div>
+                <p className="text-white/70">A thermal keeps rising while the <span style={{ color: '#f08c00' }}>orange parcel</span> is <span className="text-white/90">warmer than (to the right of)</span> the <span style={{ color: '#e03131' }}>red</span> line. Where orange crosses back to the left of red, the thermal stops — that's your <span className="text-white/90">thermal top</span>.</p>
+                <ul className="mt-1.5 space-y-1 text-white/70">
+                  <li>If the parcel reaches saturation (touches <span style={{ color: '#2f9e44' }}>green</span>) <em>before</em> it stops → a cumulus forms; that height is <span style={{ color: '#1971c2' }} className="font-medium">cloudbase</span>.</li>
+                  <li>If it tops out before saturating → a <span className="text-amber-400 font-medium">"Blue" day</span>: thermals, but no marker cloud.</li>
+                </ul>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Drag the orange dot — trigger temperature</div>
+                <p className="text-white/70">The <span style={{ color: '#f08c00' }} className="font-medium">orange dot at the surface</span> is the ground temperature that sets off thermals. It starts at the forecast temp. <span className="text-white/90">Drag it right (warmer)</span> to ask <em>"if the ground heats to X°, how high will the day go?"</em> — the thermal top and cloudbase update live. This is the most useful move: it shows how the day builds as it warms, and whether a hot afternoon pushes the top toward your airspace.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Drag the plot — level cursor</div>
+                <p className="text-white/70">Drag anywhere on the chart to slide a cursor line. The data box then reads that exact height: temperature, dewpoint, and <span className="text-white/90">wind speed &amp; direction</span> there.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">The data box — the answers</div>
+                <ul className="mt-0.5 space-y-1 text-white/70">
+                  <li><span className="text-white/90 font-medium">Thermal top</span> — the ceiling of the lift (AGL &amp; AMSL): your working height.</li>
+                  <li><span className="text-white/90 font-medium">Cloudbase</span> (or <span className="text-amber-400">"Blue — no cloud"</span>) — where cumulus form.</li>
+                  <li><span className="text-white/90 font-medium">Wind at top / at cloudbase</span> — drift and whether it's XC-able or a boating day.</li>
+                  <li><span className="text-white/90 font-medium">CAPE</span> — overdevelopment/storm caution (high = watch out).</li>
+                  <li><span className="text-white/90 font-medium">Trigger temp</span> — what you're assuming; compare your dragged value to the forecast.</li>
+                </ul>
+                <p className="text-white/50 mt-1.5">The marks up the right edge are winds aloft — the stem points into wind, the number is knots. Tap any altitude to switch m/ft.</p>
+              </section>
+
+              <section>
+                <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">A quick workflow</div>
+                <p className="text-white/70">Read the forecast thermal top and cloudbase for launch (or anywhere on your route). Drag the trigger a few degrees warmer to see the day's <em>potential</em> and whether the top nears your ceiling. Glance up the wind marks for drift. Then go make your own call.</p>
+              </section>
+
+              <section className="border-t border-white/10 pt-3">
+                <p className="text-white/40 text-[10px]">Sounding source: ECMWF IFS (0.25°) pressure levels via Open-Meteo, fetched for the point on demand. The parcel/LCL are computed from validated thermodynamics (Bolton 1980). This is a forecast tool — always make your own assessment before flying.</p>
+              </section>
+            </>
+          )}
+
+          {variant !== 'skewt' && (<>
           <section>
             <div className="text-amber-400 font-bold uppercase tracking-wide text-[10px] mb-1">Thermal Strength</div>
             <p className="text-white/70">The colour overlay shows how strong convective lift (thermals) is expected to be across Victoria at the selected time. Based on W* (convective velocity scale), the same quantity RASP and SkySight colour their thermal maps by.</p>
@@ -100,6 +155,7 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
             </ul>
             <p className="text-white/50 mt-1.5">A small warning triangle marks overdevelopment risk — hollow (▲) for watch, solid (▲) for likely. The risk is judged from CAPE together with how unstable the air is higher up (Lifted Index or CIN), not from cloud thickness alone. Critically, the triangle can appear on a plain blue day with no cumulus at all — and it also fires under a grey sheet. A loaded atmosphere hidden under solid overcast is the same trap as an uncapped blue day, arguably worse, because the grey gives you nothing visible to read. Either way, the absence of cu does not mean the atmosphere is calm.</p>
           </section>
+          </>)}
 
           <section className="border-t border-white/10 pt-3 space-y-1.5">
             <p className="text-white/40 text-[10px]">Data source: ECMWF IFS forecast via Open-Meteo. Updated daily at 5:26am Melbourne time. Grid resolution: 0.09° (~10km). This is a forecast tool — always make your own assessment before flying.</p>

@@ -127,7 +127,7 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
           </div>
         )}
       </div>
-      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} variant="chart" />}
+      {showHelp && <ThermalHelpModal onClose={() => setShowHelp(false)} variant="skewt" />}
     </div>,
     document.body,
   );
