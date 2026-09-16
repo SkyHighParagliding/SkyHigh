@@ -376,7 +376,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       {thermalGrid && (showLegend ? (
         <button
           onClick={(e) => { e.stopPropagation(); setShowLegend(false); }}
-          className="absolute bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))] left-3 z-30 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100%-1rem)]"
+          className={`absolute ${fullscreen ? 'bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[2.75rem]'} left-3 z-30 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100%-1rem)]`}
           title="Tap to hide legend"
         >
           <div className="flex items-center justify-between gap-2.5 mb-1">
@@ -440,7 +440,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       ) : (
         <button
           onClick={(e) => { e.stopPropagation(); setShowLegend(true); }}
-          className="absolute bottom-[calc(0.4rem+env(safe-area-inset-bottom,0px))] left-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors"
+          className={`absolute ${fullscreen ? 'bottom-[calc(0.4rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[0.4rem]'} left-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors`}
           title="Show legend"
         >
           <span className="h-2 w-8 rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
