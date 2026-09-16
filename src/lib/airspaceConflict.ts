@@ -94,9 +94,41 @@ export function airspaceAt(
   return best;
 }
 
-/** Short bracket label — specific ICAO class when classified, else the sector. */
+/** Title-case an ALL-CAPS aerodrome name: "ADELAIDE/PARAFIELD" → "Adelaide/Parafield". */
+function titleCaseName(s: string): string {
+  return s.toLowerCase().replace(/\b\w/g, m => m.toUpperCase());
+}
+
+/**
+ * Short bracket label. Prefers a location-based name over the bare type, since
+ * the raw `name` is verbose (e.g. "ARARAT 126.7 VIC (YARA) CERT"):
+ *  - classified CTA/CTR (ICAO A–G): "Class C" — the class is the clearest tag
+ *  - RMZ:  "ARARAT 126.7 VIC (YARA) CERT"  → "Ararat RMZ"   (name before the freq)
+ *  - CTR:  "ADELAIDE CONTROL ZONE (C) [H24]" → "Adelaide CTR"
+ *  - CTA:  "SOMEPLACE CTA C1 [H24]"         → "Someplace CTA"
+ *  - annotated restricted/prohibited: the descriptive prefix before ':'
+ * Falls back to a short raw name, then the type.
+ */
 export function airspaceLabel(c: AirspaceConflict): string {
+  const name = (c.name || '').trim();
   if (/^[A-G]$/i.test(c.icaoClass)) return `Class ${c.icaoClass.toUpperCase()}`;
-  if (c.name && c.name.length <= 14) return c.name;
+
+  if (c.typeName === 'RMZ') {
+    const loc = name.split(/\s+\d/)[0].trim(); // stop at the first space-then-digit (the frequency)
+    return loc ? `${titleCaseName(loc)} RMZ` : 'RMZ';
+  }
+  if (c.typeName === 'CTR') {
+    const loc = name.split(/\bcontrol zone\b/i)[0].trim();
+    return loc ? `${titleCaseName(loc)} CTR` : 'CTR';
+  }
+  if (c.typeName === 'CTA') {
+    const loc = name.split(/\bcta\b/i)[0].trim();
+    return loc ? `${titleCaseName(loc)} CTA` : 'CTA';
+  }
+  // Pilot-annotated restricted/prohibited (e.g. "No Fly Zone: Turbine 3"): the
+  // descriptive prefix reads as a warning without the site-specific tail.
+  const prefix = name.split(':')[0].trim();
+  if (prefix && prefix.length <= 22) return prefix;
+  if (name && name.length <= 16) return name;
   return c.typeName || 'Airspace';
 }
