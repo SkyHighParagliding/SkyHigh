@@ -14,7 +14,8 @@ import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/ther
 import type { ThermalGrid } from './windmap/thermalInterpolation';
 import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, HATCH_MIN } from './windmap/thermalRenderer';
 import { precipDescription } from '@/lib/precip';
-import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
+import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
+import { AirspaceRange } from './AirspaceRange';
 
 const M_TO_FT = 3.280839895;
 // Ignore wide info regions / low ground obstacles for the airspace warning (see
@@ -92,6 +93,20 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, thermalInfo?.lat, thermalInfo?.lon, thermalInfo?.blh, thermalInfo?.ccl, thermalInfo?.groundAmsl, zones]);
   const toggleAirspace = useCallback((f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f), []);
+  // "Airspace ON" list: every sector stacked under the pin (floor-first), thermal
+  // mode only. Updates as you pan (the pin is screen-fixed).
+  const airspaceStack = useMemo(() => {
+    if (!showAllAirspace || viewMode !== 'thermal' || !thermalInfo || thermalInfo.lat == null || thermalInfo.lon == null || !zones) return [];
+    return airspacesAt(thermalInfo.lat, thermalInfo.lon, zones, AIRSPACE_WARN_SKIP);
+  }, [showAllAirspace, viewMode, thermalInfo?.lat, thermalInfo?.lon, zones]);
+  // Turning airspace OFF also clears any drawn conflict sector (you may have
+  // panned off it, so the tap-the-bracket toggle is no longer reachable).
+  const toggleAllAirspace = useCallback(() => {
+    setShowAllAirspace(v => {
+      if (v) setShownAirspace(null);
+      return !v;
+    });
+  }, []);
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [thermalLoading, setThermalLoading] = useState(false);
   const [thermalError, setThermalError] = useState<string | null>(null);
@@ -545,44 +560,57 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         <div className={`bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[120px] max-w-[calc(100vw-1.5rem)] ${showLegend ? 'hidden lg:block' : ''}`}>
           <div className="flex items-start justify-between gap-2.5">
             <div className="space-y-0.5">
-              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
+              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">{viewMode === 'thermal' && showAllAirspace ? 'Airspace overhead' : 'Tapped point'}</div>
               {viewMode === 'thermal' ? (
                 thermalInfo ? (
                   <>
-                    {thermalOvercast
-                      ? <div className="text-[12px] font-bold leading-tight text-white/70">{thermalOvercastLabel}</div>
-                      : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
-                    {thermalInfo.blh > 0 && (
-                      <div className="text-[11px] text-white/75">
-                        BL Top {typeof thermalInfo.groundAmsl === 'number'
-                          ? <><Altitude metres={thermalInfo.blh + thermalInfo.groundAmsl} step={100} /> AMSL</>
-                          : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
-                        {airspaceConflicts.bl && (
-                          <button onClick={() => toggleAirspace(airspaceConflicts.bl!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.bl)})</button>
+                    {showAllAirspace ? (
+                      airspaceStack.length === 0
+                        ? <div className="text-[11px] text-white/50">No airspace here</div>
+                        : airspaceStack.map((sec, i) => (
+                            <div key={i} className="text-[11px] leading-tight">
+                              <span className="font-semibold text-white/90">{airspaceLabel(sec)}</span>
+                              <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
+                            </div>
+                          ))
+                    ) : (
+                      <>
+                        {thermalOvercast
+                          ? <div className="text-[12px] font-bold leading-tight text-white/70">{thermalOvercastLabel}</div>
+                          : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
+                        {thermalInfo.blh > 0 && (
+                          <div className="text-[11px] text-white/75">
+                            BL Top {typeof thermalInfo.groundAmsl === 'number'
+                              ? <><Altitude metres={thermalInfo.blh + thermalInfo.groundAmsl} step={100} /> AMSL</>
+                              : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
+                            {airspaceConflicts.bl && (
+                              <button onClick={() => toggleAirspace(airspaceConflicts.bl!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.bl)})</button>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                    {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                      <div className={`text-[11px] ${thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75'}`}>
-                        Cu Base {typeof thermalInfo.groundAmsl === 'number'
-                          ? <><Altitude metres={thermalInfo.ccl + thermalInfo.groundAmsl} step={100} /> AMSL</>
-                          : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
-                        {airspaceConflicts.cu && (
-                          <button onClick={() => toggleAirspace(airspaceConflicts.cu!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.cu)})</button>
+                        {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                          <div className={`text-[11px] ${thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75'}`}>
+                            Cu Base {typeof thermalInfo.groundAmsl === 'number'
+                              ? <><Altitude metres={thermalInfo.ccl + thermalInfo.groundAmsl} step={100} /> AMSL</>
+                              : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                            {airspaceConflicts.cu && (
+                              <button onClick={() => toggleAirspace(airspaceConflicts.cu!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.cu)})</button>
+                            )}
+                          </div>
                         )}
-                      </div>
+                        {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                          <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                        )}
+                        {typeof thermalInfo.groundAmsl === 'number' && (
+                          <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
+                        )}
+                      </>
                     )}
-                    {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                      <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
-                    )}
-                    {typeof thermalInfo.groundAmsl === 'number' && (
-                      <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
-                    )}
-                    {/* Show ALL airspace, regardless of whether a height busts it. */}
+                    {/* Airspace ON: the box lists the stack overhead. OFF reverts + clears any drawn sector. */}
                     <button
-                      onClick={() => setShowAllAirspace(v => !v)}
-                      className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white pt-0.5"
-                      title="Outline every airspace sector on the map"
+                      onClick={() => toggleAllAirspace()}
+                      className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white pt-1 mt-0.5 border-t border-white/10"
+                      title="List the airspace stack under the pin"
                     >
                       Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
                     </button>

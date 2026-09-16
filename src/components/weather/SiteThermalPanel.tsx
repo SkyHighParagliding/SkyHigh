@@ -5,7 +5,8 @@ import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, Map as
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
 import { precipDescription } from '@/lib/precip';
-import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
+import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
+import { AirspaceRange } from '@/components/AirspaceRange';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { MapScaleBar } from '../windmap/MapScaleBar';
 import { WindMapScrubberTray } from '../windmap/WindMapScrubberTray';
@@ -125,6 +126,22 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thermalInfo?.lat, thermalInfo?.lon, thermalInfo?.blh, thermalInfo?.ccl, thermalInfo?.groundAmsl, zones]);
+
+  // "Airspace ON" list: every sector stacked under the pin (floor-first). Only
+  // computed while the toggle is on; updates as you pan (the pin is screen-fixed).
+  const airspaceStack = useMemo(() => {
+    if (!showAllAirspace || !thermalInfo || thermalInfo.lat == null || thermalInfo.lon == null || !zones) return [];
+    return airspacesAt(thermalInfo.lat, thermalInfo.lon, zones, AIRSPACE_WARN_SKIP);
+  }, [showAllAirspace, thermalInfo?.lat, thermalInfo?.lon, zones]);
+
+  // Turning the airspace layer OFF also clears any drawn conflict sector — you
+  // may have panned off it, so the tap-the-bracket toggle is no longer reachable.
+  const toggleAllAirspace = useCallback(() => {
+    setShowAllAirspace(v => {
+      if (v) setShownAirspace(null);
+      return !v;
+    });
+  }, []);
   // lat/k from onTransformChange; fall back to site lat and a sensible default zoom.
   const [mapTransform, setMapTransform] = useState<{ lat: number; k: number }>({ lat: site?.lat ?? -37.8, k: 256 * Math.pow(2, 8) });
   const handleTransformChange = useCallback((lat: number, _lon: number, zoomLevel: number) => {
@@ -314,43 +331,56 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 z-30 min-w-[120px] max-w-[calc(100%-1rem)]">
             <div className="flex items-start justify-between gap-2.5">
               <div className="space-y-0.5">
-                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
-                {overcast
-                  ? <div className="text-[12px] font-bold leading-tight text-white/70">{overcastLabel}</div>
-                  : (s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>)}
-                {thermalInfo.blh > 0 && (
-                  <div className="text-[10px] text-white/75">
-                    BL Top {hasGround
-                      ? <><Altitude metres={blhAmslM!} step={100} /> AMSL</>
-                      : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
-                    {blConflict && (
-                      <button onClick={(e) => { e.stopPropagation(); toggleAS(blConflict.feature); }}
-                        className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(blConflict)})</button>
+                <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">{showAllAirspace ? 'Airspace overhead' : 'Tapped point'}</div>
+                {showAllAirspace ? (
+                  airspaceStack.length === 0
+                    ? <div className="text-[10px] text-white/50">No airspace here</div>
+                    : airspaceStack.map((sec, i) => (
+                        <div key={i} className="text-[10px] leading-tight">
+                          <span className="font-semibold text-white/90">{airspaceLabel(sec)}</span>
+                          <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
+                        </div>
+                      ))
+                ) : (
+                  <>
+                    {overcast
+                      ? <div className="text-[12px] font-bold leading-tight text-white/70">{overcastLabel}</div>
+                      : (s && <div className="text-[12px] font-bold leading-tight" style={{ color: s.color }}>{s.label}</div>)}
+                    {thermalInfo.blh > 0 && (
+                      <div className="text-[10px] text-white/75">
+                        BL Top {hasGround
+                          ? <><Altitude metres={blhAmslM!} step={100} /> AMSL</>
+                          : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
+                        {blConflict && (
+                          <button onClick={(e) => { e.stopPropagation(); toggleAS(blConflict.feature); }}
+                            className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(blConflict)})</button>
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-                {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                  <div className={cn('text-[10px]', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75')}>
-                    Cu Base {hasGround && cclAmslM != null
-                      ? <><Altitude metres={cclAmslM} step={100} /> AMSL</>
-                      : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
-                    {cuConflict && (
-                      <button onClick={(e) => { e.stopPropagation(); toggleAS(cuConflict.feature); }}
-                        className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(cuConflict)})</button>
+                    {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                      <div className={cn('text-[10px]', thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75')}>
+                        Cu Base {hasGround && cclAmslM != null
+                          ? <><Altitude metres={cclAmslM} step={100} /> AMSL</>
+                          : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        {cuConflict && (
+                          <button onClick={(e) => { e.stopPropagation(); toggleAS(cuConflict.feature); }}
+                            className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(cuConflict)})</button>
+                        )}
+                      </div>
                     )}
-                  </div>
+                    {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                      <div className="text-[10px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                    )}
+                    {typeof thermalInfo.groundAmsl === 'number' && (
+                      <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
+                    )}
+                  </>
                 )}
-                {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                  <div className="text-[10px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
-                )}
-                {typeof thermalInfo.groundAmsl === 'number' && (
-                  <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
-                )}
-                {/* Show ALL airspace, regardless of whether a height busts it. */}
+                {/* Airspace ON: the box lists the stack overhead. OFF reverts + clears any drawn sector. */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowAllAirspace(v => !v); }}
-                  className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white pt-0.5"
-                  title="Outline every airspace sector on the map"
+                  onClick={(e) => { e.stopPropagation(); toggleAllAirspace(); }}
+                  className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white pt-1 mt-0.5 border-t border-white/10"
+                  title="List the airspace stack under the pin"
                 >
                   Airspace <span className={cn('font-semibold', showAllAirspace ? 'text-sky-300' : 'text-white/40')}>{showAllAirspace ? 'ON' : 'OFF'}</span>
                 </button>

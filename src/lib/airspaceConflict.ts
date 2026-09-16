@@ -109,7 +109,7 @@ function titleCaseName(s: string): string {
  *  - annotated restricted/prohibited: the descriptive prefix before ':'
  * Falls back to a short raw name, then the type.
  */
-export function airspaceLabel(c: AirspaceConflict): string {
+export function airspaceLabel(c: { typeName?: string; icaoClass?: string; name?: string }): string {
   const name = (c.name || '').trim();
   if (/^[A-G]$/i.test(c.icaoClass)) return `Class ${c.icaoClass.toUpperCase()}`;
 
@@ -131,4 +131,50 @@ export function airspaceLabel(c: AirspaceConflict): string {
   if (prefix && prefix.length <= 22) return prefix;
   if (name && name.length <= 16) return name;
   return c.typeName || 'Airspace';
+}
+
+/** One sector in the vertical stack over a point, with its raw altitude datum. */
+export interface AirspaceSector {
+  name: string;
+  typeName: string;
+  icaoClass: string;
+  lowerFt: number;
+  upperFt: number;
+  lowerRef: number; // 0 = AGL/SFC, 1 = AMSL (matches siteguideZoneData parseAltitude)
+  upperRef: number;
+}
+
+/**
+ * Every sector containing (lat, lon), floor-first (ground up) — the vertical
+ * airspace stack for the "Airspace ON" readout. `disabledTypes` skips the same
+ * wide info regions / non-airspace annotations the map hides.
+ */
+export function airspacesAt(
+  lat: number,
+  lon: number,
+  zones: GeoJSON.FeatureCollection | null | undefined,
+  disabledTypes?: Set<string>,
+): AirspaceSector[] {
+  if (!zones?.features) return [];
+  const out: AirspaceSector[] = [];
+  for (const f of zones.features) {
+    const p: any = f.properties || {};
+    if (disabledTypes && disabledTypes.has(p.typeName)) continue;
+    if (f.bbox) {
+      const [minLng, minLat, maxLng, maxLat] = f.bbox as number[];
+      if (lon < minLng || lon > maxLng || lat < minLat || lat > maxLat) continue;
+    }
+    if (!featureContains(f, lon, lat)) continue;
+    out.push({
+      name: String(p.name ?? 'Airspace'),
+      typeName: String(p.typeName ?? ''),
+      icaoClass: String(p.icaoClass ?? ''),
+      lowerFt: Number(p.lowerFt ?? 0),
+      upperFt: Number(p.upperFt ?? 0),
+      lowerRef: Number(p.lowerRef ?? 1),
+      upperRef: Number(p.upperRef ?? 1),
+    });
+  }
+  out.sort((a, b) => a.lowerFt - b.lowerFt || a.upperFt - b.upperFt);
+  return out;
 }
