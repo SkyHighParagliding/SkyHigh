@@ -22,6 +22,10 @@ interface WindCanvasProps {
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
   onWindInfoChange?: (info: { speed: number; direction: number; groundAmsl?: number } | null) => void;
+  /** Filled with a function that dismisses the pinned wind readout (clears the
+   *  pin so the render loop stops repainting it, and emits null). Mirrors the
+   *  ThermalCanvas dismiss pattern. */
+  dismissRef?: React.MutableRefObject<(() => void) | null>;
   sizeKey?: number;
   initialZoomK?: number;
   savedCenterLat?: number;
@@ -35,7 +39,7 @@ interface WindCanvasProps {
 export const WindCanvas = memo(function WindCanvas({
   windGrid, currentTime, siteLat, siteLon, siteName,
   onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
-  siteMarkers, onSiteClick, onWindInfoChange,
+  siteMarkers, onSiteClick, onWindInfoChange, dismissRef,
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, siteStatus, siteUpcomingClosureDates,
 }: WindCanvasProps) {
@@ -159,6 +163,18 @@ export const WindCanvas = memo(function WindCanvas({
     setPinnedCrosshair(pin);
   }, []);
 
+  // MapCanvas fills this with its pin-clear; the dismiss below chains all three
+  // pieces of pin state: the pinned crosshair state (stops the readout layer
+  // firing), the parent readout (emit null), and the visual crosshair.
+  const mapClearPinRef = useRef<(() => void) | null>(null);
+  if (dismissRef) {
+    dismissRef.current = () => {
+      setPinnedCrosshair(null);
+      onWindInfoChangeRef.current?.(null);
+      mapClearPinRef.current?.();
+    };
+  }
+
   return (
     <MapCanvas
       bounds={bounds}
@@ -177,6 +193,7 @@ export const WindCanvas = memo(function WindCanvas({
       onSiteClick={onSiteClick}
       markerHitSuppressesPin={false}
       onPinChange={handlePinChange}
+      clearPinRef={mapClearPinRef}
       projectionRef={projectionRef}
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"

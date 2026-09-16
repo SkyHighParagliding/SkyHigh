@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Play, Pause, FastForward, ChevronUp } from 'lucide-react';
 import { TRAY_HANDLE_HEIGHT_PX } from '../windMapTypes';
 import type { PlaySpeed } from '../windMapTypes';
@@ -17,12 +17,16 @@ interface WindMapScrubberTrayProps {
   onSpeedCycle: () => void;
   formattedTime: string;
   mapMode: 'today' | '7day';
+  /** Optional control (e.g. the Today/7-day toggle) rendered before the play button. */
+  modeToggle?: ReactNode;
+  /** Optional summary (e.g. the launch site's current reading) shown in the bottom row. */
+  readout?: ReactNode;
 }
 
 export function WindMapScrubberTray({
   trayOpen, onToggle, isPlaying, onPlayToggle,
   currentTime, forecastStart, forecastEnd, timeStep, onTimeChange,
-  playSpeed, onSpeedCycle, formattedTime, mapMode,
+  playSpeed, onSpeedCycle, formattedTime, mapMode, modeToggle, readout,
 }: WindMapScrubberTrayProps) {
   // One label per whole day the slider spans, positioned at that day's start:
   // "Today", then the short weekday name (Melbourne). Makes the multi-day window
@@ -77,6 +81,7 @@ export function WindMapScrubberTray({
         inert={!trayOpen}
       >
         <div className="flex items-center gap-3">
+          {modeToggle && <div className="shrink-0">{modeToggle}</div>}
           <button
             onClick={onPlayToggle}
             aria-label={isPlaying ? 'Pause' : 'Play'}
@@ -99,7 +104,9 @@ export function WindMapScrubberTray({
               className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500"
             />
             {dayMarkers.length > 1 && (
-              <div className="relative h-3 mt-1 select-none" aria-hidden="true">
+              // mb lifts the day labels clear of the bottom-left "Key" pill (which
+              // overlays the tray) — the leftmost "Today" label otherwise sits under it.
+              <div className="relative h-3 mt-1 mb-3 select-none" aria-hidden="true">
                 {dayMarkers.map((m, i) => (
                   <span
                     key={i}
@@ -122,8 +129,9 @@ export function WindMapScrubberTray({
           </button>
           <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>
         </div>
-        <div className="flex items-center justify-end mt-1.5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 mt-1.5">
+          <div className="min-w-0 flex-1">{readout}</div>
+          <div className="flex items-center gap-2 shrink-0">
             <span className="text-[8px] font-mono text-white/60">{5000 / playSpeed}x</span>
             <span className="text-[8px] font-mono text-white/60">ECMWF{mapMode === '7day' ? ' 7-DAY' : ''}</span>
           </div>

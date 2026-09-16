@@ -40,6 +40,9 @@ interface ThermalCanvasProps {
   /** A single airspace GeoJSON feature to outline on the map (the conflicting
    *  sector the pilot tapped), or null to draw none. */
   airspaceFeature?: GeoJSON.Feature | null;
+  /** The full airspace collection to outline faintly (every sector, not just a
+   *  conflict). Drawn viewport-culled beneath `airspaceFeature`; null to draw none. */
+  allAirspace?: GeoJSON.FeatureCollection | null;
   sizeKey?: number;
   savedCenterLat?: number;
   savedCenterLon?: number;
@@ -59,7 +62,7 @@ interface ThermalCanvasProps {
 
 export const ThermalCanvas = memo(function ThermalCanvas({
   thermalGrid, currentTime, siteLat, siteLon,
-  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, airspaceFeature,
+  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, airspaceFeature, allAirspace,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
 }: ThermalCanvasProps) {
@@ -67,6 +70,8 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   siteMarkersRef.current = siteMarkers;
   const airspaceRef = useRef(airspaceFeature);
   airspaceRef.current = airspaceFeature;
+  const allAirspaceRef = useRef(allAirspace);
+  allAirspaceRef.current = allAirspace;
   const onThermalInfoChangeRef = useRef(onThermalInfoChange);
   onThermalInfoChangeRef.current = onThermalInfoChange;
   // Held in a ref, as WindCanvas does, so retuning the setpoints does not
@@ -157,38 +162,78 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       },
     };
 
-    // Airspace outline — a single conflicting sector the pilot tapped. No-op
-    // when none is set. Projected geo→screen the same way as the readout inverse.
+    // Airspace outlines. Two modes, composable:
+    //  - `allAirspace`: every sector, drawn faint and viewport-culled (the
+    //    "Airspace ON" toggle) — projected geo→screen like the readout inverse.
+    //  - `airspaceFeature`: one conflicting sector the pilot tapped, emphasised
+    //    on top so it stands out even when everything is shown.
+    // Lazily cache a [minLng,minLat,maxLng,maxLat] bbox on each feature so the
+    // per-frame cull over ~1800 sectors is a cheap comparison, not a re-scan.
+    const featureBbox = (f: GeoJSON.Feature): number[] | null => {
+      if ((f as any).bbox) return (f as any).bbox;
+      const g = f.geometry;
+      if (!g) return null;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const scan = (rings: number[][][]) => {
+        for (const ring of rings) for (const [x, y] of ring) {
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      };
+      if (g.type === 'Polygon') scan(g.coordinates as number[][][]);
+      else if (g.type === 'MultiPolygon') for (const poly of g.coordinates as number[][][][]) scan(poly);
+      else return null;
+      return ((f as any).bbox = [minX, minY, maxX, maxY]);
+    };
+    const drawAirspaceFeature = (c: any, f: GeoJSON.Feature | null | undefined, fillAlpha: number, lineWidth: number) => {
+      if (!f?.geometry) return;
+      const rings: number[][][] = [];
+      if (f.geometry.type === 'Polygon') rings.push(...(f.geometry.coordinates as number[][][]));
+      else if (f.geometry.type === 'MultiPolygon') for (const poly of f.geometry.coordinates as number[][][][]) rings.push(...poly);
+      else return;
+      const colors = getAirspaceColor((f.properties as any)?.typeName);
+      const { ctx } = c;
+      ctx.save();
+      ctx.beginPath();
+      for (const ring of rings) {
+        let started = false;
+        for (const coord of ring) {
+          const proj = c.projection([coord[0], coord[1]] as [number, number]);
+          if (!proj) continue;
+          const [x, y] = c.transform.apply(proj);
+          if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+      ctx.fillStyle = colors.fill;
+      ctx.globalAlpha = fillAlpha;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = colors.stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+      ctx.restore();
+    };
     const airspace: MapLayer<any> = {
       draw: (c) => {
-        const f = airspaceRef.current;
-        if (!f?.geometry) return;
-        const rings: number[][][] = [];
-        if (f.geometry.type === 'Polygon') rings.push(...(f.geometry.coordinates as number[][][]));
-        else if (f.geometry.type === 'MultiPolygon') for (const poly of f.geometry.coordinates as number[][][][]) rings.push(...poly);
-        else return;
-        const colors = getAirspaceColor((f.properties as any)?.typeName);
-        const { ctx } = c;
-        ctx.save();
-        ctx.beginPath();
-        for (const ring of rings) {
-          let started = false;
-          for (const coord of ring) {
-            const proj = c.projection([coord[0], coord[1]] as [number, number]);
-            if (!proj) continue;
-            const [x, y] = c.transform.apply(proj);
-            if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+        const all = allAirspaceRef.current;
+        if (all?.features?.length) {
+          // Visible geo bounds from the screen corners; skip sectors whose bbox
+          // doesn't intersect so we only project what's actually on screen.
+          let vMinX = Infinity, vMinY = Infinity, vMaxX = -Infinity, vMaxY = -Infinity;
+          for (const [sx, sy] of [[0, 0], [c.width, 0], [0, c.height], [c.width, c.height]] as [number, number][]) {
+            const g = c.projection.invert!(c.transform.invert([sx, sy]));
+            if (!g) continue;
+            if (g[0] < vMinX) vMinX = g[0]; if (g[0] > vMaxX) vMaxX = g[0];
+            if (g[1] < vMinY) vMinY = g[1]; if (g[1] > vMaxY) vMaxY = g[1];
           }
-          ctx.closePath();
+          for (const f of all.features) {
+            const b = featureBbox(f);
+            if (b && (b[2] < vMinX || b[0] > vMaxX || b[3] < vMinY || b[1] > vMaxY)) continue;
+            drawAirspaceFeature(c, f, 0.08, 1.2);
+          }
         }
-        ctx.fillStyle = colors.fill;
-        ctx.globalAlpha = 0.22;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-        ctx.restore();
+        drawAirspaceFeature(c, airspaceRef.current, 0.22, 2.5);
       },
     };
 

@@ -51,6 +51,11 @@ Anywhere a thermal height / cloudbase AMSL is shown, run the airspace check
 (`src/lib/airspaceConflict.ts`, `/api/sites/xc/airspace`). Conflict → a red
 `(Class C)` bracket after BL Top / Cu Base; tapping it outlines that sector on the
 map, tap again to hide. Skips FIR/OCA/ground-obstacles.
+- **Airspace ON/OFF** — the last line of the tapped-point box is an `Airspace
+  ON/OFF` toggle that outlines **every** sector (not just a height conflict),
+  independent of the red brackets. Drawn by `ThermalCanvas`'s `allAirspace` prop
+  (viewport-culled, faint fill 0.08); the tapped conflict still draws emphasised
+  (0.22) on top. State lives in the surface (`showAllAirspace`).
 
 ### 6. Time scrubber — pull-out tray (decision 5B)
 A **pull-out tray/tab** (`WindMapScrubberTray` idiom) on every surface, embedded
@@ -59,6 +64,9 @@ and fullscreen. Not an always-visible slider.
 ### 7. Fullscreen == embedded (decision 6A)
 Fullscreen shows the **identical chrome** — same Key/mode switch, legend, readout,
 scrubber — just larger. No mode/controls hidden in fullscreen.
+- **Fullscreen toggle button is top-right** on every surface (2026-09-16). The
+  top-left is for the mode toggle + readout; bottom-left for the Key; bottom for
+  the scrubber tray.
 
 ### 8. Text sizes (decision 7A) — the readable scale
 The thermal-panel scale, everywhere (no more 6–8px):
@@ -84,7 +92,20 @@ Legend marks must match what the map draws:
 1. **Stage 1 ✅** — AMSL + airspace on the picker readouts (done, `377d007`).
 2. **Stage 2** — canonical collapsible Key (mode switch + legend) on the picker,
    remove `overlayLevel`; stacked top-left readout; pull-out scrubber retained.
-3. **Stage 3** — bring the site wind map (`WindMapProto`) onto the same chrome +
-   AMSL; fullscreen parity.
-4. **Stage 4** — unify: the site page uses the one component (Wind/Thermal/Chart),
-   retiring the split between `WindMapProto` and `SiteThermalPanel`.
+3. **Stage 3 ✅** — bring the site wind map (`WindMapProto`) onto the same chrome:
+   stacked AMSL readout **hidden until tap** with ✕, Key pill raised to clear the
+   collapsed scrubber tab, the **Today/7-day toggle moved into the tray** (before
+   play), and **fullscreen == embedded** — the `WeatherCard` wind-map portal lost
+   its header bar; the map now carries its own **top-right minimize** button (new
+   `onExitFullscreen` prop) + Esc-to-close.
+4. **Stage 3b ✅** — bring the site thermal panel (`SiteThermalPanel`) onto the
+   same chrome: pull-out `WindMapScrubberTray` with play/pause + speed (replacing
+   the manual slider), stacked top-left readout with airspace warnings, Key pill,
+   top-right fullscreen toggle, and fullscreen == embedded (the separate
+   fullscreen header/slider was removed). The launch site's own reading now rides
+   in the tray's bottom row (new optional `readout` slot on the tray). Map/Chart
+   stays a header switch for now — Chart replaces the map, so an on-map mode pill
+   needs the full component merge below.
+5. **Stage 4** — unify: the site page uses the one component (Wind/Thermal/Chart
+   as one on-map mode switch), retiring the split between `WindMapProto` and
+   `SiteThermalPanel`. Deferred (largest change).

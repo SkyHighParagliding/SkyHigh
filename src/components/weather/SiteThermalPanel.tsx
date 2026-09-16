@@ -1,17 +1,20 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
-import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Thermometer, Info, Map as MapIcon, LineChart } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, Map as MapIcon, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { MapScaleBar } from '../windmap/MapScaleBar';
+import { WindMapScrubberTray } from '../windmap/WindMapScrubberTray';
+import { SCALE_BAR_BOTTOM_COLLAPSED } from '../windMapTypes';
 import { cn } from '@/lib/utils';
 import type { ThermalGrid } from '../windmap/thermalInterpolation';
-import { getThermalStrength, effectiveWstar, getThermalAt } from '../windmap/thermalInterpolation';
-import type { SiteMarker } from '../windMapTypes';
+import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolation';
+import { nextSpeed } from '../windMapTypes';
+import type { SiteMarker, PlaySpeed } from '../windMapTypes';
 import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from '../windmap/thermalRenderer';
 
 const ThermalCanvas = lazy(() =>
@@ -82,7 +85,12 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sliderIndex, setSliderIndex] = useState(0);
+  // Playback over today's flying-hours window — same idiom as the picker
+  // (WindMapScrubberTray + play/pause), scoped to a single day.
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playSpeed, setPlaySpeed] = useState<PlaySpeed>(5000);
+  const [trayOpen, setTrayOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
@@ -92,6 +100,8 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null);
   // The conflicting sector to draw on the map, set by tapping a red bracket.
   const [shownAirspace, setShownAirspace] = useState<GeoJSON.Feature | null>(null);
+  // "Airspace ON" — outline every sector, not just a height conflict.
+  const [showAllAirspace, setShowAllAirspace] = useState(false);
   useEffect(() => {
     fetch('/api/sites/xc/airspace')
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -121,6 +131,18 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
     setMapTransform({ lat, k: 256 * Math.pow(2, zoomLevel) });
   }, []);
 
+  // Fullscreen: lock body scroll and exit on Escape (parity with the picker).
+  useEffect(() => {
+    if (!isFullscreen) return;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFullscreen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isFullscreen]);
+
   useEffect(() => {
     fetch('/api/weather/thermal-overlay')
       .then(res => res.ok ? res.json() as Promise<ThermalGrid> : Promise.reject(`HTTP ${res.status}`))
@@ -144,33 +166,41 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       );
   }, [thermalGrid]);
 
-  // Set initial slider to the closest flying slot to current Melbourne time
+  // The scrubber runs continuously across the flying-hours window; the map
+  // interpolates at any instant, so we don't need discrete slot indices.
+  const HOUR_MS = 60 * 60 * 1000;
+  const forecastStart = flyingSlots.length ? new Date(flyingSlots[0].t).getTime() : 0;
+  const forecastEnd = flyingSlots.length ? new Date(flyingSlots[flyingSlots.length - 1].t).getTime() : 0;
+  const timeStep = HOUR_MS;
+
+  // Open at "now" clamped into the flying window (else the nearest edge).
   useEffect(() => {
     if (!flyingSlots.length) return;
-    const nowMs = Date.now();
-    const best = flyingSlots.reduce(
-      (bestI, slot, i) =>
-        Math.abs(new Date(slot.t).getTime() - nowMs) <
-        Math.abs(new Date(flyingSlots[bestI].t).getTime() - nowMs)
-          ? i : bestI,
-      0
-    );
-    setSliderIndex(best);
+    const first = new Date(flyingSlots[0].t).getTime();
+    const last = new Date(flyingSlots[flyingSlots.length - 1].t).getTime();
+    setCurrentTime(Math.min(Math.max(Date.now(), first), last));
   }, [flyingSlots]);
 
-  // Map slider position → original grid index → Unix ms timestamp
-  const activeSlot = flyingSlots[sliderIndex];
-  const currentTime = activeSlot ? new Date(activeSlot.t).getTime() : Date.now();
+  // Advance one hour per tick while playing, looping back to the window start.
+  useEffect(() => {
+    if (!isPlaying || !flyingSlots.length) return;
+    const id = setInterval(() => {
+      setCurrentTime(prev => {
+        const next = prev + timeStep;
+        return next > forecastEnd ? forecastStart : next;
+      });
+    }, playSpeed);
+    return () => clearInterval(id);
+  }, [isPlaying, playSpeed, forecastStart, forecastEnd, timeStep, flyingSlots.length]);
 
-  // Compute current thermal reading at the site for the readout strip
-  const siteReading = useMemo(() => {
-    if (!thermalGrid || !site?.lat || !site?.lon) return null;
-    return getThermalAt(site.lon, site.lat, currentTime, thermalGrid);
-  }, [thermalGrid, site?.lat, site?.lon, currentTime]);
-
-  const strength = siteReading
-    ? getThermalStrength(effectiveWstar(siteReading.wstar, siteReading.cape))
-    : null;
+  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsPlaying(false);
+    setCurrentTime(parseInt(e.target.value));
+  }, []);
+  const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
+  const cycleSpeed = useCallback(() => { setIsPlaying(true); setPlaySpeed(prev => nextSpeed(prev)); }, []);
+  const toggleTray = useCallback(() => setTrayOpen(o => !o), []);
+  const formattedTime = flyingSlots.length ? fmtMelbTime(new Date(currentTime).toISOString()) : '';
 
   // Single-entry marker array for the launch pin; passing exactly 1 marker keeps
   // ThermalCanvas in the single-site zoom path (not the Victoria-fit path).
@@ -186,44 +216,22 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   const btnClass = 'flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition-colors hover:opacity-80';
   const btnStyle = { background: '#0071e3', color: '#fff' };
 
-  const sliderContent = flyingSlots.length > 1 && (
-    <div className="mt-2 px-1">
-      <div className="flex items-center gap-2">
-        <span className="text-[9px] font-mono text-muted-foreground w-7 text-right shrink-0">
-          {fmtMelbTime(flyingSlots[0].t)}
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={flyingSlots.length - 1}
-          value={sliderIndex}
-          onChange={e => setSliderIndex(Number(e.target.value))}
-          className="flex-1 h-1.5 appearance-none rounded-full cursor-pointer"
-          style={{ accentColor: '#f97316' }}
-        />
-        <span className="text-[9px] font-mono text-muted-foreground w-7 shrink-0">
-          {fmtMelbTime(flyingSlots[flyingSlots.length - 1].t)}
-        </span>
-      </div>
-      <div className="text-center text-[10px] font-mono font-semibold text-amber-600 mt-0.5">
-        {activeSlot ? fmtMelbTime(activeSlot.t) : ''}
-        {strength && (
-          <span className="ml-2 font-bold" style={{ color: strength.color }}>
-            · {strength.label}
-          </span>
-        )}
-        {siteReading && siteReading.blh > 0 && (
-          <span className="ml-1.5 text-muted-foreground font-normal">
-            BL Top <Altitude metres={siteReading.blh} step={100} />
-          </span>
-        )}
-        {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
-          <span className={cn('ml-1.5 font-normal', siteReading.ccl < 600 ? 'text-amber-500' : 'text-muted-foreground')}>
-            Cu Base <Altitude metres={siteReading.ccl} step={100} />
-          </span>
-        )}
-      </div>
-    </div>
+  const scrubberTray = flyingSlots.length > 1 && (
+    <WindMapScrubberTray
+      trayOpen={trayOpen}
+      onToggle={toggleTray}
+      isPlaying={isPlaying}
+      onPlayToggle={togglePlay}
+      currentTime={currentTime}
+      forecastStart={forecastStart}
+      forecastEnd={forecastEnd}
+      timeStep={timeStep}
+      onTimeChange={handleSliderChange}
+      playSpeed={playSpeed}
+      onSpeedCycle={cycleSpeed}
+      formattedTime={formattedTime}
+      mapMode="today"
+    />
   );
 
   const mapArea = (fullscreen: boolean) => (
@@ -258,19 +266,20 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             onThermalInfoChange={setThermalInfo}
             dismissRef={dismissThermalInfoRef}
             airspaceFeature={shownAirspace}
+            allAirspace={showAllAirspace ? zones : null}
             siteMarkers={launchMarker}
             onTransformChange={handleTransformChange}
           />
         </Suspense>
       ) : null}
 
-      {/* Fullscreen toggle */}
+      {/* Fullscreen toggle — top-right, matching the picker (map style guide). */}
       <button
         onClick={() => setIsFullscreen(v => !v)}
-        className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white rounded-md p-1.5 hover:bg-black/70 transition-colors z-10"
+        className="absolute top-3 right-3 z-40 w-8 h-8 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors shadow-lg"
         title={fullscreen ? 'Exit fullscreen' : 'Fullscreen — XC planning view'}
       >
-        {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+        {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </button>
 
       {/* Tapped-point info overlay */}
@@ -292,7 +301,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         const toggleAS = (f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f);
 
         return (
-          <div className="absolute top-2 left-2 bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 z-10 min-w-[120px]">
+          <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 z-30 min-w-[120px] max-w-[calc(100%-1rem)]">
             <div className="flex items-start justify-between gap-2.5">
               <div className="space-y-0.5">
                 <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
@@ -327,6 +336,14 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                 {typeof thermalInfo.groundAmsl === 'number' && (
                   <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
                 )}
+                {/* Show ALL airspace, regardless of whether a height busts it. */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowAllAirspace(v => !v); }}
+                  className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white pt-0.5"
+                  title="Outline every airspace sector on the map"
+                >
+                  Airspace <span className={cn('font-semibold', showAllAirspace ? 'text-sky-300' : 'text-white/40')}>{showAllAirspace ? 'ON' : 'OFF'}</span>
+                </button>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); setThermalInfo(null); dismissThermalInfoRef.current?.(); }}
@@ -339,26 +356,24 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         );
       })()}
 
-      {/* Scale bar.
-          Embedded: top-right, clear of the tapped-point info (top-left) and the
-          fullscreen button (top-right of the map — but that's right-2 and this bar
-          is tucked left of it; in practice the fullscreen button is 28px so we use
-          right-10 to stay clear of it).
-          Fullscreen: bottom-left, above the legend. */}
+      {/* Scale bar — bottom-left, offset right of the Key pill, shifting up when
+          the scrubber tray opens (matches the picker). */}
       {thermalGrid && (
-        <div className={`absolute z-10 ${fullscreen ? 'left-2' : 'top-2 right-10'}`}
-             style={fullscreen ? { bottom: 'calc(0.5rem + 52px)' } : undefined}>
+        <div
+          className="absolute left-24 z-20 transition-[bottom] duration-300 pointer-events-none"
+          style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
+        >
           <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
         </div>
       )}
 
       {/* Legend — collapsed to a swatch pill on this small map; tap to expand to a
-          readable panel, tap the panel to hide. The pinch-to-zoom hint was
-          removed as self-evident. */}
+          readable panel, tap the panel to hide. Sits above the scrubber tray
+          handle (bottom-left), matching the picker. */}
       {thermalGrid && (showLegend ? (
         <button
           onClick={(e) => { e.stopPropagation(); setShowLegend(false); }}
-          className="absolute bottom-2 left-2 z-10 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100%-1rem)]"
+          className="absolute bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))] left-3 z-30 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100%-1rem)]"
           title="Tap to hide legend"
         >
           <div className="flex items-center justify-between gap-2.5 mb-1">
@@ -422,13 +437,17 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       ) : (
         <button
           onClick={(e) => { e.stopPropagation(); setShowLegend(true); }}
-          className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors"
+          className="absolute bottom-[calc(0.4rem+env(safe-area-inset-bottom,0px))] left-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors"
           title="Show legend"
         >
           <span className="h-2 w-8 rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
           <span className="text-[11px] text-white/80 font-medium">Key</span>
         </button>
       ))}
+
+      {/* Time scrubber — pull-out tray (identical to the picker), embedded and
+          fullscreen. */}
+      {scrubberTray}
     </div>
   );
 
@@ -525,86 +544,19 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
             />
           )
         ) : (
-          <>
-            {mapArea(false)}
-            {sliderContent}
-          </>
+          mapArea(false)
         )}
       </div>
 
-      {/* Fullscreen portal */}
+      {/* Fullscreen portal — identical chrome to the embedded map (Key, readout,
+          scrubber tray, top-right toggle), just larger. Per the style guide,
+          fullscreen == embedded, so no extra header. */}
       {isFullscreen && createPortal(
         <div
-          className="fixed inset-0 z-[10001] h-[100dvh] bg-black flex flex-col"
+          className="fixed inset-0 z-[10001] h-[100dvh] w-screen bg-black"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Fullscreen header */}
-          <div className="flex items-center justify-between px-3 py-2 bg-black/90 border-b border-white/10 shrink-0">
-            <div className="flex items-center gap-2">
-              <Thermometer className="w-4 h-4 text-amber-400" />
-              <span className="text-white/80 text-xs font-semibold truncate">
-                {site.name} — Thermal Forecast (XC Planning)
-              </span>
-            </div>
-            <button
-              onClick={() => setIsFullscreen(false)}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0 ml-2"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Fullscreen map */}
-          <div className="flex-1 min-h-0">
-            {mapArea(true)}
-          </div>
-
-          {/* Fullscreen time slider */}
-          {flyingSlots.length > 1 && (
-            <div
-              className="px-4 pt-3 bg-black/80 border-t border-white/10 shrink-0"
-              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono text-white/50 w-8 text-right shrink-0">
-                  {fmtMelbTime(flyingSlots[0].t)}
-                </span>
-                <input
-                  type="range"
-                  min={0}
-                  max={flyingSlots.length - 1}
-                  value={sliderIndex}
-                  onChange={e => setSliderIndex(Number(e.target.value))}
-                  className="flex-1 h-2 appearance-none rounded-full cursor-pointer"
-                  style={{ accentColor: '#f97316' }}
-                />
-                <span className="text-[10px] font-mono text-white/50 w-8 shrink-0">
-                  {fmtMelbTime(flyingSlots[flyingSlots.length - 1].t)}
-                </span>
-              </div>
-              <div className="flex items-center justify-center gap-3 mt-1.5">
-                <span className="text-[11px] font-mono font-bold text-amber-400">
-                  {activeSlot ? fmtMelbTime(activeSlot.t) : ''}
-                </span>
-                {strength && (
-                  <span className="text-[11px] font-bold" style={{ color: strength.color }}>
-                    {strength.label}
-                  </span>
-                )}
-                {siteReading && siteReading.blh > 0 && (
-                  <span className="text-[10px] text-white/50 font-mono">
-                    BL Top <Altitude metres={siteReading.blh} step={100} />
-                  </span>
-                )}
-                {siteReading && siteReading.ccl !== undefined && siteReading.ccl > 0 && (
-                  <span className={cn('text-[10px] font-mono', siteReading.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/50')}>
-                    Cu Base <Altitude metres={siteReading.ccl} step={100} />
-                    {siteReading.ccl < 600 ? ' ⚠' : ''}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+          {mapArea(true)}
         </div>,
         document.body
       )}

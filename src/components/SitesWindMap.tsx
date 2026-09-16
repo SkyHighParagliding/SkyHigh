@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Layers, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X } from 'lucide-react';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
@@ -14,6 +14,12 @@ import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/ther
 import type { ThermalGrid } from './windmap/thermalInterpolation';
 import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from './windmap/thermalRenderer';
 import { precipDescription } from '@/lib/precip';
+import { airspaceAt, airspaceLabel } from '@/lib/airspaceConflict';
+
+const M_TO_FT = 3.280839895;
+// Ignore wide info regions / low ground obstacles for the airspace warning (see
+// airspaceConflict.ts). Controlled/restricted/danger airspace IS flagged.
+const AIRSPACE_WARN_SKIP = new Set(['FIR', 'OCA', 'OTHER', 'TIZ', 'GLIDING_SECTOR', 'WAVE_WINDOW']);
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
@@ -24,9 +30,6 @@ interface SitesWindMapProps {
   isAuthenticated?: boolean;
   zoomSetpoints?: ZoomSetpoints;
 }
-
-/** Overlay hide-level at which nothing is drawn over the map at all. */
-const OVERLAY_OFF = 5;
 
 export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
   const { settings, updateSettings } = useSettings();
@@ -39,7 +42,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
   // Mirror the renderer's overcast rule so the tapped-point strength label agrees
   // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
   const thermalOvercast = !!thermalInfo && thermalInfo.cloudLow !== undefined
@@ -48,44 +51,42 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
+  // Collapsible "Key" legend pill (bottom-left) — collapsed by default.
+  const [showLegend, setShowLegend] = useState(false);
+  // Dismiss handlers filled in by the active canvas; the ✕ on the readout box
+  // calls the current mode's handler to clear the pin fully (box + pin +
+  // crosshair), otherwise the render loop repaints it.
+  const dismissThermalRef = useRef<(() => void) | null>(null);
+  const dismissWindRef = useRef<(() => void) | null>(null);
+
+  // Airspace conflict warning (thermal mode): same zones + logic as the site panel.
+  const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [shownAirspace, setShownAirspace] = useState<GeoJSON.Feature | null>(null);
+  // "Airspace ON" — outline every sector, not just a height conflict.
+  const [showAllAirspace, setShowAllAirspace] = useState(false);
+  useEffect(() => {
+    fetch('/api/sites/xc/airspace')
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then((d: GeoJSON.FeatureCollection) => setZones(d))
+      .catch(() => {});
+  }, []);
+  const airspaceConflicts = useMemo(() => {
+    const t = thermalInfo;
+    if (viewMode !== 'thermal' || !t || t.lat == null || t.lon == null || typeof t.groundAmsl !== 'number' || !zones) {
+      return { bl: null as ReturnType<typeof airspaceAt>, cu: null as ReturnType<typeof airspaceAt> };
+    }
+    const blFt = (t.blh + t.groundAmsl) * M_TO_FT;
+    const cuFt = t.ccl !== undefined ? (t.ccl + t.groundAmsl) * M_TO_FT : null;
+    return {
+      bl: t.blh > 0 ? airspaceAt(t.lat, t.lon, blFt, zones, AIRSPACE_WARN_SKIP) : null,
+      cu: cuFt != null ? airspaceAt(t.lat, t.lon, cuFt, zones, AIRSPACE_WARN_SKIP) : null,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, thermalInfo?.lat, thermalInfo?.lon, thermalInfo?.blh, thermalInfo?.ccl, thermalInfo?.groundAmsl, zones]);
+  const toggleAirspace = useCallback((f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f), []);
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [thermalLoading, setThermalLoading] = useState(false);
   const [thermalError, setThermalError] = useState<string | null>(null);
-  // The INFO button strips overlay pills one at a time on phones where vertical
-  // space is scarce. We use a numeric level rather than a named enum because the
-  // pill count varies by viewMode and isThermalEnabled — a fixed enum cannot
-  // express "one press removes exactly one currently-rendered pill". Each
-  // increment hides one more pill, in this order:
-  //   0 = full (all pills visible)
-  //   1 = gradient legend hidden
-  //   2 = site type legend hidden (wind mode only; skipped in thermal)
-  //   3 = today/7-day toggle hidden (wind mode only; skipped in thermal)
-  //   4 = view toggle hidden (only when isThermalEnabled)
-  //   5 = off (bare map)
-  // Desktop always renders the full overlay (lg:flex); the INFO button is
-  // lg:hidden so the level only matters below the lg breakpoint.
-  const [overlayLevel, setOverlayLevel] = useState(
-    () => (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : OVERLAY_OFF),
-  );
-  // Derived helpers — read these instead of comparing the level directly, so the
-  // logic stays in one place when pill definitions change.
-  const showOverlay = overlayLevel < OVERLAY_OFF;
-  const hideGradientLegend = overlayLevel >= 1;
-  const hideSiteTypeLegend = overlayLevel >= 2;
-  const hideModeToggle = overlayLevel >= 3;
-  const hideViewToggle = overlayLevel >= 4;
-  // Which pills are actually on screen right now, combining the hide level with
-  // each pill's own render condition.
-  const gradientPillShown = !hideGradientLegend;
-  const siteTypePillShown = viewMode === 'wind' && !hideSiteTypeLegend;
-  const modeTogglePillShown = viewMode === 'wind' && !hideModeToggle;
-  const viewTogglePillShown = isThermalEnabled && !hideViewToggle;
-  // The data pill moves up and left the moment it is the last one standing —
-  // derived from the pills themselves rather than from a magic level, because the
-  // level at which that happens differs by mode (4 in thermal, 3 when the thermal
-  // feature is off, 4 in wind with it on).
-  const dataPillOnly = showOverlay
-    && !gradientPillShown && !siteTypePillShown && !modeTogglePillShown && !viewTogglePillShown;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
@@ -166,9 +167,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setViewMode(mode);
     setSelectedSite(null);
     if (mode === 'thermal') setMapMode('today');
-    // Reset overlay to full when switching modes — the pill set changes and the
-    // previous level may hide wrong pills.
-    setOverlayLevel(prev => prev < OVERLAY_OFF ? 0 : prev);
   }, []);
 
   // Thermal data at the selected site, live-updating with currentTime
@@ -201,13 +199,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       closingViaPopRef.current = false;
       setIsFullscreen(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => setOverlayLevel(e.matches ? 0 : OVERLAY_OFF);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
@@ -279,32 +270,18 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     setSelectedSite(null);
   }, []);
 
-  /**
-   * The next level up that actually changes what is on screen. Levels whose pill
-   * is not rendered in the current mode are skipped, so every press visibly
-   * removes exactly one pill instead of appearing to do nothing.
-   */
-  const nextOverlayLevel = useCallback((prev: number) => {
-    if (prev >= OVERLAY_OFF) return 0; // wrap: off → full
-    let next = prev + 1;
-    if (next === 2 && viewMode !== 'wind') next++;        // site type legend — wind only
-    if (next === 3 && viewMode !== 'wind') next++;        // today/7-day toggle — wind only
-    if (next === 4 && !isThermalEnabled) next++;          // view toggle — only when enabled
-    return next;
-  }, [viewMode, isThermalEnabled]);
-
-  const advanceOverlayLevel = useCallback(() => {
-    setOverlayLevel(nextOverlayLevel);
-  }, [nextOverlayLevel]);
-
-  // Tooltip describes what the *next* press will do, accounting for the skips
-  // above — otherwise it promises to hide a pill that this mode never showed.
-  const infoButtonTitle = (() => {
-    const next = nextOverlayLevel(overlayLevel);
-    if (next === 0) return 'Show map info';
-    if (next >= OVERLAY_OFF) return 'Hide map info';
-    return ['', 'Hide the strength legend', 'Hide the site key', 'Hide the today/7-day toggle', 'Hide the wind/thermal toggle'][next];
-  })();
+  // Dismiss the pinned readout in the active mode. Clears the pin fully (box +
+  // pin + crosshair) so the render loop stops repainting it, and clears the
+  // local readout state that drives the box.
+  const dismissReading = useCallback(() => {
+    if (viewMode === 'thermal') {
+      dismissThermalRef.current?.();
+      setThermalInfo(null);
+    } else {
+      dismissWindRef.current?.();
+      setSitesWindInfo(null);
+    }
+  }, [viewMode]);
 
   const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
@@ -366,6 +343,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 siteMarkers={sites}
                 onSiteClick={handleSiteClick}
                 onThermalInfoChange={setThermalInfo}
+                dismissRef={dismissThermalRef}
+                airspaceFeature={shownAirspace}
+                allAirspace={showAllAirspace ? zones : null}
                 sizeKey={canvasSizeKey}
                 savedCenterLat={viewLat}
                 savedCenterLon={viewLon}
@@ -393,6 +373,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               siteMarkers={sites}
               onSiteClick={handleSiteClick}
               onWindInfoChange={setSitesWindInfo}
+              dismissRef={dismissWindRef}
               sizeKey={canvasSizeKey}
               initialZoomK={INITIAL_K}
               savedCenterLat={viewLat}
@@ -499,13 +480,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           onSpeedCycle={cycleSpeed}
           formattedTime={formattedTime}
           mapMode={mapMode}
+          modeToggle={viewMode === 'wind' ? sitesModeToggle : undefined}
         />
       </div>
 
-      {/* Fullscreen button */}
+      {/* Fullscreen button — top-right, per the map style guide. */}
       <button
         onClick={() => isFullscreen ? exitFullscreen() : setIsFullscreen(true)}
-        className="absolute top-3 left-3 z-40 w-8 h-8 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors shadow-lg"
+        className="absolute top-3 right-3 z-40 w-8 h-8 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors shadow-lg"
         title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
       >
         {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -525,40 +507,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         </button>
       )}
 
-      <button
-        onClick={advanceOverlayLevel}
-        title={infoButtonTitle}
-        className={`absolute top-3 right-3 z-30 lg:hidden flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors border shadow-lg ${
-          overlayLevel === 0
-            ? 'bg-sky-500 text-white border-white/20'
-            : dataPillOnly
-              // De-emphasised but still legible. A translucent sky tint was tried
-              // here first and disappeared against the near-white thermal basemap,
-              // so this state reuses the dark plate with a sky accent.
-              ? 'bg-black/55 text-sky-200 border-sky-400/40 backdrop-blur-md'
-              : showOverlay
-                // Kept opaque enough to stay readable over the near-white thermal
-                // basemap as well as the dark wind map.
-                ? 'bg-sky-600/80 text-white border-sky-300/50 backdrop-blur-md'
-                : 'bg-black/60 text-white/70 border-white/10 backdrop-blur-md'
-        }`}
-      >
-        <Layers className="w-3 h-3" />
-        INFO
-      </button>
-
-      {/* Overlay info panel.
-          dataPillOnly: repositioned to top-3 left-14 so it sits in the top bar
-          beside the fullscreen button, freeing the map area. max-w is tightened
-          in that state so it cannot run under the INFO button at top-3 right-3. */}
-      <div className={`absolute z-30 flex-col gap-1.5 ${
-        dataPillOnly
-          ? 'top-3 left-14 max-w-[calc(100vw-7rem)]'
-          : 'top-14 left-3 max-w-[calc(100vw-1.5rem)]'
-      } ${showOverlay ? 'flex' : 'hidden'} lg:flex lg:top-14 lg:left-3 lg:max-w-[calc(100vw-1.5rem)]`}>
-
-        {/* Wind / Thermal view toggle (feature-flagged) */}
-        {isThermalEnabled && !hideViewToggle && (
+      {/* Mode controls — ALWAYS visible (never hidden). Wind/Thermal view toggle
+          (feature-flagged) and the Today/7-day toggle (wind mode only). Sits
+          top-left below the fullscreen button. */}
+      <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5 max-w-[calc(100vw-1.5rem)]">
+        {isThermalEnabled && (
           <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
             <button
               onClick={() => handleViewModeChange('wind')}
@@ -577,48 +530,117 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           </div>
         )}
 
-        {/* Today / 7-day toggle (wind mode only) */}
-        {viewMode === 'wind' && !hideModeToggle && sitesModeToggle}
-
-        {/* Site type legend (wind mode only) */}
-        {viewMode === 'wind' && !hideSiteTypeLegend && (
-          <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[9px] font-mono">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50" />
-            <span className="text-white/70">{clubName}</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 ml-1.5" />
-            <span className="text-white/70">Other</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 ml-1.5" />
-            <span className="text-white/70">Restricted</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 ml-1.5" />
-            <span className="text-white/70">Closed</span>
+        {/* Stacked, dismissable tapped-point readout box (top-left) — only shown
+            after the map is tapped; ✕ closes it (clears the pin). One value/line. */}
+        {((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (
+        <div className={`bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[120px] max-w-[calc(100vw-1.5rem)] ${showLegend ? 'hidden lg:block' : ''}`}>
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
+              {viewMode === 'thermal' ? (
+                thermalInfo ? (
+                  <>
+                    {thermalOvercast
+                      ? <div className="text-[12px] font-bold leading-tight text-white/70">Overcast — suppressed</div>
+                      : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
+                    {thermalInfo.blh > 0 && (
+                      <div className="text-[11px] text-white/75">
+                        BL Top {typeof thermalInfo.groundAmsl === 'number'
+                          ? <><Altitude metres={thermalInfo.blh + thermalInfo.groundAmsl} step={100} /> AMSL</>
+                          : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
+                        {airspaceConflicts.bl && (
+                          <button onClick={() => toggleAirspace(airspaceConflicts.bl!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.bl)})</button>
+                        )}
+                      </div>
+                    )}
+                    {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
+                      <div className={`text-[11px] ${thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75'}`}>
+                        Cu Base {typeof thermalInfo.groundAmsl === 'number'
+                          ? <><Altitude metres={thermalInfo.ccl + thermalInfo.groundAmsl} step={100} /> AMSL</>
+                          : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
+                        {airspaceConflicts.cu && (
+                          <button onClick={() => toggleAirspace(airspaceConflicts.cu!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.cu)})</button>
+                        )}
+                      </div>
+                    )}
+                    {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                      <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                    )}
+                    {typeof thermalInfo.groundAmsl === 'number' && (
+                      <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
+                    )}
+                    {/* Show ALL airspace, regardless of whether a height busts it. */}
+                    <button
+                      onClick={() => setShowAllAirspace(v => !v)}
+                      className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white pt-0.5"
+                      title="Outline every airspace sector on the map"
+                    >
+                      Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-[11px] text-white/50">Tap map for a reading</div>
+                )
+              ) : (
+                sitesWindInfo ? (
+                  <>
+                    <div className="text-[12px] font-bold leading-tight text-sky-400">{sitesWindInfo.speed.toFixed(1)} kt</div>
+                    <div className="text-[11px] text-white/75">
+                      {sitesWindInfo.direction.toFixed(0)}° <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(sitesWindInfo.direction)}</span>
+                    </div>
+                    {typeof sitesWindInfo.groundAmsl === 'number' && (
+                      <div className="text-[11px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} /> AMSL</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-[11px] text-white/50">Tap map for a reading</div>
+                )
+              )}
+            </div>
+            {((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (
+              <button
+                onClick={dismissReading}
+                className="text-white/50 hover:text-white/80 transition-colors shrink-0 mt-0.5"
+                title="Dismiss reading"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+        </div>
         )}
+      </div>
 
-        {/* Gradient legend — dropped first (level 1+) so the readout below rises. */}
-        {!hideGradientLegend && (
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-[9px] font-mono">
+      {/* Collapsible "Key" legend pill (bottom-left). Collapsed = gradient swatch
+          + "Key"; expanded = a readable per-mode panel; tap panel or ✕ to hide. */}
+      {showLegend ? (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowLegend(false); }}
+          className="absolute bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))] left-3 z-30 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100vw-1.5rem)]"
+          title="Tap to hide legend"
+        >
           {viewMode === 'thermal' ? (
             <>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[8px] text-white/80 font-semibold tracking-wide uppercase">Thermal Strength</span>
-                <button
-                  onClick={() => setShowThermalHelp(true)}
-                  className="text-white/40 hover:text-white/80 transition-colors pointer-events-auto"
-                  title="What do these readings mean?"
-                >
-                  <Info className="w-3 h-3" />
-                </button>
+              <div className="flex items-center justify-between gap-2.5 mb-1">
+                <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Thermal Strength</span>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowThermalHelp(true); }}
+                    className="text-white/40 hover:text-white/80 transition-colors cursor-pointer"
+                    title="What do these readings mean?"
+                    role="button"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                  <X className="w-3.5 h-3.5 text-white/50" />
+                </span>
               </div>
-              <div className="h-2 w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
-              {/* Labels positioned at the true W* threshold fraction of LEGEND_MAX_WSTAR
-                  so they align with where each band actually sits on the gradient. */}
-              <div className="relative mt-1 h-[10px] text-[7px] font-mono text-white/70">
+              <div className="h-2.5 w-44 max-w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
+              {/* W* band labels pinned to their true threshold position. */}
+              <div className="relative mt-1 h-[13px] w-44 max-w-full text-[10px] text-white/60 font-mono">
                 {(
                   [
-                    // No 'None' label: nothing is painted below W* 0.3, so it would
-                    // sit at 0% with no colour to point at and collide with 'Weak'.
                     { label: 'Weak',   wstar: 0.3 },
-                    { label: 'Mod',    wstar: 0.8 },
                     { label: 'Good',   wstar: 1.5 },
                     { label: 'Strong', wstar: 2.5 },
                   ] as { label: string; wstar: number }[]
@@ -638,37 +660,54 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   );
                 })}
               </div>
-              <div className="flex items-center gap-1 mt-1.5 text-[7px] text-white/60">
-                <span className="text-[9px] leading-none">☁</span>
-                <span>Cumulus</span>
-                <span className="text-white/35 ml-auto">density = coverage · size = depth</span>
+              <div className="mt-2 space-y-1.5 text-[10px] text-white/75 leading-snug">
+                <div className="flex items-center gap-2">
+                  {/* Same shape the map draws (traceCumulus): three domes on a flat base. */}
+                  <span className="w-[22px] flex justify-center shrink-0">
+                    <svg width="22" height="16" viewBox="0 0 16 11">
+                      <path fill="white" d="M2.52 9 A2.48 2.48 0 0 1 7.48 9 L4.8 7.4 A3.2 3.2 0 0 1 11.2 7.4 L9 8.8 A2.2 2.2 0 0 1 13.4 8.8 L2.52 9 Z" />
+                    </svg>
+                  </span>
+                  <span>Cumulus — density = coverage · size &amp; brightness = depth</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(150,154,160)' }} /></span>
+                  <span>Overcast — grey sheet, thermals suppressed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>
+                  <span>Rain — deeper blue = heavier</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>Overdevelopment:</span>
+                  <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="none" stroke="white" strokeWidth="1.2" /></svg>
+                  <span className="text-white/60">watch</span>
+                  <span className="text-white/35">·</span>
+                  <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="white" /></svg>
+                  <span className="text-white/60">likely</span>
+                </div>
+                {/* Wind-flow ON/OFF toggle — moved into the panel. */}
+                <div
+                  onClick={(e) => { e.stopPropagation(); setShowWindOnThermal(v => !v); }}
+                  className="flex items-center gap-2 pt-0.5 cursor-pointer hover:text-white/90"
+                  role="button"
+                >
+                  <span className="w-[22px] flex justify-center shrink-0 text-white/60">〰</span>
+                  <span>Wind flow</span>
+                  <span className={`ml-auto font-bold ${showWindOnThermal ? 'text-sky-300' : 'text-white/35'}`}>
+                    {showWindOnThermal ? 'ON' : 'OFF'}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 mt-0.5 text-[7px] text-white/60">
-                <span className="text-[9px] leading-none" style={{ fontStyle: 'italic', letterSpacing: '-0.5px' }}>▨</span>
-                <span>Overcast sheet</span>
-                <span className="text-white/35 ml-auto">plain = blue day</span>
-              </div>
-              <div className="flex items-center gap-1 mt-0.5 text-[7px] text-white/60">
-                <span className="text-[9px] leading-none">▲</span>
-                <span>Overdevelopment</span>
-                <span className="text-white/35 ml-auto">hollow = watch · solid = likely</span>
-              </div>
-              <button
-                onClick={() => setShowWindOnThermal(v => !v)}
-                className="flex items-center gap-1 mt-0.5 text-[7px] w-full pointer-events-auto transition-colors hover:text-white/90 text-white/60"
-              >
-                <span className="text-[9px] leading-none">〰</span>
-                <span>Wind flow</span>
-                <span className={`ml-auto font-bold ${showWindOnThermal ? 'text-sky-300' : 'text-white/35'}`}>
-                  {showWindOnThermal ? 'ON' : 'OFF'}
-                </span>
-              </button>
             </>
           ) : (
             <>
-              <div className="text-center text-[8px] text-white/80 font-semibold tracking-wide uppercase mb-1">Forecast Data</div>
-              <div className="relative">
-                <div className="h-2 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
+              <div className="flex items-center justify-between gap-2.5 mb-1">
+                <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Forecast Data</span>
+                <X className="w-3.5 h-3.5 text-white/50 shrink-0" />
+              </div>
+              <div className="relative w-44 max-w-full">
+                <div className="h-2.5 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
                 {sitesWindInfo && (
                   <div
                     className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
@@ -676,200 +715,38 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   />
                 )}
               </div>
-              <div className="flex justify-between mt-1 text-[7px] font-mono text-white/70 px-0.5">
-                <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kts</span>
+              <div className="flex justify-between mt-1 w-44 max-w-full text-[10px] font-mono text-white/60 px-0.5">
+                <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kt</span>
+              </div>
+              {/* Site-type key. */}
+              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-white/75">
+                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50 shrink-0" /><span>{clubName}</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 shrink-0" /><span>Other</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 shrink-0" /><span>Restricted</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 shrink-0" /><span>Closed</span></div>
               </div>
             </>
           )}
-        </div>
-        )}
-
-        {/* Readout panel */}
-        <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-[9px] font-mono lg:whitespace-nowrap pointer-events-none">
-          {viewMode === 'thermal' ? (
-            <>
-              {/* Desktop: single row (lg+) */}
-              {thermalInfo ? (
-                <div className="hidden lg:flex items-center gap-2">
-                  <span className="font-bold" style={{ color: thermalOvercast ? '#9aa0aa' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
-                    {thermalOvercast ? 'Overcast' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
-                  </span>
-                  <span className="text-white/40">|</span>
-                  {thermalInfo.wstar !== undefined ? (
-                    <span className="text-white/60">W* {thermalInfo.wstar.toFixed(1)} m/s</span>
-                  ) : (
-                    <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
-                  )}
-                  {thermalInfo.blh > 0 && (
-                    <>
-                      <span className="text-white/40">|</span>
-                      <span className="text-white/60">BL Top <Altitude metres={thermalInfo.blh} step={100} className="pointer-events-auto" /></span>
-                    </>
-                  )}
-                  {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                    <>
-                      <span className="text-white/40">|</span>
-                      <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                        Cu Base <Altitude metres={thermalInfo.ccl} step={100} className="pointer-events-auto" />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
-                      </span>
-                    </>
-                  )}
-                  {typeof thermalInfo.groundAmsl === 'number' && (
-                    <>
-                      <span className="text-white/40">|</span>
-                      <span className="text-white/60">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
-                    </>
-                  )}
-                  {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                    <>
-                      <span className="text-white/40">|</span>
-                      <span className="text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</span>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="hidden lg:flex items-center gap-2">
-                  <span className="text-white/40">Tap map for thermal reading</span>
-                </div>
-              )}
-              {/* Mobile: two rows (below lg) */}
-              {thermalInfo ? (
-                <div className="flex lg:hidden flex-col gap-1">
-                  {/* Row 1: Strength | W-star/CAPE | BL */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold" style={{ color: thermalOvercast ? '#9aa0aa' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>
-                      {thermalOvercast ? 'Overcast' : getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).shortLabel}
-                    </span>
-                    <span className="text-white/40">|</span>
-                    {thermalInfo.wstar !== undefined ? (
-                      <span className="text-white/60">W* {thermalInfo.wstar.toFixed(1)} m/s</span>
-                    ) : (
-                      <span className="text-white/60">CAPE {Math.round(thermalInfo.cape)} J/kg</span>
-                    )}
-                    {thermalInfo.blh > 0 && (
-                      <>
-                        <span className="text-white/40">|</span>
-                        <span className="text-white/60">BL <Altitude metres={thermalInfo.blh} step={100} className="pointer-events-auto" /></span>
-                      </>
-                    )}
-                  </div>
-                  {/* Row 2: Cu Base | Ground (only if either is present) */}
-                  {(thermalInfo.ccl !== undefined && thermalInfo.ccl > 0) || typeof thermalInfo.groundAmsl === 'number' ? (
-                    <div className="flex items-center gap-1.5">
-                      {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                        <span className={thermalInfo.ccl < 600 ? 'text-amber-400 font-semibold' : 'text-white/60'}>
-                          Cu <Altitude metres={thermalInfo.ccl} step={100} className="pointer-events-auto" />{thermalInfo.ccl < 600 ? ' ⚠' : ''}
-                        </span>
-                      )}
-                      {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && typeof thermalInfo.groundAmsl === 'number' && (
-                        <span className="text-white/40">|</span>
-                      )}
-                      {typeof thermalInfo.groundAmsl === 'number' && (
-                        <span className="text-white/60">Gnd <Altitude metres={thermalInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
-                      )}
-                    </div>
-                  ) : null}
-                  {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                    <div className="text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex lg:hidden items-center gap-2">
-                  <span className="text-white/40">Tap map for thermal reading</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Desktop: single row (lg+) */}
-              {sitesWindInfo ? (
-                <div className="hidden lg:flex items-center gap-2">
-                  <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
-                  <span className="text-white/40">|</span>
-                  <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
-                  <span className="text-sky-300 font-bold tracking-wider">{getCompassDirection(sitesWindInfo.direction)}</span>
-                  <svg
-                    width="10"
-                    height="14"
-                    viewBox="0 0 10 18"
-                    className="fill-white drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]"
-                    style={{ transform: `rotate(${sitesWindInfo.direction}deg)`, transformOrigin: 'center' }}
-                  >
-                    <path d="M 5 0 L 10 18 L 0 18 Z" />
-                  </svg>
-                  {typeof sitesWindInfo.groundAmsl === 'number' && (
-                    <>
-                      <span className="text-white/40">|</span>
-                      <span className="text-white/60">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
-                    </>
-                  )}
-                  <span className="text-white/40">|</span>
-                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
-                </div>
-              ) : (
-                <div className="hidden lg:flex items-center gap-2">
-                  <span className="text-white/40">Tap map to pin wind reading</span>
-                  <span className="text-white/40">|</span>
-                  <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
-                </div>
-              )}
-              {/* Mobile: two rows (below lg) */}
-              {sitesWindInfo ? (
-                <div className="flex lg:hidden flex-col gap-1">
-                  {/* Row 1: speed | dir compass arrow */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sky-400 font-bold">{sitesWindInfo.speed.toFixed(1)} KTS</span>
-                    <span className="text-white/40">|</span>
-                    <span className="text-white font-bold">{sitesWindInfo.direction.toFixed(0)}°</span>
-                    <span className="text-sky-300 font-bold tracking-wider">{getCompassDirection(sitesWindInfo.direction)}</span>
-                    <svg
-                      width="10"
-                      height="14"
-                      viewBox="0 0 10 18"
-                      className="fill-white drop-shadow-[0_0_2px_rgba(255,255,255,0.5)]"
-                      style={{ transform: `rotate(${sitesWindInfo.direction}deg)`, transformOrigin: 'center' }}
-                    >
-                      <path d="M 5 0 L 10 18 L 0 18 Z" />
-                    </svg>
-                  </div>
-                  {/* Row 2: Gnd | Z */}
-                  <div className="flex items-center gap-1.5">
-                    {typeof sitesWindInfo.groundAmsl === 'number' && (
-                      <>
-                        <span className="text-white/60">Gnd <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="pointer-events-auto" /></span>
-                        <span className="text-white/40">|</span>
-                      </>
-                    )}
-                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex lg:hidden flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white/40">Tap map to pin wind reading</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white/50">Z{Math.max(0, Math.min(10, Math.round(((liveView?.zoom ?? Math.log2(INITIAL_K / 256)) - 6) * (10 / 7))))}</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Scale bar — visible in every INFO state except the bare-map off state.
-          Shifts up when the scrubber tray is open so the tray doesn't cover it,
-          and clears the handle plus home-indicator inset when it is collapsed —
-          see SCALE_BAR_BOTTOM_COLLAPSED. */}
-      {showOverlay && (
-        <div
-          className="absolute left-3 z-30 transition-[bottom] duration-300 pointer-events-none"
-          style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
+        </button>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowLegend(true); }}
+          className="absolute bottom-[calc(0.4rem+env(safe-area-inset-bottom,0px))] left-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors"
+          title="Show legend"
         >
-          <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
-        </div>
+          <span className="h-2 w-8 rounded-full" style={{ background: viewMode === 'thermal' ? THERMAL_LEGEND_CSS : SPEED_LEGEND_CSS }} />
+          <span className="text-[11px] text-white/80 font-medium">Key</span>
+        </button>
       )}
+
+      {/* Scale bar. Shifts up when the scrubber tray is open, and to clear the
+          Key pill at bottom-left it sits offset right of it. */}
+      <div
+        className="absolute left-24 z-20 transition-[bottom] duration-300 pointer-events-none"
+        style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
+      >
+        <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
+      </div>
 
       {/* Thermal help modal */}
       {showThermalHelp && <ThermalHelpModal onClose={() => setShowThermalHelp(false)} />}

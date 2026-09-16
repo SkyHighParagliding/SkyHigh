@@ -1,4 +1,4 @@
-import { CloudSun, X, Sun, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Snowflake, Wind, Thermometer, type LucideIcon } from 'lucide-react';
+import { CloudSun, Sun, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, Snowflake, Wind, Thermometer, type LucideIcon } from 'lucide-react';
 import { getWeatherIcon, getWindStatus, getIdealDirections } from '@/lib/utils';
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
@@ -122,7 +122,12 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
   useEffect(() => {
     if (showWindMap) {
       document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = ''; };
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowWindMap(false); };
+      window.addEventListener('keydown', onKey);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', onKey);
+      };
     }
   }, [showWindMap]);
 
@@ -212,26 +217,16 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
   const isDirectionIdeal = idealDirs.includes(direction);
 
   const windMapPortal = showWindMap && site.lat && site.lon && createPortal(
+    // Fullscreen == embedded: no separate header — the map carries its own
+    // top-right minimize button (wired via onExitFullscreen), matching the
+    // picker and thermal panel.
     <div
-      className="fixed inset-0 z-[10001] bg-black flex flex-col"
+      className="fixed inset-0 z-[10001] bg-black"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between px-3 py-2 bg-black/90 border-b border-white/10 shrink-0">
-        <p className="text-white/80 text-xs font-semibold truncate">
-          {site.name} — Wind Map (ECMWF)
-        </p>
-        <button
-          onClick={() => setShowWindMap(false)}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0 ml-2"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="flex-1 min-h-0">
-        <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
-          <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} siteStatus={site.status} siteUpcomingClosureDates={site.upcomingClosureDates} fullscreen />
-        </Suspense>
-      </div>
+      <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
+        <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} siteStatus={site.status} siteUpcomingClosureDates={site.upcomingClosureDates} fullscreen onExitFullscreen={() => setShowWindMap(false)} />
+      </Suspense>
     </div>,
     document.body
   );
