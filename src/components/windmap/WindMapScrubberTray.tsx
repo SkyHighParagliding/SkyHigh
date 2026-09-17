@@ -96,7 +96,6 @@ export function WindMapScrubberTray({
         inert={!trayOpen}
       >
         <div className="flex items-center gap-3">
-          {modeToggle && <div className="shrink-0">{modeToggle}</div>}
           <button
             onClick={onPlayToggle}
             aria-label={isPlaying ? 'Pause' : 'Play'}
@@ -145,7 +144,14 @@ export function WindMapScrubberTray({
           <span className="text-[9px] font-mono text-sky-400 font-bold whitespace-nowrap shrink-0">{formattedTime}</span>
         </div>
         <div className="flex items-center justify-between gap-2 mt-1.5">
-          <div className="min-w-0 flex-1">{readout}</div>
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            {/* The Key pill overlays the tray's bottom-left corner; this spacer pushes
+                the Today/7-day switch just to its right so the two align. Only present
+                when a mode toggle is supplied (maps that have the Key pill). */}
+            {modeToggle && <span aria-hidden="true" className="w-[68px] shrink-0" />}
+            {modeToggle && <div className="shrink-0">{modeToggle}</div>}
+            <div className="min-w-0 flex-1">{readout}</div>
+          </div>
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[8px] font-mono text-white/60">{5000 / playSpeed}x</span>
             <span className="text-[8px] font-mono text-white/60">ECMWF{mapMode === '7day' ? ' 7-DAY' : ''}</span>
