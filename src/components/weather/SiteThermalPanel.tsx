@@ -158,17 +158,16 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
       .catch(e => { setError(String(e)); setLoading(false); });
   }, []);
 
-  // Filter to today's flying hours only (10am–8pm Melbourne time)
-  // thermalGrid.times spans today+tomorrow; we restrict to the first date so
-  // the slider shows a clean single-day view (10am → 8pm).
+  // Flying-hours slots (10am–8pm Melbourne) across EVERY day the grid covers
+  // (~3 days). thermalGrid.times spans today→+2 days; we keep all of them so the
+  // site page offers the same multi-day scrub as the overview map. Restricting to
+  // daylight keeps the slider meaningful — thermals only form in the day — while
+  // the tray's per-day markers (Today/Fri/Sat) make the multi-day span navigable.
   const flyingSlots = useMemo(() => {
     if (!thermalGrid) return [];
-    const firstDate = thermalGrid.times[0]?.slice(0, 10) ?? '';
     return thermalGrid.times
       .map((t, idx) => ({ t, idx, h: getMelbHour(t) }))
-      .filter(({ t, h }) =>
-        t.slice(0, 10) === firstDate && h >= FLYING_HOUR_START && h <= FLYING_HOUR_END
-      );
+      .filter(({ h }) => h >= FLYING_HOUR_START && h <= FLYING_HOUR_END);
   }, [thermalGrid]);
 
   // The scrubber runs continuously across the flying-hours window; the map
