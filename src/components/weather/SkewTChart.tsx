@@ -221,7 +221,7 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
         {cursorP != null && <line x1={PAD_L} y1={yOf(cursorP)} x2={PAD_L + PLOT_W} y2={yOf(cursorP)} stroke="#0b7285" strokeWidth={1} />}
       </g>
       {/* marker labels (outside clip so they aren't cut) */}
-      {derived.cloud && derived.pLcl >= pTop && <text x={PAD_L + 3} y={yOf(derived.pLcl) - 2} style={{ fontSize: 8, fill: '#1971c2', fontWeight: 700 }}>Cloudbase</text>}
+      {derived.cloud && derived.pLcl >= pTop && <text x={PAD_L + 3} y={yOf(derived.pLcl) + 8} style={{ fontSize: 8, fill: '#1971c2', fontWeight: 700 }}>Cloudbase</text>}
       <text x={PAD_L + PLOT_W - 3} y={yOf(Math.max(derived.topP, pTop)) - 2} textAnchor="end" style={{ fontSize: 8, fill: '#e8590c', fontWeight: 700 }}>Thermal top</text>
 
       {/* Wind (level points only) on the right margin */}
