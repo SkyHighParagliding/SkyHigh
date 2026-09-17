@@ -6,42 +6,40 @@ type: wiki
 
 # Architecture — Tech Stack, Patterns, and Structure
 
-> Last updated: 2026-09-11
+> Last updated: 2026-09-17 — resynced with the code after grid refactor
+> (`server/grid/*` + provider chain), `shared/` split, and the thermal/meteogram/
+> SkewT weather tools. For the exhaustive feature/table catalogue see the in-app
+> `src/pages/ProductSpec.tsx` (PRD) and `src/pages/TechSpec.tsx`.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-- **React 19** — via Vite 6.4.2
-- **TypeScript** — strict mode throughout
-- **Tailwind CSS v4** — utility-first styling
-- **Shadcn/UI** — component library built on Radix primitives
-- **Lucide React** — icon library
-- **Leaflet 1.9.x** — base map (sites, grid bounds selector)
-- **D3.js v7** — zoom/pan mathematics for wind map canvas
-- **react-query** — server state management and caching
-- **Canvas API** — wind map rendering (particles, speed heatmap, thermal overlay)
-- **localStorage** — client-side persistence (wind map viewport, theme)
+- **React 19** via **Vite 6** — strict-mode **TypeScript** throughout
+- **Tailwind CSS v4** + **Shadcn/UI** (Radix) + **Lucide** icons
+- **Leaflet 1.9** — XC maps, retrieval/duty-pilot maps, grid-bounds selector
+- **D3 v7** — zoom/pan maths for the Canvas wind/thermal maps
+- **Canvas API** — wind particles, speed heatmap, thermal overlay; **SVG** for the meteogram + SkewT charts
+- **react-query** — server state/caching; **localStorage** for viewport/unit/theme
+- **PWA** — `public/sw.js` service worker caches map tiles (OSM/OpenTopo/ArcGIS + AWS terrarium); app shell is *not* SW-cached
 
 ### Backend
-- **Express 4.x** — HTTP server (port 3001)
-- **TypeScript** — compiled via `tsx` (dev) / `esbuild` (prod)
-- **PostgreSQL** — sole database (dev via Docker, prod via Railway managed Postgres)
-- **node-postgres (`pg`)** — database driver with connection pooling
-- **node-cron** — scheduled jobs (grid fetches, version checks, session cleanup)
+- **Express 4** (`server.ts` at repo root is the entry point) — **TypeScript** run via **`tsx`** in both dev and prod; **esbuild** (`esbuild.server.mjs`) bundles for `build`
+- **PostgreSQL** — sole database (dev via Docker, prod via Railway managed Postgres); **node-postgres (`pg`)** with pooling
+- **node-cron** — scheduled grid fetches, weather scraping, siteguide checks, session cleanup
 
 ### External Services
-- **Open-Meteo API (ECMWF IFS model)** — all weather/wind data; free tier (IP-keyed) or customer tier (API key via `OPEN_METEO_API_KEY`)
-- **Google Gemini API** — AI features: site guide scraping, image enhancement, moderation, smart search
-- **TidyHQ API** — membership sync (webhooks + manual trigger)
-- **Cloudflare R2** — S3-compatible object storage (production media)
-- **Google Drive API** — document storage and search indexing
+- **Weather grids:** Open-Meteo REST (ECMWF IFS HRES) + Open-Meteo S3 archive (ECMWF & GFS) + NOAA NOMADS GFS — a 4-tier provider chain (see below)
+- **Live station weather:** Weather Underground, BOM, Davis WeatherLink, FreeFlightWx/WDL, BRYC — dispatched by station-ID prefix
+- **Google Gemini** — all AI (site scraping, image enhancement/moderation, admin smart search, public assistant)
+- **TidyHQ** — membership/events sync (webhooks + manual)
+- **Cloudflare R2** — S3-compatible media storage (prod); local `/uploads/` in dev
+- **Google Drive/Sheets** — documents + AI-search index, via an Apps Script bridge (not a googleapis client)
+- **AWS Open Data terrain tiles**, **OpenAIP** (airspace), **OSM/Overpass** (hospital lookup), **OSRM** (routing), satellite trackers (Garmin inReach / SPOT / ZOLEO)
 
 ### Deployment
-- **Railway** — production host (Node.js server + managed PostgreSQL + GitHub auto-deploy)
-- **npm** — package management
-- **GitHub** — version control, CI trigger for Railway deploys
+- **Railway** (Node server + managed PostgreSQL + GitHub auto-deploy). **npm** + **GitHub**.
 
 ---
 
@@ -49,16 +47,22 @@ type: wiki
 
 | # | Decision | Choice | Why |
 |---|---|---|---|
-| 001 | Database | PostgreSQL everywhere (dev + prod) | SQLite removed session 23 — one DB engine eliminates divergence bugs |
-| 002 | Storage | Cloudflare R2 (prod) + local `/uploads/` (dev) | S3-compatible, no egress fees, seamless abstraction via `server/storage.ts` |
-| 003 | Weather grid | Daily pre-fetch, 7-day rolling DB cache | Avoids real-time API calls on wind map load; single daily batch keeps request count low |
-| 004 | Wind map rendering | Canvas + D3 (not SVG or WebGL) | Fast for thousands of vectors, minimal deps, smooth at any resolution |
-| 005 | AI | Google Gemini (multi-modal) | Generous free tier, handles images + text, supports long-context extraction |
-| 006 | Hosting | Railway | Low ops overhead, committee can self-manage, auto-deploy on push |
-| 007 | Cache bypass | Bypass cache if `?limit` / `?offset` present | Prevents stale paginated results |
-| 008 | Scheduled closures | Per-site calendar dates in `site_closure_dates` table | Replaces manual banner entry; auto-banner 7 days before closure |
-| 009 | Credentials | 1Password → `draw-env.ps1` → `.env` | Raw secrets never persist on disk between sessions |
-| 010 | Weather source dispatch | Station ID prefix routing | Each source (BOM, Davis, FreeFlightWx, WDL, WU) identified by prefix; WU is catch-all |
+| 001 | Database | PostgreSQL everywhere (dev + prod) | SQLite removed session 23 — one engine, no divergence bugs |
+| 002 | Storage | Cloudflare R2 (prod) + local `/uploads/` (dev) | S3-compatible, no egress fees; abstracted in `server/storage.ts` |
+| 003 | Weather grid | Daily pre-fetch, 7-day rolling DB cache | Avoids real-time API calls on map load; one daily batch |
+| 004 | Map rendering | Canvas + D3 (not SVG/WebGL) | Fast for thousands of vectors, minimal deps |
+| 005 | AI | Google Gemini (multi-modal, model chains) | Generous free tier, images + long-context text |
+| 006 | Hosting | Railway | Low ops, committee-manageable, auto-deploy on push |
+| 007 | Cache bypass | Bypass when `?limit`/`?offset` present | Prevents stale paginated results |
+| 008 | Scheduled closures | `site_closure_dates` table + unified calendar | Auto-banners 7 days before closure |
+| 009 | Credentials | 1Password → `draw-env.ps1` → `.env`, wiped on exit | Raw secrets never persist on disk between sessions |
+| 010 | Live weather dispatch | Station-ID prefix routing | Each source identified by prefix; WU is catch-all |
+| 011 | Terrain elevation | Client-side terrarium-tile sampling (server route as fallback) | No API key, ~0.2 ms vs ~465 ms; GA CC BY 4.0 attribution required |
+| 012 | `@openmeteo/file-reader` (GPL-2.0-only) | Accepted — hosted-only, never distributed | Any future source release must revisit first |
+| 013 | Land mask | One baked raster (`shared/landMask.generated.ts`) | Replaces two drifted hand-traced rings; regenerated via `npm run bake:landmask` |
+| 014 | White-label | Dropped — native single-club (Wonderful White) | Template engine removed; revert tag `pre-debrand-2026-09-15` |
+
+Full records: `wiki/03-decisions-log.md`.
 
 ---
 
@@ -66,136 +70,114 @@ type: wiki
 
 ```
 SkyHigh/
-├── server.ts                   # Express entry point
-├── esbuild.server.mjs          # Production bundler
+├── server.ts                   # Express entry point (run via tsx)
+├── esbuild.server.mjs          # Production server bundler
 ├── vite.config.ts              # Frontend build config
-├── tsconfig.json
-├── package.json
-├── .env.template               # All required env vars documented
-├── CLAUDE.md                   # Session instructions
-├── RESUME_HERE.md              # Current state (updated each session end)
+├── scripts/                    # bake-land-mask, lint-migrations, eval-smart-search, …
+├── shared/                     # Code imported by BOTH client and server
+│   ├── parcel.ts               # Validated parcel physics (LCL, lift, dewpoint)
+│   └── landMask.generated.ts   # Baked land/coast raster (DECISION-013)
 │
-├── src/                        # Frontend (React + TypeScript)
-├── server/                     # Backend (Express + TypeScript)
-├── public/                     # Static assets
-├── uploads/                    # Dev media storage (prod uses R2)
-├── wiki/                       # Project documentation
-└── memory/                     # Session memory (gitignored)
+├── src/                        # Frontend (React + TS)
+├── server/                     # Backend (Express + TS)
+├── public/                     # Static assets + sw.js (PWA tile cache)
+├── uploads/                    # Dev media (prod uses R2)
+├── wiki/  memory/              # Docs / session memory (memory gitignored)
 ```
 
 ### `server/` (Backend)
 
 ```
 server/
-├── pg.ts                       # DB helper: query/queryOne/execute/transaction
-├── db.ts                       # Migration runner: applies pg_migrations/ on startup
-├── victoriaGrid.ts             # Fine + thermal grid fetch, cache, interpolation
-├── extendedForecast.ts         # Extended 7-day forecast fetch + per-site extraction
-├── weather.ts                  # Live weather scraper + scheduling
-├── weather-utils.ts            # fetchWithRetry, degreesToDirection, station helpers
-├── storage.ts                  # R2/local file abstraction
-├── constants.ts                # Shared numeric constants
+├── db.ts / pg.ts / seed.ts     # Migration runner / query helper / seed
+├── storage.ts  constants.ts    # R2-or-local file abstraction; shared constants
+├── weather.ts  weather-utils.ts# Live station scraper + scheduling; fetch helpers
+├── extendedForecast.ts         # 8-day extended grid fetch + per-site extraction
+├── tides.ts  wtf.ts            # Tide predictions; WhereToFly wind compare
+├── bomWeather.ts  wdlWeather.ts  freeflightwx.ts   # Live-weather source adapters
 │
-├── utils/
-│   ├── scheduledJobs.ts        # All cron jobs: fine/thermal/extended grid, version check
-│   ├── openMeteo.ts            # buildOpenMeteoParams / buildOpenMeteoBody
-│   ├── gridTiles.ts            # buildLandTiles / buildRectangularTiles
-│   ├── asyncHandler.ts         # Express async error wrapper
-│   ├── logger.ts               # Structured logger factory (createLogger)
-│   ├── email.ts                # Email sending (admin notifications)
-│   └── siteguideVersionCheck.ts# Siteguide content version diffing
+├── grid/                       # Wind/thermal grid engine (replaces old victoriaGrid.ts)
+│   ├── orchestrator.ts         # Walks the provider chain, assembles a grid
+│   ├── pipeline.ts  fineGrid.ts  thermalGrid.ts     # Build passes per product
+│   ├── extract.ts              # Per-point/site extraction + NaN neighbour fill
+│   ├── store.ts  bounds.ts  time.ts                 # DB cache; coverage; local-midnight anchor
+│   ├── parcel.ts               # Re-export shim → shared/parcel.ts
+│   ├── pointSounding.ts  siteMeteogram.ts           # SkewT sounding + meteogram data
+│   ├── elevationPoint.ts  grib2.ts  health.ts  types.ts
+│   └── providers/              # provider.ts, registry.ts, openMeteoApi.ts,
+│                               #   openMeteoS3.ts, nomadsGfs.ts, s3ReadCommon.ts,
+│                               #   ecmwfLiftedIndex.ts
 │
-├── routes/
-│   ├── weather.ts              # /api/weather/* — grid fetch, live weather, bounds
-│   ├── sites/                  # /api/sites — CRUD, closures, bulk ops
-│   ├── flights/                # /api/flights — submit, list, GPX parse
-│   ├── retrieval/              # /api/retrieval — SSE real-time chat
-│   ├── admin/                  # /api/admin — dashboard, TidyHQ sync, settings
-│   └── auth/                   # /api/auth — login, logout, session
-│
-├── middleware/
-│   ├── auth.ts                 # requireAuth — session token verification
-│   ├── csrf.ts                 # CSRF token generate + validate
-│   └── errorHandler.ts         # Global Express error handler
-│
-├── services/real/              # Production implementations (Gemini, TidyHQ, etc.)
-├── services/demo/              # Stubbed implementations (DEV_BYPASS_AUTH mode)
-└── pg_migrations/              # SQL migration files (applied sequentially on startup)
+├── routes/                     # weather, sites/*, flights, retrievals, pilotAuth,
+│                               #   auth, ai, search, documents, projects, contacts,
+│                               #   news, pages, safety, procedures, events, shop,
+│                               #   sponsors, branding, competitions, businessDirectory,
+│                               #   checkins, mapMessages, submissions, pageviews,
+│                               #   searchLogs, tidyhq, settings, demo/*, admin/*
+├── middleware/                 # auth.ts (session), csrf.ts, validation.ts
+├── services/                   # real*/demo* pairs (flat files): realFlightService +
+│                               #   demoFlightService, real/demoMessageService,
+│                               #   realRetrievalService, photoService, index.ts, types.ts
+├── utils/                      # scheduledJobs, openMeteo, logger, email, watermark,
+│                               #   garminMapshare/spotTracker/zoleoTracker, siteScraper,
+│                               #   aiModels, gridAlerts, siteResolver, eligibility, …
+└── pg_migrations/              # 47 sequential SQL migrations (applied on startup)
 ```
 
 ### `src/` (Frontend)
 
 ```
 src/
-├── main.tsx                    # React entry point
-├── App.tsx                     # Root router + global providers
-│
-├── pages/
-│   ├── Home.tsx                # Sites list + closure banners
-│   ├── SiteDetail.tsx          # Site weather, wind map, thermal overlay
-│   ├── AdminWeather.tsx        # Grid fetch controls + live progress
-│   ├── AdminSites.tsx          # Site CRUD
-│   └── ...
-│
+├── main.tsx  App.tsx           # Entry; registers sw.js; router + providers
+├── pages/                      # ~60 pages: Home, Sites, SiteDetail, SiteFieldView,
+│                               #   XCMaps, FlightHistory, RetrievalMap, DutyPilotMap,
+│                               #   Airspace, News/Events/Join/Shop/Sponsors/…,
+│                               #   Admin* (site/content/weather/forecast/XC/…),
+│                               #   ProductSpec/TechSpec/Features/BuildBlueprint (specs)
 ├── components/
-│   ├── windmap/
-│   │   ├── WindCanvas.tsx          # Fine wind canvas (particles + speed heatmap)
-│   │   ├── ThermalCanvas.tsx       # Thermal CAPE/BLH coloured overlay
-│   │   ├── particleRenderer.ts     # Particle animation + speed overlay draw
-│   │   ├── thermalRenderer.ts      # Thermal colour render (land-masked)
-│   │   ├── windInterpolation.ts    # Bilinear wind interpolation + speed LUT
-│   │   ├── thermalInterpolation.ts # Thermal bilinear (relaxed — null-corner fallback)
-│   │   ├── windMapTypes.ts         # Shared types (ZoomSetpoints, etc.)
-│   │   └── landMask.ts             # isOnLand() — used by thermal renderer only
-│   ├── GridBoundsSelector.tsx      # Leaflet map for admin grid area config
-│   └── ui/                         # Shadcn/UI + custom shared components
-│
-├── contexts/
-│   ├── AuthContext.tsx          # Session token + admin flag
-│   └── SettingsContext.tsx      # App settings (grid bounds, last run times, etc.)
-│
-├── hooks/                       # Custom React hooks (API calls, map state, etc.)
-├── lib/
-│   ├── apiClient.ts             # Typed fetch wrapper
-│   ├── geomath.ts               # haversineKm / haversineMeters
-│   ├── leafletIcons.ts          # Shared Leaflet icon factories
-│   └── utils.ts                 # cn() and misc helpers
-└── styles/                      # Global CSS + Tailwind config
+│   ├── weather/                # SiteThermalPanel, SkewTChart, SkewTModal,
+│   │                           #   SiteMeteogramChart, PointMeteogramModal,
+│   │                           #   ExtendedOutlookPanel, WeatherCardApple,
+│   │                           #   WeatherHistoryChart, TideChart, WindCompass
+│   ├── windmap/                # WindCanvas, ThermalCanvas, MapCanvas, particleRenderer,
+│   │                           #   thermalRenderer, windInterpolation, thermalInterpolation,
+│   │                           #   cumulusField, terrainTiles, elevationPoint, landMask.ts,
+│   │                           #   ModeSwitchPill, WindMapModeToggle, WindMapScrubberTray,
+│   │                           #   MapScaleBar, ThermalHelpModal, siteMarkerRenderer,
+│   │                           #   groundRegistration, mapExtent
+│   ├── xcmap/                  # AirspaceLayer, PilotMarkers, DistanceRingsOverlay,
+│   │                           #   BearingLabels, SiteguideZoneLayer, MapHelpers
+│   ├── map/                    # leafletHelpers
+│   ├── SitesWindMap.tsx  WindMapProto.tsx  XCMap.tsx  WindFieldLayer.tsx
+│   ├── Altitude.tsx  AirspaceRange.tsx  MapMessaging.tsx  FlightTrail.tsx …
+│   └── ui/                     # Shadcn/UI + custom shared components
+├── contexts/                   # AuthContext, PilotAuthContext, SettingsContext
+├── hooks/  lib/  styles/       # API hooks; apiClient/geomath/units/utils; global CSS
 ```
 
 ---
 
-## Data Model (Key Tables)
+## Data Model
 
-| Table | Purpose |
+PostgreSQL, ~47 migrations. Broad categories (full list: `ProductSpec.tsx` → Data Model):
+
+| Group | Tables (representative) |
 |---|---|
-| `sites` | Flying site records (name, status, lat/lon, guide, images, wind range) |
-| `wind_grid_data` | Fine + thermal grid blobs (key: `fine_grid_YYYY-MM-DD`, `thermal_grid_YYYY-MM-DD`); 7-day rolling |
-| `extended_forecasts` | 8-day extended grid blobs (key: `extended_grid_YYYY-MM-DD`); 7-day rolling |
-| `site_extended_forecasts` | Pre-extracted per-site 7-day outlook (bilinear interpolated from extended grid) |
-| `settings` | Key-value config store — grid bounds, last run timestamps, progress keys, scraper schedule |
-| `sessions` | Auth session tokens (24-hour TTL) |
-| `contacts` | TidyHQ-synced member roster |
-| `site_closure_dates` | Scheduled closure calendar; drives auto-banners 7 days before closure |
-| `weather_forecasts` | Cached live weather observations per site |
-| `news` | Site news items and alerts |
+| **Sites & content** | `sites`, `site_closure_dates`, `news`, `pages`, `page_attachments`, `safety_sections`, `procedures`, `sponsors`, `business_directory`, `competitions`, `image_submissions` |
+| **Pilots & flights** | `pilots`, `pilot_sessions`, `flights`, `breadcrumbs`, `retrievals`, `map_messages`, `checkins` |
+| **Members & auth** | `contacts`, `admin_sessions`, `settings` (key-value config) |
+| **Weather & ops** | `weather_forecasts`/observations, `extended_forecasts`, `site_extended_forecasts`, `wind_grid_data` (fine + thermal blobs, 7-day rolling), `emergency_hospitals_cache`, `siteguide_version_checks`, `search_logs` |
+| **Documents** | `documents` / document index (Google Drive AI-search) |
 
 ### Important `settings` keys (wind grid)
 
-| Key | Type | Purpose |
-|---|---|---|
-| `gridFineLatMin/Max` | float | Fine/thermal/extended coverage bounds (overrides code defaults) |
-| `gridFineLonMin/Max` | float | ditto |
-| `fineGridLastRun` | ISO timestamp | Last successful fine grid fetch |
-| `fineGridLastResult` | string | "ok" or error message |
-| `fineGridProgress` | string | Live tile progress (polled by admin UI every 2s; blank when idle) |
-| `thermalGridLastRun` | ISO timestamp | Last thermal grid fetch attempt |
-| `thermalGridLastResult` | string | "ok", "partial — N tiles, retry X/4 in Ymin", or error |
-| `thermalGridProgress` | string | Live tile progress |
-| `thermalGridFailedTiles` | JSON array | Tile specs queued for next retry round; empty string when clear |
-| `extendedForecastLastRun` | ISO timestamp | Last extended forecast fetch |
-| `extendedForecastLastResult` | string | "ok" or error message |
-| `extendedGridProgress` | string | Live tile progress |
+| Key | Purpose |
+|---|---|
+| `gridFineLatMin/Max`, `gridFineLonMin/Max` | Fine/thermal/extended coverage bounds (override code defaults) |
+| `fineGridLastRun` / `fineGridLastResult` / `fineGridProgress` | Fine grid status + live tile progress (polled every 2 s) |
+| `thermalGridLastRun` / `thermalGridLastResult` / `thermalGridProgress` / `thermalGridFailedTiles` | Thermal grid status, retry state, failed-tile queue |
+| `extendedForecastLastRun` / `extendedForecastLastResult` / `extendedGridProgress` | Extended forecast status |
+| `feature*` (e.g. `featureThermalMap`, `featureMeteogram`, `featureSkewT`) | Feature flags; **must** be in the `SettingsContext` allow-list or they're silently dropped client-side |
 
 ---
 
@@ -203,65 +185,59 @@ src/
 
 | Aspect | Development | Production |
 |---|---|---|
-| **Database** | PostgreSQL via Docker | PostgreSQL managed by Railway |
+| **Database** | PostgreSQL via Docker | Railway managed PostgreSQL |
 | **Storage** | Local `/uploads/` | Cloudflare R2 |
-| **Server port** | 3001 | Auto-assigned by Railway |
-| **Frontend** | Vite dev server (port 5173) | Bundled + served by Express |
+| **Server** | `tsx server.ts` (port 3001) | `tsx server.ts`, `NODE_ENV=production`, port from Railway |
+| **Frontend** | Vite dev server (5173) | `vite build` bundle served by Express |
+| **Build** | — | `npm run build` = `vite build` + `esbuild.server.mjs` |
 | **Auth** | `DEV_BYPASS_AUTH=true` optional | Session token + CSRF required |
-| **Open-Meteo** | Free tier (IP-keyed) | Customer tier via `OPEN_METEO_API_KEY` (higher rate limit) |
-| **Gemini API** | Optional (demo mode if missing) | Required |
-| **Logging** | Console | Railway logs dashboard (JSON) |
+| **Open-Meteo** | Free tier (IP-keyed) | Customer tier via `OPEN_METEO_API_KEY` |
+| **Gemini** | Optional (demo mode if missing) | Required |
 | **CORS** | Permissive (localhost) | Restricted to production domain |
 
 ---
 
 ## Key Architectural Patterns
 
-### PostgreSQL Everywhere (DECISION-001)
-SQLite was removed in session 23. Both dev and prod run PostgreSQL. Dev uses a Docker container; prod uses Railway's managed Postgres. `server/db.ts` runs SQL migration files from `server/pg_migrations/` on startup. `server/pg.ts` exposes `query()`, `queryOne()`, `execute()`, `transaction()` — all backend DB access goes through these.
+### PostgreSQL everywhere (DECISION-001)
+`server/db.ts` applies `server/pg_migrations/*.sql` on startup; `server/pg.ts` exposes `query/queryOne/execute/transaction` — all backend DB access goes through these.
 
-### Three-Tier Wind Grid System (DECISION-003)
-Wind data is pre-fetched once per day in three independent passes, each serving a different map layer:
-1. **Fine grid** (0.15°, ~6,900 pts) — wind speed/direction/weather for the heatmap and particles
-2. **Thermal grid** (0.09°, ~19,000 pts) — CAPE + BLH for the thermal colour overlay
-3. **Extended forecast** (0.5°, ~700 pts) — 8-day outlook at 4 time slots/day, per-site extracted
+### Grid products + 4-tier provider chain (DECISION-003)
+Three grid **products** are pre-fetched daily, each serving a map layer:
+1. **Fine grid** — wind speed/direction/weather for heatmap + particles
+2. **Thermal grid** — CAPE/BLH/W\*/cloud for the thermal overlay
+3. **Extended forecast** — 8-day outlook, per-site extracted
 
-See `wiki/12-wind-grid-workflow.md` for the full internal workflow of each fetch.
+Each product is assembled by `server/grid/orchestrator.ts`, which walks the provider **chain** (`providers/registry.ts`): **① Open-Meteo REST (ECMWF IFS)** → **② Open-Meteo S3 (ECMWF)** → **③ Open-Meteo S3 (GFS)** → **④ NOAA NOMADS GFS**. Tiers 1–2 (ECMWF family) mix seamlessly; falling to the GFS family (3–4) is a last resort and can seam. Every provider anchors time to local midnight via `grid/time.ts`. See `wiki/12-wind-grid-workflow.md`.
 
-### Fire-and-Forget Admin Routes
-All three manual fetch routes (`/api/weather/fine-grid/fetch-now`, `/thermal-grid/fetch-now`, `/extended-forecast/fetch-now`) respond to the browser **immediately** with `{success: true}`, then run the fetch in the background. The admin UI polls `fineGridProgress` / `thermalGridProgress` / `extendedGridProgress` from the `settings` table every 2 seconds to show live tile-by-tile progress.
+### Fire-and-forget admin fetches
+Manual fetch routes respond immediately (`{success:true}`) then run in the background; the admin UI polls `*Progress` settings every 2 s for live tile-by-tile progress. After a partial thermal fetch, the scheduler retries failed tiles at +5/+15/+40/+90 min, with a 7:30am cron backstop.
 
-### Canvas + D3 Wind Map (DECISION-004)
-The wind map has three layers rendered independently:
-- **Speed heatmap** — pixel-grid canvas (`CELL=5px`), coloured by interpolated wind speed via a pre-built LUT
-- **Particles** — 2,400-particle system animating along wind vectors with age-based fade
-- **Thermal overlay** — separate canvas, CAPE/BLH coloured with land mask applied; edge-faded at grid boundary
+### Shared parcel physics + derived sounding tools
+`shared/parcel.ts` (LCL, lift, dewpoint) is imported by **both** the server (`grid/pointSounding.ts`, `grid/siteMeteogram.ts`) and the client SkewT (`components/weather/SkewTChart.tsx`), so the draggable trigger-temperature re-runs the same validated ascent client-side. `server/grid/parcel.ts` is a re-export shim for existing callers.
 
-D3 handles zoom/pan math. Bilinear interpolation runs at render time from the cached grid.
+### Canvas + D3 maps, baked land mask (DECISION-004, 013)
+Speed heatmap (pixel grid + LUT), a particle system, and a land-masked thermal overlay render as independent Canvas layers; D3 does zoom/pan. The land mask is one baked raster (`shared/landMask.generated.ts`), regenerated via `npm run bake:landmask`.
 
-### Client-Side Terrain Elevation Sampling
-The Ground readout on wind and thermal maps resolves terrain elevation (metres AMSL) without a server round-trip.
+### Client-side terrain sampling (DECISION-011)
+`components/windmap/terrainTiles.ts` fetches AWS terrarium z12 tiles and decodes RGB→metres AMSL (LRU cache of 64); `elevationPoint.ts` tries the tile cache first, falling back to `GET /api/weather/elevation-at`. Both canvases prefetch a 3×3 tile block around centre. GA CC BY 4.0 attribution is a licence obligation — do not remove it.
 
-- **`src/components/windmap/terrainTiles.ts`** — fetches AWS Open Data "terrarium" tiles at zoom level 12 (~30 m/px) and decodes RGB pixel values to metres AMSL using bilinear interpolation. Holds an in-memory LRU cache of 64 tiles.
-- **`src/components/windmap/elevationPoint.ts`** — two-tier facade: tries the local tile cache first; falls back to `GET /api/weather/elevation-at` (server) only when the required tile is not yet resident, and kicks off a background tile fetch so the next tap is instant.
-- **Prefetch:** both map canvases prefetch the 3×3 block of z12 tiles around the map centre (debounced 300 ms after pan/zoom). Nine tiles covers roughly 29 × 22 km and amounts to ~180 KB.
-- **Tile source:** `https://s3.amazonaws.com/elevation-tiles-prod/terrarium` by default; overridable via `VITE_TERRAIN_TILE_URL` (Vite build-time env var).
-- **Attribution obligation:** Australian terrain data is © Commonwealth of Australia (Geoscience Australia) 2017 under CC BY 4.0. Full attribution is shown in `ThermalHelpModal.tsx` and summarised in the wind map legend.
+### Service layer with demo mode
+`server/services/` holds `real*`/`demo*` pairs (flat files) selected via `DEV_BYPASS_AUTH`, injected by `services/index.ts` — lets dev run without external API keys.
 
-### Thermal Retry Chain
-After any thermal fetch that leaves failed tiles, the scheduler automatically retries up to 4 times at +5min, +15min, +40min, +90min. Each retry fetches only the failed tiles (not the full grid). The `thermalGridLastResult` setting reflects the current retry state. A 7:30am cron is the final backstop.
-
-### Service Layer with Demo Mode
-`server/services/real/` contains real implementations (Gemini, TidyHQ, etc.). `server/services/demo/` contains stubbed versions for dev without API keys. Selected via `DEV_BYPASS_AUTH` env var.
+### Test suite
+`npm test` runs the grid/mask/geometry suites: `landmask`, `mapextent`, `extended`, `extract`, `pipeline`, `health`, `orchestrator` (plus `grib2`). Migrations are linted via `npm run lint:migrations`; type-check via `npm run lint` (`tsc --noEmit`).
 
 ---
 
 ## Development Workflow
 
 ```powershell
-npm run dev        # Start concurrent API (3001) + Vite client (5173)
-npm run build      # Bundle server (esbuild) + frontend (Vite) → dist/
-npm start          # Run production bundle
+npm run dev        # concurrently: API (tsx server.ts :3001) + Vite client (:5173)
+npm run build      # vite build + esbuild.server.mjs → dist/
+npm start          # tsx server.ts with NODE_ENV=production
+npm test           # grid/mask/geometry regression suites
+npm run lint       # tsc --noEmit
 ```
 
-Push to GitHub → Railway auto-deploys. No manual build step needed for production.
+Push to GitHub → Railway auto-deploys.
