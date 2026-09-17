@@ -13,7 +13,7 @@ export interface SoundingHour {
 export interface PointSounding { lat: number; lon: number; times: string[]; hours: SoundingHour[]; source: string; }
 
 // ── Geometry ────────────────────────────────────────────────────────────────
-const PAD_L = 48, PAD_R = 34, PAD_T = 12, PAD_B = 26;
+const PAD_L = 58, PAD_R = 34, PAD_T = 12, PAD_B = 26;
 const SVG_H = 440;
 const P_SCAN_TOP = 400;        // parcel/thermal-top search goes to here regardless of the view
 const T_MIN = -30, T_MAX = 40; // °C domain
@@ -191,8 +191,8 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
         return (
           <g key={`g${Math.round(z)}`}>
             <line x1={PAD_L} y1={yOf(p)} x2={PAD_L + PLOT_W} y2={yOf(p)} stroke="#eceff3" strokeWidth={0.8} />
-            <text x={PAD_L - 3} y={yOf(p) + 3} textAnchor="end" style={{ fontSize: 8.5, fill: '#334155', fontWeight: 600 }}>{fmtAlt(z - ground)}</text>
-            <text x={PAD_L - 3} y={yOf(p) + 12} textAnchor="end" style={{ fontSize: 6.5, fill: '#a3adba' }}>{fmtAlt(z)} MSL</text>
+            <text x={PAD_L - 3} y={yOf(p) + 3} textAnchor="end" style={{ fontSize: 8.5, fill: '#334155', fontWeight: 600 }}>{fmtAlt(z - ground)} AGL</text>
+            <text x={PAD_L - 3} y={yOf(p) + 12} textAnchor="end" style={{ fontSize: 6.5, fill: '#a3adba' }}>{fmtAlt(z)} AMSL</text>
           </g>
         );
       })}
