@@ -4,6 +4,7 @@ import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, L
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
+import { ModeSwitchPill } from './windmap/ModeSwitchPill';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -315,26 +316,19 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
-  // The Wind/Thermal view toggle. Rendered top-left in the loaded state AND in the
-  // loading/error states, so the correct pills are in place before the grid arrives
-  // (the Today/7-day toggle lives in the scrubber tray, not this corner).
+  // The Wind/Thermal view switch. Rendered top-left in the loaded state AND in the
+  // loading/error states, so the correct pill is in place before the grid arrives
+  // (the Today/7-day switch lives in the scrubber tray, not this corner). Single-pill
+  // idiom: it shows the mode you'll switch TO (see ModeSwitchPill).
   const viewModeToggle = isThermalEnabled ? (
-    <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
-      <button
-        onClick={() => handleViewModeChange('wind')}
-        className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'wind' ? 'bg-sky-500 text-white' : 'text-white/50 hover:text-white/80'}`}
-      >
-        <Wind aria-hidden="true" className="w-2.5 h-2.5" />
-        WIND
-      </button>
-      <button
-        onClick={() => handleViewModeChange('thermal')}
-        className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'thermal' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white/80'}`}
-      >
-        <Thermometer aria-hidden="true" className="w-2.5 h-2.5" />
-        THERMAL
-      </button>
-    </div>
+    <ModeSwitchPill
+      value={viewMode}
+      onChange={handleViewModeChange}
+      options={[
+        { value: 'wind', label: 'Wind', icon: Wind, colorClass: 'text-sky-400' },
+        { value: 'thermal', label: 'Thermal', icon: Thermometer, colorClass: 'text-amber-400' },
+      ]}
+    />
   ) : null;
 
   if (loading) {
