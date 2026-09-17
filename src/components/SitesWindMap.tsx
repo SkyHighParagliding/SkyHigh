@@ -315,10 +315,32 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
+  // The Wind/Thermal view toggle. Rendered top-left in the loaded state AND in the
+  // loading/error states, so the correct pills are in place before the grid arrives
+  // (the Today/7-day toggle lives in the scrubber tray, not this corner).
+  const viewModeToggle = isThermalEnabled ? (
+    <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
+      <button
+        onClick={() => handleViewModeChange('wind')}
+        className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'wind' ? 'bg-sky-500 text-white' : 'text-white/50 hover:text-white/80'}`}
+      >
+        <Wind aria-hidden="true" className="w-2.5 h-2.5" />
+        WIND
+      </button>
+      <button
+        onClick={() => handleViewModeChange('thermal')}
+        className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'thermal' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white/80'}`}
+      >
+        <Thermometer aria-hidden="true" className="w-2.5 h-2.5" />
+        THERMAL
+      </button>
+    </div>
+  ) : null;
+
   if (loading) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
-        <div className="absolute top-3 left-3 z-30">{sitesModeToggle}</div>
+        <div className="absolute top-3 left-3 z-30">{viewModeToggle}</div>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
           <span className="text-xs text-white/50 font-mono">Loading {mapMode === '7day' ? '7-day' : ''} wind data...</span>
@@ -330,7 +352,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   if (error || !windGrid) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
-        <div className="absolute top-3 left-3 z-30">{sitesModeToggle}</div>
+        <div className="absolute top-3 left-3 z-30">{viewModeToggle}</div>
         <span className="text-xs text-red-400 font-mono">{error || 'No wind data available'}</span>
       </div>
     );
@@ -542,24 +564,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           (feature-flagged) and the Today/7-day toggle (wind mode only). Sits
           top-left below the fullscreen button. */}
       <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5 max-w-[calc(100vw-1.5rem)]">
-        {isThermalEnabled && (
-          <div className="flex bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
-            <button
-              onClick={() => handleViewModeChange('wind')}
-              className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'wind' ? 'bg-sky-500 text-white' : 'text-white/50 hover:text-white/80'}`}
-            >
-              <Wind aria-hidden="true" className="w-2.5 h-2.5" />
-              WIND
-            </button>
-            <button
-              onClick={() => handleViewModeChange('thermal')}
-              className={`px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wide transition-colors flex items-center gap-1 ${viewMode === 'thermal' ? 'bg-amber-500 text-white' : 'text-white/50 hover:text-white/80'}`}
-            >
-              <Thermometer aria-hidden="true" className="w-2.5 h-2.5" />
-              THERMAL
-            </button>
-          </div>
-        )}
+        {viewModeToggle}
 
         {/* Stacked, dismissable tapped-point readout box (top-left) — only shown
             after the map is tapped; ✕ closes it (clears the pin). One value/line. */}
