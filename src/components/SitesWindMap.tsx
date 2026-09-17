@@ -768,7 +768,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
             <>
               <div className="flex items-center justify-between gap-2.5 mb-1">
                 <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Forecast Data</span>
-                <X className="w-3.5 h-3.5 text-white/50 shrink-0" />
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setShowThermalHelp(true); }}
+                    className="text-white/40 hover:text-white/80 transition-colors cursor-pointer"
+                    title="How to read this map"
+                    role="button"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                  <X className="w-3.5 h-3.5 text-white/50" />
+                </span>
               </div>
               <div className="relative w-44 max-w-full">
                 <div className="h-2.5 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
@@ -803,17 +813,18 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         </button>
       )}
 
-      {/* Scale bar. Shifts up when the scrubber tray is open, and to clear the
-          Key pill at bottom-left it sits offset right of it. */}
+      {/* Scale bar. Shifts up when the scrubber tray is open. Left-justified with
+          the other bottom-left chrome (Key pill etc.); it sits a row above the
+          Key pill, so they don't collide. */}
       <div
-        className="absolute left-24 z-20 transition-[bottom] duration-300 pointer-events-none"
+        className="absolute left-3 z-20 transition-[bottom] duration-300 pointer-events-none"
         style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
       >
         <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
       </div>
 
       {/* Thermal help modal */}
-      {showThermalHelp && <ThermalHelpModal onClose={() => setShowThermalHelp(false)} />}
+      {showThermalHelp && <ThermalHelpModal variant={viewMode === 'thermal' ? 'map' : 'wind'} onClose={() => setShowThermalHelp(false)} />}
 
       {/* Point-aware Chart popup — the meteogram for the tapped point. */}
       {chartPoint && (

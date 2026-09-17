@@ -409,11 +409,11 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         );
       })()}
 
-      {/* Scale bar — bottom-left, offset right of the Key pill, shifting up when
-          the scrubber tray opens (matches the picker). */}
+      {/* Scale bar — bottom-left, left-justified with the Key pill (a row above
+          it), shifting up when the scrubber tray opens (matches the picker). */}
       {thermalGrid && (
         <div
-          className="absolute left-24 z-20 transition-[bottom] duration-300 pointer-events-none"
+          className="absolute left-3 z-20 transition-[bottom] duration-300 pointer-events-none"
           style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
         >
           <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />

@@ -175,10 +175,10 @@ export default function WindMapProto({ siteId, siteLat, siteLon, siteName, siteS
           </button>
         )}
 
-        {/* Scale bar — offset right of the Key pill at bottom-left, lower z so the
-            expanded legend panel sits over it. Shifts up when the tray is open. */}
+        {/* Scale bar — left-justified with the Key pill (a row above it), lower z
+            so the expanded legend panel sits over it. Shifts up when the tray is open. */}
         <div
-          className="absolute left-24 z-20 transition-[bottom] duration-300 pointer-events-none"
+          className="absolute left-3 z-20 transition-[bottom] duration-300 pointer-events-none"
           style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
         >
           <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
