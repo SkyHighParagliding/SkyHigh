@@ -17,7 +17,7 @@ import type { ThermalGrid } from '../windmap/thermalInterpolation';
 import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolation';
 import { nextSpeed } from '../windMapTypes';
 import type { SiteMarker, PlaySpeed } from '../windMapTypes';
-import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, HATCH_MIN } from '../windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, OVERCAST_SUPPRESS_MIN } from '../windmap/thermalRenderer';
 
 const ThermalCanvas = lazy(() =>
   import('../windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas }))
@@ -305,9 +305,9 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
         const overcast = thermalInfo.cloudLow !== undefined && overcastPct >= overcastOnset;
         // Grade the label to the same ramp the grey sheet draws (onset→full): a
         // broken deck near onset reads "reduced" (grey is still faint), only a
-        // solid sheet (past HATCH_MIN of the ramp) reads "suppressed".
+        // solid sheet (past OVERCAST_SUPPRESS_MIN of the ramp) reads "suppressed".
         const overcastRaw = Math.min(1, Math.max(0, (overcastPct - overcastOnset) / Math.max(1, overcastFull - overcastOnset)));
-        const overcastLabel = overcastRaw >= HATCH_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
+        const overcastLabel = overcastRaw >= OVERCAST_SUPPRESS_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
 
         // BL Top / Cu Base are AGL; add ground to show AMSL (what airspace uses).
         const gm = thermalInfo.groundAmsl;

@@ -8,16 +8,10 @@ const CumulusGlyph = () => (
   </svg>
 );
 
-/** Overcast swatch — grey sheet with the fine 45° diagonal hatch the map lays over it. */
+/** Overcast swatch — the grey sheet the map lays over overcast cells. */
 const OvercastGlyph = () => (
   <svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true">
-    <defs>
-      <pattern id="ovc-hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1="0" y1="0" x2="0" y2="4" stroke="rgb(90,96,106)" strokeWidth="1" />
-      </pattern>
-    </defs>
     <rect width="22" height="14" rx="2" fill="rgb(150,154,160)" />
-    <rect width="22" height="14" rx="2" fill="url(#ovc-hatch)" />
   </svg>
 );
 
@@ -169,7 +163,7 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-[22px] flex justify-center shrink-0"><OvercastGlyph /></span>
-                <span><span className="text-white/90 font-medium">Overcast</span> — a grey, hatched sheet shading the ground; thermals suppressed.</span>
+                <span><span className="text-white/90 font-medium">Overcast</span> — a grey sheet shading the ground; thermals suppressed.</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>

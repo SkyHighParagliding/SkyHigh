@@ -398,7 +398,6 @@ function buildSettings(data: Record<string, any>): Settings {
     thermalMinWstar: data.thermalMinWstar,
     thermalStormCapeGate: data.thermalStormCapeGate,
     thermalRainOffMm: data.thermalRainOffMm,
-    thermalHatchOpacity: data.thermalHatchOpacity,
     thermalOvercastOpacity: data.thermalOvercastOpacity,
     thermalRainWashOpacity: data.thermalRainWashOpacity,
     thermalMapDefaultHour: data.thermalMapDefaultHour,

@@ -93,10 +93,9 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     minWstar:         numOr(settings.thermalMinWstar,         DEFAULT_THERMAL_TUNING.minWstar),
     stormCapeGate:    numOr(settings.thermalStormCapeGate,    DEFAULT_THERMAL_TUNING.stormCapeGate),
     rainOffMm:        numOr(settings.thermalRainOffMm,        DEFAULT_THERMAL_TUNING.rainOffMm),
-    hatchOpacity:     numOr(settings.thermalHatchOpacity,     DEFAULT_THERMAL_TUNING.hatchOpacity),
     overcastOpacity:  numOr(settings.thermalOvercastOpacity,  DEFAULT_THERMAL_TUNING.overcastOpacity),
     rainWashOpacity:  numOr(settings.thermalRainWashOpacity,  DEFAULT_THERMAL_TUNING.rainWashOpacity),
-  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate, settings.thermalRainOffMm, settings.thermalHatchOpacity, settings.thermalOvercastOpacity, settings.thermalRainWashOpacity]);
+  }), [settings.thermalClearSkyCloudPct, settings.thermalOvercastOnsetPct, settings.thermalOvercastFullPct, settings.thermalMinWstar, settings.thermalStormCapeGate, settings.thermalRainOffMm, settings.thermalOvercastOpacity, settings.thermalRainWashOpacity]);
   const tuningRef = useRef(tuning);
   tuningRef.current = tuning;
 
@@ -143,7 +142,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       draw: (c, res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
         maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid, tuningRef.current);
         drawThermalOverlay(c.ctx, res.overlay, c.transform);
-        rebuildCumulusField(res.field, res.overlay, c.transform, tuningRef.current.hatchOpacity);
+        rebuildCumulusField(res.field, res.overlay, c.transform);
         drawCumulusField(c.ctx, res.field, c.transform);
       },
     };

@@ -1,5 +1,5 @@
 import type { ZoomTransform } from 'd3-zoom';
-import { CELL, HATCH_MIN } from './thermalRenderer';
+import { CELL, OVERCAST_SUPPRESS_MIN } from './thermalRenderer';
 import type { ThermalOverlayState } from './thermalRenderer';
 import { drawRegistered } from './groundRegistration';
 
@@ -91,39 +91,11 @@ const GLYPH_Y_SPACING = 1.2 * CU_R_NOM;     // ~10.3 px — cloud height so vert
 // of triangles. 54 px keeps it legible as a caution layer rather than a texture.
 const OD_SPACING = 54; // px
 
-// ── Hatch parameters ──────────────────────────────────────────────────────────
-//
-// 45° diagonal lines in the overcast region convey "cloud sheet" — a different
-// visual language from the dot stipple of the cumulus glyphs. The grey heat
-// ramp underneath already expresses overcast intensity continuously; a second
-// intensity channel on the hatch would double-code the same signal and add
-// visual noise. Constant alpha is correct here.
-//
-// 8 px spacing and 1 px line weight reads as texture at arm's length. Too wide
-// (>12 px) becomes a grid pattern rather than cloud texture; too narrow (<5 px)
-// fills the region as a solid tone.
-//
-// The stroke is DARK, not white. The first revision used rgba(255,255,255,0.18),
-// which measured 1.15:1 against the fully-overcast sheet colour rgb(181,185,191)
-// — a 6× contrast stretch was needed to see the lines at all in a screenshot,
-// which means a pilot outdoors would never see them. White is the wrong family
-// anyway: the sheet is pale and the basemap is Carto Light, so lightening on
-// light has nowhere to go. HATCH_RGB at HATCH_ALPHA gives ~1.44:1 — legible as
-// shading without competing with the white cumulus glyphs, which keep lightness
-// as their exclusive channel.
-//
-// Hatch and glyphs never overlap: thermalRenderer.ts suppresses cumulus at the
-// same HATCH_MIN threshold used here, so a cell is hatched or stippled, never
-// both. The constant is imported rather than redeclared so the two cannot drift.
-//
-// The clip region is built from 6-px-wide CELL rects, so the edge is blocky.
-// That is accepted: the grey blur underneath is smooth and drawn with a 5 px
-// gaussian blur; the hatch adds texture inside a region already defined
-// visually by the colour ramp.
-const HATCH_SPACING   = 8;                     // px between parallel diagonal lines
-const HATCH_LINE_WIDTH = 1;                    // px stroke weight
-const HATCH_RGB       = '90,96,106';           // slate grey — darker than the sheet
-const HATCH_ALPHA     = 0.35;                  // constant — see note above
+// Overcast is conveyed by the grey wash from thermalRenderer.ts alone — no
+// diagonal hatch. A screen-space hatch drifted under pan and added artefacts
+// for no extra information the grey ramp did not already carry. Cumulus glyphs
+// are still withheld over a solid sheet (OVERCAST_SUPPRESS_MIN), so grey and
+// cloud marks stay mutually exclusive.
 
 export interface CumulusFieldState {
   canvas: HTMLCanvasElement;
@@ -221,15 +193,12 @@ function latticeHash(i: number, j: number): number {
 // ─── rebuild (called once per thermal overlay rebuild) ────────────────────────
 
 /**
- * Redraws the cumulus canvas from `overlay.cumulusDepth`, `overlay.cuCoverage`,
- * and `overlay.overcast`.
+ * Redraws the cumulus canvas from `overlay.cumulusDepth` and `overlay.cuCoverage`.
  *
  * Pass order:
- *   1. Hatch pass — diagonal-line texture clipped to the overcast region, drawn
- *      first so cumulus glyphs at the soft boundary sit on top.
- *   2. Cumulus glyph pass — density-thinned by cuCoverage so areal coverage is
+ *   1. Cumulus glyph pass — density-thinned by cuCoverage so areal coverage is
  *      visually expressed as lattice density, not just glyph brightness.
- *   3. OD warning triangle pass — drawn last so triangles sit above both layers.
+ *   2. OD warning triangle pass — drawn last so triangles sit above the glyphs.
  *
  * This is intentionally cheap: it only reads Float32Arrays (no getThermalAt
  * calls) and traces small paths into an offscreen canvas. The heavy work
@@ -243,11 +212,9 @@ export function rebuildCumulusField(
   field: CumulusFieldState,
   overlay: ThermalOverlayState,
   currentTransform: ZoomTransform,
-  hatchOpacity: number = HATCH_ALPHA,
 ): void {
-  // Only rebuild when the thermal overlay has actually changed — hatchOpacity is
-  // folded in so an Admin change to it forces a fresh hatch pass.
-  const newKey = `${overlay.cachedTransformKey}|${overlay.cachedTime}|${hatchOpacity}`;
+  // Only rebuild when the thermal overlay has actually changed.
+  const newKey = `${overlay.cachedTransformKey}|${overlay.cachedTime}`;
   if (newKey === field.cachedKey) return;
   field.cachedKey = newKey;
 
@@ -255,62 +222,6 @@ export function rebuildCumulusField(
   ctx.clearRect(0, 0, width, height);
 
   const { cumulusDepth, odRisk, width: overlayW, height: overlayH } = overlay;
-
-  // ── Pass 1: Hatch — drawn FIRST, under the cumulus glyphs ─────────────────
-  //
-  // Build a Path2D clip region from every overlay cell whose overcast strength
-  // exceeds the threshold. Each cell contributes one CELL×CELL axis-aligned
-  // rectangle in screen coordinates — `cx * CELL, cy * CELL` for cell (cx, cy).
-  //
-  // The blocky clip edge is accepted; the smooth grey ramp underneath already
-  // defines the overcast boundary cleanly, and the hatch is texture, not a border.
-  //
-  // `overcast` is a raster allocated by createThermalOverlay, so it is present
-  // on every overlay regardless of how old the underlying grid is. A grid cached
-  // before TASK-036 carries no cloud fields, but that degrades to an all-zero
-  // raster — no cell clears OVERCAST_THRESHOLD, hatchCellCount stays 0, and the
-  // pass below is skipped. Absence of cloud data is handled by the values, not
-  // by the raster going missing.
-  const hatchPath = new Path2D();
-  let hatchCellCount = 0;
-
-  // hatchOpacity 0 disables the hatch entirely (Admin setting) — skip the build.
-  for (let cy = 0; hatchOpacity > 0 && cy < overlayH; cy++) {
-    for (let cx = 0; cx < overlayW; cx++) {
-      if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) {
-        hatchPath.rect(cx * CELL, cy * CELL, CELL, CELL);
-        hatchCellCount++;
-      }
-    }
-  }
-
-  if (hatchCellCount > 0) {
-    ctx.save();
-    ctx.clip(hatchPath);
-
-    // Stroke 45° diagonal lines across the FULL viewport. The clip region
-    // restricts where ink lands; the lines themselves can be computed against
-    // the viewport bounding box, which is simpler and avoids edge gaps at the
-    // clip boundary.
-    //
-    // Parameterisation: lines of the form  y = x + c, where c ranges from
-    // -(height) to width. Stepping c by HATCH_SPACING * √2 puts the lines
-    // HATCH_SPACING apart measured perpendicularly, which is the spacing the
-    // eye actually reads — stepping c by HATCH_SPACING directly would leave
-    // them a factor of √2 too close.
-    const step = HATCH_SPACING * Math.SQRT2;
-
-    ctx.strokeStyle = `rgba(${HATCH_RGB},${hatchOpacity})`;
-    ctx.lineWidth   = HATCH_LINE_WIDTH;
-    ctx.beginPath();
-    for (let c = -height; c <= width + step; c += step) {
-      ctx.moveTo(0,     c);
-      ctx.lineTo(width, c + width);
-    }
-    ctx.stroke();
-
-    ctx.restore();
-  }
 
   // Absolute lattice indices covering the viewport, derived from the transform so
   // the lattice phase is welded to the ground. See the geometry comment at the
@@ -326,7 +237,7 @@ export function rebuildCumulusField(
   const cuXBlock = Math.max(1, Math.round(GLYPH_X_SPACING / CELL));
   const cuYBlock = Math.max(1, Math.round(GLYPH_Y_SPACING / CELL));
 
-  // ── Pass 2: Cumulus glyph pass ────────────────────────────────────────────
+  // ── Pass 1: Cumulus glyph pass ────────────────────────────────────────────
   //
   // Glyphs are always white. The old `depth > 3000 m` proxy for OD colouring
   // has been removed; CAPE + LI/CIN signal is now shown as a separate triangle
@@ -378,16 +289,12 @@ export function rebuildCumulusField(
       const cy = Math.floor(sy / CELL);
       if (cx < 0 || cx >= overlayW || cy < 0 || cy >= overlayH) continue;
 
-      // Mutual-exclusivity guard: skip this lattice point when its anchor cell
-      // is hatched. We test the anchor cell (cy * overlayW + cx), not a block
-      // statistic, because the anchor is precisely the cell the hatch mark is
-      // drawn into — testing it is what makes hatch and glyph mutually exclusive
-      // at the glyph's origin. A block mean or max would reintroduce the fuzziness
-      // being fixed. Perfect exclusivity over the full glyph footprint is impossible
-      // with a fixed lattice (a glyph is ~10-19 px wide and can overhang a
-      // neighbouring hatched cell), so anchor-cell exclusivity is the correct,
-      // defensible rule.
-      if (overlay.overcast[cy * overlayW + cx] > HATCH_MIN) continue;
+      // Overcast guard: skip this lattice point when its anchor cell is a solid
+      // grey sheet. Real cumulus cannot form under an advected stratus deck, so
+      // no cloud mark is drawn there — the grey wash stands alone. We test the
+      // anchor cell (cy * overlayW + cx) the glyph originates from, not a block
+      // statistic, which keeps grey and cloud marks mutually exclusive.
+      if (overlay.overcast[cy * overlayW + cx] > OVERCAST_SUPPRESS_MIN) continue;
 
       // Block sample bounds — shared by both the depth and coverage passes.
       const x0 = Math.max(0, cx - (cuXBlock >> 1)), x1 = Math.min(overlayW - 1, cx + (cuXBlock >> 1));
@@ -447,9 +354,9 @@ export function rebuildCumulusField(
     }
   }
 
-  // ── Pass 3: OD warning triangle pass ─────────────────────────────────────
+  // ── Pass 2: OD warning triangle pass ─────────────────────────────────────
   //
-  // Drawn AFTER all cumulus glyphs and the hatch so the triangles sit on top.
+  // Drawn AFTER all cumulus glyphs so the triangles sit on top.
   // Hard constraint: triangles must still render INSIDE a grey overcast region.
   // A loaded atmosphere under a grey sheet is the same OD trap — arguably worse,
   // because the grey sky suppresses pilot awareness. Do NOT gate triangles on

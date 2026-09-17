@@ -15,7 +15,7 @@ import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
-import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, HATCH_MIN } from './windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from './AirspaceRange';
@@ -61,9 +61,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     : 0;
   const thermalOvercast = !!thermalInfo && thermalInfo.cloudLow !== undefined && overcastPct >= overcastOnsetPct;
   // Grade the label to the grey ramp (onset→full): "reduced" near onset where the
-  // grey is faint, "suppressed" only past HATCH_MIN (a solid sheet).
+  // grey is faint, "suppressed" only past OVERCAST_SUPPRESS_MIN (a solid sheet).
   const overcastRaw = Math.min(1, Math.max(0, (overcastPct - overcastOnsetPct) / Math.max(1, overcastFullPct - overcastOnsetPct)));
-  const thermalOvercastLabel = overcastRaw >= HATCH_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
+  const thermalOvercastLabel = overcastRaw >= OVERCAST_SUPPRESS_MIN ? 'Overcast — suppressed' : 'Overcast — reduced';
   const [showThermalHelp, setShowThermalHelp] = useState(false);
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');

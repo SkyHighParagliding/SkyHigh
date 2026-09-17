@@ -84,7 +84,7 @@ Legend marks must match what the map draws:
 - Wind-flow ON/OFF: a control inside the collapsible panel (per 1C)
 
 ### 10. Shared bits already standardised
-- Admin → Forecast opacity knobs (hatch / grey wash / rain wash) apply to all.
+- Admin → Forecast opacity knobs (grey overcast wash / rain wash) apply to all.
 - `getAirspaceColor`, `getThermalStrength`, `effectiveWstar`, `<Altitude>`,
   `precipDescription`, `airspaceConflict` are the shared primitives — reuse, don't fork.
 

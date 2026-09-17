@@ -41,20 +41,17 @@ export const OVERCAST_FULL_PCT = 95;  // % → sheet fully opaque
 export const OVERCAST_SHEET_ALPHA_FLOOR = 115;
 
 /**
- * Overcast strength (0–1, as written into `ThermalOverlayState.overcast`) above
- * which a cell counts as "under the sheet".
+ * Overcast strength (0–1, as written into `ThermalOverlayState.overcast`) at or
+ * above which a cell counts as "under the sheet" — a solid grey overcast.
  *
- * This single value decides two things that must agree: where cumulusField.ts
- * draws the hatch, and where this file suppresses cumulus glyphs. They are the
- * same threshold on purpose — the map promises three states that each mean one
- * thing, and a cell that is both hatched and stippled reads as neither. Anything
- * that changes this must change both behaviours together, which is exactly what
- * sharing the constant enforces.
+ * At this strength cumulus glyphs are suppressed: real cumulus cannot form under
+ * an advected stratus deck, so the map draws grey alone (no cloud marks), and the
+ * tapped-point readout reads "suppressed" rather than "reduced".
  *
  * 0.35 on the 70 → 95 % ramp works out at roughly 79 % low cloud: the point at
  * which a deck stops being "scattered cumulus" and starts being a sheet.
  */
-export const HATCH_MIN = 0.35;
+export const OVERCAST_SUPPRESS_MIN = 0.35;
 
 // ---------------------------------------------------------------------------
 // Admin-tunable thermal parameters
@@ -80,8 +77,6 @@ export interface ThermalTuning {
   stormCapeGate: number;
   /** Precip (mm/hr) at which the blue rain wash saturates. Lighter rain fades in below it. */
   rainOffMm: number;
-  /** Overcast diagonal-hatch opacity, 0–1. 0 hides the hatch entirely (grey ramp only). */
-  hatchOpacity: number;
   /** Grey overcast wash max opacity, 0–1, at full overcast. */
   overcastOpacity: number;
   /** Blue rain wash max opacity, 0–1, at the no-fly rain rate. */
@@ -95,7 +90,6 @@ export const DEFAULT_THERMAL_TUNING: ThermalTuning = {
   minWstar: 0.3,
   stormCapeGate: 500,
   rainOffMm: 1,
-  hatchOpacity: 0.35,
   overcastOpacity: 0.75,
   rainWashOpacity: 0.5,
 };
@@ -269,7 +263,7 @@ export interface ThermalOverlayState {
    * 0 = clear or pre-TASK-036 grid (degradation rule). Driven by the
    * cloudLow and cloud fields from ThermalCellValue; see OVERCAST_MIN_PCT /
    * OVERCAST_FULL_PCT for the ramp definition. Read by cumulusField.ts, which
-   * draws a diagonal hatch pattern over cells where this exceeds 0.35.
+   * suppresses cumulus glyphs over cells where this exceeds OVERCAST_SUPPRESS_MIN.
    */
   overcast: Float32Array;
   /**
@@ -500,19 +494,16 @@ function rebuildThermalOverlay(
         // advected stratus — so glyphs are suppressed at source here, and
         // cumulusField.ts never needs to know the overcast rule.
         //
-        // The threshold is HATCH_MIN, the same value that decides where the
-        // hatch is drawn, and it is shared rather than duplicated for a reason:
-        // glyphs and hatch must be mutually exclusive. The whole point of this
-        // task is three states that each mean one thing. Two independent
-        // thresholds would open a band where a cell is hatched AND stippled,
-        // which reads as neither.
+        // The threshold is OVERCAST_SUPPRESS_MIN: at or above it the cell is a
+        // solid grey sheet and cumulus glyphs are withheld, so grey and cloud
+        // marks stay mutually exclusive — a cell is one state or the other.
         //
-        // An earlier revision used `< 1.0` — full saturation. That was wrong
-        // twice over: it left glyphs drawing through the hatch across the
-        // entire 70–95 % band, and because this raster is pre-multiplied by
-        // `fade`, cells near the grid edge can never reach 1.0 at all, so
-        // suppression would have silently never fired there.
-        if (th.ccl != null && th.blh - th.ccl >= 50 && overcastArr[cellIdx] <= HATCH_MIN) {
+        // An earlier revision used `< 1.0` — full saturation. That was wrong:
+        // it left glyphs drawing across the entire 70–95 % band, and because
+        // this raster is pre-multiplied by `fade`, cells near the grid edge can
+        // never reach 1.0 at all, so suppression would have silently never
+        // fired there.
+        if (th.ccl != null && th.blh - th.ccl >= 50 && overcastArr[cellIdx] <= OVERCAST_SUPPRESS_MIN) {
           cumulusDepth[cellIdx] = (th.blh - th.ccl) * fade;
         }
 
@@ -591,7 +582,7 @@ export function maybeRebuildThermalOverlay(
   // Fold the tuning into the cache key so a settings change forces a rebuild
   // (otherwise the map keeps the raster it baked with the old thresholds until
   // the next pan/zoom/time change).
-  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}_${tuning.rainOffMm}_${tuning.hatchOpacity}_${tuning.overcastOpacity}_${tuning.rainWashOpacity}`;
+  const tuningKey = `${tuning.clearSkyCloudPct}_${tuning.overcastOnsetPct}_${tuning.overcastFullPct}_${tuning.minWstar}_${tuning.stormCapeGate}_${tuning.rainOffMm}_${tuning.overcastOpacity}_${tuning.rainWashOpacity}`;
   const transformKey = `${currentTransform.k.toFixed(1)}_${currentTransform.x.toFixed(0)}_${currentTransform.y.toFixed(0)}_${tuningKey}`;
   const curTime = currentTimeRef.current;
   if (transformKey !== overlay.cachedTransformKey || curTime !== overlay.cachedTime) {
