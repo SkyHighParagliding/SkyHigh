@@ -54,7 +54,7 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
   groundAmsl?: number;
   onReadout?: (r: SkewTReadout) => void;
 }) {
-  const { units } = useUnits();
+  const { units, toggleUnits } = useUnits();
   const [svgW, setSvgW] = useState(360);
   const svgRef = useRef<SVGSVGElement>(null);
   const [triggerT, setTriggerT] = useState<number | null>(null); // null = follow forecast T2m
@@ -196,6 +196,11 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
           </g>
         );
       })}
+      {/* Tap the altitude gutter to flip m ⇄ ft (consistent with the rest of the app) */}
+      <rect x={0} y={PAD_T} width={PAD_L} height={PLOT_H} fill="transparent"
+        onPointerDown={e => { e.stopPropagation(); toggleUnits(); }} style={{ cursor: 'pointer' }}>
+        <title>Tap to switch {units === 'imperial' ? 'to metres' : 'to feet'}</title>
+      </rect>
       {/* Bottom temperature ticks */}
       {isotherms.filter(t => t % 10 === 0 && t >= T_MIN && t <= T_MAX).map(t => {
         const x = xOf(t, pBot);
@@ -236,7 +241,8 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
         <line x1={-40} y1={0} x2={40} y2={0} stroke="#f08c00" strokeWidth={0} />
         <circle r={9} fill="#f08c00" stroke="#fff" strokeWidth={2.5} />
         <path d="M-3.5 -0.5 L-6.5 2.5 L-3.5 5.5 M3.5 -0.5 L6.5 2.5 L3.5 5.5" transform="translate(0,-2.5)" stroke="#fff" strokeWidth={1.2} fill="none" />
-        <text x={0} y={-13} textAnchor="middle" style={{ fontSize: 9, fill: '#e8590c', fontWeight: 700 }}>{trigT.toFixed(0)}° ⟵ drag ⟶</text>
+        <rect x={-42} y={-23} width={84} height={15} rx={7.5} fill="#fff" stroke="#f08c00" strokeWidth={1} />
+        <text x={0} y={-12.5} textAnchor="middle" style={{ fontSize: 9, fill: '#e8590c', fontWeight: 700 }}>{trigT.toFixed(0)}° ⟵ drag ⟶</text>
       </g>
     </svg>
   );

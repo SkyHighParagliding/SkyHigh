@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, X, Info, Wind as WindIcon } from 'lucide-react';
 import { useUnits } from '@/hooks/useUnits';
+import { Altitude } from '@/components/Altitude';
 import { getCompassDirection } from '@/components/windMapTypes';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { SkewTChart, type PointSounding, type SkewTReadout } from './SkewTChart';
@@ -31,7 +32,7 @@ function fmtMelb(iso: string): string {
  * on the plot for a level readout. The data box below shows what a pilot needs.
  */
 export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalProps) {
-  const { units, formatAltitude } = useUnits();
+  const { units } = useUnits();
   const [data, setData] = useState<PointSounding | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,6 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
     return data.hours.find(h => h.time.slice(0, 13) === key) ?? data.hours[0];
   }, [data, time]);
 
-  const alt = (m: number | null) => (m == null ? '—' : formatAltitude(m, 1));
   const wind = (w: { s: number; d: number }) => `${Math.round(w.s)}kt ${getCompassDirection(w.d)}`;
 
   return createPortal(
@@ -90,13 +90,13 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Thermal top</div>
-                    <div className="font-semibold text-ink">{alt(readout.thermalTopAgl)} <span className="text-muted-foreground font-normal">AGL · {alt(readout.thermalTopAmsl)} AMSL</span></div>
+                    <div className="font-semibold text-ink"><Altitude metres={readout.thermalTopAgl} step={1} /> <span className="text-muted-foreground font-normal">AGL · <Altitude metres={readout.thermalTopAmsl} step={1} /> AMSL</span></div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">Wind {wind(readout.topWind)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Cloudbase</div>
                     {readout.cloud
-                      ? <><div className="font-semibold text-sky-600">{alt(readout.cloudbaseAgl)} <span className="text-muted-foreground font-normal">AGL · {alt(readout.cloudbaseAmsl)} AMSL</span></div>
+                      ? <><div className="font-semibold text-sky-600"><Altitude metres={readout.cloudbaseAgl} step={1} /> <span className="text-muted-foreground font-normal">AGL · <Altitude metres={readout.cloudbaseAmsl} step={1} /> AMSL</span></div>
                          <div className="text-[11px] text-muted-foreground mt-0.5">Wind {wind(readout.baseWind)}</div></>
                       : <div className="font-semibold text-amber-600">Blue — no cloud</div>}
                   </div>
@@ -113,14 +113,14 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
                 {readout.cursor && (
                   <div className="mt-2 pt-2 border-t border-black/10 text-[11px] text-ink">
                     <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-2">At cursor</span>
-                    {alt(readout.cursor.zAgl)} AGL · {readout.cursor.t.toFixed(1)}° / {readout.cursor.td.toFixed(1)}°dp · {wind({ s: readout.cursor.ws, d: readout.cursor.wd })}
+                    <Altitude metres={readout.cursor.zAgl} step={1} /> AGL · {readout.cursor.t.toFixed(1)}° / {readout.cursor.td.toFixed(1)}°dp · {wind({ s: readout.cursor.ws, d: readout.cursor.wd })}
                   </div>
                 )}
                 <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
                   <span><span className="inline-block w-3 border-t-2 border-red-500 align-middle mr-1" />Temp</span>
                   <span><span className="inline-block w-3 border-t-2 border-green-600 align-middle mr-1" />Dewpoint</span>
                   <span><span className="inline-block w-3 border-t-2 border-dashed border-orange-500 align-middle mr-1" />Parcel</span>
-                  <span className="ml-auto">{units === 'imperial' ? 'ft' : 'm'} · tap altitude to switch</span>
+                  <span className="ml-auto">Showing {units === 'imperial' ? 'ft' : 'm'} · tap any altitude to switch</span>
                 </div>
               </div>
             )}
