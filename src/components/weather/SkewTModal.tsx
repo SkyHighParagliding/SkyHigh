@@ -64,7 +64,7 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
   const wind = (w: { s: number; d: number }) => `${Math.round(w.s)}kt ${getCompassDirection(w.d)}`;
 
   return createPortal(
-    <div className="fixed inset-0 z-[10001] h-[100dvh] w-screen bg-white flex flex-col" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[10001] h-[100dvh] w-screen bg-white flex flex-col select-none [-webkit-touch-callout:none]" onClick={e => e.stopPropagation()}>
       <div className="flex items-center justify-between px-3 py-2 border-b border-black/10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <WindIcon className="w-4 h-4 text-amber-500 shrink-0" />

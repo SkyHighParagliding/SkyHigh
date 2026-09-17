@@ -172,7 +172,8 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
   const clipId = 'skewt-clip';
 
   return (
-    <svg ref={svgRef} width="100%" height={SVG_H} viewBox={`0 0 ${svgW} ${SVG_H}`} style={{ touchAction: 'none' }}
+    <svg ref={svgRef} width="100%" height={SVG_H} viewBox={`0 0 ${svgW} ${SVG_H}`}
+      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
       onPointerMove={e => { if (drag.current) move(e); }} onPointerUp={onUp} onPointerLeave={onUp}>
       <defs><clipPath id={clipId}><rect x={PAD_L} y={PAD_T} width={PLOT_W} height={PLOT_H} /></clipPath></defs>
 
