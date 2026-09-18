@@ -12,10 +12,11 @@ const AIRSPACE_RED = '#dc2626';
 // Ignore low ground obstacles (powerlines/towers labelled DANGER at 0–100 ft) —
 // mirrors airspaceConflict.ts. Real controlled/restricted airspace sits higher.
 const MIN_AIRSPACE_CEILING_FT = 500;
-// The shaded strip only MARKS the floor boundary — it is a fixed band on the
-// airspace side, not a floor-to-ceiling fill. A full fill can be thousands of
-// feet tall and reads as "can't fly here" over airspace you could legally top.
-const AIRSPACE_BAND_PX = 30;
+// The shade only MARKS the floor boundary — a modest band behind the label, not
+// a floor-to-ceiling fill (which can be thousands of feet tall and reads as
+// "can't fly here" over airspace you could legally top). Half-height: the band
+// is centred on the label so the tint is balanced above and below the text.
+const AIRSPACE_BAND_HALF_PX = 13;
 
 // One hour of the per-site meteogram, as returned by GET /api/weather/:id/meteogram.
 export interface MeteogramHour {
@@ -44,6 +45,12 @@ const FLYING_HOUR_END = 20;
 const LIGHT_RAIN_MM = 0.1;
 const RAIN_PROB_MARGINAL = 50; // precip probability (%) that flags showery/marginal
 const CU_COLOR = '#38bdf8'; // Cu Base (cloud base) line — sky blue, distinct from BL Top + launch
+// Shared style for the on-plot line labels (Ground / BL Top / Cu Base / Class C)
+// so they read at one consistent size. Colour is set per-label.
+const LINE_LABEL = { fontSize: '9px', fontWeight: 700, fontFamily: 'system-ui,sans-serif' } as const;
+// Offset (px) of a line label above its line — Ground's spacing, reused so every
+// horizontal-line label sits the same small distance off its line.
+const LINE_LABEL_DY = 3;
 
 // Flying-window working-height cutoffs (m above launch). Hardcoded defaults for
 // Stage 1b; candidates for their own Admin keys later.
@@ -348,38 +355,43 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
 
         if (!drawn.length) return null;
 
-        // Top of the shaded band (smaller y): a fixed height above the floor,
-        // but never past the plot top or the sector's own (thin-sector) ceiling.
-        const bandTopY = (floorM: number, ceilM: number) =>
-          Math.max(plotTop, toY(Math.min(ceilM, yTopM)), toY(floorM) - AIRSPACE_BAND_PX);
+        // Geometry per drawn sector: the floor line, a label the same small
+        // distance off its line as Ground, and a shade band centred on that label
+        // (balanced above/below the text), clamped to the sector ceiling and plot.
+        const items = drawn.map(({ sec, floorM, ceilM }) => {
+          const yF = toY(floorM);
+          const ceilY = toY(Math.min(ceilM, yTopM)); // sector ceiling (smaller y)
+          const label = `${airspaceLabel(sec)} · ${endStr(sec.lowerFt, sec.lowerRef)}–${endStr(sec.upperFt, sec.upperRef)} ${unitSuffix}`;
+          // Above the line by Ground's offset; if that clips the plot top, drop it
+          // just below the line instead.
+          const above = yF - LINE_LABEL_DY - 8 >= plotTop;
+          const labelY = above ? yF - LINE_LABEL_DY : yF + 10;
+          const labelMid = labelY - 3; // ~vertical centre of the 9px cap height
+          const bTop = Math.max(plotTop, ceilY, labelMid - AIRSPACE_BAND_HALF_PX);
+          const bBot = Math.min(plotBot, labelMid + AIRSPACE_BAND_HALF_PX);
+          const midOffset = bBot > bTop ? Math.min(0.85, Math.max(0.15, (labelMid - bTop) / (bBot - bTop))) : 0.5;
+          return { yF, label, labelY, bTop, bBot, midOffset };
+        });
 
         return (
           <g>
             <defs>
-              {drawn.map(({ floorM, ceilM }, i) => (
+              {items.map(({ bTop, bBot, midOffset }, i) => (
                 <linearGradient key={i} id={`asp-grad-${i}`} gradientUnits="userSpaceOnUse"
-                  x1={0} y1={toY(floorM)} x2={0} y2={bandTopY(floorM, ceilM)}>
-                  <stop offset="0" stopColor={AIRSPACE_RED} stopOpacity={0.26} />
+                  x1={0} y1={bTop} x2={0} y2={bBot}>
+                  <stop offset="0" stopColor={AIRSPACE_RED} stopOpacity={0} />
+                  <stop offset={midOffset} stopColor={AIRSPACE_RED} stopOpacity={0.26} />
                   <stop offset="1" stopColor={AIRSPACE_RED} stopOpacity={0} />
                 </linearGradient>
               ))}
             </defs>
-            {drawn.map(({ sec, floorM, ceilM }, i) => {
-              const yF = toY(floorM);
-              const yTop = bandTopY(floorM, ceilM);
-              const bandH = Math.max(0, yF - yTop);
-              const label = `${airspaceLabel(sec)} · ${endStr(sec.lowerFt, sec.lowerRef)}–${endStr(sec.upperFt, sec.upperRef)} ${unitSuffix}`;
-              // Centre the label vertically in the band (balanced space above/below
-              // the text); if the band is squeezed thin, drop it just below the line.
-              const labelY = bandH >= 16 ? (yTop + yF) / 2 + 3 : yF + 11;
-              return (
-                <g key={i}>
-                  <rect x={PAD_L} y={yTop} width={PLOT_W} height={bandH} fill={`url(#asp-grad-${i})`} />
-                  <line x1={PAD_L} y1={yF} x2={PAD_L + PLOT_W} y2={yF} stroke={AIRSPACE_RED} strokeWidth={1.5} opacity={0.9} />
-                  <text x={PAD_L + 3} y={labelY} style={{ fontSize: '8px', fontWeight: 700, fill: AIRSPACE_RED, fontFamily: 'system-ui' }}>{label}</text>
-                </g>
-              );
-            })}
+            {items.map(({ yF, label, labelY, bTop, bBot }, i) => (
+              <g key={i}>
+                <rect x={PAD_L} y={bTop} width={PLOT_W} height={Math.max(0, bBot - bTop)} fill={`url(#asp-grad-${i})`} />
+                <line x1={PAD_L} y1={yF} x2={PAD_L + PLOT_W} y2={yF} stroke={AIRSPACE_RED} strokeWidth={1.5} opacity={0.9} />
+                <text x={PAD_L + 3} y={labelY} style={{ ...LINE_LABEL, fill: AIRSPACE_RED }}>{label}</text>
+              </g>
+            ))}
           </g>
         );
       })()}
@@ -389,7 +401,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         <>
           <line x1={PAD_L} y1={toY(groundAmsl)} x2={PAD_L + PLOT_W} y2={toY(groundAmsl)}
             stroke="#0071e3" strokeWidth={1} strokeDasharray="6,3" opacity={0.7} />
-          <text x={PAD_L + 2} y={toY(groundAmsl) - 3} style={{ ...axisStyle, fill: '#0071e3', fontWeight: 700 }}>
+          <text x={PAD_L + 2} y={toY(groundAmsl) - LINE_LABEL_DY} style={{ ...LINE_LABEL, fill: '#0071e3' }}>
             {groundLabel}
           </text>
         </>
@@ -415,7 +427,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
               ? <line key={`cu-${ri}`} x1={run[0][0] - 4} y1={run[0][1]} x2={run[0][0] + 4} y2={run[0][1]} stroke={CU_COLOR} strokeWidth={1.5} strokeDasharray="4,3" />
               : <path key={`cu-${ri}`} d={'M' + run.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L')} fill="none" stroke={CU_COLOR} strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" />
             )}
-            <text x={first[0] + 4} y={first[1] + 10} style={{ fontSize: '8px', fontWeight: 700, fill: CU_COLOR, fontFamily: 'system-ui' }}>Cu Base</text>
+            <text x={first[0] + 4} y={first[1] + 10} style={{ ...LINE_LABEL, fill: CU_COLOR }}>Cu Base</text>
           </>
         );
       })()}
@@ -424,7 +436,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
       {ceilingPath && ceilingXY.length > 0 && (
         <>
           <path d={ceilingPath} fill="none" stroke="#1f2937" strokeWidth={2} strokeDasharray="7,4" strokeLinecap="round" />
-          <text x={ceilingXY[0][0] + 4} y={ceilingXY[0][1] - 4} style={{ fontSize: '8px', fontWeight: 700, fill: '#1f2937', fontFamily: 'system-ui' }}>BL Top</text>
+          <text x={ceilingXY[0][0] + 4} y={ceilingXY[0][1] - 4} style={{ ...LINE_LABEL, fill: '#1f2937' }}>BL Top</text>
         </>
       )}
 
