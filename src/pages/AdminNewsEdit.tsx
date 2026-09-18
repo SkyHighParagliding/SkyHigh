@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { ArrowLeft, Save, Check } from "lucide-react";
 import { ContentImageToolbar } from "@/components/ContentImageToolbar";
 import { HeroImagePicker } from "@/components/HeroImagePicker";
@@ -133,13 +134,10 @@ export function AdminNewsEdit() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground-label mb-1">Date</label>
-                    <input
-                      type="date"
-                      name="date"
+                    <DatePicker
                       value={formData.date}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-border rounded-md focus:ring-accent focus:border-accent"
-                      required
+                      onChange={(d) => { setFormData(prev => ({ ...prev, date: d })); markDirty(); }}
+                      className="w-full"
                     />
                   </div>
                 </div>

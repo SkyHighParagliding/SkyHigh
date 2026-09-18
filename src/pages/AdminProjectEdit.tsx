@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
@@ -904,11 +905,11 @@ export function AdminProjectEdit({ id: propId, isDialog, onClose }: { id?: strin
                   <label className="block text-sm font-medium text-foreground-label mb-1">
                     Approval Date
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={approvalDate}
-                    onChange={(e) => setApprovalDate(e.target.value)}
-                    className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
+                    onChange={setApprovalDate}
+                    clearable
+                    className="w-full"
                   />
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useCompetitions, useXCSites, useAdminCompetitions, useCompetitionMutation } from "@/hooks/api";
@@ -276,20 +277,21 @@ export function AdminXC() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground-label mb-1">Start Date</label>
-          <input
-            type="date"
+          <DatePicker
             value={compForm.startDate}
-            onChange={e => setCompForm(prev => ({ ...prev, startDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
+            onChange={d => setCompForm(prev => ({ ...prev, startDate: d }))}
+            clearable
+            className="w-full"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-foreground-label mb-1">End Date</label>
-          <input
-            type="date"
+          <DatePicker
             value={compForm.endDate}
-            onChange={e => setCompForm(prev => ({ ...prev, endDate: e.target.value }))}
-            className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent bg-white"
+            onChange={d => setCompForm(prev => ({ ...prev, endDate: d }))}
+            min={compForm.startDate || undefined}
+            clearable
+            className="w-full"
           />
         </div>
         <div>
