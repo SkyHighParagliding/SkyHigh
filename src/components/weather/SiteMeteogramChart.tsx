@@ -12,6 +12,10 @@ const AIRSPACE_RED = '#dc2626';
 // Ignore low ground obstacles (powerlines/towers labelled DANGER at 0–100 ft) —
 // mirrors airspaceConflict.ts. Real controlled/restricted airspace sits higher.
 const MIN_AIRSPACE_CEILING_FT = 500;
+// The shaded strip only MARKS the floor boundary — it is a fixed band on the
+// airspace side, not a floor-to-ceiling fill. A full fill can be thousands of
+// feet tall and reads as "can't fly here" over airspace you could legally top.
+const AIRSPACE_BAND_PX = 30;
 
 // One hour of the per-site meteogram, as returned by GET /api/weather/:id/meteogram.
 export interface MeteogramHour {
@@ -344,26 +348,33 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
 
         if (!drawn.length) return null;
 
+        // Top of the shaded band (smaller y): a fixed height above the floor,
+        // but never past the plot top or the sector's own (thin-sector) ceiling.
+        const bandTopY = (floorM: number, ceilM: number) =>
+          Math.max(plotTop, toY(Math.min(ceilM, yTopM)), toY(floorM) - AIRSPACE_BAND_PX);
+
         return (
           <g>
             <defs>
               {drawn.map(({ floorM, ceilM }, i) => (
                 <linearGradient key={i} id={`asp-grad-${i}`} gradientUnits="userSpaceOnUse"
-                  x1={0} y1={toY(floorM)} x2={0} y2={Math.max(plotTop, toY(Math.min(ceilM, yTopM)))}>
-                  <stop offset="0" stopColor={AIRSPACE_RED} stopOpacity={0.22} />
+                  x1={0} y1={toY(floorM)} x2={0} y2={bandTopY(floorM, ceilM)}>
+                  <stop offset="0" stopColor={AIRSPACE_RED} stopOpacity={0.26} />
                   <stop offset="1" stopColor={AIRSPACE_RED} stopOpacity={0} />
                 </linearGradient>
               ))}
             </defs>
             {drawn.map(({ sec, floorM, ceilM }, i) => {
               const yF = toY(floorM);
-              const yC = Math.max(plotTop, toY(Math.min(ceilM, yTopM)));
+              const yTop = bandTopY(floorM, ceilM);
+              const bandH = Math.max(0, yF - yTop);
               const label = `${airspaceLabel(sec)} · ${endStr(sec.lowerFt, sec.lowerRef)}–${endStr(sec.upperFt, sec.upperRef)} ${unitSuffix}`;
-              // Label above the line normally; below when the floor sits near the plot top.
-              const labelY = yF < plotTop + 14 ? yF + 11 : yF - 4;
+              // Centre the label vertically in the band (balanced space above/below
+              // the text); if the band is squeezed thin, drop it just below the line.
+              const labelY = bandH >= 16 ? (yTop + yF) / 2 + 3 : yF + 11;
               return (
                 <g key={i}>
-                  <rect x={PAD_L} y={yC} width={PLOT_W} height={Math.max(0, yF - yC)} fill={`url(#asp-grad-${i})`} />
+                  <rect x={PAD_L} y={yTop} width={PLOT_W} height={bandH} fill={`url(#asp-grad-${i})`} />
                   <line x1={PAD_L} y1={yF} x2={PAD_L + PLOT_W} y2={yF} stroke={AIRSPACE_RED} strokeWidth={1.5} opacity={0.9} />
                   <text x={PAD_L + 3} y={labelY} style={{ fontSize: '8px', fontWeight: 700, fill: AIRSPACE_RED, fontFamily: 'system-ui' }}>{label}</text>
                 </g>
