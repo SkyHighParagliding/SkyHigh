@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, useLocation, useParams, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams, Link } from "react-router-dom";
 import { useEffect, useState, Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./lib/apiClient";
@@ -75,7 +75,6 @@ const AdminSponsors = lazy(() => import("./pages/AdminSponsors").then(m => ({ de
 const AdminBusinessDirectory = lazy(() => import("./pages/AdminBusinessDirectory").then(m => ({ default: m.AdminBusinessDirectory })));
 const AdminScheduledTasks = lazy(() => import("./pages/AdminScheduledTasks").then(m => ({ default: m.AdminScheduledTasks })));
 const AdminJoinSettings = lazy(() => import("./pages/AdminJoinSettings").then(m => ({ default: m.AdminJoinSettings })));
-const AdminCompetitions = lazy(() => import("./pages/AdminCompetitions").then(m => ({ default: m.AdminCompetitions })));
 const AdminXC = lazy(() => import("./pages/AdminXC").then(m => ({ default: m.AdminXC })));
 const AdminFlightTracker = lazy(() => import("./pages/AdminFlightTracker").then(m => ({ default: m.AdminFlightTracker })));
 const AdminSafety = lazy(() => import("./pages/AdminSafety").then(m => ({ default: m.AdminSafety })));
@@ -232,7 +231,9 @@ export default function App() {
               <Route path="admin/business-directory" element={<AdminRoute><AdminBusinessDirectory /></AdminRoute>} />
               <Route path="admin/scheduled-tasks" element={<AdminRoute><AdminScheduledTasks /></AdminRoute>} />
               <Route path="admin/join-settings" element={<AdminRoute><AdminJoinSettings /></AdminRoute>} />
-              <Route path="admin/competitions" element={<AdminRoute><AdminCompetitions /></AdminRoute>} />
+              {/* Competitions are managed on the XC admin page now; keep the old
+                  path working for bookmarks/links by redirecting. */}
+              <Route path="admin/competitions" element={<Navigate to="/admin/xc" replace />} />
               <Route path="admin/xc" element={<AdminRoute><AdminXC /></AdminRoute>} />
               <Route path="admin/flight-tracker" element={<AdminRoute><AdminFlightTracker /></AdminRoute>} />
               <Route path="admin/safety" element={<AdminRoute><AdminSafety /></AdminRoute>} />
