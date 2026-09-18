@@ -152,6 +152,19 @@ let seedSettings: [string, string][] = [
   ['schedDriveSyncHour', '4'],
   ['schedDriveSyncMinute', '0'],
   ['driveSyncEnabled', 'false'],
+  // Siteguide auto actions on version change (default on; server also falls back to on).
+  ['autoDownloadZoneData', 'true'],
+  ['autoImportEnabled', 'true'],
+  // Cache TTLs — values match the client defaults (AdminScheduledTasks) and the
+  // server-side fallbacks, so seeding them keeps all three in step.
+  ['cacheAdminSessionTtl', '24'],
+  ['cacheTidyHqMemberTtl', '15'],
+  ['cacheBomTideTtl', '6'],
+  ['cacheAstroTideTtl', '30'],
+  ['cacheTidyHqEventsTtl', '5'],
+  ['cacheSearchContextTtl', '5'],
+  ['cacheAssetRegisterTtl', '10'],
+  ['cacheFreeFlightWxTtl', '30'],
   ['homeBox1Desc', ''],
   ['homeBox2Desc', ''],
   ['homeBox3Desc', 'We fly whenever its on! Connect with local pilots and find mentors through our telegram chat. Contact an SO for an invitation'],
