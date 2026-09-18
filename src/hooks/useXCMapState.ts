@@ -15,25 +15,8 @@ import { cacheTilesForLocation } from '@/lib/tileCache';
 import type { CacheProgress } from '@/lib/tileCache';
 import { buildWindObservations } from '@/components/WindFieldLayer';
 import type { WindFieldSettings } from '@/components/WindFieldLayer';
-
-export interface XCSite {
-  id: string;
-  name: string;
-  lat: number;
-  lon: number;
-  type?: string;
-  windDir?: string;
-  launchHeight?: string;
-  status?: string;
-  useLiveWeather?: string;
-}
-
-export interface WindData {
-  windSpeed: number | null;
-  windGust: number | null;
-  direction: string | number | null;
-  stale?: boolean;
-}
+// XCSite / WindData live in one place — lib/xcMapUtils.
+import type { XCSite, WindData } from '@/lib/xcMapUtils';
 
 const DEFAULT_DISABLED_AIRSPACE = new Set([
   'RESTRICTED', 'DANGER', 'PROHIBITED', 'OTHER',

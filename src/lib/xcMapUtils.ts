@@ -15,6 +15,7 @@ export interface XCSite {
   type?: string;
   windDir?: string;
   launchHeight?: string;
+  status?: string;
   useLiveWeather?: string;
 }
 

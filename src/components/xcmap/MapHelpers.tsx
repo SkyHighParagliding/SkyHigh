@@ -11,23 +11,7 @@ export function MapFitter({ lat, lon }: { lat: number; lon: number }) {
   return null;
 }
 
-export function MapResizer() {
-  const map = useMap();
-  useEffect(() => {
-    const handler = () => {
-      setTimeout(() => map.invalidateSize(), 100);
-    };
-    document.addEventListener('fullscreenchange', handler);
-    window.addEventListener('orientationchange', handler);
-    window.addEventListener('resize', handler);
-    return () => {
-      document.removeEventListener('fullscreenchange', handler);
-      window.removeEventListener('orientationchange', handler);
-      window.removeEventListener('resize', handler);
-    };
-  }, [map]);
-  return null;
-}
+// MapResizer moved to components/map/leafletHelpers (single shared impl).
 
 function bearingBetween(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const toRad = (d: number) => (d * Math.PI) / 180;

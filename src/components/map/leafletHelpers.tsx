@@ -7,13 +7,24 @@ import L from 'leaflet';
  * Page-specific components (AutoFitAll, UserInteractionDetector) remain in their pages.
  */
 
+/**
+ * Keeps the Leaflet map sized to its container. Runs an initial invalidate (for
+ * maps mounted while hidden/animating) and re-invalidates on resize, fullscreen,
+ * and orientation change. Shared by every Leaflet map (XC, retrieval, duty pilot).
+ */
 export function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    setTimeout(() => map.invalidateSize(), 200);
-    const handler = () => setTimeout(() => map.invalidateSize(), 100);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
+    const invalidate = () => setTimeout(() => map.invalidateSize(), 100);
+    invalidate();
+    document.addEventListener('fullscreenchange', invalidate);
+    window.addEventListener('orientationchange', invalidate);
+    window.addEventListener('resize', invalidate);
+    return () => {
+      document.removeEventListener('fullscreenchange', invalidate);
+      window.removeEventListener('orientationchange', invalidate);
+      window.removeEventListener('resize', invalidate);
+    };
   }, [map]);
   return null;
 }

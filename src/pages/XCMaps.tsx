@@ -9,7 +9,7 @@ import { DEMO_LAUNCH } from '@/lib/demoConfig';
 import { MapMessaging } from '@/components/MapMessaging';
 import { THRESHOLD_OPTIONS } from '@/hooks/useProximityAlerts';
 import { useXCMapState } from '@/hooks/useXCMapState';
-import type { XCSite, WindData } from '@/hooks/useXCMapState';
+import type { XCSite, WindData } from '@/lib/xcMapUtils';
 import { haversineKm } from '@/hooks/useXCMapState';
 import { BASEMAPS } from '@/lib/xcMapUtils';
 import { requestCompassPermission } from '@/components/xcmap/MapHelpers';

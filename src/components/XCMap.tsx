@@ -13,7 +13,8 @@ export type { MapOrientation } from '@/lib/xcMapUtils';
 import { BearingLabels } from './xcmap/BearingLabels';
 import { AirspaceLayer } from './xcmap/AirspaceLayer';
 import { SiteguideZoneLayer } from './xcmap/SiteguideZoneLayer';
-import { MapFitter, MapResizer, PilotFollower, UserLocationMarker, InitialLocator } from './xcmap/MapHelpers';
+import { MapFitter, PilotFollower, UserLocationMarker, InitialLocator } from './xcmap/MapHelpers';
+import { MapResizer } from './map/leafletHelpers';
 import { PilotMarker, WindArrowMarker, LivePilotMarkers, DriverMarker } from './xcmap/PilotMarkers';
 import { DistanceRingsOverlay } from './xcmap/DistanceRingsOverlay';
 

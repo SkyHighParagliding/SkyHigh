@@ -155,6 +155,9 @@ async function getAssetTtl(): Promise<number> {
   return minutes * 60 * 1000;
 }
 
+// The real cache-clearer. Registered into the searchCacheInvalidation dispatcher
+// so other modules can invalidate without importing this large module (cycle break).
+// fallow-ignore-next-line duplicate-export
 export function invalidateSearchCaches() {
   publicContextCache = null;
   internalContextCache = null;

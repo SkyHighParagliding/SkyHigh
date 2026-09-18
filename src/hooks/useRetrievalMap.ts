@@ -5,18 +5,8 @@ import { useDataUsage, trackSSEMessage } from "@/hooks/useDataUsage";
 import { api } from "@/lib/apiClient";
 import { getDemoRole } from "@/lib/demoConfig";
 import { haversineMeters } from "@/lib/geomath";
-
-interface LivePilotData {
-  pilotId: string;
-  firstName: string;
-  lat: number;
-  lon: number;
-  altitude: number;
-  speed: number;
-  heading: number;
-  verticalSpeed?: number;
-  landed?: boolean;
-}
+// LivePilotData lives in one place — lib/xcMapUtils.
+import type { LivePilotData } from "@/lib/xcMapUtils";
 
 interface RouteInfo {
   pilotId: string;
@@ -86,7 +76,7 @@ async function fetchOSRMRoute(
   } catch { return null; }
 }
 
-export type { LivePilotData, RouteInfo, RetrievalRecord };
+export type { RouteInfo, RetrievalRecord };
 
 interface DemoRouteAnim {
   pilotId: string;
