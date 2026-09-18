@@ -8,7 +8,6 @@ import { GridBoundsSelector } from "@/components/GridBoundsSelector";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
@@ -189,7 +188,7 @@ function ProvenanceRow({ label, raw }: { label: string; raw: string | undefined 
 }
 
 export function AdminWeather() {
-  const { settings, refreshSettings, updateSettings, settingsFetchedAt } = useSettings();
+  const { settings, refreshSettings, settingsFetchedAt } = useSettings();
   const { token } = useAuth();
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -299,43 +298,12 @@ export function AdminWeather() {
     return () => clearInterval(id);
   }, []);
 
-  // 7-Day fetch time, read from the same setting the scheduler uses so this
-  // description cannot drift from the real schedule.
-  const extendedScheduleLabel = (() => {
-    const h = parseInt(String(settings.schedExtendedForecastHour ?? "5"), 10);
-    const m = parseInt(String(settings.schedExtendedForecastMinute ?? "30"), 10);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return "its scheduled time";
-    const suffix = h < 12 ? "am" : "pm";
-    const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(m).padStart(2, "0")}${suffix}`;
-  })();
-
-  const [schedStartHour, setSchedStartHour] = useState<number>(7);
-  const [schedEndHour, setSchedEndHour] = useState<number>(20);
-  const [schedContinuous, setSchedContinuous] = useState(false);
-  const [schedSaving, setSchedSaving] = useState(false);
-
-  useEffect(() => {
-    setSchedStartHour(parseInt(settings.weatherScraperStartHour ?? "7", 10));
-    setSchedEndHour(parseInt(settings.weatherScraperEndHour ?? "20", 10));
-    setSchedContinuous(settings.weatherScraperRunContinuously === "true");
-  }, [settings.weatherScraperStartHour, settings.weatherScraperEndHour, settings.weatherScraperRunContinuously]);
-
-  const handleSaveSchedule = async () => {
-    setSchedSaving(true);
-    try {
-      await updateSettings({
-        weatherScraperStartHour: String(schedStartHour),
-        weatherScraperEndHour: String(schedEndHour),
-        weatherScraperRunContinuously: schedContinuous ? "true" : "false",
-      });
-      toast.success("Scraper schedule saved");
-    } catch {
-      toast.error("Failed to save schedule");
-    } finally {
-      setSchedSaving(false);
-    }
-  };
+  // Scraper operating window, read live from the same settings the scheduler
+  // uses so this summary can't drift. The schedule itself is edited on the
+  // Scheduled Tasks page (single home for all schedules) — not here.
+  const schedStartHour = parseInt(settings.weatherScraperStartHour ?? "7", 10);
+  const schedEndHour = parseInt(settings.weatherScraperEndHour ?? "20", 10);
+  const schedContinuous = settings.weatherScraperRunContinuously === "true";
 
   // Grid fetches: fire-and-forget — HTTP responds immediately, background fetch runs
   const handleGridFetch = async (endpoint: string, type: GridType) => {
@@ -435,55 +403,14 @@ export function AdminWeather() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm font-medium text-ink mb-3">Scraper Schedule</p>
-                <div className="flex flex-wrap items-end gap-4">
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="sched-start" className="text-xs text-muted-foreground">Start time</Label>
-                    <select
-                      id="sched-start"
-                      value={schedStartHour}
-                      onChange={e => setSchedStartHour(Number(e.target.value))}
-                      disabled={schedContinuous}
-                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-accent"
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>{hourLabel(i)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="sched-end" className="text-xs text-muted-foreground">End time</Label>
-                    <select
-                      id="sched-end"
-                      value={schedEndHour}
-                      onChange={e => setSchedEndHour(Number(e.target.value))}
-                      disabled={schedContinuous}
-                      className="border border-input rounded-md px-2 py-1.5 text-sm bg-background disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-accent"
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>{hourLabel(i)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2 pb-1.5">
-                    <input
-                      type="checkbox"
-                      id="sched-continuous"
-                      checked={schedContinuous}
-                      onChange={e => setSchedContinuous(e.target.checked)}
-                      className="w-4 h-4 accent-accent cursor-pointer"
-                    />
-                    <Label htmlFor="sched-continuous" className="text-sm cursor-pointer">Run continuously (24 hours)</Label>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveSchedule}
-                    disabled={schedSaving}
-                    className="pb-1.5"
-                  >
-                    {schedSaving ? "Saving..." : "Save Schedule"}
-                  </Button>
-                </div>
+                <p className="text-sm font-medium text-ink mb-1">Scraper Schedule</p>
+                <p className="text-sm text-muted-foreground">
+                  {schedContinuous
+                    ? "Running continuously (24 hours)."
+                    : `Operating ${hourLabel(schedStartHour)} – ${hourLabel(schedEndHour)} Melbourne time.`}{" "}
+                  Operating hours and per-source intervals are set in{" "}
+                  <Link to="/admin/scheduled-tasks" className="text-accent hover:underline">Scheduled Tasks</Link>.
+                </p>
               </div>
             </CardHeader>
           </Card>
@@ -497,11 +424,10 @@ export function AdminWeather() {
                     Grid Data
                   </CardTitle>
                   <CardDescription>
-                    {/* Wind and Thermal are fixed crons in scheduledJobs.ts. The 7-Day
-                        time is a database setting editable on Scheduled Tasks, so it is
-                        read live rather than written here — a hard-coded time drifted
-                        out of step with the real schedule once already. */}
-                    Wind grid data downloaded daily at 5:00am (Wind), 5:26am (Thermal), and {extendedScheduleLabel} (7-Day). Cached for entire day.
+                    {/* No hard-coded times here — the daily fetch schedule lives in one
+                        place (Scheduled Tasks). This card is for manual fetches + status. */}
+                    Forecast grids that power the maps, downloaded once daily and cached. Fetch times are set in{" "}
+                    <Link to="/admin/scheduled-tasks" className="text-accent hover:underline">Scheduled Tasks</Link>. Use the buttons below to fetch now.
                   </CardDescription>
                 </div>
               </div>

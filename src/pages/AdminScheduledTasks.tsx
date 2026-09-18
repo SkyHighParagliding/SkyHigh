@@ -13,12 +13,17 @@ import { toast } from "sonner";
 interface ScheduleSettings {
   schedSiteguideHour: string;
   schedSiteguideMinute: string;
+  schedFineGridHour: string;
+  schedFineGridMinute: string;
+  schedThermalGridHour: string;
+  schedThermalGridMinute: string;
   schedExtendedForecastHour: string;
   schedExtendedForecastMinute: string;
   submissionNotifyHour: string;
   submissionNotifyEnabled: string;
   weatherScraperStartHour: string;
   weatherScraperEndHour: string;
+  weatherScraperRunContinuously: string;
   weatherScraper_ffwx_min: string;
   weatherScraper_ffwx_max: string;
   weatherScraper_wu_min: string;
@@ -47,12 +52,17 @@ interface ScheduleSettings {
 const DEFAULTS: ScheduleSettings = {
   schedSiteguideHour: "5",
   schedSiteguideMinute: "0",
+  schedFineGridHour: "5",
+  schedFineGridMinute: "0",
+  schedThermalGridHour: "5",
+  schedThermalGridMinute: "26",
   schedExtendedForecastHour: "5",
   schedExtendedForecastMinute: "30",
   submissionNotifyHour: "19",
   submissionNotifyEnabled: "true",
   weatherScraperStartHour: "7",
   weatherScraperEndHour: "20",
+  weatherScraperRunContinuously: "false",
   weatherScraper_ffwx_min: "2",
   weatherScraper_ffwx_max: "3",
   weatherScraper_wu_min: "14",
@@ -271,19 +281,25 @@ export function AdminScheduledTasks() {
 
           <Card className="border-t-4 border-t-indigo-500">
             <CardHeader>
-              <CardTitle className="text-ink">Extended Forecast Fetch</CardTitle>
-              <p className="text-sm text-muted-foreground">Downloads the 7-day extended weather forecast grid from Open-Meteo for all Victoria sites.</p>
+              <CardTitle className="text-ink">Grid Data Fetch</CardTitle>
+              <p className="text-sm text-muted-foreground">Daily download times (Melbourne) for the forecast grids that power the maps. Each is cached for the whole day. Manual "Fetch Now" buttons live on the Weather page.</p>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
-                  <Input type="number" min="0" max="23" className="w-20" value={settings.schedExtendedForecastHour} onChange={(e) => updateField("schedExtendedForecastHour", e.target.value)} />
+            <CardContent className="space-y-3">
+              {([
+                { label: "Wind (fine grid)", hourKey: "schedFineGridHour", minKey: "schedFineGridMinute" },
+                { label: "Thermal grid", hourKey: "schedThermalGridHour", minKey: "schedThermalGridMinute" },
+                { label: "7-Day (extended)", hourKey: "schedExtendedForecastHour", minKey: "schedExtendedForecastMinute" },
+              ] as const).map(row => (
+                <div key={row.hourKey} className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-foreground-label w-36 shrink-0">{row.label}</label>
+                  <span className="text-sm text-muted-foreground">Run at:</span>
+                  <Input type="number" min="0" max="23" className="w-20" value={settings[row.hourKey]} onChange={(e) => updateField(row.hourKey, e.target.value)} />
                   <span className="text-muted-foreground">:</span>
-                  <Input type="number" min="0" max="59" step="5" className="w-20" value={settings.schedExtendedForecastMinute} onChange={(e) => updateField("schedExtendedForecastMinute", e.target.value)} />
-                  <span className="text-sm text-muted-foreground ml-1">{formatTime(settings.schedExtendedForecastHour, settings.schedExtendedForecastMinute)}</span>
+                  <Input type="number" min="0" max="59" step="1" className="w-20" value={settings[row.minKey]} onChange={(e) => updateField(row.minKey, e.target.value)} />
+                  <span className="text-sm text-muted-foreground ml-1">{formatTime(settings[row.hourKey], settings[row.minKey])}</span>
                 </div>
-              </div>
+              ))}
+              <p className="text-xs text-muted-foreground">Changes take effect from the next day's run (or the next server restart).</p>
             </CardContent>
           </Card>
 
@@ -376,7 +392,16 @@ export function AdminScheduledTasks() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">All scrapers sleep outside operating hours (Melbourne time). Random interval between min and max prevents predictable API patterns.</p>
+              <label className="flex items-center gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
+                  checked={settings.weatherScraperRunContinuously === "true"}
+                  onChange={(e) => updateField("weatherScraperRunContinuously", e.target.checked ? "true" : "false")}
+                />
+                <span className="text-sm font-medium text-foreground-label">Run continuously (ignore operating hours)</span>
+              </label>
+              <p className="text-xs text-muted-foreground">All scrapers sleep outside operating hours (Melbourne time) unless "run continuously" is on. Random interval between min and max prevents predictable API patterns.</p>
             </CardContent>
           </Card>
 

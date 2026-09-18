@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import { fromZonedTime } from "date-fns-tz";
 import createLogger from "./logger.js";
 import { runVersionCheck, notifySiteguideVersionChange } from "./siteguideVersionCheck.js";
 import { sendEmail } from "./email.js";
@@ -15,6 +16,52 @@ async function getSetting(key: string, fallback: string): Promise<string> {
 async function getSettingInt(key: string, fallback: number): Promise<number> {
   const val = parseInt(await getSetting(key, String(fallback)), 10);
   return Number.isFinite(val) ? val : fallback;
+}
+
+// ── Settings-driven daily scheduler ──────────────────────────────────────────
+// Runs a job once per day at a Melbourne wall-clock time read from settings, and
+// reschedules itself after each run (re-reading the settings). This is the same
+// mechanism the extended-forecast fetch uses, so every daily grid fetch — Wind,
+// Thermal, 7-Day — is configured the same way and controlled from ONE place
+// (Admin → Scheduled Tasks). An admin edit takes effect from the next day's run.
+
+/** Current Melbourne wall-clock hour + minute. */
+function melbourneHourMinute(): { hour: number; minute: number } {
+  const p: Record<string, string> = {};
+  new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  return { hour: parseInt(p.hour, 10) % 24, minute: parseInt(p.minute, 10) };
+}
+
+/** Melbourne calendar date (YYYY-MM-DD), offset by whole days. */
+function melbourneDate(daysOffset = 0): string {
+  const melb = new Date(new Date().toLocaleString("en-US", { timeZone: "Australia/Melbourne" }));
+  melb.setDate(melb.getDate() + daysOffset);
+  return `${melb.getFullYear()}-${String(melb.getMonth() + 1).padStart(2, "0")}-${String(melb.getDate()).padStart(2, "0")}`;
+}
+
+const dailyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+async function scheduleDailyFromSettings(
+  label: string, hourKey: string, minKey: string, defH: number, defM: number,
+  job: () => Promise<void>,
+): Promise<void> {
+  const existing = dailyTimers.get(label);
+  if (existing) clearTimeout(existing);
+
+  const targetHour = await getSettingInt(hourKey, defH);
+  const targetMinute = await getSettingInt(minKey, defM);
+  const { hour, minute } = melbourneHourMinute();
+  const daysUntil = (hour > targetHour || (hour === targetHour && minute >= targetMinute)) ? 1 : 0;
+  const nextTimeStr = `${melbourneDate(daysUntil)}T${String(targetHour).padStart(2, "0")}:${String(targetMinute).padStart(2, "0")}:00`;
+  const ms = Math.max(fromZonedTime(nextTimeStr, "Australia/Melbourne").getTime() - Date.now(), 60_000);
+  log.info(`${label}: next run ${nextTimeStr} Melbourne time (in ${(ms / 3600000).toFixed(1)}h)`);
+
+  dailyTimers.set(label, setTimeout(async () => {
+    try { await job(); } catch (e: any) { log.error(`${label} scheduled run failed: ${e.message}`); }
+    scheduleDailyFromSettings(label, hourKey, minKey, defH, defM, job);
+  }, ms));
 }
 
 async function checkAndNotifySubmissions() {
@@ -287,17 +334,14 @@ export async function startScheduledJobs() {
   // On startup: catch up if grid data is stale (server started after scheduled window)
   await startupGridCheck();
 
-  // Daily wind grid pre-fetches: Fine at 5:00am, Thermal at 5:26am (fixed crons below).
-  // Extended/7-Day runs at the schedExtendedForecastHour/Minute setting (default 5:30am),
-  // triggered by the hourly cron further down — not a fixed cron here.
-  cron.schedule("0 5 * * *", fetchFineGridDaily, { timezone: "Australia/Melbourne" });
-  log.info("Fine grid daily fetch scheduled: 5:00am Melbourne time");
-
-  // Wrapped, not passed directly: node-cron invokes tasks with a TaskContext
-  // argument, which would arrive as `retryRound` and silently disable the
-  // retry chain on the cron path (an object is never < the delay count).
-  cron.schedule("26 5 * * *", () => fetchThermalGridDaily(0), { timezone: "Australia/Melbourne" });
-  log.info("Thermal grid daily fetch scheduled: 5:26am Melbourne time");
+  // Daily grid pre-fetches, all settings-driven from Admin → Scheduled Tasks and
+  // rescheduled the same way (see scheduleDailyFromSettings). Defaults: Fine 5:00,
+  // Thermal 5:26. The 7-Day/extended fetch schedules itself in extendedForecast.ts
+  // from schedExtendedForecastHour/Minute (default 5:30).
+  scheduleDailyFromSettings("Fine grid", "schedFineGridHour", "schedFineGridMinute", 5, 0, fetchFineGridDaily);
+  // Wrapped, not passed directly, so node-cron/TaskContext-style args can never
+  // arrive as `retryRound` and silently disable the retry chain.
+  scheduleDailyFromSettings("Thermal grid", "schedThermalGridHour", "schedThermalGridMinute", 5, 26, () => fetchThermalGridDaily(0));
 
   cron.schedule("30 7 * * *", () => retryThermalGaps(), { timezone: "Australia/Melbourne" });
   log.info("Thermal grid retry scheduled: 7:30am Melbourne time (runs only if points are missing)");
