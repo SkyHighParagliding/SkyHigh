@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/Switch";
 import { MarkdownHelpLink } from "@/components/MarkdownHelpLink";
 import {
   ArrowLeft,
@@ -1002,15 +1003,11 @@ export function AdminConnections() {
           {expandedCards.has("smart-assistant") && (
             <CardContent className="border-t border-border-subtle pt-4 space-y-5">
               <div className="flex items-center gap-4 flex-wrap">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={saEnabled}
-                    onChange={(e) => { setSaEnabled(e.target.checked); markDirty(); }}
-                    className="w-4 h-4 accent-accent"
-                  />
-                  <span className="text-sm font-medium text-foreground-label">Enable public Smart Search</span>
-                </label>
+                <Switch
+                  checked={saEnabled}
+                  onChange={(v) => { setSaEnabled(v); markDirty(); }}
+                  label="Enable public Smart Search"
+                />
                 {!saEnabled && <span className="text-xs text-amber-600">Smart Search is hidden from the home page and the public API is disabled</span>}
               </div>
 
@@ -1143,15 +1140,11 @@ export function AdminConnections() {
                   An email is sent when the log exceeds 10 MB — then clear the log to reset the alert.
                 </p>
                 <div className="flex items-center gap-4 flex-wrap">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={searchLogEnabled}
-                      onChange={(e) => toggleSearchLogging(e.target.checked)}
-                      className="w-4 h-4 accent-accent"
-                    />
-                    <span className="text-sm font-medium text-foreground-label">Enable logging</span>
-                  </label>
+                  <Switch
+                    checked={searchLogEnabled}
+                    onChange={(v) => toggleSearchLogging(v)}
+                    label="Enable logging"
+                  />
                   {searchLogStats && searchLogStats.total > 0 && (
                     <span className="text-xs text-muted-foreground">
                       {searchLogStats.total} {searchLogStats.total === 1 ? "entry" : "entries"} — {searchLogStats.sizeMb} MB

@@ -11,6 +11,7 @@ import L from 'leaflet';
 import { AISiteGeneratorModal } from "@/components/AISiteGeneratorModal";
 import { WindCompass } from "@/components/WindCompass";
 import { ClosureDatePicker } from "@/components/ui/ClosureDatePicker";
+import { Switch } from "@/components/ui/Switch";
 import { useSiteForm } from "@/hooks/useSiteForm";
 
 // Fix for default marker icon in react-leaflet
@@ -352,52 +353,22 @@ export function AdminSiteEdit() {
                     />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
-                    <div className="flex flex-col gap-1 sm:pb-1">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="isSkyHighSite"
-                          checked={formData.isSkyHighSite === "true"}
-                          onChange={(e) => {
-                            setFormData(prev => ({ ...prev, isSkyHighSite: e.target.checked ? "true" : "false" }));
-                            markDirty();
-                          }}
-                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
-                        />
-                        <label htmlFor="isSkyHighSite" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
-                          Club Site
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="skipBulkImport"
-                          checked={formData.skipBulkImport === "true"}
-                          onChange={(e) => {
-                            setFormData(prev => ({ ...prev, skipBulkImport: e.target.checked ? "true" : "false" }));
-                            markDirty();
-                          }}
-                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
-                        />
-                        <label htmlFor="skipBulkImport" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
-                          Skip Import
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="isXCSite"
-                          checked={formData.isXCSite === "true"}
-                          onChange={(e) => {
-                            setFormData(prev => ({ ...prev, isXCSite: e.target.checked ? "true" : "false" }));
-                            markDirty();
-                          }}
-                          className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
-                        />
-                        <label htmlFor="isXCSite" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
-                          XC Site
-                        </label>
-                      </div>
+                    <div className="flex flex-col gap-2 sm:pb-1">
+                      <Switch
+                        checked={formData.isSkyHighSite === "true"}
+                        onChange={(v) => { setFormData(prev => ({ ...prev, isSkyHighSite: v ? "true" : "false" })); markDirty(); }}
+                        label="Club Site"
+                      />
+                      <Switch
+                        checked={formData.skipBulkImport === "true"}
+                        onChange={(v) => { setFormData(prev => ({ ...prev, skipBulkImport: v ? "true" : "false" })); markDirty(); }}
+                        label="Skip Import"
+                      />
+                      <Switch
+                        checked={formData.isXCSite === "true"}
+                        onChange={(v) => { setFormData(prev => ({ ...prev, isXCSite: v ? "true" : "false" })); markDirty(); }}
+                        label="XC Site"
+                      />
                     </div>
                     <div className="space-y-2 sm:ml-auto sm:w-45">
                       <label className="text-sm font-medium text-foreground-label">Type</label>
@@ -459,19 +430,11 @@ export function AdminSiteEdit() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
                     <div className="flex items-center gap-2 sm:pb-1">
-                      <input
-                        type="checkbox"
-                        id="overrideHideClosed"
+                      <Switch
                         checked={formData.overrideHideClosed === "true"}
-                        onChange={(e) => {
-                          setFormData(prev => ({ ...prev, overrideHideClosed: e.target.checked ? "true" : "false" }));
-                          markDirty();
-                        }}
-                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent cursor-pointer"
+                        onChange={(v) => { setFormData(prev => ({ ...prev, overrideHideClosed: v ? "true" : "false" })); markDirty(); }}
+                        label="Override Hide Closed Sites"
                       />
-                      <label htmlFor="overrideHideClosed" className="text-sm font-medium text-foreground-label cursor-pointer select-none whitespace-nowrap">
-                        Override Hide Closed Sites
-                      </label>
                     </div>
                     <div className="space-y-2 sm:ml-auto sm:w-45">
                       <label className="text-sm font-medium text-foreground-label">Hazard Level</label>
@@ -646,15 +609,12 @@ export function AdminSiteEdit() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground-label">Hooded Plovers</label>
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer shrink-0">
-                        <input
-                          type="checkbox"
-                          checked={formData.hoodedPloversActive === "true"}
-                          onChange={(e) => { handleChange({ target: { name: "hoodedPloversActive", value: e.target.checked ? "true" : "false" } } as any); }}
-                          className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                        />
-                        <span className="text-sm text-foreground-secondary">Active</span>
-                      </label>
+                      <Switch
+                        checked={formData.hoodedPloversActive === "true"}
+                        onChange={(v) => { handleChange({ target: { name: "hoodedPloversActive", value: v ? "true" : "false" } } as any); }}
+                        label="Active"
+                        className="shrink-0"
+                      />
                       <input 
                         type="text" 
                         name="hoodedPloversLink" 
@@ -1064,30 +1024,16 @@ export function AdminSiteEdit() {
                   <div className="grid grid-cols-1 md:grid-cols-3">
                     <div className="md:col-span-2 flex items-center justify-center gap-4">
                       <div className="flex flex-col gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.crossLeft === "true"}
-                            onChange={(e) => {
-                              setFormData(prev => ({ ...prev, crossLeft: e.target.checked ? "true" : "false" }));
-                              markDirty();
-                            }}
-                            className="w-4 h-4 rounded text-accent focus:ring-accent"
-                          />
-                          <span className="text-xs font-medium text-foreground-secondary">Left Cross</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.crossRight === "true"}
-                            onChange={(e) => {
-                              setFormData(prev => ({ ...prev, crossRight: e.target.checked ? "true" : "false" }));
-                              markDirty();
-                            }}
-                            className="w-4 h-4 rounded text-accent focus:ring-accent"
-                          />
-                          <span className="text-xs font-medium text-foreground-secondary">Right Cross</span>
-                        </label>
+                        <Switch
+                          checked={formData.crossLeft === "true"}
+                          onChange={(v) => { setFormData(prev => ({ ...prev, crossLeft: v ? "true" : "false" })); markDirty(); }}
+                          label="Left Cross"
+                        />
+                        <Switch
+                          checked={formData.crossRight === "true"}
+                          onChange={(v) => { setFormData(prev => ({ ...prev, crossRight: v ? "true" : "false" })); markDirty(); }}
+                          label="Right Cross"
+                        />
                       </div>
                       <WindCompass
                         value={formData.windDir}

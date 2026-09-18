@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Switch } from "@/components/ui/Switch";
 import { ArrowLeft, Save, Trash2, Image as ImageIcon, RefreshCw, Star, GraduationCap, Check, MessageCircle, Tags, Copy, ExternalLink, Share2, Plus, Play, ArrowUp, ArrowDown, ChevronDown, ChevronUp } from "lucide-react";
 import { socialLinks } from "@/components/SocialIcons";
 import { MarkdownHelpLink } from "@/components/MarkdownHelpLink";
@@ -345,17 +346,12 @@ export function AdminHomeSettings() {
             {expandedSections.has("quickcards") && <CardContent className="space-y-6 border-t border-border pt-4">
               <div className="space-y-4 border-b pb-6">
                 <h3 className="text-sm font-bold text-ink">Card Display Settings</h3>
-                <div className="flex items-center gap-2 mb-4">
-                  <input
-                    type="checkbox"
-                    id="homeCardsCycle"
+                <div className="mb-4">
+                  <Switch
                     checked={formData.homeCardsCycle}
-                    onChange={(e) => setFormData(prev => ({ ...prev, homeCardsCycle: e.target.checked }))}
-                    className="rounded text-accent focus:ring-accent"
+                    onChange={(v) => setFormData(prev => ({ ...prev, homeCardsCycle: v }))}
+                    label="Cycle cards on page refresh"
                   />
-                  <label htmlFor="homeCardsCycle" className="text-sm font-medium text-foreground-label">
-                    Cycle cards on page refresh
-                  </label>
                 </div>
 
                 {formData.homeCardsCycle && (

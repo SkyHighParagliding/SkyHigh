@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/Switch";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { getCachedTileCount, clearTileCache, estimateTileCount } from "@/lib/tileCache";
@@ -350,19 +351,12 @@ export function AdminFlightTracker() {
                 { label: "SPOT Tracker", value: spotVisible, setter: setSpotVisible, color: "bg-blue-500" },
                 { label: "ZOLEO", value: zoleoVisible, setter: setZoleoVisible, color: "bg-green-500" },
               ].map(({ label, value, setter, color }) => (
-                <label key={label} className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) => { setter(e.target.checked); markDirty(); }}
-                    className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-400"
-                  />
-                  <span className={`w-2 h-2 rounded-full ${color}`} />
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {value ? 'Visible' : 'Hidden'}
-                  </span>
-                </label>
+                <Switch
+                  key={label}
+                  checked={value}
+                  onChange={(v) => { setter(v); markDirty(); }}
+                  label={<span className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${color}`} />{label}</span>}
+                />
               ))}
             </div>
           </CardContent>

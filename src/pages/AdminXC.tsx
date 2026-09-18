@@ -7,6 +7,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { Switch } from "@/components/ui/Switch";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { UnsavedChangesModal } from "@/components/UnsavedChangesModal";
 import { useCompetitions, useXCSites, useAdminCompetitions, useCompetitionMutation } from "@/hooks/api";
@@ -419,18 +420,12 @@ export function AdminXC() {
             {expandedSections.has("maps") && (
               <CardContent className="pt-0 pb-5 space-y-4">
                 <div className="border-t border-border pt-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={localMapsEnabled}
-                      onChange={(e) => { setLocalMapsEnabled(e.target.checked); markDirty(); }}
-                      disabled={settingsLoading}
-                    />
-                    <span className="ml-2 text-sm font-medium text-foreground-label">
-                      Show XC Maps in navigation
-                    </span>
-                  </label>
+                  <Switch
+                    checked={localMapsEnabled}
+                    onChange={(v) => { setLocalMapsEnabled(v); markDirty(); }}
+                    disabled={settingsLoading}
+                    label="Show XC Maps in navigation"
+                  />
                   <p className="mt-1 ml-7 text-xs text-muted-foreground">
                     When enabled, XC Maps appears in the XC dropdown menu and at /xc/maps.
                   </p>
@@ -475,30 +470,18 @@ export function AdminXC() {
                     Control which overlay toggle buttons appear on the XC Maps map view.
                   </p>
                   <div className="space-y-3">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                        checked={localMapAirspaceButton}
-                        onChange={(e) => { setLocalMapAirspaceButton(e.target.checked); markDirty(); }}
-                        disabled={settingsLoading}
-                      />
-                      <span className="ml-2 text-sm font-medium text-foreground-label">
-                        Show Airspace button on map
-                      </span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                        checked={localMapWindButton}
-                        onChange={(e) => { setLocalMapWindButton(e.target.checked); markDirty(); }}
-                        disabled={settingsLoading}
-                      />
-                      <span className="ml-2 text-sm font-medium text-foreground-label">
-                        Show Live Wind button on map
-                      </span>
-                    </label>
+                    <Switch
+                      checked={localMapAirspaceButton}
+                      onChange={(v) => { setLocalMapAirspaceButton(v); markDirty(); }}
+                      disabled={settingsLoading}
+                      label="Show Airspace button on map"
+                    />
+                    <Switch
+                      checked={localMapWindButton}
+                      onChange={(v) => { setLocalMapWindButton(v); markDirty(); }}
+                      disabled={settingsLoading}
+                      label="Show Live Wind button on map"
+                    />
                   </div>
                 </div>
 
@@ -732,18 +715,12 @@ export function AdminXC() {
             {expandedSections.has("airspace") && (
               <CardContent className="pt-0 pb-5 space-y-4">
                 <div className="border-t border-border pt-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={localAirspaceEnabled}
-                      onChange={(e) => { setLocalAirspaceEnabled(e.target.checked); markDirty(); }}
-                      disabled={settingsLoading}
-                    />
-                    <span className="ml-2 text-sm font-medium text-foreground-label">
-                      Show Airspace page in navigation
-                    </span>
-                  </label>
+                  <Switch
+                    checked={localAirspaceEnabled}
+                    onChange={(v) => { setLocalAirspaceEnabled(v); markDirty(); }}
+                    disabled={settingsLoading}
+                    label="Show Airspace page in navigation"
+                  />
                   <p className="mt-1 ml-7 text-xs text-muted-foreground">
                     When enabled, an Airspace link appears in the XC dropdown menu and at /xc/airspace.
                   </p>
@@ -787,18 +764,12 @@ export function AdminXC() {
             {expandedSections.has("competitions") && (
               <CardContent className="pt-0 pb-5 space-y-4">
                 <div className="border-t border-border pt-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={localCompetitionsEnabled}
-                      onChange={(e) => { setLocalCompetitionsEnabled(e.target.checked); markDirty(); }}
-                      disabled={settingsLoading}
-                    />
-                    <span className="ml-2 text-sm font-medium text-foreground-label">
-                      Show Competitions in navigation
-                    </span>
-                  </label>
+                  <Switch
+                    checked={localCompetitionsEnabled}
+                    onChange={(v) => { setLocalCompetitionsEnabled(v); markDirty(); }}
+                    disabled={settingsLoading}
+                    label="Show Competitions in navigation"
+                  />
                   <p className="mt-1 ml-7 text-xs text-muted-foreground">
                     When enabled, competitions appear in the XC nav dropdown and at /xc/competitions.
                   </p>

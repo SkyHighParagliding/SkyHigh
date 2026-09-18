@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Plus, Edit, Trash2, X, Search, RefreshCw, AlertTriangle, CheckCircle2, Clock, Loader2, Archive, RotateCcw, Eye, ChevronDown, ChevronRight, Wind } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/Switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -797,16 +798,11 @@ export function AdminSites() {
             />
           </div>
           <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="hideClosedSites"
+            <Switch
               checked={hideClosedSites}
-              onChange={toggleHideClosedSites}
-              className="w-5 h-5 rounded border-border text-accent focus:ring-1 focus:ring-accent focus:border-accent cursor-pointer"
+              onChange={() => toggleHideClosedSites()}
+              label="Hide closed sites"
             />
-            <label htmlFor="hideClosedSites" className="text-sm font-medium text-foreground-label cursor-pointer select-none">
-              Hide closed sites
-            </label>
             <span className="text-xs text-foreground-faint">(closed sites will not appear on the public Sites page or maps, but remain visible here)</span>
           </div>
         </div>
