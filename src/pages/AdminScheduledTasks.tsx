@@ -33,6 +33,7 @@ interface ScheduleSettings {
   schedDriveSyncMinute: string;
   driveSyncEnabled: string;
   autoDownloadZoneData: string;
+  autoImportEnabled: string;
   cacheAdminSessionTtl: string;
   cacheTidyHqMemberTtl: string;
   cacheBomTideTtl: string;
@@ -66,6 +67,7 @@ const DEFAULTS: ScheduleSettings = {
   schedDriveSyncMinute: "0",
   driveSyncEnabled: "false",
   autoDownloadZoneData: "true",
+  autoImportEnabled: "true",
   cacheAdminSessionTtl: "24",
   cacheTidyHqMemberTtl: "15",
   cacheBomTideTtl: "6",
@@ -203,9 +205,9 @@ export function AdminScheduledTasks() {
           <Card className="border-t-4 border-t-accent">
             <CardHeader>
               <CardTitle className="text-ink">Site Guide Version Check & Auto-Import</CardTitle>
-              <p className="text-sm text-muted-foreground">Checks if the SAFA site guide has a new version. If changed and auto-import is enabled, triggers a bulk site import.</p>
+              <p className="text-sm text-muted-foreground">Checks if the SAFA site guide has a new version. If changed and auto-import is enabled, triggers a bulk site import for the last imported state.</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
@@ -215,6 +217,16 @@ export function AdminScheduledTasks() {
                   <span className="text-sm text-muted-foreground ml-1">{formatTime(settings.schedSiteguideHour, settings.schedSiteguideMinute)}</span>
                 </div>
               </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
+                  checked={settings.autoImportEnabled !== "false"}
+                  onChange={(e) => updateField("autoImportEnabled", e.target.checked ? "true" : "false")}
+                />
+                <span className="text-sm font-medium text-foreground-label">Auto-import sites on version change</span>
+              </label>
+              <p className="text-xs text-muted-foreground">Only runs after an admin has done at least one manual import (Admin → Sites → Siteguide Import), which sets the state to re-import.</p>
             </CardContent>
           </Card>
 
