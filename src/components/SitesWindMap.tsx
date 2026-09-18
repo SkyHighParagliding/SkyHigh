@@ -586,21 +586,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         <div className={`bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[120px] max-w-[calc(100vw-1.5rem)] ${showLegend ? 'hidden lg:block' : ''}`}>
           <div className="flex items-start justify-between gap-2.5">
             <div className="space-y-0.5">
-              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">{viewMode === 'thermal' && showAllAirspace ? 'Airspace overhead' : 'Tapped point'}</div>
+              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
               {viewMode === 'thermal' ? (
                 thermalInfo ? (
                   <>
-                    {showAllAirspace ? (
-                      airspaceStack.length === 0
-                        ? <div className="text-[11px] text-white/50">No airspace here</div>
-                        : airspaceStack.map((sec, i) => (
-                            <div key={i} className="text-[11px] leading-tight">
-                              <span className="font-semibold text-white/90">{airspaceLabel(sec)}</span>
-                              <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
-                            </div>
-                          ))
-                    ) : (
-                      <>
+                    <>
                         {thermalOvercast
                           ? <div className="text-[12px] font-bold leading-tight text-white/70">{thermalOvercastLabel}</div>
                           : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
@@ -630,13 +620,24 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         {typeof thermalInfo.groundAmsl === 'number' && (
                           <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
                         )}
+                        {/* Airspace ON: list the sectors overhead here — between
+                            Ground and Wind — rather than replacing the readout. */}
+                        {showAllAirspace && (
+                          airspaceStack.length === 0
+                            ? <div className="text-[11px] text-white/50">No airspace overhead</div>
+                            : airspaceStack.map((sec, i) => (
+                                <div key={i} className="text-[11px] leading-tight">
+                                  <span className="font-semibold text-white/90">{airspaceLabel(sec)}</span>
+                                  <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
+                                </div>
+                              ))
+                        )}
                         {tappedWind && (
                           <div className="text-[11px] text-white/75">
                             Wind {tappedWind.speedKt.toFixed(0)} kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>
                           </div>
                         )}
                       </>
-                    )}
                     {/* Point actions (Chart / SkewT, stacked) and display toggles
                         (Airspace stack + Wind flow overlay, stacked), side by side. */}
                     <div className="flex items-start gap-4 pt-1 mt-0.5 border-t border-white/10">
