@@ -25,6 +25,10 @@ const M_TO_FT = 3.280839895;
 // Ignore wide info regions / low ground obstacles for the airspace warning (see
 // airspaceConflict.ts). Controlled/restricted/danger airspace IS flagged.
 const AIRSPACE_WARN_SKIP = new Set(['FIR', 'OCA', 'OTHER', 'TIZ', 'GLIDING_SECTOR', 'WAVE_WINDOW']);
+// Interactive readout text (Chart / SkewT / the class label / the Wind line) gets
+// a subtle sky tint so it reads as tappable, distinct from the plain white/75
+// readings — without shouting like the red airspace-conflict words.
+const CLICKABLE = 'text-sky-300/80 hover:text-sky-300';
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
@@ -605,7 +609,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             {zones && typeof thermalInfo.groundAmsl === 'number' && (
                               <button
                                 onClick={() => toggleAllAirspace()}
-                                className={`ml-1 ${airspaceConflicts.bl ? 'font-semibold text-red-400 hover:text-red-300' : 'hover:text-white'}`}
+                                className={`ml-1 ${airspaceConflicts.bl ? 'font-semibold text-red-400 hover:text-red-300' : CLICKABLE}`}
                                 title="Show/hide airspace overhead"
                               >
                                 ({airspaceConflicts.bl ? airspaceLabel(airspaceConflicts.bl) : 'Class G'})
@@ -621,7 +625,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             {zones && typeof thermalInfo.groundAmsl === 'number' && (
                               <button
                                 onClick={() => toggleAllAirspace()}
-                                className={`ml-1 ${airspaceConflicts.cu ? 'font-semibold text-red-400 hover:text-red-300' : 'hover:text-white'}`}
+                                className={`ml-1 ${airspaceConflicts.cu ? 'font-semibold text-red-400 hover:text-red-300' : CLICKABLE}`}
                                 title="Show/hide airspace overhead"
                               >
                                 ({airspaceConflicts.cu ? airspaceLabel(airspaceConflicts.cu) : 'Class G'})
@@ -654,7 +658,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         {tappedWind && (
                           <button
                             onClick={() => setShowWindOnThermal(v => !v)}
-                            className={`block text-left text-[11px] hover:text-white ${showWindOnThermal ? 'text-sky-300' : 'text-white/75'}`}
+                            className={`block text-left text-[11px] ${showWindOnThermal ? 'text-sky-300 font-semibold' : CLICKABLE}`}
                             title="Show/hide wind flow on the map"
                           >
                             Wind {tappedWind.speedKt.toFixed(0)} kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>
@@ -668,7 +672,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         {meteogramEnabled && (
                           <button
                             onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
-                            className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
                             title="Thermal forecast chart for this point"
                           >
                             <LineChart className="w-3 h-3" /> Chart
@@ -677,7 +681,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         {skewtEnabled && (
                           <button
                             onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
-                            className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
                             title="SkewT sounding for this point + time"
                           >
                             <ChartLine className="w-3 h-3" /> SkewT
