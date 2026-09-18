@@ -177,7 +177,14 @@ try {
   const settingsPath = path.join(seedsDir, 'seed_settings.json');
   if (fs.existsSync(settingsPath)) {
     const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    seedSettings = data.map((s: any) => [s.key, s.value]);
+    const fromJson: [string, string][] = data.map((s: any) => [s.key, s.value]);
+    // The JSON snapshot is authoritative — put it FIRST so it wins under
+    // INSERT ... ON CONFLICT DO NOTHING. Append the hardcoded defaults so keys
+    // the snapshot omits (e.g. the schedule times schedFineGridHour/Minute etc.,
+    // autoImportEnabled) are still seeded on a fresh DB instead of only relying
+    // on server-side fallbacks. Previously this REPLACED the array, so those
+    // keys were never seeded.
+    seedSettings = [...fromJson, ...seedSettings];
   }
 } catch (e) {
   log.error("Failed to load seed_settings.json", e);
