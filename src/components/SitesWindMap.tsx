@@ -629,14 +629,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             )}
                           </div>
                         )}
-                        {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                          <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
-                        )}
-                        {typeof thermalInfo.groundAmsl === 'number' && (
-                          <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
-                        )}
-                        {/* Airspace ON: list the sectors overhead here — between
-                            Ground and Wind — rather than replacing the readout. */}
+                        {/* Airspace ON: list the sectors overhead here — directly
+                            under Cu Base and above Ground — rather than replacing
+                            the readout. */}
                         {showAllAirspace && (
                           airspaceStack.length === 0
                             ? <div className="text-[11px] text-white/50">No airspace overhead</div>
@@ -646,6 +641,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                                   <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
                                 </div>
                               ))
+                        )}
+                        {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
+                          <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                        )}
+                        {typeof thermalInfo.groundAmsl === 'number' && (
+                          <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
                         )}
                         {/* Wind line doubles as the wind-flow toggle: tap to show/
                             hide the wind-flow overlay on the map. Turns sky-blue
