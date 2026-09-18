@@ -980,6 +980,10 @@ export function AdminHomeSettings() {
                     <option key={site.id} value={site.id}>{site.name}</option>
                   ))}
                 </select>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Show or hide this section with the Featured Sites toggle in{" "}
+                  <Link to="/admin/site-options" className="text-blue-600 hover:text-blue-700 font-medium">Site Options →</Link>
+                </p>
               </div>
             </CardContent>}
           </Card>

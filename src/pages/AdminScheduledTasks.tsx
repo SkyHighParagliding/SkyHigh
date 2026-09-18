@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TimeInput, HourInput } from "@/components/ui/TimeInput";
+import { Switch } from "@/components/ui/Switch";
 import { ArrowLeft, Clock, Save, Loader2, Lock, Play, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminForm } from "@/hooks/useAdminForm";
@@ -219,15 +220,11 @@ export function AdminScheduledTasks() {
                   onChange={(h, m) => { updateField("schedSiteguideHour", h); updateField("schedSiteguideMinute", m); }}
                 />
               </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.autoImportEnabled !== "false"}
-                  onChange={(e) => updateField("autoImportEnabled", e.target.checked ? "true" : "false")}
-                />
-                <span className="text-sm font-medium text-foreground-label">Auto-import sites on version change</span>
-              </label>
+              <Switch
+                checked={settings.autoImportEnabled !== "false"}
+                onChange={(v) => updateField("autoImportEnabled", v ? "true" : "false")}
+                label="Auto-import sites on version change"
+              />
               <p className="text-xs text-muted-foreground">Only runs after an admin has done at least one manual import (Admin → Sites → Siteguide Import), which sets the state to re-import.</p>
             </CardContent>
           </Card>
@@ -243,15 +240,11 @@ export function AdminScheduledTasks() {
               <p className="text-sm text-muted-foreground">Automatically downloads Siteguide zone data (LZ, no-go, powerlines, airspace) when a version change is detected. Data includes landing zones, no-fly zones, hazards, and CASA airspace.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.autoDownloadZoneData !== "false"}
-                  onChange={(e) => updateField("autoDownloadZoneData", e.target.checked ? "true" : "false")}
-                />
-                <span className="text-sm font-medium text-foreground-label">Auto-download on version change</span>
-              </label>
+              <Switch
+                checked={settings.autoDownloadZoneData !== "false"}
+                onChange={(v) => updateField("autoDownloadZoneData", v ? "true" : "false")}
+                label="Auto-download on version change"
+              />
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -302,15 +295,11 @@ export function AdminScheduledTasks() {
               <p className="text-sm text-muted-foreground">Sends email to Social Media committee contacts when new image submissions are pending review.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.submissionNotifyEnabled === "true"}
-                  onChange={(e) => updateField("submissionNotifyEnabled", e.target.checked ? "true" : "false")}
-                />
-                <span className="text-sm font-medium text-foreground-label">Enabled</span>
-              </label>
+              <Switch
+                checked={settings.submissionNotifyEnabled === "true"}
+                onChange={(v) => updateField("submissionNotifyEnabled", v ? "true" : "false")}
+                label="Enabled"
+              />
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Send at:</label>
                 <HourInput hour={settings.submissionNotifyHour} onChange={(h) => updateField("submissionNotifyHour", h)} />
@@ -378,15 +367,12 @@ export function AdminScheduledTasks() {
                   <HourInput hour={settings.weatherScraperEndHour} onChange={(h) => updateField("weatherScraperEndHour", h)} />
                 </div>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.weatherScraperRunContinuously === "true"}
-                  onChange={(e) => updateField("weatherScraperRunContinuously", e.target.checked ? "true" : "false")}
-                />
-                <span className="text-sm font-medium text-foreground-label">Run continuously (ignore operating hours)</span>
-              </label>
+              <Switch
+                checked={settings.weatherScraperRunContinuously === "true"}
+                onChange={(v) => updateField("weatherScraperRunContinuously", v ? "true" : "false")}
+                label="Run continuously (ignore operating hours)"
+                className="pt-1"
+              />
               <p className="text-xs text-muted-foreground">All scrapers sleep outside operating hours (Melbourne time) unless "run continuously" is on. Random interval between min and max prevents predictable API patterns.</p>
             </CardContent>
           </Card>
@@ -397,15 +383,11 @@ export function AdminScheduledTasks() {
               <p className="text-sm text-muted-foreground">Automatically syncs and indexes documents from Google Drive via the Apps Script bridge. Requires the Drive connection to be configured.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.driveSyncEnabled === "true"}
-                  onChange={(e) => updateField("driveSyncEnabled", e.target.checked ? "true" : "false")}
-                />
-                <span className="text-sm font-medium text-foreground-label">Enable automatic daily sync</span>
-              </label>
+              <Switch
+                checked={settings.driveSyncEnabled === "true"}
+                onChange={(v) => updateField("driveSyncEnabled", v ? "true" : "false")}
+                label="Enable automatic daily sync"
+              />
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
                 <TimeInput

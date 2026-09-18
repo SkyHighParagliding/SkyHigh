@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, QrCode, Star, Flag, Store, UserPlus, Palette, ExternalLink, Shield } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { Switch } from "@/components/ui/Switch";
 
 export function AdminSiteOptions() {
   const { settings, updateSettings, loading } = useSettings();
@@ -27,24 +28,13 @@ export function AdminSiteOptions() {
               <CardDescription>Manage online check-in and QR code site cards for flying sites.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label htmlFor="online-checkin-toggle" className="flex items-center cursor-pointer">
-                  <input
-                    id="online-checkin-toggle"
-                    type="checkbox"
-                    className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                    checked={settings.onlineCheckInEnabled}
-                    onChange={(e) => updateSettings({ onlineCheckInEnabled: e.target.checked }).catch(() => {})}
-                    disabled={loading}
-                  />
-                  <span className="ml-2 text-sm font-medium text-foreground-label">
-                    Mandatory Check-in: {settings.onlineCheckInEnabled ? "On" : "Off"}
-                  </span>
-                </label>
-                <p className="mt-1 ml-7 text-xs text-muted-foreground">
-                  When enabled, pilots must check in online before flying.
-                </p>
-              </div>
+              <Switch
+                checked={!!settings.onlineCheckInEnabled}
+                onChange={(v) => updateSettings({ onlineCheckInEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Mandatory Check-in"
+                description="When enabled, pilots must check in online before flying."
+              />
               <div className="border-t border-border-faint pt-3">
                 <label htmlFor="qr-code-mode" className="block text-sm font-medium text-foreground-label mb-1.5">QR Code Site Cards</label>
                 <select
@@ -76,24 +66,13 @@ export function AdminSiteOptions() {
               <CardDescription>Controls the automatic on-site SO login popup.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label htmlFor="so-proximity-prompt-toggle" className="flex items-center cursor-pointer">
-                  <input
-                    id="so-proximity-prompt-toggle"
-                    type="checkbox"
-                    className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                    checked={settings.soProximityPromptEnabled !== "false"}
-                    onChange={(e) => updateSettings({ soProximityPromptEnabled: e.target.checked ? "true" : "false" }).catch(() => {})}
-                    disabled={loading}
-                  />
-                  <span className="ml-2 text-sm font-medium text-foreground-label">
-                    Auto-prompt: {settings.soProximityPromptEnabled !== "false" ? "On" : "Off"}
-                  </span>
-                </label>
-                <p className="mt-1 ml-7 text-xs text-muted-foreground">
-                  When on, anyone within 500m of a flying site is automatically shown an SO login prompt. Turn this off if you want SO and committee members to log in manually via the admin menu link instead.
-                </p>
-              </div>
+              <Switch
+                checked={settings.soProximityPromptEnabled !== "false"}
+                onChange={(v) => updateSettings({ soProximityPromptEnabled: v ? "true" : "false" }).catch(() => {})}
+                disabled={loading}
+                label="Auto-prompt"
+                description="When on, anyone within 500m of a flying site is automatically shown an SO login prompt. Turn this off if you want SO and committee members to log in manually via the admin menu link instead."
+              />
             </CardContent>
           </Card>
 
@@ -105,94 +84,46 @@ export function AdminSiteOptions() {
               </CardTitle>
               <CardDescription>Show or hide sections on the home page.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <label htmlFor="featured-site-toggle" className="flex items-center cursor-pointer">
-                <input
-                  id="featured-site-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.featuredSiteEnabled}
-                  onChange={(e) => updateSettings({ featuredSiteEnabled: e.target.checked }).catch(() => {})}
+            <CardContent className="space-y-3">
+              <Switch
+                checked={!!settings.featuredSiteEnabled}
+                onChange={(v) => updateSettings({ featuredSiteEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Featured Sites"
+              />
+              <div>
+                <Switch
+                  checked={!!settings.photoSliderEnabled}
+                  onChange={(v) => updateSettings({ photoSliderEnabled: v }).catch(() => {})}
                   disabled={loading}
+                  label="Photo Carousel"
                 />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  Featured Sites: {settings.featuredSiteEnabled ? "Enabled" : "Disabled"}
-                </span>
-              </label>
-              <label htmlFor="photo-slider-toggle" className="flex items-center cursor-pointer mt-3">
-                <input
-                  id="photo-slider-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.photoSliderEnabled}
-                  onChange={(e) => updateSettings({ photoSliderEnabled: e.target.checked }).catch(() => {})}
+                {settings.photoSliderEnabled && (
+                  <div className="ml-12 mt-2 flex gap-5">
+                    <Switch checked={!!settings.photoSliderAutoScroll} onChange={(v) => updateSettings({ photoSliderAutoScroll: v }).catch(() => {})} disabled={loading} label="Auto-scroll" />
+                    <Switch checked={!!settings.photoSliderReverse} onChange={(v) => updateSettings({ photoSliderReverse: v }).catch(() => {})} disabled={loading} label="Reverse direction" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <Switch
+                  checked={!!settings.youtubeCarouselEnabled}
+                  onChange={(v) => updateSettings({ youtubeCarouselEnabled: v }).catch(() => {})}
                   disabled={loading}
+                  label="YouTube Carousel"
                 />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  Photo Carousel: {settings.photoSliderEnabled ? "Enabled" : "Disabled"}
-                </span>
-              </label>
-              {settings.photoSliderEnabled && (
-                <div className="ml-7 mt-1 flex gap-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={settings.photoSliderAutoScroll}
-                      onChange={(e) => updateSettings({ photoSliderAutoScroll: e.target.checked }).catch(() => {})}
-                      disabled={loading}
-                    />
-                    <span className="ml-1.5 text-xs text-foreground-secondary">Auto-scroll</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={settings.photoSliderReverse}
-                      onChange={(e) => updateSettings({ photoSliderReverse: e.target.checked }).catch(() => {})}
-                      disabled={loading}
-                    />
-                    <span className="ml-1.5 text-xs text-foreground-secondary">Reverse direction</span>
-                  </label>
-                </div>
-              )}
-              <label htmlFor="youtube-carousel-toggle" className="flex items-center cursor-pointer mt-3">
-                <input
-                  id="youtube-carousel-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.youtubeCarouselEnabled}
-                  onChange={(e) => updateSettings({ youtubeCarouselEnabled: e.target.checked }).catch(() => {})}
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  YouTube Carousel: {settings.youtubeCarouselEnabled ? "Enabled" : "Disabled"}
-                </span>
-              </label>
-              {settings.youtubeCarouselEnabled && (
-                <div className="ml-7 mt-1 flex gap-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={settings.youtubeCarouselAutoScroll}
-                      onChange={(e) => updateSettings({ youtubeCarouselAutoScroll: e.target.checked }).catch(() => {})}
-                      disabled={loading}
-                    />
-                    <span className="ml-1.5 text-xs text-foreground-secondary">Auto-scroll</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                      checked={settings.youtubeCarouselReverse}
-                      onChange={(e) => updateSettings({ youtubeCarouselReverse: e.target.checked }).catch(() => {})}
-                      disabled={loading}
-                    />
-                    <span className="ml-1.5 text-xs text-foreground-secondary">Reverse direction</span>
-                  </label>
-                </div>
-              )}
+                {settings.youtubeCarouselEnabled && (
+                  <div className="ml-12 mt-2 flex gap-5">
+                    <Switch checked={!!settings.youtubeCarouselAutoScroll} onChange={(v) => updateSettings({ youtubeCarouselAutoScroll: v }).catch(() => {})} disabled={loading} label="Auto-scroll" />
+                    <Switch checked={!!settings.youtubeCarouselReverse} onChange={(v) => updateSettings({ youtubeCarouselReverse: v }).catch(() => {})} disabled={loading} label="Reverse direction" />
+                  </div>
+                )}
+              </div>
+              {/* These toggles only show/hide the sections. Their content — which site
+                  is featured, and the carousel images/videos — is set in Home Settings. */}
+              <Link to="/admin/home" className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors pt-1">
+                Configure home page content (featured site, carousel images &amp; videos) →
+              </Link>
             </CardContent>
           </Card>
 
@@ -205,22 +136,13 @@ export function AdminSiteOptions() {
               <CardDescription>Manage the embedded Google My Maps ground handling sites page.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <label htmlFor="ground-handling-toggle" className="flex items-center cursor-pointer">
-                <input
-                  id="ground-handling-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={settings.groundHandlingEnabled}
-                  onChange={(e) => updateSettings({ groundHandlingEnabled: e.target.checked }).catch(() => {})}
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  Ground Handling Page: {settings.groundHandlingEnabled ? "Visible" : "Hidden"}
-                </span>
-              </label>
-              <p className="mt-1 ml-7 text-xs text-muted-foreground">
-                When enabled, the ground handling map appears in the Pilots nav menu and at /ground-handling.
-              </p>
+              <Switch
+                checked={!!settings.groundHandlingEnabled}
+                onChange={(v) => updateSettings({ groundHandlingEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Ground Handling Page"
+                description="When enabled, the ground handling map appears in the Pilots nav menu and at /ground-handling."
+              />
 
               <div className="border-t border-border-faint pt-4">
                 <h4 className="text-sm font-semibold text-ink mb-2">Edit Map Sites</h4>
@@ -283,22 +205,13 @@ export function AdminSiteOptions() {
               <CardDescription>Show or hide the member business directory on the public site.</CardDescription>
             </CardHeader>
             <CardContent>
-              <label htmlFor="business-directory-toggle" className="flex items-center cursor-pointer">
-                <input
-                  id="business-directory-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={!!settings.businessDirectoryEnabled}
-                  onChange={(e) => updateSettings({ businessDirectoryEnabled: e.target.checked }).catch(() => {})}
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  Business Directory: {settings.businessDirectoryEnabled ? "Visible" : "Hidden"}
-                </span>
-              </label>
-              <p className="mt-1 ml-7 text-xs text-muted-foreground">
-                When hidden, the directory link is removed from navigation and the public page is inaccessible. Admin management remains available.
-              </p>
+              <Switch
+                checked={!!settings.businessDirectoryEnabled}
+                onChange={(v) => updateSettings({ businessDirectoryEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Business Directory"
+                description="When hidden, the directory link is removed from navigation and the public page is inaccessible. Admin management remains available."
+              />
             </CardContent>
           </Card>
 
@@ -323,22 +236,13 @@ export function AdminSiteOptions() {
               <CardDescription>Membership signup page visibility and TidyHQ link.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <label htmlFor="join-page-toggle" className="flex items-center cursor-pointer">
-                <input
-                  id="join-page-toggle"
-                  type="checkbox"
-                  className="w-5 h-5 text-accent focus:ring-accent border-border rounded cursor-pointer"
-                  checked={!!settings.joinPageEnabled}
-                  onChange={(e) => updateSettings({ joinPageEnabled: e.target.checked }).catch(() => {})}
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm font-medium text-foreground-label">
-                  Join Page: {settings.joinPageEnabled ? "Visible" : "Hidden"}
-                </span>
-              </label>
-              <p className="ml-7 text-xs text-muted-foreground">
-                When enabled, the Join page is visible to the public and appears in the Pilots dropdown menu.
-              </p>
+              <Switch
+                checked={!!settings.joinPageEnabled}
+                onChange={(v) => updateSettings({ joinPageEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Join Page"
+                description="When enabled, the Join page is visible to the public and appears in the Pilots dropdown menu."
+              />
               <Link
                 to="/admin/join-settings"
                 className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors mt-1"
