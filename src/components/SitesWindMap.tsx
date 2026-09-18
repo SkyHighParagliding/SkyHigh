@@ -11,7 +11,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, SCALE_BAR_BOTTOM_COLLAPSED } from './windMapTypes';
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
-import type { WindGrid } from './windmap/windInterpolation';
+import { getWindAt, type WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
@@ -212,6 +212,19 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     if (viewMode !== 'thermal' || !thermalGrid || !selectedSite) return null;
     return getThermalAt(selectedSite.site.lon, selectedSite.site.lat, currentTime, thermalGrid);
   }, [viewMode, thermalGrid, selectedSite, currentTime]);
+
+  // Surface wind at the tapped thermal point, sampled from the wind overlay at
+  // the current scrubber time — shown under Ground in the readout box.
+  const tappedWind = useMemo(() => {
+    if (viewMode !== 'thermal' || !thermalInfo || thermalInfo.lat == null || thermalInfo.lon == null || !windGrid) return null;
+    const uv = getWindAt(thermalInfo.lon, thermalInfo.lat, currentTime, windGrid);
+    if (!uv) return null;
+    const [u, v] = uv;
+    const speedKt = Math.hypot(u, v) / 0.514444;
+    // u/v were built as u=-S·sin(dir), v=-S·cos(dir) (dir = FROM), so atan2(-u,-v)=dir.
+    const direction = (Math.atan2(-u, -v) * 180 / Math.PI + 360) % 360;
+    return { speedKt, direction };
+  }, [viewMode, thermalInfo?.lat, thermalInfo?.lon, currentTime, windGrid]);
 
   const thermalSiteStrength = thermalAtSite ? getThermalStrength(effectiveWstar(thermalAtSite.wstar, thermalAtSite.cape)) : null;
 
@@ -617,36 +630,54 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         {typeof thermalInfo.groundAmsl === 'number' && (
                           <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
                         )}
+                        {tappedWind && (
+                          <div className="text-[11px] text-white/75">
+                            Wind {tappedWind.speedKt.toFixed(0)} kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>
+                          </div>
+                        )}
                       </>
                     )}
-                    {/* Point actions. Chart opens the meteogram for this point; Airspace
-                        ON lists the stack (OFF reverts + clears any drawn sector). */}
-                    <div className="flex items-center gap-3 pt-1 mt-0.5 border-t border-white/10">
-                      {meteogramEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
-                        <button
-                          onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
-                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                          title="Thermal forecast chart for this point"
-                        >
-                          <LineChart className="w-3 h-3" /> Chart
-                        </button>
+                    {/* Point actions (Chart / SkewT, stacked) and display toggles
+                        (Airspace stack + Wind flow overlay, stacked), side by side. */}
+                    <div className="flex items-start gap-4 pt-1 mt-0.5 border-t border-white/10">
+                      {(meteogramEnabled || skewtEnabled) && thermalInfo.lat != null && thermalInfo.lon != null && (
+                        <div className="flex flex-col gap-1">
+                          {meteogramEnabled && (
+                            <button
+                              onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
+                              className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                              title="Thermal forecast chart for this point"
+                            >
+                              <LineChart className="w-3 h-3" /> Chart
+                            </button>
+                          )}
+                          {skewtEnabled && (
+                            <button
+                              onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
+                              className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                              title="SkewT sounding for this point + time"
+                            >
+                              <ChartLine className="w-3 h-3" /> SkewT
+                            </button>
+                          )}
+                        </div>
                       )}
-                      {skewtEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                      <div className="flex flex-col gap-1">
                         <button
-                          onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
+                          onClick={() => toggleAllAirspace()}
                           className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                          title="SkewT sounding for this point + time"
+                          title="List the airspace stack under the pin"
                         >
-                          <ChartLine className="w-3 h-3" /> SkewT
+                          Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
                         </button>
-                      )}
-                      <button
-                        onClick={() => toggleAllAirspace()}
-                        className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                        title="List the airspace stack under the pin"
-                      >
-                        Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
-                      </button>
+                        <button
+                          onClick={() => setShowWindOnThermal(v => !v)}
+                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                          title="Overlay wind-flow lines on the thermal map"
+                        >
+                          Wind flow <span className={`font-semibold ${showWindOnThermal ? 'text-sky-300' : 'text-white/40'}`}>{showWindOnThermal ? 'ON' : 'OFF'}</span>
+                        </button>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -707,20 +738,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 </span>
               </div>
               <ThermalStrengthLegend />
-              {/* Wind-flow ON/OFF toggle — SitesWindMap only. */}
-              <div className="mt-1.5 text-[10px] text-white/75">
-                <div
-                  onClick={(e) => { e.stopPropagation(); setShowWindOnThermal(v => !v); }}
-                  className="flex items-center gap-2 cursor-pointer hover:text-white/90"
-                  role="button"
-                >
-                  <span className="w-[22px] flex justify-center shrink-0 text-white/60">〰</span>
-                  <span>Wind flow</span>
-                  <span className={`ml-auto font-bold ${showWindOnThermal ? 'text-sky-300' : 'text-white/35'}`}>
-                    {showWindOnThermal ? 'ON' : 'OFF'}
-                  </span>
-                </div>
-              </div>
             </>
           ) : (
             <>
