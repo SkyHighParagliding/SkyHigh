@@ -116,6 +116,29 @@ function formatTime(hour: string, minute: string): string {
   return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
+/**
+ * No-typing time picker: two native <select> dropdowns (hour + minute). On mobile
+ * these render as a scroll wheel — pick, don't type. Shared by every schedule
+ * card so the time input looks and behaves the same everywhere.
+ */
+function TimeInput({ hour, minute, onChange }: { hour: string; minute: string; onChange: (hour: string, minute: string) => void }) {
+  const cls = "border border-input rounded-md px-2 py-1.5 text-sm bg-background cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent";
+  const h = String(parseInt(hour, 10) || 0);
+  const m = String(parseInt(minute, 10) || 0);
+  return (
+    <div className="flex items-center gap-1.5">
+      <select className={cls} value={h} onChange={(e) => onChange(e.target.value, m)} aria-label="Hour">
+        {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, "0")}</option>)}
+      </select>
+      <span className="text-muted-foreground">:</span>
+      <select className={cls} value={m} onChange={(e) => onChange(h, e.target.value)} aria-label="Minute">
+        {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, "0")}</option>)}
+      </select>
+      <span className="text-sm text-muted-foreground ml-1">{formatTime(h, m)}</span>
+    </div>
+  );
+}
+
 export function AdminScheduledTasks() {
   const { token } = useAuth();
   const [settings, setSettings] = useState<ScheduleSettings>({ ...DEFAULTS });
@@ -218,14 +241,13 @@ export function AdminScheduledTasks() {
               <p className="text-sm text-muted-foreground">Checks if the SAFA site guide has a new version. If changed and auto-import is enabled, triggers a bulk site import for the last imported state.</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
-                  <Input type="number" min="0" max="23" className="w-20" value={settings.schedSiteguideHour} onChange={(e) => updateField("schedSiteguideHour", e.target.value)} />
-                  <span className="text-muted-foreground">:</span>
-                  <Input type="number" min="0" max="59" step="5" className="w-20" value={settings.schedSiteguideMinute} onChange={(e) => updateField("schedSiteguideMinute", e.target.value)} />
-                  <span className="text-sm text-muted-foreground ml-1">{formatTime(settings.schedSiteguideHour, settings.schedSiteguideMinute)}</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
+                <TimeInput
+                  hour={settings.schedSiteguideHour}
+                  minute={settings.schedSiteguideMinute}
+                  onChange={(h, m) => { updateField("schedSiteguideHour", h); updateField("schedSiteguideMinute", m); }}
+                />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -293,10 +315,11 @@ export function AdminScheduledTasks() {
                 <div key={row.hourKey} className="flex items-center gap-2">
                   <label className="text-sm font-medium text-foreground-label w-36 shrink-0">{row.label}</label>
                   <span className="text-sm text-muted-foreground">Run at:</span>
-                  <Input type="number" min="0" max="23" className="w-20" value={settings[row.hourKey]} onChange={(e) => updateField(row.hourKey, e.target.value)} />
-                  <span className="text-muted-foreground">:</span>
-                  <Input type="number" min="0" max="59" step="1" className="w-20" value={settings[row.minKey]} onChange={(e) => updateField(row.minKey, e.target.value)} />
-                  <span className="text-sm text-muted-foreground ml-1">{formatTime(settings[row.hourKey], settings[row.minKey])}</span>
+                  <TimeInput
+                    hour={settings[row.hourKey]}
+                    minute={settings[row.minKey]}
+                    onChange={(h, m) => { updateField(row.hourKey, h); updateField(row.minKey, m); }}
+                  />
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">Changes take effect from the next day's run (or the next server restart).</p>
