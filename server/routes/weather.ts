@@ -616,11 +616,14 @@ router.get("/elevation-at", asyncHandler(async (req, res) => {
 }));
 
 router.get("/thermal-overlay", asyncHandler(async (_req, res) => {
-  let grid = await getCachedThermalGrid();
+  const grid = await getCachedThermalGrid();
   if (!grid) {
-    try { grid = await fetchThermalGrid(); } catch (e) { log.error("Thermal grid fetch failed:", e); }
+    // Serve from the DB cache only — the morning download + startup catch-up keep
+    // it warm. Never block a user request on a ~30s Open-Meteo fetch: warm the
+    // cache in the background and fail fast so the client can retry in a moment.
+    void fetchThermalGrid().catch(e => log.error("Thermal grid background warm failed:", e));
+    return res.status(503).json({ error: "Thermal data temporarily unavailable" });
   }
-  if (!grid) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
   const result = extractThermalGrid(grid);
   if (!result) return res.status(503).json({ error: "Thermal data temporarily unavailable" });
   // no-cache (not no-store): always revalidate before reuse. The Express ETag
@@ -851,12 +854,10 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Site not found or missing coordinates" });
   }
 
-  let grid = await getCachedFineGrid();
-
+  const grid = await getCachedFineGrid();
   if (!grid) {
-    grid = await fetchFineGrid().catch(e => { log.error("Fine grid fetch failed:", e); return null; });
-  }
-  if (!grid) {
+    // DB-only serve — never block a user request on Open-Meteo. Warm in background.
+    void fetchFineGrid().catch(e => log.error("Fine grid background warm failed:", e));
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
@@ -870,16 +871,10 @@ router.get("/:siteId/wind-particles", asyncHandler(async (req, res) => {
 }));
 
 router.get("/wind-overlay/full", asyncHandler(async (req, res) => {
-  let grid = await getCachedFineGrid();
-
+  const grid = await getCachedFineGrid();
   if (!grid) {
-    try {
-      grid = await fetchFineGrid();
-    } catch (e) {
-      log.error("Fine grid fetch failed:", e);
-    }
-  }
-  if (!grid) {
+    // DB-only serve — never block a user request on Open-Meteo. Warm in background.
+    void fetchFineGrid().catch(e => log.error("Fine grid background warm failed:", e));
     return res.status(503).json({ error: "Wind data temporarily unavailable" });
   }
 
