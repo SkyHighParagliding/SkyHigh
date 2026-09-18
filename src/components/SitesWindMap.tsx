@@ -15,7 +15,8 @@ import type { WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
-import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR, OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
+import { THERMAL_LEGEND_CSS, OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
+import { ThermalStrengthLegend } from './windmap/ThermalLegend';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from './AirspaceRange';
@@ -699,61 +700,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                   <X className="w-3.5 h-3.5 text-white/50" />
                 </span>
               </div>
-              <div className="h-2.5 w-44 max-w-full rounded-full" style={{ background: THERMAL_LEGEND_CSS }} />
-              {/* W* band labels pinned to their true threshold position. */}
-              <div className="relative mt-1 h-[13px] w-44 max-w-full text-[10px] text-white/60 font-mono">
-                {(
-                  [
-                    { label: 'Weak',   wstar: 0.3 },
-                    { label: 'Good',   wstar: 1.5 },
-                    { label: 'Strong', wstar: 2.5 },
-                  ] as { label: string; wstar: number }[]
-                ).map(({ label, wstar }, i, arr) => {
-                  const pct = Math.min(100, (wstar / LEGEND_MAX_WSTAR) * 100);
-                  const isFirst = i === 0;
-                  const isLast  = i === arr.length - 1;
-                  return (
-                    <span
-                      key={label}
-                      className="absolute"
-                      style={{
-                        left: `${pct}%`,
-                        transform: isFirst ? 'none' : isLast ? 'translateX(-100%)' : 'translateX(-50%)',
-                      }}
-                    >{label}</span>
-                  );
-                })}
-              </div>
-              <div className="mt-2 space-y-1.5 text-[10px] text-white/75 leading-snug">
-                <div className="flex items-center gap-2">
-                  {/* Same shape the map draws (traceCumulus): three domes on a flat base. */}
-                  <span className="w-[22px] flex justify-center shrink-0">
-                    <svg width="22" height="16" viewBox="0 0 16 11">
-                      <path fill="white" d="M2.52 9 A2.48 2.48 0 0 1 7.48 9 L4.8 7.4 A3.2 3.2 0 0 1 11.2 7.4 L9 8.8 A2.2 2.2 0 0 1 13.4 8.8 L2.52 9 Z" />
-                    </svg>
-                  </span>
-                  <span>Cumulus — density = coverage · size &amp; brightness = depth</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: 'linear-gradient(90deg, rgba(150,154,160,0.3), rgb(150,154,160))' }} /></span>
-                  <span>Overcast — deeper grey = more low cloud; thermals suppressed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-[22px] flex justify-center shrink-0"><span className="inline-block w-3.5 h-2.5 rounded-sm" style={{ background: 'rgb(56,118,209)' }} /></span>
-                  <span>Rain — deeper blue = heavier</span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span>Overdevelopment:</span>
-                  <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="none" stroke="white" strokeWidth="1.2" /></svg>
-                  <span className="text-white/60">watch</span>
-                  <span className="text-white/35">·</span>
-                  <svg width="11" height="11" viewBox="0 0 11 11" className="shrink-0"><path d="M5.5 1 L10 10 L1 10 Z" fill="white" /></svg>
-                  <span className="text-white/60">likely</span>
-                </div>
-                {/* Wind-flow ON/OFF toggle — moved into the panel. */}
+              <ThermalStrengthLegend />
+              {/* Wind-flow ON/OFF toggle — SitesWindMap only. */}
+              <div className="mt-1.5 text-[10px] text-white/75">
                 <div
                   onClick={(e) => { e.stopPropagation(); setShowWindOnThermal(v => !v); }}
-                  className="flex items-center gap-2 pt-0.5 cursor-pointer hover:text-white/90"
+                  className="flex items-center gap-2 cursor-pointer hover:text-white/90"
                   role="button"
                 >
                   <span className="w-[22px] flex justify-center shrink-0 text-white/60">〰</span>
