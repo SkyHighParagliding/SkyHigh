@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TimeInput, HourInput } from "@/components/ui/TimeInput";
 import { ArrowLeft, Clock, Save, Loader2, Lock, Play, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminForm } from "@/hooks/useAdminForm";
@@ -107,37 +108,6 @@ const CACHE_TIMERS: CacheTimer[] = [
   { key: "cacheAssetRegisterTtl", label: "Asset Register Cache", description: "How long the asset register context is cached for search", unit: "minutes", min: 1, max: 1440 },
   { key: "cacheFreeFlightWxTtl", label: "FreeFlightWx Cache", description: "How long live weather station data from FreeFlightWx is cached", unit: "seconds", min: 5, max: 3600 },
 ];
-
-function formatTime(hour: string, minute: string): string {
-  const h = parseInt(hour) || 0;
-  const m = parseInt(minute) || 0;
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
-}
-
-/**
- * No-typing time picker: two native <select> dropdowns (hour + minute). On mobile
- * these render as a scroll wheel — pick, don't type. Shared by every schedule
- * card so the time input looks and behaves the same everywhere.
- */
-function TimeInput({ hour, minute, onChange }: { hour: string; minute: string; onChange: (hour: string, minute: string) => void }) {
-  const cls = "border border-input rounded-md px-2 py-1.5 text-sm bg-background cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent";
-  const h = String(parseInt(hour, 10) || 0);
-  const m = String(parseInt(minute, 10) || 0);
-  return (
-    <div className="flex items-center gap-1.5">
-      <select className={cls} value={h} onChange={(e) => onChange(e.target.value, m)} aria-label="Hour">
-        {Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, "0")}</option>)}
-      </select>
-      <span className="text-muted-foreground">:</span>
-      <select className={cls} value={m} onChange={(e) => onChange(h, e.target.value)} aria-label="Minute">
-        {Array.from({ length: 60 }, (_, i) => <option key={i} value={i}>{String(i).padStart(2, "0")}</option>)}
-      </select>
-      <span className="text-sm text-muted-foreground ml-1">{formatTime(h, m)}</span>
-    </div>
-  );
-}
 
 export function AdminScheduledTasks() {
   const { token } = useAuth();
@@ -342,9 +312,8 @@ export function AdminScheduledTasks() {
                 <span className="text-sm font-medium text-foreground-label">Enabled</span>
               </label>
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Send at hour:</label>
-                <Input type="number" min="0" max="23" className="w-20" value={settings.submissionNotifyHour} onChange={(e) => updateField("submissionNotifyHour", e.target.value)} />
-                <span className="text-sm text-muted-foreground ml-1">({formatTime(settings.submissionNotifyHour, "0")})</span>
+                <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Send at:</label>
+                <HourInput hour={settings.submissionNotifyHour} onChange={(h) => updateField("submissionNotifyHour", h)} />
               </div>
             </CardContent>
           </Card>
@@ -402,17 +371,11 @@ export function AdminScheduledTasks() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
                 <div>
                   <label className="text-sm font-medium text-foreground-label block mb-1">Operating start hour</label>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" min="0" max="23" className="w-full" value={settings.weatherScraperStartHour} onChange={(e) => updateField("weatherScraperStartHour", e.target.value)} />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatTime(settings.weatherScraperStartHour, "0")}</span>
-                  </div>
+                  <HourInput hour={settings.weatherScraperStartHour} onChange={(h) => updateField("weatherScraperStartHour", h)} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground-label block mb-1">Operating end hour</label>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" min="0" max="23" className="w-full" value={settings.weatherScraperEndHour} onChange={(e) => updateField("weatherScraperEndHour", e.target.value)} />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{formatTime(settings.weatherScraperEndHour, "0")}</span>
-                  </div>
+                  <HourInput hour={settings.weatherScraperEndHour} onChange={(h) => updateField("weatherScraperEndHour", h)} />
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer pt-1">
@@ -445,10 +408,11 @@ export function AdminScheduledTasks() {
               </label>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-foreground-label whitespace-nowrap">Run at:</label>
-                <Input type="number" min="0" max="23" className="w-20" value={settings.schedDriveSyncHour} onChange={(e) => updateField("schedDriveSyncHour", e.target.value)} />
-                <span className="text-muted-foreground">:</span>
-                <Input type="number" min="0" max="59" step="5" className="w-20" value={settings.schedDriveSyncMinute} onChange={(e) => updateField("schedDriveSyncMinute", e.target.value)} />
-                <span className="text-sm text-muted-foreground ml-1">{formatTime(settings.schedDriveSyncHour, settings.schedDriveSyncMinute)}</span>
+                <TimeInput
+                  hour={settings.schedDriveSyncHour}
+                  minute={settings.schedDriveSyncMinute}
+                  onChange={(h, m) => { updateField("schedDriveSyncHour", h); updateField("schedDriveSyncMinute", m); }}
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Button

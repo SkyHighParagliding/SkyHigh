@@ -8,6 +8,7 @@ import { GridBoundsSelector } from "@/components/GridBoundsSelector";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { formatHour } from "@/components/ui/TimeInput";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
@@ -80,12 +81,6 @@ function WindMapPreviewCard() {
       )}
     </>
   );
-}
-
-function hourLabel(h: number) {
-  if (h === 0) return "12:00 am (midnight)";
-  if (h === 12) return "12:00 pm (noon)";
-  return h < 12 ? `${h}:00 am` : `${h - 12}:00 pm`;
 }
 
 type GridType = 'fine' | 'thermal' | 'extended';
@@ -370,7 +365,7 @@ export function AdminWeather() {
                   <CardDescription>
                     {schedContinuous
                       ? "Live weather observations fetched automatically every 15–30 minutes, continuously (no time restriction)."
-                      : `Live weather observations fetched automatically every 15–30 minutes between ${hourLabel(schedStartHour)} and ${hourLabel(schedEndHour)} Melbourne time.`
+                      : `Live weather observations fetched automatically every 15–30 minutes between ${formatHour(schedStartHour)} and ${formatHour(schedEndHour)} Melbourne time.`
                     }
                     {settings.weatherScraperLastRun && (
                       <span className="block mt-1 text-emerald-600 font-medium">
@@ -407,7 +402,7 @@ export function AdminWeather() {
                 <p className="text-sm text-muted-foreground">
                   {schedContinuous
                     ? "Running continuously (24 hours)."
-                    : `Operating ${hourLabel(schedStartHour)} – ${hourLabel(schedEndHour)} Melbourne time.`}{" "}
+                    : `Operating ${formatHour(schedStartHour)} – ${formatHour(schedEndHour)} Melbourne time.`}{" "}
                   Operating hours and per-source intervals are set in{" "}
                   <Link to="/admin/scheduled-tasks" className="text-accent hover:underline">Scheduled Tasks</Link>.
                 </p>

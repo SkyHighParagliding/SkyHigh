@@ -4,6 +4,7 @@ import { ArrowLeft, Map, Sliders, Monitor } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { HourInput } from "@/components/ui/TimeInput";
 import { useSettings } from "@/contexts/SettingsContext";
 import { toast } from "sonner";
 
@@ -153,12 +154,6 @@ export function AdminForecast() {
       setDisplaySaving(false);
     }
   };
-
-  function hourLabel(h: number) {
-    if (h === 0) return "12:00 am (midnight)";
-    if (h === 12) return "12:00 pm (noon)";
-    return h < 12 ? `${h}:00 am` : `${h - 12}:00 pm`;
-  }
 
   return (
     <div className="bg-background min-h-screen py-12">
@@ -328,20 +323,16 @@ export function AdminForecast() {
             </CardHeader>
             <CardContent>
               <div className="space-y-1 max-w-xs">
-                <Label htmlFor="thermal-hour" className="text-sm font-semibold text-ink">Default map time</Label>
+                <Label className="text-sm font-semibold text-ink">Default map time</Label>
                 <p className="text-xs text-muted-foreground">
                   Applies to the site wind &amp; thermal map. Clamped to the available forecast range.
                 </p>
-                <select
-                  id="thermal-hour"
-                  value={thermalDefaultHour}
-                  onChange={e => setThermalDefaultHour(Number(e.target.value))}
-                  className="w-full border border-input rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-accent"
-                >
-                  {Array.from({ length: 14 }, (_, i) => i + 7).map(h => (
-                    <option key={h} value={h}>{hourLabel(h)}</option>
-                  ))}
-                </select>
+                <HourInput
+                  hour={thermalDefaultHour}
+                  onChange={h => setThermalDefaultHour(Number(h))}
+                  minHour={7}
+                  maxHour={20}
+                />
               </div>
             </CardContent>
           </Card>
