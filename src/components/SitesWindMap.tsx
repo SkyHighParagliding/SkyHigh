@@ -663,7 +663,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     {/* Point actions — Chart / SkewT, stacked. (Airspace + wind-flow
                         toggles now live on the readout lines above.) */}
                     {(meteogramEnabled || skewtEnabled) && thermalInfo.lat != null && thermalInfo.lon != null && (
-                      <div className="flex flex-col gap-1 pt-1 mt-0.5 border-t border-white/10">
+                      <div className="flex items-center gap-4 pt-1 mt-0.5 border-t border-white/10">
                         {meteogramEnabled && (
                           <button
                             onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
