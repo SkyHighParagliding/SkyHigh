@@ -107,7 +107,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     () => (chartPoint && zones) ? airspacesAt(chartPoint.lat, chartPoint.lon, zones, AIRSPACE_WARN_SKIP) : [],
     [chartPoint, zones],
   );
-  const toggleAirspace = useCallback((f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f), []);
   // "Airspace ON" list: every sector stacked under the pin (floor-first), thermal
   // mode only. Updates as you pan (the pin is screen-fixed).
   const airspaceStack = useMemo(() => {
@@ -599,8 +598,18 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             BL Top {typeof thermalInfo.groundAmsl === 'number'
                               ? <><Altitude metres={thermalInfo.blh + thermalInfo.groundAmsl} step={100} /> AMSL</>
                               : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
-                            {airspaceConflicts.bl && (
-                              <button onClick={() => toggleAirspace(airspaceConflicts.bl!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.bl)})</button>
+                            {/* Airspace class at this height. Plain (inherits the
+                                line colour) when uncontrolled (Class G); red when
+                                it busts controlled airspace. Tap = show/hide the
+                                airspace overhead list (same as the old toggle). */}
+                            {zones && typeof thermalInfo.groundAmsl === 'number' && (
+                              <button
+                                onClick={() => toggleAllAirspace()}
+                                className={`ml-1 ${airspaceConflicts.bl ? 'font-semibold text-red-400 hover:text-red-300' : 'hover:text-white'}`}
+                                title="Show/hide airspace overhead"
+                              >
+                                ({airspaceConflicts.bl ? airspaceLabel(airspaceConflicts.bl) : 'Class G'})
+                              </button>
                             )}
                           </div>
                         )}
@@ -609,8 +618,14 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             Cu Base {typeof thermalInfo.groundAmsl === 'number'
                               ? <><Altitude metres={thermalInfo.ccl + thermalInfo.groundAmsl} step={100} /> AMSL</>
                               : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
-                            {airspaceConflicts.cu && (
-                              <button onClick={() => toggleAirspace(airspaceConflicts.cu!.feature)} className="ml-1 text-red-400 font-semibold hover:text-red-300">({airspaceLabel(airspaceConflicts.cu)})</button>
+                            {zones && typeof thermalInfo.groundAmsl === 'number' && (
+                              <button
+                                onClick={() => toggleAllAirspace()}
+                                className={`ml-1 ${airspaceConflicts.cu ? 'font-semibold text-red-400 hover:text-red-300' : 'hover:text-white'}`}
+                                title="Show/hide airspace overhead"
+                              >
+                                ({airspaceConflicts.cu ? airspaceLabel(airspaceConflicts.cu) : 'Class G'})
+                              </button>
                             )}
                           </div>
                         )}
@@ -632,54 +647,43 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                                 </div>
                               ))
                         )}
+                        {/* Wind line doubles as the wind-flow toggle: tap to show/
+                            hide the wind-flow overlay on the map. Turns sky-blue
+                            when the overlay is on. */}
                         {tappedWind && (
-                          <div className="text-[11px] text-white/75">
+                          <button
+                            onClick={() => setShowWindOnThermal(v => !v)}
+                            className={`block text-left text-[11px] hover:text-white ${showWindOnThermal ? 'text-sky-300' : 'text-white/75'}`}
+                            title="Show/hide wind flow on the map"
+                          >
                             Wind {tappedWind.speedKt.toFixed(0)} kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>
-                          </div>
+                          </button>
                         )}
                       </>
-                    {/* Point actions (Chart / SkewT, stacked) and display toggles
-                        (Airspace stack + Wind flow overlay, stacked), side by side. */}
-                    <div className="flex items-start gap-4 pt-1 mt-0.5 border-t border-white/10">
-                      {(meteogramEnabled || skewtEnabled) && thermalInfo.lat != null && thermalInfo.lon != null && (
-                        <div className="flex flex-col gap-1">
-                          {meteogramEnabled && (
-                            <button
-                              onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
-                              className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                              title="Thermal forecast chart for this point"
-                            >
-                              <LineChart className="w-3 h-3" /> Chart
-                            </button>
-                          )}
-                          {skewtEnabled && (
-                            <button
-                              onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
-                              className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                              title="SkewT sounding for this point + time"
-                            >
-                              <ChartLine className="w-3 h-3" /> SkewT
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => toggleAllAirspace()}
-                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                          title="List the airspace stack under the pin"
-                        >
-                          Airspace <span className={`font-semibold ${showAllAirspace ? 'text-sky-300' : 'text-white/40'}`}>{showAllAirspace ? 'ON' : 'OFF'}</span>
-                        </button>
-                        <button
-                          onClick={() => setShowWindOnThermal(v => !v)}
-                          className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
-                          title="Overlay wind-flow lines on the thermal map"
-                        >
-                          Wind flow <span className={`font-semibold ${showWindOnThermal ? 'text-sky-300' : 'text-white/40'}`}>{showWindOnThermal ? 'ON' : 'OFF'}</span>
-                        </button>
+                    {/* Point actions — Chart / SkewT, stacked. (Airspace + wind-flow
+                        toggles now live on the readout lines above.) */}
+                    {(meteogramEnabled || skewtEnabled) && thermalInfo.lat != null && thermalInfo.lon != null && (
+                      <div className="flex flex-col gap-1 pt-1 mt-0.5 border-t border-white/10">
+                        {meteogramEnabled && (
+                          <button
+                            onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
+                            className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                            title="Thermal forecast chart for this point"
+                          >
+                            <LineChart className="w-3 h-3" /> Chart
+                          </button>
+                        )}
+                        {skewtEnabled && (
+                          <button
+                            onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
+                            className="flex items-center gap-1 text-[11px] text-white/75 hover:text-white"
+                            title="SkewT sounding for this point + time"
+                          >
+                            <ChartLine className="w-3 h-3" /> SkewT
+                          </button>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-[11px] text-white/50">Tap map for a reading</div>
