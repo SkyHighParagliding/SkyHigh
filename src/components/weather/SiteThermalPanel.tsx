@@ -118,6 +118,11 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
 
   // "Airspace ON" list: every sector stacked under the pin (floor-first). Only
   // computed while the toggle is on; updates as you pan (the pin is screen-fixed).
+  // Airspace stack at the Chart's point — drives the meteogram's red conflict overlay.
+  const chartAirspace = useMemo(
+    () => (chartPoint && zones) ? airspacesAt(chartPoint.lat, chartPoint.lon, zones, AIRSPACE_WARN_SKIP) : [],
+    [chartPoint, zones],
+  );
   const airspaceStack = useMemo(() => {
     if (!showAllAirspace || !thermalInfo || thermalInfo.lat == null || thermalInfo.lon == null || !zones) return [];
     return airspacesAt(thermalInfo.lat, thermalInfo.lon, zones, AIRSPACE_WARN_SKIP);
@@ -524,6 +529,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           lat={chartPoint.lat}
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
+          airspace={chartAirspace}
           onClose={() => setChartPoint(null)}
         />
       )}

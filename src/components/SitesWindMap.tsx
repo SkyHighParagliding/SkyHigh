@@ -101,6 +101,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, thermalInfo?.lat, thermalInfo?.lon, thermalInfo?.blh, thermalInfo?.ccl, thermalInfo?.groundAmsl, zones]);
+  // Airspace stack at the point the Chart was opened for — drives the meteogram's
+  // red conflict overlay (floor line + tapered strip).
+  const chartAirspace = useMemo(
+    () => (chartPoint && zones) ? airspacesAt(chartPoint.lat, chartPoint.lon, zones, AIRSPACE_WARN_SKIP) : [],
+    [chartPoint, zones],
+  );
   const toggleAirspace = useCallback((f: GeoJSON.Feature) => setShownAirspace(cur => cur === f ? null : f), []);
   // "Airspace ON" list: every sector stacked under the pin (floor-first), thermal
   // mode only. Updates as you pan (the pin is screen-fixed).
@@ -784,6 +790,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           lat={chartPoint.lat}
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
+          airspace={chartAirspace}
           onClose={() => setChartPoint(null)}
         />
       )}

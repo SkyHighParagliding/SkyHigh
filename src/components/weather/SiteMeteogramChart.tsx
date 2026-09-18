@@ -3,6 +3,15 @@ import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolat
 import { useUnits } from '@/hooks/useUnits';
 import { metresToFeet } from '@/lib/units';
 import { precipDescription } from '@/lib/precip';
+import { airspaceLabel, type AirspaceSector } from '@/lib/airspaceConflict';
+
+const M_TO_FT = 3.280839895;
+// Warning red for a busted airspace floor. Distinct from the dashed BL Top
+// (dark) and Cu Base (sky-blue) lines.
+const AIRSPACE_RED = '#dc2626';
+// Ignore low ground obstacles (powerlines/towers labelled DANGER at 0–100 ft) —
+// mirrors airspaceConflict.ts. Real controlled/restricted airspace sits higher.
+const MIN_AIRSPACE_CEILING_FT = 500;
 
 // One hour of the per-site meteogram, as returned by GET /api/weather/:id/meteogram.
 export interface MeteogramHour {
@@ -108,12 +117,16 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   launchElevation,
   thresholds = DEFAULT_THRESHOLDS,
   groundLabel = 'Launch',
+  airspace = [],
 }: {
   hours: MeteogramHour[];
   launchElevation: number | null;
   thresholds?: MeteogramThresholds;
   /** Label for the ground reference line — "Launch" at a site, "Ground" for an arbitrary point. */
   groundLabel?: string;
+  /** Vertical airspace stack at the point (airspacesAt). Any sector the day's
+   *  BL Top / Cu Base busts is drawn as a red floor line + tapered strip. */
+  airspace?: AirspaceSector[];
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
   const [svgW, setSvgW] = useState(480);
@@ -292,6 +305,73 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
           />
         );
       })}
+
+      {/* Airspace conflict overlay (AMSL axis only). For each sector the day's
+          thermals bust — floor above ground and at/below the peak BL Top / Cu
+          Base — draw a red floor line, an upward-tapering strip up to the
+          sector's own ceiling (the airspace is ABOVE its floor), and a label
+          with the sector name + its min/max altitude. Drawn before the BL Top /
+          Cu Base lines so those stay legible on top. */}
+      {useAmsl && airspace.length > 0 && (() => {
+        // Peak height the day's forecast reaches (AMSL, m): the higher of BL Top
+        // and Cu Base. Both count unconditionally — matching the tapped-point
+        // readout, which flags a Cu Base conflict from CCL even on a blue day
+        // where cloudbase sits above BL Top. A floor above this is never bust.
+        let peakM = groundAmsl;
+        for (const s of slots) {
+          if (s.ceilingAmsl !== null) peakM = Math.max(peakM, s.ceilingAmsl);
+          if (s.ccl !== null && s.ccl > 0) peakM = Math.max(peakM, s.ccl + groundAmsl);
+        }
+
+        const unitSuffix = units === 'imperial' ? 'ft' : 'm';
+        const ftToDisp = (ft: number) => units === 'imperial' ? Math.round(ft) : Math.round(ft / M_TO_FT);
+        // Range end as a display string; SFC/UNL carry no number.
+        const endStr = (ft: number, ref: number) =>
+          ft >= 99999 ? 'UNL' : (ft <= 0 && ref === 0) ? 'SFC' : String(ftToDisp(ft));
+        // Floor / ceiling of a sector as AMSL metres, honouring an AGL/SFC datum.
+        const floorAmslM = (sec: AirspaceSector) =>
+          sec.lowerRef === 0 ? groundAmsl + Math.max(0, sec.lowerFt) / M_TO_FT : sec.lowerFt / M_TO_FT;
+        const ceilAmslM = (sec: AirspaceSector) =>
+          sec.upperFt >= 99999 ? yTopM : (sec.upperRef === 0 ? groundAmsl + sec.upperFt / M_TO_FT : sec.upperFt / M_TO_FT);
+
+        const seen = new Set<number>();
+        const drawn = airspace
+          .filter(sec => (sec.upperFt ?? 0) >= MIN_AIRSPACE_CEILING_FT)
+          .map(sec => ({ sec, floorM: floorAmslM(sec), ceilM: ceilAmslM(sec) }))
+          .filter(({ floorM }) => floorM > groundAmsl + 1 && floorM <= peakM && floorM < yTopM)
+          .sort((a, b) => a.floorM - b.floorM)
+          .filter(({ floorM }) => { const k = Math.round(floorM); if (seen.has(k)) return false; seen.add(k); return true; });
+
+        if (!drawn.length) return null;
+
+        return (
+          <g>
+            <defs>
+              {drawn.map(({ floorM, ceilM }, i) => (
+                <linearGradient key={i} id={`asp-grad-${i}`} gradientUnits="userSpaceOnUse"
+                  x1={0} y1={toY(floorM)} x2={0} y2={Math.max(plotTop, toY(Math.min(ceilM, yTopM)))}>
+                  <stop offset="0" stopColor={AIRSPACE_RED} stopOpacity={0.22} />
+                  <stop offset="1" stopColor={AIRSPACE_RED} stopOpacity={0} />
+                </linearGradient>
+              ))}
+            </defs>
+            {drawn.map(({ sec, floorM, ceilM }, i) => {
+              const yF = toY(floorM);
+              const yC = Math.max(plotTop, toY(Math.min(ceilM, yTopM)));
+              const label = `${airspaceLabel(sec)} · ${endStr(sec.lowerFt, sec.lowerRef)}–${endStr(sec.upperFt, sec.upperRef)} ${unitSuffix}`;
+              // Label above the line normally; below when the floor sits near the plot top.
+              const labelY = yF < plotTop + 14 ? yF + 11 : yF - 4;
+              return (
+                <g key={i}>
+                  <rect x={PAD_L} y={yC} width={PLOT_W} height={Math.max(0, yF - yC)} fill={`url(#asp-grad-${i})`} />
+                  <line x1={PAD_L} y1={yF} x2={PAD_L + PLOT_W} y2={yF} stroke={AIRSPACE_RED} strokeWidth={1.5} opacity={0.9} />
+                  <text x={PAD_L + 3} y={labelY} style={{ fontSize: '8px', fontWeight: 700, fill: AIRSPACE_RED, fontFamily: 'system-ui' }}>{label}</text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })()}
 
       {/* Launch reference line (AMSL axis only) */}
       {useAmsl && (

@@ -4,6 +4,7 @@ import { Loader2, X, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
+import type { AirspaceSector } from '@/lib/airspaceConflict';
 
 /** Parse a string setting to a finite number, else the default (handles 0 correctly). */
 function numSetting(v: unknown, d: number): number {
@@ -16,6 +17,8 @@ interface PointMeteogramModalProps {
   lon: number;
   /** Ground elevation at the point, m AMSL — sets the ceiling (AMSL) axis. */
   groundAmsl?: number;
+  /** Airspace stack at the point (airspacesAt) — drives the red conflict overlay. */
+  airspace?: AirspaceSector[];
   onClose: () => void;
 }
 
@@ -24,7 +27,7 @@ interface PointMeteogramModalProps {
  * point). Opened from the thermal map's tapped-point box; the point + scrubber
  * context is what the pilot cares about, so the chart is point-aware.
  */
-export function PointMeteogramModal({ lat, lon, groundAmsl, onClose }: PointMeteogramModalProps) {
+export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }: PointMeteogramModalProps) {
   const { settings } = useSettings();
   const [data, setData] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +84,7 @@ export function PointMeteogramModal({ lat, lon, groundAmsl, onClose }: PointMete
               hours={data.hours}
               launchElevation={data.launchElevation}
               groundLabel="Ground"
+              airspace={airspace}
               thresholds={{
                 clearSkyPct: numSetting(settings.thermalClearSkyCloudPct, 12),
                 overcastPct: numSetting(settings.thermalOvercastOnsetPct, 70),
