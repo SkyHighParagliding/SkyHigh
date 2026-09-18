@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Wind, ChevronRight, ArrowLeft, Search, Menu as MenuIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { prefetchWindGrids } from "@/lib/windGridCache";
 import { useSites } from "@/hooks/api";
 import { getClosureStatus, formatClosureDateRange } from "@/utils/closureStatus";
 
@@ -17,12 +16,11 @@ export function Sites() {
   const [searchQuery, setSearchQuery] = useState("");
   const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (sites.length > 0) {
-      const liveIds = sites.filter((s: any) => s.useLiveWeather === 'true' && s.lat && s.lon).map((s: any) => s.id);
-      if (liveIds.length > 0) prefetchWindGrids(liveIds);
-    }
-  }, [sites]);
+  // No eager whole-list wind-grid prefetch here. The overview map fetches one
+  // combined grid (/api/weather/wind-overlay/full); the per-site grids are only
+  // needed on a site-detail page, which prefetches its own on mount. Warming all
+  // ~50 up front pushed ~6MB of speculative traffic that starved the visible
+  // map's fetch on mobile (first paint ~27s).
 
   const filteredSites = sites.filter(site => {
     if (searchQuery && !site.name.toLowerCase().includes(searchQuery.toLowerCase())) {

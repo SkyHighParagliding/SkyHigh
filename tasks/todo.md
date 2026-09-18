@@ -1,7 +1,27 @@
-# Current Tasks — Last updated: 2026-09-15
+# Current Tasks — Last updated: 2026-09-18
 
-> **No incomplete backlog tasks remain.** See wiki/02-tasks.md for the full log.
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
+
+## 🟡 Open / on hold
+
+### REVIEW — Big page-clone refactors (+ possible wider design/feature review)
+- **Status:** DEFERRED (Jon's call 2026-09-18). Surfaced by the fallow `find_dupes` scan.
+- **The two large clones to break up:**
+  1. `src/pages/SiteDetail.tsx` ↔ `src/pages/SiteFieldView.tsx` — **~575 duplicated lines** (field view is a stripped-down site detail).
+  2. `src/pages/AdminPageEdit.tsx` ↔ `src/pages/Airspace.tsx` — **~348 lines** (Airspace re-implements the CMS content/attachment rendering).
+- **Why deferred:** real but higher-risk refactors, not a quick pass. Jon wants to **do these alongside a wider design/feature review** rather than in isolation — so revisit when that review happens, and fold the extraction into it.
+- Smaller clones already handled this session (thermal legend, Drive helpers, XC types, MapResizer). Everything else fallow flagged was false-positive-heavy (barrel re-exports, query-key factories).
+
+### TRAINING — Club "weather school" content pages
+- **Status:** First page LIVE/DEPLOYED (`567b149`, pushed 2026-09-18). Jon may still revise + add topics — iterate in place.
+- **What exists:** `training/cloud-engine/index.html` — self-contained "The Cloud Engine" thermal/SkewT explainer for novices (animated hero, 3-players, chart anatomy with real screenshot, **interactive drag-to-heat SVG simulator**, four real screenshots showing capped→breakthrough→collapse→soar, summary table, takeaways, 3-Q quiz). Images in `img/`; model tuning in `_tune.mjs`. Vanilla HTML/CSS/JS, no deps.
+- **Viewable:** `http://localhost:5173/training/cloud-engine/index.html` (Vite serves project-root files). Phone: `vite --host` + same LAN + VPN off.
+- **Next (when Jon returns to it):**
+  1. Jon to review copy/visuals/simulator feel and request tweaks.
+  2. Brainstorm + build MORE topics (e.g. sea-breeze/coastal, wind gradient, airspace basics, overdevelopment, launch decision-making). Reuse the same page shell/idiom.
+  3. Decide the home for the series: standalone files vs an app route vs CMS pages (link from a "Weather School" index). Currently a standalone file at `training/cloud-engine/`, not linked in any menu.
+
+> **No incomplete *backlog* tasks remain** beyond the training initiative. See wiki/02-tasks.md for the full log.
 
 ## ✅ Done
 

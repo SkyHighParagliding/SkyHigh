@@ -539,22 +539,26 @@ export function extractThermalGrid(grid: ThermalVictoriaGrid): ThermalOverlay | 
           const cloudLowRaw = point.hourly.cloud_cover_low?.[timeIdx];
           const precipRaw   = point.hourly.precipitation?.[timeIdx];
           const wcRaw       = point.hourly.weather_code?.[timeIdx];
+          // Every float below is emitted for every cell of every hour, so full
+          // precision inflates the JSON (and the brotli output) for no visible
+          // gain — the renderer buckets/rounds all of these anyway. Round at the
+          // boundary: cape/blh/ccl/cin to whole units, wstar/precip to what the
+          // legend resolves, li to 1 dp. (Same reasoning that already trimmed
+          // wstar.) This roughly halves the payload vs raw floats.
           timeStepData.push({
-            cape: point.hourly.cape[timeIdx] ?? 0,
-            blh,
-            // Rounded to 2 dp: this field is emitted for every cell of every hour,
-            // and full float precision inflates the payload for no visible gain.
+            cape: Math.round(point.hourly.cape[timeIdx] ?? 0),
+            blh: Math.round(blh),
             wstar: wstar === undefined ? undefined : Math.round(wstar * 100) / 100,
-            ccl: hasTd ? computeCCL(t2m!, td2m!) : undefined,
-            li:       (liRaw       != null && !Number.isNaN(liRaw))       ? liRaw       : undefined,
-            cin:      (cinRaw      != null && !Number.isNaN(cinRaw))      ? cinRaw      : undefined,
+            ccl: hasTd ? Math.round(computeCCL(t2m!, td2m!)) : undefined,
+            li:       (liRaw       != null && !Number.isNaN(liRaw))       ? Math.round(liRaw * 10) / 10 : undefined,
+            cin:      (cinRaw      != null && !Number.isNaN(cinRaw))      ? Math.round(cinRaw)          : undefined,
             // cloud_cover and cloud_cover_low are absent on grids cached before
             // TASK-036 (their arrays won't exist on old ThermalPoint rows). The
             // optional-chained index already produces undefined in that case, but
             // an explicit NaN guard here keeps the contract watertight.
-            cloud:    (cloudRaw    != null && !Number.isNaN(cloudRaw))    ? cloudRaw    : undefined,
-            cloudLow: (cloudLowRaw != null && !Number.isNaN(cloudLowRaw)) ? cloudLowRaw : undefined,
-            precip:   (precipRaw   != null && !Number.isNaN(precipRaw))   ? precipRaw   : undefined,
+            cloud:    (cloudRaw    != null && !Number.isNaN(cloudRaw))    ? Math.round(cloudRaw)        : undefined,
+            cloudLow: (cloudLowRaw != null && !Number.isNaN(cloudLowRaw)) ? Math.round(cloudLowRaw)     : undefined,
+            precip:   (precipRaw   != null && !Number.isNaN(precipRaw))   ? Math.round(precipRaw * 10) / 10 : undefined,
             weatherCode: (wcRaw    != null && !Number.isNaN(wcRaw))       ? wcRaw       : undefined,
           });
         } else {

@@ -4,7 +4,6 @@ import { api } from '@/lib/apiClient';
 import { haversineDistance } from '@/lib/utils';
 import { getCachedLocation } from '@/lib/cachedLocation';
 import { getRecentSites, seedSitesIfEmpty } from '@/lib/recentSites';
-import { prefetchWindGrids } from '@/lib/windGridCache';
 import type { Site, WeatherData } from '@/types/api';
 
 interface HomeSitesResult {
@@ -24,11 +23,10 @@ export function useHomeSites(): HomeSitesResult {
 
   const loadSitesWithWeather = useCallback((sitesToDisplay: Site[]) => {
     setDisplaySites(sitesToDisplay);
-    const liveIds = sitesToDisplay
-      .filter((s) => s.useLiveWeather === 'true' && s.lat && s.lon)
-      .map((s) => s.id);
-    if (liveIds.length > 0) prefetchWindGrids(liveIds);
-
+    // No eager per-site wind-grid prefetch: the home cards render from
+    // /api/weather/bulk, not the wind grid. A site's grid is prefetched when
+    // its detail page mounts — warming 20 up front here only stole bandwidth
+    // from the bulk-weather fetch the cards actually need.
     const siteIds = sitesToDisplay.map((s) => s.id);
     api.post<Record<string, WeatherData>>('/api/weather/bulk', { siteIds })
       .then((bulkWeather) => {
