@@ -34,6 +34,10 @@ interface WindCanvasProps {
   onTransformChange?: (lat: number, lon: number, zoomLevel: number) => void;
   siteStatus?: string;
   siteUpcomingClosureDates?: string[];
+  /** Live 0–1 "base map detail" intensity, forwarded to MapCanvas. */
+  basemapIntensityRef?: React.MutableRefObject<number>;
+  /** Live town-name labels toggle, forwarded to MapCanvas. */
+  showLabelsRef?: React.MutableRefObject<boolean>;
 }
 
 export const WindCanvas = memo(function WindCanvas({
@@ -41,7 +45,7 @@ export const WindCanvas = memo(function WindCanvas({
   onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
   siteMarkers, onSiteClick, onWindInfoChange, dismissRef,
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
-  onTransformChange, siteStatus, siteUpcomingClosureDates,
+  onTransformChange, siteStatus, siteUpcomingClosureDates, basemapIntensityRef, showLabelsRef,
 }: WindCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -199,6 +203,8 @@ export const WindCanvas = memo(function WindCanvas({
       containerClassName="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"
       hoverCrosshairClassName="bg-white/40"
       pinnedCrosshairColor="rgb(56, 189, 248)"
+      basemapIntensityRef={basemapIntensityRef}
+      showLabelsRef={showLabelsRef}
     />
   );
 });

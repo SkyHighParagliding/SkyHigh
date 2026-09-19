@@ -87,6 +87,15 @@ interface MapCanvasProps {
   /** CSS colour for the pinned reticle. A colour, not a class, because the
    *  reticle is an SVG drawn twice (dark halo under, colour over). */
   pinnedCrosshairColor: string;
+  /** Live 0–1 "base map detail" intensity. When > 0, the basemap is re-composited
+   *  over the overlay with `multiply` blending so roads/rivers/borders darken back
+   *  in without washing out the heat/speed colours. Held in a ref so the slider
+   *  drives the running frame loop without a React re-render. */
+  basemapIntensityRef?: React.MutableRefObject<number>;
+  /** Live toggle for town/place-name labels. When true, CARTO's transparent
+   *  `light_only_labels` tiles are drawn *on top* of the overlay so names stay
+   *  readable above the heat/speed colours. Held in a ref, same rationale. */
+  showLabelsRef?: React.MutableRefObject<boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,6 +193,8 @@ export const MapCanvas = memo(function MapCanvas({
   containerClassName,
   hoverCrosshairClassName,
   pinnedCrosshairColor,
+  basemapIntensityRef,
+  showLabelsRef,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -429,6 +440,11 @@ export const MapCanvas = memo(function MapCanvas({
       ctx.fillStyle = '#e8e8e8';
       ctx.fillRect(0, 0, w, h);
 
+      const basemapIntensity = basemapIntensityRef?.current ?? 0;
+      // Collected during this first pass so the "base map detail" slider can
+      // re-draw the same tiles with `multiply` after the overlay (see below).
+      const drawnTiles: { img: CanvasImageSource; x: number; y: number; s: number }[] = [];
+
       for (const d of tiles) {
         const tileKey2 = `${d[2]}/${d[0]}/${d[1]}`;
         const url = `https://basemaps.cartocdn.com/rastertiles/light_nolabels/${tileKey2}${dpr > 1 ? '@2x' : ''}.png?key=${import.meta.env.VITE_CARTO_API_KEY}`;
@@ -437,11 +453,42 @@ export const MapCanvas = memo(function MapCanvas({
           const x = (d[0] + tiles.translate[0]) * tiles.scale;
           const y = (d[1] + tiles.translate[1]) * tiles.scale;
           ctx.drawImage(img, x, y, tiles.scale, tiles.scale);
+          if (basemapIntensity > 0) drawnTiles.push({ img, x, y, s: tiles.scale });
         }
       }
 
       const c: MapRenderContext = { ctx, transform: currentTransform, transformRef, projection, width: w, height: h, todayStr };
       for (let i = 0; i < layers.length; i++) layers[i].draw(c, layerResources[i]);
+
+      // "Base map detail" re-emphasis. The CARTO basemap is near-white with faint
+      // grey linework that the translucent heat/speed overlay washes out. Multiply
+      // blending leaves the near-white background almost untouched (overlay colour
+      // preserved) but darkens the map's own lines back in over the colour — so
+      // terrain reads for orientation without dimming the thermal/wind data.
+      // Alpha is the slider value; drawn from the same tiles already on screen.
+      if (basemapIntensity > 0 && drawnTiles.length) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.globalAlpha = basemapIntensity;
+        for (const t of drawnTiles) ctx.drawImage(t.img, t.x, t.y, t.s, t.s);
+        ctx.restore();
+      }
+
+      // Town/place-name labels, drawn last so they float on top of the overlay
+      // (and the multiply pass above) and stay legible over the colours. These are
+      // CARTO's transparent `light_only_labels` tiles — text only, ~1 KB each.
+      if (showLabelsRef?.current) {
+        for (const d of tiles) {
+          const lk = `${d[2]}/${d[0]}/${d[1]}`;
+          const lurl = `https://basemaps.cartocdn.com/rastertiles/light_only_labels/${lk}${dpr > 1 ? '@2x' : ''}.png?key=${import.meta.env.VITE_CARTO_API_KEY}`;
+          const limg = loadTile(`L${lk}`, lurl);
+          if (limg && limg.complete && limg.naturalWidth > 0) {
+            const x = (d[0] + tiles.translate[0]) * tiles.scale;
+            const y = (d[1] + tiles.translate[1]) * tiles.scale;
+            ctx.drawImage(limg, x, y, tiles.scale, tiles.scale);
+          }
+        }
+      }
 
       animationFrameId = requestAnimationFrame(render);
     };

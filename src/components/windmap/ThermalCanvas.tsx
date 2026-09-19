@@ -58,6 +58,10 @@ interface ThermalCanvasProps {
    * it does one toggle away.
    */
   zoomSetpoints?: ZoomSetpoints;
+  /** Live 0–1 "base map detail" intensity, forwarded to MapCanvas. */
+  basemapIntensityRef?: React.MutableRefObject<number>;
+  /** Live town-name labels toggle, forwarded to MapCanvas. */
+  showLabelsRef?: React.MutableRefObject<boolean>;
 }
 
 export const ThermalCanvas = memo(function ThermalCanvas({
@@ -65,6 +69,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, airspaceFeature, allAirspace,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
+  basemapIntensityRef, showLabelsRef,
 }: ThermalCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -344,6 +349,8 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       containerClassName="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"
       hoverCrosshairClassName="bg-black/30"
       pinnedCrosshairColor="rgb(249, 115, 22)"
+      basemapIntensityRef={basemapIntensityRef}
+      showLabelsRef={showLabelsRef}
     />
   );
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, Map as MapIcon } from 'lucide-react';
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
@@ -73,6 +73,29 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [showWindOnThermal, setShowWindOnThermal] = useState(false);
   const [mapMode, setMapMode] = useState<'today' | '7day'>('today');
   const [viewMode, setViewMode] = useState<'wind' | 'thermal'>('wind');
+  // "Base map detail" — 0–1 personal preference, shared by both maps and
+  // remembered per browser. Held in a ref too, so dragging the slider updates the
+  // canvas frame loop live without re-rendering the map (see MapCanvas).
+  const [basemapIntensity, setBasemapIntensity] = useState<number>(() => {
+    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('skyhigh.basemapIntensity') : null;
+    const n = v == null ? NaN : Number(v);
+    return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
+  });
+  const basemapIntensityRef = useRef(basemapIntensity);
+  useEffect(() => {
+    basemapIntensityRef.current = basemapIntensity;
+    try { localStorage.setItem('skyhigh.basemapIntensity', String(basemapIntensity)); } catch { /* private mode */ }
+  }, [basemapIntensity]);
+  // Town-name labels toggle (the map icon in front of the slider). Drawn on top of
+  // the overlay so names stay readable. Shared by both maps, remembered per browser.
+  const [showMapLabels, setShowMapLabels] = useState<boolean>(() => {
+    try { return localStorage.getItem('skyhigh.showMapLabels') === 'true'; } catch { return false; }
+  });
+  const showLabelsRef = useRef(showMapLabels);
+  useEffect(() => {
+    showLabelsRef.current = showMapLabels;
+    try { localStorage.setItem('skyhigh.showMapLabels', String(showMapLabels)); } catch { /* private mode */ }
+  }, [showMapLabels]);
   // Collapsible "Key" legend pill (bottom-left) — collapsed by default.
   const [showLegend, setShowLegend] = useState(false);
   // Dismiss handlers filled in by the active canvas; the ✕ on the readout box
@@ -354,6 +377,40 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     />
   ) : null;
 
+  // Shared "base map detail" slider — dropped into both readouts (thermal, next
+  // to Chart/SkewT; wind, its own row). Darkens the CARTO linework back in under
+  // the overlay so the pilot can orientate. stopPropagation keeps a drag on the
+  // slider from panning the map underneath.
+  const basemapSlider = (
+    <div
+      className="flex items-center gap-1.5 ml-auto"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setShowMapLabels(v => !v); }}
+        className={`shrink-0 transition-colors ${showMapLabels ? 'text-sky-300' : 'text-white/55 hover:text-white/80'}`}
+        title={showMapLabels ? 'Town names: on — tap to hide' : 'Town names: off — tap to show'}
+        aria-pressed={showMapLabels}
+        aria-label="Toggle town names"
+      >
+        <MapIcon className="w-3.5 h-3.5" />
+      </button>
+      <input
+        title="Base map detail — darkens roads, rivers and borders so they show through the overlay"
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={Math.round(basemapIntensity * 100)}
+        onChange={(e) => setBasemapIntensity(Number(e.target.value) / 100)}
+        onClick={(e) => e.stopPropagation()}
+        className="w-16 h-1 accent-sky-400 cursor-pointer"
+        aria-label="Base map detail intensity"
+      />
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
@@ -423,6 +480,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 windGrid={windGrid}
                 showWind={showWindOnThermal}
                 zoomSetpoints={zoomSetpoints}
+                basemapIntensityRef={basemapIntensityRef}
+                showLabelsRef={showLabelsRef}
               />
             </Suspense>
           ) : null
@@ -449,6 +508,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               savedCenterLon={viewLon}
               savedZoom={viewZoom}
               onTransformChange={handleTransformChange}
+              basemapIntensityRef={basemapIntensityRef}
+              showLabelsRef={showLabelsRef}
             />
           </Suspense>
         )}
@@ -665,10 +726,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                           </button>
                         )}
                       </>
-                    {/* Point actions — Chart / SkewT, stacked. (Airspace + wind-flow
-                        toggles now live on the readout lines above.) */}
-                    {(meteogramEnabled || skewtEnabled) && thermalInfo.lat != null && thermalInfo.lon != null && (
-                      <div className="flex items-center gap-4 pt-1 mt-0.5 border-t border-white/10">
+                    {/* Point actions — Chart / SkewT, then the base-map detail
+                        slider (right-aligned). (Airspace + wind-flow toggles live
+                        on the readout lines above.) */}
+                    {thermalInfo.lat != null && thermalInfo.lon != null && (
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 mt-0.5 border-t border-white/10">
                         {meteogramEnabled && (
                           <button
                             onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
@@ -687,6 +749,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             <ChartLine className="w-3 h-3" /> SkewT
                           </button>
                         )}
+                        {basemapSlider}
                       </div>
                     )}
                   </>
@@ -703,6 +766,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                     {typeof sitesWindInfo.groundAmsl === 'number' && (
                       <div className="text-[11px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} /> AMSL</div>
                     )}
+                    <div className="flex items-center pt-1 mt-0.5 border-t border-white/10">
+                      {basemapSlider}
+                    </div>
                   </>
                 ) : (
                   <div className="text-[11px] text-white/50">Tap map for a reading</div>
