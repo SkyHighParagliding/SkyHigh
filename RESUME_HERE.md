@@ -1,11 +1,43 @@
-# RESUME_HERE — Last updated: 2026-09-19 (session 65)
+# RESUME_HERE — Last updated: 2026-09-19 (session 66)
 
 ## Project: SkyHigh
-## Status: Active — on `main`. Base-map legibility (detail slider + town names + admin band) is the latest work.
+## Status: Active — on `main`. Latest work: public Smart Search re-evaluation (design only, no code yet).
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## Session 66 (2026-09-19) — public Smart Search re-evaluation (DESIGN ONLY)
+
+Re-examined the public Smart Search for answer safety, driven by re-reading the full
+135-entry July-2026 query log (`SkyHigh — Smart Search Log.pdf` at repo root). **No code
+changed this session** — output is a closed design ruleset in memory:
+`memory/smart-search-reeval-decisions.md` + `memory/gust-tolerance-rule.md`.
+
+**All decisions confirmed by Jon. Nothing built yet.** Key rulings:
+- **Philosophy:** assistant builds a coarse shortlist + names what to watch; never makes
+  the go/no-go call. Eligibility = hard fact; weather = options + caveats, decision to the
+  pilot + the site's hourly tools.
+- **Weather buckets:** hard-stop (drops the day) = wrong wind direction · sustained blown-out.
+  Caution (surface, flag, never drops) = precipitation · gusts over ceiling · light wind.
+- **Gust ceiling (SSO-confirmed, rating-keyed):** `top-of-range + allowance×mean`, mean =
+  (low+high)/2, PG4+ 0.50 / PG2-3 0.25. Portsea 10-14 → 20 / 17 kn. Over-ceiling = strong
+  "launch-in-the-lulls" caution, NOT exclusion. Compute in TS; makes RATING-FIRST a prerequisite.
+- **Answer to the asker's rating; never authorise** — supervised clearance is the supervisor's call.
+- **Fixed gates:** Type F flight-technique how-to → refuse/redirect to instructor; HG pilot →
+  "no HG data, see an instructor" (triggers on asker's HG rating); emergency → existing `safetyGate.ts`.
+- **Taxonomy:** 10 question types (A–J); each of the 135 log entries → a labelled eval case.
+
+**Next: the build, in this order (prompt depends on the module's tag format):**
+1. Gust/weather module — parse site wind range → low/high, compute per-rating ceiling,
+   classify each day hard-stop/caution/ideal, emit pre-computed reasoned tags
+   (extend `conditionQualifications.ts` or new module). Verify site `windSpeed` is parseable.
+2. Rework the public prompt in `server/routes/search.ts` (`getDefaultPublicPrompt` +
+   `getDefaultEligibilityRules`, ~line 818) around the eligibility-fact / weather-option
+   split; wire Type F + HG gates alongside the emergency gate.
+3. 135 labelled eval cases → `scripts/eval-smart-search-units.ts`.
+Also owed: a DECISION record in `wiki/03-decisions-log.md` + tasks in `wiki/02-tasks.md`.
+Open scope point: whether HG refusal is blanket (incl. plain HG facts) — Jon leaning yes.
 
 ## Session 65 (2026-09-19) — base-map legibility on the wind/thermal maps
 
