@@ -40,6 +40,10 @@ context; the picker has no Chart mode).
 - Dismiss clears the pin fully (pin + box + crosshair) — see `dismissRef`/`clearPinRef`.
 - Lines, in order: mode-specific strength/summary, then BL Top, Cu Base, (Rain),
   Ground — or Wind speed/dir, Ground for wind mode.
+- **Base-map controls cluster** (last row of the box, both modes; added 2026-09-19,
+  commit `e64b02f`): a **map icon = town-names toggle** and a **base-map detail
+  slider**. Both are shared by wind + thermal and remembered per browser
+  (`localStorage`: `skyhigh.showMapLabels`, `skyhigh.basemapIntensity`). See rule 11.
 
 ### 4. Altitudes — always AMSL (decision 8A)
 Every altitude shows **" AMSL"** and is mean-sea-level. BL Top / Cu Base are AGL
@@ -87,6 +91,31 @@ Legend marks must match what the map draws:
 - Admin → Forecast opacity knobs (grey overcast wash / rain wash) apply to all.
 - `getAirspaceColor`, `getThermalStrength`, `effectiveWstar`, `<Altitude>`,
   `precipDescription`, `airspaceConflict` are the shared primitives — reuse, don't fork.
+
+### 11. Base-map legibility — detail slider + town-names toggle (2026-09-19)
+The CARTO `light_nolabels` base is near-white and the translucent heat/speed
+overlay washes it out, hiding terrain the pilot uses to orientate. Two ref-driven
+levers in `MapCanvas` fix this without a React re-render of the map:
+- **Base-map detail slider** — after the overlay draws, the same base tiles are
+  re-composited with `globalCompositeOperation = 'multiply'` at an alpha. Multiply
+  leaves the near-white background (the overlay colour) ~untouched but darkens the
+  base's own roads/rivers/borders back in. Do **not** "fix" wash-out by fading the
+  overlay — that dims the data; darken the base instead.
+- **Town names** — CARTO's transparent `light_only_labels` tiles (`L<key>` cache
+  key) drawn **last, on top** of the overlay so names stay legible over the colours
+  (~1 KB/tile). Never draw labels under the overlay.
+- **Admin band (per map)** — the pilot's slider is a *position* 0–1; the effective
+  multiply alpha is that position mapped into an admin `[floor, ceiling]` band set
+  in **Admin → Forecast → "Base-map detail range"** (`windBasemapDetailFloorPct` /
+  `…CeilPct`, `thermalBasemapDetailFloorPct` / `…CeilPct`; defaults 0/100 = the
+  full range). Separate per map because the wind and thermal overlays bury the base
+  by different amounts. Remap: `alpha = floor + position × (ceiling − floor)`,
+  bounds order-safe. Lives in `SitesWindMap`; the labels toggle has no admin default
+  (pure pilot preference).
+- **Future option:** CARTO also offers **vector** basemaps (MapLibre GL) which could do
+  the darken-roads / hide-labels restyling natively — but they need a WebGL renderer, not
+  our Canvas 2D + D3 stack, so it's a rebuild, not a swap. Deferred; see
+  [[future/vector-basemaps]].
 
 ## Rollout (see RESUME_HERE for live status)
 1. **Stage 1 ✅** — AMSL + airspace on the picker readouts (done, `377d007`).

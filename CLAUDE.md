@@ -15,7 +15,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, PostgreSQL (dev + prod), Cloudflare R2 (prod storage), Gemini AI (@google/genai), Open-Meteo weather API (free tier, IP-keyed), TidyHQ membership integration, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI, Lucide icons  
 **Status:** Active  
 **Deployed:** ✅ Railway (PostgreSQL) — live at https://skyhigh-production.up.railway.app; localhost:5173/3001 (dev — Vite + Express concurrently)  
-**Current Focus:** Session 57 completed the Ground AMSL readout across all four map surfaces and moved terrain elevation to client-side terrarium-tile sampling (commit `8e6f39e`) — see DECISION-011. All backlog tasks (030 siteguide email, 031 XC export, 032 closure calendar) and TASK-SW-001 (service-worker consolidation) are complete as of 2026-09-15. Queued smaller item: the deferred R2 terrain-tile mirror. Larger candidate: SkyHigh RASP meteogram (Phase 1 buildable now).  
+**Current Focus:** Session 65 (2026-09-19) added base-map legibility to the wind/thermal maps — a "base-map detail" slider (a `multiply` re-pass in `MapCanvas` that darkens the base's roads/rivers/borders back in under the overlay) and a town-names toggle (`light_only_labels` on top), both in the tapped-point readout and shared across both maps (committed `e64b02f`). The slider's floor/ceiling is admin-tunable per map in Admin → Forecast → "Base-map detail range" — see DECISION-015. Earlier: Session 57 completed the Ground AMSL readout across all four map surfaces (client-side terrarium-tile sampling, `8e6f39e`, DECISION-011); all backlog tasks and TASK-SW-001 complete as of 2026-09-15. Queued smaller item: the deferred R2 terrain-tile mirror. Larger candidate: SkyHigh RASP meteogram (Phase 1 buildable now).  
 **Start Date:** 2026-05-01
 
 **Key Decisions Made:**
@@ -29,6 +29,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009
 - Ground elevation is sampled client-side from AWS terrarium tiles (no API key), with the server route retained as fallback — see DECISION-011. The Geoscience Australia CC BY 4.0 attribution is a licence obligation; do not remove it.
 - `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future source release must revisit that decision first.
+- Base-map legibility under the overlay is fixed by darkening the base (a `multiply` re-pass in `MapCanvas`), not by fading the overlay; town names use `light_only_labels` drawn on top. Pilot slider + labels toggle live in the readout; the slider's range is an admin per-map floor/ceiling band — see DECISION-015.
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**

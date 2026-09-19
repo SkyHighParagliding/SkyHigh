@@ -478,6 +478,7 @@ const categories: SpecCategory[] = [
           "WeatherCard.tsx — Live weather display with compass, forecast, and integrated tide chart toggle for coastal sites. 7-Day Outlook and Tides panels swap in the same space with animated transitions.",
           "WindCompass.tsx — Animated wind direction compass with sector ring",
           "WindMapProto.tsx — D3 particle wind map (production version). Uses windGridCache for client-side caching + background prefetch on page load. TODAY/7 DAYS toggle switches between hourly and extended (4h-interval) ECMWF data. Timestamp-aware interpolation handles irregular time spacing.",
+          "windmap/MapCanvas.tsx — Shared canvas shell for the Sites picker maps (WindCanvas + ThermalCanvas): CARTO tile basemap, D3-zoom transform, pinned reticle, and the per-frame layer draw. Two ref-driven base-map legibility passes run in the frame loop: a 'base-map detail' multiply re-pass (darkens the base's roads/rivers/borders back in over the overlay without dimming it) and an optional light_only_labels town-names pass drawn last, on top. Both are controlled from SitesWindMap; the slider's alpha is the pilot's position mapped into an admin per-map floor/ceiling band (Admin → Forecast).",
           "WindMap.tsx — Legacy wind map component",
           "InfoCard.tsx — Dynamic layout card (vertical/horizontal/stacked based on text length)",
           "AIImageEnhancerModal.tsx — Smart image enhancer with crop selector",

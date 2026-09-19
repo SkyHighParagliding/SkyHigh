@@ -1,11 +1,36 @@
-# RESUME_HERE — Last updated: 2026-09-16 (session 64)
+# RESUME_HERE — Last updated: 2026-09-19 (session 65)
 
 ## Project: SkyHigh
-## Status: Active — on `main`. Meteogram Stage 1 + rain + thermal-map cleanup live.
+## Status: Active — on `main`. Base-map legibility (detail slider + town names + admin band) is the latest work.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## Session 65 (2026-09-19) — base-map legibility on the wind/thermal maps
+
+The CARTO base map washed out under the heat/wind overlay, costing pilots their
+orientation. Added two ref-driven levers in `MapCanvas` (no React re-render/frame)
+plus an admin control. See DECISION-015 and `wiki/12-map-ui-style-guide.md` rule 11.
+
+- **Base-map detail slider** (readout, both maps) — after the overlay draws, the same
+  base tiles are re-composited with `multiply` at an alpha, darkening the base's
+  roads/rivers/borders back in without dimming the overlay colours. Measured ~2.6×
+  line↔bg contrast at full, bg moves ~2%.
+- **Town-names toggle** (the map icon in front of the slider) — CARTO
+  `light_only_labels` transparent tiles drawn **last, on top** of the overlay so
+  names stay legible (`L<key>` cache key, ~1 KB/tile).
+- Both shared by wind + thermal, remembered per browser (`skyhigh.basemapIntensity`,
+  `skyhigh.showMapLabels`). **Committed + pushed `e64b02f`.**
+- **Admin per-map band** (Admin → Forecast → "Base-map detail range"): the pilot's
+  slider is a *position*; effective alpha = `floor + position×(ceiling−floor)`, with
+  floor/ceiling set separately for Wind and Thermal (`wind*/thermal*BasemapDetailFloor
+  /CeilPct`, defaults 0/100 = no-op). Fields added to `AdminForecast.tsx` (existing
+  threshold pattern, no migration); remap lives in `SitesWindMap.tsx`. **⚠️ Uncommitted
+  at time of writing** — verify `git status` and commit if not yet done.
+- Docs updated this session: `wiki/12-map-ui-style-guide.md` (rule 11 + readout row),
+  `wiki/03-decisions-log.md` (DECISION-015), `src/pages/AdminManual.tsx` (Forecast +
+  readout entries), `CLAUDE.md` Section 0. Memory: `carto-basemap`.
 
 ## Session 64 (2026-09-16) — thermal-map / site-panel cleanup (pushed)
 

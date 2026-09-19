@@ -683,6 +683,47 @@ hosted-only and never distributed — unchanged by this removal.
 
 ---
 
+## DECISION-015: Base-map Legibility — Darken the Base, Don't Fade the Overlay
+
+**Date:** 2026-09-19
+**Owner:** Jon Pamment
+**Status:** ✅ Locked (slider + labels shipped `e64b02f`; admin per-map band follow-up)
+
+### Context
+On both the wind and thermal maps the CARTO `light_nolabels` base is near-white,
+and the translucent heat/speed overlay washes it out — pilots lose the roads,
+rivers and coastline they use to orientate ("where am I / where do I want to go").
+Two things were wanted: a way to bring base detail back, and town/place names.
+
+### Options considered
+- **A — Fade the overlay** so the pale base shows through. Simple, but it dims the
+  thermal/wind colours, which are the whole point of the map.
+- **B — Darken the base detail** with a `multiply` re-pass after the overlay. Multiply
+  leaves the near-white background (the overlay colour) ~untouched but darkens the
+  base's own lines back in. Keeps the data at full strength. ✅ **Chosen.**
+- **Labels:** draw CARTO `light_only_labels` (transparent, text-only) **on top** of the
+  overlay so names stay legible — never under it.
+
+### Chosen: B (+ labels-on-top)
+Both are ref-driven in `MapCanvas` (no React re-render per frame). Measured on a real
+Melbourne tile: at full slider the base-line↔background luminance separation rose ~2.6×
+while the background moved ~2%. Pilot controls live in the tapped-point readout (map
+icon = names toggle, slider = detail), shared by both maps, remembered per browser
+(`localStorage`). The slider is a *position* mapped into an admin-set per-map floor/
+ceiling band (**Admin → Forecast → Base-map detail range**; `wind*/thermal*BasemapDetail
+Floor/CeilPct`, defaults 0/100 = no-op) — separate per map because the two overlays bury
+the base by different amounts. Labels have no admin default (pure pilot preference).
+
+### Reversibility
+Easy. Both levers are additive and off by default (slider position 0, labels off,
+admin band 0/100 = full range); removing the readout controls + the two `MapCanvas`
+passes fully reverts with no data/schema impact (settings are key/value, unset = default).
+
+**Confirms:** Honours the [[carto-basemap]] key/attribution setup and the Canvas+D3
+rendering choice (DECISION-004).
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -699,7 +740,9 @@ hosted-only and never distributed — unchanged by this removal.
 | 011 | Client-side terrain sampling | Browser-decoded terrarium tiles + API fallback; pre-baked Postgres DEM rejected on measurement | 2026-09-13 | ✅ Locked |
 | 012 | Accept GPL-2.0 dependency | Hosted-only, never distributed, so copyleft never triggers; **blocks any future white-label/source release** | 2026-09-12 | ✅ Locked |
 | 013 | Baked raster land mask | One generated artifact replaces two drifted hand-traced rings; Western Port / Phillip Is. / the Prom now real geometry; +2.1% points, same tile count | 2026-09-14 | ✅ Locked |
+| 014 | Remove white-label engine | Native single-club; `TemplateContext`/template registry deleted, palette rewritten to semantic tokens | 2026-09-15 | ✅ Locked |
+| 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
 
 ---
 
-Last updated: 2026-09-14
+Last updated: 2026-09-19

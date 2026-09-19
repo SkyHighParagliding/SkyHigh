@@ -98,6 +98,7 @@ const categories: SpecCategory[] = [
           "Compact Field View (/sites/:id/field): stripped-down mobile page for field QR code scanning, showing essential safety info.",
           "Animated wind map: particle animation across the state, colour-coded by wind speed with timeline controls.",
           "Ground readout: tapping any point on the wind map or thermal map shows terrain elevation above mean sea level (AMSL) at that point, alongside the boundary layer top and cloud base altitudes. Lets pilots read how high the boundary layer and cloud base sit above the ground they will be flying over. Tapping the Ground figure toggles the whole app between metres and feet.",
+          "Base-map orientation aids: the tapped-point readout carries a town-names toggle and a base-map detail slider (both wind and thermal maps). The slider darkens roads, rivers and borders back in under the heat/wind colours so pilots keep their bearings without dimming the forecast data; each pilot's choices are remembered on their device. Admins frame the slider's usable range per map in Admin → Forecast.",
         ],
       },
       {
