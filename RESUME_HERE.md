@@ -25,12 +25,26 @@ plus an admin control. See DECISION-015 and `wiki/12-map-ui-style-guide.md` rule
 - **Admin per-map band** (Admin → Forecast → "Base-map detail range"): the pilot's
   slider is a *position*; effective alpha = `floor + position×(ceiling−floor)`, with
   floor/ceiling set separately for Wind and Thermal (`wind*/thermal*BasemapDetailFloor
-  /CeilPct`, defaults 0/100 = no-op). Fields added to `AdminForecast.tsx` (existing
-  threshold pattern, no migration); remap lives in `SitesWindMap.tsx`. **⚠️ Uncommitted
-  at time of writing** — verify `git status` and commit if not yet done.
-- Docs updated this session: `wiki/12-map-ui-style-guide.md` (rule 11 + readout row),
-  `wiki/03-decisions-log.md` (DECISION-015), `src/pages/AdminManual.tsx` (Forecast +
-  readout entries), `CLAUDE.md` Section 0. Memory: `carto-basemap`.
+  /CeilPct`, defaults 0/100 = no-op). Fields in `AdminForecast.tsx` (existing threshold
+  pattern, no migration); remap lives in `SitesWindMap.tsx`. **Committed + pushed
+  `7c7f04d`.** Verified end-to-end: admin save persists to `/api/settings`, and a 30%
+  wind floor darkened the base at slider-0 on the live map.
+- **All work this session is committed + pushed** (`e64b02f`, `7c7f04d`, docs `88124f9`);
+  `main == origin/main`. Railway auto-deploys.
+- Docs updated: `wiki/12-map-ui-style-guide.md` (rule 11 + readout row),
+  `wiki/03-decisions-log.md` (DECISION-015 + table), `RESUME_HERE.md`, `CLAUDE.md`
+  Section 0, `AdminManual/ProductSpec/TechSpec.tsx`. New future notes:
+  `wiki/future/vector-basemaps.md` and `wiki/future/3d-flight-replay.md` (cross-linked;
+  both share an "adopt MapLibre GL" foundation but are independent). Memory: `carto-basemap`.
+
+## Next / open items (session 65)
+- Nothing outstanding from this session — base-map legibility + admin band shipped.
+- **Optional follow-ups Jon mentioned/deferred:** admin default for the town-names
+  toggle (currently a pure pilot preference); label contrast — using `light_only_labels`
+  (dark text); `dark_only_labels` + a halo would read better over dark/purple overlay
+  regions if names ever get lost.
+- **Future candidates (noted, not scheduled):** CARTO vector basemaps (MapLibre) and a
+  3D GPX flight replay — see the two `wiki/future/` notes above.
 
 ## Session 64 (2026-09-16) — thermal-map / site-panel cleanup (pushed)
 
