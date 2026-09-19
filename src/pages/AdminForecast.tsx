@@ -37,6 +37,17 @@ const THRESHOLD_FIELDS: ThresholdField[] = [
   { key: "thermalRainWashOpacity",  label: "Rain wash intensity",           description: "Max opacity of the blue rain wash at the no-fly rain rate. Higher = stronger blue over rain areas.", defaultVal: 0.5, unit: "", min: 0, max: 1, step: 0.05 },
 ];
 
+// The pilot's "base map detail" slider scrubs between a floor and a ceiling, not a
+// flat 0–100%. Admin frames that band per map because the wind speed overlay and
+// the thermal heat ramp wash out the base by different amounts. Defaults 0/100 =
+// the full range, so leaving them unchanged reproduces today's slider exactly.
+const BASEMAP_FIELDS: ThresholdField[] = [
+  { key: "windBasemapDetailFloorPct",    label: "Wind map — detail floor",    description: "Left end of the pilot's base-map detail slider on the WIND map (%). The slider never applies less base-map darkening than this — raise it when the wind colours are heavy and always bury the base.", defaultVal: 0,   unit: "%", min: 0, max: 100, step: 5 },
+  { key: "windBasemapDetailCeilPct",     label: "Wind map — detail ceiling",  description: "Right end of the slider on the WIND map (%). The slider never applies more than this.", defaultVal: 100, unit: "%", min: 0, max: 100, step: 5 },
+  { key: "thermalBasemapDetailFloorPct", label: "Thermal map — detail floor", description: "Left end of the slider on the THERMAL map (%). The slider never applies less than this.", defaultVal: 0,   unit: "%", min: 0, max: 100, step: 5 },
+  { key: "thermalBasemapDetailCeilPct",  label: "Thermal map — detail ceiling", description: "Right end of the slider on the THERMAL map (%). The slider never applies more than this.", defaultVal: 100, unit: "%", min: 0, max: 100, step: 5 },
+];
+
 const THERMAL_DEFAULT_HOUR = 12;
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -72,7 +83,7 @@ export function AdminForecast() {
     setSkewtOn(settings.featureSkewT === "true");
 
     const t: Record<string, number> = {};
-    for (const field of THRESHOLD_FIELDS) {
+    for (const field of [...THRESHOLD_FIELDS, ...BASEMAP_FIELDS]) {
       const raw = settings[field.key];
       t[field.key] = raw !== undefined && raw !== "" ? parseFloat(String(raw)) : field.defaultVal;
     }
@@ -140,7 +151,13 @@ export function AdminForecast() {
   const handleResetThresholds = () => {
     const reset: Record<string, number> = {};
     for (const f of THRESHOLD_FIELDS) reset[f.key] = f.defaultVal;
-    setThresholds(reset);
+    setThresholds(prev => ({ ...prev, ...reset }));
+  };
+
+  const handleResetBasemap = () => {
+    const reset: Record<string, number> = {};
+    for (const f of BASEMAP_FIELDS) reset[f.key] = f.defaultVal;
+    setThresholds(prev => ({ ...prev, ...reset }));
   };
 
   const handleSaveDisplay = async () => {
@@ -277,6 +294,60 @@ export function AdminForecast() {
             <CardContent>
               <div className="space-y-4">
                 {THRESHOLD_FIELDS.map(field => (
+                  <div key={field.key} className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-start py-3 border-b border-border last:border-0">
+                    <div>
+                      <Label htmlFor={field.key} className="text-sm font-semibold text-ink block mb-0.5">
+                        {field.label}
+                      </Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{field.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 sm:justify-end">
+                      <input
+                        id={field.key}
+                        type="number"
+                        value={thresholds[field.key] ?? field.defaultVal}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
+                        onChange={e => setThresholds(prev => ({ ...prev, [field.key]: parseFloat(e.target.value) }))}
+                        className="w-24 border border-input rounded-md px-2 py-1.5 text-sm bg-background text-right focus:outline-none focus:ring-1 focus:ring-accent"
+                      />
+                      <span className="text-xs text-muted-foreground w-12">{field.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Section 2b: Base-map detail range ── */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center text-ink">
+                    <Sliders className="w-5 h-5 mr-2 text-accent" />
+                    Base-map detail range
+                  </CardTitle>
+                  <CardDescription>
+                    Frames the pilot's "base-map detail" slider (the map icon + slider in the
+                    tapped-point readout). The slider scrubs between the floor and ceiling below —
+                    set the band to suit how heavily each map's colours cover the base map. The
+                    pilot's chosen position within the band is remembered on their device. Defaults
+                    of 0–100 leave the slider at its full range.
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={handleResetBasemap}>Reset Defaults</Button>
+                  <Button size="sm" onClick={handleSaveThresholds} disabled={thresholdsSaving}>
+                    {thresholdsSaving ? "Saving…" : "Save"}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {BASEMAP_FIELDS.map(field => (
                   <div key={field.key} className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-start py-3 border-b border-border last:border-0">
                     <div>
                       <Label htmlFor={field.key} className="text-sm font-semibold text-ink block mb-0.5">

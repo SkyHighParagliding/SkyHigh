@@ -81,11 +81,23 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     const n = v == null ? NaN : Number(v);
     return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
   });
-  const basemapIntensityRef = useRef(basemapIntensity);
+  // `basemapIntensity` is the pilot's slider POSITION (0–1), remembered per browser.
+  // The effective multiply alpha is that position mapped into an admin-set floor/
+  // ceiling band (Admin → Forecast → Base-map detail range), separate per map
+  // because the wind and thermal overlays bury the base by different amounts.
   useEffect(() => {
-    basemapIntensityRef.current = basemapIntensity;
     try { localStorage.setItem('skyhigh.basemapIntensity', String(basemapIntensity)); } catch { /* private mode */ }
   }, [basemapIntensity]);
+  const basemapIntensityRef = useRef(0);
+  useEffect(() => {
+    const numOr = (v: unknown, d: number) => { const n = parseFloat(String(v)); return Number.isFinite(n) ? n : d; };
+    const floorPct = viewMode === 'thermal' ? numOr(settings.thermalBasemapDetailFloorPct, 0) : numOr(settings.windBasemapDetailFloorPct, 0);
+    const ceilPct  = viewMode === 'thermal' ? numOr(settings.thermalBasemapDetailCeilPct, 100) : numOr(settings.windBasemapDetailCeilPct, 100);
+    const lo = Math.min(floorPct, ceilPct) / 100;
+    const hi = Math.max(floorPct, ceilPct) / 100;
+    const pos = Math.min(1, Math.max(0, basemapIntensity));
+    basemapIntensityRef.current = lo + pos * (hi - lo);
+  }, [basemapIntensity, viewMode, settings.windBasemapDetailFloorPct, settings.windBasemapDetailCeilPct, settings.thermalBasemapDetailFloorPct, settings.thermalBasemapDetailCeilPct]);
   // Town-name labels toggle (the map icon in front of the slider). Drawn on top of
   // the overlay so names stay readable. Shared by both maps, remembered per browser.
   const [showMapLabels, setShowMapLabels] = useState<boolean>(() => {
