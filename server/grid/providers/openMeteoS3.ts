@@ -372,7 +372,11 @@ interface VariantConfig {
 const CONFIGS: Record<Variant, VariantConfig> = {
   ecmwf: {
     id:            "openmeteo-s3-ecmwf",
-    tier:          2,
+    // Primary source for the bulk grid (promoted above the REST API, which is
+    // rate-limited). This S3 archive is anonymous and effectively unlimited. It
+    // lacks weather_code + precipitation_probability — those come from the fine
+    // grid's targeted API top-up. See 2026-09-22 Open-Meteo quota incident.
+    tier:          1,
     modelFamily:   "ecmwf",
     label:         "Open-Meteo S3 archive (ECMWF IFS HRES 9 km)",
     resolutionDeg: 0.09,

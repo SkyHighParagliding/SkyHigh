@@ -23,6 +23,8 @@ import { cleanupOldGrids, melbourneToday, readGrid, readLatestGrid, setStatus, w
 import type { GridEnvelope } from "./bounds.js";
 import { getGridBounds, gridDimensions } from "./bounds.js";
 import type { LatLon, MergedGrid, MergedPoint, Variable } from "./types.js";
+import { pointKey } from "./types.js";
+import { openMeteoApiProvider } from "./providers/openMeteoApi.js";
 
 const log = createLogger("grid:pipeline");
 
@@ -76,6 +78,14 @@ export interface GridKind<P> {
   required: Variable[];
   /** Variables permitted to contain gaps (see GridRequest.optional). */
   optional?: Variable[];
+  /**
+   * Variables to fetch from the Open-Meteo REST API in a separate pass and merge
+   * into the base grid, for fields the primary (S3 mirror) source lacks
+   * (weather_code, precipitation_probability). Best-effort: a failed top-up
+   * leaves these absent (rendered "unavailable"), never 0. Must also appear in
+   * `optional` so a missing top-up cannot veto the axis or throw in seriesOf.
+   */
+  topUpVariables?: Variable[];
   /** The point set to request, derived from the configured bounds. */
   buildPoints(): Promise<LatLon[]>;
   /** Converts one merged point into the persisted per-point shape. */
@@ -337,6 +347,14 @@ async function runFetch<P>(
   // throwing case has already left via the catch above.
   if (cancelled) throw new GridFetchCancelledError(kind.baseKey);
 
+  // Restore any API-only fields (weather_code, precipitation_probability) that
+  // the primary S3 mirror doesn't carry. Best-effort and non-fatal: if the API
+  // is down or rate-limited, those fields stay absent (client shows them as
+  // unavailable) rather than failing the whole grid or reading as 0.
+  if (kind.topUpVariables?.length) {
+    await applyFieldTopUp(kind, points, merged, signal);
+  }
+
   // Recorded regardless of which branch follows — the admin panel should see
   // what the providers actually returned, even when we then keep the old cache.
   await setStatus(kind.provenanceKey, JSON.stringify(merged.provenance));
@@ -388,6 +406,58 @@ async function runFetch<P>(
   return grid;
 }
 
+/**
+ * Remap a per-hour series from one time axis onto another by matching timestamp
+ * strings. Hours the source axis doesn't cover become NaN (rendered as absent).
+ */
+function remapSeriesByTime(values: number[], fromTime: string[], toTime: string[]): number[] {
+  const indexByTime = new Map<string, number>();
+  for (let i = 0; i < fromTime.length; i++) indexByTime.set(fromTime[i], i);
+  return toTime.map(t => {
+    const i = indexByTime.get(t);
+    const v = i === undefined ? NaN : values[i];
+    return Number.isFinite(v) ? v : NaN;
+  });
+}
+
+/**
+ * Second, small fetch for the fields the primary source lacks — pulled from the
+ * REST API only — merged per-variable into the already-built grid. The base grid
+ * decides completeness/axis; this is a pure enrichment. Any failure is logged
+ * and swallowed so the grid still publishes with those fields marked absent.
+ */
+async function applyFieldTopUp<P>(
+  kind: GridKind<P>, points: LatLon[], merged: MergedGrid, signal: AbortSignal,
+): Promise<void> {
+  const vars = kind.topUpVariables!;
+  let topup: MergedGrid;
+  try {
+    topup = await fetchMergedGrid(
+      { points, variables: vars, required: vars, optional: [], forecastDays: FORECAST_DAYS, signal },
+      { providers: [openMeteoApiProvider] },
+    );
+  } catch (err) {
+    log.warn(
+      `${kind.baseKey}: field top-up (${vars.join(", ")}) unavailable — ${err instanceof Error ? err.message : String(err)}. ` +
+      `These fields will render as unavailable this cycle.`,
+    );
+    return;
+  }
+
+  const topByKey = new Map(topup.points.map(p => [pointKey(p), p]));
+  let applied = 0;
+  for (const mp of merged.points) {
+    const tp = topByKey.get(pointKey(mp));
+    if (!tp) continue;
+    for (const v of vars) {
+      const series = tp.values[v];
+      if (series) mp.values[v] = remapSeriesByTime(series, topup.time, merged.time);
+    }
+    applied++;
+  }
+  log.info(`${kind.baseKey}: field top-up applied to ${applied}/${merged.points.length} points (${vars.join(", ")})`);
+}
+
 /** Today's row if present, otherwise the newest row of any day. */
 async function loadPrevious<G>(baseKey: string): Promise<G | null> {
   try {
@@ -427,7 +497,10 @@ export function seriesOf(
   point: MergedPoint, variable: Variable, length: number, allowGaps = false,
 ): number[] {
   const raw = point.values[variable];
-  if (!raw) return [];
+  // A gap-tolerant variable that is entirely absent (e.g. a failed field top-up)
+  // returns a full-length NaN series, not [], so it stays length-aligned with the
+  // time axis and renders as "unavailable" rather than shifting or reading as 0.
+  if (!raw) return allowGaps ? new Array<number>(length).fill(NaN) : [];
   const out = new Array<number>(length);
   for (let i = 0; i < length; i++) {
     const v = raw[i];

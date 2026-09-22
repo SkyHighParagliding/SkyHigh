@@ -128,7 +128,12 @@ function extractValues(
  */
 export const openMeteoApiProvider: GridProvider = {
   id: "openmeteo-api",
-  tier: 1,
+  // Demoted below the S3 mirror (tier 1) so the bulk grid fetch runs off the
+  // unlimited S3 archive, not the rate-limited REST API. The API stays as a
+  // same-family fallback for points S3 can't fill, and is used explicitly by the
+  // fine grid's field top-up for weather_code + precipitation_probability (the
+  // two variables the S3 archive lacks). See 2026-09-22 Open-Meteo quota incident.
+  tier: 2,
   modelFamily: "ecmwf",
   label: "Open-Meteo API (ECMWF IFS HRES)",
   resolutionDeg: 0.09,

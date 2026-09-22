@@ -41,6 +41,17 @@ const FINE_VARIABLES: Variable[] = [
  */
 const FINE_REQUIRED: Variable[] = ["wind_speed_10m", "wind_direction_10m"];
 
+/**
+ * Gap-tolerant fields. weather_code + precipitation_probability are NOT carried
+ * by the primary S3 mirror; they are restored by a targeted REST-API top-up
+ * (FINE_TOP_UP). Declaring them optional means a missing top-up renders them as
+ * "unavailable" instead of vetoing the forecast axis or reading as 0.
+ */
+const FINE_OPTIONAL: Variable[] = ["weather_code", "precipitation_probability"];
+
+/** Fields fetched from the REST API and merged in (the two the S3 mirror lacks). */
+const FINE_TOP_UP: Variable[] = ["weather_code", "precipitation_probability"];
+
 async function buildFinePoints(): Promise<LatLon[]> {
   const bounds = await getGridBounds();
   const tiles = buildRectangularTiles(
@@ -63,9 +74,12 @@ function buildFinePoint(p: MergedPoint, time: string[]): GridPoint {
       wind_gusts_10m: seriesOf(p, "wind_gusts_10m", n),
       wind_direction_10m: seriesOf(p, "wind_direction_10m", n),
       temperature_2m: seriesOf(p, "temperature_2m", n),
-      weather_code: seriesOf(p, "weather_code", n),
+      // weather_code + precipitation_probability come from the API field top-up
+      // (the S3 mirror lacks them). Gap-tolerant: if the top-up was unavailable
+      // this cycle they render as absent, never as 0 (clear sky / no rain).
+      weather_code: seriesOf(p, "weather_code", n, true),
       precipitation: seriesOf(p, "precipitation", n),
-      precipitation_probability: seriesOf(p, "precipitation_probability", n),
+      precipitation_probability: seriesOf(p, "precipitation_probability", n, true),
       cloud_cover: seriesOf(p, "cloud_cover", n),
       cloud_cover_low: seriesOf(p, "cloud_cover_low", n),
       visibility: seriesOf(p, "visibility", n),
@@ -84,6 +98,8 @@ export const FINE_GRID: GridKind<GridPoint> = {
   delta: FINE_DELTA,
   variables: FINE_VARIABLES,
   required: FINE_REQUIRED,
+  optional: FINE_OPTIONAL,
+  topUpVariables: FINE_TOP_UP,
   buildPoints: buildFinePoints,
   buildPoint: buildFinePoint,
 };
