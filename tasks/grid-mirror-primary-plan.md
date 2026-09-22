@@ -1,6 +1,16 @@
 # Plan — move bulk grid fetch to the S3 mirror (option A), keep API for top-up + soundings
 
-**Branch:** `fix/grid-mirror-primary` (off `main` @ 6295be5). Not started — this is the design.
+**Branch:** `fix/grid-mirror-primary`. **BUILT + VERIFIED locally (commit d88d1b2).** Ready to deploy pending sign-off.
+
+## Verification (2026-09-22, real local fine-grid fetch)
+- ✅ S3 primary: 4884/4884 points from `openmeteo-s3-ecmwf` for all base vars — bulk grid entirely off the API.
+- ✅ Top-up merges correctly: weather_code (valid WMO codes) + precipitation_probability (%) populated where the API returned data.
+- ✅ Graceful degradation proven: API top-up hit a 429 mid-run (2000/4884 pts), grid still published with the two fields absent-not-0 on the rest. No crash, no false "clear sky".
+- ⚠️ Free-tier caveat: the 2-field top-up can be partial on the free tier (my test IP's quota was already used). It's ~1/5 the old API volume, so should mostly complete on prod's fresh 5am quota; an API key would make it reliably complete. Partial = safe/honest (unavailable, never 0). Jon: no paid key — accepted.
+- Startup guard: **not needed** — S3-primary means startup fetches hit the mirror, not the API. Disk alert: Railway native is spend-only; a small app-side pg_database_size check is the follow-up.
+
+---
+_Original design below (implemented as above)._
 **Why:** 2026-09-22 prod incident — Open-Meteo free-tier daily quota exhausted (HTTP 429 on SkewT soundings). Root: the grid provider chain is **API-first** (rate-limited) + the volume-full crash-loop hammered the API. Move bulk grid to the unlimited S3 mirror; reserve the API for the two fields S3 lacks + soundings. Decision: option **A** (keep weather_code + precipitation_probability via a targeted top-up). No paid API key (free tier is fine once bulk is off it).
 
 ## Current state (verified in code)
