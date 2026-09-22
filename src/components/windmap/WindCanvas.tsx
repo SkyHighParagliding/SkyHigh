@@ -21,7 +21,7 @@ interface WindCanvasProps {
   zoomSetpoints?: ZoomSetpoints;
   siteMarkers?: SiteMarker[];
   onSiteClick?: (site: SiteMarker, screenX: number, screenY: number) => void;
-  onWindInfoChange?: (info: { speed: number; direction: number; groundAmsl?: number } | null) => void;
+  onWindInfoChange?: (info: { speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number } | null) => void;
   /** Filled with a function that dismisses the pinned wind readout (clears the
    *  pin so the render loop stops repainting it, and emits null). Mirrors the
    *  ThermalCanvas dismiss pattern. */
@@ -153,6 +153,8 @@ export const WindCanvas = memo(function WindCanvas({
                 speed: speedMs * 1.94384,
                 direction: dir,
                 groundAmsl: elevationPinRef.current?.value,
+                lat: geo[1],
+                lon: geo[0],
               });
             } else {
               onWindInfoChangeRef.current?.(null);

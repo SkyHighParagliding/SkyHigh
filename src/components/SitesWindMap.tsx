@@ -18,6 +18,7 @@ import type { ThermalGrid } from './windmap/thermalInterpolation';
 import { THERMAL_LEGEND_CSS, OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
 import { ThermalStrengthLegend } from './windmap/ThermalLegend';
 import { precipDescription } from '@/lib/precip';
+import { haversineDistance } from '@/lib/utils';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from './AirspaceRange';
 
@@ -40,6 +41,10 @@ interface SitesWindMapProps {
   zoomSetpoints?: ZoomSetpoints;
 }
 
+/** Tapped point must be within this many km of a live-reporting site to show its
+ *  live wind alongside the forecast. Tunable. */
+const LIVE_WIND_RADIUS_KM = 5;
+
 export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
@@ -55,7 +60,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
-  const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number } | null>(null);
+  const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
+  // Live wind from the nearest live-reporting site within LIVE_WIND_RADIUS_KM of
+  // the tapped point — only when the scrubber sits on "now" (see effect below).
+  const [liveWind, setLiveWind] = useState<{ speedKt: number; direction: string; siteName: string } | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
   // Mirror the renderer's overcast rule so the tapped-point strength label agrees
   // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
@@ -234,6 +242,48 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       .then(data => { setThermalGrid(data); setThermalLoading(false); })
       .catch(e => { setThermalError((e as Error).message); setThermalLoading(false); });
   }, [viewMode, thermalGrid]);
+
+  // Live wind for the tapped point: when the scrubber is on "now" and the tap is
+  // within LIVE_WIND_RADIUS_KM of a live-reporting site, fetch that site's most
+  // recent reading and show it beside the forecast. Off-now or too far → cleared.
+  const tappedLat = viewMode === 'thermal' ? thermalInfo?.lat : sitesWindInfo?.lat;
+  const tappedLon = viewMode === 'thermal' ? thermalInfo?.lon : sitesWindInfo?.lon;
+  useEffect(() => {
+    const isNow = Math.abs(currentTime - Date.now()) < timeStep; // within one frame of real "now"
+    if (!isNow || tappedLat == null || tappedLon == null) { setLiveWind(null); return; }
+
+    // Nearest live-capable site within the radius (uses site coords we already hold).
+    let nearest: { site: SiteMarker; km: number } | null = null;
+    for (const s of sites) {
+      const km = haversineDistance(tappedLat, tappedLon, s.lat, s.lon);
+      if (km <= LIVE_WIND_RADIUS_KM && (!nearest || km < nearest.km)) nearest = { site: s, km };
+    }
+    if (!nearest) { setLiveWind(null); return; }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/weather/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteIds: [nearest!.site.id] }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json() as Record<string, any>;
+        const obs = data[nearest!.site.id];
+        if (cancelled) return;
+        if (obs && obs.type === 'live' && obs.windSpeed != null) {
+          const dir = typeof obs.direction === 'number' ? getCompassDirection(obs.direction) : String(obs.direction ?? '');
+          setLiveWind({ speedKt: Number(obs.windSpeed), direction: dir, siteName: nearest!.site.name });
+        } else {
+          setLiveWind(null);
+        }
+      } catch {
+        if (!cancelled) setLiveWind(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tappedLat, tappedLon, currentTime, timeStep, sites]);
 
   const handleViewModeChange = useCallback((mode: 'wind' | 'thermal') => {
     // Carry the current viewport across the switch. The two canvases are mounted
@@ -738,7 +788,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             className={`block text-left text-[11px] ${showWindOnThermal ? 'text-sky-300 font-semibold' : CLICKABLE}`}
                             title="Show/hide wind flow on the map"
                           >
-                            Wind {tappedWind.speedKt.toFixed(0)} kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>
+                            Wind {liveWind ? 'F ' : ''}{tappedWind.speedKt.toFixed(0)}kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>{liveWind && <> | L {Math.round(liveWind.speedKt)}kt <span className="text-sky-300 font-semibold tracking-wide">{liveWind.direction}</span></>}
                           </button>
                         )}
                       </>
@@ -775,10 +825,13 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               ) : (
                 sitesWindInfo ? (
                   <>
-                    <div className="text-[12px] font-bold leading-tight text-sky-400">{sitesWindInfo.speed.toFixed(1)} kt</div>
+                    <div className="text-[12px] font-bold leading-tight text-sky-400">{liveWind ? 'F ' : ''}{sitesWindInfo.speed.toFixed(1)} kt</div>
                     <div className="text-[11px] text-white/75">
                       {sitesWindInfo.direction.toFixed(0)}° <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(sitesWindInfo.direction)}</span>
                     </div>
+                    {liveWind && (
+                      <div className="text-[11px] text-sky-300">Live {Math.round(liveWind.speedKt)}kt <span className="font-semibold tracking-wide">{liveWind.direction}</span></div>
+                    )}
                     {typeof sitesWindInfo.groundAmsl === 'number' && (
                       <div className="text-[11px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} /> AMSL</div>
                     )}
