@@ -1,11 +1,43 @@
-# RESUME_HERE — Last updated: 2026-09-19 (session 66)
+# RESUME_HERE — Last updated: 2026-09-22 (session 67)
 
 ## Project: SkyHigh
-## Status: Active — on `main`. Latest work: public Smart Search re-evaluation (design only, no code yet).
+## Status: Active — on `main` (== origin/main). Prod healthy (200). Big incident-recovery + feature session, all shipped & prod-verified.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## Session 67 (2026-09-22) — prod outage recovery + Site Logic + weather-card features
+
+**Production incident (resolved):** Railway app crash-looped — the **500 MB Postgres
+volume was 99% full** (`could not write init file: No space left on device`) during the
+~5am grid write. Fixed: Jon upgraded to Pro, I **live-resized the volume 500 MB → 5 GB**
+and restarted. Second symptom: **Open-Meteo free-tier daily quota exhausted (429)** →
+SkewT soundings down (self-heals at daily reset). Diagnosed via Playwright on the Railway
+dashboard. Full write-up: `memory/prod-volume-and-openmeteo-incident.md`.
+
+**Shipped to prod this session (all pushed, all verified):**
+- **Grid S3-mirror-primary + fine-grid API top-up** (`fix/grid-mirror-primary`, commit
+  d88d1b2) — bulk grid now off the rate-limited API onto the unlimited S3 mirror; the two
+  fields S3 lacks (weather_code, precip_probability) restored via a best-effort API top-up
+  that degrades to absent-not-zero. Prod-verified: 3784/3784 from S3, top-up applied.
+- **DB-volume email alert** (a5cbe06) — `checkDatabaseVolume` warns admins once when
+  pg_database_size crosses `dbSizeAlertMb` (default 3500 MB ≈ 68% of 5 GB). Dormant now (~500 MB).
+- **Gust caution pill** (`⚠ GUSTY`, c391663) — rating-scaled gust ceiling on the weather cards.
+- **Site Logic doc + 474-entry catalogue + admin page** (6295be5) — `docs/site-logic.md`
+  (principles/template/catalogue) + `docs/site-logic/`, `AGENTS.md`, `/admin/site-logic`.
+- **Tapped-point card: forecast time line** (73af678) + **nearest live-station wind**
+  (d7da584, labels `Fcst`/`Live`, b6e01f6) — `Wind Fcst 3kt N | Live 6kt NW` when the
+  scrubber is at "now" and within `LIVE_WIND_RADIUS_KM` (5 km) of a live site. Prod-verified
+  by Playwright at Mystic (inside → Live shows; outside → forecast only).
+- **Grid Fetch-Now double-click guard** (92ef829).
+
+## Open / not done (optional, non-urgent)
+- Open-Meteo **API key** (`OPEN_METEO_API_KEY`, code already supports it) would make the
+  fine-grid top-up reliably complete instead of best-effort. Jon: no paid key for now.
+- **Startup-fetch guard** — deemed unnecessary (S3-primary already removes the crash-loop→API drain).
+- Smart Search re-eval **build** (from session 66) still not started — design ruleset is in
+  `memory/smart-search-reeval-decisions.md` + `docs/site-logic.md`.
 
 ## Session 66 (2026-09-19) — public Smart Search re-evaluation (DESIGN ONLY)
 
