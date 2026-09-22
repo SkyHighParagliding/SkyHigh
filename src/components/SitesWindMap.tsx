@@ -663,6 +663,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           <div className="flex items-start justify-between gap-2.5">
             <div className="space-y-0.5">
               <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
+              {/* Forecast time this readout is for (the scrubber's selected time) —
+                  same string the tray shows, surfaced here so you don't have to
+                  open the tray to know which day/hour you're looking at. */}
+              <div className="text-[11px] font-semibold text-sky-300 leading-tight">{formattedTime}</div>
               {viewMode === 'thermal' ? (
                 thermalInfo ? (
                   <>
