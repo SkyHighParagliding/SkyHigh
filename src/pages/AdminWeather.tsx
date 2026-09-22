@@ -470,7 +470,10 @@ export function AdminWeather() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleGridFetch(endpoint, type)}
-                            disabled={(anyActive && !isThisActive) || loadingType === 'liveWeather'}
+                            // Disable ALL three (including the one fetching) while any grid
+                            // fetch runs, so a double-click can't re-fire and force-cancel its
+                            // own in-flight fetch. The active button still shows "Fetching…".
+                            disabled={anyActive || loadingType === 'liveWeather'}
                             className={`flex items-center gap-2 whitespace-nowrap transition-opacity ${isDimmed ? 'opacity-40' : ''} ${isThisActive ? 'ring-2 ring-accent' : ''}`}
                           >
                             <RefreshCw className={`w-4 h-4 ${isThisActive ? 'animate-spin' : ''}`} />
