@@ -32,6 +32,7 @@ const Features = lazy(() => import("./pages/Features").then(m => ({ default: m.F
 const TechSpec = lazy(() => import("./pages/TechSpec").then(m => ({ default: m.TechSpec })));
 const BuildBlueprint = lazy(() => import("./pages/BuildBlueprint").then(m => ({ default: m.BuildBlueprint })));
 const ProductSpec = lazy(() => import("./pages/ProductSpec").then(m => ({ default: m.ProductSpec })));
+const SiteLogic = lazy(() => import("./pages/SiteLogic").then(m => ({ default: m.SiteLogic })));
 const SiteFieldView = lazy(() => import("./pages/SiteFieldView").then(m => ({ default: m.SiteFieldView })));
 const ClubPhotos = lazy(() => import("./pages/ClubPhotos").then(m => ({ default: m.ClubPhotos })));
 const VideoWall = lazy(() => import("./pages/VideoWall").then(m => ({ default: m.VideoWall })));
@@ -210,6 +211,7 @@ export default function App() {
               <Route path="admin/documents" element={<AdminRoute><AdminDocuments /></AdminRoute>} />
               <Route path="admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
               <Route path="admin/manual" element={<AdminRoute><AdminManual /></AdminRoute>} />
+              <Route path="admin/site-logic" element={<AdminRoute><SiteLogic /></AdminRoute>} />
               <Route path="admin/procedures" element={<AdminRoute><ProceduresManual /></AdminRoute>} />
               <Route path="admin/sites" element={<AdminRoute><AdminSites /></AdminRoute>} />
               <Route path="admin/sites/:id/edit" element={<AdminRoute><AdminSiteEdit /></AdminRoute>} />

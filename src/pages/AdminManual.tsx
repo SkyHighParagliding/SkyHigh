@@ -2,9 +2,9 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  ArrowLeft, 
-  Book, 
-  MapPin, 
+  ArrowLeft,
+  Book,
+  MapPin,
   FileText, 
   Newspaper, 
   Activity, 
@@ -400,7 +400,24 @@ export function AdminManual() {
         "The assistant answers questions about sites, ratings, weather, and hazards from the site database.",
         "Search Disclaimer: Add text that appears at the end of every reply. Leave blank to disable.",
         "Call-to-Action Message: A promotional message shown periodically in the chat. Set frequency (Off, every response, every 2nd–5th). Supports formatting — click 'Formatting help' for reference.",
-        "Committee Contact Link: Where visitors are directed for equipment or committee queries. Defaults to /page/committee."
+        "Committee Contact Link: Where visitors are directed for equipment or committee queries. Defaults to /page/committee.",
+        <span className="flex flex-wrap items-center gap-2"><span>To understand the rules the assistant follows when answering (eligibility, weather cautions, gust ceiling, safety gates), see the Site Logic reference.</span><Link to="/admin/site-logic" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Logic <ExternalLink className="w-3 h-3" /></Link></span>
+      ]
+    },
+    {
+      title: "Site Logic (Admin Reference)",
+      icon: <Book className="w-6 h-6 text-accent" />,
+      link: "/admin/site-logic",
+      category: "Dashboard Settings",
+      description: "Admin-only reference explaining WHY the Smart Search assistant and the site weather cards behave as they do — the rules they follow, and why they never make the fly / no-fly decision for a pilot.",
+      steps: [
+        <span className="flex flex-wrap items-center gap-2"><span>Admin-only page. A point-form summary of the rules behind the Smart Search assistant and the weather displays.</span><Link to="/admin/site-logic" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Logic <ExternalLink className="w-3 h-3" /></Link></span>,
+        "Why this document exists: to keep one authoritative, version-controlled explanation of how the site decides what to show — so the behaviour stays consistent and reviewable, so anyone (or any AI engine) working on the code can read and enforce the same rules, and so admins can explain to pilots and critics why the site behaves the way it does (for example, why a weather card can read SPD GOOD while the gust number looks high).",
+        "Structured in three layers: Part 1 — Principles that apply to anything the site does (e.g. decisions stay with the human; compute in code, phrase with the model; assume the safest reading when context is missing). Part 2 — a fixed What/Why/How/Principles template. Part 3 — a catalogue of concrete decisions written up against the principles.",
+        "The catalogue is populated: 474 documented decisions across eight domain files (in docs/site-logic/, indexed by README.md) covering the whole codebase — Smart Search & AI safety, weather & flyability, the grid pipeline, map rendering, auth & security, admin & settings, integrations & scheduling, and XC tracking & media. It can be re-scanned and extended by an AI at any time.",
+        "Source of truth: the version-controlled file docs/site-logic.md in the code repository. When you run the site locally you can edit it right here — click Edit, make changes, and Save writes straight back to that file; then commit it. On the live (production) site the page is read-only. You can also just edit the file directly and commit.",
+        "Use the 'Download .md' button to save the document and feed it to any AI engine (e.g. 'read this and tell me which components don't comply'). AGENTS.md in the repo points AI coding tools at the same file automatically.",
+        "Search tags: site logic, smart search, smart assistant, flyability, gust, gust ceiling, gusty, wind speed, sustained wind, weather card, SPD GOOD, DIR CROSS, eligibility, PG rating, supervision, hang gliding, HG, safety gate, emergency, spiral dive, source of truth, single source of truth, AI prompt, compliance audit, AGENTS.md, GitHub repo, docs/site-logic.md."
       ]
     },
     {

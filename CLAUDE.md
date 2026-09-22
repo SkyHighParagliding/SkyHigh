@@ -30,6 +30,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Ground elevation is sampled client-side from AWS terrarium tiles (no API key), with the server route retained as fallback — see DECISION-011. The Geoscience Australia CC BY 4.0 attribution is a licence obligation; do not remove it.
 - `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future source release must revisit that decision first.
 - Base-map legibility under the overlay is fixed by darkening the base (a `multiply` re-pass in `MapCanvas`), not by fading the overlay; town names use `light_only_labels` drawn on top. Pilot slider + labels toggle live in the readout; the slider's range is an admin per-map floor/ceiling band — see DECISION-015.
+- Site decision logic (Smart Search + weather-card flyability rules) has a single source of truth at `docs/site-logic.md`, pointed to by a vendor-neutral `AGENTS.md` so any AI engine working on the repo can read/enforce it. The website renders that same file at `/admin/site-logic` (download + print, and Edit/Save that writes the file when running locally; read-only in production). No DB copy — edit the file (or edit via the local site) and commit.
 - Previous session decisions: see wiki/03-decisions-log.md
 
 **Quick Context Refresher:**
