@@ -17,7 +17,7 @@
  */
 
 import createLogger from "../utils/logger.js";
-import { reportGridHealth } from "../utils/gridAlerts.js";
+import { reportGridHealth, checkDatabaseVolume } from "../utils/gridAlerts.js";
 import { fetchMergedGrid, type OrchestratorOptions } from "./orchestrator.js";
 import { cleanupOldGrids, melbourneToday, readGrid, readLatestGrid, setStatus, writeGrid } from "./store.js";
 import type { GridEnvelope } from "./bounds.js";
@@ -398,6 +398,10 @@ async function runFetch<P>(
   const today = melbourneToday();
   await writeGrid(kind.baseKey, today, grid);
   await cleanupOldGrids(kind.baseKey, RETAIN_DAYS);
+
+  // Grid blobs dominate the database; a fresh store is the natural moment to
+  // check the volume isn't creeping toward full (2026-09-22 crash). Never throws.
+  await checkDatabaseVolume();
 
   lastFreshByKey.set(kind.baseKey, true);
   state.memGrid = grid;

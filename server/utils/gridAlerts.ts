@@ -175,3 +175,91 @@ export async function reportGridHealth(
     log.error(`${gridLabel}: health reporting failed`, err instanceof Error ? err.message : err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Database volume early-warning
+// ---------------------------------------------------------------------------
+//
+// The 2026-09-22 outage was a full Postgres volume: the daily grid write hit
+// "No space left on device" and the app crash-looped. Railway has no native
+// per-volume alert (only spend), so this warns by email before the volume
+// fills again. The grid blobs (wind_grid_data) dominate the database, so
+// checking pg_database_size after each grid store is a good proxy for volume use.
+
+/** Alert threshold in MB (settings override). Default ≈ 68% of the 5 GB volume. */
+const DB_SIZE_ALERT_KEY = "dbSizeAlertMb";
+const DEFAULT_DB_SIZE_ALERT_MB = 3500;
+/** Dedup flag: "1" while an alert is outstanding, cleared when back under. */
+const DB_SIZE_SENT_KEY = "dbSizeAlertSent";
+
+function buildDbVolumeHtml(usedMb: number, thresholdMb: number): string {
+  return `
+    <div style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
+      <h2 style="margin:0 0 8px">SkyHigh database volume is filling up</h2>
+      <p style="margin:0 0 16px;color:#444">
+        The Postgres database is now <strong>${usedMb.toLocaleString()} MB</strong>, past the
+        <strong>${thresholdMb.toLocaleString()} MB</strong> warning threshold. If the volume
+        fills completely the app cannot write and will crash (as on 2026-09-22).
+      </p>
+      <p style="margin:0 0 4px"><strong>What to do</strong></p>
+      <ul style="margin:0 0 16px;color:#444">
+        <li>Most of the size is the wind/thermal grid blobs (<code>wind_grid_data</code>), kept as a 7-day rolling set.</li>
+        <li>Grow the Railway Postgres volume (Volume → Settings → Live resize), or reduce grid retention.</li>
+        <li>This alert won't repeat until usage drops back under the threshold. Change it via the <code>dbSizeAlertMb</code> setting.</li>
+      </ul>
+    </div>`;
+}
+
+/**
+ * Emails the admins once when the database crosses {@link DB_SIZE_ALERT_KEY}
+ * (MB), resetting when it drops back under so a later crossing warns again.
+ * Never throws — a failed check must not fail the grid fetch that calls it.
+ */
+export async function checkDatabaseVolume(): Promise<void> {
+  try {
+    const row = await queryOne<{ bytes: string }>(
+      "SELECT pg_database_size(current_database()) AS bytes",
+    );
+    if (!row?.bytes) return;
+    const usedMb = Math.round(Number(row.bytes) / (1024 * 1024));
+
+    const thresholdRaw = await getSetting(DB_SIZE_ALERT_KEY);
+    const thresholdMb = thresholdRaw && Number.isFinite(Number(thresholdRaw))
+      ? Number(thresholdRaw) : DEFAULT_DB_SIZE_ALERT_MB;
+
+    const outstanding = (await getSetting(DB_SIZE_SENT_KEY)) === "1";
+
+    if (usedMb < thresholdMb) {
+      if (outstanding) {
+        await setSetting(DB_SIZE_SENT_KEY, "0");
+        log.info(`Database volume back under threshold (${usedMb}MB < ${thresholdMb}MB) — alert reset`);
+      }
+      return;
+    }
+
+    log.warn(`Database size ${usedMb}MB is over the ${thresholdMb}MB alert threshold`);
+    if (outstanding) return; // already warned; don't repeat until it recovers
+
+    const recipients = await resolveRecipients();
+    if (recipients.length === 0) {
+      log.error("Database volume over threshold, but no alert recipients are configured");
+      return;
+    }
+
+    const subject = `SkyHigh: database volume warning (${usedMb.toLocaleString()} MB)`;
+    const html = buildDbVolumeHtml(usedMb, thresholdMb);
+    const results = await Promise.all(
+      recipients.map(async to => {
+        const res = await sendEmail({ to, subject, html });
+        if (!res.success) log.error(`Database volume alert to ${to} failed — ${res.error}`);
+        return res.success;
+      }),
+    );
+    if (results.some(Boolean)) {
+      await setSetting(DB_SIZE_SENT_KEY, "1");
+      log.info(`Database volume alert emailed to ${results.filter(Boolean).length}/${recipients.length} recipients`);
+    }
+  } catch (err) {
+    log.error("Database volume check failed", err instanceof Error ? err.message : err);
+  }
+}
