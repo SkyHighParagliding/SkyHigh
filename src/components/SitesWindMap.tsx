@@ -788,7 +788,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             className={`block text-left text-[11px] ${showWindOnThermal ? 'text-sky-300 font-semibold' : CLICKABLE}`}
                             title="Show/hide wind flow on the map"
                           >
-                            Wind {liveWind ? 'Fct ' : ''}{tappedWind.speedKt.toFixed(0)}kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>{liveWind && <> | Liv {Math.round(liveWind.speedKt)}kt <span className="text-sky-300 font-semibold tracking-wide">{liveWind.direction}</span></>}
+                            Wind {liveWind ? 'Fcst ' : ''}{tappedWind.speedKt.toFixed(0)}kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>{liveWind && <> | Live {Math.round(liveWind.speedKt)}kt <span className="text-sky-300 font-semibold tracking-wide">{liveWind.direction}</span></>}
                           </button>
                         )}
                       </>
@@ -825,12 +825,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               ) : (
                 sitesWindInfo ? (
                   <>
-                    <div className="text-[12px] font-bold leading-tight text-sky-400">{liveWind ? 'Fct ' : ''}{sitesWindInfo.speed.toFixed(1)} kt</div>
+                    <div className="text-[12px] font-bold leading-tight text-sky-400">{liveWind ? 'Fcst ' : ''}{sitesWindInfo.speed.toFixed(1)} kt</div>
                     <div className="text-[11px] text-white/75">
                       {sitesWindInfo.direction.toFixed(0)}° <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(sitesWindInfo.direction)}</span>
                     </div>
                     {liveWind && (
-                      <div className="text-[11px] text-sky-300">Liv {Math.round(liveWind.speedKt)}kt <span className="font-semibold tracking-wide">{liveWind.direction}</span></div>
+                      <div className="text-[11px] text-sky-300">Live {Math.round(liveWind.speedKt)}kt <span className="font-semibold tracking-wide">{liveWind.direction}</span></div>
                     )}
                     {typeof sitesWindInfo.groundAmsl === 'number' && (
                       <div className="text-[11px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} /> AMSL</div>
