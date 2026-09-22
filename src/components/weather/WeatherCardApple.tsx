@@ -108,6 +108,11 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
             <span className="px-2.5 py-1 rounded-md text-[10px] font-bold text-white" style={{ background: spdBadgeColor }}>
               SPD {windStatus.speedStatus.label.toUpperCase()}
             </span>
+            {windStatus.gustStatus?.label === 'Caution' && (
+              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold text-white" style={{ background: '#f97316' }}>
+                ⚠ GUSTY
+              </span>
+            )}
           </div>
         </div>
       </div>

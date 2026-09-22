@@ -138,20 +138,32 @@ function getCrossDirections(idealDirs: string[], crossLeft: boolean, crossRight:
   return crossDirs;
 }
 
-export function getWindStatus(windSpeed: number, windDirection: string, site: any) {
+/**
+ * Rating-dependent gust ceiling (SSO-confirmed): a gust up to
+ * `top-of-range + allowance × mean` is tolerable. Allowance is 0.25 for the
+ * conservative low-PG (PG2/PG3) band and 0.50 for PG4+. The public map has no
+ * rating context so it assumes low (0.25); Smart Search passes the pilot's band.
+ */
+export function computeGustCeiling(minSpeed: number, maxSpeed: number, allowance: number = 0.25): number {
+  const mean = (minSpeed + maxSpeed) / 2;
+  return maxSpeed + allowance * mean;
+}
+
+export function getWindStatus(windSpeed: number, windDirection: string, site: any, gust: number | null = null) {
   let speedRange = parseWindSpeed(site.windSpeed);
   if (!speedRange) speedRange = parseWindSpeed(site.windDir);
   let minSpeed = speedRange?.min ?? null;
   let maxSpeed = speedRange?.max ?? null;
-  
+
   const idealDirs = getIdealDirections(site);
-  
+
   if (minSpeed == null || maxSpeed == null || idealDirs.length === 0) {
-    return { 
-      label: "N/A", 
+    return {
+      label: "N/A",
       color: "bg-gray-400",
       speedStatus: { label: "N/A", color: "bg-gray-400" },
-      directionStatus: { label: "N/A", color: "bg-gray-400" }
+      directionStatus: { label: "N/A", color: "bg-gray-400" },
+      gustStatus: { label: "Good", color: "bg-emerald-500" }
     };
   }
 
@@ -163,6 +175,14 @@ export function getWindStatus(windSpeed: number, windDirection: string, site: an
     speedStatus = { label: "Blown Out", color: "bg-red-500" };
   } else if (roundedSpeed < minSpeed) {
     speedStatus = { label: "Light", color: "bg-yellow-500" };
+  }
+
+  // Gust is a caution, never a hard-stop: it flags but never downgrades the
+  // overall verdict. With no rating context (public map) we assume the
+  // conservative low-PG band. See computeGustCeiling.
+  let gustStatus = { label: "Good", color: "bg-emerald-500" };
+  if (gust != null && Number.isFinite(gust) && Math.round(gust) > computeGustCeiling(minSpeed, maxSpeed)) {
+    gustStatus = { label: "Caution", color: "bg-accent" };
   }
 
   const crossLeft = site.crossLeft === "true" || site.crossLeft === true;
@@ -190,9 +210,10 @@ export function getWindStatus(windSpeed: number, windDirection: string, site: an
     overall = speedStatus;
   }
 
-  return { 
+  return {
     ...overall,
     speedStatus,
-    directionStatus
+    directionStatus,
+    gustStatus
   };
 }

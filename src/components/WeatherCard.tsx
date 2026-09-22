@@ -135,8 +135,8 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
 
   const direction = activeWeather?.direction || activeWeather?.windDirection || '';
   const windStatus = useMemo(
-    () => getWindStatus(activeWeather?.windSpeed ?? null, direction, site),
-    [activeWeather?.windSpeed, direction, site?.windDir, site?.windSpeed, site?.id]
+    () => getWindStatus(activeWeather?.windSpeed ?? null, direction, site, activeWeather?.windGust ?? null),
+    [activeWeather?.windSpeed, activeWeather?.windGust, direction, site?.windDir, site?.windSpeed, site?.id]
   );
 
   const forecasts = useMemo(() => {
