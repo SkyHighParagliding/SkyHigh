@@ -6,6 +6,7 @@
  * interpolates across the whole viewport, so a clipped grid leaves dead zones.
  */
 
+import { deriveWeatherCode } from "../weather-utils.js";
 import { buildRectangularTiles } from "../utils/gridTiles.js";
 import { FINE_DELTA, MAX_POINTS_PER_TILE, getGridBounds } from "./bounds.js";
 import type { GridPoint, VictoriaGrid } from "./bounds.js";
@@ -64,6 +65,21 @@ async function buildFinePoints(): Promise<LatLon[]> {
 
 function buildFinePoint(p: MergedPoint, time: string[]): GridPoint {
   const n = time.length;
+  const precipitation = seriesOf(p, "precipitation", n);
+  const cloud_cover = seriesOf(p, "cloud_cover", n);
+  // weather_code + precipitation_probability come from the API field top-up (the
+  // S3 mirror lacks them). The top-up is fragile: it hits the rate-limited REST
+  // API and runs only after the fetch's cancellation gate, so a rate-limit or a
+  // force-cancelled run leaves weather_code entirely absent — which then rendered
+  // a sun icon over overcast rain (2026-09-22 incident fallout). Where the top-up
+  // supplied a code we keep it (full WMO granularity: fog / thunder / snow);
+  // where it is absent we synthesise one from precipitation + cloud_cover, the
+  // two fields S3 always carries, so the field is never blank. Same pattern the
+  // grid already uses to derive lifted_index when a source lacks it.
+  const topUpCode = seriesOf(p, "weather_code", n, true);
+  const weather_code = topUpCode.map((c, h) =>
+    Number.isFinite(c) ? c : deriveWeatherCode(precipitation[h], cloud_cover[h]),
+  );
   return {
     lat: p.lat,
     lon: p.lon,
@@ -74,13 +90,10 @@ function buildFinePoint(p: MergedPoint, time: string[]): GridPoint {
       wind_gusts_10m: seriesOf(p, "wind_gusts_10m", n),
       wind_direction_10m: seriesOf(p, "wind_direction_10m", n),
       temperature_2m: seriesOf(p, "temperature_2m", n),
-      // weather_code + precipitation_probability come from the API field top-up
-      // (the S3 mirror lacks them). Gap-tolerant: if the top-up was unavailable
-      // this cycle they render as absent, never as 0 (clear sky / no rain).
-      weather_code: seriesOf(p, "weather_code", n, true),
-      precipitation: seriesOf(p, "precipitation", n),
+      weather_code,
+      precipitation,
       precipitation_probability: seriesOf(p, "precipitation_probability", n, true),
-      cloud_cover: seriesOf(p, "cloud_cover", n),
+      cloud_cover,
       cloud_cover_low: seriesOf(p, "cloud_cover_low", n),
       visibility: seriesOf(p, "visibility", n),
       cape: seriesOf(p, "cape", n),

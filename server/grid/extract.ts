@@ -9,7 +9,7 @@
 
 import { fromZonedTime } from "date-fns-tz";
 import createLogger from "../utils/logger.js";
-import { getWeatherCodeSummary, degreesToDirection } from "../weather-utils.js";
+import { deriveWeatherPresentation, degreesToDirection } from "../weather-utils.js";
 import type { GridPoint, ThermalPoint, ThermalVictoriaGrid, VictoriaGrid } from "./bounds.js";
 import { FORECAST_DAYS } from "./pipeline.js";
 
@@ -149,13 +149,18 @@ export function extractSiteForecast(
   const windSpeed = Math.round(nearest.hourly.wind_speed_10m[hourIdx] ?? 0);
   const windGust = Math.round(nearest.hourly.wind_gusts_10m[hourIdx] ?? 0);
   const windDirection = degreesToDirection(nearest.hourly.wind_direction_10m[hourIdx] ?? 0);
-  // No `?? 0` here: 0 is "Clear sky", and the fallback tiers do not carry
-  // weather_code at all. Defaulting would show a sun icon for a point we have
-  // no sky observation for. An absent code falls through to "Unknown".
+  // weather_code is not on the S3 mirror; it arrives via a gap-tolerant REST
+  // top-up and is frequently absent. Derive from precipitation + cloud_cover
+  // (both core fields, always present) when the code is missing, so an overcast
+  // rainy hour never renders as a sun icon. See deriveWeatherPresentation.
   const weatherCode = nearest.hourly.weather_code[hourIdx];
   const time = nearest.hourly.time[hourIdx];
 
-  const { text: summary, icon } = getWeatherCodeSummary(weatherCode);
+  const { text: summary, icon } = deriveWeatherPresentation(
+    weatherCode,
+    nearest.hourly.precipitation?.[hourIdx],
+    nearest.hourly.cloud_cover?.[hourIdx],
+  );
   const timestamp = fromZonedTime(time, "Australia/Melbourne").toISOString();
 
   const melbDateStr = `${parts.year}-${parts.month}-${parts.day}`;
@@ -183,7 +188,11 @@ export function extractSiteForecast(
     const hTime = nearest.hourly.time[idx];
     if (!hTime.startsWith(melbDateStr)) break;
     const hCode = nearest.hourly.weather_code[idx];
-    const { icon: hIcon, text: hSummary } = getWeatherCodeSummary(hCode);
+    const { icon: hIcon, text: hSummary } = deriveWeatherPresentation(
+      hCode,
+      nearest.hourly.precipitation?.[idx],
+      nearest.hourly.cloud_cover?.[idx],
+    );
     forecastHours.push({
       timestamp: fromZonedTime(hTime, "Australia/Melbourne").toISOString(),
       time: hTime.split("T")[1]?.slice(0, 5) ?? "",

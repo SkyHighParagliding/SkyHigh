@@ -65,6 +65,67 @@ export function getWeatherCodeSummary(code: number): { text: string, icon: strin
 }
 
 /**
+ * Presentation (icon + text) for a forecast hour, resilient to a missing
+ * `weather_code`.
+ *
+ * `weather_code` is not carried by the S3 grid mirror; it is restored by a
+ * REST-API top-up (see fineGrid.ts FINE_TOP_UP) that is gap-tolerant — when the
+ * top-up is unavailable the field is absent, NOT zero. Deriving the icon from
+ * `weather_code` alone then collapses every hour to `getWeatherCodeSummary(undefined)`
+ * = {"Unknown","CloudSun"}, i.e. a sunny icon during overcast rain, because the
+ * `precipitation` and `cloud_cover` fields that ARE present were never consulted.
+ *
+ * When the code is present we defer to it (richest classification — drizzle vs
+ * rain vs thunder vs snow); behaviour is then identical to before. When it is
+ * absent we fall back to the core fields so the icon stays honest. Thresholds
+ * validated against live ECMWF: 82 (showers)→CloudRain matches ≥0.5 mm; 51
+ * (drizzle)→CloudDrizzle matches >0 mm; 3 (overcast)→Cloudy matches ≥85% cloud.
+ */
+/**
+ * Synthesise a WMO weather code from the two fields the S3 grid mirror always
+ * carries — precipitation (mm/hr) and total cloud cover (%). Used to fill
+ * `weather_code` when the REST-API top-up that normally supplies it was
+ * unavailable (rate-limited or its run cancelled — see fineGrid.ts / the
+ * 2026-09-22 Open-Meteo incident). Deliberately coarse: it cannot distinguish
+ * fog / thunder / snow (those need visibility / CAPE / temperature), so it maps
+ * only to the precip+cloud codes and defers to the real code whenever present.
+ * Thresholds validated against live ECMWF (0.5 mm ≈ showers, >0 ≈ drizzle,
+ * ≥85% ≈ overcast). Codes chosen so getWeatherCodeSummary renders the right icon.
+ */
+export function deriveWeatherCode(
+  precipitation: number | null | undefined,
+  cloudCover: number | null | undefined,
+): number {
+  const p = Number.isFinite(precipitation as number) ? (precipitation as number) : 0;
+  const c = Number.isFinite(cloudCover as number) ? (cloudCover as number) : 0;
+  if (p >= 4)   return 65; // Heavy rain       → CloudRain
+  if (p >= 1)   return 63; // Moderate rain    → CloudRain
+  if (p >= 0.3) return 61; // Slight rain      → CloudRain
+  if (p > 0)    return 51; // Light drizzle    → CloudDrizzle
+  if (c >= 85)  return 3;  // Overcast         → Cloudy
+  if (c >= 40)  return 2;  // Partly cloudy    → CloudSun
+  return 0;                // Clear sky        → Sun
+}
+
+/**
+ * Presentation (icon + text) for a forecast hour, resilient to a missing
+ * `weather_code` — defers to the real code when present, else derives one from
+ * precipitation + cloud_cover. See deriveWeatherCode for why the code can be
+ * absent. Everything funnels through getWeatherCodeSummary so a derived code and
+ * a real code render identically.
+ */
+export function deriveWeatherPresentation(
+  weatherCode: number | null | undefined,
+  precipitation: number | null | undefined,
+  cloudCover: number | null | undefined,
+): { text: string; icon: string } {
+  const code = (weatherCode != null && Number.isFinite(weatherCode))
+    ? weatherCode
+    : deriveWeatherCode(precipitation, cloudCover);
+  return getWeatherCodeSummary(code);
+}
+
+/**
  * Station-ID prefixes for the explicitly-handled live weather sources.
  * Weather Underground is the catch-all — any ID *without* one of these prefixes is a WU
  * station ID. Adding a new source means adding its prefix here, or WU will try to fetch it.

@@ -1,5 +1,5 @@
 import { query, queryOne, execute } from "./pg.js";
-import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection } from "./weather-utils.js";
+import { fetchWithRetry, deriveWeatherPresentation, degreesToDirection } from "./weather-utils.js";
 import { fromZonedTime } from 'date-fns-tz';
 import { getCachedFineGrid } from "./grid/fineGrid.js";
 import { getTimeWindow } from "./grid/extract.js";
@@ -480,7 +480,11 @@ export function buildSiteExtendedForecast(
         const idx = vicTimeWindow.startIdx + ti;
         if (idx >= vicNearestPoint.hourly.time.length) continue;
         const wc = vicNearestPoint.hourly.weather_code[idx];
-        const { text, icon } = getWeatherCodeSummary(wc);
+        const { text, icon } = deriveWeatherPresentation(
+          wc,
+          vicNearestPoint.hourly.precipitation?.[idx],
+          vicNearestPoint.hourly.cloud_cover?.[idx],
+        );
         vicSlots.push({
           time: t,
           windSpeed: Math.round(vicNearestPoint.hourly.wind_speed_10m[idx]),
@@ -571,7 +575,11 @@ export function buildSiteExtendedForecast(
     const dayName = getMelbourneDayName(dateStr);
     const slots = indices.map(i => {
       const wc = nearest.weatherCode[i];
-      const { text, icon } = getWeatherCodeSummary(wc);
+      const { text, icon } = deriveWeatherPresentation(
+        wc,
+        nearest.precipitation[i],
+        nearest.cloudCover[i],
+      );
       return {
         time: nearest.times[i],
         windSpeed: Math.round(nearest.windSpeed[i]),
