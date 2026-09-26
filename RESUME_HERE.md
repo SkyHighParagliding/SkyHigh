@@ -1,11 +1,63 @@
-# RESUME_HERE — Last updated: 2026-09-22 (session 67)
+# RESUME_HERE — Last updated: 2026-09-26 (session 68)
 
 ## Project: SkyHigh
-## Status: Active — on `main` (== origin/main). Prod healthy (200). Big incident-recovery + feature session, all shipped & prod-verified.
+## Status: Active — on `main` (== origin/main). Two fixes shipped + prod-verified this session.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
 ```
+
+## Session 68 (2026-09-26) — weather-icon "sun over rain" fix + ECMWF strip enhancement
+
+**Both shipped to prod, both prod-verified.**
+
+**1. Weather-icon fix (`653eba4`).** Jon reported Portsea showing sun/cloud while
+Windy (same ECMWF) showed rain all morning. Root cause (proven, not guessed): the
+forecast icon was derived *solely* from `weather_code`. The S3 grid mirror doesn't
+carry `weather_code`; it's restored by a REST-API **field top-up** that runs *after*
+the pipeline's cancellation gate (`pipeline.ts:348` throws, `:354` tops up) — so a
+force-cancelled fine-grid run (today's 5am cron was cancelled, `fineGridLastResult`)
+leaves it absent grid-wide → `getWeatherCodeSummary(undefined)` = `{"Unknown","CloudSun"}`
+for every hour of every site, even though `precipitation`+`cloud_cover` ARE present.
+Proven on Portsea: grid carried 0.1–8 mm precip + 100% cloud, served forecast was all
+CloudSun/Unknown.
+- Fix: new `deriveWeatherCode(precip,cloud)` + `deriveWeatherPresentation(code,precip,cloud)`
+  in `server/weather-utils.ts` (defers to a real code, else derives one — all through
+  `getWeatherCodeSummary`). `fineGrid.ts` `buildFinePoint` now fills `weather_code` from
+  precip+cloud wherever the top-up left it absent (same pattern as the `lifted_index`
+  derivation). `extract.ts` (×2) + `extendedForecast.ts` (×2) icon calls use the helper.
+- Verified vs authoritative Open-Meteo `weather_code`: wet morning now drizzle/rain,
+  overcast afternoon Cloudy, clearing evening — zero 2-step errors. **7-day TODAY icon
+  now CloudDrizzle (was CloudSun).**
+- Honest limit: derived code is coarse (can't tell fog/thunder/snow — needs vis/CAPE/temp);
+  the real top-up still adds value when it runs. Optional follow-up: nudge the drizzle→rain
+  threshold up (currently ≥0.3 mm→light rain; ECMWF treats ≤0.5 mm as drizzle).
+
+**2. ECMWF Forecast strip enhancement (`62f2a9c`).** The strip (above 7-Day) showed only
+wind dir+speed for a fixed 7-hour window. Now shows the same rich hourly data as the 7-Day
+"Today" expansion — **weather icon + dir + speed + gust (G##) + temp** — and scrolls/
+drag-pans across the **full day** (auto-scrolls to current hour). Implementation: extracted
+the existing `SlotStrip` (was private to `ExtendedOutlookPanel`) into
+`src/components/weather/SlotStrip.tsx` and reused it for `HourlyForecastStrip`, fed the full
+`forecasts` array (already carried icon/gust/temp — old strip just didn't render them).
+Threaded `forecasts`+`iconMap` props. No backend/data change. Playwright-verified on prod.
+
+**Ops facts learned this session (see memory):**
+- `/health` `uptime` is **milliseconds** (`Date.now()-startTime`); a reset to a small value
+  = deploy swapped in. Reliable deploy-detection signal.
+- **Railway auto-deploy stalled ~1 hr** on the first push (didn't fire until Jon nudged the
+  dashboard); the second push deployed in <1 min. Prod memory 95–97% "unhealthy" (memory
+  check fails → `/health` 503) — the known Sept-22 incident; worth watching re: whether it
+  interferes with deploy healthchecks.
+- `POST /api/weather/scrape-now` is **unauthenticated** and forces `fetchFineGrid(true)` +
+  forecast rebuild — a remote lever to force a grid rebuild.
+- Portsea site id = `portsea`; `/api/sites` returns 50 by default, use `?limit=500`.
+- `railway` CLI is installed but **not authenticated** (needs interactive `railway login`);
+  no token in `.env`. `gh` not installed in the bash env.
+
+### Open / next (session 68)
+- Optional: tune `deriveWeatherCode` drizzle↔rain threshold to hug ECMWF's convention.
+- The auto-deploy stall + prod memory pressure (95–97%) are worth a dedicated look.
 
 ## Session 67 (2026-09-22) — prod outage recovery + Site Logic + weather-card features
 
