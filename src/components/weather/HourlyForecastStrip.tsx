@@ -1,20 +1,40 @@
-import { Map } from 'lucide-react';
-import { getWindStatus, cn } from '@/lib/utils';
+import { Map, type LucideIcon } from 'lucide-react';
+import { SlotStrip } from './SlotStrip';
 
 interface HourlyForecastStripProps {
-  windowedForecasts: any[];
+  /** Full hourly forecast for the day (weather_forecasts.forecasts), not the
+   *  7-slot window — the strip scrolls to show every available hour. */
+  forecasts: any[];
   site: any;
+  iconMap: Record<string, LucideIcon>;
   onShowWindMap: () => void;
 }
 
-export function HourlyForecastStrip({ windowedForecasts, site, onShowWindMap }: HourlyForecastStripProps) {
-  if (windowedForecasts.length === 0) return null;
+export function HourlyForecastStrip({ forecasts, site, iconMap, onShowWindMap }: HourlyForecastStripProps) {
+  if (!forecasts || forecasts.length === 0) return null;
 
   const showMapBtn = !!(site.lat && site.lon);
 
+  // Reshape weather_forecasts hours into the slot shape SlotStrip renders. The
+  // per-hour icon/gust/temp are already present in the payload — the old strip
+  // simply didn't show them. `time` uses the ISO timestamp so SlotStrip's
+  // Melbourne-hour parsing and auto-scroll-to-now work.
+  const todayMelb = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' });
+  const day = {
+    date: todayMelb,
+    slots: forecasts.map((f: any) => ({
+      time: f.timestamp,
+      weatherIcon: f.icon,
+      windDirection: f.windDirection,
+      windSpeed: f.windSpeed,
+      windGust: f.windGust,
+      temperature: f.temperature,
+    })),
+  };
+
   return (
     <div className="w-full mt-3 rounded-xl p-4" style={{ background: '#f5f5f7' }}>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#86868b' }}>
             ECMWF Forecast
@@ -31,24 +51,7 @@ export function HourlyForecastStrip({ windowedForecasts, site, onShowWindMap }: 
           </button>
         )}
       </div>
-      <div className="flex w-full">
-        {windowedForecasts.map((f: any, idx: number) => {
-          const fStatus = getWindStatus(f.windSpeed, f.windDirection, site);
-          const date = new Date(f.timestamp);
-          const hourStr = date.toLocaleTimeString([], { hour: 'numeric', hour12: true }).toUpperCase();
-          const now = new Date();
-          const isCurrentHour = date.getHours() === now.getHours() && date.toDateString() === now.toDateString();
-          const fDirColor = fStatus.directionStatus.label === 'Good' ? '#10b981' : fStatus.directionStatus.label === 'Cross' ? '#f97316' : fStatus.directionStatus.label === 'Light' ? '#eab308' : '#ef4444';
-          const fSpdColor = fStatus.speedStatus.label === 'Good' ? '#10b981' : fStatus.speedStatus.label === 'Light' ? '#eab308' : '#ef4444';
-          return (
-            <div key={idx} className="flex flex-col items-center flex-1">
-              <span className={cn("text-[12px] font-medium mb-1", isCurrentHour ? "text-accent font-bold" : "")} style={!isCurrentHour ? { color: '#86868b' } : undefined}>{hourStr}</span>
-              <span className="text-[14px] font-bold" style={{ color: fDirColor }}>{f.windDirection}</span>
-              <span className="text-[14px] font-bold" style={{ color: fSpdColor }}>{Math.round(f.windSpeed)}</span>
-            </div>
-          );
-        })}
-      </div>
+      <SlotStrip day={day} site={site} iconMap={iconMap} />
     </div>
   );
 }

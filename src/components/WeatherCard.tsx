@@ -236,7 +236,7 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
 
   const renderProps = {
     site, activeWeather, weather, distance, hasAlt, showAlt, setShowAlt, direction, windStatus, idealDirs, isDirectionIdeal,
-    windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs,
+    windowedForecasts, forecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs,
     hasExtended, extendedForecast, tideData, showTides, setShowTides: handleSetShowTides, effectiveShowTides,
     hasLiveWeather: hasLiveHistory, activePanel, setActivePanel: handleSetActivePanel, historyData: hasLiveHistory ? (historyData ?? null) : null,
     nextReadingMs: hasLiveHistory ? nextReadingMs : null,

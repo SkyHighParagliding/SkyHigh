@@ -15,6 +15,7 @@ export interface WeatherCardRenderProps {
   idealDirs: string[];
   isDirectionIdeal: boolean;
   windowedForecasts: any[];
+  forecasts: any[];
   forecastSubtitle: string;
   forecastWindowStartMs?: number;
   forecastWindowEndMs?: number;
