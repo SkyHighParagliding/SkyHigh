@@ -522,12 +522,17 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         const colX0 = PAD_L + PLOT_W;
         const colXc = colX0 + WIND_COL_W / 2;
         const groundY = toY(groundAmsl);
-        // Aloft gridlines, kept clear of the ground row so the two don't collide.
+        // Aloft gridlines above ground. Only drop one if it would actually collide
+        // (in pixels) with the ground row — so low gridlines still show when the
+        // ground is low, and are only omitted where the ground sits high enough to
+        // crowd them.
         const rows = (profileHour ? yLines : []).map(v => {
           const m = units === 'imperial' ? v / M_TO_FT : v;
-          if (m < groundAmsl + 250) return null;
+          if (m < groundAmsl - 1) return null;
+          const y = toYDisp(v);
+          if (Math.abs(y - groundY) < 13) return null;
           const w = windAtAltitude(profileHour!.levels, m);
-          return w ? { y: toYDisp(v), spd: Math.round(w.spd), dir: degToCompass(w.dir) } : null;
+          return w ? { y, spd: Math.round(w.spd), dir: degToCompass(w.dir) } : null;
         }).filter((r): r is { y: number; spd: number; dir: string } => r !== null);
         return (
           <g style={{ pointerEvents: 'none' }}>
@@ -574,9 +579,8 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
           ['Time', fmtMelbTime(crossSlot.time), '#334155'],
           ['Ceiling', ceilM !== null ? formatAltitude(ceilM, 100) : '—', '#1f2937'],
           ['Thermal', strength?.label ?? '—', strength?.color ?? '#94a3b8'],
-          ['Wind/Dir', crossSlot.windSpeed !== null
-            ? `${Math.round(crossSlot.windSpeed)} kt${crossSlot.windDir !== null ? ` / ${degToCompass(crossSlot.windDir)}` : ''}`
-            : '—', '#334155'],
+          // Wind/Dir omitted — winds (incl. ground) are on the right-hand winds
+          // column, aligned to the altitude scale.
         ];
         if (crossSlot.ccl !== null && crossSlot.blh !== null && crossSlot.ccl < crossSlot.blh) {
           rows.splice(2, 0, ['Cu base', formatAltitude(useAmsl ? crossSlot.ccl + groundAmsl : crossSlot.ccl, 100), CU_COLOR]);
