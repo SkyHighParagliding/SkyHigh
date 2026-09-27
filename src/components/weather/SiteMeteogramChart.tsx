@@ -95,7 +95,6 @@ const PAD_R = 16;
 const PAD_T = 34;   // room for the flying-window bar + unit label above the plot
 const SVG_H = 324;
 const PAD_B = 22;   // time labels
-const WIND_H = 26;  // surface wind strip
 const SKY_H = 16;   // cloud / rain icon strip
 const FLY_Y = 6;    // flying-window bar top
 const FLY_H = 6;    // flying-window bar height
@@ -214,14 +213,15 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   // Reserve a slim right-hand column for the winds-aloft readout when a sounding
   // is available, so it never overlaps the plot content or the crosshair tooltip.
   const hasSounding = !!sounding?.hours?.length && slots.length > 0;
-  const WIND_COL_W = hasSounding ? 52 : 0;
+  const WIND_COL_W = hasSounding ? 60 : 0;
   const PLOT_W = svgW - PAD_L - PAD_R - WIND_COL_W;
   // Inset the hourly columns from the plot edges so the first/last column's
   // centred marks (cloud icon, wind speed, compass) clear the Y-axis labels.
   const INNER_X = 16;
   const spanW = Math.max(1, PLOT_W - INNER_X * 2);
-  const windTop = SVG_H - PAD_B - WIND_H;
-  const skyTop = windTop - SKY_H - 6;
+  // The surface-wind strip was removed; the ground wind now sits at the foot of
+  // the winds-aloft column, leaving just the sky + time rows across the bottom.
+  const skyTop = SVG_H - PAD_B - SKY_H;
   const plotTop = PAD_T;
   const plotBot = skyTop - 6;
   const PLOT_H = plotBot - plotTop;
@@ -515,54 +515,42 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         );
       })}
 
-      {/* Surface wind strip: speed (kt) over compass direction, per hour. */}
-      <line x1={PAD_L} y1={windTop} x2={PAD_L + PLOT_W} y2={windTop} stroke="#e5e7eb" strokeWidth={0.6} />
-      <text x={PAD_L - 5} y={windTop + WIND_H / 2} textAnchor="end" dominantBaseline="middle" style={{ ...axisStyle, fontSize: '9px' }}>
-        wind
-      </text>
-      {slots.map((s, i) => {
-        if (s.windSpeed === null) return null;
-        const x = toX(i);
-        return (
-          <g key={`wind-${i}`}>
-            <text x={x} y={windTop + 11} textAnchor="middle" style={{ fontSize: '9px', fontWeight: 600, fill: '#334155', fontFamily: 'system-ui' }}>
-              {Math.round(s.windSpeed)}
-            </text>
-            {s.windDir !== null && (
-              <text x={x} y={windTop + 21} textAnchor="middle" style={{ fontSize: '8px', fill: '#64748b', fontFamily: 'system-ui' }}>
-                {degToCompass(s.windDir)}
-              </text>
-            )}
-          </g>
-        );
-      })}
-
-      {/* Winds-aloft column: wind (kt over compass) at each altitude gridline for
-          the selected hour — reuses the SkewT sounding, vector-interpolated. */}
+      {/* Winds column: wind (kt + compass) at each altitude gridline for the
+          selected hour — reuses the SkewT sounding, vector-interpolated — with
+          the ground (surface) wind at the foot of the same scale. */}
       {hasSounding && profileSlot && (() => {
         const colX0 = PAD_L + PLOT_W;
         const colXc = colX0 + WIND_COL_W / 2;
+        const groundY = toY(groundAmsl);
+        // Aloft gridlines, kept clear of the ground row so the two don't collide.
         const rows = (profileHour ? yLines : []).map(v => {
           const m = units === 'imperial' ? v / M_TO_FT : v;
-          if (useAmsl && m < groundAmsl - 1) return null;
+          if (m < groundAmsl + 250) return null;
           const w = windAtAltitude(profileHour!.levels, m);
           return w ? { y: toYDisp(v), spd: Math.round(w.spd), dir: degToCompass(w.dir) } : null;
         }).filter((r): r is { y: number; spd: number; dir: string } => r !== null);
         return (
           <g style={{ pointerEvents: 'none' }}>
-            <line x1={colX0} y1={plotTop} x2={colX0} y2={windTop} stroke="#e5e7eb" strokeWidth={0.6} />
+            <line x1={colX0} y1={plotTop} x2={colX0} y2={plotBot} stroke="#e5e7eb" strokeWidth={0.6} />
             <text x={colXc} y={plotTop - 6} textAnchor="middle" style={{ fontSize: '8px', fontWeight: 700, fill: '#64748b', fontFamily: 'system-ui' }}>
-              {fmtMelbTime(profileSlot.time)} kt
+              {fmtMelbTime(profileSlot.time)}
             </text>
             {rows.length === 0 && (
-              <text x={colXc} y={(plotTop + windTop) / 2} textAnchor="middle" style={{ fontSize: '8px', fill: '#cbd5e1', fontFamily: 'system-ui' }}>—</text>
+              <text x={colXc} y={(plotTop + plotBot) / 2} textAnchor="middle" style={{ fontSize: '8px', fill: '#cbd5e1', fontFamily: 'system-ui' }}>—</text>
             )}
             {rows.map((r, i) => (
-              <g key={i}>
-                <text x={colXc} y={r.y - 1} textAnchor="middle" style={{ fontSize: '9px', fontWeight: 700, fill: '#334155', fontFamily: 'system-ui' }}>{r.spd}</text>
-                <text x={colXc} y={r.y + 8} textAnchor="middle" style={{ fontSize: '8px', fill: '#64748b', fontFamily: 'system-ui' }}>{r.dir}</text>
-              </g>
+              <text key={i} x={colXc} y={r.y} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: '9px', fontWeight: 600, fill: '#334155', fontFamily: 'system-ui' }}>
+                {r.spd}kt {r.dir}
+              </text>
             ))}
+            {/* Ground (surface) wind, on the ground reference line. */}
+            {profileSlot.windSpeed !== null && (
+              <text x={colXc} y={groundY} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: '9px', fontWeight: 700, fill: '#0f172a', fontFamily: 'system-ui' }}>
+                {Math.round(profileSlot.windSpeed)}kt{profileSlot.windDir !== null ? ` ${degToCompass(profileSlot.windDir)}` : ''}
+              </text>
+            )}
           </g>
         );
       })()}
@@ -603,7 +591,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         const tipH = rows.length * 15 + 8;
         return (
           <g style={{ pointerEvents: 'none' }}>
-            <line x1={x} y1={plotTop} x2={x} y2={windTop} stroke="#475569" strokeWidth={1} strokeDasharray="3,2" opacity={0.65} />
+            <line x1={x} y1={plotTop} x2={x} y2={plotBot} stroke="#475569" strokeWidth={1} strokeDasharray="3,2" opacity={0.65} />
             <rect x={tipX} y={plotTop + 2} width={tipW} height={tipH} fill="white" fillOpacity={0.97} stroke="#cbd5e1" strokeWidth={1} rx={5} />
             {rows.map(([label, val, colour], li) => (
               <g key={label}>
