@@ -506,9 +506,10 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Status:** ⬜ TODO
 - **Prerequisites:** TASK-METEO-001 (shares the full-range scale); reuses the pressure-level sounding + thermal grid already fetched.
 - **Estimated effort:** L
-- **Description:** Add an alternate, denser chart view (toggle alongside the current simplified "Thermal Forecast") modelled on the classic RASP meteogram — a time (x) × altitude (y, ground → ~9000 m) grid showing: wind barbs at every model level across the day; thermal-strength (W*) filled colour contours with a colour-scale legend; the boundary-layer-top line; the condensation / Cu-base line; and a cloud-cover shading overlay. Reference image supplied by the user (RASP "Overview" tab). Reuses the same data as the current chart + winds column; no new endpoint expected beyond what the sounding already provides.
+- **Description:** Add a denser chart view modelled on the classic RASP meteogram — a time (x) × altitude (y, ground → ~9000 m) grid showing: wind barbs at every model level across the day; thermal-strength (W*) filled colour contours with a colour-scale legend; the boundary-layer-top line; the condensation / Cu-base line; and a cloud-cover shading overlay. Reference image supplied by the user (RASP "Overview" tab). Reuses the same data as the current chart + winds column; no new endpoint expected beyond what the sounding already provides.
+- **Entry point:** a new **"RASP"** button in the tapped-point box, a peer of the existing **Chart / SkewT / Airspace** buttons (rendered in `SiteThermalPanel.tsx` and `SitesWindMap.tsx`; opens a full-screen modal like `PointMeteogramModal` / `SkewTModal`). It is NOT a toggle inside the current "Thermal Forecast" modal.
 - **Acceptance Criteria:**
-  - A view toggle switches between the current simplified chart and the RASP-style grid.
+  - A "RASP" button appears in the tapped-point box next to Chart / SkewT / Airspace and opens the RASP-style view for the tapped point.
   - Wind barbs render at each level per hour; W* contours match the thermal-map colour mapping; BL Top, Cu-base and cloud overlays present with a legend.
   - Readable on mobile (the primary target); scrubbing/selection consistent with the other charts.
 
