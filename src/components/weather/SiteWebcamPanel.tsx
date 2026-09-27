@@ -55,39 +55,52 @@ function melbourneHourStamp(offsetHours: number): string {
   return `${g('year')}${g('month')}${g('day')}_${g('hour')}00`;
 }
 
-function ventuskyUrl(cam: Cam, offsetHours: number, bust: number): string {
-  return `https://webcams.ventusky.com/data/${cam.ventuskyShard}/${cam.ventuskyId}/hour/${melbourneHourStamp(offsetHours)}.jpg?b=${bust}`;
+function ventuskyUrl(cam: Cam, offsetHours: number, buster: string): string {
+  return `https://webcams.ventusky.com/data/${cam.ventuskyShard}/${cam.ventuskyId}/hour/${melbourneHourStamp(offsetHours)}.jpg?v=${buster}`;
 }
+
+const REAL_FRAME_MIN_WIDTH = 1600; // real = 1920 wide; placeholder = 1024
+const WALK_BACK_HOURS = 24;
+
+type CamState = { ageHours: number | null; unavailable: boolean };
 
 /**
  * Renders the most recent real frame for a camera.
  *
- * Ventusky returns a 1024x768 PNG placeholder (~6 KB) for hours it hasn't
- * ingested yet (top of the current hour, overnight, or a stale CDN edge), with
- * an HTTP 200 — so `onError` alone won't catch it. Real frames are always
- * 1920x1440, so we treat anything narrower as a placeholder: walk back through
- * recent hours, skipping placeholders, and land on the latest genuine capture.
+ * Two Ventusky quirks force the logic here:
+ *   1. It returns a 1024x768 PNG placeholder (~6 KB, HTTP 200) for hours it
+ *      hasn't ingested — so `onError` alone won't catch it. Real frames are
+ *      always 1920x1440, so we treat anything narrower as a placeholder and
+ *      walk back through recent hours until we find a genuine capture.
+ *   2. Its CDN caches per full URL, and a SHARED cache-buster value (e.g. the
+ *      old `?b=0`) can get poisoned with a placeholder that's then served to
+ *      everyone even after the real frame lands at origin. We defeat that with a
+ *      per-client random token in the query string, so each visitor is a
+ *      cache-miss that resolves to origin's actual (real) frame.
+ *
+ * Reports the resolved frame's age (in hours) or `unavailable` via onResolved.
  */
-const REAL_FRAME_MIN_WIDTH = 1600; // real = 1920 wide; placeholder = 1024
 function VentuskyCamImg({
-  cam, bust, className, style, onUnavailable,
+  cam, bust, className, style, onResolved,
 }: {
   cam: Cam;
   bust: number;
   className?: string;
   style?: React.CSSProperties;
-  onUnavailable?: (v: boolean) => void;
+  onResolved?: (s: CamState) => void;
 }) {
+  // Per-client token → unique cache key → never served a poisoned placeholder.
+  const [token] = useState(() => Math.random().toString(36).slice(2, 10));
   const candidates = useMemo(
-    () => Array.from({ length: 12 }, (_, o) => ventuskyUrl(cam, o, bust)),
-    [cam, bust],
+    () => Array.from({ length: WALK_BACK_HOURS }, (_, o) => ventuskyUrl(cam, o, `${token}-${bust}`)),
+    [cam, token, bust],
   );
   const [idx, setIdx] = useState(0);
-  useEffect(() => { setIdx(0); onUnavailable?.(false); }, [candidates, onUnavailable]);
+  useEffect(() => { setIdx(0); }, [candidates]);
 
   const advance = () => setIdx(i => {
     const next = i + 1;
-    if (next >= candidates.length) { onUnavailable?.(true); return i; }
+    if (next >= candidates.length) { onResolved?.({ ageHours: null, unavailable: true }); return i; }
     return next;
   });
 
@@ -99,7 +112,10 @@ function VentuskyCamImg({
       style={style}
       loading="lazy"
       onError={advance}
-      onLoad={(e) => { if (e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth < REAL_FRAME_MIN_WIDTH) advance(); }}
+      onLoad={(e) => {
+        if (e.currentTarget.naturalWidth > 0 && e.currentTarget.naturalWidth < REAL_FRAME_MIN_WIDTH) advance();
+        else onResolved?.({ ageHours: idx, unavailable: false });
+      }}
     />
   );
 }
@@ -157,8 +173,11 @@ function FullscreenViewer({ cam, bust, onClose }: { cam: Cam; bust: number; onCl
   );
 }
 
+const STALE_HOURS = 2; // beyond this, flag the frame as old rather than current
+
 function CamThumb({ cam, bust, onOpen }: { cam: Cam; bust: number; onOpen: () => void }) {
-  const [unavailable, setUnavailable] = useState(false);
+  const [state, setState] = useState<CamState>({ ageHours: null, unavailable: false });
+  const isStale = !state.unavailable && state.ageHours != null && state.ageHours >= STALE_HOURS;
 
   return (
     <button
@@ -171,11 +190,16 @@ function CamThumb({ cam, bust, onOpen }: { cam: Cam; bust: number; onOpen: () =>
         cam={cam}
         bust={bust}
         className="w-full h-full object-cover"
-        onUnavailable={setUnavailable}
+        onResolved={setState}
       />
-      {unavailable && (
-        <span className="absolute inset-0 flex items-center justify-center text-center px-2 text-[10px] font-medium" style={{ color: '#86868b' }}>
-          Camera image unavailable
+      {state.unavailable && (
+        <span className="absolute inset-0 flex items-center justify-center text-center px-2 text-[11px] font-semibold" style={{ background: 'rgba(0,0,0,0.35)', color: '#fff' }}>
+          Camera offline
+        </span>
+      )}
+      {isStale && (
+        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style={{ background: 'rgba(217,119,6,0.9)' }}>
+          {state.ageHours}h ago
         </span>
       )}
       <span
