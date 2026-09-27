@@ -3,6 +3,7 @@ import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
 import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useChartScale } from '@/hooks/useChartScale';
 import { PointMeteogramModal } from './PointMeteogramModal';
 import { SkewTModal } from './SkewTModal';
 import { precipDescription } from '@/lib/precip';
@@ -71,6 +72,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   // Point-aware Chart / SkewT: the tapped point opens a full-screen modal. Null = closed.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
+  const { fullScale, toggle: toggleScale } = useChartScale();
 
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -377,6 +379,15 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                     is just a point). Airspace ON lists the stack; OFF reverts + clears
                     any drawn sector. */}
                 <div className="flex items-center gap-3 pt-1 mt-0.5 border-t border-white/10">
+                  {(meteogramEnabled || skewtEnabled) && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleScale(); }}
+                      className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
+                      title="Altitude scale for Chart & SkewT: PG working band vs full profile"
+                    >
+                      Scale <span className={cn('font-semibold', fullScale ? 'text-sky-300' : 'text-white/40')}>{fullScale ? 'Full' : 'PG'}</span>
+                    </button>
+                  )}
                   {meteogramEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl }); }}
@@ -530,6 +541,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
           airspace={chartAirspace}
+          fullScale={fullScale}
           onClose={() => setChartPoint(null)}
         />
       )}
@@ -541,6 +553,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           lon={skewtPoint.lon}
           groundAmsl={skewtPoint.ground}
           time={skewtPoint.time}
+          fullScale={fullScale}
           onClose={() => setSkewtPoint(null)}
         />
       )}

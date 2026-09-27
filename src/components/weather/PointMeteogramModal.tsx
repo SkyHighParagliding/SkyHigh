@@ -20,6 +20,8 @@ interface PointMeteogramModalProps {
   groundAmsl?: number;
   /** Airspace stack at the point (airspacesAt) — drives the red conflict overlay. */
   airspace?: AirspaceSector[];
+  /** true = full profile altitude scale; false = PG working band. */
+  fullScale?: boolean;
   onClose: () => void;
 }
 
@@ -28,7 +30,7 @@ interface PointMeteogramModalProps {
  * point). Opened from the thermal map's tapped-point box; the point + scrubber
  * context is what the pilot cares about, so the chart is point-aware.
  */
-export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }: PointMeteogramModalProps) {
+export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, fullScale = false, onClose }: PointMeteogramModalProps) {
   const { settings } = useSettings();
   const [data, setData] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
   const [sounding, setSounding] = useState<PointSounding | null>(null);
@@ -99,6 +101,7 @@ export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }:
               groundLabel="Ground"
               airspace={airspace}
               sounding={sounding}
+              fullScale={fullScale}
               thresholds={{
                 clearSkyPct: numSetting(settings.thermalClearSkyCloudPct, 12),
                 overcastPct: numSetting(settings.thermalOvercastOnsetPct, 70),

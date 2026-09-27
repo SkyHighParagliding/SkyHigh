@@ -49,10 +49,12 @@ function pAtZ(pts: ProfilePt[], z: number): number {
   return pts[pts.length - 1].p;
 }
 
-export function SkewTChart({ hour, groundAmsl, onReadout }: {
+export function SkewTChart({ hour, groundAmsl, onReadout, fullScale = false }: {
   hour: SoundingHour;
   groundAmsl?: number;
   onReadout?: (r: SkewTReadout) => void;
+  /** true = full profile (surface → top of sounding); false = PG working band. */
+  fullScale?: boolean;
 }) {
   const { units, toggleUnits } = useUnits();
   const [svgW, setSvgW] = useState(360);
@@ -106,12 +108,14 @@ export function SkewTChart({ hour, groundAmsl, onReadout }: {
   // cloudbase, capped near a paraglider's ceiling. Stable while dragging.
   const maxLevelZ = pts[pts.length - 1].z;
   const pTop = useMemo(() => {
-    // Anchor the view to the paraglider's world (~11,500 ft AMSL); only extend
-    // above that if the cloudbase / thermal top is higher (rare, above the ceiling
-    // anyway). Never collapses on weak/night soundings.
-    const axisTopZ = Math.min(maxLevelZ, Math.max(3505, forecast.topZ + 300, forecast.cloud ? forecast.lclZ + 300 : 0));
+    // Full scale: extend to the top of the sounding. PG scale: anchor to the
+    // paraglider's world (~11,500 ft AMSL) and only extend above that if the
+    // cloudbase / thermal top is higher. Never collapses on weak/night soundings.
+    const axisTopZ = fullScale
+      ? maxLevelZ
+      : Math.min(maxLevelZ, Math.max(3505, forecast.topZ + 300, forecast.cloud ? forecast.lclZ + 300 : 0));
     return Math.max(P_SCAN_TOP, Math.min(pBot - 20, pAtZ(pts, axisTopZ)));
-  }, [pts, forecast, maxLevelZ, pBot]);
+  }, [pts, forecast, maxLevelZ, pBot, fullScale]);
 
   const PLOT_W = svgW - PAD_L - PAD_R;
   const PLOT_H = SVG_H - PAD_T - PAD_B;

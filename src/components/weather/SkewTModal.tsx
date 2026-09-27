@@ -13,6 +13,8 @@ interface SkewTModalProps {
   groundAmsl?: number;
   /** Scrubber time (Unix ms) — the sounding hour is picked to match. */
   time: number;
+  /** true = full profile altitude scale; false = PG working band. */
+  fullScale?: boolean;
   onClose: () => void;
 }
 
@@ -31,7 +33,7 @@ function fmtMelb(iso: string): string {
  * trigger-temperature handle to project thermal top / cloudbase; drag anywhere
  * on the plot for a level readout. The data box below shows what a pilot needs.
  */
-export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalProps) {
+export function SkewTModal({ lat, lon, groundAmsl, time, fullScale = false, onClose }: SkewTModalProps) {
   const { units } = useUnits();
   const [data, setData] = useState<PointSounding | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export function SkewTModal({ lat, lon, groundAmsl, time, onClose }: SkewTModalPr
           <div className="h-full flex items-center justify-center"><span className="text-xs text-red-500">Sounding unavailable</span></div>
         ) : (
           <div className="max-w-2xl mx-auto p-3 flex flex-col gap-3">
-            <SkewTChart hour={hour} groundAmsl={groundAmsl} onReadout={setReadout} />
+            <SkewTChart hour={hour} groundAmsl={groundAmsl} onReadout={setReadout} fullScale={fullScale} />
 
             {readout && (
               <div className="rounded-xl p-3 text-[12px]" style={{ background: '#f5f5f7' }}>

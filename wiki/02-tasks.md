@@ -491,16 +491,16 @@ foot) and smooth (monotone-spline) BL Top / Cu Base / band-top lines. SkewT
 sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 `wiki/future/meteogram-plan.md` and the RASP plan in memory.
 
-### TASK-METEO-001 ⬜ Dual altitude-scale ranges for SkewT, thermal chart + meteogram
-- **Status:** ⬜ TODO
+### TASK-METEO-001 ✅ Dual altitude-scale ranges for SkewT, thermal chart + meteogram
+- **Status:** ✅ DONE — 2026-09-28
 - **Prerequisites:** None
 - **Estimated effort:** M
-- **Description:** The charts currently scale to a single altitude range (the flying/working band — roughly ground to just above BL Top, ~9k ft). Add a second selectable range covering the full atmosphere (ground to ~9000 m) so pilots can read winds/thermals/soundings at higher levels — a "Working band" ↔ "Full" toggle shared across the SkewT (`SkewTChart.tsx`), the Thermal Forecast meteogram (`SiteMeteogramChart.tsx`) and any other altitude-scaled chart. In "Full" mode the winds-aloft column shows the whole profile (surface → ~9000 m) rather than just the flying band.
-- **Open question:** confirm whether "dual scale" means a *toggle* between two ranges (assumed here) or showing both a zoomed + full panel side-by-side.
+- **Description:** A **"Scale" PG ↔ Full toggle** (before Chart in the tapped-point box on both `SiteThermalPanel.tsx` and `SitesWindMap.tsx`) switches the SkewT and Thermal Forecast meteogram between the PG working band (auto-zoomed to the day's thermals) and the full profile (surface → top of the sounding). Shared + persisted via `useChartScale` (localStorage). In Full mode the meteogram axis extends to the sounding top and the winds-aloft column shows the whole profile; the SkewT extends `pTop` to the top data level. Resolved the open question as a toggle (not side-by-side), per the user.
+- **Implementation:** `src/hooks/useChartScale.ts`; `fullScale` prop threaded through `PointMeteogramModal`→`SiteMeteogramChart` (full `yTopM` from sounding max z) and `SkewTModal`→`SkewTChart` (`axisTopZ = maxLevelZ`). The future RASP view (TASK-METEO-002) consumes the same `fullScale`.
 - **Acceptance Criteria:**
-  - A single toggle switches all three chart types between working-band and full-atmosphere ranges.
-  - Axis gridlines, BL Top / Cu Base lines, band, and winds column all rescale correctly in both ranges.
-  - Choice persists across the SkewT / chart views within a session.
+  - ✅ A single toggle switches both chart types between working-band and full ranges.
+  - ✅ Axis gridlines, BL Top / Cu Base lines, band, and winds column all rescale correctly in both ranges.
+  - ✅ Choice persists across the SkewT / chart views (localStorage) and both map surfaces.
 
 ### TASK-METEO-002 ⬜ Alternate RASP-style time×altitude chart view
 - **Status:** ⬜ TODO

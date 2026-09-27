@@ -202,6 +202,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   groundLabel = 'Launch',
   airspace = [],
   sounding = null,
+  fullScale = false,
 }: {
   hours: MeteogramHour[];
   launchElevation: number | null;
@@ -214,6 +215,8 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   /** Pressure-level sounding (reused from the SkewT) — drives the per-altitude
    *  winds-aloft column for the selected hour. Omit to hide the column. */
   sounding?: PointSounding | null;
+  /** true = full profile (surface → top of sounding); false = PG working band. */
+  fullScale?: boolean;
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
   const bandClipId = `band-clip-${useId().replace(/:/g, '')}`;
@@ -273,7 +276,14 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
     .map(s => (useAmsl ? s.ceilingAmsl : s.blh))
     .filter((v): v is number => v !== null);
   const rawCeilMax = ceilVals.length ? Math.max(...ceilVals) : 3000;
-  const yTopM = niceCeil(Math.max(rawCeilMax * 1.15, groundAmsl + 800), 500);
+  // Full-scale ceiling: the top of the winds profile (sounding). Falls back to a
+  // sensible cap when no sounding is present.
+  const soundingMaxZ = sounding?.hours?.length
+    ? sounding.hours.reduce((mx, h) => h.levels.reduce((m, l) => Math.max(m, l.zAmsl), mx), 0)
+    : 0;
+  const yTopM = fullScale
+    ? niceCeil(Math.max(soundingMaxZ || 6000, groundAmsl + 800), 500)
+    : niceCeil(Math.max(rawCeilMax * 1.15, groundAmsl + 800), 500);
   const yBotM = useAmsl ? Math.floor(groundAmsl / 500) * 500 : 0;
   const dispTop = toDisp(yTopM);
   const dispBot = toDisp(yBotM);

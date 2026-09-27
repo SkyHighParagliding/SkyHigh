@@ -8,6 +8,7 @@ import { ModeSwitchPill } from './windmap/ModeSwitchPill';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useChartScale } from '@/hooks/useChartScale';
 import { useAuth } from '@/contexts/AuthContext';
 import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, SCALE_BAR_BOTTOM_COLLAPSED } from './windMapTypes';
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
@@ -57,6 +58,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // Point-aware Chart / SkewT: tapped point opens a full-screen modal.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
+  const { fullScale, toggle: toggleScale } = useChartScale();
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
@@ -797,6 +799,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                         on the readout lines above.) */}
                     {thermalInfo.lat != null && thermalInfo.lon != null && (
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 mt-0.5 border-t border-white/10">
+                        {(meteogramEnabled || skewtEnabled) && (
+                          <button
+                            onClick={() => toggleScale()}
+                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
+                            title="Altitude scale for Chart & SkewT: PG working band vs full profile"
+                          >
+                            Scale <span className={`font-semibold ${fullScale ? 'text-sky-300' : 'text-white/40'}`}>{fullScale ? 'Full' : 'PG'}</span>
+                          </button>
+                        )}
                         {meteogramEnabled && (
                           <button
                             onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
@@ -953,6 +964,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           lon={chartPoint.lon}
           groundAmsl={chartPoint.ground}
           airspace={chartAirspace}
+          fullScale={fullScale}
           onClose={() => setChartPoint(null)}
         />
       )}
@@ -964,6 +976,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           lon={skewtPoint.lon}
           groundAmsl={skewtPoint.ground}
           time={skewtPoint.time}
+          fullScale={fullScale}
           onClose={() => setSkewtPoint(null)}
         />
       )}
