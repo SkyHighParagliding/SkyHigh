@@ -4,6 +4,7 @@ import { useUnits } from '@/hooks/useUnits';
 import { metresToFeet } from '@/lib/units';
 import { precipDescription } from '@/lib/precip';
 import { airspaceLabel, type AirspaceSector } from '@/lib/airspaceConflict';
+import type { PointSounding, SoundingHour } from './SkewTChart';
 
 const M_TO_FT = 3.280839895;
 // Warning red for a busted airspace floor. Distinct from the dashed BL Top
@@ -123,12 +124,47 @@ function degToCompass(deg: number): string {
   return COMPASS_16[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
 }
 
+/**
+ * Wind (speed kt, dir° FROM) vector-interpolated to an altitude (m AMSL) from a
+ * sounding hour's levels. Vector (u/v) interpolation so direction wraps through
+ * 360° correctly. Returns null when the altitude is outside the profile.
+ */
+function windAtAltitude(
+  levels: { zAmsl: number; windSpd: number; windDir: number }[],
+  zM: number,
+): { spd: number; dir: number } | null {
+  if (!levels.length) return null;
+  const asc = [...levels].sort((a, b) => a.zAmsl - b.zAmsl);
+  const lo = asc[0], hi = asc[asc.length - 1];
+  if (zM < lo.zAmsl - 100 || zM > hi.zAmsl + 100) return null;
+  if (zM <= lo.zAmsl) return { spd: lo.windSpd, dir: lo.windDir };
+  if (zM >= hi.zAmsl) return { spd: hi.windSpd, dir: hi.windDir };
+  const toUV = (s: number, d: number) => {
+    const r = (d * Math.PI) / 180;
+    return [-s * Math.sin(r), -s * Math.cos(r)] as const;
+  };
+  for (let i = 0; i < asc.length - 1; i++) {
+    const a = asc[i], b = asc[i + 1];
+    if (zM >= a.zAmsl && zM <= b.zAmsl) {
+      const f = (zM - a.zAmsl) / (b.zAmsl - a.zAmsl || 1);
+      const [ua, va] = toUV(a.windSpd, a.windDir);
+      const [ub, vb] = toUV(b.windSpd, b.windDir);
+      const u = ua + f * (ub - ua), v = va + f * (vb - va);
+      let dir = (Math.atan2(-u, -v) * 180) / Math.PI;
+      if (dir < 0) dir += 360;
+      return { spd: Math.hypot(u, v), dir };
+    }
+  }
+  return null;
+}
+
 export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   hours,
   launchElevation,
   thresholds = DEFAULT_THRESHOLDS,
   groundLabel = 'Launch',
   airspace = [],
+  sounding = null,
 }: {
   hours: MeteogramHour[];
   launchElevation: number | null;
@@ -138,6 +174,9 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   /** Vertical airspace stack at the point (airspacesAt). Any sector the day's
    *  BL Top / Cu Base busts is drawn as a red floor line + tapered strip. */
   airspace?: AirspaceSector[];
+  /** Pressure-level sounding (reused from the SkewT) — drives the per-altitude
+   *  winds-aloft column for the selected hour. Omit to hide the column. */
+  sounding?: PointSounding | null;
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
   const [svgW, setSvgW] = useState(480);
@@ -172,7 +211,11 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
     });
   }, [hours]);
 
-  const PLOT_W = svgW - PAD_L - PAD_R;
+  // Reserve a slim right-hand column for the winds-aloft readout when a sounding
+  // is available, so it never overlaps the plot content or the crosshair tooltip.
+  const hasSounding = !!sounding?.hours?.length && slots.length > 0;
+  const WIND_COL_W = hasSounding ? 52 : 0;
+  const PLOT_W = svgW - PAD_L - PAD_R - WIND_COL_W;
   // Inset the hourly columns from the plot edges so the first/last column's
   // centred marks (cloud icon, wind speed, compass) clear the Y-axis labels.
   const INNER_X = 16;
@@ -238,6 +281,19 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
     ? Math.max(0, Math.min(n - 1, Math.round(((crosshairX - PAD_L - INNER_X) / spanW) * (n - 1))))
     : null;
   const crossSlot = crossIdx !== null ? slots[Math.max(0, Math.min(n - 1, crossIdx))] : null;
+
+  // Winds-aloft column: show the profile for the selected hour; with nothing
+  // selected, default to the day's peak-ceiling hour (the best-thermals time).
+  const profileSlot = !hasSounding ? null : crossSlot ?? slots.reduce((best, s) => {
+    const v = (useAmsl ? s.ceilingAmsl : s.blh) ?? -Infinity;
+    const bv = (useAmsl ? best.ceilingAmsl : best.blh) ?? -Infinity;
+    return v > bv ? s : best;
+  }, slots[0]);
+  const profileHour: SoundingHour | null = useMemo(() => {
+    if (!profileSlot || !sounding?.hours?.length) return null;
+    const key = profileSlot.time.slice(0, 13);
+    return sounding.hours.find(h => h.time.slice(0, 13) === key) ?? null;
+  }, [sounding, profileSlot?.time]);
 
   if (slots.length < 2) {
     return (
@@ -480,6 +536,36 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
           </g>
         );
       })}
+
+      {/* Winds-aloft column: wind (kt over compass) at each altitude gridline for
+          the selected hour — reuses the SkewT sounding, vector-interpolated. */}
+      {hasSounding && profileSlot && (() => {
+        const colX0 = PAD_L + PLOT_W;
+        const colXc = colX0 + WIND_COL_W / 2;
+        const rows = (profileHour ? yLines : []).map(v => {
+          const m = units === 'imperial' ? v / M_TO_FT : v;
+          if (useAmsl && m < groundAmsl - 1) return null;
+          const w = windAtAltitude(profileHour!.levels, m);
+          return w ? { y: toYDisp(v), spd: Math.round(w.spd), dir: degToCompass(w.dir) } : null;
+        }).filter((r): r is { y: number; spd: number; dir: string } => r !== null);
+        return (
+          <g style={{ pointerEvents: 'none' }}>
+            <line x1={colX0} y1={plotTop} x2={colX0} y2={windTop} stroke="#e5e7eb" strokeWidth={0.6} />
+            <text x={colXc} y={plotTop - 6} textAnchor="middle" style={{ fontSize: '8px', fontWeight: 700, fill: '#64748b', fontFamily: 'system-ui' }}>
+              {fmtMelbTime(profileSlot.time)} kt
+            </text>
+            {rows.length === 0 && (
+              <text x={colXc} y={(plotTop + windTop) / 2} textAnchor="middle" style={{ fontSize: '8px', fill: '#cbd5e1', fontFamily: 'system-ui' }}>—</text>
+            )}
+            {rows.map((r, i) => (
+              <g key={i}>
+                <text x={colXc} y={r.y - 1} textAnchor="middle" style={{ fontSize: '9px', fontWeight: 700, fill: '#334155', fontFamily: 'system-ui' }}>{r.spd}</text>
+                <text x={colXc} y={r.y + 8} textAnchor="middle" style={{ fontSize: '8px', fill: '#64748b', fontFamily: 'system-ui' }}>{r.dir}</text>
+              </g>
+            ))}
+          </g>
+        );
+      })()}
 
       {/* Time axis labels (every other slot to avoid crowding) */}
       {slots.map((s, i) => (

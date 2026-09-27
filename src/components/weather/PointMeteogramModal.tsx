@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Loader2, X, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
+import type { PointSounding } from './SkewTChart';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import type { AirspaceSector } from '@/lib/airspaceConflict';
 
@@ -30,6 +31,7 @@ interface PointMeteogramModalProps {
 export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }: PointMeteogramModalProps) {
   const { settings } = useSettings();
   const [data, setData] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
+  const [sounding, setSounding] = useState<PointSounding | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -44,6 +46,17 @@ export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }:
       .then((d: { hours: MeteogramHour[]; launchElevation: number | null }) => { setData(d); setLoading(false); })
       .catch(e => { setError(String(e)); setLoading(false); });
   }, [lat, lon, groundAmsl]);
+
+  // Best-effort winds-aloft profile (reuses the SkewT sounding). Failure is
+  // silent — the chart just omits the per-altitude wind column.
+  useEffect(() => {
+    setSounding(null);
+    const q = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+    fetch(`/api/weather/sounding/point?${q}`)
+      .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+      .then((d: PointSounding) => setSounding(d))
+      .catch(() => setSounding(null));
+  }, [lat, lon]);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -85,6 +98,7 @@ export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, onClose }:
               launchElevation={data.launchElevation}
               groundLabel="Ground"
               airspace={airspace}
+              sounding={sounding}
               thresholds={{
                 clearSkyPct: numSetting(settings.thermalClearSkyCloudPct, 12),
                 overcastPct: numSetting(settings.thermalOvercastOnsetPct, 70),
