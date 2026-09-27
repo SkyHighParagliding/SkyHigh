@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { WindCompass } from './WindCompass';
 import { HourlyForecastStrip } from './HourlyForecastStrip';
 import { ExtendedOutlookPanel } from './ExtendedOutlookPanel';
+import { SiteWebcamPanel } from './SiteWebcamPanel';
 import type { WeatherCardRenderProps } from './WeatherCardRenderProps';
 import { getClosureStatus } from '@/utils/closureStatus';
 
@@ -141,6 +142,8 @@ export function WeatherCardApple({ site, activeWeather, weather, distance, hasAl
         forecastWindowEndMs={forecastWindowEndMs}
         iconMap={iconMap}
       />
+
+      <SiteWebcamPanel site={site} />
 
       {windMapPortal}
     </div>
