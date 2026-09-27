@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
 
 /**
@@ -107,38 +108,52 @@ function FullscreenViewer({ cam, bust, onClose }: { cam: Cam; bust: number; onCl
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Lock background scroll while the overlay is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [onClose]);
 
-  return (
+  // Portal to <body> so `fixed inset-0` is relative to the viewport, not a
+  // transformed/overflow-clipped ancestor (the sliding outlook panel) — that
+  // ancestor was trapping the overlay inside the card and clipping the image.
+  return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.9)' }}
+      className="fixed inset-0 z-[10001] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.97)' }}
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full text-white"
-        style={{ background: 'rgba(255,255,255,0.15)' }}
+        className="absolute p-2 rounded-full text-white"
+        style={{
+          top: 'max(1rem, env(safe-area-inset-top))',
+          right: 'max(1rem, env(safe-area-inset-right))',
+          background: 'rgba(255,255,255,0.15)',
+        }}
         aria-label="Close"
       >
         <X className="w-6 h-6" />
       </button>
       <figure
-        className="max-w-full max-h-full flex flex-col items-center gap-2"
+        className="flex flex-col items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
         <VentuskyCamImg
           cam={cam}
           bust={bust}
-          className="max-w-full object-contain rounded-lg"
-          style={{ maxHeight: '85vh' }}
+          className="object-contain rounded-lg"
+          style={{ maxHeight: '85vh', maxWidth: '95vw', width: 'auto', height: 'auto' }}
         />
         <figcaption className="text-white/80 text-xs font-semibold uppercase tracking-widest">
           {cam.label} view
         </figcaption>
       </figure>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
