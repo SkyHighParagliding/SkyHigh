@@ -483,6 +483,37 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 
 ---
 
+## Phase 12: Meteogram / Sounding Enhancements (Backlog)
+
+Added 2026-09-28. Context: the Thermal Forecast meteogram now has a per-hour
+winds-aloft column (dir + speed at each altitude gridline, ground wind at the
+foot) and smooth (monotone-spline) BL Top / Cu Base / band-top lines. SkewT
+sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
+`wiki/future/meteogram-plan.md` and the RASP plan in memory.
+
+### TASK-METEO-001 ⬜ Dual altitude-scale ranges for SkewT, thermal chart + meteogram
+- **Status:** ⬜ TODO
+- **Prerequisites:** None
+- **Estimated effort:** M
+- **Description:** The charts currently scale to a single altitude range (the flying/working band — roughly ground to just above BL Top, ~9k ft). Add a second selectable range covering the full atmosphere (ground to ~9000 m) so pilots can read winds/thermals/soundings at higher levels — a "Working band" ↔ "Full" toggle shared across the SkewT (`SkewTChart.tsx`), the Thermal Forecast meteogram (`SiteMeteogramChart.tsx`) and any other altitude-scaled chart. In "Full" mode the winds-aloft column shows the whole profile (surface → ~9000 m) rather than just the flying band.
+- **Open question:** confirm whether "dual scale" means a *toggle* between two ranges (assumed here) or showing both a zoomed + full panel side-by-side.
+- **Acceptance Criteria:**
+  - A single toggle switches all three chart types between working-band and full-atmosphere ranges.
+  - Axis gridlines, BL Top / Cu Base lines, band, and winds column all rescale correctly in both ranges.
+  - Choice persists across the SkewT / chart views within a session.
+
+### TASK-METEO-002 ⬜ Alternate RASP-style time×altitude chart view
+- **Status:** ⬜ TODO
+- **Prerequisites:** TASK-METEO-001 (shares the full-range scale); reuses the pressure-level sounding + thermal grid already fetched.
+- **Estimated effort:** L
+- **Description:** Add an alternate, denser chart view (toggle alongside the current simplified "Thermal Forecast") modelled on the classic RASP meteogram — a time (x) × altitude (y, ground → ~9000 m) grid showing: wind barbs at every model level across the day; thermal-strength (W*) filled colour contours with a colour-scale legend; the boundary-layer-top line; the condensation / Cu-base line; and a cloud-cover shading overlay. Reference image supplied by the user (RASP "Overview" tab). Reuses the same data as the current chart + winds column; no new endpoint expected beyond what the sounding already provides.
+- **Acceptance Criteria:**
+  - A view toggle switches between the current simplified chart and the RASP-style grid.
+  - Wind barbs render at each level per hour; W* contours match the thermal-map colour mapping; BL Top, Cu-base and cloud overlays present with a legend.
+  - Readable on mobile (the primary target); scrubbing/selection consistent with the other charts.
+
+---
+
 ## Summary
 
 | Phase | Name | Tasks | Status | Completion Date |
@@ -499,6 +530,7 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 | 5 | Hardening & Audit | 1 | ✅ Complete | 2026-06-02 |
 | 11 | Ground Readout & Terrain Tiles | 4 | 3✅ / 1⬜ | 2026-09-13 |
 | 8 | Future / Low Priority | 2 | ⬜ DEFERRED/BACKLOG | — |
+| 12 | Meteogram / Sounding Enhancements | 2 | ⬜ BACKLOG | — |
 | Code Review | Sonnet Review | 7 | 6✅ / 1⬜ | — |
 
 ---
@@ -509,5 +541,6 @@ Convert the static bottom scrubber bar on both wind map variants into a slide-up
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
 - **Backlog (0):** none outstanding — Task 030 (siteguide email) done 2026-09-15; Task 031 (XC export, `GET /api/flights/export`) done 2026-06-03; Task 032 (closure calendar) done 2026-05-21
 - **Done 2026-09-15:** TASK-030 (siteguide version-change email), TASK-SW-001 (service worker consolidation), TASK-REVIEW-F (useWindPlayback hook — was already implemented)
+- **Backlog added 2026-09-28:** TASK-METEO-001 (dual altitude-scale ranges), TASK-METEO-002 (RASP-style time×altitude chart view)
 
-Last updated: 2026-09-15
+Last updated: 2026-09-28
