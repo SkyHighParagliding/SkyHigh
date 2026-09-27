@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getThermalStrength, effectiveWstar } from '../windmap/thermalInterpolation';
 import { useUnits } from '@/hooks/useUnits';
 import { metresToFeet } from '@/lib/units';
@@ -124,6 +124,44 @@ function degToCompass(deg: number): string {
 }
 
 /**
+ * Monotone cubic-Hermite (Fritsch–Carlson) bezier segments for x-increasing
+ * points — a smooth curve that does NOT overshoot the data (so a spline top
+ * never implies a higher ceiling than the forecast). Returns the path commands
+ * AFTER an implicit moveto to points[0] (i.e. the "C…"/"L…" tail).
+ */
+function monotoneSegments(pts: [number, number][]): string {
+  const nP = pts.length;
+  if (nP < 2) return '';
+  if (nP === 2) return `L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+  const xs = pts.map(p => p[0]);
+  const ys = pts.map(p => p[1]);
+  const dx: number[] = [], slope: number[] = [];
+  for (let i = 0; i < nP - 1; i++) { dx[i] = xs[i + 1] - xs[i]; slope[i] = (ys[i + 1] - ys[i]) / (dx[i] || 1); }
+  const t: number[] = [slope[0]];
+  for (let i = 1; i < nP - 1; i++) t[i] = slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2;
+  t[nP - 1] = slope[nP - 2];
+  for (let i = 0; i < nP - 1; i++) {
+    if (slope[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
+    const a = t[i] / slope[i], b = t[i + 1] / slope[i], s = a * a + b * b;
+    if (s > 9) { const f = 3 / Math.sqrt(s); t[i] = f * a * slope[i]; t[i + 1] = f * b * slope[i]; }
+  }
+  let d = '';
+  for (let i = 0; i < nP - 1; i++) {
+    const c1x = xs[i] + dx[i] / 3, c1y = ys[i] + t[i] * dx[i] / 3;
+    const c2x = xs[i + 1] - dx[i] / 3, c2y = ys[i + 1] - t[i + 1] * dx[i] / 3;
+    d += `C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${xs[i + 1].toFixed(1)},${ys[i + 1].toFixed(1)} `;
+  }
+  return d.trim();
+}
+/** Smooth (monotone) open path through x-increasing points. */
+function smoothLine(pts: [number, number][]): string {
+  if (!pts.length) return '';
+  const head = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  const seg = monotoneSegments(pts);
+  return seg ? `${head} ${seg}` : head;
+}
+
+/**
  * Wind (speed kt, dir° FROM) vector-interpolated to an altitude (m AMSL) from a
  * sounding hour's levels. Vector (u/v) interpolation so direction wraps through
  * 360° correctly. Returns null when the altitude is outside the profile.
@@ -178,6 +216,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
   sounding?: PointSounding | null;
 }) {
   const { units, toggleUnits, formatAltitude } = useUnits();
+  const bandClipId = `band-clip-${useId().replace(/:/g, '')}`;
   const [svgW, setSvgW] = useState(480);
   const [crosshairX, setCrosshairX] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -249,9 +288,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
       return v !== null ? ([toX(i), toY(v)] as [number, number]) : null;
     })
     .filter((p): p is [number, number] => p !== null);
-  const ceilingPath = ceilingXY.length
-    ? 'M' + ceilingXY.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L')
-    : '';
+  const ceilingPath = ceilingXY.length ? smoothLine(ceilingXY) : '';
 
   // Altitude gridlines, chosen in the display unit so labels are tidy.
   const range = dispTop - dispBot;
@@ -349,29 +386,47 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
         );
       })}
 
-      {/* Thermal-strength band: per-hour column ground→ceiling, coloured by W*
-          (identical mapping to the thermal map). */}
-      {slots.map((s, i) => {
-        const ceil = useAmsl ? s.ceilingAmsl : s.blh;
-        if (ceil === null) return null;
-        const strength = getThermalStrength(effectiveWstar(s.wstar ?? undefined, s.cape ?? 0));
+      {/* Thermal-strength band: per-hour column coloured by W* (identical mapping
+          to the thermal map). Columns are full-height and clipped to the smooth
+          ceiling spline, so the band's TOP is a smooth curve (matches BL Top),
+          not stepped, while each hour keeps its own colour. */}
+      {ceilingXY.length > 0 && (() => {
+        const first = ceilingXY[0], last = ceilingXY[ceilingXY.length - 1];
+        const rightEdge = PAD_L + PLOT_W;
+        const areaD =
+          `M${PAD_L.toFixed(1)},${plotBot.toFixed(1)} ` +
+          `L${PAD_L.toFixed(1)},${first[1].toFixed(1)} ` +
+          `L${first[0].toFixed(1)},${first[1].toFixed(1)} ` +
+          `${monotoneSegments(ceilingXY)} ` +
+          `L${rightEdge.toFixed(1)},${last[1].toFixed(1)} ` +
+          `L${rightEdge.toFixed(1)},${plotBot.toFixed(1)} Z`;
         const half = spanW / (n - 1) / 2;
-        // Clamp BOTH edges to the plot so edge columns never spill into a neighbour.
-        const left = Math.max(PAD_L, toX(i) - half);
-        const right = Math.min(PAD_L + PLOT_W, toX(i) + half);
-        const top = toY(ceil);
         return (
-          <rect
-            key={`band-${i}`}
-            x={left}
-            y={top}
-            width={Math.max(0, right - left)}
-            height={Math.max(0, plotBot - top)}
-            fill={strength.color}
-            opacity={0.28}
-          />
+          <>
+            <clipPath id={bandClipId}><path d={areaD} /></clipPath>
+            <g clipPath={`url(#${bandClipId})`}>
+              {slots.map((s, i) => {
+                const ceil = useAmsl ? s.ceilingAmsl : s.blh;
+                if (ceil === null) return null;
+                const strength = getThermalStrength(effectiveWstar(s.wstar ?? undefined, s.cape ?? 0));
+                const left = Math.max(PAD_L, toX(i) - half);
+                const right = Math.min(PAD_L + PLOT_W, toX(i) + half);
+                return (
+                  <rect
+                    key={`band-${i}`}
+                    x={left}
+                    y={plotTop}
+                    width={Math.max(0, right - left)}
+                    height={Math.max(0, plotBot - plotTop)}
+                    fill={strength.color}
+                    opacity={0.28}
+                  />
+                );
+              })}
+            </g>
+          </>
         );
-      })}
+      })()}
 
       {/* Airspace conflict overlay (AMSL axis only). For each sector the day's
           thermals bust — floor above ground and at/below the peak BL Top / Cu
@@ -481,7 +536,7 @@ export const SiteMeteogramChart = memo(function SiteMeteogramChart({
           <>
             {runs.map((run, ri) => run.length === 1
               ? <line key={`cu-${ri}`} x1={run[0][0] - 4} y1={run[0][1]} x2={run[0][0] + 4} y2={run[0][1]} stroke={CU_COLOR} strokeWidth={1.5} strokeDasharray="4,3" />
-              : <path key={`cu-${ri}`} d={'M' + run.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L')} fill="none" stroke={CU_COLOR} strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" />
+              : <path key={`cu-${ri}`} d={smoothLine(run)} fill="none" stroke={CU_COLOR} strokeWidth={1.5} strokeDasharray="4,3" strokeLinecap="round" />
             )}
             <text x={first[0] + 4} y={first[1] + 10} style={{ ...LINE_LABEL, fill: CU_COLOR }}>Cu Base</text>
           </>
