@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
 import { createPortal } from 'react-dom';
-import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, LineChart } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, X, ChartLine, CalendarDays, Info, LineChart, Wind } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useChartScale } from '@/hooks/useChartScale';
 import { PointMeteogramModal } from './PointMeteogramModal';
 import { SkewTModal } from './SkewTModal';
+import { RaspModal } from './RaspModal';
 import { precipDescription } from '@/lib/precip';
 import { airspaceAt, airspaceLabel, airspacesAt } from '@/lib/airspaceConflict';
 import { AirspaceRange } from '@/components/AirspaceRange';
@@ -72,6 +73,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
   // Point-aware Chart / SkewT: the tapped point opens a full-screen modal. Null = closed.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
+  const [raspPoint, setRaspPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const { fullScale, toggle: toggleScale } = useChartScale();
 
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
@@ -406,6 +408,15 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
                       <ChartLine className="w-3 h-3" /> SkewT
                     </button>
                   )}
+                  {meteogramEnabled && thermalInfo.lat != null && thermalInfo.lon != null && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setRaspPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl }); }}
+                      className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
+                      title="RASP — winds & thermals aloft (time × altitude)"
+                    >
+                      <Wind className="w-3 h-3" /> RASP
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleAllAirspace(); }}
                     className="flex items-center gap-1 text-[10px] text-white/75 hover:text-white"
@@ -555,6 +566,17 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           time={skewtPoint.time}
           fullScale={fullScale}
           onClose={() => setSkewtPoint(null)}
+        />
+      )}
+
+      {/* RASP — winds & thermals aloft (time × altitude) for the tapped point. */}
+      {raspPoint && (
+        <RaspModal
+          lat={raspPoint.lat}
+          lon={raspPoint.lon}
+          groundAmsl={raspPoint.ground}
+          fullScale={fullScale}
+          onClose={() => setRaspPoint(null)}
         />
       )}
     </>

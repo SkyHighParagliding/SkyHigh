@@ -502,16 +502,19 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
   - ✅ Axis gridlines, BL Top / Cu Base lines, band, and winds column all rescale correctly in both ranges.
   - ✅ Choice persists across the SkewT / chart views (localStorage) and both map surfaces.
 
-### TASK-METEO-002 ⬜ Alternate RASP-style time×altitude chart view
-- **Status:** ⬜ TODO
+### TASK-METEO-002 ✅ Alternate RASP-style time×altitude chart view
+- **Status:** ✅ DONE — 2026-09-28
 - **Prerequisites:** TASK-METEO-001 (shares the full-range scale); reuses the pressure-level sounding + thermal grid already fetched.
 - **Estimated effort:** L
-- **Description:** Add a denser chart view modelled on the classic RASP meteogram — a time (x) × altitude (y, ground → ~9000 m) grid showing: wind barbs at every model level across the day; thermal-strength (W*) filled colour contours with a colour-scale legend; the boundary-layer-top line; the condensation / Cu-base line; and a cloud-cover shading overlay. Reference image supplied by the user (RASP "Overview" tab). Reuses the same data as the current chart + winds column; no new endpoint expected beyond what the sounding already provides.
-- **Entry point:** a new **"RASP"** button in the tapped-point box, a peer of the existing **Chart / SkewT / Airspace** buttons (rendered in `SiteThermalPanel.tsx` and `SitesWindMap.tsx`; opens a full-screen modal like `PointMeteogramModal` / `SkewTModal`). It is NOT a toggle inside the current "Thermal Forecast" modal.
+- **Description:** RASP-style time (x) × altitude (y) chart: wind barbs on a regular altitude lattice (interpolated per hour from the sounding); **smooth splined W\* thermal-strength contour bands** (region {W≥grade} per grade, boundaries splined + tapered to a point at the ends, colours clipped to the spline, nested darkest-on-top); splined **cloud-cover** regions (light + overcast); BL Top + Cu-base lines. Reuses `/api/weather/meteogram/point` + `/api/weather/sounding/point` (joined by hour) — no new endpoint.
+- **Entry point:** a **"RASP"** button in the tapped-point box, peer of Chart / SkewT / Airspace (`SiteThermalPanel.tsx` + `SitesWindMap.tsx`), opening `RaspModal` (full-screen, like the others). Honours the PG/Full scale toggle (METEO-001).
+- **Implementation:** `src/components/weather/RaspChart.tsx` (chart + `WSTAR_BANDS` + barb glyph), `RaspModal.tsx` (fetch/join + legends); spline helpers extracted to `src/lib/spline.ts` (`smoothLine`/`monotoneSegments`/`windAtAltitude`).
+- **Legends:** bottom = W\* grade colours with their m/s values + cloud swatch; right column = wind-barb key (calm/5/10/25/50 kt + two "dir (from)" direction samples).
+- **Known approximation:** W\* has one value per hour (surface peak); the vertical profile shape is synthesised (peak ~0.4 of BL depth) — contour shapes are model-plausible, not measured per level.
 - **Acceptance Criteria:**
-  - A "RASP" button appears in the tapped-point box next to Chart / SkewT / Airspace and opens the RASP-style view for the tapped point.
-  - Wind barbs render at each level per hour; W* contours match the thermal-map colour mapping; BL Top, Cu-base and cloud overlays present with a legend.
-  - Readable on mobile (the primary target); scrubbing/selection consistent with the other charts.
+  - ✅ "RASP" button in the tapped-point box opens the RASP view for the tapped point.
+  - ✅ Wind barbs per level per hour; W\* contours match the thermal-map colour mapping; BL Top, Cu-base + cloud overlays with legends.
+  - ✅ Readable on mobile; consistent with the other charts; PG/Full scale honoured.
 
 ---
 
@@ -531,7 +534,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 | 5 | Hardening & Audit | 1 | ✅ Complete | 2026-06-02 |
 | 11 | Ground Readout & Terrain Tiles | 4 | 3✅ / 1⬜ | 2026-09-13 |
 | 8 | Future / Low Priority | 2 | ⬜ DEFERRED/BACKLOG | — |
-| 12 | Meteogram / Sounding Enhancements | 2 | ⬜ BACKLOG | — |
+| 12 | Meteogram / Sounding Enhancements | 2 | ✅ Complete | 2026-09-28 |
 | Code Review | Sonnet Review | 7 | 6✅ / 1⬜ | — |
 
 ---
@@ -542,6 +545,6 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Deferred (2):** Task 028 (single-instance, no Redis needed), Task MIG-001 (Fly.io migration)
 - **Backlog (0):** none outstanding — Task 030 (siteguide email) done 2026-09-15; Task 031 (XC export, `GET /api/flights/export`) done 2026-06-03; Task 032 (closure calendar) done 2026-05-21
 - **Done 2026-09-15:** TASK-030 (siteguide version-change email), TASK-SW-001 (service worker consolidation), TASK-REVIEW-F (useWindPlayback hook — was already implemented)
-- **Backlog added 2026-09-28:** TASK-METEO-001 (dual altitude-scale ranges), TASK-METEO-002 (RASP-style time×altitude chart view)
+- **Done 2026-09-28:** TASK-METEO-001 (PG/Full altitude-scale toggle), TASK-METEO-002 (RASP-style time×altitude chart view)
 
 Last updated: 2026-09-28

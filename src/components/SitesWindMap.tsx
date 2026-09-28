@@ -3,6 +3,7 @@ import { Altitude } from '@/components/Altitude';
 import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, Map as MapIcon } from 'lucide-react';
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
+import { RaspModal } from './weather/RaspModal';
 import { WindMapModeToggle } from './windmap/WindMapModeToggle';
 import { ModeSwitchPill } from './windmap/ModeSwitchPill';
 import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
@@ -58,6 +59,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // Point-aware Chart / SkewT: tapped point opens a full-screen modal.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
+  const [raspPoint, setRaspPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const { fullScale, toggle: toggleScale } = useChartScale();
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
@@ -826,6 +828,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             <ChartLine className="w-3 h-3" /> SkewT
                           </button>
                         )}
+                        {meteogramEnabled && (
+                          <button
+                            onClick={() => setRaspPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
+                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
+                            title="RASP — winds & thermals aloft (time × altitude)"
+                          >
+                            <Wind className="w-3 h-3" /> RASP
+                          </button>
+                        )}
                         {basemapSlider}
                       </div>
                     )}
@@ -978,6 +989,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           time={skewtPoint.time}
           fullScale={fullScale}
           onClose={() => setSkewtPoint(null)}
+        />
+      )}
+
+      {/* RASP — winds & thermals aloft (time × altitude) for the tapped point. */}
+      {raspPoint && (
+        <RaspModal
+          lat={raspPoint.lat}
+          lon={raspPoint.lon}
+          groundAmsl={raspPoint.ground}
+          fullScale={fullScale}
+          onClose={() => setRaspPoint(null)}
         />
       )}
     </div>
