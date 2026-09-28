@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Loader2, X, Wind } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { RaspChart, WSTAR_BANDS, type RaspHour } from './RaspChart';
+import { ScaleToggle } from './ScaleToggle';
 import type { MeteogramHour } from './SiteMeteogramChart';
 import type { PointSounding } from './SkewTChart';
 
@@ -12,6 +13,8 @@ interface RaspModalProps {
   groundAmsl?: number;
   /** true = full profile altitude scale; false = PG working band. */
   fullScale?: boolean;
+  /** Flip the shared PG/Full scale — enables the on-display toggle. */
+  onToggleScale?: () => void;
   onClose: () => void;
 }
 
@@ -26,7 +29,7 @@ function numSetting(v: unknown, d: number): number {
  * the meteogram (BL Top / W* / cloud per hour) with the pressure-level sounding
  * (winds aloft) — the same two endpoints the Chart and SkewT already use.
  */
-export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onClose }: RaspModalProps) {
+export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleScale, onClose }: RaspModalProps) {
   const { settings } = useSettings();
   const [hours, setHours] = useState<RaspHour[] | null>(null);
   const [launch, setLaunch] = useState<number | null>(null);
@@ -76,9 +79,12 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onClose }: 
           <Wind className="w-4 h-4 text-amber-500" />
           <span className="text-[13px] font-semibold text-ink">RASP · winds &amp; thermals aloft</span>
         </div>
-        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 text-ink" title="Close">
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onToggleScale && <ScaleToggle fullScale={fullScale} onToggle={onToggleScale} />}
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 text-ink" title="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       <div className="flex-1 min-h-0 overflow-auto p-3">
         {loading ? (
@@ -114,7 +120,7 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onClose }: 
               </div>
               <p className="text-[10px] text-muted-foreground text-center max-w-md">
                 Wind barbs show direction &amp; speed at each level (half-barb 5&nbsp;kt, full 10&nbsp;kt, pennant 50&nbsp;kt).
-                Toggle PG / Full scale from the tapped-point box.
+                Toggle PG / Full altitude scale up top.
               </p>
             </div>
           </div>

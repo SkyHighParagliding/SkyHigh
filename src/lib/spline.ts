@@ -37,6 +37,37 @@ export function smoothLine(pts: [number, number][]): string {
 }
 
 /**
+ * Closed smooth loop through an arbitrary sequence of points (no x-monotone
+ * requirement) as a single tangent-continuous bezier path — a centripetal
+ * Catmull-Rom (alpha = 0.5, so no cusps or self-intersections at tight turns).
+ * Use for filled blobs whose outline turns back on itself: because the whole
+ * boundary is one loop, the tips where the top and bottom edges meet come out
+ * rounded and tangent instead of as sharp corners. Returns a full "M … C … Z".
+ */
+export function closedSpline(pts: [number, number][], alpha = 0.5): string {
+  const m = pts.length;
+  if (m < 3) return smoothLine(pts) + (m ? ' Z' : '');
+  const at = (i: number) => pts[((i % m) + m) % m];
+  const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]) || 1e-6;
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} `;
+  for (let i = 0; i < m; i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const t1 = Math.pow(dist(p0, p1), alpha);
+    const t2 = Math.pow(dist(p1, p2), alpha);
+    const t3 = Math.pow(dist(p2, p3), alpha);
+    const c1: [number, number] = [0, 0], c2: [number, number] = [0, 0];
+    for (let k = 0; k < 2; k++) {
+      const m1 = (p2[k] - p1[k]) / t2 - (p2[k] - p0[k]) / (t1 + t2) + (p1[k] - p0[k]) / t1;
+      const m2 = (p3[k] - p2[k]) / t3 - (p3[k] - p1[k]) / (t2 + t3) + (p2[k] - p1[k]) / t2;
+      c1[k] = p1[k] + (m1 * t2) / 3;
+      c2[k] = p2[k] - (m2 * t2) / 3;
+    }
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)} `;
+  }
+  return d.trim() + ' Z';
+}
+
+/**
  * Vector-interpolated wind (speed, dir° FROM) at an altitude (m AMSL) from a set
  * of levels. u/v interpolation so direction wraps through 360° correctly.
  * Returns null when the altitude is outside the profile (± margin).

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useUnits } from '@/hooks/useUnits';
 import { metresToFeet } from '@/lib/units';
 import { effectiveWstar } from '../windmap/thermalInterpolation';
-import { smoothLine, monotoneSegments, windAtAltitude } from '@/lib/spline';
+import { smoothLine, monotoneSegments, closedSpline, windAtAltitude } from '@/lib/spline';
 
 /** W* thermal-strength grades (m/s) with the colours the contour bands + legend
  *  share. `min` is the lower bound of the grade; drawn low→high so the darker
@@ -161,8 +161,17 @@ export function RaspChart({
         const [x, ty] = run.top[0]; const by = run.bot[0][1];
         d = `M${(x - half).toFixed(1)},${ty.toFixed(1)} L${(x + half).toFixed(1)},${ty.toFixed(1)} L${(x + half).toFixed(1)},${by.toFixed(1)} L${(x - half).toFixed(1)},${by.toFixed(1)} Z`;
       } else {
+        // Walk the blob as ONE closed loop — top edge left→right, bottom edge
+        // right→left — dropping the shared tip points where the ends taper to a
+        // single vertex, so closedSpline rounds those tips tangentially instead
+        // of leaving the sharp corner two separate splines used to make.
+        const same = (a: [number, number], b: [number, number]) => Math.abs(a[0] - b[0]) < 0.05 && Math.abs(a[1] - b[1]) < 0.05;
         const botRev = [...run.bot].reverse();
-        d = `${smoothLine(run.top)} L${botRev[0][0].toFixed(1)},${botRev[0][1].toFixed(1)} ${monotoneSegments(botRev)} Z`;
+        const loop: [number, number][] = [...run.top];
+        const lo = same(botRev[0], run.top[run.top.length - 1]) ? 1 : 0;
+        const hi = same(botRev[botRev.length - 1], run.top[0]) ? botRev.length - 1 : botRev.length;
+        for (let j = lo; j < hi; j++) loop.push(botRev[j]);
+        d = closedSpline(loop);
       }
       contourFills.push(<path key={`ct${bi}-${ri}`} d={d} fill={band.color} />);
     });

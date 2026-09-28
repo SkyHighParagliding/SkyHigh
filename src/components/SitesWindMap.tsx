@@ -976,6 +976,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           groundAmsl={chartPoint.ground}
           airspace={chartAirspace}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setChartPoint(null)}
         />
       )}
@@ -988,6 +989,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           groundAmsl={skewtPoint.ground}
           time={skewtPoint.time}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setSkewtPoint(null)}
         />
       )}
@@ -999,6 +1001,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           lon={raspPoint.lon}
           groundAmsl={raspPoint.ground}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setRaspPoint(null)}
         />
       )}

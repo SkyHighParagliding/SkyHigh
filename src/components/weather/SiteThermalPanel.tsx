@@ -553,6 +553,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           groundAmsl={chartPoint.ground}
           airspace={chartAirspace}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setChartPoint(null)}
         />
       )}
@@ -565,6 +566,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           groundAmsl={skewtPoint.ground}
           time={skewtPoint.time}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setSkewtPoint(null)}
         />
       )}
@@ -576,6 +578,7 @@ export function SiteThermalPanel({ site, onBack, hasExtended, hasLiveWeather }: 
           lon={raspPoint.lon}
           groundAmsl={raspPoint.ground}
           fullScale={fullScale}
+          onToggleScale={toggleScale}
           onClose={() => setRaspPoint(null)}
         />
       )}

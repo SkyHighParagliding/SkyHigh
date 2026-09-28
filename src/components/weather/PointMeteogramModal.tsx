@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Loader2, X, Info, LineChart } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SiteMeteogramChart, type MeteogramHour } from './SiteMeteogramChart';
+import { ScaleToggle } from './ScaleToggle';
 import type { PointSounding } from './SkewTChart';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import type { AirspaceSector } from '@/lib/airspaceConflict';
@@ -22,6 +23,8 @@ interface PointMeteogramModalProps {
   airspace?: AirspaceSector[];
   /** true = full profile altitude scale; false = PG working band. */
   fullScale?: boolean;
+  /** Flip the shared PG/Full scale — enables the on-display toggle. */
+  onToggleScale?: () => void;
   onClose: () => void;
 }
 
@@ -30,7 +33,7 @@ interface PointMeteogramModalProps {
  * point). Opened from the thermal map's tapped-point box; the point + scrubber
  * context is what the pilot cares about, so the chart is point-aware.
  */
-export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, fullScale = false, onClose }: PointMeteogramModalProps) {
+export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, fullScale = false, onToggleScale, onClose }: PointMeteogramModalProps) {
   const { settings } = useSettings();
   const [data, setData] = useState<{ hours: MeteogramHour[]; launchElevation: number | null } | null>(null);
   const [sounding, setSounding] = useState<PointSounding | null>(null);
@@ -75,6 +78,7 @@ export function PointMeteogramModal({ lat, lon, groundAmsl, airspace, fullScale 
           <span className="text-[13px] font-semibold text-ink">Thermal Forecast</span>
         </div>
         <div className="flex items-center gap-1.5">
+          {onToggleScale && <ScaleToggle fullScale={fullScale} onToggle={onToggleScale} />}
           <button onClick={() => setShowHelp(true)} className="text-muted-foreground/60 hover:text-muted-foreground p-1" title="What do these readings mean?">
             <Info className="w-4 h-4" />
           </button>

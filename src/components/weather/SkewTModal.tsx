@@ -6,6 +6,7 @@ import { Altitude } from '@/components/Altitude';
 import { getCompassDirection } from '@/components/windMapTypes';
 import { ThermalHelpModal } from '../windmap/ThermalHelpModal';
 import { SkewTChart, type PointSounding, type SkewTReadout } from './SkewTChart';
+import { ScaleToggle } from './ScaleToggle';
 
 interface SkewTModalProps {
   lat: number;
@@ -15,6 +16,8 @@ interface SkewTModalProps {
   time: number;
   /** true = full profile altitude scale; false = PG working band. */
   fullScale?: boolean;
+  /** Flip the shared PG/Full scale — enables the on-display toggle. */
+  onToggleScale?: () => void;
   onClose: () => void;
 }
 
@@ -33,7 +36,7 @@ function fmtMelb(iso: string): string {
  * trigger-temperature handle to project thermal top / cloudbase; drag anywhere
  * on the plot for a level readout. The data box below shows what a pilot needs.
  */
-export function SkewTModal({ lat, lon, groundAmsl, time, fullScale = false, onClose }: SkewTModalProps) {
+export function SkewTModal({ lat, lon, groundAmsl, time, fullScale = false, onToggleScale, onClose }: SkewTModalProps) {
   const { units } = useUnits();
   const [data, setData] = useState<PointSounding | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,7 @@ export function SkewTModal({ lat, lon, groundAmsl, time, fullScale = false, onCl
           <span className="text-[13px] font-semibold text-ink truncate">SkewT sounding{hour ? ` · ${fmtMelb(hour.time)}` : ''}</span>
         </div>
         <div className="flex items-center gap-1.5">
+          {onToggleScale && <ScaleToggle fullScale={fullScale} onToggle={onToggleScale} />}
           <button onClick={() => setShowHelp(true)} className="text-muted-foreground/60 hover:text-muted-foreground p-1" title="What do these mean?"><Info className="w-4 h-4" /></button>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 text-ink" title="Close"><X className="w-4 h-4" /></button>
         </div>
