@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { qrRedirectTarget, QrRedirect } from '@/lib/qrRedirect';
 import { ArrowLeft, MapPin, Compass, ChevronDown, X, Layers, Maximize, Minimize, Shield, Car, CheckCircle, Monitor, Clock, BellOff, Wind, Plus, Minus, Navigation, Map as MapIcon, User } from 'lucide-react';
 import { XCMap } from '@/components/XCMap';
 import { FlightControls } from '@/components/FlightControls';
@@ -194,6 +195,7 @@ export function XCMaps() {
   } = useXCMapState();
 
   const [showPilotLogin, setShowPilotLogin] = useState(false);
+  const [xcSearchParams] = useSearchParams();
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [activeBasemap, setActiveBasemap] = useState('streets');
   const handleMapReady = useCallback((map: L.Map) => { mapInstanceRef.current = map; }, []);
@@ -217,6 +219,15 @@ export function XCMaps() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#007aff]" />
       </div>
     );
+  }
+
+  // XC Maps QR redirect: if this site's XC redirect is set + switched on, send scans there.
+  {
+    const qrSite = xcSearchParams.get('site');
+    if (qrSite) {
+      const target = qrRedirectTarget(sites.find((s) => String(s.id) === qrSite) as { qrRedirects?: string } | undefined, 'xcmaps');
+      if (target) return <QrRedirect to={target} />;
+    }
   }
 
   if (sites.length === 0) {

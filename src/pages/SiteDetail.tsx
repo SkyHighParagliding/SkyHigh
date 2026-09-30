@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { prefetchWindGrids } from "@/lib/windGridCache";
 import { getClosureStatus, formatClosureDateRange } from "@/utils/closureStatus";
 import { recordSiteView } from "@/lib/recentSites";
 import { useSite, useWeather } from "@/hooks/api";
+import { qrRedirectTarget, QrRedirect } from "@/lib/qrRedirect";
 
 const isValidField = (value: string | undefined | null) => {
   if (!value) return false;
@@ -26,6 +27,7 @@ const isValidField = (value: string | undefined | null) => {
 export function SiteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: site, isLoading: loading, error: siteError, refetch: refetchSite } = useSite(id);
   const { data: weatherRaw } = useWeather(site ? id : undefined);
   const weather = useMemo(() => {
@@ -99,6 +101,12 @@ export function SiteDetail() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading site details...</div>;
   if (error || !site) return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Site not found"}</div>;
+
+  // Site QR redirect: only when arrived via the site QR (?src=qr) and a redirect is set + switched on.
+  if (searchParams.get("src") === "qr") {
+    const target = qrRedirectTarget(site, "info");
+    if (target) return <QrRedirect to={target} />;
+  }
 
   return (
     <div className="bg-background min-h-screen pb-20">

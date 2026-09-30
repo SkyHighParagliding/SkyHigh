@@ -7,6 +7,7 @@ import { convertToDirectImageUrl } from "@/lib/urlHelpers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { escapeHtml } from "@/lib/xcMapUtils";
+import { parseQrRedirects, type QrType, type QrRedirectEntry } from "@/lib/qrRedirect";
 
 /** Safely coerce an unknown value to string, returning fallback on null/undefined. */
 /** Safely coerce an unknown value to string, returning fallback on null/undefined. */
@@ -88,6 +89,7 @@ export function useSiteForm() {
     isTidal: "false", tideStationId: "",
     skipBulkImport: "false", isXCSite: "false",
     inductionFormUrl: "",
+    qrRedirects: "",
   });
 
   const [baseUrl, setBaseUrl] = useState(window.location.origin);
@@ -145,6 +147,7 @@ export function useSiteForm() {
             skipBulkImport: safeStr(data.skipBulkImport) || "false",
             isXCSite: safeStr(data.isXCSite) || "false",
             inductionFormUrl: safeStr(data.inductionFormUrl),
+            qrRedirects: safeStr(data.qrRedirects),
           });
           setEssentialImages(safeStrArr(data.essentialInfoImages));
           setClosurePillsMax(typeof data.closurePillsMax === 'number' ? data.closurePillsMax : 7);
@@ -412,8 +415,22 @@ export function useSiteForm() {
   };
 
   const checkInUrl = `${baseUrl}/check-in?site=${id}`;
-  const fieldViewUrl = `${baseUrl}/sites/${id}/field`;
+  // "info" QR → the site's normal page. The ?src=qr marker lets that page apply a
+  // per-site redirect only for QR scans (not normal browsing). Named fieldViewUrl
+  // for historical reasons; there is no separate mobile field page.
+  const fieldViewUrl = `${baseUrl}/sites/${id}?src=qr`;
   const xcMapsUrl = `${baseUrl}/xc/maps?site=${id}`;
+
+  // Per-QR-type redirect config (parsed from the JSON string in formData).
+  const qrRedirects = parseQrRedirects(formData.qrRedirects);
+  const setQrRedirect = useCallback((type: QrType, patch: Partial<QrRedirectEntry>) => {
+    setFormData(prev => {
+      const current = parseQrRedirects(prev.qrRedirects);
+      const next = { ...current, [type]: { ...current[type], ...patch } };
+      return { ...prev, qrRedirects: JSON.stringify(next) };
+    });
+    markDirty();
+  }, [markDirty]);
 
   const handlePrintFieldQR = () => {
     const printWindow = window.open('', '_blank');
@@ -507,6 +524,7 @@ export function useSiteForm() {
     handleRefreshSites, handleSavePrompt,
     applyScrapedData, handleRestoreSite, handleViewSiteDiff,
     checkInUrl, fieldViewUrl, xcMapsUrl,
+    qrRedirects, setQrRedirect,
     handlePrintFieldQR, handlePrintXCMapsQR, handlePrintQR,
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,

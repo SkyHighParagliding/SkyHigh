@@ -80,6 +80,7 @@ export function AdminSiteEdit() {
     handleRefreshSites, handleSavePrompt,
     applyScrapedData, handleRestoreSite, handleViewSiteDiff,
     checkInUrl, fieldViewUrl, xcMapsUrl,
+    qrRedirects, setQrRedirect,
     handlePrintFieldQR, handlePrintXCMapsQR, handlePrintQR,
     setBaseUrl, saveSite, siteIndex,
     navigateToSite, formatHeights,
@@ -1155,7 +1156,7 @@ export function AdminSiteEdit() {
                     onChange={(e) => setQrCodeType(e.target.value as "info" | "checkin" | "xcmaps")}
                     className="p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent text-sm"
                   >
-                    <option value="info">Site Info (Field View)</option>
+                    <option value="info">Site Page</option>
                     <option value="checkin">Site Check-in</option>
                     {formData.isXCSite === "true" && (
                       <option value="xcmaps">XC Maps</option>
@@ -1165,15 +1166,7 @@ export function AdminSiteEdit() {
                 <CardDescription>
                   {qrCodeType === "info" ? (
                     <>
-                      Generate a QR code linking to the compact field-view page for this site — designed for phone screens.
-                      {settings.qrCodeMode && settings.qrCodeMode !== "off" && (
-                        <>
-                          <br/>
-                          <span className="text-accent font-medium">
-                            Mode: {settings.qrCodeMode === "informative" ? "Informative" : settings.qrCodeMode}
-                          </span>
-                        </>
-                      )}
+                      Generate a QR code that opens this site’s page. Pre-filled with the site page URL — leave the redirect off for normal behaviour, or set a redirect and switch it on to send scans elsewhere.
                     </>
                   ) : qrCodeType === "checkin" ? (
                     <>
@@ -1208,7 +1201,7 @@ export function AdminSiteEdit() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground-label">{qrCodeType === "info" ? "Field View URL" : qrCodeType === "checkin" ? "Check-in URL" : "XC Maps URL"}</label>
+                      <label className="text-sm font-medium text-foreground-label">{qrCodeType === "info" ? "Site Page URL" : qrCodeType === "checkin" ? "Check-in URL" : "XC Maps URL"}</label>
                       <input 
                         type="text" 
                         value={qrCodeType === "info" ? fieldViewUrl : qrCodeType === "checkin" ? checkInUrl : xcMapsUrl} 
@@ -1216,14 +1209,40 @@ export function AdminSiteEdit() {
                         className="w-full p-2 border border-border rounded-md bg-background text-muted-foreground"
                       />
                     </div>
+                    <div className="space-y-2 pt-3 border-t border-border-faint">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-sm font-medium text-foreground-label">Redirect URL (temporary)</label>
+                        <Switch
+                          checked={qrRedirects[qrCodeType].enabled}
+                          onChange={(v) => setQrRedirect(qrCodeType, { enabled: v })}
+                          label={qrRedirects[qrCodeType].enabled ? "On" : "Off"}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={qrRedirects[qrCodeType].url}
+                        onChange={(e) => setQrRedirect(qrCodeType, { url: e.target.value })}
+                        className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
+                        placeholder="/sites/{id} or https://…"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {qrRedirects[qrCodeType].enabled ? (
+                          <span className="text-orange-600 font-medium">
+                            Redirect ON — scanning this printed QR opens the redirect URL, not the page above. The printed QR itself is unchanged, so switch this OFF when ready — no reprint.
+                          </span>
+                        ) : (
+                          <>Leave OFF for normal behaviour. Turn ON to temporarily send scans of this QR to another page (e.g. this site’s page <code className="text-[11px]">/sites/{id}</code>) until the real destination is ready.</>
+                        )}
+                      </p>
+                    </div>
                     <div className="flex gap-3 mt-4">
                       <Button onClick={qrCodeType === "info" ? handlePrintFieldQR : qrCodeType === "checkin" ? handlePrintQR : handlePrintXCMapsQR} variant="outline">
                         <Printer className="w-4 h-4 mr-2" /> Print QR Sign
                       </Button>
                       {qrCodeType === "info" && (
-                        <Link to={`/sites/${id}/field`} target="_blank">
+                        <Link to={`/sites/${id}`} target="_blank">
                           <Button variant="outline">
-                            <ArrowLeft className="w-4 h-4 mr-2 rotate-180" /> Preview Field View
+                            <ArrowLeft className="w-4 h-4 mr-2 rotate-180" /> Preview Site Page
                           </Button>
                         </Link>
                       )}
@@ -1245,7 +1264,7 @@ export function AdminSiteEdit() {
                       includeMargin={true}
                     />
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      {qrCodeType === "info" ? "Scan for site info at" : qrCodeType === "checkin" ? "Scan to check-in at" : "Scan for XC Map at"}<br/>{formData.name}
+                      {qrCodeType === "info" ? "Scan for site page at" : qrCodeType === "checkin" ? "Scan to check-in at" : "Scan for XC Map at"}<br/>{formData.name}
                     </p>
                   </div>
                 </div>

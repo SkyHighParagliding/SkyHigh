@@ -48,6 +48,8 @@ export interface Site {
   temporarilyClosed?: number;
   upcomingClosureDates?: string[];
   closurePillsMax?: number;
+  /** JSON string: per-QR-type redirect config, see src/lib/qrRedirect.tsx */
+  qrRedirects?: string;
 }
 
 export interface WeatherData {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { qrRedirectTarget, QrRedirect } from "@/lib/qrRedirect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, AlertTriangle, CheckCircle2, MapPin, Info } from "lucide-react";
@@ -42,6 +43,12 @@ export function CheckIn() {
 
   if (settingsLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  // Check-in QR redirect: if this site's check-in redirect is set + switched on, send scans there.
+  if (!loading && initialSite) {
+    const target = qrRedirectTarget(sites.find((s) => s.id === initialSite), "checkin");
+    if (target) return <QrRedirect to={target} />;
   }
 
   if (!settings.onlineCheckInEnabled) {

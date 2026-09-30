@@ -14,6 +14,7 @@ interface XCSiteRow {
   launchHeight: number;
   status: string;
   useLiveWeather: string;
+  qrRedirects: string | null;
 }
 
 interface AltLimit {
@@ -43,7 +44,7 @@ const router = Router();
 router.get("/xc/sites", async (req, res) => {
   try {
     const sites = await query<XCSiteRow>(
-      `SELECT id, name, type, lat, lon, "windDir", "launchHeight", status, "useLiveWeather"
+      `SELECT id, name, type, lat, lon, "windDir", "launchHeight", status, "useLiveWeather", "qrRedirects"
        FROM sites
        WHERE "isXCSite" = 'true' AND lat IS NOT NULL AND lon IS NOT NULL AND status != 'closed'
        ORDER BY name ASC`
