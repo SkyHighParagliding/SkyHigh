@@ -728,7 +728,7 @@ rendering choice (DECISION-004).
 
 **Date:** 2026-10-03
 **Owner:** Jon Pamment
-**Status:** ✅ Locked (built on branch `feat/rain-radar-layer`, pushed; **not yet merged to `main`** → not in prod)
+**Status:** ✅ Locked — **merged to `main` and live in prod** (fast-forward `d933f8c..39210c0`). Two follow-ups shipped same day (see below).
 
 ### Context
 Pilots wanted live rain on the `/sites` wind/thermal map. The map already had two
@@ -784,6 +784,24 @@ The card restyle is cosmetic and independent. Honour RainViewer attribution in t
 **Confirms:** Builds on the Canvas+D3 rendering choice (DECISION-004) and the base-map
 legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
 
+### Follow-ups (2026-10-03, on `main`)
+- **CSP fix (`326cd2a`).** Radar showed "Radar unavailable" in prod: the frame-index
+  `fetch()` to `api.rainviewer.com` was blocked because `server.ts` CSP `connect-src`
+  only allowed self/s3/carto. Added `https://api.rainviewer.com` to `connect-src`.
+  Radar *tiles* load as `crossOrigin` images (covered by `img-src https:`) and were
+  never affected; dev worked because Vite's CSP is looser. Rule of thumb: a client
+  fetch to a new host needs `connect-src`, images/tiles need `img-src`.
+- **Cross-layer tapped-point carry (`61a3bc9`).** Switching Wind/Thermal/Radar no longer
+  forces a re-tap. New `MapCanvas` `setPinGeoRef` drops the pin at a lat/lon through the
+  live transform (symmetric with `clearPinRef`); both canvases take an `initialPinGeoRef`
+  and seed the pin once on mount (rAF-retried until the projection is ready); `SitesWindMap`
+  holds the last tapped lat/lon in `carriedGeoRef`, cleared on ✕. Wind↔Radar and
+  Thermal↔Radar already carried (same canvas stays mounted) — this fills the Wind↔Thermal
+  canvas-swap gap. Also fixed a latent bug it exposed: the per-layer readout state was
+  never cleared on a swap, so a dismissed-then-switched card could linger with no pin; a
+  true `viewMode` change now clears both readouts (guarded so a radar→same-mode return,
+  no remount, keeps its live reading).
+
 ---
 
 ## Summary Table
@@ -804,7 +822,7 @@ legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
 | 013 | Baked raster land mask | One generated artifact replaces two drifted hand-traced rings; Western Port / Phillip Is. / the Prom now real geometry; +2.1% points, same tile count | 2026-09-14 | ✅ Locked |
 | 014 | Remove white-label engine | Native single-club; `TemplateContext`/template registry deleted, palette rewritten to semantic tokens | 2026-09-15 | ✅ Locked |
 | 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
-| 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system | 2026-10-03 | ✅ Locked (branch, not merged) |
+| 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system. +CSP fix (api.rainviewer.com) +cross-layer tapped-point carry | 2026-10-03 | ✅ Locked (merged + live) |
 
 ---
 

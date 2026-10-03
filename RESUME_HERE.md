@@ -1,11 +1,11 @@
 # RESUME_HERE — Last updated: 2026-10-03 (session 72)
 
 ## Project: SkyHigh
-## Status: Active — on feature branch `feat/rain-radar-layer` (pushed to origin, **NOT merged to main**). Railway auto-deploys `main` only, so radar is not live yet.
+## Status: Active — back on `main` (== origin/main). Rain radar **merged + live in prod**. Railway auto-deploys `main`.
 
 ```
-branch: feat/rain-radar-layer   (pushed, upstream set; main is 2 commits behind this branch)
-PR: https://github.com/SkyHighParagliding/SkyHigh/pull/new/feat/rain-radar-layer
+branch: main   (== origin/main; Railway auto-deploys main)
+latest: 61a3bc9 (cross-layer tapped-point carry)  ← 326cd2a (CSP fix)  ← 39210c0 (radar merge)
 ```
 
 ## Session 72 (2026-10-03) — Rain radar as a 3rd peer layer + tapped-point card redesign (`1691857` + `b603bcc`, pushed)
@@ -16,8 +16,15 @@ selected by one segmented pill on the map**, plus a from-scratch style system fo
 tapped-point card so all three panels read as if one style guide preceded them.
 `tsc --noEmit` clean; all 3 panels + selector + (i) explainers visually verified on dev.
 
-**Branch is pushed but NOT merged** — radar won't reach prod until this merges to `main`.
-Open the PR link above (or `git checkout main; git merge feat/rain-radar-layer`) when ready.
+**MERGED to `main` and live in prod** (fast-forward `d933f8c..39210c0`). Two follow-ups
+shipped same day, both on `main`:
+- **`326cd2a` — CSP fix.** Radar was "Radar unavailable" in prod: the `api.rainviewer.com`
+  frame-index `fetch()` was blocked by `server.ts` CSP `connect-src` (only self/s3/carto).
+  Added `https://api.rainviewer.com`. Tiles load as images (`img-src https:`) — never affected.
+- **`61a3bc9` — cross-layer tapped-point carry.** Switching Wind/Thermal/Radar no longer
+  forces a re-tap: new `MapCanvas.setPinGeoRef` + `initialPinGeoRef` on both canvases +
+  `carriedGeoRef` in `SitesWindMap` (cleared on ✕). Also cleared a stale-card-on-swap bug
+  (both readouts cleared on a true `viewMode` change). Verified on dev both directions.
 
 ### What shipped
 - **RainViewer overlay** — ~1h observed history + ~30min nowcast, Real→Forecast made
