@@ -55,13 +55,13 @@ export function Sites() {
         </Link>
 
         <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-ink mb-4">Flying Sites</h1>
-          <p className="text-lg text-foreground-secondary max-w-3xl mb-8">
-            Explore our local flying sites. Always check current weather conditions, read the site rules, and ensure you have the appropriate rating before flying.
-          </p>
+          {/* Heading stays up top; the intro paragraph moves below the map so the
+              map can reclaim that vertical space and render taller (the dvh
+              subtraction drops ~85px to match). */}
+          <h1 className="text-4xl md:text-5xl font-extrabold text-ink mb-6">Flying Sites</h1>
 
           {mappableSites.length > 0 && (
-            <div className="mb-8 rounded-xl overflow-hidden shadow-sm relative aspect-square lg:aspect-auto lg:h-[calc(100dvh-360px)] lg:min-h-[420px] lg:max-h-[900px]">
+            <div className="mb-6 rounded-xl overflow-hidden shadow-sm relative aspect-square lg:aspect-auto lg:h-[calc(100dvh-280px)] lg:min-h-[420px] lg:max-h-[900px]">
               <Suspense fallback={
                 <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a] rounded-xl">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
@@ -84,6 +84,10 @@ export function Sites() {
               </Suspense>
             </div>
           )}
+
+          <p className="text-lg text-foreground-secondary max-w-3xl mb-8">
+            Explore our local flying sites. Always check current weather conditions, read the site rules, and ensure you have the appropriate rating before flying.
+          </p>
 
           <div className="relative max-w-md mb-8">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-faint pointer-events-none" />
