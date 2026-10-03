@@ -170,7 +170,10 @@ async function startServer() {
       // s3.amazonaws.com: terrarium elevation tiles fetched client-side for the
       // Ground AMSL readout (terrainTiles.ts). basemaps.cartocdn.com: CARTO wind/
       // thermal basemap tiles (also prefetched by the tile service worker).
-      "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com",
+      // api.rainviewer.com: the rain-radar frame index (useRainviewer.ts) — a JSON
+      // fetch, so it needs connect-src; the radar tiles themselves load as images
+      // and are already covered by img-src https:.
+      "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com https://api.rainviewer.com",
       // frame-src: legitimate third-party embeds — Google My Maps (Ground Handling
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
