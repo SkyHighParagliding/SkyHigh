@@ -68,6 +68,45 @@ export function closedSpline(pts: [number, number][], alpha = 0.5): string {
 }
 
 /**
+ * Smooth OPEN curve through an arbitrary ordered sequence of points (no
+ * x-monotone requirement) as one tangent-continuous bezier path — a centripetal
+ * Catmull-Rom (alpha = 0.5, so no cusps or overshoot at tight turns). Unlike
+ * `smoothLine` (which needs x-increasing points), this follows the point ORDER,
+ * so it suits near-vertical traces whose x wanders back and forth — e.g. a
+ * Skew-T temperature or dewpoint profile. Endpoints get reflected phantom
+ * neighbours so the curve starts/ends exactly on the first/last point with a
+ * natural tangent. Returns a full "M … C …" (open, no Z).
+ */
+export function openSpline(pts: [number, number][], alpha = 0.5): string {
+  const m = pts.length;
+  if (m === 0) return '';
+  if (m === 1) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  if (m === 2) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+  const at = (i: number): [number, number] => {
+    if (i < 0) return [2 * pts[0][0] - pts[1][0], 2 * pts[0][1] - pts[1][1]];
+    if (i >= m) return [2 * pts[m - 1][0] - pts[m - 2][0], 2 * pts[m - 1][1] - pts[m - 2][1]];
+    return pts[i];
+  };
+  const dist = (a: [number, number], b: [number, number]) => Math.hypot(b[0] - a[0], b[1] - a[1]) || 1e-6;
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} `;
+  for (let i = 0; i < m - 1; i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const t1 = Math.pow(dist(p0, p1), alpha);
+    const t2 = Math.pow(dist(p1, p2), alpha);
+    const t3 = Math.pow(dist(p2, p3), alpha);
+    const c1: [number, number] = [0, 0], c2: [number, number] = [0, 0];
+    for (let k = 0; k < 2; k++) {
+      const m1 = (p2[k] - p1[k]) / t2 - (p2[k] - p0[k]) / (t1 + t2) + (p1[k] - p0[k]) / t1;
+      const m2 = (p3[k] - p2[k]) / t3 - (p3[k] - p1[k]) / (t2 + t3) + (p2[k] - p1[k]) / t2;
+      c1[k] = p1[k] + (m1 * t2) / 3;
+      c2[k] = p2[k] - (m2 * t2) / 3;
+    }
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)} `;
+  }
+  return d.trim();
+}
+
+/**
  * Vector-interpolated wind (speed, dir° FROM) at an altitude (m AMSL) from a set
  * of levels. u/v interpolation so direction wraps through 360° correctly.
  * Returns null when the altitude is outside the profile (± margin).

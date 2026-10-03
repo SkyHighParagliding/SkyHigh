@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUnits } from '@/hooks/useUnits';
 import { getCompassDirection } from '@/components/windMapTypes';
 import { lclPressureTemp, liftParcel } from '../../../shared/parcel';
+import { openSpline } from '@/lib/spline';
 
 // ── Sounding types (mirror server/grid/pointSounding.ts) ────────────────────
 export interface SoundingLevel { p: number; zAmsl: number; t: number; td: number; windSpd: number; windDir: number; }
@@ -152,7 +153,13 @@ export function SkewTChart({ hour, groundAmsl, onReadout, fullScale = false }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pBot, pTop, trigT, sfc.td, svgW]);
 
-  const line = (key: 't' | 'td') => 'M' + pts.map(pt => `${xOf(pt[key], pt.p).toFixed(1)},${yOf(pt.p).toFixed(1)}`).join(' L');
+  // Environment temp/dewpoint traces as smooth splines through the profile
+  // levels, so the sparse sounding reads as an organic curve rather than kinked
+  // straight segments. Centripetal Catmull-Rom (order-, not x-, parameterised)
+  // because these traces are near-vertical and their temperature wanders both
+  // ways with height. The parcel line stays a dense polyline — its LCL kink is
+  // physical and shouldn't be rounded away.
+  const line = (key: 't' | 'td') => openSpline(pts.map(pt => [xOf(pt[key], pt.p), yOf(pt.p)] as [number, number]));
 
   const onDown = (mode: 'trigger' | 'cursor') => (e: React.PointerEvent) => {
     e.stopPropagation(); (e.target as Element).setPointerCapture?.(e.pointerId); drag.current = mode; move(e);
