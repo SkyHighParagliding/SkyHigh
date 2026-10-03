@@ -18,6 +18,9 @@ export interface UseWindPlaybackResult {
   forecastEnd: number;
   formattedTime: string;
   handleSliderChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Jump the forecast time to the nearest available grid time to `t` (ms). Used
+   *  to keep the forecast in step with the displayed radar frame. */
+  seekTo: (t: number) => void;
   togglePlay: () => void;
   cycleSpeed: () => void;
 }
@@ -35,6 +38,8 @@ export function useWindPlayback(
    * default-hour setting.
    */
   defaultHour?: number,
+  /** 12h (false) vs 24h (true) clock for formattedTime. */
+  use24h = false,
 ): UseWindPlaybackResult {
   const [windGrid, setWindGrid] = useState<WindGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,6 +131,20 @@ export function useWindPlayback(
     setCurrentTime(parseInt(e.target.value));
   }, []);
 
+  // Snap the forecast to the nearest available grid time to `t` (within range).
+  // Used to keep the forecast reading in step with the displayed radar frame.
+  const seekTo = useCallback((t: number) => {
+    if (!windGrid?.times?.length) return;
+    let best = new Date(windGrid.times[0]).getTime();
+    let bestDiff = Math.abs(best - t);
+    for (let i = 1; i < windGrid.times.length; i++) {
+      const ms = new Date(windGrid.times[i]).getTime();
+      const diff = Math.abs(ms - t);
+      if (diff < bestDiff) { bestDiff = diff; best = ms; }
+    }
+    setCurrentTime(prev => (prev === best ? prev : best));
+  }, [windGrid]);
+
   const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
 
   const cycleSpeed = useCallback(() => {
@@ -144,7 +163,7 @@ export function useWindPlayback(
     () => windGrid ? new Date(windGrid.times[windGrid.times.length - 1]).getTime() : 0,
     [windGrid],
   );
-  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day');
+  const formattedTime = formatWindMapTime(currentTime, mapMode === '7day', use24h);
 
   return {
     windGrid,
@@ -160,6 +179,7 @@ export function useWindPlayback(
     forecastEnd,
     formattedTime,
     handleSliderChange,
+    seekTo,
     togglePlay,
     cycleSpeed,
   };

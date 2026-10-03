@@ -8,8 +8,11 @@ import { tile as d3tile } from 'd3-tile';
 import type { SiteMarker } from '../windMapTypes';
 import { toMelbourneDate } from '@/utils/closureStatus';
 import { tileCoordsFor, prefetchTile } from './terrainTiles';
+import { RADAR_MAX_Z, radarTileUrl } from './radarTiles';
 
-const TILE_CACHE_MAX = 200;
+// Bumped from 200 to hold several radar frames (each ~a dozen tiles) alongside
+// the basemap + label tiles during a radar loop without thrashing the FIFO.
+const TILE_CACHE_MAX = 400;
 
 type TileResult = ReturnType<ReturnType<typeof d3tile>>;
 
@@ -96,6 +99,14 @@ interface MapCanvasProps {
    *  `light_only_labels` tiles are drawn *on top* of the overlay so names stay
    *  readable above the heat/speed colours. Held in a ref, same rationale. */
   showLabelsRef?: React.MutableRefObject<boolean>;
+  /** Live on/off for the RainViewer rain-radar overlay. Refs so the radar loop
+   *  and opacity slider drive the frame loop without re-rendering the map. */
+  radarEnabledRef?: React.MutableRefObject<boolean>;
+  /** Live 0–1 radar opacity. */
+  radarOpacityRef?: React.MutableRefObject<number>;
+  /** The frame to draw this instant: tile host + `/v2/radar/…` path, or null when
+   *  radar is off / not yet loaded. Updated by the host as the loop advances. */
+  radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +206,9 @@ export const MapCanvas = memo(function MapCanvas({
   pinnedCrosshairColor,
   basemapIntensityRef,
   showLabelsRef,
+  radarEnabledRef,
+  radarOpacityRef,
+  radarFrameRef,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -459,6 +473,39 @@ export const MapCanvas = memo(function MapCanvas({
 
       const c: MapRenderContext = { ctx, transform: currentTransform, transformRef, projection, width: w, height: h, todayStr };
       for (let i = 0; i < layers.length; i++) layers[i].draw(c, layerResources[i]);
+
+      // Rain-radar overlay (RainViewer). Drawn over the data layers but under the
+      // base-map detail re-pass and town labels below, so roads and place names
+      // stay legible on top of the rain. Standard web-mercator XYZ tiles, same
+      // d3-tile list as the basemap — only the URL differs. The frame to draw is
+      // whatever the host's loop has parked in radarFrameRef this instant.
+      const radarFrame = radarEnabledRef?.current ? radarFrameRef?.current : null;
+      if (radarFrame) {
+        ctx.save();
+        ctx.globalAlpha = radarOpacityRef?.current ?? 0.75;
+        for (const d of tiles) {
+          const z = d[2];
+          // Overzoom above RainViewer's z7 data cap: use the z7 ancestor tile and
+          // crop to the sub-region this on-screen tile covers. At z ≤ 7, dz = 0 and
+          // this reduces to a plain full-tile draw.
+          const az = Math.min(z, RADAR_MAX_Z);
+          const dz = z - az;
+          const ax = d[0] >> dz;
+          const ay = d[1] >> dz;
+          const rKey = `R${radarFrame.path}/${az}/${ax}/${ay}`;
+          const rUrl = radarTileUrl(radarFrame.host, radarFrame.path, az, ax, ay);
+          const rImg = loadTile(rKey, rUrl);
+          if (rImg && rImg.complete && rImg.naturalWidth > 0) {
+            const x = (d[0] + tiles.translate[0]) * tiles.scale;
+            const y = (d[1] + tiles.translate[1]) * tiles.scale;
+            const sub = Math.max(1, 256 >> dz);      // source crop size in the ancestor
+            const sx = (d[0] - (ax << dz)) * sub;
+            const sy = (d[1] - (ay << dz)) * sub;
+            ctx.drawImage(rImg, sx, sy, sub, sub, x, y, tiles.scale, tiles.scale);
+          }
+        }
+        ctx.restore();
+      }
 
       // "Base map detail" re-emphasis. The CARTO basemap is near-white with faint
       // grey linework that the translucent heat/speed overlay washes out. Multiply

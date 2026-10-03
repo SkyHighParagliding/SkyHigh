@@ -1,23 +1,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, Map as MapIcon } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, CloudRain } from 'lucide-react';
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
 import { RaspModal } from './weather/RaspModal';
-import { WindMapModeToggle } from './windmap/WindMapModeToggle';
-import { ModeSwitchPill } from './windmap/ModeSwitchPill';
-import { WindMapScrubberTray } from './windmap/WindMapScrubberTray';
+import { LayerSelector, type LayerOption } from './windmap/LayerSelector';
+import { RadarCardControls } from './windmap/RadarCardControls';
+import { RADAR_LEGEND_CSS, sampleRadarAt, type RadarSample } from './windmap/radarTiles';
+import { useRainviewer } from '@/hooks/useRainviewer';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useChartScale } from '@/hooks/useChartScale';
 import { useAuth } from '@/contexts/AuthContext';
-import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, SCALE_BAR_BOTTOM_COLLAPSED } from './windMapTypes';
+import { SPEED_LEGEND_CSS, getCompassDirection, INITIAL_K, SCALE_BAR_BOTTOM_COLLAPSED, SLIDER_INPUT_CLS } from './windMapTypes';
 import type { SiteMarker, ZoomSetpoints } from './windMapTypes';
 import { getWindAt, type WindGrid } from './windmap/windInterpolation';
 import { useWindPlayback } from '@/hooks/useWindPlayback';
 import { getThermalAt, getThermalStrength, effectiveWstar } from './windmap/thermalInterpolation';
 import type { ThermalGrid } from './windmap/thermalInterpolation';
-import { THERMAL_LEGEND_CSS, OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
+import { OVERCAST_SUPPRESS_MIN } from './windmap/thermalRenderer';
 import { ThermalStrengthLegend } from './windmap/ThermalLegend';
 import { precipDescription } from '@/lib/precip';
 import { haversineDistance } from '@/lib/utils';
@@ -31,7 +32,16 @@ const AIRSPACE_WARN_SKIP = new Set(['FIR', 'OCA', 'OTHER', 'TIZ', 'GLIDING_SECTO
 // Interactive readout text (Chart / SkewT / the class label / the Wind line) gets
 // a subtle sky tint so it reads as tappable, distinct from the plain white/75
 // readings — without shouting like the red airspace-conflict words.
-const CLICKABLE = 'text-sky-300/80 hover:text-sky-300';
+const CLICKABLE = 'text-sky-500 hover:text-sky-400';
+
+// Switchable speed/direction display. Speed cycles kt→mph→kph; direction toggles
+// compass↔degrees. Both persist per browser and are shown on one line ("4.9 kt / S").
+type SpeedUnit = 'kt' | 'mph' | 'kph';
+const SPEED_UNITS: SpeedUnit[] = ['kt', 'mph', 'kph'];
+const SPEED_FACTOR: Record<SpeedUnit, number> = { kt: 1, mph: 1.15078, kph: 1.852 };
+const fmtSpeed = (kt: number, unit: SpeedUnit, dp = 1) => `${(kt * SPEED_FACTOR[unit]).toFixed(dp)} ${unit}`;
+type DirMode = 'compass' | 'deg';
+const fmtDir = (deg: number, mode: DirMode) => (mode === 'deg' ? `${Math.round(deg)}°` : getCompassDirection(deg));
 
 const WindCanvas = lazy(() => import('./windmap/WindCanvas').then(m => ({ default: m.WindCanvas })));
 const ThermalCanvas = lazy(() => import('./windmap/ThermalCanvas').then(m => ({ default: m.ThermalCanvas })));
@@ -67,7 +77,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
   // Live wind from the nearest live-reporting site within LIVE_WIND_RADIUS_KM of
   // the tapped point — only when the scrubber sits on "now" (see effect below).
-  const [liveWind, setLiveWind] = useState<{ speedKt: number; direction: string; siteName: string } | null>(null);
+  const [liveWind, setLiveWind] = useState<{ speedKt: number; direction: string; directionDeg?: number; siteName: string } | null>(null);
   const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
   // Mirror the renderer's overcast rule so the tapped-point strength label agrees
   // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
@@ -120,8 +130,66 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     showLabelsRef.current = showMapLabels;
     try { localStorage.setItem('skyhigh.showMapLabels', String(showMapLabels)); } catch { /* private mode */ }
   }, [showMapLabels]);
-  // Collapsible "Key" legend pill (bottom-left) — collapsed by default.
-  const [showLegend, setShowLegend] = useState(false);
+
+  // ── Rain-radar overlay (RainViewer) ──────────────────────────────────────
+  // Shared by both maps, same ref pattern as the basemap controls: React state
+  // drives the control UI; refs feed the canvas frame loop live. On/off and
+  // opacity persist per browser; the frame index and play state are per session.
+  const [radarEnabled, setRadarEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('skyhigh.radarEnabled') === 'true'; } catch { return false; }
+  });
+  const [radarOpacity, setRadarOpacity] = useState<number>(() => {
+    try { const v = localStorage.getItem('skyhigh.radarOpacity'); const n = v == null ? NaN : Number(v); return Number.isFinite(n) ? Math.min(1, Math.max(0.1, n)) : 0.75; } catch { return 0.75; }
+  });
+  const [radarIndex, setRadarIndex] = useState(0);
+  const [radarPlaying, setRadarPlaying] = useState(false);
+  // Rain intensity sampled from the radar image at the tapped point (null = no rain
+  // / unavailable) — drives the marker + mm/hr on the Rain-radar scale.
+  const [radarPoint, setRadarPoint] = useState<RadarSample | null>(null);
+
+  const radar = useRainviewer(radarEnabled);
+  const radarHost = radar.data?.host ?? '';
+  const radarFrames = useMemo(() => radar.data?.frames ?? [], [radar.data]);
+  const radarNowIndex = radar.data?.nowIndex ?? 0;
+  // Clamp the index to the live frame list (it can shrink/grow on refetch).
+  const radarClampedIndex = radarFrames.length ? Math.min(radarIndex, radarFrames.length - 1) : 0;
+
+  const radarEnabledRef = useRef(radarEnabled);
+  const radarOpacityRef = useRef(radarOpacity);
+  const radarFrameRef = useRef<{ host: string; path: string } | null>(null);
+
+  useEffect(() => {
+    radarEnabledRef.current = radarEnabled;
+    try { localStorage.setItem('skyhigh.radarEnabled', String(radarEnabled)); } catch { /* private mode */ }
+    if (!radarEnabled) setRadarPlaying(false);
+  }, [radarEnabled]);
+  useEffect(() => {
+    radarOpacityRef.current = radarOpacity;
+    try { localStorage.setItem('skyhigh.radarOpacity', String(radarOpacity)); } catch { /* private mode */ }
+  }, [radarOpacity]);
+
+  // When a fresh index arrives (first load or a 5-min refetch), jump the scrubber
+  // to the "now" edge so the map opens on the latest observed scan.
+  useEffect(() => {
+    if (radar.data) setRadarIndex(radar.data.nowIndex);
+  }, [radar.data]);
+
+  // Park the frame the canvas should draw this instant; null when off or empty.
+  useEffect(() => {
+    const f = radarFrames[radarClampedIndex];
+    radarFrameRef.current = radarEnabled && f ? { host: radarHost, path: f.path } : null;
+  }, [radarEnabled, radarFrames, radarClampedIndex, radarHost]);
+
+  // Loop: advance ~2 frames/sec, wrapping back to the start of the ~1h history.
+  useEffect(() => {
+    if (!radarPlaying || radarFrames.length < 2) return;
+    const id = setInterval(() => {
+      setRadarIndex(prev => (prev + 1) % radarFrames.length);
+    }, 500);
+    return () => clearInterval(id);
+  }, [radarPlaying, radarFrames.length]);
+
+  const onRadarIndexChange = useCallback((i: number) => { setRadarPlaying(false); setRadarIndex(i); }, []);
   // Dismiss handlers filled in by the active canvas; the ✕ on the readout box
   // calls the current mode's handler to clear the pin fully (box + pin +
   // crosshair), otherwise the render loop repaints it.
@@ -215,11 +283,33 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     return res.json();
   }, []);
 
+  // 12h (e.g. "3 PM") vs 24h ("15:00") clock, shared by every time display on the
+  // map (card, scrubber tray, radar frame). Toggled by tapping the card's time,
+  // remembered per browser.
+  const [use24h, setUse24h] = useState<boolean>(() => {
+    try { return localStorage.getItem('skyhigh.time24h') === 'true'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('skyhigh.time24h', String(use24h)); } catch { /* private mode */ }
+  }, [use24h]);
+
+  // Speed units (kt/mph/kph) + direction mode (compass/degrees), remembered per
+  // browser. Tapping the speed cycles units; tapping the direction toggles mode.
+  const [speedUnit, setSpeedUnit] = useState<SpeedUnit>(() => {
+    try { const v = localStorage.getItem('skyhigh.speedUnit'); return (SPEED_UNITS as string[]).includes(v || '') ? (v as SpeedUnit) : 'kt'; } catch { return 'kt'; }
+  });
+  const [dirMode, setDirMode] = useState<DirMode>(() => {
+    try { return localStorage.getItem('skyhigh.dirMode') === 'deg' ? 'deg' : 'compass'; } catch { return 'compass'; }
+  });
+  useEffect(() => { try { localStorage.setItem('skyhigh.speedUnit', speedUnit); } catch { /* private */ } }, [speedUnit]);
+  useEffect(() => { try { localStorage.setItem('skyhigh.dirMode', dirMode); } catch { /* private */ } }, [dirMode]);
+  const cycleSpeedUnit = useCallback(() => setSpeedUnit(u => SPEED_UNITS[(SPEED_UNITS.indexOf(u) + 1) % SPEED_UNITS.length]), []);
+  const toggleDirMode = useCallback(() => setDirMode(m => (m === 'compass' ? 'deg' : 'compass')), []);
+
   const {
     windGrid, loading, error,
-    currentTime, isPlaying, trayOpen, toggleTray,
-    playSpeed, timeStep, forecastStart, forecastEnd,
-    formattedTime, handleSliderChange, togglePlay, cycleSpeed,
+    currentTime, timeStep, forecastStart, forecastEnd,
+    formattedTime, handleSliderChange, seekTo,
   } = useWindPlayback(
     mapMode,
     todayFetcher,
@@ -228,7 +318,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     settings.thermalMapDefaultHour !== undefined && settings.thermalMapDefaultHour !== ''
       ? parseInt(String(settings.thermalMapDefaultHour), 10)
       : undefined,
+    use24h,
   );
+
+  // Keep the forecast in step with the radar: while radar is on, snap the forecast
+  // time to the nearest grid time to the displayed radar frame, so the tapped-point
+  // reading and the radar image are for the same moment (follows radar scrubbing too).
+  useEffect(() => {
+    if (!radarEnabled) return;
+    const f = radarFrames[radarClampedIndex];
+    if (f) seekTo(f.time * 1000);
+  }, [radarEnabled, radarFrames, radarClampedIndex, seekTo]);
 
   // Lazy-load thermal grid when user switches to thermal mode
   useEffect(() => {
@@ -252,6 +352,20 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // recent reading and show it beside the forecast. Off-now or too far → cleared.
   const tappedLat = viewMode === 'thermal' ? thermalInfo?.lat : sitesWindInfo?.lat;
   const tappedLon = viewMode === 'thermal' ? thermalInfo?.lon : sitesWindInfo?.lon;
+  // Terrain elevation at the tapped point, from whichever readout is active — used
+  // by the Radar panel (which shows no wind/thermal reading of its own).
+  const tappedGround = viewMode === 'thermal' ? thermalInfo?.groundAmsl : sitesWindInfo?.groundAmsl;
+
+  // Sample the radar image at the tapped point for the current frame → marker + mm/hr.
+  useEffect(() => {
+    if (!radarEnabled || tappedLat == null || tappedLon == null) { setRadarPoint(null); return; }
+    const f = radarFrames[radarClampedIndex];
+    if (!f || !radarHost) { setRadarPoint(null); return; }
+    let cancelled = false;
+    sampleRadarAt(tappedLat, tappedLon, radarHost, f.path).then(r => { if (!cancelled) setRadarPoint(r); });
+    return () => { cancelled = true; };
+  }, [radarEnabled, tappedLat, tappedLon, radarFrames, radarClampedIndex, radarHost]);
+
   useEffect(() => {
     const isNow = Math.abs(currentTime - Date.now()) < timeStep; // within one frame of real "now"
     if (!isNow || tappedLat == null || tappedLon == null) { setLiveWind(null); return; }
@@ -278,7 +392,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         if (cancelled) return;
         if (obs && obs.type === 'live' && obs.windSpeed != null) {
           const dir = typeof obs.direction === 'number' ? getCompassDirection(obs.direction) : String(obs.direction ?? '');
-          setLiveWind({ speedKt: Number(obs.windSpeed), direction: dir, siteName: nearest!.site.name });
+          const dirDeg = typeof obs.direction === 'number' ? obs.direction : undefined;
+          setLiveWind({ speedKt: Number(obs.windSpeed), direction: dir, directionDeg: dirDeg, siteName: nearest!.site.name });
         } else {
           setLiveWind(null);
         }
@@ -426,61 +541,147 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     }
   }, [viewMode]);
 
-  const sitesModeToggle = <WindMapModeToggle mode={mapMode} onChange={setMapMode} />;
 
-  // The Wind/Thermal view switch. Rendered top-left in the loaded state AND in the
-  // loading/error states, so the correct pill is in place before the grid arrives
-  // (the Today/7-day switch lives in the scrubber tray, not this corner). Single-pill
-  // idiom: it shows the mode you'll switch TO (see ModeSwitchPill).
-  const viewModeToggle = isThermalEnabled ? (
-    <ModeSwitchPill
-      value={viewMode}
-      onChange={handleViewModeChange}
-      options={[
-        { value: 'wind', label: 'Wind', icon: Wind, colorClass: 'text-sky-400' },
-        { value: 'thermal', label: 'Thermal', icon: Thermometer, colorClass: 'text-amber-400' },
-      ]}
+  // The layer selector (Wind | Thermal | Radar). Rendered top-left in the loaded
+  // state AND in the loading/error states, so the control is in place before the
+  // grid arrives. Segmented idiom: all layers visible, the active one highlighted.
+  // The map's active data layer — Wind | Thermal | Radar, three mutually-exclusive
+  // peers selected by one segmented control (replaces the old mode pill + the in-card
+  // radar toggle). "Radar" reuses whichever canvas is mounted, suppressing its data
+  // overlay and drawing rain instead.
+  const activeLayer: 'wind' | 'thermal' | 'radar' = radarEnabled ? 'radar' : viewMode;
+  const handleLayerChange = useCallback((layer: 'wind' | 'thermal' | 'radar') => {
+    if (layer === 'radar') { setRadarEnabled(true); return; }
+    setRadarEnabled(false);
+    handleViewModeChange(layer); // viewport snapshot, popup clear, today-for-thermal
+  }, [handleViewModeChange]);
+  const layerOptions = ([
+    { value: 'wind', label: 'Wind', icon: Wind, colorClass: 'text-sky-400' },
+    isThermalEnabled ? { value: 'thermal', label: 'Thermal', icon: Thermometer, colorClass: 'text-amber-400' } : null,
+    { value: 'radar', label: 'Radar', icon: CloudRain, colorClass: 'text-sky-300' },
+  ] as (LayerOption<'wind' | 'thermal' | 'radar'> | null)[]).filter(Boolean) as LayerOption<'wind' | 'thermal' | 'radar'>[];
+  const layerSelector = <LayerSelector options={layerOptions} value={activeLayer} onChange={handleLayerChange} />;
+
+  // One slider style for the whole card: a label (optionally a toggle) +
+  // full-width track. All sliders share this so their tracks line up and match in
+  // length. The narrow w-12 label lets the track run a little longer leftwards.
+  const cardSlider = (
+    label: string, value: number, onChange: (v: number) => void, title: string,
+    min = 0, labelActive?: boolean, onLabelClick?: () => void,
+  ) => (
+    <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()} title={title}>
+      {onLabelClick ? (
+        <button onClick={onLabelClick} className={`text-[10px] tracking-wide shrink-0 w-14 text-left ${labelActive ? 'text-sky-500' : 'text-sky-500/55 hover:text-sky-500'}`}>{label}</button>
+      ) : (
+        <span className="text-[10px] text-white/75 tracking-wide shrink-0 w-14 text-left">{label}</span>
+      )}
+      <div className="relative flex-1 flex items-center">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-sky-500/70 pointer-events-none" />
+        <input
+          type="range" min={min} max={100} step={5}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          onClick={(e) => e.stopPropagation()}
+          className={SLIDER_INPUT_CLS}
+        />
+      </div>
+    </div>
+  );
+  // Rain controls.
+  const opacitySlider = cardSlider('Opacity', Math.round(radarOpacity * 100), v => setRadarOpacity(Math.max(0.1, v / 100)), 'Rain radar opacity', 10);
+  // Map control: the slider sets base-map detail; tapping the MAP label toggles
+  // town names (sky when on). Combines the old Detail slider + Labels toggle.
+  const mapSlider = cardSlider(
+    'Base map', Math.round(basemapIntensity * 100), v => setBasemapIntensity(v / 100),
+    'Base-map detail (slider) · tap MAP to toggle town names',
+    0, showMapLabels, () => setShowMapLabels(v => !v),
+  );
+
+  // Forecast time scrubber — moved out of the bottom tray into the card. Same look
+  // as the other sliders. The label toggles Today↔7-day (wind only; thermal is
+  // today-only). No play button or time readout — the time is in the card header.
+  const forecastSlider = (
+    <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()} title="Forecast time — drag to scrub">
+      {viewMode === 'wind' ? (
+        <button onClick={() => setMapMode(m => (m === 'today' ? '7day' : 'today'))} className="text-[10px] tracking-wide shrink-0 w-14 text-left text-sky-500 hover:text-sky-400" title="Tap to switch Today / 7-day">
+          {mapMode === '7day' ? '7 Days' : 'Today'}
+        </button>
+      ) : (
+        <span className="text-[10px] tracking-wide shrink-0 w-14 text-left text-white/75">Today</span>
+      )}
+      <div className="relative flex-1 flex items-center">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-sky-500/70 pointer-events-none" />
+        <input
+          type="range" min={forecastStart} max={forecastEnd} step={timeStep}
+          value={currentTime}
+          onChange={handleSliderChange}
+          onClick={(e) => e.stopPropagation()}
+          className={SLIDER_INPUT_CLS}
+        />
+      </div>
+    </div>
+  );
+
+  // Radar loop (Play + timeline), shown only when radar is on.
+  const radarLoop = radarEnabled ? (
+    <RadarCardControls
+      frames={radarFrames}
+      index={radarClampedIndex}
+      onIndexChange={onRadarIndexChange}
+      nowIndex={radarNowIndex}
+      isPlaying={radarPlaying}
+      onPlayToggle={() => setRadarPlaying(v => !v)}
+      loading={radar.isLoading}
+      error={radar.isError}
+      use24h={use24h}
+      onToggle24h={() => setUse24h(v => !v)}
+      pointMmhr={radarPoint ? radarPoint.mmhr : null}
     />
   ) : null;
 
-  // Shared "base map detail" slider — dropped into both readouts (thermal, next
-  // to Chart/SkewT; wind, its own row). Darkens the CARTO linework back in under
-  // the overlay so the pilot can orientate. stopPropagation keeps a drag on the
-  // slider from panning the map underneath.
-  const basemapSlider = (
-    <div
-      className="flex items-center gap-1.5 ml-auto"
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setShowMapLabels(v => !v); }}
-        className={`shrink-0 transition-colors ${showMapLabels ? 'text-sky-300' : 'text-white/55 hover:text-white/80'}`}
-        title={showMapLabels ? 'Town names: on — tap to hide' : 'Town names: off — tap to show'}
-        aria-pressed={showMapLabels}
-        aria-label="Toggle town names"
-      >
-        <MapIcon className="w-3.5 h-3.5" />
-      </button>
-      <input
-        title="Base map detail — darkens roads, rivers and borders so they show through the overlay"
-        type="range"
-        min={0}
-        max={100}
-        step={5}
-        value={Math.round(basemapIntensity * 100)}
-        onChange={(e) => setBasemapIntensity(Number(e.target.value) / 100)}
-        onClick={(e) => e.stopPropagation()}
-        className="w-16 h-1 accent-sky-400 cursor-pointer"
-        aria-label="Base map detail intensity"
-      />
+  // The scale, pinned to the card bottom — shows the scale for whatever the map is
+  // displaying (rain radar / thermal strength / wind speed). Replaces the old Key pill.
+  const scaleBlock = (
+    <div>
+      {radarEnabled ? (
+        <>
+          <div className="relative h-1.5 w-full rounded-full" style={{ background: RADAR_LEGEND_CSS }}>
+            {radarPoint && (
+              <div className="absolute top-0 w-px bg-white shadow-[0_0_3px_rgba(255,255,255,0.8)]" style={{ left: `${Math.min(100, Math.max(0, radarPoint.pos * 100))}%`, height: 'calc(100% + 2px)' }} />
+            )}
+          </div>
+          <div className="flex justify-between mt-1 text-[10px] font-mono text-white/75 px-0.5"><span>Light</span><span>Moderate</span><span>Heavy</span></div>
+        </>
+      ) : viewMode === 'thermal' ? (
+        <>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[10px] text-white/75 font-semibold tracking-wide">Thermal strength</span>
+            <button onClick={() => setShowThermalHelp(true)} className="text-white/40 hover:text-white/80 transition-colors" title="What do these readings mean?"><Info className="w-3.5 h-3.5" /></button>
+          </div>
+          <ThermalStrengthLegend marks={false} wstar={thermalInfo ? effectiveWstar(thermalInfo.wstar, thermalInfo.cape) : undefined} />
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[10px] text-white/75 font-semibold tracking-wide">Wind speed</span>
+            <button onClick={() => setShowThermalHelp(true)} className="text-white/40 hover:text-white/80 transition-colors" title="How to read this map"><Info className="w-3.5 h-3.5" /></button>
+          </div>
+          <div className="relative w-full">
+            <div className="h-1.5 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
+            {sitesWindInfo && (
+              <div className="absolute top-0 w-px bg-white shadow-[0_0_3px_rgba(255,255,255,0.8)]" style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }} />
+            )}
+          </div>
+          <div className="flex justify-between mt-1 text-[10px] font-mono text-white/75 px-0.5"><span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kt</span></div>
+        </>
+      )}
     </div>
   );
 
   if (loading) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
-        <div className="absolute top-3 left-3 z-30">{viewModeToggle}</div>
+        <div className="absolute top-3 left-3 z-30">{layerSelector}</div>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
           <span className="text-xs text-white/50 font-mono">Loading {mapMode === '7day' ? '7-day' : ''} wind data...</span>
@@ -492,7 +693,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   if (error || !windGrid) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
-        <div className="absolute top-3 left-3 z-30">{viewModeToggle}</div>
+        <div className="absolute top-3 left-3 z-30">{layerSelector}</div>
         <span className="text-xs text-red-400 font-mono">{error || 'No wind data available'}</span>
       </div>
     );
@@ -548,6 +749,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 zoomSetpoints={zoomSetpoints}
                 basemapIntensityRef={basemapIntensityRef}
                 showLabelsRef={showLabelsRef}
+                radarEnabledRef={radarEnabledRef}
+                radarOpacityRef={radarOpacityRef}
+                radarFrameRef={radarFrameRef}
               />
             </Suspense>
           ) : null
@@ -576,6 +780,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               onTransformChange={handleTransformChange}
               basemapIntensityRef={basemapIntensityRef}
               showLabelsRef={showLabelsRef}
+              radarEnabledRef={radarEnabledRef}
+              radarOpacityRef={radarOpacityRef}
+              radarFrameRef={radarFrameRef}
             />
           </Suspense>
         )}
@@ -662,23 +869,6 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           </div>
         )}
 
-        <WindMapScrubberTray
-          trayOpen={trayOpen}
-          onToggle={toggleTray}
-          isPlaying={isPlaying}
-          onPlayToggle={togglePlay}
-          currentTime={currentTime}
-          forecastStart={forecastStart}
-          forecastEnd={forecastEnd}
-          timeStep={timeStep}
-          onTimeChange={handleSliderChange}
-          playSpeed={playSpeed}
-          onSpeedCycle={cycleSpeed}
-          formattedTime={formattedTime}
-          mapMode={mapMode}
-          modeToggle={viewMode === 'wind' ? sitesModeToggle : undefined}
-          insetBottom={isFullscreen}
-        />
       </div>
 
       {/* Fullscreen button — top-right, per the map style guide. */}
@@ -708,28 +898,70 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
           (feature-flagged) and the Today/7-day toggle (wind mode only). Sits
           top-left below the fullscreen button. */}
       <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5 max-w-[calc(100vw-1.5rem)]">
-        {viewModeToggle}
+        {layerSelector}
 
         {/* Stacked, dismissable tapped-point readout box (top-left) — only shown
             after the map is tapped; ✕ closes it (clears the pin). One value/line. */}
         {((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (
-        <div className={`bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[120px] max-w-[calc(100vw-1.5rem)] ${showLegend ? 'hidden lg:block' : ''}`}>
-          <div className="flex items-start justify-between gap-2.5">
+        <div className="relative bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[232px] max-w-[calc(100vw-1.5rem)]">
             <div className="space-y-0.5">
-              <div className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Tapped point</div>
-              {/* Forecast time this readout is for (the scrubber's selected time) —
-                  same string the tray shows, surfaced here so you don't have to
-                  open the tray to know which day/hour you're looking at. */}
-              <div className="text-[11px] font-semibold text-sky-300 leading-tight">{formattedTime}</div>
-              {viewMode === 'thermal' ? (
+              <div className="text-[10px] text-white/75 font-semibold tracking-wide">Tapped point</div>
+              {/* Forecast time this readout is for (the scrubber's selected time),
+                  with the wind speed/direction on the same line (wind mode). The
+                  Radar panel has no forecast reading, so this header is hidden there —
+                  its time lives on the Live line. Tap time = 12/24h; speed = units;
+                  dir = compass/degrees. */}
+              {!radarEnabled && (
+              <div className="flex items-baseline gap-2 flex-wrap text-[10px] font-semibold leading-tight">
+                <span className="flex items-baseline gap-1">
+                  <span className="text-white/75">Fcst</span>
+                  <button
+                    onClick={() => setUse24h(v => !v)}
+                    className="text-sky-500 hover:text-sky-400 text-left"
+                    title="Tap to switch 12-hour / 24-hour clock"
+                  >
+                    {formattedTime}
+                  </button>
+                </span>
+                {viewMode === 'wind' && sitesWindInfo && (
+                  <span className="flex items-center gap-1">
+                    <button onClick={cycleSpeedUnit} className="text-sky-500 hover:text-sky-400" title="Tap to change speed units (kt / mph / kph)">
+                      {fmtSpeed(sitesWindInfo.speed, speedUnit)}
+                    </button>
+                    <span className="text-white/40 font-normal">/</span>
+                    <button onClick={toggleDirMode} className="text-sky-500 hover:text-sky-400 tracking-wide" title="Tap to switch compass / degrees">
+                      {fmtDir(sitesWindInfo.direction, dirMode)}
+                    </button>
+                  </span>
+                )}
+              </div>
+              )}
+              {radarEnabled ? (
+                /* RADAR PANEL — rain at the tapped point. Its time + scrubber are the
+                   Rain radar section (the Play loop), so no Fcst header / Today here;
+                   no wind/thermal reading (those are the other two layers). */
+                <>
+                  {typeof tappedGround === 'number' && (
+                    <div className="text-[10px] text-white/75">Ground <Altitude metres={tappedGround} step={10} className="text-sky-500 hover:text-sky-400" /> AMSL</div>
+                  )}
+                  <div className="pt-1 mt-0.5 border-t border-white/10 space-y-1.5">
+                    {radarLoop}
+                    {opacitySlider}
+                    {scaleBlock}
+                    <div className="border-t border-white/10" />
+                    {mapSlider}
+                    <div className="text-[9px] text-white/40">© RainViewer</div>
+                  </div>
+                </>
+              ) : viewMode === 'thermal' ? (
                 thermalInfo ? (
                   <>
                     <>
                         {thermalOvercast
-                          ? <div className="text-[12px] font-bold leading-tight text-white/70">{thermalOvercastLabel}</div>
-                          : <div className="text-[12px] font-bold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
+                          ? <div className="text-[10px] font-semibold leading-tight text-white/75">{thermalOvercastLabel}</div>
+                          : <div className="text-[10px] font-semibold leading-tight" style={{ color: getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).color }}>{getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)).label}</div>}
                         {thermalInfo.blh > 0 && (
-                          <div className="text-[11px] text-white/75">
+                          <div className="text-[10px] text-white/75">
                             BL Top {typeof thermalInfo.groundAmsl === 'number'
                               ? <><Altitude metres={thermalInfo.blh + thermalInfo.groundAmsl} step={100} /> AMSL</>
                               : <><Altitude metres={thermalInfo.blh} step={100} /> AGL</>}
@@ -749,7 +981,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                           </div>
                         )}
                         {thermalInfo.ccl !== undefined && thermalInfo.ccl > 0 && (
-                          <div className={`text-[11px] ${thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75'}`}>
+                          <div className={`text-[10px] ${thermalInfo.ccl < 600 ? 'text-amber-400' : 'text-white/75'}`}>
                             Cu Base {typeof thermalInfo.groundAmsl === 'number'
                               ? <><Altitude metres={thermalInfo.ccl + thermalInfo.groundAmsl} step={100} /> AMSL</>
                               : <><Altitude metres={thermalInfo.ccl} step={100} /> AGL</>}{thermalInfo.ccl < 600 ? ' ⚠' : ''}
@@ -769,198 +1001,111 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                             the readout. */}
                         {showAllAirspace && (
                           airspaceStack.length === 0
-                            ? <div className="text-[11px] text-white/50">No airspace overhead</div>
+                            ? <div className="text-[10px] text-white/75">No airspace overhead</div>
                             : airspaceStack.map((sec, i) => (
-                                <div key={i} className="text-[11px] leading-tight">
-                                  <span className="font-semibold text-white/90">{airspaceLabel(sec)}</span>
-                                  <span className="text-white/55"> <AirspaceRange sector={sec} /></span>
+                                <div key={i} className="text-[10px] leading-tight">
+                                  <span className="font-semibold text-white/75">{airspaceLabel(sec)}</span>
+                                  <span className="text-white/75"> <AirspaceRange sector={sec} /></span>
                                 </div>
                               ))
                         )}
                         {typeof thermalInfo.precip === 'number' && thermalInfo.precip >= 0.1 && (
-                          <div className="text-[11px] text-sky-300">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
+                          <div className="text-[10px] text-white/75">{precipDescription(thermalInfo.precip, thermalInfo.weatherCode)}</div>
                         )}
                         {typeof thermalInfo.groundAmsl === 'number' && (
-                          <div className="text-[11px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} /> AMSL</div>
+                          <div className="text-[10px] text-white/75">Ground <Altitude metres={thermalInfo.groundAmsl} step={10} className="text-sky-500 hover:text-sky-400" /> AMSL</div>
                         )}
-                        {/* Wind line doubles as the wind-flow toggle: tap to show/
-                            hide the wind-flow overlay on the map. Turns sky-blue
-                            when the overlay is on. */}
+                        {/* Wind line doubles as the wind-flow toggle. */}
                         {tappedWind && (
                           <button
                             onClick={() => setShowWindOnThermal(v => !v)}
-                            className={`block text-left text-[11px] ${showWindOnThermal ? 'text-sky-300 font-semibold' : CLICKABLE}`}
+                            className={`block text-left text-[10px] ${showWindOnThermal ? 'text-sky-500 font-semibold' : CLICKABLE}`}
                             title="Show/hide wind flow on the map"
                           >
-                            Wind {liveWind ? 'Fcst ' : ''}{tappedWind.speedKt.toFixed(0)}kt <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(tappedWind.direction)}</span>{liveWind && <> | Live {Math.round(liveWind.speedKt)}kt <span className="text-sky-300 font-semibold tracking-wide">{liveWind.direction}</span></>}
+                            Wind {liveWind ? 'Fcst ' : ''}{fmtSpeed(tappedWind.speedKt, speedUnit, 0)} <span className="text-sky-500 font-semibold tracking-wide">{fmtDir(tappedWind.direction, dirMode)}</span>{liveWind && <> | Live {fmtSpeed(liveWind.speedKt, speedUnit, 0)} <span className="text-sky-500 font-semibold tracking-wide">{liveWind.directionDeg != null ? fmtDir(liveWind.directionDeg, dirMode) : liveWind.direction}</span></>}
                           </button>
                         )}
                       </>
-                    {/* Point actions — Chart / SkewT, then the base-map detail
-                        slider (right-aligned). (Airspace + wind-flow toggles live
-                        on the readout lines above.) */}
+                    <div className="pt-1">{forecastSlider}</div>
+                    {/* Point actions — they act on the tapped point, so they live in
+                        the readings zone, above the layer-section divider. */}
                     {thermalInfo.lat != null && thermalInfo.lon != null && (
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 mt-0.5 border-t border-white/10">
+                      <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                         {(meteogramEnabled || skewtEnabled) && (
-                          <button
-                            onClick={() => toggleScale()}
-                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
-                            title="Altitude scale for Chart & SkewT: PG working band vs full profile"
-                          >
-                            Scale <span className={`font-semibold ${fullScale ? 'text-sky-300' : 'text-white/40'}`}>{fullScale ? 'Full' : 'PG'}</span>
+                          <button onClick={() => toggleScale()} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="Altitude scale for Chart & SkewT: PG working band vs full profile">
+                            Scale <span className={`font-semibold ${fullScale ? 'text-sky-500' : 'text-white/40'}`}>{fullScale ? 'Full' : 'PG'}</span>
                           </button>
                         )}
                         {meteogramEnabled && (
-                          <button
-                            onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
-                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
-                            title="Thermal forecast chart for this point"
-                          >
+                          <button onClick={() => setChartPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="Thermal forecast chart for this point">
                             <LineChart className="w-3 h-3" /> Chart
                           </button>
                         )}
                         {skewtEnabled && (
-                          <button
-                            onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })}
-                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
-                            title="SkewT sounding for this point + time"
-                          >
+                          <button onClick={() => setSkewtPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl, time: currentTime })} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="SkewT sounding for this point + time">
                             <ChartLine className="w-3 h-3" /> SkewT
                           </button>
                         )}
                         {meteogramEnabled && (
-                          <button
-                            onClick={() => setRaspPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })}
-                            className={`flex items-center gap-1 text-[11px] ${CLICKABLE}`}
-                            title="RASP — winds & thermals aloft (time × altitude)"
-                          >
+                          <button onClick={() => setRaspPoint({ lat: thermalInfo.lat!, lon: thermalInfo.lon!, ground: thermalInfo.groundAmsl })} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="RASP — winds & thermals aloft (time × altitude)">
                             <Wind className="w-3 h-3" /> RASP
                           </button>
                         )}
-                        {basemapSlider}
+                      </div>
+                    )}
+                    {/* Layer section (Rain radar / Thermal strength, legend at its
+                        foot), then the Base map zone — same order as the wind map. */}
+                    {thermalInfo.lat != null && thermalInfo.lon != null && (
+                      <div className="pt-1 mt-0.5 border-t border-white/10 space-y-1.5">
+                        {scaleBlock}
+                        <div className="border-t border-white/10" />
+                        {mapSlider}
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="text-[11px] text-white/50">Tap map for a reading</div>
+                  <div className="text-[10px] text-white/75">Tap map for a reading</div>
                 )
               ) : (
                 sitesWindInfo ? (
                   <>
-                    <div className="text-[12px] font-bold leading-tight text-sky-400">{liveWind ? 'Fcst ' : ''}{sitesWindInfo.speed.toFixed(1)} kt</div>
-                    <div className="text-[11px] text-white/75">
-                      {sitesWindInfo.direction.toFixed(0)}° <span className="text-sky-300 font-semibold tracking-wide">{getCompassDirection(sitesWindInfo.direction)}</span>
-                    </div>
                     {liveWind && (
-                      <div className="text-[11px] text-sky-300">Live {Math.round(liveWind.speedKt)}kt <span className="font-semibold tracking-wide">{liveWind.direction}</span></div>
+                      <div className="text-[10px] text-white/75"><span className="font-semibold tracking-wide">Live</span> {fmtSpeed(liveWind.speedKt, speedUnit, 0)} <span className="font-semibold tracking-wide">{liveWind.directionDeg != null ? fmtDir(liveWind.directionDeg, dirMode) : liveWind.direction}</span></div>
                     )}
                     {typeof sitesWindInfo.groundAmsl === 'number' && (
-                      <div className="text-[11px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} /> AMSL</div>
+                      <div className="text-[10px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="text-sky-500 hover:text-sky-400" /> AMSL</div>
                     )}
-                    <div className="flex items-center pt-1 mt-0.5 border-t border-white/10">
-                      {basemapSlider}
+                    <div className="pt-1">{forecastSlider}</div>
+                    <div className="pt-1 mt-0.5 border-t border-white/10 space-y-1.5">
+                      {scaleBlock}
+                      <div className="border-t border-white/10" />
+                      {mapSlider}
                     </div>
                   </>
                 ) : (
-                  <div className="text-[11px] text-white/50">Tap map for a reading</div>
+                  <div className="text-[10px] text-white/75">Tap map for a reading</div>
                 )
               )}
             </div>
-            {((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (
-              <button
-                onClick={dismissReading}
-                className="text-white/50 hover:text-white/80 transition-colors shrink-0 mt-0.5"
-                title="Dismiss reading"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+            <button
+              onClick={dismissReading}
+              className="absolute top-2 right-2 text-white/50 hover:text-white/80 transition-colors"
+              title="Dismiss reading"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
         </div>
         )}
       </div>
 
-      {/* Collapsible "Key" legend pill (bottom-left). Collapsed = gradient swatch
-          + "Key"; expanded = a readable per-mode panel; tap panel or ✕ to hide. */}
-      {showLegend ? (
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowLegend(false); }}
-          className={`absolute ${isFullscreen ? 'bottom-[calc(2.75rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[2.75rem]'} left-3 z-30 text-left bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 max-w-[calc(100vw-1.5rem)]`}
-          title="Tap to hide legend"
-        >
-          {viewMode === 'thermal' ? (
-            <>
-              <div className="flex items-center justify-between gap-2.5 mb-1">
-                <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Thermal Strength</span>
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span
-                    onClick={(e) => { e.stopPropagation(); setShowThermalHelp(true); }}
-                    className="text-white/40 hover:text-white/80 transition-colors cursor-pointer"
-                    title="What do these readings mean?"
-                    role="button"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                  <X className="w-3.5 h-3.5 text-white/50" />
-                </span>
-              </div>
-              <ThermalStrengthLegend />
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-between gap-2.5 mb-1">
-                <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Forecast Data</span>
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span
-                    onClick={(e) => { e.stopPropagation(); setShowThermalHelp(true); }}
-                    className="text-white/40 hover:text-white/80 transition-colors cursor-pointer"
-                    title="How to read this map"
-                    role="button"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                  <X className="w-3.5 h-3.5 text-white/50" />
-                </span>
-              </div>
-              <div className="relative w-44 max-w-full">
-                <div className="h-2.5 w-full rounded-full" style={{ background: SPEED_LEGEND_CSS }} />
-                {sitesWindInfo && (
-                  <div
-                    className="absolute top-0 w-px bg-card shadow-[0_0_3px_rgba(255,255,255,0.8)]"
-                    style={{ left: `${Math.min(100, (sitesWindInfo.speed / 20) * 100)}%`, height: 'calc(100% + 2px)' }}
-                  />
-                )}
-              </div>
-              <div className="flex justify-between mt-1 w-44 max-w-full text-[10px] font-mono text-white/60 px-0.5">
-                <span>0</span><span>5</span><span>10</span><span>15</span><span>20+ kt</span>
-              </div>
-              {/* Site-type key. */}
-              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-white/75">
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white/50 shrink-0" /><span>{clubName}</span></div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-500 border border-white/50 shrink-0" /><span>Other</span></div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white/50 shrink-0" /><span>Restricted</span></div>
-                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white/50 shrink-0" /><span>Closed</span></div>
-              </div>
-            </>
-          )}
-        </button>
-      ) : (
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowLegend(true); }}
-          className={`absolute ${isFullscreen ? 'bottom-[calc(0.4rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[0.4rem]'} left-3 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1.5 pr-2.5 py-1 hover:bg-black/80 transition-colors`}
-          title="Show legend"
-        >
-          <span className="h-2 w-8 rounded-full" style={{ background: viewMode === 'thermal' ? THERMAL_LEGEND_CSS : SPEED_LEGEND_CSS }} />
-          <span className="text-[11px] text-white/80 font-medium">Key</span>
-        </button>
-      )}
+      {/* Map scale now lives in the tapped-point card (see scaleBlock); the old
+          bottom-left Key pill has been removed. */}
 
       {/* Scale bar. Shifts up when the scrubber tray is open. Left-justified with
-          the other bottom-left chrome (Key pill etc.); it sits a row above the
-          Key pill, so they don't collide. */}
+          the other bottom-left chrome. */}
       <div
         className="absolute left-3 z-20 transition-[bottom] duration-300 pointer-events-none"
-        style={{ bottom: trayOpen ? 104 : SCALE_BAR_BOTTOM_COLLAPSED }}
+        style={{ bottom: SCALE_BAR_BOTTOM_COLLAPSED }}
       >
         <MapScaleBar lat={mapTransform.lat} k={mapTransform.k} />
       </div>

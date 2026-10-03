@@ -59,6 +59,14 @@ export const SPEED_LEGEND_CSS = (() => {
   return `linear-gradient(to right, ${stops.join(', ')})`;
 })();
 
+// Shared slider look for the tapped-point card: a transparent native range over a
+// flat blue track bar, with a larger white thumb. Used by PLAY, OPACITY and MAP so
+// all three match. Pair with a `bg-sky-500/70` track bar behind the input.
+export const SLIDER_INPUT_CLS =
+  'relative w-full h-4 bg-transparent appearance-none cursor-pointer ' +
+  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow ' +
+  '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0';
+
 const PLAY_SPEEDS = [5000, 2500, 1250] as const;
 export type PlaySpeed = typeof PLAY_SPEEDS[number];
 export const nextSpeed = (current: PlaySpeed): PlaySpeed =>

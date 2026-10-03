@@ -62,6 +62,10 @@ interface ThermalCanvasProps {
   basemapIntensityRef?: React.MutableRefObject<number>;
   /** Live town-name labels toggle, forwarded to MapCanvas. */
   showLabelsRef?: React.MutableRefObject<boolean>;
+  /** Rain-radar overlay refs, forwarded to MapCanvas. */
+  radarEnabledRef?: React.MutableRefObject<boolean>;
+  radarOpacityRef?: React.MutableRefObject<number>;
+  radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
 }
 
 export const ThermalCanvas = memo(function ThermalCanvas({
@@ -70,6 +74,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
   basemapIntensityRef, showLabelsRef,
+  radarEnabledRef, radarOpacityRef, radarFrameRef,
 }: ThermalCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -145,6 +150,9 @@ export const ThermalCanvas = memo(function ThermalCanvas({
         if (res.overlay.rebuildTimeout) clearTimeout(res.overlay.rebuildTimeout);
       },
       draw: (c, res: { overlay: ReturnType<typeof createThermalOverlay>; field: ReturnType<typeof createCumulusField> }) => {
+        // Radar on → hide the thermal data overlay + cumulus so the rain reads
+        // over the bare basemap. Airspace, markers and tap-to-read stay.
+        if (radarEnabledRef?.current) return;
         maybeRebuildThermalOverlay(res.overlay, c.transform, c.transformRef, c.projection, currentTimeRef, thermalGrid, tuningRef.current);
         drawThermalOverlay(c.ctx, res.overlay, c.transform);
         rebuildCumulusField(res.field, res.overlay, c.transform);
@@ -158,6 +166,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     const windLayer: MapLayer<any> = {
       create: (w: number, h: number) => createParticlePool(w, h),
       draw: (c, p: ReturnType<typeof createParticlePool>) => {
+        if (radarEnabledRef?.current) return;
         updateAndDrawParticles(
           c.ctx, p, c.width, c.height, c.transform, c.projection,
           currentTimeRef.current, windGrid!, zoomSetpointsRef.current,
@@ -351,6 +360,9 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       pinnedCrosshairColor="rgb(249, 115, 22)"
       basemapIntensityRef={basemapIntensityRef}
       showLabelsRef={showLabelsRef}
+      radarEnabledRef={radarEnabledRef}
+      radarOpacityRef={radarOpacityRef}
+      radarFrameRef={radarFrameRef}
     />
   );
 });

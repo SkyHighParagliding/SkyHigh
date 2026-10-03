@@ -38,6 +38,10 @@ interface WindCanvasProps {
   basemapIntensityRef?: React.MutableRefObject<number>;
   /** Live town-name labels toggle, forwarded to MapCanvas. */
   showLabelsRef?: React.MutableRefObject<boolean>;
+  /** Rain-radar overlay refs, forwarded to MapCanvas. */
+  radarEnabledRef?: React.MutableRefObject<boolean>;
+  radarOpacityRef?: React.MutableRefObject<number>;
+  radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
 }
 
 export const WindCanvas = memo(function WindCanvas({
@@ -46,6 +50,7 @@ export const WindCanvas = memo(function WindCanvas({
   siteMarkers, onSiteClick, onWindInfoChange, dismissRef,
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, siteStatus, siteUpcomingClosureDates, basemapIntensityRef, showLabelsRef,
+  radarEnabledRef, radarOpacityRef, radarFrameRef,
 }: WindCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -95,6 +100,9 @@ export const WindCanvas = memo(function WindCanvas({
         if (o.rebuildTimeout) clearTimeout(o.rebuildTimeout);
       },
       draw: (c, o: ReturnType<typeof createSpeedOverlay>) => {
+        // Radar on → hide the wind data overlay so the rain reads over the bare
+        // basemap. Basemap, markers and tap-to-read stay (see layers C/D).
+        if (radarEnabledRef?.current) return;
         maybeRebuildOverlay(o, c.transform, c.transformRef, c.projection, currentTimeRef, windGrid);
         drawSpeedOverlay(c.ctx, o, c.transform);
       },
@@ -103,6 +111,7 @@ export const WindCanvas = memo(function WindCanvas({
     {
       create: (w: number, h: number) => createParticlePool(w, h),
       draw: (c, p: ReturnType<typeof createParticlePool>) => {
+        if (radarEnabledRef?.current) return;
         updateAndDrawParticles(c.ctx, p, c.width, c.height, c.transform, c.projection, currentTimeRef.current, windGrid, zoomSetpointsRef.current);
       },
     },
@@ -207,6 +216,9 @@ export const WindCanvas = memo(function WindCanvas({
       pinnedCrosshairColor="rgb(56, 189, 248)"
       basemapIntensityRef={basemapIntensityRef}
       showLabelsRef={showLabelsRef}
+      radarEnabledRef={radarEnabledRef}
+      radarOpacityRef={radarOpacityRef}
+      radarFrameRef={radarFrameRef}
     />
   );
 });
