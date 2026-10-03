@@ -598,16 +598,17 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   );
 
   // Forecast time scrubber — moved out of the bottom tray into the card. Same look
-  // as the other sliders. The label toggles Today↔7-day (wind only; thermal is
-  // today-only). No play button or time readout — the time is in the card header.
+  // as the other sliders. The label is the span the slider covers and toggles
+  // 1-day↔7-day (wind only; thermal is 1-day). No play button or time readout —
+  // the time is in the card header.
   const forecastSlider = (
     <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()} title="Forecast time — drag to scrub">
       {viewMode === 'wind' ? (
-        <button onClick={() => setMapMode(m => (m === 'today' ? '7day' : 'today'))} className="text-[10px] tracking-wide shrink-0 w-14 text-left text-sky-500 hover:text-sky-400" title="Tap to switch Today / 7-day">
-          {mapMode === '7day' ? '7 Days' : 'Today'}
+        <button onClick={() => setMapMode(m => (m === 'today' ? '7day' : 'today'))} className="text-[10px] tracking-wide shrink-0 w-14 text-left text-sky-500 hover:text-sky-400" title="Tap to switch 1-day / 7-day forecast span">
+          {mapMode === '7day' ? '7 Days' : '1 Day'}
         </button>
       ) : (
-        <span className="text-[10px] tracking-wide shrink-0 w-14 text-left text-white/75">Today</span>
+        <span className="text-[10px] tracking-wide shrink-0 w-14 text-left text-white/75">1 Day</span>
       )}
       <div className="relative flex-1 flex items-center">
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-sky-500/70 pointer-events-none" />
@@ -636,6 +637,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       use24h={use24h}
       onToggle24h={() => setUse24h(v => !v)}
       pointMmhr={radarPoint ? radarPoint.mmhr : null}
+      onHelp={() => setShowThermalHelp(true)}
     />
   ) : null;
 
@@ -1111,7 +1113,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       </div>
 
       {/* Thermal help modal */}
-      {showThermalHelp && <ThermalHelpModal variant={viewMode === 'thermal' ? 'map' : 'wind'} onClose={() => setShowThermalHelp(false)} />}
+      {showThermalHelp && <ThermalHelpModal variant={radarEnabled ? 'radar' : viewMode === 'thermal' ? 'map' : 'wind'} onClose={() => setShowThermalHelp(false)} />}
 
       {/* Point-aware Chart popup — the meteogram for the tapped point. */}
       {chartPoint && (

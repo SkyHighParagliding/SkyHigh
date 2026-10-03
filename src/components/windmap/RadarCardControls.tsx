@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import type { RadarFrame } from '@/hooks/useRainviewer';
 import { formatClockTime } from '@/lib/dateUtils';
 import { formatMmhr } from './radarTiles';
@@ -19,6 +20,8 @@ interface RadarCardControlsProps {
   onToggle24h: () => void;
   /** Sampled rain rate (mm/hr) at the tapped point, or null for no rain. */
   pointMmhr: number | null;
+  /** Open the rain-radar help popup. */
+  onHelp: () => void;
 }
 
 /**
@@ -30,7 +33,7 @@ interface RadarCardControlsProps {
  * caption.
  */
 export function RadarCardControls(props: RadarCardControlsProps) {
-  const { frames, index, onIndexChange, nowIndex, isPlaying, onPlayToggle, loading, error, use24h, onToggle24h, pointMmhr } = props;
+  const { frames, index, onIndexChange, nowIndex, isPlaying, onPlayToggle, loading, error, use24h, onToggle24h, pointMmhr, onHelp } = props;
 
   const frame = frames[index];
   const isForecast = frame?.kind === 'nowcast';
@@ -45,7 +48,10 @@ export function RadarCardControls(props: RadarCardControlsProps) {
 
   return (
     <div className="w-full space-y-1.5" onPointerDown={(e) => e.stopPropagation()}>
-      <div className="text-[10px] text-white/75 font-semibold tracking-wide">Rain radar</div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] text-white/75 font-semibold tracking-wide">Rain radar</span>
+        <button onClick={onHelp} className="text-white/40 hover:text-white/80 transition-colors" title="How to read the rain radar"><Info className="w-3.5 h-3.5" /></button>
+      </div>
       {/* Status: Live/Forecast with its time right alongside (like "Fcst <time>").
           The time toggles the 12/24h clock, same as the header time. */}
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { RADAR_LEGEND_CSS } from './radarTiles';
 
 /** Cumulus glyph — the exact three-dome-on-a-flat-base shape the map draws (traceCumulus). */
 const CumulusGlyph = () => (
@@ -22,11 +23,12 @@ const TriangleGlyph = ({ filled }: { filled: boolean }) => (
   </svg>
 );
 
-export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => void; variant?: 'map' | 'wind' | 'chart' | 'skewt' }) {
+export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => void; variant?: 'map' | 'wind' | 'chart' | 'skewt' | 'radar' }) {
   const title =
     variant === 'skewt' ? 'Reading the SkewT'
     : variant === 'chart' ? 'Reading the Meteogram'
     : variant === 'wind' ? 'Reading the Wind Map'
+    : variant === 'radar' ? 'Reading the Rain Radar'
     : 'Reading the Thermal Map';
 
   return createPortal(
@@ -192,19 +194,40 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
           </section>
           </>)}
 
+          {/* ── RAIN RADAR ───────────────────────────────────────────────── */}
+          {variant === 'radar' && (<>
+            <section>
+              <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">What it shows</div>
+              <p className="text-white/70">Live rain radar over the base map — the last hour of observed scans plus a short nowcast. <span className="text-white/90">Colour is rain intensity.</span></p>
+              <div className="mt-2 h-1.5 w-full rounded-full" style={{ background: RADAR_LEGEND_CSS }} />
+              <div className="flex justify-between mt-1 text-[10px] font-mono text-white/50"><span>Light</span><span>Moderate</span><span>Heavy</span></div>
+            </section>
+            <section>
+              <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">Live vs forecast</div>
+              <p className="text-white/70">Press <span className="text-white/90">Play</span> to run the loop: observed scans (sky on the timeline) into a ~30-minute <span className="text-white/90">nowcast</span> (amber). The <span className="text-white/90">Live / Forecast</span> word by the time says which you're viewing.</p>
+            </section>
+            <section>
+              <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">Tap a point</div>
+              <p className="text-white/70">Reads the approximate <span className="text-white/90">rain rate (mm/hr)</span> at that spot and marks it on the scale — inferred from the radar colour, so a close estimate, not a gauge. <span className="text-white/90">Opacity</span> fades the overlay; <span className="text-white/90">Base map</span> darkens the map underneath.</p>
+            </section>
+            <section className="border-t border-white/10 pt-3">
+              <p className="text-white/40 text-[10px]">Radar © RainViewer. A nowcast is a forecast — always make your own assessment before flying.</p>
+            </section>
+          </>)}
+
+          {(variant === 'map' || variant === 'wind') && (
           <section className="border-t border-white/10 pt-3 space-y-1.5">
             {variant === 'map' && (
               <p className="text-white/40 text-[10px]">Data source: ECMWF forecast via Open-Meteo, updated daily. Grid ~0.09° (~10km). A forecast tool — always make your own assessment before flying.</p>
             )}
-            {(variant === 'map' || variant === 'wind') && (
-              <p className="text-white/40 text-[10px]">
-                Ground elevation: <span className="text-white/55">Mapzen/AWS Terrain Tiles</span>. Australian data from the
-                {' '}<span className="text-white/55">DEM derived from LiDAR 5 Metre Grid</span> — © Commonwealth of Australia
-                {' '}(Geoscience Australia) 2017, used under{' '}
-                <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline hover:text-white/70">CC BY 4.0</a>.
-              </p>
-            )}
+            <p className="text-white/40 text-[10px]">
+              Ground elevation: <span className="text-white/55">Mapzen/AWS Terrain Tiles</span>. Australian data from the
+              {' '}<span className="text-white/55">DEM derived from LiDAR 5 Metre Grid</span> — © Commonwealth of Australia
+              {' '}(Geoscience Australia) 2017, used under{' '}
+              <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline hover:text-white/70">CC BY 4.0</a>.
+            </p>
           </section>
+          )}
         </div>
       </div>
     </div>,
