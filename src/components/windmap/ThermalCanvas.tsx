@@ -37,6 +37,10 @@ interface ThermalCanvasProps {
   /** Filled with a function that dismisses the tapped-point readout (clears the
    *  pin so the render loop stops repainting it, and emits null). */
   dismissRef?: React.MutableRefObject<(() => void) | null>;
+  /** A tapped point carried in from another layer (lat/lon). When present on
+   *  mount the pin is dropped there so switching Wind↔Thermal doesn't force a
+   *  re-tap. A ref (not a prop value) so it can't churn the memoised canvas. */
+  initialPinGeoRef?: React.MutableRefObject<{ lat: number; lon: number } | null>;
   /** A single airspace GeoJSON feature to outline on the map (the conflicting
    *  sector the pilot tapped), or null to draw none. */
   airspaceFeature?: GeoJSON.Feature | null;
@@ -70,7 +74,7 @@ interface ThermalCanvasProps {
 
 export const ThermalCanvas = memo(function ThermalCanvas({
   thermalGrid, currentTime, siteLat, siteLon,
-  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, airspaceFeature, allAirspace,
+  siteMarkers, onSiteClick, onThermalInfoChange, dismissRef, initialPinGeoRef, airspaceFeature, allAirspace,
   sizeKey, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
   basemapIntensityRef, showLabelsRef,
@@ -336,6 +340,23 @@ export const ThermalCanvas = memo(function ThermalCanvas({
     };
   }
 
+  // Carry a tapped point in from another layer: once on mount, drop the pin at
+  // the geo point the previous layer was reading. Retried via rAF because the
+  // projection isn't ready on the very first commit (MapCanvas builds it in its
+  // own mount effect). Fires once, so a later tap/pan is never overridden.
+  const mapSetPinGeoRef = useRef<((lat: number, lon: number) => boolean) | null>(null);
+  useEffect(() => {
+    const geo = initialPinGeoRef?.current;
+    if (!geo) return;
+    let raf = 0;
+    const trySeed = () => {
+      if (mapSetPinGeoRef.current?.(geo.lat, geo.lon)) return;
+      raf = requestAnimationFrame(trySeed);
+    };
+    raf = requestAnimationFrame(trySeed);
+    return () => cancelAnimationFrame(raf);
+  }, [initialPinGeoRef]);
+
   return (
     <MapCanvas
       bounds={bounds}
@@ -353,6 +374,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       markerHitSuppressesPin={true}
       onPinChange={handlePinChange}
       clearPinRef={mapClearPinRef}
+      setPinGeoRef={mapSetPinGeoRef}
       projectionRef={projectionRef}
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-[#e8e8e8] cursor-crosshair touch-none overflow-hidden"

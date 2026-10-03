@@ -57,6 +57,11 @@ interface SitesWindMapProps {
  *  live wind alongside the forecast. Tunable. */
 const LIVE_WIND_RADIUS_KM = 5;
 
+/** The tapped-point readout each canvas emits. Shared by the state and the
+ *  carried-point handlers so they can't drift. */
+type WindTapInfo = { speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number };
+type ThermalTapInfo = { cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number };
+
 export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
@@ -74,11 +79,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
   const [selectedSite, setSelectedSite] = useState<{ site: SiteMarker; x: number; y: number } | null>(null);
-  const [sitesWindInfo, setSitesWindInfo] = useState<{ speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
+  const [sitesWindInfo, setSitesWindInfo] = useState<WindTapInfo | null>(null);
   // Live wind from the nearest live-reporting site within LIVE_WIND_RADIUS_KM of
   // the tapped point — only when the scrubber sits on "now" (see effect below).
   const [liveWind, setLiveWind] = useState<{ speedKt: number; direction: string; directionDeg?: number; siteName: string } | null>(null);
-  const [thermalInfo, setThermalInfo] = useState<{ cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number } | null>(null);
+  const [thermalInfo, setThermalInfo] = useState<ThermalTapInfo | null>(null);
   // Mirror the renderer's overcast rule so the tapped-point strength label agrees
   // with the grey sheet (a low-cloud deck suppresses thermals — don't say "Good").
   const overcastOnsetPct = Number(settings.thermalOvercastOnsetPct) || 70;
@@ -195,6 +200,25 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // crosshair), otherwise the render loop repaints it.
   const dismissThermalRef = useRef<(() => void) | null>(null);
   const dismissWindRef = useRef<(() => void) | null>(null);
+
+  // The last tapped point (lat/lon), carried across a Wind↔Thermal layer switch
+  // so the pilot doesn't have to re-tap the same spot. A ref, not state: the
+  // incoming canvas reads it once on mount (see its initialPinGeoRef), and the
+  // 10fps readout updating it must not re-render the map. Cleared on an explicit
+  // dismiss (✕) so the pin doesn't resurrect on the next switch. Wind↔Radar and
+  // Thermal↔Radar already keep the point (same canvas stays mounted).
+  const carriedGeoRef = useRef<{ lat: number; lon: number } | null>(null);
+  const rememberGeo = (info: { lat?: number; lon?: number } | null) => {
+    if (info && info.lat != null && info.lon != null) carriedGeoRef.current = { lat: info.lat, lon: info.lon };
+  };
+  const handleWindInfo = useCallback((info: WindTapInfo | null) => {
+    setSitesWindInfo(info);
+    rememberGeo(info);
+  }, []);
+  const handleThermalInfo = useCallback((info: ThermalTapInfo | null) => {
+    setThermalInfo(info);
+    rememberGeo(info);
+  }, []);
 
   // Airspace conflict warning (thermal mode): same zones + logic as the site panel.
   const [zones, setZones] = useState<GeoJSON.FeatureCollection | null>(null);
@@ -409,10 +433,20 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     // in an either/or ternary, so the incoming one would otherwise initialise
     // from the admin default and throw away wherever the pilot had panned to.
     if (liveViewRef.current) setViewportSnapshot(liveViewRef.current);
+    // A true Wind↔Thermal swap unmounts one canvas and mounts the other. Clear
+    // both readouts so the incoming layer starts clean: it re-emits at the
+    // carried point if one is pinned (see initialPinGeoRef), otherwise the box
+    // stays hidden — never a stale card from the layer we just left. Guarded on
+    // an actual mode change so a radar→same-mode return (no remount, pin still
+    // live) keeps its reading.
+    if (mode !== viewMode) {
+      setSitesWindInfo(null);
+      setThermalInfo(null);
+    }
     setViewMode(mode);
     setSelectedSite(null);
     if (mode === 'thermal') setMapMode('today');
-  }, []);
+  }, [viewMode]);
 
   // Thermal data at the selected site, live-updating with currentTime
   const thermalAtSite = useMemo(() => {
@@ -532,6 +566,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // pin + crosshair) so the render loop stops repainting it, and clears the
   // local readout state that drives the box.
   const dismissReading = useCallback(() => {
+    // Explicit dismiss clears the carried point too, so switching layers after a
+    // ✕ starts clean rather than re-dropping the pin.
+    carriedGeoRef.current = null;
     if (viewMode === 'thermal') {
       dismissThermalRef.current?.();
       setThermalInfo(null);
@@ -737,8 +774,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
                 siteLon={centerLon}
                 siteMarkers={sites}
                 onSiteClick={handleSiteClick}
-                onThermalInfoChange={setThermalInfo}
+                onThermalInfoChange={handleThermalInfo}
                 dismissRef={dismissThermalRef}
+                initialPinGeoRef={carriedGeoRef}
                 airspaceFeature={shownAirspace}
                 allAirspace={showAllAirspace ? zones : null}
                 sizeKey={canvasSizeKey}
@@ -772,8 +810,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
               zoomSetpoints={zoomSetpoints}
               siteMarkers={sites}
               onSiteClick={handleSiteClick}
-              onWindInfoChange={setSitesWindInfo}
+              onWindInfoChange={handleWindInfo}
               dismissRef={dismissWindRef}
+              initialPinGeoRef={carriedGeoRef}
               sizeKey={canvasSizeKey}
               initialZoomK={INITIAL_K}
               savedCenterLat={viewLat}

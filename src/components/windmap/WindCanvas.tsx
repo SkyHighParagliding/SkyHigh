@@ -26,6 +26,10 @@ interface WindCanvasProps {
    *  pin so the render loop stops repainting it, and emits null). Mirrors the
    *  ThermalCanvas dismiss pattern. */
   dismissRef?: React.MutableRefObject<(() => void) | null>;
+  /** A tapped point carried in from another layer (lat/lon). When present on
+   *  mount the pin is dropped there so switching Wind↔Thermal doesn't force a
+   *  re-tap. A ref (not a prop value) so it can't churn the memoised canvas. */
+  initialPinGeoRef?: React.MutableRefObject<{ lat: number; lon: number } | null>;
   sizeKey?: number;
   initialZoomK?: number;
   savedCenterLat?: number;
@@ -47,7 +51,7 @@ interface WindCanvasProps {
 export const WindCanvas = memo(function WindCanvas({
   windGrid, currentTime, siteLat, siteLon, siteName,
   onZoomChange, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
-  siteMarkers, onSiteClick, onWindInfoChange, dismissRef,
+  siteMarkers, onSiteClick, onWindInfoChange, dismissRef, initialPinGeoRef,
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, siteStatus, siteUpcomingClosureDates, basemapIntensityRef, showLabelsRef,
   radarEnabledRef, radarOpacityRef, radarFrameRef,
@@ -190,6 +194,23 @@ export const WindCanvas = memo(function WindCanvas({
     };
   }
 
+  // Carry a tapped point in from another layer: once on mount, drop the pin at
+  // the geo point the previous layer was reading. Retried via rAF because the
+  // projection isn't ready on the very first commit (MapCanvas builds it in its
+  // own mount effect). Fires once, so a later tap/pan is never overridden.
+  const mapSetPinGeoRef = useRef<((lat: number, lon: number) => boolean) | null>(null);
+  useEffect(() => {
+    const geo = initialPinGeoRef?.current;
+    if (!geo) return;
+    let raf = 0;
+    const trySeed = () => {
+      if (mapSetPinGeoRef.current?.(geo.lat, geo.lon)) return;
+      raf = requestAnimationFrame(trySeed);
+    };
+    raf = requestAnimationFrame(trySeed);
+    return () => cancelAnimationFrame(raf);
+  }, [initialPinGeoRef]);
+
   return (
     <MapCanvas
       bounds={bounds}
@@ -209,6 +230,7 @@ export const WindCanvas = memo(function WindCanvas({
       markerHitSuppressesPin={false}
       onPinChange={handlePinChange}
       clearPinRef={mapClearPinRef}
+      setPinGeoRef={mapSetPinGeoRef}
       projectionRef={projectionRef}
       transformRef={transformRef}
       containerClassName="relative w-full h-full bg-black cursor-crosshair touch-none overflow-hidden"

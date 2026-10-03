@@ -82,6 +82,10 @@ interface MapCanvasProps {
    *  consumer's own "dismiss" affordance (e.g. an ✕ on the readout box) can drop
    *  the pin — otherwise the pin persists and the readout keeps repainting. */
   clearPinRef?: React.MutableRefObject<(() => void) | null>;
+  /** MapCanvas fills this with a function that drops the pin at a geographic point
+   *  (lat, lon), projecting through the live transform and firing onPinChange — so a
+   *  consumer can carry a tapped point across a canvas swap without a re-tap. */
+  setPinGeoRef?: React.MutableRefObject<((lat: number, lon: number) => boolean) | null>;
   /** Filled in by MapCanvas so consumers can invert screen coords themselves. */
   projectionRef?: React.MutableRefObject<GeoProjection | null>;
   transformRef?: React.MutableRefObject<ZoomTransform>;
@@ -199,6 +203,7 @@ export const MapCanvas = memo(function MapCanvas({
   markerHitSuppressesPin,
   onPinChange,
   clearPinRef,
+  setPinGeoRef,
   projectionRef: projectionRefProp,
   transformRef: transformRefProp,
   containerClassName,
@@ -228,6 +233,28 @@ export const MapCanvas = memo(function MapCanvas({
   const internalTransformRef = useRef<ZoomTransform>(zoomIdentity);
   const projectionRef = projectionRefProp ?? internalProjectionRef;
   const transformRef = transformRefProp ?? internalTransformRef;
+
+  // Expose a "drop pin at this geo point" to consumers, so a tapped point can be
+  // carried across a Wind↔Thermal canvas swap without re-tapping. Projects the
+  // lat/lon through the live transform, sets the visual reticle, and fires
+  // onPinChange so the readout layer samples there. Returns false if the
+  // projection isn't ready yet (the caller retries on the next frame).
+  useEffect(() => {
+    if (!setPinGeoRef) return;
+    setPinGeoRef.current = (lat: number, lon: number) => {
+      const proj = projectionRef.current;
+      const t = transformRef.current;
+      if (!proj) return false;
+      const p = proj([lon, lat]);
+      if (!p) return false;
+      const [x, y] = t.apply(p);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+      setPinnedCrosshair({ x, y });
+      onPinChange?.({ x, y });
+      return true;
+    };
+    return () => { setPinGeoRef.current = null; };
+  }, [setPinGeoRef, onPinChange, projectionRef, transformRef]);
 
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
