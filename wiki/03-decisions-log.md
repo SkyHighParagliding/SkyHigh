@@ -724,6 +724,68 @@ rendering choice (DECISION-004).
 
 ---
 
+## DECISION-016: Rain Radar as a 3rd Peer Layer (One Segmented Selector, Not a 4th State)
+
+**Date:** 2026-10-03
+**Owner:** Jon Pamment
+**Status:** ✅ Locked (built on branch `feat/rain-radar-layer`, pushed; **not yet merged to `main`** → not in prod)
+
+### Context
+Pilots wanted live rain on the `/sites` wind/thermal map. The map already had two
+modes (wind, thermal); adding radar naïvely produced *four* states (wind/thermal ×
+radar on/off) with a mode pill plus a radar toggle — two controls answering what is
+really one question: "what am I looking at right now?" Rain and heavy cloud also
+render in similar blues, so a radar overlay *on top of* the thermal/wind overlay
+clashed badly.
+
+### Options considered
+- **A — Keep radar as an overlay toggle on each mode (4 states).** Familiar, but two
+  controls for one decision, the blue-on-blue colour clash, and an awkward card with
+  radar controls bolted onto the wind/thermal panel.
+- **B — Treat Wind | Thermal | Radar as three mutually-exclusive peers, chosen by one
+  segmented pill on the map; suppress the wind/thermal overlay while radar is active
+  (basemap stays).** One control, no colour clash, each layer gets a clean dedicated
+  card panel. ✅ **Chosen.**
+
+### Chosen: B
+A generic `LayerSelector<T>` segmented control replaces the old mode pill. Internal
+state stays `viewMode:'wind'|'thermal'` + `radarEnabled:boolean`, derived to
+`activeLayer = radarEnabled ? 'radar' : viewMode`, so radar reuses whichever canvas is
+already mounted (no third canvas). The wind/thermal overlay draw is gated off while
+radar is on (`radarEnabledRef`), leaving only basemap + radar — which removed the
+blue-on-blue clash entirely. Degrades to two segments if thermal is feature-flagged off.
+
+Radar data is **RainViewer** (free, Victoria-covered): ~1h observed past + ~30min
+nowcast, drawn in the shared `MapCanvas` d3-tile loop. RainViewer radar caps at **z7**
+(z8+ returns a "not supported" placeholder) while the map zooms to z20, so tiles are
+**overzoomed** from the z7 ancestor (crop sub-region). Real→Forecast is explicit: a
+LIVE/FORECAST word, a two-tone timeline (sky = observed, amber = nowcast) with a "now"
+tick, and a per-point `≈ X mm/hr` estimate sampled from the tile pixel colour
+(Marshall-Palmer-shaped, `positionToMmhr`).
+
+Alongside, the tapped-point card was rebuilt to a single **style system** so all three
+panels look pre-designed: all text 10px; `white/75` = static, `sky-500`/`sky-400` =
+tappable; legend = `h-1.5` full-width gradient + white tapped-point marker + white/75
+mono labels; `border-t border-white/10` zone dividers; tap-to-cycle direction (181↔S)
+and speed (Kt→MPH→Kph); tap-to-toggle 12/24h clock; shared slider style
+(`SLIDER_INPUT_CLS`). The forecast-scrubber label was renamed Today → **"1 Day"/"7 Days"**
+(it spans several days). Each layer's legend/scale swaps in with its layer, and every
+panel has an (i) help popup.
+
+New files: `windmap/LayerSelector.tsx`, `windmap/RadarCardControls.tsx`,
+`windmap/radarTiles.ts`, `hooks/useRainviewer.ts`.
+
+### Reversibility
+Medium-easy. Radar is additive; removing the `'radar'` branch of `activeLayer`, the
+selector's radar segment, and the four new files reverts to the 2-mode map with no
+schema/data impact (RainViewer is a client-side fetch, nothing persisted server-side).
+The card restyle is cosmetic and independent. Honour RainViewer attribution in the card.
+
+**Confirms:** Builds on the Canvas+D3 rendering choice (DECISION-004) and the base-map
+legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -742,6 +804,7 @@ rendering choice (DECISION-004).
 | 013 | Baked raster land mask | One generated artifact replaces two drifted hand-traced rings; Western Port / Phillip Is. / the Prom now real geometry; +2.1% points, same tile count | 2026-09-14 | ✅ Locked |
 | 014 | Remove white-label engine | Native single-club; `TemplateContext`/template registry deleted, palette rewritten to semantic tokens | 2026-09-15 | ✅ Locked |
 | 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
+| 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system | 2026-10-03 | ✅ Locked (branch, not merged) |
 
 ---
 

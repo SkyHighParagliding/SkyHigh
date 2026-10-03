@@ -1,11 +1,94 @@
-# RESUME_HERE — Last updated: 2026-09-26 (session 68)
+# RESUME_HERE — Last updated: 2026-10-03 (session 72)
 
 ## Project: SkyHigh
-## Status: Active — on `main` (== origin/main). Two fixes shipped + prod-verified this session.
+## Status: Active — on feature branch `feat/rain-radar-layer` (pushed to origin, **NOT merged to main**). Railway auto-deploys `main` only, so radar is not live yet.
 
 ```
-branch: main   (== origin/main; Railway auto-deploys main)
+branch: feat/rain-radar-layer   (pushed, upstream set; main is 2 commits behind this branch)
+PR: https://github.com/SkyHighParagliding/SkyHigh/pull/new/feat/rain-radar-layer
 ```
+
+## Session 72 (2026-10-03) — Rain radar as a 3rd peer layer + tapped-point card redesign (`1691857` + `b603bcc`, pushed)
+
+Added a **RainViewer rain-radar overlay** to the wind/thermal map (`/sites`) and, in the
+process, reorganised the whole map into **three peer layers — Wind | Thermal | Radar —
+selected by one segmented pill on the map**, plus a from-scratch style system for the
+tapped-point card so all three panels read as if one style guide preceded them.
+`tsc --noEmit` clean; all 3 panels + selector + (i) explainers visually verified on dev.
+
+**Branch is pushed but NOT merged** — radar won't reach prod until this merges to `main`.
+Open the PR link above (or `git checkout main; git merge feat/rain-radar-layer`) when ready.
+
+### What shipped
+- **RainViewer overlay** — ~1h observed history + ~30min nowcast, Real→Forecast made
+  explicit (LIVE/FORECAST word, two-tone timeline sky=observed / amber=nowcast, "now" tick).
+  Drawn in the shared `MapCanvas` d3-tile loop; **overzoom from z7** (RainViewer radar caps
+  at z7, map goes to z20 → fetch z7 ancestor, crop sub-region). Rain/cloud colour clash
+  solved by **suppressing the wind/thermal overlay when radar is on** (basemap stays).
+- **3-layer model** — new generic `LayerSelector<T>` segmented control replaces the old
+  2-state mode pill on the map. Internal state kept as `viewMode:'wind'|'thermal'` +
+  `radarEnabled:boolean`; `activeLayer = radarEnabled ? 'radar' : viewMode`. Radar reuses
+  whichever canvas is mounted. Degrades to 2 segments if thermal is flagged off.
+- **Tapped-point card redesign** — one style system across all 3 panels: all text 10px;
+  `white/75` = static, `sky-500`/hover `sky-400` = tappable; legend = `h-1.5` full-width
+  gradient + white tapped-point marker + white/75 mono labels; `border-t border-white/10`
+  dividers; direction/speed are tap-to-cycle (181↔S, Kt→MPH→Kph); clock is tap-to-toggle
+  12/24h; sliders share `SLIDER_INPUT_CLS`. Forecast scrubber label renamed Today→**"1 Day"/
+  "7 Days"** (it spans multiple days). Rain-radar scale swaps into the legend when radar on.
+  Every panel now has an (i) help popup (radar one added this session).
+
+### New files
+- `src/components/windmap/LayerSelector.tsx` — generic segmented layer selector
+- `src/components/windmap/RadarCardControls.tsx` — radar status + Play + two-tone timeline
+- `src/components/windmap/radarTiles.ts` — tile URL, legend CSS, `positionToMmhr`, `sampleRadarAt`
+- `src/hooks/useRainviewer.ts` — react-query fetch of past+nowcast frames (5-min refetch)
+
+### Touched
+`SitesWindMap.tsx` (hub: state, card ternary, layer selector, sampling), `MapCanvas.tsx`
+(radar draw + overzoom), `WindCanvas.tsx`/`ThermalCanvas.tsx` (gate overlay on radar),
+`ThermalLegend.tsx` (`marks`/`wstar` props), `ThermalHelpModal.tsx` (`variant='radar'`),
+`useWindPlayback.ts` (`seekTo`, `use24h`), `dateUtils.ts` (`formatClockTime`),
+`windMapTypes.ts` (`SLIDER_INPUT_CLS`). See DECISION-016.
+
+### Not touched / left as-is
+`ModeSwitchPill`/`WindMapModeToggle`/`WindMapScrubberTray` kept — a review flagged them
+as dead but grep confirms `WindMapProto.tsx` + `SiteThermalPanel.tsx` still use them.
+Pre-existing uncommitted files untouched: `server/data/siteguide_*`, `ecmwf-strip-after.png`.
+
+## Session 71 (2026-09-28) — RASP polish from Jon's screenshots (commit `1c0dc9e`, pushed)
+
+Two changes on the RASP / tapped-point chart family. `tsc --noEmit` clean.
+**Not visually verified against live data** — API :3001 was 503 (grid not ready) at
+commit time. Next time the grid is up: tap a point → RASP, eyeball the rounded
+blob peaks; tune the Catmull-Rom `alpha` in `closedSpline` if a tip still looks off.
+
+1. **Smoothed the W\* blob tips.** The side tips were cusps: each band was drawn as
+   two separate splines (top via `smoothLine`, bottom via `monotoneSegments`) meeting
+   at the taper vertex at an angle. Fix: new **`closedSpline(pts, alpha=0.5)`** in
+   `src/lib/spline.ts` (centripetal Catmull-Rom over a non-monotone **closed loop**).
+   `RaspChart.tsx` now builds each band outline as ONE loop (top L→R + bottom R→L,
+   dropping the duplicated tip vertices where the ends taper) and renders it with
+   `closedSpline` → tips round tangentially. Single-hour band still draws its rect;
+   BL Top / Cu Base / cloud lines untouched.
+2. **PG/Full toggle moved onto the displays.** Jon wanted to flip scale on the chart
+   he's looking at, not the tap card. New shared **`src/components/weather/ScaleToggle.tsx`**
+   (segmented PG|Full pill) added to the header of all three modals — `PointMeteogramModal`,
+   `SkewTModal`, `RaspModal` — wired via a new `onToggleScale` prop from **both**
+   `SiteThermalPanel.tsx` and `SitesWindMap.tsx` → same `useChartScale` state (still
+   localStorage-shared across views/maps). **Tap-card toggle RETAINED** (Jon said
+   "copy/move"; kept as copy — he may still ask to remove it). RASP caption updated
+   to "…up top".
+
+**Note:** botched the first commit's message (PowerShell here-string via the bash
+shell left stray `@` lines) — amended + `--force-with-lease` to `main` (`0cf6364`→`1c0dc9e`).
+
+## Session 70 (2026-09-28) — PG/Full scale toggle + RASP view first shipped
+`19f609b` (TASK-METEO-001) + `afaebdb` (TASK-METEO-002). See `memory/meteogram-scale-and-rasp.md`.
+Session 71 above is the polish pass on this.
+
+## Session 69 (2026-09-27) — Flowerdale webcams
+Live N/S camera panel below the 7-day outlook (Ventusky source, club owns the cameras).
+See `memory/flowerdale-webcams.md`.
 
 ## Session 68 (2026-09-26) — weather-icon "sun over rain" fix + ECMWF strip enhancement
 
