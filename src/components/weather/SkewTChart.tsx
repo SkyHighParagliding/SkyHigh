@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUnits } from '@/hooks/useUnits';
+import { useSettings } from '@/contexts/SettingsContext';
 import { getCompassDirection } from '@/components/windMapTypes';
 import { lclPressureTemp, liftParcel } from '../../../shared/parcel';
 import { openSpline } from '@/lib/spline';
@@ -58,6 +59,12 @@ export function SkewTChart({ hour, groundAmsl, onReadout, fullScale = false }: {
   fullScale?: boolean;
 }) {
   const { units, toggleUnits } = useUnits();
+  const { settings } = useSettings();
+  // Overheat threshold (°C): how much warmer than the environment the parcel must
+  // stay to count as still rising. 0 = break-even (classic thermal top); a couple
+  // of degrees models the buoyancy real thermals need, lowering the top. Admin →
+  // Forecast → Thermal Thresholds → "SkewT trigger overheat".
+  const overheatC = Math.max(0, parseFloat(String(settings.skewtOverheatC)) || 0);
   const [svgW, setSvgW] = useState(360);
   const svgRef = useRef<SVGSVGElement>(null);
   const [triggerT, setTriggerT] = useState<number | null>(null); // null = follow forecast T2m
@@ -83,27 +90,37 @@ export function SkewTChart({ hour, groundAmsl, onReadout, fullScale = false }: {
 
   const trigT = triggerT ?? sfc.t;
 
-  /** Parcel ascent from the surface at temperature `trig` → thermal top + LCL. */
+  /** Parcel ascent from the surface at temperature `trig` → thermal top + LCL.
+   *  The top is where the parcel's temperature excess over the environment drops
+   *  below `overheatC` (not break-even), so a non-zero overheat gives a lower,
+   *  more realistic top — modelling the buoyancy real thermals need to keep rising. */
   const scanTop = (trig: number) => {
+    const lclZofP = (p: number) => interpAt(pts, Math.min(p, pBot), 'z');
     const { pLcl } = lclPressureTemp(pBot, trig, sfc.td);
     let topP = P_SCAN_TOP, topZ = interpAt(pts, P_SCAN_TOP, 'z');
-    let prevP = pBot, prevDiff = trig - sfc.t;
+    // "excess" = parcel−environment temp, measured relative to the required
+    // overheat. The surface parcel must already exceed the environment by
+    // `overheatC` or no thermal develops (top pinned at the surface).
+    let prevP = pBot, prevExcess = (trig - sfc.t) - overheatC;
+    if (prevExcess < 0) {
+      return { pLcl, lclZ: lclZofP(pLcl), topP: pBot, topZ: ground, cloud: false };
+    }
     for (let p = pBot - 5; p >= P_SCAN_TOP; p -= 5) {
       const par = liftParcel(pBot, trig, sfc.td, p);
-      const diff = par - interpAt(pts, p, 't');
-      if (diff <= 0) {
-        const f = prevDiff / (prevDiff - diff);
+      const excess = (par - interpAt(pts, p, 't')) - overheatC;
+      if (excess <= 0) {
+        const f = prevExcess / (prevExcess - excess);
         topP = prevP + f * (p - prevP);
         topZ = interpAt(pts, topP, 'z');
         break;
       }
-      prevP = p; prevDiff = diff;
+      prevP = p; prevExcess = excess;
     }
-    return { pLcl, lclZ: interpAt(pts, Math.min(pLcl, pBot), 'z'), topP, topZ, cloud: pLcl > topP };
+    return { pLcl, lclZ: lclZofP(pLcl), topP, topZ, cloud: pLcl > topP };
   };
 
-  const derived = useMemo(() => scanTop(trigT), [pts, pBot, trigT, sfc.t, sfc.td]); // eslint-disable-line react-hooks/exhaustive-deps
-  const forecast = useMemo(() => scanTop(sfc.t), [pts, pBot, sfc.t, sfc.td]);        // eslint-disable-line react-hooks/exhaustive-deps
+  const derived = useMemo(() => scanTop(trigT), [pts, pBot, trigT, sfc.t, sfc.td, overheatC]); // eslint-disable-line react-hooks/exhaustive-deps
+  const forecast = useMemo(() => scanTop(sfc.t), [pts, pBot, sfc.t, sfc.td, overheatC]);        // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus the view on the flyable band: surface → a bit above the forecast top /
   // cloudbase, capped near a paraglider's ceiling. Stable while dragging.

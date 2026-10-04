@@ -401,6 +401,9 @@ function buildSettings(data: Record<string, any>): Settings {
     thermalOvercastOpacity: data.thermalOvercastOpacity,
     thermalRainWashOpacity: data.thermalRainWashOpacity,
     thermalMapDefaultHour: data.thermalMapDefaultHour,
+    // SkewT parcel overheat threshold (°C) — see SkewTChart scanTop. Unset/0 =
+    // break-even thermal top (today's behaviour).
+    skewtOverheatC: data.skewtOverheatC,
   };
 }
 

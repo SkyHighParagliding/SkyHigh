@@ -23,9 +23,11 @@ interface ThresholdField {
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
-// These defaults mirror DEFAULT_THERMAL_TUNING in
+// Most of these defaults mirror DEFAULT_THERMAL_TUNING in
 // src/components/windmap/thermalRenderer.ts. An unset setting makes the renderer
 // fall back to the same value, so leaving a field at its default is a no-op.
+// (skewtOverheatC is the exception — it drives the interactive SkewT's parcel
+// calc, not the map renderer; default 0 = today's break-even behaviour.)
 const THRESHOLD_FIELDS: ThresholdField[] = [
   { key: "thermalClearSkyCloudPct", label: "Clear-sky cloud limit",         description: "Low-cloud % below which the sky reads as clear: full cumulus glyph density and no grey sheet. Maps to CU_CLOUD_MIN_PCT.",            defaultVal: 12,  unit: "%",    min: 0,   max: 40,   step: 1 },
   { key: "thermalOvercastOnsetPct", label: "Overcast onset",                description: "Cloud % at which the grey overcast sheet begins to appear (cumulus glyphs fade out). Maps to OVERCAST_MIN_PCT.",                     defaultVal: 70,  unit: "%",    min: 40,  max: 90,   step: 1 },
@@ -35,6 +37,7 @@ const THRESHOLD_FIELDS: ThresholdField[] = [
   { key: "thermalRainOffMm",        label: "Rain — no-fly threshold",       description: "Precipitation (mm/hr) at or above which an hour is marked NOT flyable (grey) on the meteogram fly bar, and where the blue rain wash saturates on the thermal map. Lighter rain below this shows amber/watch, not off.", defaultVal: 1, unit: "mm/hr", min: 0.1, max: 5, step: 0.1 },
   { key: "thermalOvercastOpacity",  label: "Overcast grey intensity",       description: "Max opacity of the grey overcast wash at full cloud. Higher = darker grey over overcast areas.", defaultVal: 0.75, unit: "", min: 0, max: 1, step: 0.05 },
   { key: "thermalRainWashOpacity",  label: "Rain wash intensity",           description: "Max opacity of the blue rain wash at the no-fly rain rate. Higher = stronger blue over rain areas.", defaultVal: 0.5, unit: "", min: 0, max: 1, step: 0.05 },
+  { key: "skewtOverheatC",          label: "SkewT trigger overheat",         description: "Temperature excess (°C) a rising parcel must stay above the surrounding air for the interactive SkewT to count it as still climbing. The thermal top is where the parcel's excess drops below this, not where it hits break-even — so a higher value gives a lower, more realistic top (and makes cloud less likely). 0 = break-even (today's behaviour); ~1–2°C reflects the overheat real thermals need to trigger. Interactive SkewT only — the thermal map/meteogram use a separate grid calc.", defaultVal: 0, unit: "°C", min: 0, max: 5, step: 0.5 },
 ];
 
 // The pilot's "base map detail" slider scrubs between a floor and a ceiling, not a
@@ -279,8 +282,9 @@ export function AdminForecast() {
                   </CardTitle>
                   <CardDescription>
                     The values that drive the map's cloud states (clear / cumulus / overcast), the
-                    heat-colour cut-off, and the storm-risk warning. Each defaults to the renderer's
-                    built-in value — leaving a field at its default changes nothing.
+                    heat-colour cut-off, the storm-risk warning, and the interactive SkewT's parcel
+                    trigger. Each defaults to its built-in value — leaving a field at its default
+                    changes nothing.
                   </CardDescription>
                 </div>
                 <div className="flex gap-2 shrink-0">
