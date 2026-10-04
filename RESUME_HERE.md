@@ -26,7 +26,7 @@ from the git log (`11c2e28`…`e949172`); verification notes are as recorded in 
   default zoom). Radius is now a fixed **30 px on-screen tolerance** converted to km at the live map
   scale (clamped 2–20 km), and it picks the **nearest site that actually has a live reading** (one bulk
   call over in-range ids). Base feature prod-verified earlier (Portsea "Live 13 kt SW"); **the new
-  radius logic is NOT yet verified on prod** — dev has no live obs.
+  radius logic is verified on prod** (Jon, 2026-10-05; dev has no live obs).
 - **`54898ae` — SkewT overheat threshold.** New admin setting `skewtOverheatC` (Admin → Forecast →
   Thermal Thresholds, default 0 °C = unchanged behaviour). SkewT thermal top = where the parcel's
   excess over the environment drops below it. Thermal map + meteogram untouched (separate grid-based
@@ -37,7 +37,6 @@ from the git log (`11c2e28`…`e949172`); verification notes are as recorded in 
   360 → 280 px so the map renders taller.
 
 ### Open / next (session 73)
-- **Prod-verify the live-wind radius:** tap near a live site at default zoom → "Live" line appears.
 - **Fixed 2026-10-05:** stale wiki refs to the deleted map components (`wiki/01`, `02`, `05`, `11`), the DECISION-014 de-brand entry (now ✅ shipped, `a6e1382`), and `memory/project.md`. The `SiteMeteogramChart.tsx` comment and the `wiki/future/meteogram-plan.md` notes were fixed in a follow-up.
 - **Done 2026-10-05 (uncommitted):** removed the dead `GET /api/weather/:siteId/meteogram` route from `server/routes/weather.ts` (35 lines; `tsc --noEmit` clean). The live `/api/weather/meteogram/point` route and `buildSiteMeteogram` are untouched.
 - **Knowledge graph is stale:** `wiki/graphify-knowledge-graph/` and `graphify-out/` date from 2026-06-10 and still list the deleted map components. Regenerate on Jon's machine (`graphify . --update`, needs `ANTHROPIC_API_KEY` — see `memory/graphify_obsidian_setup.md`); not run from Cowork.

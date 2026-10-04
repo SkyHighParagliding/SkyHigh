@@ -6,7 +6,6 @@
 
 ### FOLLOW-UP — Session 73 loose ends
 - **Status:** OPEN (found during the 2026-10-05 docs sync)
-- Prod-verify the zoom-aware live-wind radius (`5afabec`) — dev has no live obs, so it was never exercised.
 - ~~Stale wiki refs / DECISION-014 / `memory/project.md` / leftover `SiteThermalPanel` comment + meteogram-plan notes~~ — all fixed 2026-10-05.
 - **Done 2026-10-05 (uncommitted):** removed the dead `GET /api/weather/:siteId/meteogram` route from `server/routes/weather.ts` (35 lines; `tsc --noEmit` clean). The live `/api/weather/meteogram/point` route and `buildSiteMeteogram` are untouched.
 - **Knowledge graph is stale:** `wiki/graphify-knowledge-graph/` and `graphify-out/` date from 2026-06-10 and still list the deleted map components. Regenerate on Jon's machine (`graphify . --update`, needs `ANTHROPIC_API_KEY` — see `memory/graphify_obsidian_setup.md`); not run from Cowork.
