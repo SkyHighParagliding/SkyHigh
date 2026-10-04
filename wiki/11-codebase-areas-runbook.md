@@ -103,7 +103,7 @@ pi --model deepseek/deepseek-v4-flash "Please read and execute the instructions 
 
 ## 🟡 Area 5: Shared Components
 
-**Scope:** `src/components/` (excluding ui/, weather/, windmap/, xcmap/ subdirectories) — Layout, NavDropdown, WeatherCard, WindCompass, WindMap, WindFieldLayer, XCMap, PhotoSlider, HeroImagePicker, ContentWidgets, ContentImageToolbar, MarkdownRenderer, MapMessaging, PilotLoginModal, PilotProfileSettings, EmergencyMedicalCard, GoogleDocsPaste, TidesGauge, SponsorCard, SocialIcons, VoiceMicButton, UnsavedChangesModal, AIImageEnhancerModal, AISiteGeneratorModal, BulkUploadDialog, AdminSearchBox, PublicSearchBox, HomePageMapPopup, InfoCard, LazyMarkdown, FlightControls, FlightTrail, ErrorBoundary, LocationConsentBanner, MarkdownHelpLink and more.
+**Scope:** `src/components/` (excluding ui/, weather/, windmap/, xcmap/ subdirectories) — Layout, NavDropdown, WeatherCard, WindCompass, WindFieldLayer, XCMap, PhotoSlider, HeroImagePicker, ContentWidgets, ContentImageToolbar, MarkdownRenderer, MapMessaging, PilotLoginModal, PilotProfileSettings, EmergencyMedicalCard, GoogleDocsPaste, TidesGauge, SponsorCard, SocialIcons, VoiceMicButton, UnsavedChangesModal, AIImageEnhancerModal, AISiteGeneratorModal, BulkUploadDialog, AdminSearchBox, PublicSearchBox, HomePageMapPopup, InfoCard, LazyMarkdown, FlightControls, FlightTrail, ErrorBoundary, LocationConsentBanner, MarkdownHelpLink and more.
 
 **Focus:** Prop interface mismatches, missing key props in lists, incorrect event handler types, conditional rendering edge cases.
 
@@ -139,7 +139,7 @@ pi --model deepseek/deepseek-v4-flash "Please read and execute the instructions 
 
 ## 🟡 Area 8: Maps & Weather UI
 
-**Scope:** `src/components/windmap/` (WindCanvas, WindMapModeToggle, WindMapScrubberTray, particleRenderer, siteMarkerRenderer, windInterpolation), `src/components/xcmap/` (AirspaceLayer, BearingLabels, DistanceRingsOverlay, MapHelpers, PilotMarkers, SiteguideZoneLayer), `src/components/weather/` (ExtendedOutlookPanel, HourlyForecastStrip, TideChart, WeatherCardApple, WeatherCardClassic, WeatherCardRenderProps, WindCompass, types), `src/components/SitesWindMap.tsx`, `src/components/WindCompass.tsx`, `src/components/WindMap.tsx`, `src/components/WindFieldLayer.tsx`, `src/components/XCMap.tsx`, `src/components/TidesGauge.tsx`, `src/components/TidesPanelMockup.tsx`, `src/components/SOProximityDetector.tsx`.
+**Scope:** `src/components/windmap/` (WindCanvas, particleRenderer, siteMarkerRenderer, windInterpolation), `src/components/xcmap/` (AirspaceLayer, BearingLabels, DistanceRingsOverlay, MapHelpers, PilotMarkers, SiteguideZoneLayer), `src/components/weather/` (ExtendedOutlookPanel, HourlyForecastStrip, TideChart, WeatherCardApple, WeatherCardRenderProps, WindCompass, types), `src/components/SitesWindMap.tsx`, `src/components/WindCompass.tsx`, `src/components/WindFieldLayer.tsx`, `src/components/XCMap.tsx`, `src/components/TidesGauge.tsx`, `src/components/TidesPanelMockup.tsx`, `src/components/SOProximityDetector.tsx`.
 
 **Focus:** Canvas rendering errors, WebGL compatibility, coordinate projection bugs, marker rendering, stale animation frame references, map event handling.
 

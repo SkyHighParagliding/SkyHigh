@@ -19,7 +19,7 @@ const MIN_AIRSPACE_CEILING_FT = 500;
 // is centred on the label so the tint is balanced above and below the text.
 const AIRSPACE_BAND_HALF_PX = 13;
 
-// One hour of the per-site meteogram, as returned by GET /api/weather/:id/meteogram.
+// One hour of the per-site meteogram, as returned by GET /api/weather/meteogram/point.
 export interface MeteogramHour {
   time: string;
   blh: number | null;
@@ -37,7 +37,7 @@ export interface MeteogramHour {
   weatherCode: number | null;
 }
 
-// Flying window in Melbourne local hours — matches SiteThermalPanel's slider.
+// Flying window in Melbourne local hours (10am–8pm).
 const FLYING_HOUR_START = 10;
 const FLYING_HOUR_END = 20;
 

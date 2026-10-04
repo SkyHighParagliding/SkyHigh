@@ -155,6 +155,8 @@ Wind map displays thousands of wind vectors (arrows) across continental Australi
 - `src/components/windmap/windmapUtils.ts` handles bilinear interpolation and particle animation
 - `src/components/windmap/handleZoom.ts` maps D3 zoom events to canvas transforms
 
+*(Updated 2026-10-05: these three files no longer exist. Rendering now lives in `MapCanvas.tsx` + `WindCanvas.tsx` / `ThermalCanvas.tsx`, hosted by `SitesWindMap.tsx` — see `wiki/05-file-map.md`.)*
+
 ### Reversibility
 **Moderate.** Canvas + D3 is fairly standard; swapping to SVG or WebGL would require rewriting render logic but not changing data structures. Bilinear interpolation logic is reusable in any rendering backend.
 
@@ -641,7 +643,7 @@ command is in the bake script's header.
 
 **Date:** 2026-09-15
 **Owner:** Jon Pamment
-**Status:** In progress (Waves 1–2 landed on branch `chore/remove-multi-branding`; Waves 3–4 pending)
+**Status:** ✅ Shipped — Waves 1–4 merged to `main` and deployed 2026-09-15 (`a6e1382`)
 
 ### Context
 SkyHigh shipped a runtime multi-template engine (`TemplateContext.tsx` + `templates/registry.ts`)
@@ -671,11 +673,26 @@ fresh-reviewer code review, and a live dev-server + Chrome check). Waves 1–2 (
 verified zero pixel change: 39/39 `:root` tokens match the production baseline with `TemplateContext`
 deleted. Kept deliberately: club identity settings (`clubName`, tagline, logo uploads, PWA icon),
 `server/routes/branding.ts`, both light and dark logo sets (WW uses the light logo over the hero and
-the dark one once scrolled / in the footer), and `clubPrimaryColor` (a no-op today).
+the dark one once scrolled / in the footer), and `clubPrimaryColor` (a no-op at the time — see Outcome).
+
+### Outcome (closed out 2026-10-05)
+Shipped as planned — all four waves, merged to `main` (fast-forward) and deployed 2026-09-15
+(`a6e1382`, verified on production):
+- **4.1** `--tmpl-*` tokens → semantic names (28 renamed, values identical).
+- **4.3** Palette renamed across ~92 files: `sky` + `orange` → `accent`, `navy` → `ink`,
+  `navy-light` → `ink-muted`, `sand` → `cream`; Tailwind built-in palettes untouched. Also fixed
+  8 `*-sky-dark` hover states that were silent no-ops (no such token) — they now use
+  `accent-hover`; the commit flagged them for Jon's manual pass.
+- **4.4** `src/templates/` removed; `WonderfulHeader`/`WonderfulFooter` → `components/SiteHeader.tsx` /
+  `SiteFooter.tsx`. `clubPrimaryColor` **kept**: it gained a live consumer (the PWA `theme-color`
+  meta in `Layout`), and its stale `#00a8e8` fallback became `#007aff`.
+- Final sweep: no `Wonderful*`, `--tmpl-`, `activeTemplate`, `useTemplate` or `TemplateContext` left in code.
 
 ### Reversibility
-Easy while unmerged. Revert points: tag `pre-debrand-2026-09-15`, branch
-`backup/pre-debrand-2026-09-15`; `git checkout main` fully reverts. Nothing pushed.
+Was easy while unmerged; now merged and live. Revert points still kept: tag
+`pre-debrand-2026-09-15`, branch `backup/pre-debrand-2026-09-15`. Undoing it now means reverting the
+de-brand commits (starting `6feed11`) on top of `main`, not `git checkout main`. Prune the revert
+points once the de-brand has soaked.
 
 **Confirms / supersedes:** Extends DECISION-012's note that white-label was dropped. The
 GPL-2.0-only `@openmeteo/file-reader` acceptance in DECISION-012 still rests on SkyHigh being

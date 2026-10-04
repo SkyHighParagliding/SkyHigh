@@ -56,7 +56,7 @@ Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:
 - **Status:** ✅ DONE — commit `9b324fe`
 - **Prerequisites:** A, B, C
 - **Estimated effort:** M (~27% daily / ~5.5% weekly at Sonnet)
-- **What:** Extract ~47-51 LOC tray JSX into `src/components/windmap/WindMapScrubberTray.tsx`. Extract 17-line modeToggle JSX into `src/components/windmap/WindMapModeToggle.tsx`. Eliminates all current duplication between the two wind map components.
+- **What:** Extract ~47-51 LOC tray JSX into `src/components/windmap/WindMapScrubberTray.tsx`. Extract 17-line modeToggle JSX into `src/components/windmap/WindMapModeToggle.tsx`. Eliminates all current duplication between the two wind map components. *(Superseded 2026-10-04, `e949172`: both extracted components were later deleted when site maps were unified onto `SitesWindMap.tsx`.)*
 - **Acceptance Criteria:** Both wind map views render identically. `tsc --noEmit` clean for changed files. Tray and mode toggle function correctly.
 
 ### TASK-REVIEW-E ✅ Remove backdrop-blur from Tray Body
@@ -77,7 +77,7 @@ Identified by running the code-simplifier plugin with Sonnet 4.6. Plan file: `C:
 - **Estimated effort:** M-L (~40% daily / ~8% weekly at Sonnet)
 - **What:** Extract playback state (`isPlaying`, `speed`, `currentTime`, interval effect) into `src/hooks/useWindPlayback.ts`. Further reduces duplication between the two wind map components.
 - **Acceptance Criteria:** Playback and scrubber function correctly. `tsc --noEmit` clean.
-- **Outcome:** `src/hooks/useWindPlayback.ts` exists and is consumed by both `WindMapProto.tsx` and `SitesWindMap.tsx` (identical destructure of `currentTime/isPlaying/playSpeed/togglePlay/cycleSpeed/…`). The `setInterval`/`nextSpeed`/`formatWindMapTime` internals live only in the hook — no duplication remains.
+- **Outcome:** `src/hooks/useWindPlayback.ts` exists and is consumed by both `WindMapProto.tsx` and `SitesWindMap.tsx` (identical destructure of `currentTime/isPlaying/playSpeed/togglePlay/cycleSpeed/…`). The `setInterval`/`nextSpeed`/`formatWindMapTime` internals live only in the hook — no duplication remains. *(`WindMapProto.tsx` was deleted 2026-10-04 in `e949172`; `SitesWindMap.tsx` is now the sole consumer.)*
 
 ## Phase 1: Security Hardening (✅ All Complete)
 
@@ -177,7 +177,7 @@ Public sites list cache now respects pagination parameters.
 ### TASK-018 ✅ Open-Meteo Integration + Fallback
 Wind data sourced from pre-cached ECMWF grids; Open-Meteo available as fallback.
 - **Acceptance Criteria:** Wind map uses cached ECMWF first. If cache miss, falls back to Open-Meteo API. Bilinear interpolation at render time.
-- **Completed:** 2026-05-05. Interpolation in `windmapUtils.ts` uses cached grid data; API fallback available.
+- **Completed:** 2026-05-05. Interpolation in `windmapUtils.ts` uses cached grid data; API fallback available. *(`windmapUtils.ts` no longer exists; interpolation now lives in `windInterpolation.ts`.)*
 
 ---
 
@@ -333,7 +333,7 @@ Rename grid identifiers from location-specific to purpose-descriptive, and make 
 ### TASK-034 ✅ Wind Map Scrubber Retractable Tray
 Convert the static bottom scrubber bar on both wind map variants into a slide-up tray with a pull-tab.
 - **Acceptance Criteria:** Tab (24 × 100 px, centred at bottom edge) and tray move as one unit. Default state: retracted (tab only visible). Click tab to pull tray up; click again to retract. Chevron rotates to indicate direction. Both `SitesWindMap` and `WindMapProto` updated.
-- **Completed:** 2026-05-07. `src/components/SitesWindMap.tsx`, `src/components/WindMapProto.tsx`.
+- **Completed:** 2026-05-07. `src/components/SitesWindMap.tsx`, `src/components/WindMapProto.tsx`. *(Superseded 2026-10-04, `e949172`: the pull-up tray (`WindMapScrubberTray`) and `WindMapProto.tsx` were deleted; scrubber controls now live in the tapped-point card of `SitesWindMap.tsx`.)*
 
 ---
 
@@ -495,7 +495,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Status:** ✅ DONE — 2026-09-28
 - **Prerequisites:** None
 - **Estimated effort:** M
-- **Description:** A **"Scale" PG ↔ Full toggle** (before Chart in the tapped-point box on both `SiteThermalPanel.tsx` and `SitesWindMap.tsx`) switches the SkewT and Thermal Forecast meteogram between the PG working band (auto-zoomed to the day's thermals) and the full profile (surface → top of the sounding). Shared + persisted via `useChartScale` (localStorage). In Full mode the meteogram axis extends to the sounding top and the winds-aloft column shows the whole profile; the SkewT extends `pTop` to the top data level. Resolved the open question as a toggle (not side-by-side), per the user.
+- **Description:** A **"Scale" PG ↔ Full toggle** (before Chart in the tapped-point box on `SitesWindMap.tsx`; originally also on `SiteThermalPanel.tsx`, deleted 2026-10-04 in `e949172`) switches the SkewT and Thermal Forecast meteogram between the PG working band (auto-zoomed to the day's thermals) and the full profile (surface → top of the sounding). Shared + persisted via `useChartScale` (localStorage). In Full mode the meteogram axis extends to the sounding top and the winds-aloft column shows the whole profile; the SkewT extends `pTop` to the top data level. Resolved the open question as a toggle (not side-by-side), per the user.
 - **Implementation:** `src/hooks/useChartScale.ts`; `fullScale` prop threaded through `PointMeteogramModal`→`SiteMeteogramChart` (full `yTopM` from sounding max z) and `SkewTModal`→`SkewTChart` (`axisTopZ = maxLevelZ`). The future RASP view (TASK-METEO-002) consumes the same `fullScale`.
 - **Acceptance Criteria:**
   - ✅ A single toggle switches both chart types between working-band and full ranges.
@@ -507,7 +507,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Prerequisites:** TASK-METEO-001 (shares the full-range scale); reuses the pressure-level sounding + thermal grid already fetched.
 - **Estimated effort:** L
 - **Description:** RASP-style time (x) × altitude (y) chart: wind barbs on a regular altitude lattice (interpolated per hour from the sounding); **smooth splined W\* thermal-strength contour bands** (region {W≥grade} per grade, boundaries splined + tapered to a point at the ends, colours clipped to the spline, nested darkest-on-top); splined **cloud-cover** regions (light + overcast); BL Top + Cu-base lines. Reuses `/api/weather/meteogram/point` + `/api/weather/sounding/point` (joined by hour) — no new endpoint.
-- **Entry point:** a **"RASP"** button in the tapped-point box, peer of Chart / SkewT / Airspace (`SiteThermalPanel.tsx` + `SitesWindMap.tsx`), opening `RaspModal` (full-screen, like the others). Honours the PG/Full scale toggle (METEO-001).
+- **Entry point:** a **"RASP"** button in the tapped-point box, peer of Chart / SkewT / Airspace (`SitesWindMap.tsx`; originally also `SiteThermalPanel.tsx`, deleted 2026-10-04 in `e949172`), opening `RaspModal` (full-screen, like the others). Honours the PG/Full scale toggle (METEO-001).
 - **Implementation:** `src/components/weather/RaspChart.tsx` (chart + `WSTAR_BANDS` + barb glyph), `RaspModal.tsx` (fetch/join + legends); spline helpers extracted to `src/lib/spline.ts` (`smoothLine`/`monotoneSegments`/`windAtAltitude`).
 - **Legends:** bottom = W\* grade colours with their m/s values + cloud swatch; right column = wind-barb key (calm/5/10/25/50 kt + two "dir (from)" direction samples).
 - **Known approximation:** W\* has one value per hour (surface peak); the vertical profile shape is synthesised (peak ~0.4 of BL depth) — contour shapes are model-plausible, not measured per level.

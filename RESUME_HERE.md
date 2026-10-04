@@ -1,12 +1,56 @@
-# RESUME_HERE — Last updated: 2026-10-03 (session 72)
+# RESUME_HERE — Last updated: 2026-10-05 (docs sync after session 73)
 
 ## Project: SkyHigh
-## Status: Active — back on `main` (== origin/main). Rain radar **merged + live in prod**. Railway auto-deploys `main`.
+## Status: Active — on `main` (== origin/main at `e949172`). Rain radar + one-map-everywhere **merged + pushed**. Railway auto-deploys `main`.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
-latest: 61a3bc9 (cross-layer tapped-point carry)  ← 326cd2a (CSP fix)  ← 39210c0 (radar merge)
+latest: e949172 (one map everywhere)  ← 5afabec  ← 54898ae  ← 47e0823  ← 11c2e28  ← 7e8d6c9 (docs)  ← 61a3bc9 (session 72)
 ```
+
+## Session 73 (2026-10-04) — one map everywhere, SkewT polish, live-wind radius (5 commits, pushed)
+
+Numbered 73 here for continuity — the commits carry no session number. Written up 2026-10-05
+from the git log (`11c2e28`…`e949172`); verification notes are as recorded in each commit message.
+
+- **`e949172` — One map everywhere.** The weather-card "Map" button and the AdminWeather preview
+  now open the **Flying Sites map** (`SitesWindMap.tsx`, component `SitesWindMapProto`) instead of a
+  separately-styled site map. New props: `focusSite` (opens pre-tapped at the site — reuses
+  `carriedGeoRef`/`setPinGeoRef`), `startFullscreen`, `onExitFullscreen`. So the Wind | Thermal | Radar
+  `LayerSelector` pill + in-card scrubber now apply to every map. **Deleted (−1155/+137 lines):**
+  `WindMapProto`, `WindMap`, `SiteThermalPanel`, `WindMapScrubberTray`, `WindMapModeToggle`,
+  `ModeSwitchPill`. Dropped the inland-only "Thermal" entry in `ExtendedOutlookPanel` (thermal is a
+  layer now) + its empty-panel guard. `wiki/12-map-ui-style-guide.md` rewritten to the unified model;
+  TechSpec entry updated. Verified on dev: Portsea (coastal) + Ben More (inland).
+- **`5afabec` — Live-wind radius.** The tapped-point "Live" line was easy to miss (flat 5 km ≈ 15 px at
+  default zoom). Radius is now a fixed **30 px on-screen tolerance** converted to km at the live map
+  scale (clamped 2–20 km), and it picks the **nearest site that actually has a live reading** (one bulk
+  call over in-range ids). Base feature prod-verified earlier (Portsea "Live 13 kt SW"); **the new
+  radius logic is NOT yet verified on prod** — dev has no live obs.
+- **`54898ae` — SkewT overheat threshold.** New admin setting `skewtOverheatC` (Admin → Forecast →
+  Thermal Thresholds, default 0 °C = unchanged behaviour). SkewT thermal top = where the parcel's
+  excess over the environment drops below it. Thermal map + meteogram untouched (separate grid-based
+  calc). Key added to `SettingsContext.buildSettings`.
+- **`47e0823` — SkewT trace splines.** New `openSpline()` in `src/lib/spline.ts` (open centripetal
+  Catmull-Rom); temp + dewpoint traces drawn smooth. Parcel line stays a polyline (LCL kink is physical).
+- **`11c2e28` — Flying Sites page.** Intro paragraph moved below the map; map height subtraction
+  360 → 280 px so the map renders taller.
+
+### Open / next (session 73)
+- **Prod-verify the live-wind radius:** tap near a live site at default zoom → "Live" line appears.
+- **Fixed 2026-10-05:** stale wiki refs to the deleted map components (`wiki/01`, `02`, `05`, `11`), the DECISION-014 de-brand entry (now ✅ shipped, `a6e1382`), and `memory/project.md`. The `SiteMeteogramChart.tsx` comment and the `wiki/future/meteogram-plan.md` notes were fixed in a follow-up.
+- **Done 2026-10-05 (uncommitted):** removed the dead `GET /api/weather/:siteId/meteogram` route from `server/routes/weather.ts` (35 lines; `tsc --noEmit` clean). The live `/api/weather/meteogram/point` route and `buildSiteMeteogram` are untouched.
+- **Knowledge graph is stale:** `wiki/graphify-knowledge-graph/` and `graphify-out/` date from 2026-06-10 and still list the deleted map components. Regenerate on Jon's machine (`graphify . --update`, needs `ANTHROPIC_API_KEY` — see `memory/graphify_obsidian_setup.md`); not run from Cowork.
+- **Memory files referenced above are missing from `memory/`:** `smart-search-reeval-decisions.md`,
+  `gust-tolerance-rule.md`, `meteogram-scale-and-rasp.md`, `drive-appscript-bridge` (and others named in
+  sessions 66–71) are not in the project folder. The Smart Search design ruleset in the session 66
+  section below may exist only in this file — check before the Smart Search build.
+- Working tree: the only real uncommitted change is the siteguide data refresh
+  (`server/data/siteguide_airspace.txt`, `siteguide_zones.json`), unchanged from before. (~350 other files
+  show "modified" in `git status` when viewed from the Cowork sandbox — line-ending/permission noise only.)
+- Local branches `feat/*`, `fix/grid-mirror-primary`, `wind-map-optimise`, `chore/remove-multi-branding`
+  are all merged into `main` and can be pruned (keep `backup/pre-debrand-2026-09-15` + the tag until soaked).
+- Smart Search re-evaluation **build** (session 66 design) still not started.
 
 ## Session 72 (2026-10-03) — Rain radar as a 3rd peer layer + tapped-point card redesign (`1691857` + `b603bcc`, pushed)
 
@@ -60,6 +104,7 @@ shipped same day, both on `main`:
 ### Not touched / left as-is
 `ModeSwitchPill`/`WindMapModeToggle`/`WindMapScrubberTray` kept — a review flagged them
 as dead but grep confirms `WindMapProto.tsx` + `SiteThermalPanel.tsx` still use them.
+**Superseded in session 73 (`e949172`):** both users and all three components were since deleted.
 Pre-existing uncommitted files untouched: `server/data/siteguide_*`, `ecmwf-strip-after.png`.
 
 ## Session 71 (2026-09-28) — RASP polish from Jon's screenshots (commit `1c0dc9e`, pushed)
@@ -278,7 +323,7 @@ in prod until `featureMeteogram` is enabled in Admin → Forecast. Full spec:
 
 - `server/grid/siteMeteogram.ts` — `buildSiteMeteogram`: thermal-grid
   ceiling/Cu-base/band + fine-grid wind/precip, no new fetch.
-- `server/routes/weather.ts` — `GET /:siteId/meteogram` (parses `launchHeight`
+- `server/routes/weather.ts` — `GET /:siteId/meteogram` *(removed 2026-10-05)* (parses `launchHeight`
   display string like "798m / 2618'" to metres).
 - `src/components/weather/SiteMeteogramChart.tsx` — SVG chart: BL Top + Cu Base
   lines, per-hour W* band (matches map), launch line, sky-icon row, wind row

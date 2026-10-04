@@ -1,8 +1,16 @@
-# Current Tasks — Last updated: 2026-09-18
+# Current Tasks — Last updated: 2026-10-05
 
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## 🟡 Open / on hold
+
+### FOLLOW-UP — Session 73 loose ends
+- **Status:** OPEN (found during the 2026-10-05 docs sync)
+- Prod-verify the zoom-aware live-wind radius (`5afabec`) — dev has no live obs, so it was never exercised.
+- ~~Stale wiki refs / DECISION-014 / `memory/project.md` / leftover `SiteThermalPanel` comment + meteogram-plan notes~~ — all fixed 2026-10-05.
+- **Done 2026-10-05 (uncommitted):** removed the dead `GET /api/weather/:siteId/meteogram` route from `server/routes/weather.ts` (35 lines; `tsc --noEmit` clean). The live `/api/weather/meteogram/point` route and `buildSiteMeteogram` are untouched.
+- **Knowledge graph is stale:** `wiki/graphify-knowledge-graph/` and `graphify-out/` date from 2026-06-10 and still list the deleted map components. Regenerate on Jon's machine (`graphify . --update`, needs `ANTHROPIC_API_KEY` — see `memory/graphify_obsidian_setup.md`); not run from Cowork.
+- Several memory files named in RESUME_HERE (`smart-search-reeval-decisions.md`, `gust-tolerance-rule.md`, …) are not in `memory/` — recover the Smart Search design ruleset from RESUME_HERE's session 66 section before building it.
 
 ### REVIEW — Big page-clone refactors (+ possible wider design/feature review)
 - **Status:** DEFERRED (Jon's call 2026-09-18). Surfaced by the fallow `find_dupes` scan.
@@ -24,6 +32,17 @@
 > **No incomplete *backlog* tasks remain** beyond the training initiative. See wiki/02-tasks.md for the full log.
 
 ## ✅ Done
+
+### One map everywhere — site maps reuse the Flying Sites map
+- **Completed:** 2026-10-04 (`e949172`, pushed)
+- **What changed:** weather-card "Map" + AdminWeather preview open `SitesWindMapProto` pre-tapped at the site (`focusSite` / `startFullscreen` / `onExitFullscreen`); six site-specific map files deleted; `wiki/12-map-ui-style-guide.md` rewritten.
+
+### Live-wind radius, SkewT overheat + splines, Flying Sites layout
+- **Completed:** 2026-10-04 (`5afabec`, `54898ae`, `47e0823`, `11c2e28`, pushed)
+- **What changed:** 30 px zoom-aware live-wind radius + nearest-site-with-live-reading; admin `skewtOverheatC`; `openSpline()` for SkewT traces; intro text below the map.
+
+### Rain-radar layer + tapped-point card redesign (DECISION-016)
+- **Completed:** 2026-10-03 (merged `39210c0`; CSP fix `326cd2a`; cross-layer carry `61a3bc9`)
 
 ### TASK-030 — Siteguide Version Change Email Notification
 - **Completed:** 2026-09-15. NOTE: an earlier "done session 47" mark was wrong — the
@@ -66,7 +85,7 @@
 - **What changed:** Merged `sw-tiles.js`'s tile-caching fetch handler into `public/sw.js` (now the single `/`-scope worker, registered once in `main.tsx`). Its activate handler preserves `skyhigh-offline-tiles` and only clears legacy caches (was wiping ALL caches — the real bug). Deleted `public/sw-tiles.js` and its `useXCMapState.ts` registration. CARTO-exclusion caveat preserved.
 
 ### TASK-REVIEW-F — useWindPlayback Hook Extraction
-- **Completed:** already done in an earlier session (verified 2026-09-15). `src/hooks/useWindPlayback.ts` exists and both `WindMapProto.tsx` + `SitesWindMap.tsx` consume it; no duplication remains. The deferred note was stale.
+- **Completed:** already done in an earlier session (verified 2026-09-15). `src/hooks/useWindPlayback.ts` exists and both `WindMapProto.tsx` (since deleted, `e949172`) + `SitesWindMap.tsx` consume it; no duplication remains. The deferred note was stale.
 
 ---
 

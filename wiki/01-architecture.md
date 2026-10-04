@@ -135,20 +135,20 @@ src/
 │                               #   Admin* (site/content/weather/forecast/XC/…),
 │                               #   ProductSpec/TechSpec/Features/BuildBlueprint (specs)
 ├── components/
-│   ├── weather/                # SiteThermalPanel, SkewTChart, SkewTModal,
+│   ├── weather/                # SkewTChart, SkewTModal,
 │   │                           #   SiteMeteogramChart, PointMeteogramModal,
 │   │                           #   ExtendedOutlookPanel, WeatherCardApple,
 │   │                           #   WeatherHistoryChart, TideChart, WindCompass
 │   ├── windmap/                # WindCanvas, ThermalCanvas, MapCanvas, particleRenderer,
 │   │                           #   thermalRenderer, windInterpolation, thermalInterpolation,
 │   │                           #   cumulusField, terrainTiles, elevationPoint, landMask.ts,
-│   │                           #   ModeSwitchPill, WindMapModeToggle, WindMapScrubberTray,
+│   │                           #   LayerSelector, RadarCardControls, radarTiles, ThermalLegend,
 │   │                           #   MapScaleBar, ThermalHelpModal, siteMarkerRenderer,
 │   │                           #   groundRegistration, mapExtent
 │   ├── xcmap/                  # AirspaceLayer, PilotMarkers, DistanceRingsOverlay,
 │   │                           #   BearingLabels, SiteguideZoneLayer, MapHelpers
 │   ├── map/                    # leafletHelpers
-│   ├── SitesWindMap.tsx  WindMapProto.tsx  XCMap.tsx  WindFieldLayer.tsx
+│   ├── SitesWindMap.tsx  XCMap.tsx  WindFieldLayer.tsx   # SitesWindMap = the one map component
 │   ├── Altitude.tsx  AirspaceRange.tsx  MapMessaging.tsx  FlightTrail.tsx …
 │   └── ui/                     # Shadcn/UI + custom shared components
 ├── contexts/                   # AuthContext, PilotAuthContext, SettingsContext

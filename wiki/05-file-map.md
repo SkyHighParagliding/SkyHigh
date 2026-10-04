@@ -233,17 +233,14 @@ Used by WindMap component to restore viewport on page load.
 
 ## Wind Map Components (`src/components/windmap/`)
 
-### `src/components/windmap/WindMap.tsx`
-Main wind map component. Creates `<canvas>`, sets up D3 zoom, runs animation loop (requestAnimationFrame). Fetches cached grid data from API, renders vectors.
+### Map architecture (current, 2026-10-05)
+One map component serves every map: `src/components/SitesWindMap.tsx` (`SitesWindMapProto`) — the Flying Sites page, the weather-card "Map" button (fullscreen, pre-tapped via `focusSite`) and the AdminWeather preview. It owns the Wind | Thermal | Radar layer state and the tapped-point card, and mounts one canvas at a time:
+- `MapCanvas.tsx` — shared base: the D3 tile loop (CARTO base + labels, RainViewer radar overlay with overzoom) and the tapped-point pin.
+- `WindCanvas.tsx` / `ThermalCanvas.tsx` — wind-particle and thermal overlays on `MapCanvas`; both skip their overlay when radar is on.
+- `LayerSelector.tsx` — segmented Wind | Thermal | Radar pill. `RadarCardControls.tsx` — radar status, Play and timeline. `radarTiles.ts` — RainViewer tile URL, legend and point sampling. `ThermalLegend.tsx`, `ThermalHelpModal.tsx` — legends and (i) explainers.
+- Renderers/maths: `particleRenderer.ts`, `windInterpolation.ts`, `thermalRenderer.ts`, `thermalInterpolation.ts`, `cumulusField.ts`, `siteMarkerRenderer.ts`, `groundRegistration.ts`, `mapExtent.ts`, `MapScaleBar.tsx`.
 
-### `src/components/windmap/windmapUtils.ts`
-Core wind map math:
-- `interpolateWind(lat, lon, gridData)` — bilinear interpolation
-- `animateParticles()` — particle animation system (moves particles along wind vectors)
-- `drawVector(ctx, lat, lon, u, v)` — draw single wind arrow on canvas
-
-### `src/components/windmap/handleZoom.ts`
-D3 zoom event handlers. Maps D3 zoom transform (translate, scale) to canvas transforms. Redraws wind map on zoom/pan.
+Removed — don't look for them: `windmap/WindMap.tsx`, `windmapUtils.ts`, `handleZoom.ts`, and (2026-10-04, `e949172`) `WindMapProto`, `WindMap`, `SiteThermalPanel`, `WindMapScrubberTray`, `WindMapModeToggle`, `ModeSwitchPill`. See `wiki/12-map-ui-style-guide.md`.
 
 ### `src/components/windmap/terrainTiles.ts`
 **Client-side terrain tile sampler.** Fetches AWS Open Data "terrarium" tiles at zoom level 12 (~30 m/px) and decodes RGB pixel values to metres AMSL using bilinear interpolation. Maintains an in-memory LRU cache (64 tiles). Sampling a resident tile takes about 0.2 ms, against a ~465 ms round-trip for the server fallback. Both wind and thermal map canvases call this module to prefetch the 3×3 tile block around the map centre (debounced 300 ms after pan/zoom).

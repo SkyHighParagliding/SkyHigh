@@ -16,8 +16,8 @@ thermal **map** overlay (the "where"). Both read the same daily ECMWF grids.
 ## Decisions locked (2026-09-15)
 - **Placement (Q1-A):** a `[Map] / [Chart]` toggle *inside* the existing site
   thermal panel (`SiteThermalPanel.tsx`) — not a new weather-card tab. Smallest
-  blast radius; the map and chart are two lenses on one dataset.
-- **Phase-1 data (Q2-A):** one endpoint `GET /api/weather/:siteId/meteogram`
+  blast radius; the map and chart are two lenses on one dataset. *(Superseded 2026-10-04, `e949172`: `SiteThermalPanel.tsx` was deleted when site maps were unified onto `SitesWindMap`; the chart now opens from the tapped-point card via `PointMeteogramModal`, using `/api/weather/meteogram/point`.)*
+- **Phase-1 data (Q2-A):** one endpoint `GET /api/weather/:siteId/meteogram` *(removed 2026-10-05 — unused once `SiteThermalPanel` was deleted; `/api/weather/meteogram/point` is the live path)*
   bundling thermal-grid series (ceiling/band/cloud) + fine-grid wind/precip.
 
 ## Data architecture
@@ -34,14 +34,14 @@ No new fetch: both grids are already cached for the wind/thermal map.
 Server module: `server/grid/siteMeteogram.ts`. Route in `server/routes/weather.ts`.
 
 ## Stage 1 — chart on existing data ✅ COMMITTED (reviewed on-device 2026-09-15)
-- ✅ `GET /api/weather/:siteId/meteogram` (`buildSiteMeteogram`). Parses the
+- ✅ `GET /api/weather/:siteId/meteogram` *(removed 2026-10-05)* (`buildSiteMeteogram`). Parses the
   `launchHeight` display string ("798m / 2618'") to metres for the AMSL axis.
 - ✅ `SiteMeteogramChart.tsx` (SVG): **BL Top line + Cu Base line** (Cu Base drawn
   only where CCL < BL Top = cumulus hours), per-hour W* band (same colours as the
   map), launch reference line, sky-icon row (☁/▨/🌧/·), wind row (speed over
   compass), crosshair, **metric/imperial toggle** via `useUnits`. 10am–8pm window.
 - ✅ `[Map]/[Chart]` toggle in `SiteThermalPanel` (chart data fetched lazily) +
-  chart-variant `ThermalHelpModal` explainer.
+  chart-variant `ThermalHelpModal` explainer. *(`SiteThermalPanel` deleted 2026-10-04 in `e949172`.)*
 - ✅ `featureMeteogram` flag in Admin → Forecast (default off). NOTE: also had to
   add the key to `SettingsContext.buildSettings` — it uses an allow-list, and
   omitting a key silently drops it on the client (that hid the toggle first try).
