@@ -12,7 +12,7 @@ import { formatHour } from "@/components/ui/TimeInput";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
 
-const WindMap = lazy(() => import("@/components/WindMap"));
+const SitesWindMapProto = lazy(() => import("@/components/SitesWindMap").then(m => ({ default: m.SitesWindMapProto })));
 
 function WindMapPreviewCard() {
   const [showPreview, setShowPreview] = useState(false);
@@ -73,7 +73,11 @@ function WindMapPreviewCard() {
           </div>
           <div className="flex-1 min-h-0">
             <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
-              <WindMap siteId={previewSite.id} siteLat={previewSite.lat} siteLon={previewSite.lon} siteName={previewSite.name} fullscreen />
+              <SitesWindMapProto
+                sites={[{ id: previewSite.id, name: previewSite.name, lat: previewSite.lat, lon: previewSite.lon }]}
+                focusSite={{ lat: previewSite.lat, lon: previewSite.lon }}
+                isAuthenticated
+              />
             </Suspense>
           </div>
         </div>,

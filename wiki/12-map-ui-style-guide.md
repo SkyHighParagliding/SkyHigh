@@ -1,49 +1,65 @@
 ---
-title: Map UI Style Guide (Wind / Thermal / Meteogram)
-tags: [maps, ui, style-guide, wind, thermal, meteogram, airspace]
-status: adopted 2026-09-16 — rollout in progress
+title: Map UI Style Guide (Wind / Thermal / Radar)
+tags: [maps, ui, style-guide, wind, thermal, radar, meteogram, airspace]
+status: adopted 2026-09-16 · rewritten 2026-10-04 — one component, in-card controls
 ---
 
 # Map UI Style Guide
 
-The single source of truth for how **every** wind / thermal / meteogram map looks
-and behaves — site picker, site page, admin previews, embedded and fullscreen.
-New map surfaces or modifications MUST follow this. Decisions locked with Jon
-2026-09-16.
+The single source of truth for how **every** wind / thermal / radar map looks and
+behaves — site picker, site page, admin previews, embedded and fullscreen. New map
+surfaces or modifications MUST follow this.
+
+> **2026-10-04 — the model changed.** There is now **one** map component,
+> `SitesWindMap` (`SitesWindMapProto`), used everywhere. The old per-site surfaces
+> (`WindMapProto`/`WindMap`, `SiteThermalPanel`) and the pull-out scrubber tray
+> (`WindMapScrubberTray`, `WindMapModeToggle`, `ModeSwitchPill`) are **deleted**.
+> All controls live **inside the tapped-point card** (no pull-out tray, no separate
+> "Key" pill). The three data layers are **Wind | Thermal | Radar** chosen by one
+> segmented `LayerSelector` pill (see DECISION-016). Rules below are rewritten to match.
 
 ## Surfaces this governs
-- **Site picker** (`SitesWindMap`) — Sites page
-- **Site wind map** (`WindMapProto` / `WindMap`) — site weather card + admin preview
-- **Site thermal panel** (`SiteThermalPanel`) — site weather card Thermal tab
-- **Meteogram chart** (`SiteMeteogramChart`) — chart mode
+- **Site picker** (`SitesWindMap`) — Sites page: all site markers, pan/tap freely.
+- **Single-site map** (`SitesWindMap` with `focusSite` + `startFullscreen`) — reached from
+  the weather-card **"Map"** button; opens fullscreen, **pre-tapped at the site**, carrying
+  the same Wind|Thermal|Radar pill. No separate per-site component.
+- **Admin preview** (`SitesWindMap` with `focusSite`) — AdminWeather "Preview Wind Map".
+- **Meteogram / SkewT / RASP** — point-modals reached from the thermal card's actions
+  (`Chart` / `SkewT` / `RASP`), not separate map surfaces.
 - Out of scope: the **XC map** (`XCMap`, Leaflet) — deliberately a different stack.
 
 ## The rules
 
-### 1. One unified component (decision 10A)
-Wind, Thermal and Meteogram are **modes of one canonical map component**, used on
-both the picker and the site page. Wind and Thermal are not separate components.
-`Map` and `Chart` (meteogram) become the **third option** in the same mode switch.
-Target switch: **Wind · Thermal · Chart** (Chart only where a single site is in
-context; the picker has no Chart mode).
+### 1. One component, three layers
+`SitesWindMap` is the only map component. The data layers — **Wind | Thermal | Radar** —
+are three mutually-exclusive peers chosen by one segmented `LayerSelector` pill
+(`windmap/LayerSelector.tsx`), **top-left, always visible**. Radar reuses whichever
+canvas is mounted and suppresses its data overlay (DECISION-016). Thermal degrades out
+of the pill when `featureThermalMap` is off. `Chart` (meteogram), `SkewT` and `RASP` are
+**point-modal actions in the thermal card**, not layers.
 
-### 2. Mode switch always visible; legend collapsible (decision 1C → hybrid B, 2026-09-16)
-- The **Wind · Thermal · Chart mode pill is always visible** (it's the primary
-  control) — the picker's rounded segmented pill with icons, inside the map top-left.
-- The **legend collapses behind a "Key" pill** (bottom-left): default = bare map
-  + mode pill + Key pill; tap the Key → legend panel expands; tap again (or ✕) →
-  collapse. Only the legend hides — never the mode switch.
+### 2. All controls live in the tapped-point card
+No pull-out tray, no separate "Key" pill. Once a point is tapped, a single dark card
+(top-left, under the pill) holds everything: the forecast reading, the **in-card time
+scrubber**, the layer **scale/legend**, the **base-map detail slider + town-names toggle**,
+and (thermal) the point actions + airspace toggle. Before a tap: just the map + pill. The
+`LayerSelector` pill is always visible; the card appears on tap and is dismissable (✕).
 
-### 3. Readout / data box (decision 3A + 4A)
-- **Stacked** — one value per line, never a side-by-side strip.
-- **Top-left**, dark rounded box (`bg-black/75`), with a **✕ to dismiss**.
-- Dismiss clears the pin fully (pin + box + crosshair) — see `dismissRef`/`clearPinRef`.
-- Lines, in order: mode-specific strength/summary, then BL Top, Cu Base, (Rain),
-  Ground — or Wind speed/dir, Ground for wind mode.
-- **Base-map controls cluster** (last row of the box, both modes; added 2026-09-19,
-  commit `e64b02f`): a **map icon = town-names toggle** and a **base-map detail
-  slider**. Both are shared by wind + thermal and remembered per browser
-  (`localStorage`: `skyhigh.showMapLabels`, `skyhigh.basemapIntensity`). See rule 11.
+### 3. Readout / data card
+- **Stacked** — one value per line, never a side-by-side strip. Top-left, `bg-black/75`,
+  `min-w-[232px]`, with a **✕ to dismiss** (clears pin + card + crosshair — `dismissRef`/`clearPinRef`).
+- **Style system (strict):** all text **10px** (9px for helper notes). `white/75` = static,
+  **`sky-500` (hover `sky-400`) = tappable**. Tap-to-cycle idioms: speed units (kt→mph→kph),
+  direction (compass↔degrees), the 12/24h clock. Zone dividers = `border-t border-white/10`.
+- **Lines, in order.** Wind: Fcst time + speed/dir → Live (if within range at "now") → Ground
+  → scrubber → scale/legend → base-map. Thermal: Fcst time → strength → BL Top / Cu Base /
+  Ground / (Rain) → actions (Scale · Chart · SkewT · RASP) → scale/legend → base-map. Radar:
+  Ground → Rain-radar loop (Play + two-tone timeline) + opacity → scale → base-map + © RainViewer.
+- **Base-map controls** (last zone, every layer): a **town-names toggle** + **base-map detail
+  slider**, shared across layers and remembered per browser (`skyhigh.showMapLabels`,
+  `skyhigh.basemapIntensity`). See rule 11.
+- The point is **carried across a layer switch** (`focusSite`/`carriedGeoRef`/`setPinGeoRef`)
+  so Wind↔Thermal↔Radar never needs a re-tap; a single-site map opens **pre-tapped**.
 
 ### 4. Altitudes — always AMSL (decision 8A)
 Every altitude shows **" AMSL"** and is mean-sea-level. BL Top / Cu Base are AGL
@@ -61,16 +77,21 @@ map, tap again to hide. Skips FIR/OCA/ground-obstacles.
   (viewport-culled, faint fill 0.08); the tapped conflict still draws emphasised
   (0.22) on top. State lives in the surface (`showAllAirspace`).
 
-### 6. Time scrubber — pull-out tray (decision 5B)
-A **pull-out tray/tab** (`WindMapScrubberTray` idiom) on every surface, embedded
-and fullscreen. Not an always-visible slider.
+### 6. Time scrubber — in-card slider (supersedes the pull-out tray, 2026-10-04)
+The scrubber is a **slider inside the tapped-point card**, not a pull-out tray. The label
+at its start is the span toggle — **"1 Day" ↔ "7 Days"** (wind only; thermal stays 1 Day) —
+tappable (`sky-500`). Drag-only: **no play button** on the forecast scrubber (the radar loop
+is the one exception — it has an in-card "Play" word + two-tone timeline). All sliders share
+one style (`SLIDER_INPUT_CLS`: transparent track, white `w-4` thumb) so they line up. The old
+`WindMapScrubberTray`/`WindMapModeToggle`/`ModeSwitchPill` are deleted.
 
 ### 7. Fullscreen == embedded (decision 6A)
-Fullscreen shows the **identical chrome** — same Key/mode switch, legend, readout,
-scrubber — just larger. No mode/controls hidden in fullscreen.
-- **Fullscreen toggle button is top-right** on every surface (2026-09-16). The
-  top-left is for the mode toggle + readout; bottom-left for the Key; bottom for
-  the scrubber tray.
+Fullscreen shows the **identical chrome** — same pill, card, scrubber, legend — just larger.
+Nothing is hidden in fullscreen.
+- **Fullscreen/minimize toggle is top-right**; the `LayerSelector` pill + card are top-left.
+- The map owns its own fullscreen overlay (`fixed inset-0 z-[10001]`), Esc, and back-button
+  close. A **single-site map opens already fullscreen** (`startFullscreen`) and routes its exit
+  to `onExitFullscreen` (the parent unmounts it) — there is no embedded single-site host.
 
 ### 8. Text sizes (decision 7A) — the readable scale
 The thermal-panel scale, everywhere (no more 6–8px):
@@ -117,24 +138,16 @@ levers in `MapCanvas` fix this without a React re-render of the map:
   our Canvas 2D + D3 stack, so it's a rebuild, not a swap. Deferred; see
   [[future/vector-basemaps]].
 
-## Rollout (see RESUME_HERE for live status)
-1. **Stage 1 ✅** — AMSL + airspace on the picker readouts (done, `377d007`).
-2. **Stage 2** — canonical collapsible Key (mode switch + legend) on the picker,
-   remove `overlayLevel`; stacked top-left readout; pull-out scrubber retained.
-3. **Stage 3 ✅** — bring the site wind map (`WindMapProto`) onto the same chrome:
-   stacked AMSL readout **hidden until tap** with ✕, Key pill raised to clear the
-   collapsed scrubber tab, the **Today/7-day toggle moved into the tray** (before
-   play), and **fullscreen == embedded** — the `WeatherCard` wind-map portal lost
-   its header bar; the map now carries its own **top-right minimize** button (new
-   `onExitFullscreen` prop) + Esc-to-close.
-4. **Stage 3b ✅** — bring the site thermal panel (`SiteThermalPanel`) onto the
-   same chrome: pull-out `WindMapScrubberTray` with play/pause + speed (replacing
-   the manual slider), stacked top-left readout with airspace warnings, Key pill,
-   top-right fullscreen toggle, and fullscreen == embedded (the separate
-   fullscreen header/slider was removed). The launch site's own reading now rides
-   in the tray's bottom row (new optional `readout` slot on the tray). Map/Chart
-   stays a header switch for now — Chart replaces the map, so an on-map mode pill
-   needs the full component merge below.
-5. **Stage 4** — unify: the site page uses the one component (Wind/Thermal/Chart
-   as one on-map mode switch), retiring the split between `WindMapProto` and
-   `SiteThermalPanel`. Deferred (largest change).
+## History
+The 2026-09-16 rollout (Stages 1–3b) brought AMSL/airspace readouts and the shared
+pull-out-tray chrome onto the picker, the site wind map (`WindMapProto`) and the thermal
+panel (`SiteThermalPanel`). Session 72 (2026-10-03) then redesigned the **picker** —
+Wind|Thermal|Radar `LayerSelector`, the scrubber moved **into the card**, radar added
+(DECISION-016) — which left the per-site surfaces behind on the old tray.
+
+**Stage 4 ✅ (2026-10-04) — unified.** The site page now uses the one `SitesWindMap`
+component via `focusSite` + `startFullscreen` (opens fullscreen, pre-tapped at the site).
+The weather-card **"Map"** button launches it; the buried inland "Thermal" entry is gone
+(thermal is a layer in the pill). `WindMapProto`/`WindMap`, `SiteThermalPanel`,
+`WindMapScrubberTray`, `WindMapModeToggle` and `ModeSwitchPill` were **deleted**. The rules
+above describe the unified result; this guide is now the live state, not a rollout plan.

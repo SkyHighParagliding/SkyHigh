@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-const WindMap = lazy(() => import('./WindMap'));
+// The single-site map is the Flying Sites map (SitesWindMapProto) reused: opened
+// fullscreen, pre-tapped at the site, carrying its own Wind|Thermal|Radar pill.
+const SitesWindMapProto = lazy(() => import('./SitesWindMap').then(m => ({ default: m.SitesWindMapProto })));
 
 import type { TideData } from './weather/types';
 import { WeatherCardApple } from './weather/WeatherCardApple';
@@ -216,18 +218,23 @@ export function WeatherCard({ weather, site, distance }: { weather: any; site: a
   const { windowedForecasts, forecastSubtitle, forecastWindowStartMs, forecastWindowEndMs } = forecastWindow;
   const isDirectionIdeal = idealDirs.includes(direction);
 
+  // One map everywhere: the Flying Sites map opened fullscreen, pre-tapped at this
+  // site, with its own Wind|Thermal|Radar pill. It owns its fullscreen overlay
+  // (fixed inset-0 z-[10001]) + the top-right minimize button; onExitFullscreen
+  // closes it. `sites=[thisSite]` centers on the site at the single-site zoom.
   const windMapPortal = showWindMap && site.lat && site.lon && createPortal(
-    // Fullscreen == embedded: no separate header — the map carries its own
-    // top-right minimize button (wired via onExitFullscreen), matching the
-    // picker and thermal panel.
-    <div
-      className="fixed inset-0 z-[10001] bg-black"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
-        <WindMap siteId={site.id} siteLat={site.lat} siteLon={site.lon} siteName={site.name} siteStatus={site.status} siteUpcomingClosureDates={site.upcomingClosureDates} fullscreen onExitFullscreen={() => setShowWindMap(false)} />
-      </Suspense>
-    </div>,
+    <Suspense fallback={<div className="fixed inset-0 z-[10001] bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div></div>}>
+      <SitesWindMapProto
+        sites={[{
+          id: site.id, name: site.name, lat: site.lat, lon: site.lon,
+          status: site.status, isSkyHighSite: site.isSkyHighSite, type: site.type,
+          windDir: site.windDir, upcomingClosureDates: site.upcomingClosureDates,
+        }]}
+        focusSite={{ lat: site.lat, lon: site.lon }}
+        startFullscreen
+        onExitFullscreen={() => setShowWindMap(false)}
+      />
+    </Suspense>,
     document.body
   );
 

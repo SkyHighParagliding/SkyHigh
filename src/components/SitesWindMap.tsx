@@ -51,6 +51,15 @@ interface SitesWindMapProps {
   sites: SiteMarker[];
   isAuthenticated?: boolean;
   zoomSetpoints?: ZoomSetpoints;
+  /** Single-site mode: seed the initial picked point here so the map opens with
+   *  the readout already showing for that site. Centering comes for free from a
+   *  one-element `sites` array (MapCanvas centers on it at the single-site zoom). */
+  focusSite?: { lat: number; lon: number };
+  /** Mount already in fullscreen — the site map opens fullscreen from the weather card. */
+  startFullscreen?: boolean;
+  /** Called when the user exits fullscreen while in `startFullscreen` mode: there is
+   *  no embedded single-site host, so the parent unmounts the map instead. */
+  onExitFullscreen?: () => void;
 }
 
 /** The live-wind catch radius is zoom-aware: a fixed on-screen tolerance (px)
@@ -68,7 +77,7 @@ const EARTH_CIRCUMFERENCE_M = 40075016.686;
 type WindTapInfo = { speed: number; direction: number; groundAmsl?: number; lat?: number; lon?: number };
 type ThermalTapInfo = { cape: number; blh: number; wstar?: number; ccl?: number; cloud?: number; cloudLow?: number; precip?: number; weatherCode?: number; groundAmsl?: number; lat?: number; lon?: number };
 
-export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: SitesWindMapProps) {
+export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focusSite, startFullscreen, onExitFullscreen }: SitesWindMapProps) {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
   const clubName = settings.clubName || 'SkyHigh';
@@ -213,7 +222,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // 10fps readout updating it must not re-render the map. Cleared on an explicit
   // dismiss (✕) so the pin doesn't resurrect on the next switch. Wind↔Radar and
   // Thermal↔Radar already keep the point (same canvas stays mounted).
-  const carriedGeoRef = useRef<{ lat: number; lon: number } | null>(null);
+  // In single-site mode, seed the carried point with the focus site so the canvas's
+  // mount-seed effect (initialPinGeoRef) drops the pin there → opens pre-tapped.
+  const carriedGeoRef = useRef<{ lat: number; lon: number } | null>(focusSite ? { lat: focusSite.lat, lon: focusSite.lon } : null);
   const rememberGeo = (info: { lat?: number; lon?: number } | null) => {
     if (info && info.lat != null && info.lon != null) carriedGeoRef.current = { lat: info.lat, lon: info.lon };
   };
@@ -273,7 +284,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   const [thermalGrid, setThermalGrid] = useState<ThermalGrid | null>(null);
   const [thermalLoading, setThermalLoading] = useState(false);
   const [thermalError, setThermalError] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(!!startFullscreen);
+  // Latest onExitFullscreen in a ref so the fullscreen effect/callbacks don't churn
+  // when the parent passes a fresh inline closure each render.
+  const onExitFullscreenRef = useRef(onExitFullscreen);
+  onExitFullscreenRef.current = onExitFullscreen;
   const [canvasSizeKey, setCanvasSizeKey] = useState(0);
   const [isSettingView, setIsSettingView] = useState(false);
   const [liveView, setLiveView] = useState<{ lat: number; lon: number; zoom: number } | null>(null);
@@ -300,8 +315,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
   // What the canvases actually mount at: the viewport carried across the most
   // recent wind/thermal toggle, falling back to the admin-configured default on
   // first load (when no toggle has happened yet).
-  const viewLat = viewportSnapshot?.lat ?? savedLat;
-  const viewLon = viewportSnapshot?.lon ?? savedLon;
+  const viewLat = viewportSnapshot?.lat ?? focusSite?.lat ?? savedLat;
+  const viewLon = viewportSnapshot?.lon ?? focusSite?.lon ?? savedLon;
   const viewZoom = viewportSnapshot?.zoom ?? savedZoom;
 
   const todayFetcher = useCallback(async (): Promise<WindGrid> => {
@@ -503,15 +518,18 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     }
   }, [liveView, updateSettings]);
 
+  // In startFullscreen (site) mode there is no embedded view to fall back to, so the
+  // final "exit" closes the map via the parent callback instead of un-fullscreening.
   const exitFullscreen = useCallback(() => {
     if (didPushHistoryRef.current && !closingViaPopRef.current) {
       didPushHistoryRef.current = false;
       window.history.back();
     } else {
       closingViaPopRef.current = false;
-      setIsFullscreen(false);
+      if (startFullscreen) onExitFullscreenRef.current?.();
+      else setIsFullscreen(false);
     }
-  }, []);
+  }, [startFullscreen]);
 
   useEffect(() => {
     let resizeTimer: ReturnType<typeof setTimeout>;
@@ -530,7 +548,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
       const handlePopState = () => {
         didPushHistoryRef.current = false;
         closingViaPopRef.current = true;
-        setIsFullscreen(false);
+        if (startFullscreen) onExitFullscreenRef.current?.();
+        else setIsFullscreen(false);
       };
       if (!didPushHistoryRef.current) {
         window.history.pushState({ windMapFullscreen: true }, '');

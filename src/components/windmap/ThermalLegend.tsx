@@ -2,13 +2,11 @@ import { THERMAL_LEGEND_CSS, LEGEND_MAX_WSTAR } from './thermalRenderer';
 
 /**
  * The thermal-map legend body: the W* strength gradient with its band labels,
- * plus (optionally) the cumulus / overcast / rain / overdevelopment marks. Shared
- * by the SitesWindMap and SiteThermalPanel legend panels so the two never drift.
- * The surrounding panel chrome (header, close/info, wind-flow toggle) stays in each
- * caller since it differs between them.
+ * plus (optionally) the cumulus / overcast / rain / overdevelopment marks. Used by
+ * the thermal card's scale block in `SitesWindMap`.
  *
  * `marks` controls the sky-marks block — hidden on the compact tapped-point card
- * (where it duplicates the ℹ help popup), shown on the fuller SiteThermalPanel.
+ * (where it duplicates the ℹ help popup); the flag remains for a fuller legend.
  * `wstar` (effective W*, m/s) draws the white tapped-point marker on the gradient,
  * the same idiom as the wind-speed and rain-radar legends.
  */
