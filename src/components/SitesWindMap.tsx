@@ -53,9 +53,15 @@ interface SitesWindMapProps {
   zoomSetpoints?: ZoomSetpoints;
 }
 
-/** Tapped point must be within this many km of a live-reporting site to show its
- *  live wind alongside the forecast. Tunable. */
-const LIVE_WIND_RADIUS_KM = 5;
+/** The live-wind catch radius is zoom-aware: a fixed on-screen tolerance (px)
+ *  around a site marker, converted to km at the current map scale. So tapping on
+ *  or just beside a visible marker always picks up its live wind, while a far tap
+ *  when zoomed in stays strict — a flat km radius was either too tight zoomed out
+ *  (≈15px at the default view) or too loose zoomed in. Clamped to a sane km band. */
+const LIVE_WIND_TOLERANCE_PX = 30;
+const LIVE_WIND_MIN_KM = 2;
+const LIVE_WIND_MAX_KM = 20;
+const EARTH_CIRCUMFERENCE_M = 40075016.686;
 
 /** The tapped-point readout each canvas emits. Shared by the state and the
  *  carried-point handlers so they can't drift. */
@@ -394,13 +400,24 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
     const isNow = Math.abs(currentTime - Date.now()) < timeStep; // within one frame of real "now"
     if (!isNow || tappedLat == null || tappedLon == null) { setLiveWind(null); return; }
 
-    // Nearest live-capable site within the radius (uses site coords we already hold).
-    let nearest: { site: SiteMarker; km: number } | null = null;
-    for (const s of sites) {
-      const km = haversineDistance(tappedLat, tappedLon, s.lat, s.lon);
-      if (km <= LIVE_WIND_RADIUS_KM && (!nearest || km < nearest.km)) nearest = { site: s, km };
-    }
-    if (!nearest) { setLiveWind(null); return; }
+    // Convert the on-screen tolerance to km at the live map scale (k = 256·2^zoom,
+    // the slippy-map world width in px). metres/px shrinks with cos(latitude). Read
+    // from the ref so zooming doesn't re-run this effect — the value is current at
+    // tap time, which is all that matters. Falls back to the default-view scale.
+    const zoom = liveViewRef.current?.zoom;
+    const k = zoom != null ? 256 * Math.pow(2, zoom) : INITIAL_K;
+    const metersPerPx = (EARTH_CIRCUMFERENCE_M * Math.cos((tappedLat * Math.PI) / 180)) / k;
+    const radiusKm = Math.min(LIVE_WIND_MAX_KM, Math.max(LIVE_WIND_MIN_KM, (LIVE_WIND_TOLERANCE_PX * metersPerPx) / 1000));
+
+    // Every site within the radius, nearest first. We pick the nearest one that
+    // actually has a live reading — not just the nearest site — so a tap near a
+    // live station still surfaces it even when a station-less site sits closer
+    // (which the wider zoom-aware radius makes common).
+    const inRange = sites
+      .map(s => ({ site: s, km: haversineDistance(tappedLat, tappedLon, s.lat, s.lon) }))
+      .filter(x => x.km <= radiusKm)
+      .sort((a, b) => a.km - b.km);
+    if (!inRange.length) { setLiveWind(null); return; }
 
     let cancelled = false;
     (async () => {
@@ -408,19 +425,22 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints }: Sit
         const res = await fetch('/api/weather/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siteIds: [nearest!.site.id] }),
+          body: JSON.stringify({ siteIds: inRange.map(x => x.site.id) }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json() as Record<string, any>;
-        const obs = data[nearest!.site.id];
         if (cancelled) return;
-        if (obs && obs.type === 'live' && obs.windSpeed != null) {
-          const dir = typeof obs.direction === 'number' ? getCompassDirection(obs.direction) : String(obs.direction ?? '');
-          const dirDeg = typeof obs.direction === 'number' ? obs.direction : undefined;
-          setLiveWind({ speedKt: Number(obs.windSpeed), direction: dir, directionDeg: dirDeg, siteName: nearest!.site.name });
-        } else {
-          setLiveWind(null);
+        // Nearest in-range site with an actual live observation wins.
+        for (const { site } of inRange) {
+          const obs = data[site.id];
+          if (obs && obs.type === 'live' && obs.windSpeed != null) {
+            const dir = typeof obs.direction === 'number' ? getCompassDirection(obs.direction) : String(obs.direction ?? '');
+            const dirDeg = typeof obs.direction === 'number' ? obs.direction : undefined;
+            setLiveWind({ speedKt: Number(obs.windSpeed), direction: dir, directionDeg: dirDeg, siteName: site.name });
+            return;
+          }
         }
+        setLiveWind(null);
       } catch {
         if (!cancelled) setLiveWind(null);
       }
