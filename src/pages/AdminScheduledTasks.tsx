@@ -234,7 +234,7 @@ export function AdminScheduledTasks() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-ink">Zone Data Auto-Download</CardTitle>
                 {zoneDataVersion && (
-                  <span className="text-xs font-medium bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">v{zoneDataVersion}</span>
+                  <span className="text-xs font-medium bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">{zoneDataVersion}</span>
                 )}
               </div>
               <p className="text-sm text-muted-foreground">Automatically downloads Siteguide zone data (LZ, no-go, powerlines, airspace) when a version change is detected. Data includes landing zones, no-fly zones, hazards, and CASA airspace.</p>

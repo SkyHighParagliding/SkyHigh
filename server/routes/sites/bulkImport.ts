@@ -162,6 +162,10 @@ async function runBulkImportLoop(sitesToImport: { name: string, url: string }[],
           [externalSite.url]
         );
         if (existingSite?.contentHash && existingSite.contentHash === newHash) {
+          await execute(
+            `UPDATE sites SET "siteguideVersion" = COALESCE($1, "siteguideVersion"), "siteguideScrapedAt" = $2 WHERE id = $3`,
+            [siteguideVersion, scrapedAt, existingSite.id]
+          );
           bulkImportProgress.completed++;
           bulkImportProgress.remaining = bulkImportProgress.total - bulkImportProgress.completed;
           bulkImportProgress.results.push({ name: externalSite.name, status: "unchanged", error: undefined as any });
