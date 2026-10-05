@@ -36,14 +36,14 @@ interface ArchiveEntry {
   siteCount: number;
 }
 
-function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered }: { token: string; selectedState?: string; onAutoImportTriggered?: () => void }) {
+function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered, refreshKey = 0 }: { token: string; selectedState?: string; onAutoImportTriggered?: () => void; refreshKey?: number }) {
   const [status, setStatus] = useState<VersionCheckStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [checkMessage, setCheckMessage] = useState<string | null>(null);
 
-  const fetchStatus = () => {
-    setLoading(true);
+  const fetchStatus = (silent = false) => {
+    if (!silent) setLoading(true);
     api.get<VersionCheckStatus>("/api/sites/siteguide-version-check/status", token)
       .then(setStatus)
       .catch(() => {})
@@ -53,7 +53,7 @@ function SiteguideVersionIndicator({ token, selectedState, onAutoImportTriggered
   const { hash } = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => { fetchStatus(); }, []);
+  useEffect(() => { fetchStatus(refreshKey > 0); }, [refreshKey]);
 
   useEffect(() => {
     if (hash && hash.startsWith("#site-")) {
@@ -222,6 +222,7 @@ export function AdminSites() {
   const [externalSites, setExternalSites] = useState<{name: string, url: string, state?: string, stateAbbr?: string, region?: string}[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [bulkImporting, setBulkImporting] = useState(false);
+  const [versionStatusTick, setVersionStatusTick] = useState(0);
   const [bulkImportResult, setBulkImportResult] = useState<BulkImportResult | null>(null);
   const [bulkRemaining, setBulkRemaining] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
@@ -305,6 +306,7 @@ export function AdminSites() {
           stopPolling();
           setBulkImporting(false);
           setBulkImportResult(data.summary as BulkImportResult);
+          setVersionStatusTick(t => t + 1);
           api.get<{ data: Site[] }>('/api/sites').then(response => setSites(response.data)).catch(() => {});
           if (token) {
             api.get<ArchiveEntry[]>("/api/sites/archives", token)
@@ -521,7 +523,7 @@ export function AdminSites() {
           </Button>
         </div>
 
-        {token && <SiteguideVersionIndicator token={token} selectedState={selectedState} onAutoImportTriggered={() => startPolling()} />}
+        {token && <SiteguideVersionIndicator token={token} selectedState={selectedState} onAutoImportTriggered={() => startPolling()} refreshKey={versionStatusTick} />}
 
         <div className="mb-4 bg-card border border-border-subtle rounded-lg p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
