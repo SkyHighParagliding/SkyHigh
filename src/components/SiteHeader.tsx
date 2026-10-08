@@ -59,6 +59,7 @@ export function SiteHeader() {
       { name: "Image Wall", path: "/club-photos" },
       { name: "Video Wall", path: "/video-wall" },
       { name: "Insta Wall", path: "/insta-wall" },
+      ...(settings.camerasEnabled !== false ? [{ name: "Cameras", path: "/cameras" }] : []),
       ...(settings.businessDirectoryEnabled ? [{ name: "Business Directory", path: "/business-directory" }] : []),
     ]},
     { name: "About Us", path: "/page/about" },

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, QrCode, Star, Flag, Store, UserPlus, Palette, ExternalLink, Shield } from "lucide-react";
+import { ArrowLeft, QrCode, Star, Flag, Store, UserPlus, Palette, ExternalLink, Shield, Camera } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Switch } from "@/components/ui/Switch";
 
@@ -211,6 +211,25 @@ export function AdminSiteOptions() {
                 disabled={loading}
                 label="Business Directory"
                 description="When hidden, the directory link is removed from navigation and the public page is inaccessible. Admin management remains available."
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow border-t-4 border-t-sky-500">
+            <CardHeader>
+              <CardTitle className="flex items-center text-ink">
+                <Camera className="w-6 h-6 mr-2" />
+                Cameras
+              </CardTitle>
+              <CardDescription>Show or hide the Cameras page (archive, timelapse and compare) on the public site.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Switch
+                checked={settings.camerasEnabled !== false}
+                onChange={(v) => updateSettings({ camerasEnabled: v }).catch(() => {})}
+                disabled={loading}
+                label="Cameras page"
+                description="When hidden, the Cameras link is removed from the Community menu and the weather-card link is removed. The live tiles on site weather cards stay. Camera ingest and admin are not affected."
               />
             </CardContent>
           </Card>

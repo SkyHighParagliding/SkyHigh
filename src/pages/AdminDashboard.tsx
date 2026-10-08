@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MapPin, FileText, Activity, Home, Book, Wind, LogOut, BarChart3, ClipboardList, FolderOpen, Briefcase, Contact2, Image as ImageIcon, FileCode2, Wrench, Cpu, Plug, Users, Handshake, Clock, UserPlus, Flag, Store, Navigation, Settings, ShieldAlert, Target, Palette } from "lucide-react";
+import { MapPin, FileText, Activity, Home, Book, Wind, LogOut, BarChart3, ClipboardList, FolderOpen, Briefcase, Contact2, Image as ImageIcon, FileCode2, Wrench, Cpu, Plug, Users, Handshake, Clock, UserPlus, Flag, Store, Navigation, Settings, ShieldAlert, Target, Palette, Camera } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -325,6 +325,17 @@ export function AdminDashboard() {
                     Scheduled Tasks
                   </CardTitle>
                   <CardDescription>Configure timing for all automated jobs — weather, forecasts, Drive sync, and notifications.</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link to="/admin/webcams" className="block group">
+              <Card className="h-full hover:shadow-lg transition-shadow border-t-4 border-t-sky-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-ink group-hover:text-sky-600 transition-colors">
+                    <Camera className="w-6 h-6 mr-2" />
+                    Cameras
+                  </CardTitle>
+                  <CardDescription>Camera feed health, archive size, retention and cleanup.</CardDescription>
                 </CardHeader>
               </Card>
             </Link>

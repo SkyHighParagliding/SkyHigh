@@ -118,6 +118,7 @@ interface Settings {
   xcMapsDescription?: string;
   xcDistanceRings?: string;
   businessDirectoryEnabled?: boolean;
+  camerasEnabled?: boolean;
   bulkUploadLimit?: string;
   xcAirspaceEnabled: boolean;
   xcCompetitionsEnabled: boolean;
@@ -213,6 +214,7 @@ const defaultSettings: Settings = {
   homeCardsCycle: false,
   joinPageEnabled: false,
   groundHandlingEnabled: false,
+  camerasEnabled: true,
   xcMapsEnabled: false,
   xcAirspaceEnabled: false,
   xcCompetitionsEnabled: false,
@@ -343,6 +345,7 @@ function buildSettings(data: Record<string, any>): Settings {
     xcMapsDescription: data.xcMapsDescription || "",
     xcDistanceRings: data.xcDistanceRings || "",
     businessDirectoryEnabled: data.businessDirectoryEnabled === "true",
+    camerasEnabled: data.camerasEnabled !== "false",
     xcAirspaceEnabled: data.xcAirspaceEnabled === "true",
     xcCompetitionsEnabled: data.xcCompetitionsEnabled === "true",
     flightTrackerEnabled: data.flightTrackerEnabled === "true",

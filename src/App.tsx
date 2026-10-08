@@ -50,6 +50,8 @@ const RetrievalMap = lazy(() => import("./pages/RetrievalMap").then(m => ({ defa
 const XCMapsDemo = lazy(() => import("./pages/XCMapsDemo").then(m => ({ default: m.XCMapsDemo })));
 const DutyPilotMap = lazy(() => import("./pages/DutyPilotMap").then(m => ({ default: m.DutyPilotMap })));
 const BusinessDirectory = lazy(() => import("./pages/BusinessDirectory").then(m => ({ default: m.BusinessDirectory })));
+const Cameras = lazy(() => import("./pages/Cameras").then(m => ({ default: m.Cameras })));
+const AdminWebcams = lazy(() => import("./pages/AdminWebcams").then(m => ({ default: m.AdminWebcams })));
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 const AdminSites = lazy(() => import("./pages/AdminSites").then(m => ({ default: m.AdminSites })));
@@ -203,6 +205,7 @@ export default function App() {
               <Route path="video-wall" element={<VideoWall />} />
               <Route path="insta-wall" element={<InstaWall />} />
               <Route path="business-directory" element={<BusinessDirectory />} />
+              <Route path="cameras" element={<Cameras />} />
 
               <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="admin/home" element={<AdminRoute><AdminHomeSettings /></AdminRoute>} />
@@ -242,6 +245,7 @@ export default function App() {
               <Route path="admin/public-contacts" element={<AdminRoute><AdminPublicContacts /></AdminRoute>} />
               <Route path="admin/site-options" element={<AdminRoute><AdminSiteOptions /></AdminRoute>} />
               <Route path="admin/forecast" element={<AdminRoute><AdminForecast /></AdminRoute>} />
+              <Route path="admin/webcams" element={<AdminRoute><AdminWebcams /></AdminRoute>} />
 
               <Route path="page/:slug" element={<Page />} />
               <Route path="features" element={<Features />} />
