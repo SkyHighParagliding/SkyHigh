@@ -81,10 +81,52 @@ Because Weather Underground is the **catch-all**, adding a source means register
 ### `server/storage.ts`
 **Media storage abstraction.** Routes file uploads to local `/uploads/` (dev) or Cloudflare R2 (prod). **Read this to understand DECISION-002.**
 
-Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`.
+Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)` (key to public URL; used by the camera archive).
 
 ### `server/grid/elevationPoint.ts`
 **Server-side terrain elevation fallback.** Fetches AWS terrarium tiles via `sharp`, decodes RGB to metres AMSL, and bilinearly interpolates at the requested coordinate. Used by `GET /api/weather/elevation-at` — the fallback path when the browser tile cache in `src/components/windmap/terrainTiles.ts` does not yet have the required tile. Maintains its own LRU cache (128 decoded tiles, ~17 MB). Cross-tile bilinear sampling is handled correctly for coordinates near tile edges.
+
+---
+
+## Camera Archive (`server/webcams/`, `server/routes/webcams.ts`, `src/components/webcams/`)
+
+**Purpose:** archive of the Flowerdale webcam images from the operator feed (`au2.airportweathercams.com`), every frame in three sizes, kept 90 days. Design and decisions: [[wiki/future/flowerdale-cameras-plan]] and DECISION-017 in `wiki/03-decisions-log.md`. Jobs run only in production (or with `WEBCAM_INGEST=1`); the admin "Run now" works anywhere.
+
+### `server/pg_migrations/048_webcams.sql`
+`webcam_sources` (one row per camera feed, seeded for `three-sisters-flowerdale`) and `webcam_frames` (one row per image, unique on `(sourceId, sourcePath)` so re-ingest is idempotent). No image bytes live in Postgres.
+
+### `server/webcams/airportweathercams.ts`
+Provider adapter. `parseDayFrames` keeps only `ok` frames whose path is `CameraN/YYYYMMDD/images/*.jpg` for the requested day; `fetchDayList` / `fetchImage` do the network calls (honest User-Agent, JPEG magic + size checks). A second provider would be a sibling file.
+
+### `server/webcams/ingest.ts`
+`runIngest(sourceId, {force})`. Lists the day, downloads new frames newest-first, writes thumb (480w) + medium (1280w) + original to storage via `sharp`/mozjpeg, then inserts the row. First run backfills the operator's 8 days. Per run: 60 frames, 150 s budget, 250 ms gap, and a path is skipped after 5 failures. Records `lastRunAt` / `lastSuccessAt` / `lastError` on the source.
+
+### `server/webcams/cleanup.ts`, `retention.ts`
+Nightly 03:30 (Melbourne) delete of frames older than `webcamRetentionDays` (default 90, minimum 7, 3000 rows per run, objects deleted before rows). `runCleanup({dryRun})` powers the admin preview.
+
+### `server/webcams/usageAlert.ts`
+Emails the admins once when the archive passes `webcamUsageAlertGb` (default 25 GB); with 90-day retention it levels off near 12 GB, so crossing it means cleanup has stopped.
+
+### `server/webcams/jobs.ts`
+`startWebcamJobs()` (called from `startScheduledJobs`): poll every 3 min inside the source's poll window, nightly cleanup + storage check, a 45 s startup poll.
+
+### `server/webcams/status.ts`, `pairing.ts`, `keys.ts`, `timeUtil.ts`
+Pure helpers (all unit-tested in `server/webcams/webcams.test.mjs`): `feedStatus` (live / overnight / stale / offline from the expected capture window), `pairByTime` (north/south pairing at read time, 90 s tolerance), storage key layout `webcams/<siteId>/<YYYYMMDD>/<camera>-<HHMMSS>-{thumb,medium,orig}.jpg`, station-local time conversion.
+
+### `server/routes/webcams.ts` (mounted at `/api/webcams`)
+Public: `GET /sites`, `/:siteId/latest`, `/:siteId/days`, `/:siteId/day/:ymd` (all days public). Admin: `GET /admin/sources`, `PUT /admin/sources/:id`, `POST /admin/sources/:id/run`, `POST /admin/cleanup` (dry run unless `dryRun:false`).
+
+### `src/components/webcams/WebcamViewer.tsx`
+Shared viewer used by the weather-card modal and the `/cameras` page: day picker, scrubber, play with 1-8x speed, Both/North/South, compare presets (1 h, 3 h, yesterday, last week), preloading, swipe/keyboard, fullscreen, URL sync (`day`, `t`, `cam`).
+
+### `src/components/weather/SiteWebcamPanel.tsx`
+Weather-card camera tiles, now served from the archive (thumb tiles with age chips). Tapping opens the viewer modal. Falls back to `LegacyVentuskyWebcams.tsx` when a site has no feed or the API is down. The fallback is isolated so it can be deleted once the archive has proven itself.
+
+### `src/pages/Cameras.tsx`, `src/pages/AdminWebcams.tsx`
+`/cameras` (linked from the Community menu; hidden when the **Cameras** toggle in Admin → Site Options is off) and `/admin/webcams` (feed health, edit source, Run now, retention, cleanup preview, storage totals).
+
+### `src/hooks/useWebcams.ts`, `src/lib/webcamTime.ts`
+react-query hooks for the public API; client time helpers (tested in `src/lib/webcamTime.test.mjs`).
 
 ---
 

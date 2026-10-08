@@ -1,4 +1,4 @@
-# RESUME_HERE — Last updated: 2026-10-05 (docs sync after session 73)
+# RESUME_HERE — Last updated: 2026-10-08 (Flowerdale camera archive built, awaiting push + first prod run)
 
 ## Project: SkyHigh
 ## Status: Active — on `main` (== origin/main at `e949172`). Rain radar + one-map-everywhere **merged + pushed**. Railway auto-deploys `main`.
@@ -7,6 +7,24 @@
 branch: main   (== origin/main; Railway auto-deploys main)
 latest: e949172 (one map everywhere)  ← 5afabec  ← 54898ae  ← 47e0823  ← 11c2e28  ← 7e8d6c9 (docs)  ← 61a3bc9 (session 72)
 ```
+
+## Session 74 (2026-10-08) — Flowerdale camera archive (all four phases built, NOT YET PUSHED)
+
+Replaced the hourly Ventusky tiles with an archive fed from the operator's feed
+(`https://au2.airportweathercams.com/Flowerdale/timelapse.php`). Plan + decisions:
+`wiki/future/flowerdale-cameras-plan.md`, DECISION-017. File map: `wiki/05-file-map.md` → Camera Archive.
+
+- **Server:** migration `048_webcams.sql`; `server/webcams/*` (adapter, idempotent ingest with 8-day backfill, nightly cleanup, storage-usage email, status, jobs); `server/routes/webcams.ts` at `/api/webcams` (public latest/days/day, admin sources/run/cleanup). Jobs start from `startScheduledJobs()` and only auto-run in production or with `WEBCAM_INGEST=1`.
+- **Client:** `WebcamViewer` (day picker, scrubber, 1-8x playback, Both/North/South, compare presets, URL sync), `/cameras` page in the **Community** menu, weather-card tiles served from the archive, `/admin/webcams` page, `camerasEnabled` toggle (Admin → Site Options).
+- **Retention:** every frame, all three sizes (thumb 480w, medium 1280w, original) for **90 days** (`webcamRetentionDays`, min 7), about 136 MB/day, about 12 GB steady. Email alert past 25 GB.
+- **Ventusky** is kept only as an isolated fallback (`src/components/weather/LegacyVentuskyWebcams.tsx`); delete it in a one-commit cleanup once the archive has run cleanly.
+- **Verified here:** `tsc --noEmit` clean, 56 server + 19 client unit tests, migration lint. **Not verifiable from Cowork:** `vite build` (Windows-built node_modules), and whether **Railway can reach the camera host** (the sandbox is blocked).
+
+### Do this after the next deploy
+1. Admin → Cameras → **Run now**. Check `Last error` is empty and frames appear (first run backfills the operator's last 8 days over several runs).
+2. Open `/cameras` and a weather card for Flowerdale; confirm tiles, scrubber and Community menu link.
+3. If `Last error` says the host cannot be reached, Railway cannot see the operator's site: tell the developer.
+4. Locally: `npm run build` and `npm test` (the Cowork sandbox cannot run `vite build`).
 
 ## Session 73 (2026-10-04) — one map everywhere, SkewT polish, live-wind radius (5 commits, pushed)
 

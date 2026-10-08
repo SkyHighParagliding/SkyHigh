@@ -118,10 +118,11 @@ server/
 ├── services/                   # real*/demo* pairs (flat files): realFlightService +
 │                               #   demoFlightService, real/demoMessageService,
 │                               #   realRetrievalService, photoService, index.ts, types.ts
+├── webcams/                    # camera archive: ingest, cleanup, status, jobs (see wiki/05-file-map.md)
 ├── utils/                      # scheduledJobs, openMeteo, logger, email, watermark,
 │                               #   garminMapshare/spotTracker/zoleoTracker, siteScraper,
 │                               #   aiModels, gridAlerts, siteResolver, eligibility, …
-└── pg_migrations/              # 47 sequential SQL migrations (applied on startup)
+└── pg_migrations/              # 048 is the latest numbered SQL migration (two older ones are .skip) (applied on startup)
 ```
 
 ### `src/` (Frontend)

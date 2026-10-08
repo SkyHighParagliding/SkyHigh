@@ -1,3 +1,5 @@
+> **OBSOLETE (2026-10-08):** the club owns the Flowerdale cameras and is entitled to retrieve the images, so no permission email to the operator is needed. Kept for reference only. See `wiki/future/flowerdale-cameras-plan.md`.
+
 # Flowerdale (Three Sisters) cameras — operator email
 
 **Purpose:** Ask the camera operator (myairportcams.com / "Aus Web Cams") for an

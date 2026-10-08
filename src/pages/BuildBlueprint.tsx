@@ -417,6 +417,7 @@ const phases: Phase[] = [
           "Club Photos (/club-photos): masonry grid from approved image library, lightbox viewer with prev/next navigation, newest first",
           "Video Wall (/video-wall): YouTube API integration for club channel videos, carousel display with video player",
           "Insta Wall (/insta-wall): embedded Instagram posts/feed from club account",
+          "Cameras (/cameras): Flowerdale webcam archive viewer with day picker, scrubber, timelapse playback and compare; images are ingested from the camera operator into our own storage and kept 90 days",
           "PhotoSlider component: reusable horizontal image carousel for home page and site pages",
           "YouTubeCarousel component: auto-fetches and displays latest videos",
         ],

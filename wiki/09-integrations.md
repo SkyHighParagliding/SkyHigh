@@ -180,3 +180,25 @@ Checking "Permanently Closed" in the site edit page sets `sites.status = 'closed
 ### Emergency closure (temporarilyClosed)
 
 The `temporarilyClosed` flag (managed by Safety Officers via a separate admin control) is completely independent of scheduled closures. Its amber "Temporarily Closed" badge renders in the same badge stack, below scheduled-closure badges but above the base open/closed state.
+
+
+---
+
+# Flowerdale Camera Feed (airportweathercams)
+
+## What It Does
+
+Supplies the Flowerdale north/south webcam images (2560x1920, about every 6 minutes, roughly 06:00-18:00 local). The server fetches them and keeps its own 90-day archive; the site never depends on the operator's page at view time.
+
+## Setup
+
+No account or API key. The club owns the cameras and is entitled to retrieve the images. The feed address lives in the `webcam_sources` table (`baseUrl`, editable at **Admin → Cameras**). Only the server calls it; it sends a descriptive User-Agent and waits 250 ms between images.
+
+## Technical Summary
+
+- Day list: `GET {baseUrl}timelapse.php?action=getFrames&day=YYYYMMDD` (JSON; 8 days of history).
+- Images: `Camera1` = North, `Camera2` = South, path `CameraN/YYYYMMDD/images/PYYMMDDHHMMSSnn.jpg`. Filenames are not predictable, so the day list is always read first.
+- Times are station-local (Australia/Melbourne).
+- Storage: `webcams/<siteId>/<YYYYMMDD>/...` in R2 (prod) or `/uploads` (dev). Retention `webcamRetentionDays` (default 90).
+- **First production check:** after deploy, open Admin → Cameras and press **Run now**. If `Last error` says the host cannot be reached, Railway cannot see the operator's site (the dev sandbox could not test this).
+- File map: `wiki/05-file-map.md` (Camera Archive section). Design: `wiki/future/flowerdale-cameras-plan.md`.

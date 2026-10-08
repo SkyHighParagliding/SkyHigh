@@ -122,6 +122,7 @@ const categories: SpecCategory[] = [
           "Club Photos (/club-photos): mosaic image wall from the library, newest first, cycling through all size variants.",
           "Video Wall (/video-wall): mosaic of YouTube thumbnails, newest first, linking to YouTube videos.",
           "Instagram Wall (/insta-wall): Instagram feed embed.",
+          "Cameras (/cameras): Flowerdale webcam images from the last 90 days. Pick a day, scrub or play it back as a timelapse, switch North/South, or compare with an hour ago, yesterday or last week. The weather card shows the latest pair and opens the same viewer.",
           "Community photo submissions: public upload form for pilots to contribute site photos.",
           "Sponsors page: logo grid with business name, description, and website link.",
           "Business Directory (/business-directory): member-owned business listings with contact details and website links.",

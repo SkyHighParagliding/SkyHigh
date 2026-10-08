@@ -821,6 +821,28 @@ legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
 
 ---
 
+## DECISION-017: Flowerdale Camera Archive — Ingest to Our Own Storage, 90-Day Retention
+
+**Date:** 2026-10-08
+**Owner:** Jon Pamment
+**Status:** ✅ Implemented, awaiting first production run (verify Railway can reach the feed)
+
+### Context
+The club owns the Flowerdale cameras and the operator (airportweathercams) hosts a viewer at `.../Flowerdale/timelapse.php`. It serves 2560x1920 frames for two cameras about every 6 minutes but keeps only 8 days. The weather card showed hourly 600x450 Ventusky tiles. The viewer's JSON has no CORS and filenames are not guessable, so the browser cannot read it directly.
+
+### Options considered
+- **A — Hotlink the operator's images.** Free, but history stays at 8 days and we depend on their server staying up and unchanged.
+- **B — Ingest into our own storage (R2).** We keep history and serve fast thumbnails. Costs storage and a small job. ✅ **Chosen.**
+- **Retention:** keep everything forever (about 50 GB/year), keep only small sizes, or keep every size for a fixed window. ✅ **Every frame, all sizes including originals, for 90 days, then delete** (about 12 GB steady state; `webcamRetentionDays`, minimum 7).
+
+### Chosen: B, 90 days
+Per-image rows in `webcam_frames` (idempotent on the source path), three JPEG sizes per image in R2, north/south paired at read time, nightly cleanup, and an email if usage passes 25 GB. Ventusky tiles stay only as an isolated fallback until the archive is proven. All archive days are public; no operator credit line (the club owns the cameras). Weather-card tiles plus a dedicated `/cameras` page under the Community menu.
+
+### Reversibility
+Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the page; retention can be raised or lowered any time. The migration is additive.
+
+---
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -840,7 +862,8 @@ legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
 | 014 | Remove white-label engine | Native single-club; `TemplateContext`/template registry deleted, palette rewritten to semantic tokens | 2026-09-15 | ✅ Locked |
 | 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
 | 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system. +CSP fix (api.rainviewer.com) +cross-layer tapped-point carry | 2026-10-03 | ✅ Locked (merged + live) |
+| 017 | Flowerdale camera archive | Ingest operator frames to R2 (3 sizes per image), 90-day retention, tiles + `/cameras` page; Ventusky kept only as isolated fallback | 2026-10-08 | ✅ Implemented (verify first prod run) |
 
 ---
 
-Last updated: 2026-09-19
+Last updated: 2026-10-08

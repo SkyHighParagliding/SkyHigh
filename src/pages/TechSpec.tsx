@@ -456,6 +456,7 @@ const categories: SpecCategory[] = [
           "AdminNewsEdit.tsx — News article editor",
           "AdminWeather.tsx — Weather scraper config and wind map settings",
           "AdminScheduledTasks.tsx — Scheduled job control (siteguide version check, weather fetch, forecast sync, image notifications, document sync) with configurable times and cache TTL settings for 8 cache types (admin session, TidyHQ members, tide predictions, events, search context, asset register, FreeFlightWx). All times Melbourne-based, hourly system check.",
+          "AdminWebcams.tsx — Camera archive control (Admin → Cameras): feed health (live/overnight/stale/offline), last error, edit the feed address and expected capture window, Run now, retention days, cleanup preview, storage totals.",
           "AdminAIModels.tsx — AI model fallback chain configuration with live Google model search, in-place model replacement, per-model testing, trait badges (speed/thinking/cost/vision/image-gen/context/legacy/experimental), and clickable trait filters that re-sort the model list by best match with score indicators",
           "AdminCheckins.tsx — Check-in analytics",
           "AdminPageViews.tsx — Page view analytics",

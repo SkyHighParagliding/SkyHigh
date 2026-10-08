@@ -1,8 +1,15 @@
-# Current Tasks — Last updated: 2026-10-05
+# Current Tasks — Last updated: 2026-10-08
 
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## 🟡 Open / on hold
+
+### VERIFY — Flowerdale camera archive first production run
+- **Status:** OPEN (built 2026-10-08, local commits not yet pushed)
+- After deploy: Admin → Cameras → **Run now**; confirm `Last error` is empty and frames appear. If it says the host cannot be reached, Railway cannot see the operator's site (the dev sandbox could not test this).
+- Then check `/cameras`, the Flowerdale weather card, and the Community → Cameras menu link.
+- Run `npm run build` and `npm test` locally (the Cowork sandbox cannot run `vite build`).
+- Later cleanup: delete `src/components/weather/LegacyVentuskyWebcams.tsx` and its fallback branch in `SiteWebcamPanel.tsx` once the archive is proven. Not built (optional): AI vision descriptions, MP4 timelapse export.
 
 ### FOLLOW-UP — Session 73 loose ends
 - **Status:** OPEN (found during the 2026-10-05 docs sync)
@@ -31,6 +38,10 @@
 > **No incomplete *backlog* tasks remain** beyond the training initiative. See wiki/02-tasks.md for the full log.
 
 ## ✅ Done
+
+### Flowerdale camera archive (ingest, 90-day retention, tiles, /cameras, admin)
+- **Completed:** 2026-10-08 (local commits; push pending)
+- **What changed:** migration 048, `server/webcams/*`, `/api/webcams`, `WebcamViewer`, `/cameras` (Community menu), weather-card tiles from the archive, `/admin/webcams`, `camerasEnabled` setting. Decision: DECISION-017. Ventusky kept only as an isolated fallback.
 
 ### One map everywhere — site maps reuse the Flying Sites map
 - **Completed:** 2026-10-04 (`e949172`, pushed)
