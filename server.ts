@@ -41,6 +41,7 @@ import submissionsRouter from "./server/routes/submissions.js";
 import sponsorsRouter from "./server/routes/sponsors.js";
 import groundHandlingRouter from "./server/routes/groundHandling.js";
 import businessDirectoryRouter from "./server/routes/businessDirectory.js";
+import webcamsRouter from "./server/routes/webcams.js";
 import competitionsRouter from "./server/routes/competitions.js";
 import pilotAuthRouter from "./server/routes/pilotAuth.js";
 import flightsRouter from "./server/routes/flights.js";
@@ -265,6 +266,7 @@ async function startServer() {
   app.use("/api/sponsors", sponsorsRouter);
   app.use("/api/ground-handling", groundHandlingRouter);
   app.use("/api/business-directory", businessDirectoryRouter);
+  app.use("/api/webcams", webcamsRouter);
   app.use("/api/competitions", competitionsRouter);
   app.use("/api/pilot-auth", pilotAuthRouter);
   app.use("/api/public-contacts", publicContactsRouter);

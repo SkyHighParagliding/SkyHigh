@@ -56,7 +56,7 @@ async function getSetting(key: string): Promise<string | null> {
 }
 
 /** Current admins with a usable address, plus the configured extra recipients. */
-async function resolveRecipients(): Promise<string[]> {
+export async function resolveRecipients(): Promise<string[]> {
   const admins = await query<{ email: string }>(
     `SELECT email FROM contacts WHERE "isAdmin" = 1 AND email IS NOT NULL AND email != ''`,
   );

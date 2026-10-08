@@ -5,6 +5,7 @@ import { runVersionCheck, notifySiteguideVersionChange } from "./siteguideVersio
 import { sendEmail } from "./email.js";
 import { query, queryOne, execute } from "../pg.js";
 import { cleanExpiredSessions } from "../middleware/auth.js";
+import { startWebcamJobs } from "../webcams/jobs.js";
 
 const log = createLogger("scheduled-jobs");
 
@@ -442,6 +443,8 @@ export async function startScheduledJobs() {
     }
   }, { timezone: "Australia/Melbourne" });
   log.info("Admin session cleanup scheduled: 3:00am Melbourne time");
+
+  startWebcamJobs();
 
   log.info("Scheduled jobs started: hourly cron checks all configurable task times (Melbourne time)");
 }

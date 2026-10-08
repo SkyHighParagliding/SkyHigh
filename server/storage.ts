@@ -67,6 +67,7 @@ function ensureDir(dir: string) {
 //   branding/             logo variants, pwa icons
 //   attachments/          page/doc file attachments
 //   submissions/          social media image submissions
+//   webcams/              archived camera frames (<siteId>/<YYYYMMDD>/<camera>-<HHMMSS>-{thumb,medium,orig}.jpg)
 
 /**
  * Save a file buffer to R2 (if configured) or local filesystem.
@@ -165,6 +166,11 @@ export function fileExists(urlOrPath: string): boolean {
     ? path.join(process.cwd(), urlOrPath.slice(1))
     : path.join(process.cwd(), urlOrPath);
   return fs.existsSync(abs);
+}
+
+/** Public URL for a storage key (R2 public URL in prod, /uploads/... locally). */
+export function publicUrl(key: string): string {
+  return isR2Configured() ? `${R2_PUBLIC_URL}/${key}` : `/uploads/${key}`;
 }
 
 /**
