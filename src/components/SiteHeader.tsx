@@ -51,6 +51,7 @@ export function SiteHeader() {
       { name: "Visiting Pilots", path: "/page/visiting-pilots" },
       ...(settings.joinPageEnabled ? [{ name: "Join the Club", path: "/join" }] : []),
       ...(settings.groundHandlingEnabled ? [{ name: "Ground Handling", path: "/ground-handling" }] : []),
+      { name: "Voyager Project", path: "/voyager-project" },
     ]},
     ...(xcChildren.length > 0 ? [{ name: "XC", children: xcChildren }] : []),
     { name: "News", path: "/news" },

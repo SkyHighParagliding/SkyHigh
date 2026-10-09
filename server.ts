@@ -178,7 +178,7 @@ async function startServer() {
       // frame-src: legitimate third-party embeds — Google My Maps (Ground Handling
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
-      "frame-src 'self' https://www.google.com https://www.instagram.com",
+      "frame-src 'self' https://www.google.com https://www.instagram.com https://skyhighvoyagers.streamlit.app",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

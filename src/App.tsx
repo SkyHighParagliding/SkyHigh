@@ -38,6 +38,7 @@ const ClubPhotos = lazy(() => import("./pages/ClubPhotos").then(m => ({ default:
 const VideoWall = lazy(() => import("./pages/VideoWall").then(m => ({ default: m.VideoWall })));
 const InstaWall = lazy(() => import("./pages/InstaWall").then(m => ({ default: m.InstaWall })));
 const GroundHandling = lazy(() => import("./pages/GroundHandling").then(m => ({ default: m.GroundHandling })));
+const VoyagerProject = lazy(() => import("./pages/VoyagerProject").then(m => ({ default: m.VoyagerProject })));
 const XCCompetitions = lazy(() => import("./pages/XCCompetitions").then(m => ({ default: m.XCCompetitions })));
 const Shop = lazy(() => import("./pages/Shop").then(m => ({ default: m.Shop })));
 const Join = lazy(() => import("./pages/Join").then(m => ({ default: m.Join })));
@@ -206,6 +207,7 @@ export default function App() {
               <Route path="insta-wall" element={<InstaWall />} />
               <Route path="business-directory" element={<BusinessDirectory />} />
               <Route path="cameras" element={<Cameras />} />
+              <Route path="voyager-project" element={<VoyagerProject />} />
 
               <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="admin/home" element={<AdminRoute><AdminHomeSettings /></AdminRoute>} />
