@@ -178,7 +178,7 @@ async function startServer() {
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
       "frame-src 'self' https://www.google.com https://www.instagram.com https://skyhighvoyagers.streamlit.app",
-      "frame-ancestors 'self' https://www.skyhighparagliding.org.au/ https://www.skyhighparagliding.org.au/",
+      "frame-ancestors 'self' https://www.skyhighparagliding.org.au https://skyhighparagliding.org.au",
       "base-uri 'self'",
       "form-action 'self'",
     ].join('; '));
