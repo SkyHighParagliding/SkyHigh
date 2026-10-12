@@ -153,6 +153,7 @@ async function startServer() {
   app.set("trust proxy", 1);
   app.use(compression({ level: 6, threshold: 1024 }));
   app.use((_req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -178,7 +179,7 @@ async function startServer() {
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
       "frame-src 'self' https://www.google.com https://www.instagram.com https://skyhighvoyagers.streamlit.app",
-      "frame-ancestors 'self' https://www.skyhighparagliding.org.au https://skyhighparagliding.org.au",
+      "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
     ].join('; '));
