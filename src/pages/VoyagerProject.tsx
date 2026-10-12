@@ -1,7 +1,7 @@
 // The Voyager Project is a separate Streamlit app (own repo + database).
 // It is embedded here with an iframe. The origin below must also be listed in
 // `frame-src` in server.ts, otherwise the browser blocks the frame.
-const VOYAGER_APP_BASE = "skyhighvoyagers-production.up.railway.app";
+const VOYAGER_APP_BASE = "https://skyhighvoyagers-production.up.railway.app";
 // Streamlit Community Cloud only renders inside an iframe when "?embed=true" is present.
 const VOYAGER_APP_EMBED_URL = `${VOYAGER_APP_BASE}?embed=true`;
 
