@@ -36,8 +36,9 @@ function mapProduct(p: any): MappedProduct {
     images: Array.isArray(p.images) ? p.images.map((img: any) => img.url || img) : (p.image ? [p.image] : []),
     stockStatus: p.quantity != null ? (p.quantity > 0 ? "in_stock" : "out_of_stock") : "available",
     quantity: p.quantity ?? null,
-    slug: p.slug || p.id,
-    shopUrl: `https://skyhigh.tidyhq.com/public/shop/products/${p.slug || p.id}`,
+    // TidyHQ's public product pages are keyed by `permalink`, not the product id
+    slug: p.permalink || p.slug || p.id,
+    shopUrl: `https://skyhigh.tidyhq.com/public/shop/products/${p.permalink || p.slug || p.id}`,
     category: p.category?.name || "",
   };
 }
@@ -83,7 +84,10 @@ async function fetchTidyHQProducts(): Promise<MappedProduct[]> {
     }
   }
   const data = await response.json();
-  const raw = Array.isArray(data) ? data : [];
+  // Drafts and admin-only products have no public page on TidyHQ (their links 404)
+  const raw = (Array.isArray(data) ? data : []).filter(
+    (p: any) => (p.status ?? "published") === "published" && (p.visible_to ?? "public") === "public",
+  );
   cachedProducts = raw.map(mapProduct);
   cacheTimestamp = now;
   return cachedProducts;
