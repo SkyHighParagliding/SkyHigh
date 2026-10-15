@@ -4,7 +4,6 @@ import { Maximize2 } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useWebcamLatest, useWebcamSites } from "@/hooks/useWebcams";
 import { ageText, formatClock } from "@/lib/webcamTime";
-import { LegacyVentuskyWebcams, hasLegacyVentuskyWebcams } from "./LegacyVentuskyWebcams";
 
 const WebcamViewer = lazy(() => import("@/components/webcams/WebcamViewer").then(m => ({ default: m.WebcamViewer })));
 
@@ -17,8 +16,7 @@ function fmtHour(minutes: number): string {
  * Per-site camera tiles on the weather card. Images come from our own archive
  * (see wiki/future/flowerdale-cameras-plan.md): the newest frame per camera,
  * refreshed every couple of minutes. Tapping a tile opens the timelapse viewer.
- * If the site has no archived feed (or the API is down) it falls back to the
- * legacy Ventusky tiles, which are to be deleted once the archive is proven.
+ * Renders nothing if the site has no archived feed or the API is down.
  */
 export function SiteWebcamPanel({ site }: { site: { id?: string } }) {
   const siteId = site?.id;
@@ -34,13 +32,9 @@ export function SiteWebcamPanel({ site }: { site: { id?: string } }) {
     return () => clearInterval(t);
   }, []);
 
-  if (!siteId) return null;
-  const legacy = hasLegacyVentuskyWebcams(siteId) ? <LegacyVentuskyWebcams site={site} /> : null;
-  if (sitesQ.isLoading) return null;
-  if (!hasFeed) return legacy;
-  if (latestQ.isLoading) return null;
+  if (!siteId || !hasFeed) return null;
   const latest = latestQ.data;
-  if (!latest || latest.cameras.length === 0) return legacy;
+  if (!latest || latest.cameras.length === 0) return null;
 
   const tz = latest.timezone;
   const newest = latest.newestAt!;

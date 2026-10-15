@@ -7,7 +7,7 @@
 - **Measured sizes:** thumb 480w about 20 KB, medium 1280w about 125 KB, original about 395-445 KB. About 136 MB/day for both cameras, about 12 GB at 90 days. Sections below that quote keep-everything-forever figures are superseded by the 90-day decision.
 - **Storage model:** one row per image (not per pair); north/south are paired at read time with a 90 s tolerance. Idempotent on `(sourceId, sourcePath)`.
 - **Backfill** covers only the operator's last 8 days; earlier history does not exist anywhere.
-- **Ventusky** tiles remain as an isolated fallback (`LegacyVentuskyWebcams.tsx`). Deleting it is a one-commit cleanup once the archive has run cleanly for a while.
+- **Ventusky** fallback (`LegacyVentuskyWebcams.tsx`) removed 2026-10-16 after the archive ran cleanly in production from 2 Oct.
 - **Not built (optional later items):** AI vision descriptions and MP4 timelapse export.
 
 **Source link:** `https://au2.airportweathercams.com/Flowerdale/timelapse.php`

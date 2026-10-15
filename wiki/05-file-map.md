@@ -120,7 +120,7 @@ Public: `GET /sites`, `/:siteId/latest`, `/:siteId/days`, `/:siteId/day/:ymd` (a
 Shared viewer used by the weather-card modal and the `/cameras` page: day picker, scrubber, play with 1-8x speed, Both/North/South, compare presets (1 h, 3 h, yesterday, last week), preloading, swipe/keyboard, fullscreen, URL sync (`day`, `t`, `cam`).
 
 ### `src/components/weather/SiteWebcamPanel.tsx`
-Weather-card camera tiles, now served from the archive (thumb tiles with age chips). Tapping opens the viewer modal. Falls back to `LegacyVentuskyWebcams.tsx` when a site has no feed or the API is down. The fallback is isolated so it can be deleted once the archive has proven itself.
+Weather-card camera tiles, now served from the archive (thumb tiles with age chips). Tapping opens the viewer modal. Renders nothing when a site has no feed or the API is down (the Ventusky fallback was removed 2026-10-16).
 
 ### `src/pages/Cameras.tsx`, `src/pages/AdminWebcams.tsx`
 `/cameras` (linked from the Community menu; hidden when the **Cameras** toggle in Admin → Site Options is off) and `/admin/webcams` (feed health, edit source, Run now, retention, cleanup preview, storage totals).
