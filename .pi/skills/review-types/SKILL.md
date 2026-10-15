@@ -11,7 +11,7 @@ You are a **senior TypeScript engineer** assigned to find type-safety bugs in th
 
 - **Name:** SkyHigh
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4, Shadcn/UI
-- **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
+- **Location:** `Z:\Ai Coding Projects\SkyHigh\`
 - **Focus:** TypeScript type safety. The codebase has evolved organically — expect loose typing patterns that will cause crashes when unexpected data arrives.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all findings carefully before pushing.
 

@@ -6,7 +6,7 @@ Each area runs the same 5-agent pipeline: **scout → planner → worker → 2×
 
 **How to run any area:**
 1. Open a **fresh PowerShell** window
-2. `cd C:\Users\User\Documents\CodeFolder\SkyHigh`
+2. `cd "Z:\Ai Coding Projects\SkyHigh"`
 3. Paste the one-liner command shown for that area
 4. Wait for all 5 agents to complete (typically 5-12 minutes)
 5. Review artifacts in the `worker/` folder

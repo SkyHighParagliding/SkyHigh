@@ -11,7 +11,7 @@
 Run this once, before starting cycle 1:
 
 ```powershell
-mkdir "C:\Users\User\Documents\CodeFolder\skyhigh\.pi\reviews" -Force
+mkdir "Z:\Ai Coding Projects\SkyHigh\.pi\reviews" -Force
 ```
 
 ---
@@ -99,12 +99,12 @@ Launches 5 reviewers simultaneously (each opens a new terminal window). The key 
 ### Cycle 1
 
 ```powershell
-mkdir "C:\Users\User\Documents\CodeFolder\skyhigh\.pi\reviews" -Force
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-bugs 'Read the actual code files. Find real bugs. Write to .pi/reviews/cycle-1-bugs.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-duplication 'Read the actual code files. Find duplication. Write to .pi/reviews/cycle-1-duplication.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-security 'Read the actual code files. Find security vulnerabilities. Write to .pi/reviews/cycle-1-security.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-performance 'Read the actual code files. Find performance issues. Write to .pi/reviews/cycle-1-performance.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-database 'Read the actual code files. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-1-database.md'"
+mkdir "Z:\Ai Coding Projects\SkyHigh\.pi\reviews" -Force
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-bugs 'Read the actual code files. Find real bugs. Write to .pi/reviews/cycle-1-bugs.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-duplication 'Read the actual code files. Find duplication. Write to .pi/reviews/cycle-1-duplication.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-security 'Read the actual code files. Find security vulnerabilities. Write to .pi/reviews/cycle-1-security.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-performance 'Read the actual code files. Find performance issues. Write to .pi/reviews/cycle-1-performance.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-database 'Read the actual code files. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-1-database.md'"
 ```
 *Wait for all 5 windows to finish, then run:*
 ```powershell
@@ -115,11 +115,11 @@ pi /skill:review-fixer "Read .pi/reviews/cycle-1-plan.md. Implement fixes (show 
 ### Cycle 2
 
 ```powershell
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-2-bugs.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-2-duplication.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-2-security.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-2-performance.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-2-database.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-2-bugs.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-2-duplication.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-2-security.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-2-performance.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-2-database.md'"
 ```
 *Wait for all 5 windows to finish, then run:*
 ```powershell
@@ -130,11 +130,11 @@ pi /skill:review-fixer "Read .pi/reviews/cycle-2-plan.md. Implement fixes (show 
 ### Cycle 3
 
 ```powershell
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-3-bugs.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-3-duplication.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-3-security.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-3-performance.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-3-database.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-3-bugs.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-3-duplication.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-3-security.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-3-performance.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-3-database.md'"
 ```
 *Wait for all 5 windows to finish, then run:*
 ```powershell
@@ -145,11 +145,11 @@ pi /skill:review-fixer "Read .pi/reviews/cycle-3-plan.md. Implement fixes (show 
 ### Cycle 4
 
 ```powershell
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-4-bugs.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-4-duplication.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-4-security.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-4-performance.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-4-database.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-4-bugs.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-4-duplication.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-4-security.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-4-performance.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-4-database.md'"
 ```
 *Wait for all 5 windows to finish, then run:*
 ```powershell
@@ -160,11 +160,11 @@ pi /skill:review-fixer "Read .pi/reviews/cycle-4-plan.md. Implement fixes (show 
 ### Cycle 5 (Hard Stop)
 
 ```powershell
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-5-bugs.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-5-duplication.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-5-security.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-5-performance.md'"
-Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'C:\Users\User\Documents\CodeFolder\skyhigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-5-database.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-bugs 'Read the entire codebase. Find real bugs. Write to .pi/reviews/cycle-5-bugs.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-duplication 'Read the entire codebase. Find duplication. Write to .pi/reviews/cycle-5-duplication.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-security 'Read the entire codebase. Find security vulnerabilities. Write to .pi/reviews/cycle-5-security.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-performance 'Read the entire codebase. Find performance issues. Write to .pi/reviews/cycle-5-performance.md'"
+Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", "cd 'Z:\Ai Coding Projects\SkyHigh'; pi /skill:review-database 'Read the entire codebase. Find SQLite/PostgreSQL incompatibilities. Write to .pi/reviews/cycle-5-database.md'"
 ```
 *Wait for all 5 windows to finish, then run:*
 ```powershell
@@ -187,7 +187,7 @@ A single PowerShell script that does everything for you:
 ```powershell
 Set-Content -Path ".pi\Run-ReviewCycle.ps1" -Value @'
 param([int]$Cycle = 1)
-$projectDir = "C:\Users\User\Documents\CodeFolder\skyhigh"
+$projectDir = "Z:\Ai Coding Projects\SkyHigh"
 $reviewsDir = "$projectDir\.pi\reviews"
 if (!(Test-Path $reviewsDir)) { New-Item -ItemType Directory -Path $reviewsDir -Force | Out-Null; Write-Host "Created reviews directory." }
 
@@ -274,7 +274,7 @@ Check the coordinator's plan report (`cycle-N-plan.md`) after each cycle. Stop w
 ## ROLLBACK COMMANDS
 
 ```powershell
-cd "C:\Users\User\Documents\CodeFolder\skyhigh"
+cd "Z:\Ai Coding Projects\SkyHigh"
 
 # Restore all tracked files to pre-review state
 git checkout savepoint-pre-review -- .

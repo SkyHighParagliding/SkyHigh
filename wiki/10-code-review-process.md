@@ -49,7 +49,7 @@ If you want the parent AI to run the process autonomously, use this robust setup
 **Step 1: Open a Fresh Terminal**
 Close any existing Pi terminals to ensure the system memory buffer is completely clear (this prevents Node.js `STATUS_STACK_BUFFER_OVERRUN` errors when launching complex subagent chains). Open a brand new PowerShell window and navigate to your project:
 ```powershell
-cd C:\Users\User\Documents\CodeFolder\SkyHigh
+cd "Z:\Ai Coding Projects\SkyHigh"
 ```
 
 **Step 2: Create the Robust Instruction File**

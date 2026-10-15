@@ -9,7 +9,7 @@ This directory is configured as an Obsidian vault named **"SkyHigh Wiki"**.
 **To open in Obsidian:**
 1. Open Obsidian
 2. Click "Open vault as folder" or File → Open vault folder
-3. Select: `C:\Users\User\Documents\CodeFolder\SkyHigh\wiki`
+3. Select: `Z:\Ai Coding Projects\SkyHigh\wiki`
 4. The vault will load as **SkyHigh Wiki** (configured in `.obsidian/vault.json`)
 
 The vault includes:

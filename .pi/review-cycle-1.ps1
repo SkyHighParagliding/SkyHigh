@@ -3,7 +3,7 @@ CYCLE 1 — Review Agent Workflow
 Execute each step in sequence. Wait for each to finish before starting the next.
 
 For each step, run:
-  cd C:\Users\User\Documents\CodeFolder\skyhigh
+  cd "Z:\Ai Coding Projects\SkyHigh"
   (cat .pi\skills\<skill-name>\SKILL.md & echo. & echo User: Perform your review now. Write to .pi/reviews/cycle-1-<name>) | pi --print
 
 Steps:

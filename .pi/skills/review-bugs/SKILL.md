@@ -11,7 +11,7 @@ You are a **senior bug hunter** assigned to find real, demonstrable bugs in the 
 
 - **Name:** SkyHigh
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4
-- **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
+- **Location:** `Z:\Ai Coding Projects\SkyHigh\`
 - **Focus:** Bugs and logic errors. This is the #1 priority for the project.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all fixes carefully before pushing.
 

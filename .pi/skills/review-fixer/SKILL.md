@@ -11,7 +11,7 @@ You are a **careful fixer** assigned to implement the changes in the coordinator
 
 - **Name:** SkyHigh
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4
-- **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
+- **Location:** `Z:\Ai Coding Projects\SkyHigh\`
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all fixes carefully before pushing.
 
 ## Before You Start
@@ -43,7 +43,7 @@ Never batch multiple fixes. Each item gets shown, approved, applied, verified, t
 
 ### RULE 4: Verify Before Moving On
 After each fix:
-1. Run TypeScript compilation check: `npx tsc --noEmit` in `C:\Users\User\Documents\CodeFolder\skyhigh\`
+1. Run TypeScript compilation check: `npx tsc --noEmit` in `Z:\Ai Coding Projects\SkyHigh\`
 2. If there's a test file for the area: run the tests (`npm test` or `npx vitest run`)
 3. **Extra verification:** Check if the changed code path has any surrounding tests (grep for the function/module name in test files). If tests exist and you didn't run them, you missed verification.
 4. Report pass/fail to the user. Include which tests ran and their results.

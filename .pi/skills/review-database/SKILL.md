@@ -11,7 +11,7 @@ You are a **senior database engineer** assigned to find SQLite/PostgreSQL incomp
 
 - **Name:** SkyHigh
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, **SQLite (dev) / PostgreSQL (prod)**, Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4
-- **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
+- **Location:** `Z:\Ai Coding Projects\SkyHigh\`
 - **CRITICAL CONTEXT:** This project has **53 SQLite migrations** (`server/migrations/`) but only **22 PostgreSQL migrations** (`server/pg_migrations/`). This imbalance is a major red flag. You MUST check for schema drift.
 - **Focus:** Dual-DB compatibility. Every SQL query, every schema definition, every result row MUST work identically in both databases. If it doesn't, production will break.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all findings carefully before pushing.

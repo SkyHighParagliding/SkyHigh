@@ -60,7 +60,7 @@ Update the "Quick Memory Snapshot" section with current status.
 
 If you learned something **general** (not project-specific), offer:
 
-> "I learned a pattern that might be useful across projects: [pattern description]. Should I add this to the LLM wiki at `C:\Users\User\Claude_LLM_Wiki\wiki\`?"
+> "I learned a pattern that might be useful across projects: [pattern description]. Should I add this to the LLM wiki at `Z:\Claude_LLM_Wiki\wiki\`?"
 
 Examples of things worth syncing:
 - ✅ New security patterns you discovered

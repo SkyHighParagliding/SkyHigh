@@ -522,13 +522,13 @@ If the project requires parallel work, you can spawn specialized agents:
 
 ## Section 17: How-To References
 
-The files in `C:\Users\User\Documents\CodeFolder\.agents\skills\` are **manual workflow checklists for the user** — not invokable Claude Code slash commands. They live as reference docs you can open and follow when you want a structured approach to a recurring task. Each one captures a workflow you can paste into a chat or follow step-by-step yourself.
+The files in `Z:\.agents\skills\` are **manual workflow checklists for the user** — not invokable Claude Code slash commands. They live as reference docs you can open and follow when you want a structured approach to a recurring task. Each one captures a workflow you can paste into a chat or follow step-by-step yourself.
 
 **Shared Skills Library** (available across all projects):
 - UI/UX design, SEO audit, deep research, content creation, photo editing, and more
-- Located at: `CodeFolder\.agents\skills\`
+- Located at: `Z:\.agents\skills\`
 - Available to any Claude Code session on any project
-- Example: `CodeFolder\.agents\skills\ui-ux-pro-max\SKILL.md`
+- Example: `Z:\.agents\skills\ui-ux-pro-max\SKILL.md`
 
 These are how-tos. Typing `/fix-bug` etc. in Claude Code will not invoke them — open the file and follow it.
 

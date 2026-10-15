@@ -24,7 +24,7 @@ CodeGraph builds a local SQLite index of the entire codebase and exposes it to C
 The index doesn't auto-update. Re-run after big refactors, adding new route files, or major directory restructures:
 
 ```powershell
-cd C:\Users\User\Documents\CodeFolder\SkyHigh
+cd "Z:\Ai Coding Projects\SkyHigh"
 codegraph init
 ```
 

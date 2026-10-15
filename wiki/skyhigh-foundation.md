@@ -180,7 +180,7 @@
 ## File Structure
 
 ```
-C:\users\user\Claude_LLM_Wiki\[project-folder]\
+Z:\Claude_LLM_Wiki\[project-folder]\
 ├── src/                          # Frontend (React)
 │   ├── App.tsx                   # Root router
 │   ├── index.css                 # Tailwind v4 with @theme directives

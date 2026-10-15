@@ -11,7 +11,7 @@ You are a **senior engineering coordinator** assigned to read all review reports
 
 - **Name:** SkyHigh
 - **Stack:** React 19 + TypeScript (Vite), Express 4 + TypeScript, SQLite (dev) / PostgreSQL (prod), Cloudflare R2, Gemini AI (@google/genai), Open-Meteo weather API, TidyHQ, Leaflet + D3 + Canvas wind map, react-query, Tailwind CSS v4
-- **Location:** `C:\Users\User\Documents\CodeFolder\skyhigh\`
+- **Location:** `Z:\Ai Coding Projects\SkyHigh\`
 - **CRITICAL CONTEXT:** This project has separate SQLite and PostgreSQL migration files (53 SQLite vs 22 PostgreSQL migrations). The unified adapter in `server/db.ts` is the single biggest production risk.
 - **Note:** Git commands must follow the project's standard workflow. Pushes to GitHub auto-deploy to Railway, so verify all findings carefully before pushing.
 
