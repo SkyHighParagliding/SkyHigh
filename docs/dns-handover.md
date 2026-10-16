@@ -116,9 +116,9 @@ Rolling back brings back the original problem (the bare domain fails over HTTPS)
 
 ## 8. Still to do
 
-- [ ] Google Workspace admin > Account > Domains > Manage domains >
-      "Change redirect": remove the naked-domain redirect. It no longer does
-      anything, because the DNS no longer points at it.
+- [x] Google Workspace naked-domain redirect: nothing to do. Its "Change redirect"
+      dialog has no remove option, and the setting is inert now that the bare
+      domain no longer points at Google's 216.239.x.21 servers. Leave it set to www.
 - [x] Gmail DKIM: DONE 16 Oct 2026. Generated in Workspace admin > Apps > Google
       Workspace > Gmail > Authenticate email (2048-bit, selector "google"), added
       in Cloudflare as TXT google._domainkey, and authentication started. Status:
