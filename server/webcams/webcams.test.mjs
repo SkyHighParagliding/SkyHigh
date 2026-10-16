@@ -15,7 +15,8 @@ import { localToUtc, shiftYmd, ymdInZone, minutesOfDayInZone, isValidYmd } from 
 import { pairByTime } from "./pairing.ts";
 import { feedStatus } from "./status.ts";
 import { clampRetention, retentionCutoff } from "./retention.ts";
-import { frameKeyBase, variantKeys } from "./keys.ts";
+import { frameKeyBase, variantKeys, keyBaseLocalTime } from "./keys.ts";
+import { restampChanges } from "./restamp.ts";
 
 let passed = 0;
 let failed = 0;
@@ -57,6 +58,33 @@ console.log("parseDayFrames");
   assert(parseDayFrames(bad, "20261008", TZ).length === 0, "traversal and non-jpg paths are rejected");
   const dup = { frames: [fixture.frames[0], fixture.frames[0]] };
   assert(parseDayFrames(dup, "20261008", TZ).length === 2, "duplicate entries collapse to one image per camera");
+}
+
+console.log("camera clock ignores daylight saving");
+{
+  // 2026-10-16 is AEDT (+11); a no-DST clock reads at AEST (+10) all year.
+  assert(localToUtc("20261016", "09:12:01", TZ).toISOString() === "2026-10-15T22:12:01.000Z", "DST-aware: 09:12 AEDT is 22:12Z");
+  assert(localToUtc("20261016", "09:12:01", TZ, true).toISOString() === "2026-10-15T23:12:01.000Z", "no-DST: 09:12 on an AEST clock is 23:12Z");
+  assert(localToUtc("20260616", "09:12:01", TZ, true).toISOString() === localToUtc("20260616", "09:12:01", TZ).toISOString(), "no-DST matches DST-aware in winter");
+  assert(localToUtc("20260116", "12:00:00", "Europe/London", true).toISOString() === "2026-01-16T12:00:00.000Z", "northern hemisphere standard offset is the January one");
+  assert(localToUtc("20260716", "12:00:00", "Europe/London", true).toISOString() === "2026-07-16T12:00:00.000Z", "northern hemisphere no-DST in July stays on GMT");
+  const frames = parseDayFrames(fixture, "20261008", TZ, { north: true });
+  const n = frames.find(f => f.camera === "north" && f.localTime === "06:00:00");
+  const s = frames.find(f => f.camera === "south" && f.localTime === "06:00:00");
+  assert(n && n.capturedAt.toISOString() === "2026-10-07T20:00:00.000Z", "parseDayFrames: flagged north camera read at AEST");
+  assert(s && s.capturedAt.toISOString() === "2026-10-07T19:00:00.000Z", "parseDayFrames: unflagged south camera stays DST-aware");
+  assert(keyBaseLocalTime("webcams/x/20261016/north-091201") === "09:12:01", "key base carries the camera wall-clock time");
+  assert(keyBaseLocalTime("webcams/x/20261016/north") === null, "key base without a time -> null");
+  const rows = [
+    { id: "1", camera: "north", localDay: "20261016", keyBase: "webcams/x/20261016/north-091201", capturedAt: new Date("2026-10-15T22:12:01Z") },
+    { id: "2", camera: "south", localDay: "20261016", keyBase: "webcams/x/20261016/south-101200", capturedAt: new Date("2026-10-15T23:12:00Z") },
+    { id: "3", camera: "north", localDay: "20261001", keyBase: "webcams/x/20261001/north-091200", capturedAt: new Date("2026-09-30T23:12:00Z") },
+  ];
+  const ch = restampChanges(rows, TZ, { north: true, south: false });
+  assert(ch.length === 1 && ch[0].id === "1" && ch[0].capturedAt.toISOString() === "2026-10-15T23:12:01.000Z", "restamp moves only the DST-period north frame, +1 h");
+  const fixed = rows.map(r => { const c = ch.find(x => x.id === r.id); return c ? { ...r, capturedAt: c.capturedAt } : r; });
+  assert(restampChanges(fixed, TZ, { north: true }).length === 0, "restamp is idempotent");
+  assert(restampChanges(fixed, TZ, { north: false }).length === 1, "switching off moves it back");
 }
 
 console.log("resolveImageUrl / assertJpeg");

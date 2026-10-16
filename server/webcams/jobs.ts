@@ -2,6 +2,7 @@ import cron from "node-cron";
 import createLogger from "../utils/logger.js";
 import { runCleanup } from "./cleanup.js";
 import { runIngest } from "./ingest.js";
+import { restampSource } from "./restamp.js";
 import { listSources, type WebcamSource } from "./sources.js";
 import { minutesOfDayInZone } from "./timeUtil.js";
 import { checkWebcamStorage } from "./usageAlert.js";
@@ -23,12 +24,19 @@ async function pollAll() {
   }
 }
 
+/** Keeps stored capture times in line with each source's camera clock settings. */
+async function restampAll() {
+  for (const source of await listSources()) await restampSource(source);
+}
+
 /**
- * Camera ingest every 3 minutes and a nightly cleanup. Only active in production
+ * Re-times stored images once at startup (any environment), then camera ingest every 3 minutes and a nightly cleanup. Only active in production
  * (or with WEBCAM_INGEST=1) so developer machines do not poll the operator or fill
  * their local uploads folder; the admin "Run now" button works anywhere.
  */
 export function startWebcamJobs() {
+  restampAll().catch(e => log.error(`Webcam re-time failed: ${e.message}`));
+
   if (process.env.NODE_ENV !== "production" && process.env.WEBCAM_INGEST !== "1") {
     log.info("Webcam jobs not started (not production; set WEBCAM_INGEST=1 to enable)");
     return;

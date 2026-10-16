@@ -7,6 +7,8 @@ export interface WebcamSource {
   provider: string;
   baseUrl: string;
   timezone: string;
+  /** Per camera: true when that camera's clock stays on standard time all year. */
+  clockNoDst: Record<string, boolean>;
   enabled: boolean;
   pollStartHour: number;
   pollEndHour: number;
@@ -18,7 +20,7 @@ export interface WebcamSource {
   lastError: string | null;
 }
 
-const COLUMNS = `id, "siteId", label, provider, "baseUrl", timezone, enabled, "pollStartHour", "pollEndHour",
+const COLUMNS = `id, "siteId", label, provider, "baseUrl", timezone, "clockNoDst", enabled, "pollStartHour", "pollEndHour",
   "expectFromMin", "expectToMin", "backfilledAt", "lastRunAt", "lastSuccessAt", "lastError"`;
 
 export async function listSources(): Promise<WebcamSource[]> {

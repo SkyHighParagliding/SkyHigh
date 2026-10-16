@@ -95,6 +95,12 @@ Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)
 ### `server/pg_migrations/048_webcams.sql`
 `webcam_sources` (one row per camera feed, seeded for `three-sisters-flowerdale`) and `webcam_frames` (one row per image, unique on `(sourceId, sourcePath)` so re-ingest is idempotent). No image bytes live in Postgres.
 
+### `server/pg_migrations/049_webcam_clock_no_dst.sql`
+Adds `webcam_sources."clockNoDst"` (JSONB, per camera, e.g. `{"north": true, "south": false}`): true means that camera's clock stays on standard time all year. Seeded with Flowerdale North on.
+
+### `server/webcams/restamp.ts`
+Re-times stored frames from the wall-clock time in each `keyBase` under the source's current time zone and `clockNoDst`. Idempotent (only wrong rows change). Runs at startup (`startWebcamJobs`, any environment) and after an admin save that changes the clock switches or time zone.
+
 ### `server/webcams/airportweathercams.ts`
 Provider adapter. `parseDayFrames` keeps only `ok` frames whose path is `CameraN/YYYYMMDD/images/*.jpg` for the requested day; `fetchDayList` / `fetchImage` do the network calls (honest User-Agent, JPEG magic + size checks). A second provider would be a sibling file.
 

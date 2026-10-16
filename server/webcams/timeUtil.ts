@@ -20,9 +20,22 @@ export function isValidYmd(s: string): boolean {
   return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
 }
 
-/** Station wall-clock time (YYYYMMDD + HH:MM:SS) to a UTC instant, DST-aware. */
-export function localToUtc(ymd: string, hms: string, tz: string): Date {
-  return fromZonedTime(`${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T${hms}`, tz);
+/**
+ * Station wall-clock time (YYYYMMDD + HH:MM:SS) to a UTC instant. DST-aware by
+ * default; with ignoreDst the clock is read at the zone's standard offset all
+ * year (for a camera whose clock is never moved for daylight saving).
+ */
+export function localToUtc(ymd: string, hms: string, tz: string, ignoreDst = false): Date {
+  const iso = `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T${hms}`;
+  if (!ignoreDst) return fromZonedTime(iso, tz);
+  const year = +ymd.slice(0, 4);
+  return new Date(Date.parse(`${iso}Z`) - standardOffsetMs(year, tz));
+}
+
+/** The zone's standard (non-DST) UTC offset: the smaller of its January and July offsets. */
+function standardOffsetMs(year: number, tz: string): number {
+  const offsetAt = (mm: string) => Date.parse(`${year}-${mm}-01T12:00:00Z`) - fromZonedTime(`${year}-${mm}-01T12:00:00`, tz).getTime();
+  return Math.min(offsetAt("01"), offsetAt("07"));
 }
 
 /** Minutes since local midnight of an instant in the given time zone. */

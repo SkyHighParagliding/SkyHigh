@@ -16,6 +16,7 @@ interface AdminSource {
   label: string;
   baseUrl: string;
   timezone: string;
+  clockNoDst: Record<string, boolean>;
   enabled: boolean;
   pollStartHour: number;
   pollEndHour: number;
@@ -49,6 +50,7 @@ interface CleanupResult {
   capped: boolean;
 }
 
+const CAMERAS = [{ key: "north", label: "North" }, { key: "south", label: "South" }];
 const MIN_RETENTION = 7;
 const FALLBACK_BYTES_PER_DAY = 136 * 1024 * 1024;
 const DAY_MS = 86_400_000;
@@ -182,7 +184,8 @@ function SourceCard({ source, token, onChanged }: { source: AdminSource; token: 
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  useEffect(() => { setForm(toForm(source)); }, [source.id, source.label, source.baseUrl, source.timezone, source.enabled, source.pollStartHour, source.pollEndHour, source.expectFromMin, source.expectToMin]);
+  const clockKey = JSON.stringify(source.clockNoDst);
+  useEffect(() => { setForm(toForm(source)); }, [source.id, source.label, source.baseUrl, source.timezone, clockKey, source.enabled, source.pollStartHour, source.pollEndHour, source.expectFromMin, source.expectToMin]);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(toForm(source));
   const style = STATUS_STYLE[source.status] ?? STATUS_STYLE.offline;
@@ -193,17 +196,18 @@ function SourceCard({ source, token, onChanged }: { source: AdminSource; token: 
     if (from === null || to === null) { toast.error("Enter the expected capture times as hours and minutes"); return; }
     setSaving(true);
     try {
-      await api.put(`/api/webcams/admin/sources/${source.id}`, {
+      const r = await api.put<{ retimed?: number }>(`/api/webcams/admin/sources/${source.id}`, {
         label: form.label,
         baseUrl: form.baseUrl,
         timezone: form.timezone,
+        clockNoDst: form.clockNoDst,
         enabled: form.enabled,
         pollStartHour: form.pollStartHour,
         pollEndHour: form.pollEndHour,
         expectFromMin: from,
         expectToMin: to,
       }, token);
-      toast.success("Camera settings saved");
+      toast.success(r?.retimed ? `Camera settings saved. Re-timed ${r.retimed.toLocaleString()} stored images.` : "Camera settings saved");
       await onChanged();
     } catch (e) {
       toast.error(errorText(e));
@@ -303,6 +307,18 @@ function SourceCard({ source, token, onChanged }: { source: AdminSource; token: 
           <p className="text-xs text-muted-foreground">
             Times are in the camera's time zone. Outside the expected window the page shows "Overnight" instead of warning that the camera is stale.
           </p>
+          <div className="space-y-3">
+            <span className="text-sm font-medium text-foreground-label">Camera clocks</span>
+            {CAMERAS.map(cam => (
+              <Switch
+                key={cam.key}
+                checked={form.clockNoDst[cam.key] === true}
+                onChange={v => setForm(f => ({ ...f, clockNoDst: { ...f.clockNoDst, [cam.key]: v } }))}
+                label={`${cam.label} camera clock ignores daylight saving`}
+                description="Turn on if this camera's clock stays on standard time all year. Saving re-times the images already stored."
+              />
+            ))}
+          </div>
           <Button onClick={() => void save()} disabled={saving || !dirty} className="bg-ink hover:bg-ink/90 text-white">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save source settings
@@ -318,6 +334,7 @@ function toForm(s: AdminSource) {
     label: s.label,
     baseUrl: s.baseUrl,
     timezone: s.timezone,
+    clockNoDst: Object.fromEntries(CAMERAS.map(c => [c.key, s.clockNoDst?.[c.key] === true])),
     enabled: s.enabled,
     pollStartHour: s.pollStartHour,
     pollEndHour: s.pollEndHour,

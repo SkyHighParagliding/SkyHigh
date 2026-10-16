@@ -825,7 +825,7 @@ legibility passes (DECISION-015); radar reuses that same `MapCanvas` tile loop.
 
 **Date:** 2026-10-08
 **Owner:** Jon Pamment
-**Status:** ✅ Implemented, awaiting first production run (verify Railway can reach the feed)
+**Status:** ✅ Implemented, prod-verified 2026-10-16 (Ventusky fallback removed; per-camera "clock ignores daylight saving" switch added — Flowerdale North stays on AEST)
 
 ### Context
 The club owns the Flowerdale cameras and the operator (airportweathercams) hosts a viewer at `.../Flowerdale/timelapse.php`. It serves 2560x1920 frames for two cameras about every 6 minutes but keeps only 8 days. The weather card showed hourly 600x450 Ventusky tiles. The viewer's JSON has no CORS and filenames are not guessable, so the browser cannot read it directly.

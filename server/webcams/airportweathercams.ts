@@ -1,7 +1,7 @@
 import { localToUtc } from "./timeUtil.js";
 
 export type CameraKey = "north" | "south";
-const CAMERAS: CameraKey[] = ["north", "south"];
+export const CAMERAS: CameraKey[] = ["north", "south"];
 
 export interface ProviderFrame {
   camera: CameraKey;
@@ -22,9 +22,10 @@ const MAX_IMAGE_BYTES = 12_000_000;
  * Turns one day's getFrames JSON into a flat list of usable images. Only sides
  * whose status is "ok" are returned — "missing" and "unreadable" entries carry a
  * null path (or a *_file path to a file the operator could not read) and are
- * skipped. Returns null when the payload is not the expected shape.
+ * skipped. Returns null when the payload is not the expected shape. Cameras
+ * flagged in clockNoDst have clocks that stay on standard time all year.
  */
-export function parseDayFrames(json: unknown, ymd: string, tz: string): ProviderFrame[] | null {
+export function parseDayFrames(json: unknown, ymd: string, tz: string, clockNoDst: Partial<Record<string, boolean>> = {}): ProviderFrame[] | null {
   if (!json || typeof json !== "object") return null;
   const frames = (json as { frames?: unknown }).frames;
   if (!Array.isArray(frames)) return null;
@@ -42,7 +43,7 @@ export function parseDayFrames(json: unknown, ymd: string, tz: string): Provider
       if (status !== undefined && status !== "ok") continue;
       const m = PATH_RE.exec(path);
       if (!m || m[1] !== ymd || !TIME_RE.test(time) || seen.has(path)) continue;
-      const capturedAt = localToUtc(ymd, time, tz);
+      const capturedAt = localToUtc(ymd, time, tz, clockNoDst[camera] === true);
       if (Number.isNaN(capturedAt.getTime())) continue;
       seen.add(path);
       out.push({ camera, path, localTime: time, capturedAt });

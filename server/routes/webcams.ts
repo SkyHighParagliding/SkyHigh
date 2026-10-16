@@ -11,6 +11,8 @@ import { getSource, getSourceBySite, listSources, type WebcamSource } from "../w
 import { isIngestRunning, runIngest } from "../webcams/ingest.js";
 import { getRetentionDays, runCleanup } from "../webcams/cleanup.js";
 import { getArchiveTotals } from "../webcams/usageAlert.js";
+import { CAMERAS } from "../webcams/airportweathercams.js";
+import { restampSource } from "../webcams/restamp.js";
 
 const router = Router();
 
@@ -191,6 +193,14 @@ router.put("/admin/sources/:id", requireAuth, asyncHandler(async (req, res) => {
     if (typeof b.enabled !== "boolean") return res.status(400).json({ error: "enabled must be true or false" });
     add("enabled", b.enabled);
   }
+  if (b.clockNoDst !== undefined) {
+    const v = b.clockNoDst;
+    if (!v || typeof v !== "object" || Array.isArray(v)
+      || !Object.entries(v).every(([k, on]) => (CAMERAS as string[]).includes(k) && typeof on === "boolean")) {
+      return res.status(400).json({ error: "clockNoDst must map camera names to true or false" });
+    }
+    add("clockNoDst", JSON.stringify({ ...current.clockNoDst, ...v }));
+  }
   const pollStart = b.pollStartHour !== undefined ? intInRange(b.pollStartHour, 0, 23) : current.pollStartHour;
   const pollEnd = b.pollEndHour !== undefined ? intInRange(b.pollEndHour, 1, 24) : current.pollEndHour;
   if (pollStart === null || pollEnd === null || pollStart >= pollEnd) return res.status(400).json({ error: "Polling hours must be 0-23 start and 1-24 end, start before end" });
@@ -205,7 +215,9 @@ router.put("/admin/sources/:id", requireAuth, asyncHandler(async (req, res) => {
   if (sets.length === 0) return res.status(400).json({ error: "Nothing to update" });
   params.push(id);
   await execute(`UPDATE webcam_sources SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
-  res.json(await getSource(id));
+  const updated = await getSource(id);
+  const retimed = updated && (b.clockNoDst !== undefined || b.timezone !== undefined) ? await restampSource(updated) : 0;
+  res.json({ ...updated, retimed });
 }));
 
 router.post("/admin/sources/:id/run", requireAuth, asyncHandler(async (req, res) => {

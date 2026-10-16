@@ -86,7 +86,7 @@ export async function runIngest(sourceId: number, opts: { force?: boolean } = {}
         if (ymd === today) throw new Error(list.status === "http" ? `Feed returned HTTP ${list.code}` : `Feed unreachable: ${list.message}`);
         continue;
       }
-      const frames = parseDayFrames(list.json, ymd, source.timezone);
+      const frames = parseDayFrames(list.json, ymd, source.timezone, source.clockNoDst);
       if (frames === null) {
         if (ymd === today) throw new Error("Feed returned an unexpected format");
         continue;
