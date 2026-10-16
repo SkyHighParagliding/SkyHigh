@@ -843,6 +843,21 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 
 ---
 
+## DECISION-018: Move DNS from Google Cloud DNS to Cloudflare
+**Date:** 2026-10-16  
+**Context:** `https://skyhighparagliding.org.au` (no `www`) failed with ERR_CONNECTION_CLOSED. The bare domain used the Google Workspace naked-domain redirect, which is HTTP-only, and Google Cloud DNS cannot CNAME/flatten a bare domain to Railway.  
+**Options considered:**
+- A: Keep Cloud DNS, A record to Railway's current IP: unsupported by Railway; IP can change without notice.
+- B: Google HTTPS load balancer as a redirect: ~US$18+/month for one redirect.
+- C: Cloudflare DNS (Free) with CNAME flattening `@` → Railway: free, HTTPS on both names.
+
+**Chosen:** C  
+**Rationale:** Free, supported by Railway, and the club already has a Cloudflare account (R2). Records copied exactly (Gmail MX, DMARC, Resend, Railway verify) and Gmail SPF added. Proxy left off so Railway keeps terminating TLS.  
+**Reversibility:** Easy: set the Vodien nameservers back to Google's; the Cloud DNS zone is kept until ~2026-10-23.  
+**Blocked by:** None. Registrar turned out to be Vodien (not Crazy Domains or Google); see [[06-deployment]] Domain Management.  
+**Confirms:** DECISION-006 (Railway hosting).
+
+
 ## Summary Table
 
 | # | Title | Key Outcome | Date | Status |
@@ -863,6 +878,7 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 | 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
 | 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system. +CSP fix (api.rainviewer.com) +cross-layer tapped-point carry | 2026-10-03 | ✅ Locked (merged + live) |
 | 017 | Flowerdale camera archive | Ingest operator frames to R2 (3 sizes per image), 90-day retention, tiles + `/cameras` page; Ventusky kept only as isolated fallback | 2026-10-08 | ✅ Implemented, prod-verified 2026-10-16; Ventusky removed |
+| 018 | DNS to Cloudflare | Bare domain HTTPS via CNAME flattening to Railway; Google Workspace redirect retired; Gmail SPF added | 2026-10-16 | ✅ Live, verified 2026-10-16 |
 
 ---
 

@@ -67,7 +67,7 @@ Copy all values from project `.env` file to Railway web service Variables tab:
 ### Custom Domain Setup
 1. Railway → web service → Settings → Domains → Add `www.skyhighparagliding.org.au`
 2. Railway provides CNAME target
-3. In Google Cloud Console → Skyhigh DNS Service → Cloud DNS → add CNAME record
+3. In Cloudflare → skyhighparagliding.org.au → DNS → Records, add the CNAME + TXT (DNS only). See Domain Management below.
 4. Wait 1–24 hours for propagation
 5. Railway auto-provisions SSL
 
@@ -93,7 +93,7 @@ All production accounts are under club ownership. See [[02-tasks]] Phase 0 for f
 | Resend | ✅ EXISTING | [Club account] | No new setup needed |
 | TidyHQ | ✅ EXISTING | [Club account] | No new setup needed |
 | Google Workspace | ✅ EXISTING | web@skyhighparagliding.org.au | All Google services |
-| Google Cloud DNS | ✅ EXISTING | web@skyhighparagliding.org.au | Domain management |
+| Cloudflare DNS | ✅ DONE 2026-10-16 | web@skyhighparagliding.org.au | DNS for skyhighparagliding.org.au (replaced Google Cloud DNS) |
 
 ---
 
@@ -171,24 +171,34 @@ All production accounts are under club ownership. See [[02-tasks]] Phase 0 for f
 
 ## Domain Management
 
-**Domain:** www.skyhighparagliding.org.au  
-**Registrar:** Google (via Google Workspace)  
-**DNS Provider:** Google Cloud DNS (managed via Google Cloud Console)
+**Domain:** skyhighparagliding.org.au (bare domain and `www` both serve the site over HTTPS)  
+**Registrar:** **Vodien** (manage.vodien.com; registry shows "Web Address Registration Pty Ltd", the Dreamscape Networks registrar behind Vodien and Crazy Domains). Expires 8 Jan 2028, auto-renew on.  
+**DNS Provider:** **Cloudflare** (account web@skyhighparagliding.org.au, Free plan) since 2026-10-16. Nameservers `abdullah.ns.cloudflare.com`, `dana.ns.cloudflare.com`.
 
-### Current Setup (Active since Phase 5 go-live)
-- Custom domain points to Railway deployment
-- DNS CNAME record: `www` → Railway CNAME target
-- SSL certificate auto-provisioned by Railway
-- Managed in Google Cloud Console project "Skyhigh DNS Service"
+### Why Cloudflare (2026-10-16)
+The bare domain used the Google Workspace "naked domain redirect" (A records `216.239.32/34/36/38.21`), which is HTTP-only, so `https://skyhighparagliding.org.au` failed. Google Cloud DNS cannot point a bare domain at Railway (no CNAME flattening). Cloudflare flattens `@` → Railway.
 
-### DNS Update Procedure (during Phase 5)
-1. Log in to Google Cloud Console (https://console.cloud.google.com/)
-2. Select "Skyhigh DNS Service" project
-3. Navigate to **Network Services** → **Cloud DNS**
-4. Update CNAME record for `www` to Railway's provided CNAME target
-5. Wait 1–24 hours for global propagation
-6. Verify at https://whatsmydns.net/ (search for www.skyhighparagliding.org.au)
-7. Railway auto-provisions SSL once DNS resolves
+### Records (all DNS only, grey cloud: Railway terminates TLS)
+| Name | Type | Value |
+|---|---|---|
+| `@` | CNAME (flattened) | `ec6h5vtz.up.railway.app` |
+| `www` | CNAME | `33bp9c73.up.railway.app` |
+| `_railway-verify` / `_railway-verify.www` | TXT | Railway ownership tokens |
+| `@` | MX | `1 aspmx.l.google.com`, `5 alt1.aspmx.l.google.com`, `5 alt2.aspmx.l.google.com` |
+| `@` | TXT | `v=spf1 include:_spf.google.com ~all` (Gmail SPF, added 2026-10-16) |
+| `_dmarc` | TXT | `v=DMARC1; p=none;` |
+| `send` | MX / TXT | Resend: `10 feedback-smtp.ap-northeast-1.amazonses.com`; `v=spf1 include:amazonses.com ~all` |
+| `resend._domainkey` | TXT | Resend DKIM key |
+
+### Notes
+- Do **not** turn on Cloudflare proxy (orange cloud) for the Railway CNAMEs without also setting SSL/TLS to Full (strict).
+- Vodien's own "DNS Settings" tab holds stale records (`103.11.189.189`); they are unused while nameservers point at Cloudflare. Ignore them.
+- Old Google Cloud DNS zone `skyhigh-zone` (project "Skyhigh DNS Service", `glass-indexer-201105`) kept as rollback until ~2026-10-23, then delete. Rollback = set Vodien nameservers back to `ns-cloud-a1..a4.googledomains.com`.
+
+### Adding a Railway custom domain
+1. Railway → SkyHigh service → Settings → Networking → **Custom Domain** (port 8080).
+2. Add the CNAME + `_railway-verify` TXT it shows in Cloudflare → DNS → Records (DNS only).
+3. Railway shows a green tick and issues the certificate within minutes.
 
 ---
 
