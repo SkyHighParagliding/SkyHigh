@@ -1,14 +1,28 @@
-# RESUME_HERE — Last updated: 2026-10-08 (Flowerdale camera archive built, awaiting push + first prod run)
+# RESUME_HERE — Last updated: 2026-10-16 (session 75: camera DST fix, Ventusky removed, DNS moved to Cloudflare)
 
 ## Project: SkyHigh
-## Status: Active — on `main` (== origin/main at `e949172`). Rain radar + one-map-everywhere **merged + pushed**. Railway auto-deploys `main`.
+## Status: Active — on `main` (== origin/main at `69bbc19`). Railway auto-deploys `main`.
 
 ```
 branch: main   (== origin/main; Railway auto-deploys main)
-latest: e949172 (one map everywhere)  ← 5afabec  ← 54898ae  ← 47e0823  ← 11c2e28  ← 7e8d6c9 (docs)  ← 61a3bc9 (session 72)
+latest: 69bbc19 (docs) ← 066ca25 ← cc80101 ← 04aefd6 (DNS docs) ← fb2a0d6 (camera clock switch) ← ddf7ce8 (Ventusky removed) ← 94879de (test fix)
 ```
 
-## Session 74 (2026-10-08) — Flowerdale camera archive (all four phases built, NOT YET PUSHED)
+## Session 75 (2026-10-16) — summary
+
+- **Camera archive verified on prod** (live since 2 Oct, ~120 frames/day). `npm run build` + `npm test` pass locally; a stale ThermalPoint key-set test was fixed (`94879de`).
+- **Ventusky fallback deleted** (`ddf7ce8`).
+- **Per-camera "clock ignores daylight saving" switch** (`fb2a0d6`, migration 049, `server/webcams/restamp.ts`). Flowerdale North's clock stays on AEST and can't easily be changed; North is flagged on, South off. Existing frames were re-timed from their key bases. Prod-verified: the North and South latest frames line up.
+- **DNS moved to Cloudflare** (DECISION-018). `https://skyhighparagliding.org.au` (bare domain) now works; before, it failed because of the HTTP-only Google Workspace redirect. The registrar is **Vodien** (manage.vodien.com), not Crazy Domains. Nameservers: `abdullah`/`dana.ns.cloudflare.com`. Gmail SPF + **DKIM** added and authenticating. Plain-language handover: `docs/dns-handover.md`.
+- Retention is 60 days on prod (Jon's choice, not 90).
+
+### Next
+- **~2026-10-23:** delete the old Google Cloud DNS zone `skyhigh-zone` (project "Skyhigh DNS Service"); it is the rollback until then.
+- Jon to eyeball the Flowerdale weather card: North and South tiles should show the same age.
+- Uncommitted on purpose: `server/data/siteguide_airspace.txt` / `siteguide_zones.json` (newer Siteguide export, v892). Decide whether to commit. Untracked `ecmwf-strip-after.png` (old screenshot, delete?).
+- Still deferred: page-clone refactors (SiteDetail↔SiteFieldView, AdminPageEdit↔Airspace), Weather School topics, knowledge-graph regen.
+
+## Session 74 (2026-10-08) — Flowerdale camera archive (built; pushed + prod-verified 2026-10-16)
 
 Replaced the hourly Ventusky tiles with an archive fed from the operator's feed
 (`https://au2.airportweathercams.com/Flowerdale/timelapse.php`). Plan + decisions:
