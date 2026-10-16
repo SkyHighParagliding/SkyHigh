@@ -81,6 +81,7 @@ to "Proxied" (orange cloud) unless you also set Cloudflare SSL/TLS to
 | send | MX | 10 feedback-smtp.ap-northeast-1.amazonses.com | Resend (website emails) |
 | send | TXT | v=spf1 include:amazonses.com ~all | Resend SPF |
 | resend._domainkey | TXT | p=MIGfMA0... (long key) | Resend DKIM |
+| google._domainkey | TXT | v=DKIM1; k=rsa; p=MIIBIjAN... (2048-bit key) | Gmail DKIM (NEW, added 16 Oct 2026) |
 
 The full values are visible in Cloudflare. They are also in
 wiki/06-deployment.md (Domain Management).
@@ -118,11 +119,10 @@ Rolling back brings back the original problem (the bare domain fails over HTTPS)
 - [ ] Google Workspace admin > Account > Domains > Manage domains >
       "Change redirect": remove the naked-domain redirect. It no longer does
       anything, because the DNS no longer points at it.
-- [ ] Gmail DKIM: Google Workspace admin > Apps > Google Workspace > Gmail >
-      Authenticate email > Generate new record. Add it in Cloudflare as a TXT
-      record named google._domainkey, then click "Start authentication".
-      With the new SPF record, this clears the red "Action needed" email
-      warning in Workspace and helps club email avoid spam folders.
+- [x] Gmail DKIM: DONE 16 Oct 2026. Generated in Workspace admin > Apps > Google
+      Workspace > Gmail > Authenticate email (2048-bit, selector "google"), added
+      in Cloudflare as TXT google._domainkey, and authentication started. Status:
+      "Authenticating email with DKIM".
 - [ ] Around 23 October 2026, once everything has run cleanly for a week,
       delete the old Google Cloud DNS zone "skyhigh-zone"
       (project "Skyhigh DNS Service"). It costs a little each month.

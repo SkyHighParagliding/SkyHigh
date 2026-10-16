@@ -189,6 +189,7 @@ The bare domain used the Google Workspace "naked domain redirect" (A records `21
 | `_dmarc` | TXT | `v=DMARC1; p=none;` |
 | `send` | MX / TXT | Resend: `10 feedback-smtp.ap-northeast-1.amazonses.com`; `v=spf1 include:amazonses.com ~all` |
 | `resend._domainkey` | TXT | Resend DKIM key |
+| `google._domainkey` | TXT | Gmail DKIM key (2048-bit, added 2026-10-16; authentication ON in Workspace) |
 
 ### Notes
 - Do **not** turn on Cloudflare proxy (orange cloud) for the Railway CNAMEs without also setting SSL/TLS to Full (strict).
