@@ -193,6 +193,7 @@ The bare domain used the Google Workspace "naked domain redirect" (A records `21
 ### Notes
 - Do **not** turn on Cloudflare proxy (orange cloud) for the Railway CNAMEs without also setting SSL/TLS to Full (strict).
 - Vodien's own "DNS Settings" tab holds stale records (`103.11.189.189`); they are unused while nameservers point at Cloudflare. Ignore them.
+- Plain-language handover for non-developers: `docs/dns-handover.md`.
 - Old Google Cloud DNS zone `skyhigh-zone` (project "Skyhigh DNS Service", `glass-indexer-201105`) kept as rollback until ~2026-10-23, then delete. Rollback = set Vodien nameservers back to `ns-cloud-a1..a4.googledomains.com`.
 
 ### Adding a Railway custom domain
