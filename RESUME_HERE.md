@@ -18,7 +18,7 @@ latest: 69bbc19 (docs) ← 066ca25 ← cc80101 ← 04aefd6 (DNS docs) ← fb2a0d
 
 ### Next
 - **~2026-10-23:** delete the old Google Cloud DNS zone `skyhigh-zone` (project "Skyhigh DNS Service"); it is the rollback until then.
-- Jon to eyeball the Flowerdale weather card: North and South tiles should show the same age.
+- ~~Jon to eyeball the Flowerdale weather card~~ — checked by Jon 2026-10-16, North/South aligned. ✅
 - Uncommitted on purpose: `server/data/siteguide_airspace.txt` / `siteguide_zones.json` (newer Siteguide export, v892). Decide whether to commit. Untracked `ecmwf-strip-after.png` (old screenshot, delete?).
 - Still deferred: page-clone refactors (SiteDetail↔SiteFieldView, AdminPageEdit↔Airspace), Weather School topics, knowledge-graph regen.
 

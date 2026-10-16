@@ -17,7 +17,7 @@
 - **Method:** Jon installing Claude in Chrome; resume with `claude --continue --chrome` and do one step at a time, confirming before each DNS change.
 
 ### VERIFY — Flowerdale camera archive first production run
-- **Status:** ✅ VERIFIED 2026-10-16 — prod `live`, ~120 frames/day continuous since 2 Oct; `npm run build` + `npm test` pass locally (stale grid key-set test fixed `4c5ea20`); Ventusky fallback deleted. Jon to eyeball `/cameras` + Flowerdale card. North camera clock is not on daylight saving (South is) and cannot easily be changed: handled by a per-camera admin switch (migration 049, `server/webcams/restamp.ts`); after deploy confirm North and South tiles show the same age.
+- **Status:** ✅ DONE (Jon-verified) 2026-10-16 — prod `live`, ~120 frames/day continuous since 2 Oct; `npm run build` + `npm test` pass locally (stale grid key-set test fixed `4c5ea20`); Ventusky fallback deleted. Jon checked `/cameras` + Flowerdale card 2026-10-16 ✅. North camera clock is not on daylight saving (South is) and cannot easily be changed: handled by a per-camera admin switch (migration 049, `server/webcams/restamp.ts`); North/South alignment confirmed by Jon 2026-10-16 ✅.
 - After deploy: Admin → Cameras → **Run now**; confirm `Last error` is empty and frames appear. If it says the host cannot be reached, Railway cannot see the operator's site (the dev sandbox could not test this).
 - Then check `/cameras`, the Flowerdale weather card, and the Community → Cameras menu link.
 - Run `npm run build` and `npm test` locally (the Cowork sandbox cannot run `vite build`).

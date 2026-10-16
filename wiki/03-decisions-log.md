@@ -877,7 +877,7 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 | 014 | Remove white-label engine | Native single-club; `TemplateContext`/template registry deleted, palette rewritten to semantic tokens | 2026-09-15 | ✅ Locked |
 | 015 | Base-map legibility | Darken base via `multiply` re-pass (not fade overlay) + `light_only_labels` on top; pilot slider mapped into an admin per-map floor/ceiling band | 2026-09-19 | ✅ Locked |
 | 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system. +CSP fix (api.rainviewer.com) +cross-layer tapped-point carry | 2026-10-03 | ✅ Locked (merged + live) |
-| 017 | Flowerdale camera archive | Ingest operator frames to R2 (3 sizes per image), 90-day retention, tiles + `/cameras` page; Ventusky kept only as isolated fallback | 2026-10-08 | ✅ Implemented, prod-verified 2026-10-16; Ventusky removed |
+| 017 | Flowerdale camera archive | Ingest operator frames to R2 (3 sizes per image), 90-day retention, tiles + `/cameras` page; Ventusky kept only as isolated fallback | 2026-10-08 | ✅ Done — prod-verified + Jon-checked 2026-10-16; Ventusky removed; North DST switch |
 | 018 | DNS to Cloudflare | Bare domain HTTPS via CNAME flattening to Railway; Google Workspace redirect retired; Gmail SPF added | 2026-10-16 | ✅ Live, verified 2026-10-16 |
 
 ---
