@@ -1,12 +1,26 @@
-# RESUME_HERE — Last updated: 2026-10-16 (session 75: camera DST fix, Ventusky removed, DNS moved to Cloudflare)
+# RESUME_HERE — Last updated: 2026-10-19 (session 76: sausage sizzle costing, PDFs and iPad till)
 
 ## Project: SkyHigh
-## Status: Active — on `main` (== origin/main at `69bbc19`). Railway auto-deploys `main`.
+## Status: Active — work on branch `feature/sausage-sizzle` (NOT merged; main == origin/main at `8f4dc67`). Railway auto-deploys `main`.
 
 ```
-branch: main   (== origin/main; Railway auto-deploys main)
-latest: 69bbc19 (docs) ← 066ca25 ← cc80101 ← 04aefd6 (DNS docs) ← fb2a0d6 (camera clock switch) ← ddf7ce8 (Ventusky removed) ← 94879de (test fix)
+branch: feature/sausage-sizzle (local only, not pushed)
+latest: e664828 (till + server) ← b05cb55 (data, maths, PDFs, tests) ← 8f4dc67 (main)
 ```
+
+## Session 76 (2026-10-19) — sausage sizzle (TASK-037, DECISION-019)
+
+Event Sat 31 Oct – Tue 3 Nov 2026. File map: `wiki/05-file-map.md` → Sausage Sizzle.
+- **Prices:** Woolworths Bright (store 3088) shelf prices checked 19 Oct in Jon's Woolworths account, set to Direct to boot → Bright. All in `data/sizzle/sizzle-2026.json`.
+- **PDFs:** `npm run sizzle:pdfs` → `output/sizzle/` (12 files: initial list, Day 2/3/4 + 2-day top-ups, equipment, compliance, price board, float & cash-up, costing & power, card guide). All opened and checked.
+- **Till:** `/admin/sizzle` (admin login; dashboard tile only). Verified in Chrome against the production build with a mock API, including offline reload and later sync.
+- **Tests:** 49 sizzle tests in `npm test`. The 75-customer simulation runs clean.
+- **Next:**
+  1. Jon: phone the Alpine Shire EHO. Safe Food Victoria's fundraiser guidance covers ≤2 consecutive days and this event is 4. Then do the FoodTrader Class 4 notification and lodge both Statements of Trade **by Mon 26 Oct**.
+  2. Test `/api/sizzle/*` against real Postgres (local DB or prod after merge).
+  3. Jon to approve merge to `main` (deploys).
+  4. On the iPad: log in, Add to Home Screen, Admin → set PIN, test print → PDF.
+  5. Confirm the gas-swap price and Cup Day hours at Bright (from ~24 Oct), then re-run `sizzle:pdfs`.
 
 ## Session 75 (2026-10-16) — summary
 
