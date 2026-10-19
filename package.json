@@ -29,7 +29,8 @@
     "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator && npm run test:webcams && npm run test:webcamtime && npm run test:sizzle",
     "sizzle:pdfs": "node --import tsx/esm scripts/sizzle/build-pdfs.ts",
     "sizzle:simulate": "node --import tsx/esm scripts/sizzle/simulate.ts",
-    "test:sizzle": "node --import tsx/esm shared/sizzle/sizzle.test.mjs"
+    "test:sizzle": "node --import tsx/esm shared/sizzle/sizzle.test.mjs",
+    "sizzle:sample-report": "node --import tsx/esm scripts/sizzle/sample-report.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1034.0",

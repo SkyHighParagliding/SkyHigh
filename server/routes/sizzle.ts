@@ -15,6 +15,7 @@ const MAX_BATCH = 500;
 
 interface SaleIn {
   id: string;
+  event: string;
   deviceId: string;
   day: number;
   createdAt: string;
@@ -29,6 +30,7 @@ interface SaleIn {
 
 interface SnapshotIn {
   id: string;
+  event: string;
   deviceId: string;
   kind: string;
   key?: string;
@@ -37,12 +39,13 @@ interface SnapshotIn {
 }
 
 const isId = (v: unknown) => typeof v === "string" && /^[\w-]{1,80}$/.test(v);
+const isEvent = (v: unknown) => typeof v === "string" && /^[a-z0-9-]{1,40}$/.test(v);
 const isNum = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 const isIso = (v: unknown) => typeof v === "string" && !Number.isNaN(Date.parse(v));
 
 function validSale(s: any): s is SaleIn {
   return (
-    s && isId(s.id) && isId(s.deviceId) && Number.isInteger(s.day) && s.day >= 1 && s.day <= 31 &&
+    s && isId(s.id) && isEvent(s.event) && isId(s.deviceId) && Number.isInteger(s.day) && s.day >= 1 && s.day <= 31 &&
     isIso(s.createdAt) && (s.method === "cash" || s.method === "card") && isNum(s.total) &&
     (s.tendered === null || isNum(s.tendered)) && (s.change === null || isNum(s.change)) &&
     Array.isArray(s.lines) && s.lines.length > 0 && s.lines.length <= 50 &&
@@ -52,7 +55,7 @@ function validSale(s: any): s is SaleIn {
 }
 
 function validSnapshot(s: any): s is SnapshotIn {
-  return s && isId(s.id) && isId(s.deviceId) && typeof s.kind === "string" && /^[a-z-]{1,30}$/.test(s.kind) &&
+  return s && isId(s.id) && isEvent(s.event) && isId(s.deviceId) && typeof s.kind === "string" && /^[a-z-]{1,30}$/.test(s.kind) &&
     (s.key === undefined || (typeof s.key === "string" && s.key.length <= 80)) && isIso(s.createdAt) && s.data !== undefined;
 }
 
@@ -68,33 +71,37 @@ router.post("/sync", requireAuth, asyncHandler(async (req, res) => {
   await transaction(async (client) => {
     for (const s of sales as SaleIn[]) {
       await client.query(
-        `INSERT INTO sizzle_sales (id, "deviceId", day, "createdAt", method, total, tendered, change, lines, voided, "voidedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `INSERT INTO sizzle_sales (id, event, "deviceId", day, "createdAt", method, total, tendered, change, lines, voided, "voidedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          ON CONFLICT (id) DO UPDATE SET voided = EXCLUDED.voided, "voidedAt" = EXCLUDED."voidedAt", "receivedAt" = NOW()`,
-        [s.id, s.deviceId, s.day, s.createdAt, s.method, s.total, s.tendered, s.change, JSON.stringify(s.lines), s.voided, s.voidedAt ?? null],
+        [s.id, s.event, s.deviceId, s.day, s.createdAt, s.method, s.total, s.tendered, s.change, JSON.stringify(s.lines), s.voided, s.voidedAt ?? null],
       );
     }
     for (const s of snapshots as SnapshotIn[]) {
       await client.query(
-        `INSERT INTO sizzle_snapshots (id, "deviceId", kind, key, "createdAt", data)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO sizzle_snapshots (id, event, "deviceId", kind, key, "createdAt", data)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (id) DO NOTHING`,
-        [s.id, s.deviceId, s.kind, s.key ?? "", s.createdAt, JSON.stringify(s.data)],
+        [s.id, s.event, s.deviceId, s.kind, s.key ?? "", s.createdAt, JSON.stringify(s.data)],
       );
     }
   });
   res.json({ sales: (sales as SaleIn[]).map((s) => s.id), snapshots: (snapshots as SnapshotIn[]).map((s) => s.id) });
 }));
 
-// Everything stored, for restoring a device or reconciling after the event.
-router.get("/export", requireAuth, asyncHandler(async (_req, res) => {
+// Everything stored for one event (?event=2026-ntvo), for restoring a device or
+// reporting after the event. Without ?event, every event is returned.
+router.get("/export", requireAuth, asyncHandler(async (req, res) => {
+  const event = typeof req.query.event === "string" && isEvent(req.query.event) ? req.query.event : null;
   const sales = await query<any>(
-    `SELECT id, "deviceId", day, "createdAt", method, total::float AS total, tendered::float AS tendered, change::float AS change, lines, voided, "voidedAt"
-     FROM sizzle_sales ORDER BY "createdAt"`,
+    `SELECT id, event, "deviceId", day, "createdAt", method, total::float AS total, tendered::float AS tendered, change::float AS change, lines, voided, "voidedAt"
+     FROM sizzle_sales WHERE ($1::text IS NULL OR event = $1) ORDER BY "createdAt"`,
+    [event],
   );
   const snapshots = await query<any>(
-    `SELECT DISTINCT ON (kind, key) id, "deviceId", kind, key, "createdAt", data
-     FROM sizzle_snapshots ORDER BY kind, key, "createdAt" DESC`,
+    `SELECT DISTINCT ON (event, kind, key) id, event, "deviceId", kind, key, "createdAt", data
+     FROM sizzle_snapshots WHERE ($1::text IS NULL OR event = $1) ORDER BY event, kind, key, "createdAt" DESC`,
+    [event],
   );
   res.setHeader("Cache-Control", "no-store");
   res.json({ exportedAt: new Date().toISOString(), sales, snapshots });

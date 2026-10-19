@@ -14,6 +14,7 @@ import {
   shoppingPlan,
   subtractQty,
 } from "../../../shared/sizzle/calc.ts";
+import { type Banking, type Purchase, type StripeActual, eventReport, planningLessons } from "../../../shared/sizzle/report.ts";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import {
@@ -25,14 +26,23 @@ import {
   deviceId as getDeviceId,
   kvGet,
   kvSet,
+  latestOfKind,
   latestSnapshot,
   newId,
   putSale,
   putSnapshot,
+  setEvent,
   syncNow,
 } from "@/lib/sizzleStore";
 
 export const BASE = baseData as unknown as SizzleData;
+
+/** Every sale and record is tagged with this event (e.g. "2026-ntvo"). */
+export const EVENT_ID = BASE.event.id;
+setEvent(EVENT_ID);
+
+/** This event's sales only; records made before tagging belong to it. */
+const ofThisEvent = (all: StoredSale[]) => all.filter((s) => (s.event ?? EVENT_ID) === EVENT_ID);
 
 export const EMPTY_SETTINGS: TillSettings = {
   pinHash: null,
@@ -82,6 +92,9 @@ export function useTill() {
   const [closes, setCloses] = useState<Record<number, DayClose>>({});
   const [floats, setFloats] = useState<Record<number, Record<string, number>>>({});
   const [sync, setSync] = useState<SyncState>({ pending: 0, ok: true });
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [banking, setBanking] = useState<Banking[]>([]);
+  const [stripeActual, setStripeActual] = useState<StripeActual | null>(null);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
 
   const data = useMemo(() => applySettings(BASE, settings), [settings]);
@@ -101,7 +114,10 @@ export function useTill() {
     ]);
     setDeviceId(id);
     setSettings({ ...EMPTY_SETTINGS, ...(s?.data ?? {}) });
-    setSales(all);
+    setSales(ofThisEvent(all));
+    setPurchases(await latestOfKind<Purchase>("purchase"));
+    setBanking(await latestOfKind<Banking>("banking"));
+    setStripeActual((await latestSnapshot<StripeActual>("stripe-actual"))?.data ?? null);
     setBaseline(base?.data ?? null);
     setDayState(savedDay ?? todayEventDay(BASE));
     const c: Record<number, DayClose> = {};
@@ -127,7 +143,7 @@ export function useTill() {
   const runSync = useCallback(async () => {
     const res = await syncNow((body) => api.post<{ sales: string[]; snapshots: string[] }>("/api/sizzle/sync", body, tokenRef.current));
     setSync({ ...res, at: new Date().toISOString() });
-    if (res.ok) setSales(await allSales());
+    if (res.ok) setSales(ofThisEvent(await allSales()));
     return res;
   }, []);
 
@@ -196,6 +212,7 @@ export function useTill() {
       const total = saleTotal(lines);
       const sale: StoredSale = {
         id: newId("sale"),
+        event: EVENT_ID,
         deviceId,
         createdAt: new Date().toISOString(),
         day,
@@ -268,10 +285,52 @@ export function useTill() {
     [floats, recommended],
   );
 
+  // ─── Treasurer records ─────────────────────────────────────────────────────
+  const savePurchase = useCallback(
+    async (p: Purchase) => {
+      await putSnapshot("purchase", p.id, p);
+      setPurchases((list) => [...list.filter((x) => x.id !== p.id), p]);
+      runSync();
+    },
+    [runSync],
+  );
+
+  const saveBanking = useCallback(
+    async (b: Banking) => {
+      await putSnapshot("banking", b.id, b);
+      setBanking((list) => [...list.filter((x) => x.id !== b.id), b]);
+      runSync();
+    },
+    [runSync],
+  );
+
+  const saveStripeActual = useCallback(
+    async (s: StripeActual) => {
+      await putSnapshot("stripe-actual", "", s);
+      setStripeActual(s);
+      runSync();
+    },
+    [runSync],
+  );
+
+  const report = useMemo(
+    () => eventReport(data, sales, closes, purchases, banking, stripeActual, onHand),
+    [data, sales, closes, purchases, banking, stripeActual, onHand],
+  );
+  const lessons = useMemo(() => planningLessons(data, sales, report, onHand), [data, sales, report, onHand]);
+
   return {
     ready,
     data,
     prices,
+    purchases: purchases.filter((p) => !p.deleted),
+    banking: banking.filter((b) => !b.deleted),
+    stripeActual,
+    savePurchase,
+    saveBanking,
+    saveStripeActual,
+    report,
+    lessons,
     products,
     plan,
     settings,

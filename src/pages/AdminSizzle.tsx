@@ -6,6 +6,7 @@ import { SellScreen } from "@/components/sizzle/SellScreen";
 import { EndOfDayScreen } from "@/components/sizzle/EndOfDayScreen";
 import { AdminScreen } from "@/components/sizzle/AdminScreen";
 import { DataScreen } from "@/components/sizzle/DataScreen";
+import { MoneyScreen } from "@/components/sizzle/MoneyScreen";
 
 /**
  * Sausage sizzle till — iPad, landscape. Admin login required (AdminRoute);
@@ -13,10 +14,11 @@ import { DataScreen } from "@/components/sizzle/DataScreen";
  * See wiki/03-decisions-log.md DECISION-019.
  */
 
-type Tab = "sell" | "eod" | "admin" | "data";
+type Tab = "sell" | "eod" | "money" | "admin" | "data";
 const TABS: { id: Tab; label: string }[] = [
   { id: "sell", label: "Sell" },
   { id: "eod", label: "End of day" },
+  { id: "money", label: "Money" },
   { id: "admin", label: "Admin" },
   { id: "data", label: "Data" },
 ];
@@ -91,7 +93,7 @@ export function AdminSizzle() {
     <div className="fixed inset-0 flex flex-col bg-orange-50 text-stone-900 select-none" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <header className="flex items-center gap-3 px-3 py-2 bg-[#7c2d12] text-white">
         <Link to="/admin" aria-label="Back to admin" className="w-11 h-11 rounded-lg flex items-center justify-center active:bg-white/10"><ArrowLeft className="w-6 h-6" /></Link>
-        <span className="text-xl font-bold mr-2 whitespace-nowrap">Sizzle Till</span>
+        <span className="text-xl font-bold mr-2 whitespace-nowrap" title={data.event.name}>{data.event.title} Till</span>
         <nav className="flex gap-1">
           {TABS.map((t) => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`h-12 px-4 rounded-xl text-lg font-semibold ${tab === t.id ? "bg-white text-[#7c2d12]" : "active:bg-white/10"}`}>{t.label}</button>
@@ -111,6 +113,7 @@ export function AdminSizzle() {
       <main className="flex-1 min-h-0">
         {tab === "sell" && <SellScreen till={till} />}
         {tab === "eod" && <EndOfDayScreen till={till} />}
+        {tab === "money" && <MoneyScreen till={till} />}
         {tab === "admin" && <AdminScreen till={till} />}
         {tab === "data" && <DataScreen till={till} />}
       </main>

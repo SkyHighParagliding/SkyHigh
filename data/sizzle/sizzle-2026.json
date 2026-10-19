@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "event": {
-    "name": "SkyHigh Paragliding Club — Sausage Sizzle",
+    "id": "2026-ntvo",
+    "title": "2026 NTVO",
+    "name": "2026 NTVO — SkyHigh Paragliding Club Sausage Sizzle",
     "club": "SkyHigh Paragliding Club",
     "days": [
       {

@@ -874,6 +874,7 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 - PDFs on the PC use `playwright-core` with the installed Edge (dev dependency only; no browser download, no Railway impact).
 
 **Rationale:** Smallest blast radius and zero payment-data exposure, while still giving stock depletion, a cash-only cash-up and a Stripe reconciliation.  
+**Addendum (2026-10-19, Jon: "A B C D"):** Every sale and snapshot is tagged with an event id (`data.event.id`, first event `2026-ntvo` = 2026 NTVO), in IndexedDB and in a Postgres `event` column, so events never mix and can be compared. Treasurer records — purchases from receipts (with a compressed receipt photo stored in the snapshot JSON), cash banked, Stripe actual gross/fees/net — are snapshots too (latest per key wins; deletes are tombstones). The Money tab reports net result = sales − purchases − Stripe fees (actual if entered, else estimated), with leftover stock at cost shown but not netted. `planningLessons` turns actual sales into the plan's own units (`config.mix`, card share, customers per day) for the next event's data file.  
 **Reversibility:** Easy. The till is self-contained: route, tile, two tables, one route file, its own service worker.  
 **Blocked by:** None.  
 **Confirms:** SW-001 (single root worker), DECISION-006.

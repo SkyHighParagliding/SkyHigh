@@ -27,6 +27,7 @@ import {
   summariseSales,
   type SizzleData,
 } from "../../shared/sizzle/calc.ts";
+import { eventReport, planningLessons } from "../../shared/sizzle/report.ts";
 
 const data = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/sizzle/sizzle-2026.json"), "utf8")) as SizzleData;
 const customers = Number(process.argv[2] ?? 75);
@@ -142,3 +143,20 @@ console.log("\nStock (from the Day 1 initial shop)");
 console.table(Object.fromEntries(Object.entries(used).map(([pid, u]) => [pid, { unit: products[pid].unit, opening: Math.round(opening[pid] ?? 0), used: Math.round(u * 10) / 10, left: Math.round((after[pid] ?? 0) * 10) / 10 }])));
 const negative = Object.entries(after).filter(([, v]) => v < 0);
 console.log(negative.length ? `⚠ Ran out: ${negative.map(([k]) => k).join(", ")}` : "✓ No component ran out.");
+
+// Treasurer view of the simulated day: the initial shop as the only receipt,
+// the drawer count as the close, the till's card total as Stripe's gross.
+const report = eventReport(
+  data,
+  sales,
+  { 1: { day: 1, floatCounts: floatPlan.counts, counted: drawerValue, stripeTotal: summary.cardTotal } },
+  [{ id: "sim-shop", date: data.event.days[0].date, day: 0, store: "Woolworths Bright", amount: plan.initial.total + plan.initial.otherTotal, purpose: "Initial shop", paidBy: "sim", note: "planned list total" }],
+  [],
+  null,
+  after,
+);
+const lessons = planningLessons(data, sales, report, after);
+console.log("\nTreasurer view (Day 1 only; the initial shop is the only receipt, so 4 days of non-perishables are charged against 1 day of sales)");
+console.log(`  Sales $${report.totals.sales.toFixed(2)} − purchases $${report.purchasesTotal.toFixed(2)} − est. Stripe fees $${report.stripe.feesUsed.toFixed(2)} = net $${report.profit.net.toFixed(2)}`);
+console.log(`  Cash to bank $${report.cash.toBank.toFixed(2)}; leftover stock at cost $${report.closingStockValue.toFixed(2)}`);
+console.log(`  Lessons: ${lessons.notes.slice(1, 3).join(" | ")}`);

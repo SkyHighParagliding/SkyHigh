@@ -14,7 +14,9 @@ Event Sat 31 Oct – Tue 3 Nov 2026. File map: `wiki/05-file-map.md` → Sausage
 - **Prices:** Woolworths Bright (store 3088) shelf prices checked 19 Oct in Jon's Woolworths account, set to Direct to boot → Bright. All in `data/sizzle/sizzle-2026.json`.
 - **PDFs:** `npm run sizzle:pdfs` → `output/sizzle/` (12 files: initial list, Day 2/3/4 + 2-day top-ups, equipment, compliance, price board, float & cash-up, costing & power, card guide). All opened and checked.
 - **Till:** `/admin/sizzle` (admin login; dashboard tile only). Verified in Chrome against the production build with a mock API, including offline reload and later sync.
-- **Tests:** 49 sizzle tests in `npm test`. The 75-customer simulation runs clean.
+- **Tests:** 68 sizzle tests in `npm test`. The 75-customer simulation runs clean.
+- **Event = 2026 NTVO** (`event.id` `2026-ntvo` tags every sale/record). Money tab (PIN): purchases with receipt photos, cash banked, Stripe actuals, treasurer report PDF/CSV, next-event planning file. Sample report: `npm run sizzle:sample-report`.
+- **Admin manual v15.3** documents the till (6 sections), Cameras, and the Cloudflare DNS move.
 - **Next:**
   1. Jon: phone the Alpine Shire EHO. Safe Food Victoria's fundraiser guidance covers ≤2 consecutive days and this event is 4. Then do the FoodTrader Class 4 notification and lodge both Statements of Trade **by Mon 26 Oct**.
   2. Test `/api/sizzle/*` against real Postgres (local DB or prod after merge).

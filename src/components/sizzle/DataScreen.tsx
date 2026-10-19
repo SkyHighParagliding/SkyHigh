@@ -4,7 +4,7 @@ import { CloudDownload, Download, RefreshCw, Upload } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { download, exportBackup, importBackup, importServerExport, salesCsv, stockCsv, type Backup } from "@/lib/sizzleStore";
-import type { Till } from "./useTill";
+import { EVENT_ID, type Till } from "./useTill";
 
 export function DataScreen({ till }: { till: Till }) {
   const { token } = useAuth();
@@ -40,7 +40,7 @@ export function DataScreen({ till }: { till: Till }) {
         <div className="flex flex-wrap gap-3">
           <button type="button" disabled={busy} onClick={() => run("Sync", async () => { const r = await till.runSync(); toast[r.ok ? "success" : "error"](r.ok ? `Synced — ${r.pending} pending` : `Not synced: ${r.error}`); })} className={`${btn} bg-stone-800 text-white`}><RefreshCw className="w-6 h-6" /> Sync now</button>
           <button type="button" disabled={busy} onClick={() => run("Restore", async () => {
-            const x = await api.get<{ sales: never[]; snapshots: never[] }>("/api/sizzle/export", token);
+            const x = await api.get<{ sales: never[]; snapshots: never[] }>(`/api/sizzle/export?event=${EVENT_ID}`, token);
             const r = await importServerExport(x);
             await till.reload();
             toast.success(`Restored ${r.sales} sales and ${r.snapshots} records from the server`);

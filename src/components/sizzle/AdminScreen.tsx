@@ -90,7 +90,8 @@ function PinGate({ till, onUnlock }: { till: Till; onUnlock: () => void }) {
   );
 }
 
-export function AdminScreen({ till }: { till: Till }) {
+/** Shows `children` only after the admin PIN; one unlock covers Admin and Money for 10 minutes. */
+export function PinProtected({ till, children }: { till: Till; children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(Date.now() < unlockedUntil);
   useEffect(() => {
     if (!unlocked) return;
@@ -98,7 +99,11 @@ export function AdminScreen({ till }: { till: Till }) {
     return () => window.clearTimeout(t);
   }, [unlocked]);
   if (!unlocked) return <PinGate till={till} onUnlock={() => { unlockedUntil = Date.now() + UNLOCK_MS; setUnlocked(true); }} />;
-  return <AdminForm till={till} />;
+  return <>{children}</>;
+}
+
+export function AdminScreen({ till }: { till: Till }) {
+  return <PinProtected till={till}><AdminForm till={till} /></PinProtected>;
 }
 
 function AdminForm({ till }: { till: Till }) {

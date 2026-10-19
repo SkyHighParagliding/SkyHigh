@@ -19,6 +19,8 @@ export interface StoredSale extends Sale {
 
 export interface Snapshot<T = unknown> {
   id: string;
+  /** Event id (data.event.id) — records from different events never mix. */
+  event: string;
   deviceId: string;
   kind: string;
   key: string;
@@ -123,21 +125,43 @@ export async function allSales(): Promise<StoredSale[]> {
   return rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-// ─── Snapshots (settings, stock baselines, day closes) ────────────────────────
+// ─── Snapshots (settings, stock baselines, day closes, purchases, banking) ────
+
+/** The event every new record is tagged with. Set once by the till from data.event.id. */
+let currentEvent = "default";
+export function setEvent(id: string): void {
+  currentEvent = id;
+}
+export function getEvent(): string {
+  return currentEvent;
+}
+
+const latestKey = (event: string, kind: string, key: string) => `latest:${event}:${kind}:${key}`;
 
 export async function putSnapshot<T>(kind: string, key: string, data: T): Promise<Snapshot<T>> {
-  const snap: Snapshot<T> = { id: newId(kind), deviceId: await deviceId(), kind, key, createdAt: new Date().toISOString(), data, synced: false };
+  const snap: Snapshot<T> = { id: newId(kind), event: currentEvent, deviceId: await deviceId(), kind, key, createdAt: new Date().toISOString(), data, synced: false };
   await tx("snapshots", "readwrite", (s) => s.put(snap));
-  await kvSet(`latest:${kind}:${key}`, snap);
+  await kvSet(latestKey(currentEvent, kind, key), snap);
   return snap;
 }
 
 export async function latestSnapshot<T>(kind: string, key = ""): Promise<Snapshot<T> | undefined> {
-  return kvGet<Snapshot<T>>(`latest:${kind}:${key}`);
+  return kvGet<Snapshot<T>>(latestKey(currentEvent, kind, key));
 }
 
 export async function allSnapshots(): Promise<Snapshot[]> {
   return (await tx<Snapshot[]>("snapshots", "readonly", (s) => s.getAll())) ?? [];
+}
+
+/** Latest version of every record of one kind for the current event (e.g. all purchases). */
+export async function latestOfKind<T>(kind: string): Promise<T[]> {
+  const latest = new Map<string, Snapshot<T>>();
+  for (const s of (await allSnapshots()) as Snapshot<T>[]) {
+    if (s.kind !== kind || (s.event ?? currentEvent) !== currentEvent) continue;
+    const cur = latest.get(s.key);
+    if (!cur || cur.createdAt < s.createdAt) latest.set(s.key, s);
+  }
+  return [...latest.values()].map((s) => s.data);
 }
 
 // ─── Server sync ──────────────────────────────────────────────────────────────
@@ -159,7 +183,8 @@ export function syncNow(post: (body: unknown) => Promise<{ sales: string[]; snap
     if (!sales.length && !snaps.length) return { ok: true, pending: 0 };
     try {
       const strip = <T extends { synced: boolean }>({ synced: _s, ...rest }: T) => rest;
-      const ack = await post({ sales: sales.slice(0, 400).map(strip), snapshots: snaps.slice(0, 100).map(strip) });
+      // Snapshots can carry receipt photos (~150 KB each), so send them in small batches.
+      const ack = await post({ sales: sales.slice(0, 400).map(strip), snapshots: snaps.slice(0, 20).map(strip) });
       const okSales = new Set(ack.sales);
       const okSnaps = new Set(ack.snapshots);
       for (const s of sales) if (okSales.has(s.id)) await putSale({ ...s, synced: true });
@@ -215,16 +240,17 @@ export async function importServerExport(x: { sales: Omit<StoredSale, "synced">[
   for (const s of x.snapshots) {
     const snap = { ...s, createdAt: new Date(s.createdAt).toISOString(), synced: true };
     await tx("snapshots", "readwrite", (st) => st.put(snap));
-    const cur = await latestSnapshot(s.kind, s.key);
-    if (!cur || cur.createdAt < snap.createdAt) await kvSet(`latest:${s.kind}:${s.key}`, snap);
+    const key = latestKey(s.event ?? currentEvent, s.kind, s.key);
+    const cur = await kvGet<Snapshot>(key);
+    if (!cur || cur.createdAt < snap.createdAt) await kvSet(key, snap);
   }
   return { sales: x.sales.length, snapshots: x.snapshots.length };
 }
 
 export function salesCsv(sales: StoredSale[]): string {
-  const head = ["id", "createdAt", "day", "method", "total", "tendered", "change", "voided", "voidedAt", "item", "qty", "unitPrice", "lineTotal", "synced"];
+  const head = ["event", "id", "createdAt", "day", "method", "total", "tendered", "change", "voided", "voidedAt", "item", "qty", "unitPrice", "lineTotal", "synced"];
   const rows = sales.flatMap((s) =>
-    s.lines.map((l) => [s.id, s.createdAt, s.day, s.method, s.total, s.tendered ?? "", s.change ?? "", s.voided, s.voidedAt ?? "", l.item, l.qty, l.unitPrice, l.qty * l.unitPrice, s.synced]),
+    s.lines.map((l) => [s.event ?? "", s.id, s.createdAt, s.day, s.method, s.total, s.tendered ?? "", s.change ?? "", s.voided, s.voidedAt ?? "", l.item, l.qty, l.unitPrice, l.qty * l.unitPrice, s.synced]),
   );
   return [head, ...rows].map((r) => r.map((v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v))).join(",")).join("\n");
 }

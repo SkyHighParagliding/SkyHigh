@@ -2,8 +2,11 @@
 -- to IndexedDB first and syncs here when online, so a lost or reset iPad can be
 -- restored. Rows are keyed by the client-generated id, so a re-sent sale is an
 -- upsert, never a duplicate. A void re-sends the same id with voided = TRUE.
+-- "event" (e.g. 2026-ntvo) keeps each sizzle event's records separate so they
+-- can be reported on and compared with the next one.
 CREATE TABLE IF NOT EXISTS sizzle_sales (
   id TEXT PRIMARY KEY,
+  event TEXT NOT NULL,
   "deviceId" TEXT NOT NULL,
   day INTEGER NOT NULL,
   "createdAt" TIMESTAMPTZ NOT NULL,
@@ -17,12 +20,14 @@ CREATE TABLE IF NOT EXISTS sizzle_sales (
   "receivedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_sizzle_sales_day ON sizzle_sales (day, "createdAt");
+CREATE INDEX IF NOT EXISTS idx_sizzle_sales_day ON sizzle_sales (event, day, "createdAt");
 
 -- Everything else the till keeps (settings, stock baselines, end-of-day
--- closes) as JSON snapshots. Latest row per (kind, key) wins on restore.
+-- closes, purchases with receipt photos, banking, Stripe actuals) as JSON
+-- snapshots. Latest row per (event, kind, key) wins on restore.
 CREATE TABLE IF NOT EXISTS sizzle_snapshots (
   id TEXT PRIMARY KEY,
+  event TEXT NOT NULL,
   "deviceId" TEXT NOT NULL,
   kind TEXT NOT NULL,
   key TEXT NOT NULL DEFAULT '',
@@ -31,4 +36,4 @@ CREATE TABLE IF NOT EXISTS sizzle_snapshots (
   "receivedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_sizzle_snapshots_kind ON sizzle_snapshots (kind, key, "createdAt");
+CREATE INDEX IF NOT EXISTS idx_sizzle_snapshots_kind ON sizzle_snapshots (event, kind, key, "createdAt");

@@ -166,5 +166,48 @@ const lessCash = clone(real);
 lessCash.config.card.share = 0.9;
 assert(recommendFloat(lessCash).total <= f.total, "higher card share → float no bigger");
 
+// ─── Treasurer report + lessons ────────────────────────────────────────────
+console.log("\nTreasurer report");
+const { eventReport, planningLessons, reportCsv, halfHourOf } = await import("./report.ts");
+// 12:05 and 12:40 AEDT on Sat 31 Oct 2026 (UTC+11) → 01:05Z / 01:40Z
+const rs = [
+  { id: "r1", createdAt: "2026-10-31T01:05:00.000Z", day: 1, lines: [{ item: "sausage", qty: 2, unitPrice: 2 }, { item: "coffee", qty: 1, unitPrice: 2 }], total: 6, method: "cash", tendered: 10, change: 4, voided: false },
+  { id: "r2", createdAt: "2026-10-31T01:40:00.000Z", day: 1, lines: [{ item: "veg_sausage", qty: 1, unitPrice: 2 }, { item: "water", qty: 1, unitPrice: 1 }], total: 3, method: "card", tendered: null, change: null, voided: false },
+  { id: "r3", createdAt: "2026-10-31T01:45:00.000Z", day: 1, lines: [{ item: "cola", qty: 1, unitPrice: 2 }], total: 2, method: "card", tendered: null, change: null, voided: true },
+  { id: "r4", createdAt: "2026-11-01T01:10:00.000Z", day: 2, lines: [{ item: "lemonade", qty: 2, unitPrice: 2 }], total: 4, method: "cash", tendered: 5, change: 1, voided: false },
+];
+const closes = { 1: { day: 1, floatCounts: { 20: 1, 10: 0, 5: 0, 2: 0, 1: 0 }, counted: 25, stripeTotal: 3 } };
+const purchases = [
+  { id: "p1", date: "2026-10-30", day: 0, store: "Woolworths Bright", amount: 100, purpose: "Initial shop", paidBy: "Jon", note: "" },
+  { id: "p2", date: "2026-10-31", day: 1, store: "Servo", amount: 12.5, purpose: "Ice", paidBy: "Sam", note: "", deleted: true },
+];
+const banking = [{ id: "b1", date: "2026-10-31", day: 1, amount: 5, by: "Jon", note: "" }];
+const rep = eventReport(real, rs, closes, purchases, banking, null, { sausage: 26, ice: 5 });
+assert(rep.totals.sales === 13 && rep.totals.cash === 10 && rep.totals.card === 3, "event totals: $13 = $10 cash + $3 card (void excluded)");
+assert(rep.totals.transactions === 3 && rep.totals.voids === 1 && rep.totals.voidValue === 2, "3 sales, 1 void worth $2");
+assert(rep.days[0].expectedCash === 26 && rep.days[0].cashVariance === -1, "Day 1: float $20 + cash $6 = $26 expected; $25 counted → −$1");
+assert(rep.days[0].stripeVariance === 0 && rep.days[1].closed === false, "Day 1 Stripe matches; Day 2 not closed");
+assert(rep.purchasesTotal === 100 && rep.purchases.length === 1, "deleted purchase excluded from the total");
+assert(rep.stripe.feesSource === "estimate" && near(rep.stripe.feesUsed, rep.stripe.estFees, 0.001), "fees fall back to the estimate until actuals are entered");
+assert(near(rep.profit.net, 13 - 100 - rep.stripe.feesUsed, 0.001), "net = sales − purchases − fees");
+assert(rep.cash.toBank === 10 - 1 - 5, "cash to bank = cash sales $10 − $1 short − $5 banked = $4");
+assert(near(rep.closingStockValue, 10.5, 0.01), "leftover stock valued at cost: 1 pack of sausages $10.50; leftover ice is not counted (it melts)");
+const repActual = eventReport(real, rs, closes, purchases, banking, { gross: 3, fees: 0.3, net: 2.7, note: "" }, {});
+assert(repActual.stripe.feesSource === "actual" && repActual.profit.fees === 0.3, "actual Stripe fees replace the estimate");
+const csv = reportCsv(rep);
+assert(csv.split("\n").length > 10 && csv.includes("Net result") && csv.includes("Initial shop"), "report CSV has days, items, purchases and net result");
+
+console.log("\nLessons for next time");
+assert(halfHourOf("2026-10-31T01:05:00.000Z") === "12:00" && halfHourOf("2026-10-31T01:40:00.000Z") === "12:30", "half-hours bucketed in Melbourne time");
+const les = planningLessons(real, rs, rep, { sausage: 30, bread: 5, ice: 10 });
+// live sales r1, r2, r4: 3 customers. Sausages 2+1 = 3 → 1.0/customer; veg 1/3; hot 1/3; cold (water 1 + lemonade 2) = 1.0
+assert(les.actualMix.sausageServesPerCustomer === 1 && les.actualMix.vegShare === 0.333, "actual sausages per customer and veg share");
+assert(les.actualMix.hotDrinksPerCustomer === 0.333 && les.actualMix.coldDrinksPerCustomer === 1, "actual hot/cold drinks per customer");
+assert(les.actualMix.waterShareOfCold === 0.333 && les.actualMix.colaShareOfCans === 0, "water share of cold; cola share of cans (voided cola ignored)");
+assert(les.cardShare.actual === 0.333 && les.itemsPerCardSale.actual === 2, "card share 1 of 3 sales; 2 items per card sale");
+assert(les.perDay[0].customers === 2 && les.perDay[0].busiestHalfHour === "12:00" && les.perDay[0].firstSale === "12:05", "per-day customers, first sale and busiest half-hour");
+assert(les.suggestedConfig.customersPerDay[0] === 2 && les.suggestedConfig.customersPerDay[2] === 2, "untraded days suggested at the average of traded days");
+assert(les.leftovers.some((l) => l.product === "sausage") && !les.leftovers.some((l) => l.product === "ice"), "leftovers list skips ice (doesn't carry over)");
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 if (failed) process.exit(1);

@@ -105,7 +105,7 @@ ol.steps li{margin:4px 0}
 @media print{.printbar{display:none}.screenpad{padding:0}}
 `;
 
-function header(data: SizzleData, title: string, sub?: string): string {
+export function header(data: SizzleData, title: string, sub?: string): string {
   return `<header class="doc">
   <div class="ev"><span><b>${esc(data.event.name)}</b> · ${esc(dateRange(data))}</span><span>Prices checked at Woolworths Bright on ${esc(longDate(data.pricesChecked.date))}</span></div>
   <h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}

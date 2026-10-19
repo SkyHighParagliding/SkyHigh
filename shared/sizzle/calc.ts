@@ -129,7 +129,8 @@ export interface Config {
 
 export interface SizzleData {
   schemaVersion: number;
-  event: { name: string; club: string; days: { n: number; date: string; label: string }[]; service: string; sites: string; foodClass: string };
+  /** `id` tags every sale and record so future events never mix with this one. */
+  event: { id: string; title: string; name: string; club: string; days: { n: number; date: string; label: string }[]; service: string; sites: string; foodClass: string };
   pricesChecked: { store: string; address: string; phone: string; date: string; method: string };
   tradingHours: { checked: string; current: string; eventDays: string; confirmed: boolean };
   config: Config;
@@ -541,6 +542,8 @@ export type PayMethod = "cash" | "card";
 
 export interface Sale {
   id: string;
+  /** Event id (data.event.id). Older records without one belong to the current event. */
+  event?: string;
   createdAt: string;
   day: number;
   lines: SaleLine[];

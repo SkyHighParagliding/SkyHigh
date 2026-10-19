@@ -635,7 +635,7 @@ export function AdminManual() {
       icon: <Flame className="w-6 h-6 text-orange-700" />,
       link: "/admin/sizzle",
       category: "Events — Sausage Sizzle",
-      description: "The Sausage Sizzle Till is a full-screen cash register for the club sausage sizzle (31 Oct – 3 Nov 2026), built for one iPad in landscape. It works without signal: every sale is saved on the iPad first and copied to the club website whenever there's a connection. Card payments are taken on a separate Stripe device — the till never touches card details. The till is behind the admin login, hidden from search engines, and not in any menu; the only link is the Admin Dashboard tile.",
+      description: "The Sausage Sizzle Till is a full-screen cash register for the club sausage sizzle at the 2026 NTVO (31 Oct – 3 Nov 2026), built for one iPad in landscape. It works without signal: every sale is saved on the iPad first and copied to the club website whenever there's a connection. Card payments are taken on a separate Stripe device — the till never touches card details. The till is behind the admin login, hidden from search engines, and not in any menu; the only link is the Admin Dashboard tile.",
       steps: [
         <span className="flex flex-wrap items-center gap-2"><span>Open it: Admin Dashboard → 'Sausage Sizzle Till', or go to /admin/sizzle. You must be logged in as an admin.</span><Link to="/admin/sizzle" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sizzle Till <ExternalLink className="w-3 h-3" /></Link></span>,
         "Log the iPad in (each morning): open the website in Safari on the iPad, log in with an admin account, then open the till. Volunteers use the till under that login — never give them the password. The login lasts as long as the 'Admin Session TTL' (Scheduled Tasks → Cache Timers, 24 hours by default), so log in again each morning. If it expires mid-service the till asks for a login; sales already rung up stay safe on the iPad and upload after you log in.",
@@ -647,7 +647,7 @@ export function AdminManual() {
         "Pick the trading day: the D1–D4 buttons at the top right. The till picks today's date automatically; check it's right each morning. Every sale is tagged with that day.",
         "Starting float: the recommended float (with the reasoning) is on the printed Float & Cash-up sheet. On the till, the End of day tab shows the float counts — change them to what is actually in the cash box at the start.",
         "Stripe device: before Day 1 the organiser logs the phone or reader into the Stripe Dashboard app with a volunteer-level team login (never the admin login), checks the account time zone is Melbourne, and does a $1 test payment and refund. Charge it and the power bank overnight.",
-        "Header bar: tabs (Sell, End of day, Admin, Data), the day buttons, and the backup badge. 'Backed up' = every sale has reached the website. 'N to upload' (amber) = sales are safe on the iPad and waiting for signal. A crossed-out cloud = the iPad has no connection. Tap the badge to try uploading straight away.",
+        "Header bar: tabs (Sell, End of day, Money, Admin, Data), the day buttons, and the backup badge. 'Backed up' = every sale has reached the website. 'N to upload' (amber) = sales are safe on the iPad and waiting for signal. A crossed-out cloud = the iPad has no connection. Tap the badge to try uploading straight away.",
       ]
     },
     {
@@ -687,6 +687,27 @@ export function AdminManual() {
       ]
     },
     {
+      title: "Sizzle Till Money (Treasurer)",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "The Money tab (PIN-protected) is the treasurer's view of the whole event: sales, actual spend from receipts, Stripe fees, the net result, cash banked, leftover stock and lessons for next time. Every sale and record is tagged with the event (this one is '2026 NTVO', id 2026-ntvo) so a future sizzle never mixes with it.",
+      steps: [
+        "Open: Till → 'Money' tab → admin PIN (the same PIN as the Admin tab; one unlock covers both for 10 minutes).",
+        "Summary tiles: Sales (with the cash/card split), Purchases (number of receipts, and the planned spend for comparison), Stripe fees (estimated until you enter the actual figure), Net result = sales − purchases − Stripe fees (green if positive), Cash still to bank, and Leftover stock valued at what it cost (not included in the net result; ice is never counted because it melts).",
+        "By day: number of sales, cash, card, total and the planned sales for each day, plus the cash variance and Stripe variance from each End-of-day close. 'not closed' means that day's End of day hasn't been saved yet — do that first or the variances are blank.",
+        "Purchases — enter EVERY shop from its receipt, the same day: date, which day it was for (or 'Before Day 1' for the initial shop), store, receipt total, what for (Initial shop, Top-up shop, Ice, Gas, Equipment, Other), who paid (for reimbursement) and a note. Tap 'Photo' to photograph the receipt with the iPad camera — the photo is shrunk and saved with the record (tap the receipt icon to view it). Tap 'Add'. The bin icon removes an entry (it stays in the history marked removed). Keep the paper receipts too.",
+        "Cash banked: each time cash takings leave the cash box (banked, or handed to the treasurer), record the date, which day's takings, amount, who and a deposit reference. Leave the float in the box. 'Cash still to bank' = cash sales ± the counted variances − banked; it should be $0.00 at the end.",
+        "Stripe — actual figures: after the event, in the Stripe Dashboard open Balances/Payouts (or Reports) for 31 Oct – 3 Nov and enter the gross card payments, total fees and net paid out, with the payout reference, then Save. From then on the report uses the actual fees instead of the estimate. The line underneath compares Stripe's gross with the till's card total.",
+        "Treasurer's report PDF: the whole event on A4 — summary, by-day table, sales by item, every purchase (and whether a receipt photo exists), cash banked, the Stripe figures, leftover stock, 'For next time' notes, planned vs actual buying per customer, sales by half-hour, and signature lines. Opens in the print view: 'Print / Save as PDF' → Share → Save to Files / Google Drive / Mail.",
+        "Report CSV: the same figures one line each (days, items, purchases, fees, net result, banking) for the treasurer's spreadsheet.",
+        "Next-event planning file: downloads a JSON file with what actually happened — customers per day vs planned, first/last sale and busiest half-hour, the real buying mix per customer (sausages, veg share, hot/cold drinks…), card share and items per card sale, average spend, leftovers and actual vs planned spend — plus 'suggestedConfig', ready to paste into the next event's data file. Upload it to the club Drive with the treasurer's report.",
+        <span className="flex flex-wrap items-center gap-2"><span>Treasurer on a computer: log in to the website, open the till (Admin Dashboard → Sausage Sizzle Till), go to Data → 'Restore from server' to copy this event's sales and records onto that computer, then open Money. (Records only reach the server once the iPad has had signal — check the iPad's badge says 'Backed up'.)</span><Link to="/admin/sizzle" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sizzle Till <ExternalLink className="w-3 h-3" /></Link></span>,
+        <span className="flex flex-wrap items-center gap-2"><span>After the event: upload the Treasurer's report PDF, the Report CSV, the Transactions CSV (Data tab), the next-event planning file and scans of the paper receipts to the club Drive (suggested: 03_Financial Records → '2026 NTVO Sausage Sizzle').</span><Link to="/admin/documents" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Documents <ExternalLink className="w-3 h-3" /></Link></span>,
+        "History is kept: the website keeps every event's sales and records permanently, tagged by event, so 2026 NTVO can be compared with the next sizzle. A new event gets a new data file with a new event id (e.g. 2027-ntvo).",
+      ]
+    },
+    {
       title: "Sizzle Till Admin & Data",
       icon: <Flame className="w-6 h-6 text-orange-700" />,
       link: "/admin/sizzle",
@@ -700,7 +721,7 @@ export function AdminManual() {
         "Portions per serve: sausages, slices, onion grams, sauce mL, mustard grams, serviettes, tea bags, coffee grams, sugar grams, milk mL, cups, stirrers. Sauce, sugar and milk are averages across all customers. Blank = the planned value (shown as 'file'). Portions change the stock depletion and the costing.",
         "Shelf prices: what Woolworths actually charged, if different from the planned price. Changes flow into the cost per serve and the calculated sell prices.",
         "Stock on hand: after a top-up shop, type the number of PACKS bought against each product and tap 'Add delivery (packs)'. To correct a count, type the actual UNITS and tap 'Set on-hand (units)'. The table shows the current on-hand estimate; a red number means the till has sold more than it thought you had — recount.",
-        "Data → Server backup: 'Sync now' uploads anything waiting. 'Restore from server' copies every sale and setting from the club website onto this iPad — use it on a replacement iPad (log in, open the till, Data → Restore from server). Nothing is deleted.",
+        "Data → Server backup: 'Sync now' uploads anything waiting. 'Restore from server' copies every sale and record for this event (2026 NTVO) from the club website onto this device — use it on a replacement iPad (log in, open the till, Data → Restore from server). Nothing is deleted.",
         "Data → Export: 'Full backup (JSON)' saves everything on the iPad to a file (keep a copy at the end of each day). 'Transactions (CSV)' is one row per item per sale, including cash/card, tendered, change and voided — opens in Excel or Google Sheets. 'Stock (CSV)' is the current on-hand estimate per product.",
         "Data → Import: 'Import a JSON backup' merges a Full backup file into this iPad (sales with the same id are replaced by the file's copy).",
         "One till iPad: use one iPad for the till. A second device would keep its own stock count.",
@@ -721,7 +742,7 @@ export function AdminManual() {
         "Quantities: customers per day (75, 75, 75, then 62 on Day 4) × the lunch mix (1.3 sausages per customer of which 12% veg, 0.5 hot drinks, 0.6 cold drinks) × portion sizes, rounded up to whole packs. Small perishables carry a safety margin on Days 1–3; Day 4 has none to minimise leftovers.",
         "Float: worked out from the likely baskets and notes ($20, $10, $50, $5, exact) for the 30% of customers expected to pay cash. Notes cover the lunch rush (they come back in as people pay); $1 and $2 coins cover the whole day (they rarely come back). The reasoning is printed on the Float & Cash-up sheet.",
         "Power: the Bluetti Elite 300 runs only the kettle (≤ 2,200 W; 2,000 W preferred — the two AC sockets share 10 A). The Elite 100 runs only the Dometic from its 12 V socket. Recharge both every night; the figures are on the costing & power PDF.",
-        "Regenerating (developer task): prices, portions, the lunch mix, customers per day, equipment and compliance items all live in data/sizzle/sizzle-2026.json in the website code. After editing it, run 'npm run sizzle:pdfs'; the PDFs are written to output/sizzle/ on that computer. 'npm run sizzle:simulate' runs a simulated 75-customer lunch to check stock and change.",
+        "Regenerating (developer task): prices, portions, the lunch mix, customers per day, equipment and compliance items all live in data/sizzle/sizzle-2026.json in the website code. For the next event, copy that file, give it a new event id and name, paste in the 'suggestedConfig' from this event's next-event planning file, and re-check prices. After editing it, run 'npm run sizzle:pdfs'; the PDFs are written to output/sizzle/ on that computer. 'npm run sizzle:simulate' runs a simulated 75-customer lunch to check stock and change.",
         <span className="flex flex-wrap items-center gap-2"><span>Getting them to the club Drive: PDFs are NOT uploaded automatically. Upload them through Document Management (suggested: 08_Projects → a 'Sausage Sizzle 2026' folder), and re-upload after regenerating so the Drive copies aren't stale.</span><Link to="/admin/documents" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Documents <ExternalLink className="w-3 h-3" /></Link></span>,
         "Compliance (see the checklist PDF): FoodTrader Class 4 notification to the club's principal council; Statements of Trade for Alpine Shire AND Indigo Shire lodged at least 5 days before trading (by Mon 26 Oct 2026), then withdraw the unused one; confirm with the Alpine Shire environmental health officer because the state fundraiser guidance covers up to two consecutive days and this event is four; check Fire Danger Period / Total Fire Ban each morning before lighting the BBQ.",
       ]
@@ -955,6 +976,7 @@ export function AdminManual() {
                 ["Till Setup", "sizzle-till-setup"],
                 ["Selling", "sizzle-till-selling"],
                 ["End of Day", "sizzle-till-end-of-day"],
+                ["Money (Treasurer)", "sizzle-till-money-(treasurer)"],
                 ["Admin & Data", "sizzle-till-admin-&-data"],
                 ["Shopping Lists & PDFs", "sizzle-shopping-lists-&-pdfs"],
               ],

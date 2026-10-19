@@ -547,6 +547,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Estimated effort:** L
 - **Description:** Costed Woolworths Bright shopping lists (initial, Day 2/3/4 top-ups, 2-day versions), equipment/compliance/float/costing/card-guide PDFs, and an offline-first iPad till at `/admin/sizzle` (cash + card via a separate Stripe device), backed up to Postgres.
 - **Acceptance criteria:** 49 unit tests pass (`npm run test:sizzle`); 75-customer simulation runs clean; every PDF opened and checked; till verified in Chrome against the production build (sale/cash/card/declined/void/end-of-day/top-up/print view/PIN/price override/offline reload + later sync). Still to verify: `/api/sizzle/*` against a real Postgres, and on a real iPad (add to home screen, print → PDF).
+- **Treasurer + history (added 2026-10-19):** event id `2026-ntvo` on every record; Money tab (purchases with receipt photos, cash banked, Stripe actuals, net result, treasurer report PDF/CSV, next-event planning JSON). 68 sizzle tests.
 - **Details:** data `data/sizzle/sizzle-2026.json`; logic `shared/sizzle/`; PDFs `npm run sizzle:pdfs` → `output/sizzle/`; simulation `npm run sizzle:simulate -- 75 1`; DECISION-019.
 
 ---
