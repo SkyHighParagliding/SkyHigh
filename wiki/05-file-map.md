@@ -88,6 +88,21 @@ Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)
 
 ---
 
+## Sausage Sizzle (`data/sizzle/`, `shared/sizzle/`, `src/components/sizzle/`, `/admin/sizzle`)
+
+**Purpose:** club sausage sizzle 31 Oct – 3 Nov 2026: costed Woolworths Bright shopping lists and checklists as PDFs, plus an offline-first iPad till. Decisions: DECISION-019. Task: TASK-037.
+
+- `data/sizzle/sizzle-2026.json` — **the database**: event, Bright shelf prices (stockcode, URL, flags, fallbacks), portions, lunch mix, card-fee/float/power assumptions, equipment and compliance lists. Edit this, then regenerate the PDFs.
+- `shared/sizzle/calc.ts` — all maths (costing, card-fee pricing, pack rounding, shopping plan + top-ups, depletion, change, cash-up, card reconciliation, float, power). Pure; used by PDFs, till and tests.
+- `shared/sizzle/templates.ts` — A4 HTML templates for every document (shared by Node and the iPad).
+- `shared/sizzle/sizzle.test.mjs` — 49 tests (`npm run test:sizzle`, also part of `npm test`).
+- `scripts/sizzle/build-pdfs.ts` — `npm run sizzle:pdfs [-- --html]` → `output/sizzle/*.pdf` (gitignored), printed with the installed Edge via `playwright-core`.
+- `scripts/sizzle/simulate.ts` — `npm run sizzle:simulate -- <customers> <seed>`: lunch simulation with a real cash drawer.
+- `server/pg_migrations/050_sizzle.sql`, `server/routes/sizzle.ts` — `/api/sizzle/sync` (admin, upsert by client id) and `/api/sizzle/export` (restore).
+- `src/pages/AdminSizzle.tsx` + `src/components/sizzle/*` — the till (Sell, End of day, Admin (PIN), Data). `useTill.ts` holds state; `src/lib/sizzleStore.ts` is the IndexedDB layer + outbox; `printView.ts` prints templates in-page.
+- `public/sizzle-sw.js`, `public/sizzle.webmanifest`, `public/images/sizzle-icon-*.png` — offline shell scoped to `/admin/sizzle` and add-to-home-screen. Root `public/sw.js` keeps `skyhigh-sizzle*` caches.
+- Route sits outside `Layout` in `src/App.tsx`; only link is the Admin dashboard tile. `server.ts` sends `X-Robots-Tag: noindex` for `/admin/sizzle`.
+
 ## Camera Archive (`server/webcams/`, `server/routes/webcams.ts`, `src/components/webcams/`)
 
 **Purpose:** archive of the Flowerdale webcam images from the operator feed (`au2.airportweathercams.com`), every frame in three sizes, kept 90 days. Design and decisions: [[wiki/future/flowerdale-cameras-plan]] and DECISION-017 in `wiki/03-decisions-log.md`. Jobs run only in production (or with `WEBCAM_INGEST=1`); the admin "Run now" works anywhere.

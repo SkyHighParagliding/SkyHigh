@@ -42,6 +42,7 @@ import sponsorsRouter from "./server/routes/sponsors.js";
 import groundHandlingRouter from "./server/routes/groundHandling.js";
 import businessDirectoryRouter from "./server/routes/businessDirectory.js";
 import webcamsRouter from "./server/routes/webcams.js";
+import sizzleRouter from "./server/routes/sizzle.js";
 import competitionsRouter from "./server/routes/competitions.js";
 import pilotAuthRouter from "./server/routes/pilotAuth.js";
 import flightsRouter from "./server/routes/flights.js";
@@ -162,6 +163,8 @@ async function startServer() {
     // proximity all need the browser Geolocation API on our own origin. mic/camera
     // stay denied (no feature uses getUserMedia).
     res.setHeader('Permissions-Policy', 'geolocation=(self), microphone=(), camera=()');
+    // The sausage sizzle till is admin-only and never listed in search.
+    if (_req.path.startsWith('/admin/sizzle') || _req.path.startsWith('/sizzle')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",  // unsafe-inline needed for React/Vite — replace with nonces when feasible
@@ -267,6 +270,7 @@ async function startServer() {
   app.use("/api/ground-handling", groundHandlingRouter);
   app.use("/api/business-directory", businessDirectoryRouter);
   app.use("/api/webcams", webcamsRouter);
+  app.use("/api/sizzle", sizzleRouter);
   app.use("/api/competitions", competitionsRouter);
   app.use("/api/pilot-auth", pilotAuthRouter);
   app.use("/api/public-contacts", publicContactsRouter);

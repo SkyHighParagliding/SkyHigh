@@ -53,6 +53,7 @@ const DutyPilotMap = lazy(() => import("./pages/DutyPilotMap").then(m => ({ defa
 const BusinessDirectory = lazy(() => import("./pages/BusinessDirectory").then(m => ({ default: m.BusinessDirectory })));
 const Cameras = lazy(() => import("./pages/Cameras").then(m => ({ default: m.Cameras })));
 const AdminWebcams = lazy(() => import("./pages/AdminWebcams").then(m => ({ default: m.AdminWebcams })));
+const AdminSizzle = lazy(() => import("./pages/AdminSizzle").then(m => ({ default: m.AdminSizzle })));
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
 const AdminSites = lazy(() => import("./pages/AdminSites").then(m => ({ default: m.AdminSites })));
@@ -184,6 +185,7 @@ export default function App() {
             <Route path="xc/demo/duty" element={<Suspense fallback={<PageLoader />}><DutyPilotMap /></Suspense>} />
             <Route path="xc/duty-pilot" element={<Suspense fallback={<PageLoader />}><DutyPilotMap /></Suspense>} />
             <Route path="xc/maps/demo" element={<Suspense fallback={<PageLoader />}><XCMapsDemo /></Suspense>} />
+            <Route path="/admin/sizzle" element={<AdminRoute><AdminSizzle /></AdminRoute>} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />

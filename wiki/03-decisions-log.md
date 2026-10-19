@@ -857,6 +857,27 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 **Blocked by:** None. Registrar turned out to be Vodien (not Crazy Domains or Google); see [[06-deployment]] Domain Management.  
 **Confirms:** DECISION-006 (Railway hosting).
 
+## DECISION-019: Sausage Sizzle Till — Offline-First iPad Page, Stripe Kept Outside the Till
+**Date:** 2026-10-19  
+**Context:** Club sausage sizzle, 31 Oct – 3 Nov 2026, at hill sites with patchy signal. Needs costed Woolworths Bright shopping lists, printable checklists, and a cash + card till on one iPad. Card payments use the club's existing Stripe account on a separate device (Tap to Pay phone or reader).  
+**Options considered:**
+- A: Stripe Terminal integrated in the till: one tap for volunteers, but secret keys, server code and PCI scope for a 4-day event.
+- B: Till records the method only; volunteer keys the till total into the Stripe device and taps Approved/Declined: no keys, no card data ever touches SkyHigh.
+- C: Paper tally: no stock depletion, no end-of-day maths.
+
+**Chosen:** B. Plus:
+- One JSON data file (`data/sizzle/sizzle-2026.json`) feeds the PDFs, the till and the tests; the maths lives in `shared/sizzle/calc.ts`.
+- Card fee is costed before the ×1.10 markup: `P = 1.10·(C + s·0.25/n) / (1 − 1.10·s·0.0165)`, rounded up to $1 (s = card share, n = items per card sale).
+- Sales are written to IndexedDB before anything else, then upserted to Postgres (`sizzle_sales`, `sizzle_snapshots`, migration 050) by client id, so a re-send never duplicates.
+- A service worker scoped to `/admin/sizzle` (`public/sizzle-sw.js`) serves the shell and the auth checks from cache when offline. Without it, `AuthContext` treats a network error as a bad session and logs the iPad out. The site-wide `sw.js` now keeps `skyhigh-sizzle*` caches.
+- iPad PDFs render the same templates in an in-page overlay and use `window.print()`; popups don't work from a home-screen app.
+- PDFs on the PC use `playwright-core` with the installed Edge (dev dependency only; no browser download, no Railway impact).
+
+**Rationale:** Smallest blast radius and zero payment-data exposure, while still giving stock depletion, a cash-only cash-up and a Stripe reconciliation.  
+**Reversibility:** Easy. The till is self-contained: route, tile, two tables, one route file, its own service worker.  
+**Blocked by:** None.  
+**Confirms:** SW-001 (single root worker), DECISION-006.
+
 
 ## Summary Table
 
@@ -879,6 +900,7 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 | 016 | Rain radar as 3rd peer layer | Wind\|Thermal\|Radar via one segmented selector (not a 4th state); radar suppresses the overlay to kill blue-on-blue; RainViewer past+nowcast overzoomed from z7; card restyled to one style system. +CSP fix (api.rainviewer.com) +cross-layer tapped-point carry | 2026-10-03 | ✅ Locked (merged + live) |
 | 017 | Flowerdale camera archive | Ingest operator frames to R2 (3 sizes per image), 90-day retention, tiles + `/cameras` page; Ventusky kept only as isolated fallback | 2026-10-08 | ✅ Done — prod-verified + Jon-checked 2026-10-16; Ventusky removed; North DST switch |
 | 018 | DNS to Cloudflare | Bare domain HTTPS via CNAME flattening to Railway; Google Workspace redirect retired; Gmail SPF added | 2026-10-16 | ✅ Live, verified 2026-10-16 |
+| 019 | Sausage sizzle till | Offline-first iPad till at /admin/sizzle (IndexedDB → Postgres upsert, scoped SW); Stripe on a separate device, till records method only; card fee costed before ×1.10 | 2026-10-19 | 🔄 Built, not deployed |
 
 ---
 

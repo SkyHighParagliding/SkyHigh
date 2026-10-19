@@ -539,6 +539,18 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 
 ---
 
+## Phase 13: Club Sausage Sizzle — 31 Oct–3 Nov 2026 (🔄 Built, awaiting deploy)
+
+### TASK-037: Sausage sizzle costing, PDFs and iPad till
+- **Status:** 🔄 IN PROGRESS — built and verified locally on branch `feature/sausage-sizzle`; not merged/deployed (needs Jon's go-ahead; Railway auto-deploys `main`).
+- **Prerequisites:** None
+- **Estimated effort:** L
+- **Description:** Costed Woolworths Bright shopping lists (initial, Day 2/3/4 top-ups, 2-day versions), equipment/compliance/float/costing/card-guide PDFs, and an offline-first iPad till at `/admin/sizzle` (cash + card via a separate Stripe device), backed up to Postgres.
+- **Acceptance criteria:** 49 unit tests pass (`npm run test:sizzle`); 75-customer simulation runs clean; every PDF opened and checked; till verified in Chrome against the production build (sale/cash/card/declined/void/end-of-day/top-up/print view/PIN/price override/offline reload + later sync). Still to verify: `/api/sizzle/*` against a real Postgres, and on a real iPad (add to home screen, print → PDF).
+- **Details:** data `data/sizzle/sizzle-2026.json`; logic `shared/sizzle/`; PDFs `npm run sizzle:pdfs` → `output/sizzle/`; simulation `npm run sizzle:simulate -- 75 1`; DECISION-019.
+
+---
+
 **Task Summary:**
 - **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035, 036 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)

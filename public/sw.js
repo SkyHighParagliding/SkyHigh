@@ -53,7 +53,8 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => !KEEP_CACHES.includes(k)).map(k => caches.delete(k))
+        // skyhigh-sizzle-*: the till's offline shell (public/sizzle-sw.js) — not ours to delete.
+        keys.filter(k => !KEEP_CACHES.includes(k) && !k.startsWith("skyhigh-sizzle")).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );

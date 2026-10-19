@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocationConsent, setLocationConsent, requestBrowserLocation } from "@/lib/cachedLocation";
 
 export function LocationConsentBanner() {
   const [visible, setVisible] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (getLocationConsent() === null) {
@@ -13,7 +15,8 @@ export function LocationConsentBanner() {
     }
   }, []);
 
-  if (!visible) return null;
+  // The sausage sizzle till is a full-screen kiosk; no location prompt over it.
+  if (!visible || pathname.startsWith("/admin/sizzle")) return null;
 
   const handleAllow = () => {
     setLocationConsent("granted");

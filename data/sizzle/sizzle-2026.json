@@ -768,7 +768,8 @@
       "ownBrand": false,
       "confirmInStore": true,
       "flags": [
-        "No Woolworths-brand ice. Bag ice availability varies in regional stores — confirm in store; servo ice is the fallback."
+        "No Woolworths-brand ice. Bag ice availability varies in regional stores — confirm in store; servo ice is the fallback.",
+        "2-day lists: ice bought for the second day will mostly melt in the esky — buy that day's ice at a service station near the site instead."
       ],
       "fallback": "Any 5 kg bag of ice from a Bright service station."
     },
