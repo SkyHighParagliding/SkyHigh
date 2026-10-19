@@ -670,25 +670,25 @@
     },
     {
       "id": "bin_bags",
-      "name": "Armada Garbage Bag Drawstring 56L 20 pack",
+      "name": "Armada Jumbo Trolley Liner Garbage Bags 4 pack",
       "brand": "Armada",
-      "packSize": "20 pack",
-      "unitsPerPack": 20,
+      "packSize": "4 pack",
+      "unitsPerPack": 4,
       "unit": "bag",
-      "price": 3.8,
-      "unitPrice": "$0.19 / 1EA",
-      "stockcode": "517047",
-      "url": "https://www.woolworths.com.au/shop/productdetails/517047/armada-garbage-bag-drawstring-56l",
+      "price": 1.2,
+      "unitPrice": "$0.30 each",
+      "stockcode": "336010",
+      "url": "https://www.woolworths.com.au/shop/productdetails/336010/armada-jumbo-trolley-liner-garbage-bags",
       "category": "Papergoods",
       "aisle": "Paper goods & party",
       "perishable": false,
       "storage": "Dry",
-      "ownBrand": false,
+      "ownBrand": true,
       "confirmInStore": false,
       "flags": [
-        "No Woolworths-labelled bin bags found. Cheapest equivalent."
+        "Woolworths Homebrand jumbo liners, 147 × 113 cm, fit 240 L wheelie bins. Thin at 30c a bag — double-bag if the bin gets wet scraps."
       ],
-      "fallback": "Glad Wavetop Tie Bin Liner Purple Large 24 pack, $4.40, stockcode 707402."
+      "fallback": "Multix Garbage Bag Drawtight 76L 10 pack, $4.00, stockcode 485720 (heavier, for smaller bins)."
     },
     {
       "id": "paper_towel",
