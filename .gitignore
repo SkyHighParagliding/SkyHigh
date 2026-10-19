@@ -49,3 +49,6 @@ land-mask.png
 *.lnk
 z_RESUME_SESSION/
 wiki/Cloudflare Keys.png
+
+# Sausage sizzle PDFs (regenerate with npm run sizzle:pdfs)
+/output/

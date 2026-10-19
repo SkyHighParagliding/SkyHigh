@@ -1,0 +1,1219 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "name": "SkyHigh Paragliding Club — Sausage Sizzle",
+    "club": "SkyHigh Paragliding Club",
+    "days": [
+      {
+        "n": 1,
+        "date": "2026-10-31",
+        "label": "Sat 31 Oct"
+      },
+      {
+        "n": 2,
+        "date": "2026-11-01",
+        "label": "Sun 1 Nov"
+      },
+      {
+        "n": 3,
+        "date": "2026-11-02",
+        "label": "Mon 2 Nov"
+      },
+      {
+        "n": 4,
+        "date": "2026-11-03",
+        "label": "Tue 3 Nov (Melbourne Cup Day)"
+      }
+    ],
+    "service": "Lunch only",
+    "sites": "Mystic Park (Bright) or Tawonga Gap (Mt Beauty side), Alpine Shire — possibly Gundowring (Indigo / Alpine Shire boundary). Chosen on the day by wind.",
+    "foodClass": "Victorian Class 4 sausage sizzle"
+  },
+  "pricesChecked": {
+    "store": "Woolworths Bright (store 3088)",
+    "address": "87–91 Gavan Street, Bright VIC 3741",
+    "phone": "03 5732 3900",
+    "date": "2026-10-19",
+    "method": "woolworths.com.au with Direct to boot / Pick up set to Bright; regular shelf price (in-store price field matched online price for every item). Specials are noted separately and not used."
+  },
+  "tradingHours": {
+    "checked": "2026-10-19",
+    "current": "7:00 am – 10:00 pm every day (store locator, week of 19 Oct)",
+    "eventDays": "Not yet published — Woolworths only lists the next 7 days. Re-check from 24 Oct. Tue 3 Nov is Melbourne Cup Day: Victorian supermarkets usually open with holiday hours, but confirm Alpine Shire has not substituted a different local holiday and call the store (03 5732 3900).",
+    "confirmed": false
+  },
+  "config": {
+    "customersPerDay": [
+      75,
+      75,
+      75,
+      62
+    ],
+    "customersNote": "80–100 attendees × 60–75% = 48–75 lunch customers. Days 1–3 sized for the top of the range (75). Day 4 sized for the middle (62) to minimise leftovers.",
+    "markup": 1.1,
+    "priceStep": 1,
+    "onionsEnabled": true,
+    "mix": {
+      "sausageServesPerCustomer": 1.3,
+      "vegShare": 0.12,
+      "hotDrinksPerCustomer": 0.5,
+      "coffeeShareOfHot": 0.6,
+      "coldDrinksPerCustomer": 0.6,
+      "waterShareOfCold": 0.4,
+      "colaShareOfCans": 0.6
+    },
+    "portions": {
+      "sausagesPerServe": 1,
+      "breadSlicesPerServe": 1,
+      "onionG": 20,
+      "tomatoSauceMl": 10,
+      "bbqSauceMl": 5,
+      "mustardG": 3,
+      "serviettesPerFoodServe": 1,
+      "teaBagsPerCup": 1,
+      "coffeeGPerCup": 2,
+      "sugarGPerCup": 4,
+      "milkMlPerCup": 25,
+      "cupsPerHotDrink": 1,
+      "stirrersPerHotDrink": 1
+    },
+    "portionsNote": "Sauce, mustard, sugar and milk are averages across all customers (not everyone takes them): e.g. sugar 4 g = about half of customers taking one 8 g teaspoon; milk 25 ml ≈ 80% taking 30 ml.",
+    "dailyConsumables": [
+      {
+        "product": "gloves",
+        "qtyPerDay": 20,
+        "allocateTo": "food",
+        "note": "10 pairs a day"
+      },
+      {
+        "product": "foil",
+        "qtyPerDay": 1,
+        "allocateTo": "food",
+        "note": "1 m a day (cover cooked sausages, wrap leftovers)"
+      },
+      {
+        "product": "gas",
+        "qtyPerDay": 1.2,
+        "allocateTo": "food",
+        "note": "≈0.4 kg/h × 3 h on a 2–4 burner BBQ"
+      },
+      {
+        "product": "ice",
+        "qtyPerDay": 10,
+        "allocateTo": "cold",
+        "note": "2 × 5 kg bags a day for the drinks esky"
+      },
+      {
+        "product": "bin_bags",
+        "qtyPerDay": 2,
+        "allocateTo": "all"
+      },
+      {
+        "product": "paper_towel",
+        "qtyPerDay": 20,
+        "allocateTo": "all",
+        "note": "sheets; handwash station + spills"
+      },
+      {
+        "product": "hand_soap",
+        "qtyPerDay": 25,
+        "allocateTo": "all",
+        "note": "ml"
+      },
+      {
+        "product": "sanitiser",
+        "qtyPerDay": 15,
+        "allocateTo": "all",
+        "note": "ml"
+      },
+      {
+        "product": "detergent",
+        "qtyPerDay": 30,
+        "allocateTo": "all",
+        "note": "ml; washing tongs/utensils"
+      }
+    ],
+    "card": {
+      "share": 0.7,
+      "itemsPerTxn": 2,
+      "pct": 0.0165,
+      "fixed": 0.1,
+      "tapToPayFee": 0.15,
+      "worstShare": 1,
+      "worstItemsPerTxn": 1,
+      "source": "https://stripe.com/au/pricing",
+      "checked": "2026-10-19",
+      "checkedNote": "Stripe AU: in-person Terminal domestic cards 1.65% + A$0.10; Tap to Pay adds A$0.15 per authorisation. Fees include GST."
+    },
+    "float": {
+      "rushShare": 0.5,
+      "tenders": [
+        {
+          "note": 20,
+          "share": 0.45
+        },
+        {
+          "note": 10,
+          "share": 0.25
+        },
+        {
+          "note": 50,
+          "share": 0.1
+        },
+        {
+          "note": 5,
+          "share": 0.1
+        },
+        {
+          "note": 0,
+          "share": 0.1
+        }
+      ],
+      "minimum": {
+        "1": 10,
+        "2": 10,
+        "5": 4,
+        "10": 2,
+        "20": 0
+      },
+      "coinRoundTo": 5,
+      "note": "Notes: expected change paid out to the first half of the day's cash customers (the lunch rush, before notes come back in) × 1.5. Coins: expected change for ALL cash customers × 2, because coins rarely come back. Every likely basket and tender is considered. Tender mix is an editable guess; note 0 = exact money.",
+      "safety": 1.5,
+      "coinSafety": 2
+    },
+    "lowStockServes": 15,
+    "power": {
+      "kettle": {
+        "maxW": 2200,
+        "recommendW": 2000,
+        "litres": 1.7,
+        "usableLitresPerBoil": 1.5,
+        "cupMl": 250,
+        "inletC": 15,
+        "efficiency": 0.85,
+        "reboilAllowance": 0.3
+      },
+      "elite300": {
+        "name": "Bluetti Elite 300",
+        "capacityWh": 3014,
+        "usableWh": 2600,
+        "maxOutputW": 2400,
+        "socketsSharedA": 10,
+        "volts": 230,
+        "inverterEfficiency": 0.9
+      },
+      "elite100": {
+        "name": "Bluetti Elite 100 V2",
+        "capacityWh": 1024,
+        "usableWh": 900
+      },
+      "fridge": {
+        "name": "Dometic CFX (60 or 80 L)",
+        "volts": 12,
+        "avgA": 0.9,
+        "hotDayA": 1.5,
+        "note": "Average 12 V draw at a 3 °C setpoint; 'hot day' allows for 30 °C+ shade temperature and frequent lid opening. Check the CFX's app for the real figure on Day 1."
+      },
+      "overnight": [
+        {
+          "device": "Stripe device (phone or reader)",
+          "wh": 20
+        },
+        {
+          "device": "Power bank (20,000 mAh)",
+          "wh": 74
+        },
+        {
+          "device": "iPad",
+          "wh": 36
+        }
+      ]
+    }
+  },
+  "products": [
+    {
+      "id": "sausage",
+      "name": "Market Value 26 Pack Thin BBQ Sausages 1.8kg",
+      "brand": "Market Value",
+      "packSize": "1.8kg (26 sausages)",
+      "unitsPerPack": 26,
+      "unit": "sausage",
+      "price": 10.5,
+      "unitPrice": "$5.83 / 1KG",
+      "stockcode": "901719",
+      "url": "https://www.woolworths.com.au/shop/productdetails/901719/market-value-26-pack-thin-bbq-sausages",
+      "category": "Meat Convenience",
+      "aisle": "Meat (chilled)",
+      "perishable": true,
+      "storage": "Dometic ≤5 °C",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Not Woolworths-labelled: cheapest per sausage ($0.40 vs $0.65 for Woolworths 10 Pack Beef Sausages 550g)."
+      ],
+      "fallback": "Woolworths 10 Pack Beef Sausages 550g, $6.50, stockcode 901649 (buy 3 packs per Market Value pack).",
+      "bufferUnits": 13
+    },
+    {
+      "id": "veg_sausage",
+      "name": "Vegie Delights Plant Based Vegie Sausages 300g",
+      "brand": "Vegie Delights",
+      "packSize": "300g (≈6 sausages)",
+      "unitsPerPack": 6,
+      "unit": "sausage",
+      "price": 7.5,
+      "unitPrice": "$25.00 / 1KG",
+      "stockcode": "249730",
+      "url": "https://www.woolworths.com.au/shop/productdetails/249730/vegie-delights-plant-based-vegie-sausages",
+      "category": "Dairy - Plant Based and Ethnic",
+      "aisle": "Chilled (plant-based)",
+      "perishable": true,
+      "storage": "Dometic ≤5 °C — separate container from meat",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "flags": [
+        "No Woolworths-brand vegetarian sausage. Cheapest equivalent.",
+        "Sausages per pack not listed online (3 × 100 g servings); assumed 6 — confirm in store."
+      ],
+      "fallback": "Linda McCartney's Sausages 270g (frozen, 6 sausages), $7.50 regular, stockcode 74424.",
+      "special": "Fallback Linda McCartney's is on special at $5.70 (was $7.50) on 19 Oct.",
+      "bufferUnits": 6
+    },
+    {
+      "id": "bread",
+      "name": "Woolworths White Sandwich Bread Loaf 650g",
+      "brand": "Woolworths",
+      "packSize": "650g (≈22 slices; 20 usable)",
+      "unitsPerPack": 20,
+      "unit": "slice",
+      "price": 2.5,
+      "unitPrice": "$0.38 / 100G",
+      "stockcode": "277728",
+      "url": "https://www.woolworths.com.au/shop/productdetails/277728/woolworths-white-sandwich-bread-loaf",
+      "category": "Proprietary Bakery",
+      "aisle": "Bread",
+      "perishable": true,
+      "storage": "Dry, shaded tub",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Slice count assumed from 11 × 2-slice servings; end crusts excluded."
+      ],
+      "fallback": "Woolworths White Soft Sandwich Bread 650g, $2.80, stockcode 581172.",
+      "bufferUnits": 20
+    },
+    {
+      "id": "onion",
+      "name": "Woolworths Prep Set Go Frozen Diced Onions 500g",
+      "brand": "Woolworths",
+      "packSize": "500g",
+      "unitsPerPack": 500,
+      "unit": "g",
+      "price": 3,
+      "unitPrice": "$6.00 / 1KG",
+      "stockcode": "61998",
+      "url": "https://www.woolworths.com.au/shop/productdetails/61998/woolworths-prep-set-go-frozen-diced-onions",
+      "category": "Frozen Meals",
+      "aisle": "Frozen",
+      "perishable": true,
+      "storage": "Dometic ≤5 °C (thaws overnight); fry from thawed",
+      "ownBrand": true,
+      "confirmInStore": true,
+      "flags": [
+        "Only pre-cut onion Woolworths sells: FROZEN and DICED, not sliced. Onions kept on the menu on that basis. If none in store, drop onions — never substitute whole onions."
+      ],
+      "fallback": "Skip onions (set onionsEnabled to false).",
+      "bufferUnits": 500
+    },
+    {
+      "id": "tomato_sauce",
+      "name": "Woolworths Tomato Sauce Squeeze 500mL",
+      "brand": "Woolworths",
+      "packSize": "500mL",
+      "unitsPerPack": 500,
+      "unit": "ml",
+      "price": 1.85,
+      "unitPrice": "$0.37 / 100ML",
+      "stockcode": "230519",
+      "url": "https://www.woolworths.com.au/shop/productdetails/230519/woolworths-tomato-sauce-squeeze",
+      "category": "Condiments",
+      "aisle": "Condiments",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Woolworths Tomato Sauce 2L, $5.00, stockcode 18040 (needs decanting)."
+    },
+    {
+      "id": "bbq_sauce",
+      "name": "Woolworths Barbecue Sauce Squeeze 500mL",
+      "brand": "Woolworths",
+      "packSize": "500mL",
+      "unitsPerPack": 500,
+      "unit": "ml",
+      "price": 1.85,
+      "unitPrice": "$0.37 / 100ML",
+      "stockcode": "230504",
+      "url": "https://www.woolworths.com.au/shop/productdetails/230504/woolworths-barbecue-sauce-squeeze",
+      "category": "Condiments",
+      "aisle": "Condiments",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Woolworths Barbecue Sauce 2L, $5.00, stockcode 73863."
+    },
+    {
+      "id": "mustard",
+      "name": "Woolworths Mild American Mustard 250g",
+      "brand": "Woolworths",
+      "packSize": "250g",
+      "unitsPerPack": 250,
+      "unit": "g",
+      "price": 2.7,
+      "unitPrice": "$1.08 / 100G",
+      "stockcode": "748932",
+      "url": "https://www.woolworths.com.au/shop/productdetails/748932/woolworths-mild-american-mustard",
+      "category": "Condiments",
+      "aisle": "Condiments",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "French's Classic Yellow American Mustard 226g, $3.00, stockcode 96145."
+    },
+    {
+      "id": "tea",
+      "name": "Woolworths Essentials Black Tea Bags 100 pack",
+      "brand": "Woolworths Essentials",
+      "packSize": "100 pack",
+      "unitsPerPack": 100,
+      "unit": "bag",
+      "price": 1.75,
+      "unitPrice": "$0.02 / 1EA",
+      "stockcode": "617101",
+      "url": "https://www.woolworths.com.au/shop/productdetails/617101/woolworths-essentials-black-tea-bags",
+      "category": "Beverages",
+      "aisle": "Tea & coffee",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Tetley Tea Bags 100 pack, $4.30, stockcode 574821."
+    },
+    {
+      "id": "coffee",
+      "name": "Woolworths Essentials Instant Coffee Granulated 200g",
+      "brand": "Woolworths Essentials",
+      "packSize": "200g",
+      "unitsPerPack": 200,
+      "unit": "g",
+      "price": 6.5,
+      "unitPrice": "$3.25 / 100G",
+      "stockcode": "17950",
+      "url": "https://www.woolworths.com.au/shop/productdetails/17950/woolworths-essentials-instant-coffee-granulated",
+      "category": "Beverages",
+      "aisle": "Tea & coffee",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Nescafe Blend 43 Instant Coffee Jar 150g, $14.50, stockcode 33835."
+    },
+    {
+      "id": "sugar",
+      "name": "Woolworths Essentials White Sugar 1kg",
+      "brand": "Woolworths Essentials",
+      "packSize": "1kg",
+      "unitsPerPack": 1000,
+      "unit": "g",
+      "price": 1.8,
+      "unitPrice": "$0.18 / 100G",
+      "stockcode": "58537",
+      "url": "https://www.woolworths.com.au/shop/productdetails/58537/woolworths-essentials-white-sugar",
+      "category": "Cooking Needs",
+      "aisle": "Baking / sugar",
+      "perishable": false,
+      "storage": "Dry, sealed",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "CSR White Sugar 1kg, $2.30, stockcode 33156."
+    },
+    {
+      "id": "milk",
+      "name": "Woolworths Full Cream Long Life Milk UHT 1L",
+      "brand": "Woolworths",
+      "packSize": "1L",
+      "unitsPerPack": 1000,
+      "unit": "ml",
+      "price": 1.75,
+      "unitPrice": "$1.75 / 1L",
+      "stockcode": "6018705",
+      "url": "https://www.woolworths.com.au/shop/productdetails/6018705/woolworths-full-cream-long-life-milk-uht",
+      "category": "Beverages",
+      "aisle": "Long-life milk",
+      "perishable": false,
+      "storage": "Unopened: dry. Opened: Dometic ≤5 °C",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Devondale Pure Full Cream Long Life Milk 1L, $2.20, stockcode 33557."
+    },
+    {
+      "id": "water",
+      "name": "Woolworths Spring Water Bottles 600mL x 24 pack",
+      "brand": "Woolworths",
+      "packSize": "600mL x 24",
+      "unitsPerPack": 24,
+      "unit": "bottle",
+      "price": 9.4,
+      "unitPrice": "$0.65 / 1L",
+      "stockcode": "116784",
+      "url": "https://www.woolworths.com.au/shop/productdetails/116784/woolworths-spring-water-bottles",
+      "category": "Water (non-carbonated)",
+      "aisle": "Drinks",
+      "perishable": false,
+      "storage": "Esky + ice (day's stock); rest dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Woolworths Spring Water Bottles 600mL x 12 pack, $5.50, stockcode 770183."
+    },
+    {
+      "id": "cola",
+      "name": "Pepsi Soft Drink Cans 375mL x 30 pack",
+      "brand": "Pepsi",
+      "packSize": "375mL x 30",
+      "unitsPerPack": 30,
+      "unit": "can",
+      "price": 29.5,
+      "unitPrice": "$2.62 / 1L",
+      "stockcode": "6033016",
+      "url": "https://www.woolworths.com.au/shop/productdetails/6033016/pepsi-soft-drink-cans",
+      "category": "Carbonated Soft Drinks",
+      "aisle": "Drinks",
+      "perishable": false,
+      "storage": "Esky + ice (day's stock); rest dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Woolworths own-brand cola is only sold in 1.25 L bottles, not 375 mL cans. Cheapest 375 mL cola can ($0.98/can)."
+      ],
+      "fallback": "Coca-Cola Classic Soft Drink Cans 375mL x 30 pack, $32.00, stockcode 84552."
+    },
+    {
+      "id": "lemonade",
+      "name": "Schweppes Lemonade Soft Drink Cans 375mL x 30 pack",
+      "brand": "Schweppes",
+      "packSize": "375mL x 30",
+      "unitsPerPack": 30,
+      "unit": "can",
+      "price": 26,
+      "unitPrice": "$2.31 / 1L",
+      "stockcode": "773144",
+      "url": "https://www.woolworths.com.au/shop/productdetails/773144/schweppes-lemonade-soft-drink-cans-multipack",
+      "category": "Carbonated Soft Drinks",
+      "aisle": "Drinks",
+      "perishable": false,
+      "storage": "Esky + ice (day's stock); rest dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Woolworths own-brand lemonade is only sold in 1.25 L bottles. Cheapest 375 mL can ($0.87/can)."
+      ],
+      "fallback": "Solo Original Lemon Soft Drink Cans 375mL x 30 pack, $26.00, stockcode 773142."
+    },
+    {
+      "id": "hot_cups",
+      "name": "Armada Coffee Cups With Lid 16 pack",
+      "brand": "Armada",
+      "packSize": "16 pack (cups + lids)",
+      "unitsPerPack": 16,
+      "unit": "cup",
+      "price": 9,
+      "unitPrice": "$9.00 / 1EA",
+      "stockcode": "6072543",
+      "url": "https://www.woolworths.com.au/shop/productdetails/6072543/armada-coffee-cups-with-lid",
+      "category": "Domesticware",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "flags": [
+        "No Woolworths-brand hot cups. Ripple-wall insulated cup with lid; cup volume not listed online — confirm in store (want ≥ 8 oz / 240 mL)."
+      ],
+      "fallback": "BioPak Art Series Double Wall Coffee Cups & Lids 390mL 8 pack, $5.50, stockcode 6029076."
+    },
+    {
+      "id": "stirrers",
+      "name": "BioPak Wooden Spoons 10 pack",
+      "brand": "BioPak",
+      "packSize": "10 pack",
+      "unitsPerPack": 10,
+      "unit": "spoon",
+      "price": 2,
+      "unitPrice": "$0.20 / 1EA",
+      "stockcode": "160117",
+      "url": "https://www.woolworths.com.au/shop/productdetails/160117/biopak-wooden-spoons",
+      "category": "Domesticware",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Woolworths does not list coffee stirrers. Disposable wooden spoons used as stirrers (cheapest single-use option)."
+      ],
+      "fallback": "Skip: 4 stainless teaspoons (MINT Stainless Steel Teaspoon 4 pack, $6.00, stockcode 807230), washed between uses."
+    },
+    {
+      "id": "serviettes",
+      "name": "Armada 1 Ply Serviettes White 100 pack",
+      "brand": "Armada",
+      "packSize": "100 pack",
+      "unitsPerPack": 100,
+      "unit": "serviette",
+      "price": 0.95,
+      "unitPrice": "$0.01 / 1EA",
+      "stockcode": "806128",
+      "url": "https://www.woolworths.com.au/shop/productdetails/806128/armada-1-ply-serviettes-white",
+      "category": "Domesticware",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled serviettes. Cheapest equivalent."
+      ],
+      "fallback": "Deeko Extra Thick Serviette 1Ply 75 pack, $3.00, stockcode 31424."
+    },
+    {
+      "id": "gloves",
+      "name": "Hygiene Plus All Rounder Powder Free Poly Gloves M/L 100 pack",
+      "brand": "Hygiene Plus",
+      "packSize": "100 pack",
+      "unitsPerPack": 100,
+      "unit": "glove",
+      "price": 8,
+      "unitPrice": "$0.08 / 1EA",
+      "stockcode": "125348",
+      "url": "https://www.woolworths.com.au/shop/productdetails/125348/hygiene-plus-all-rounder-powder-free-poly-gloves-m-l",
+      "category": "Household Cleaning",
+      "aisle": "Cleaning",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Woolworths Essentials Multipurpose Disposable Gloves 50 pack ($6.25, stockcode 143670) showed out of stock online — cheapest in-stock equivalent used."
+      ],
+      "fallback": "Woolworths Essentials Multipurpose Disposable Gloves 50 pack, $6.25, stockcode 143670, if on the shelf."
+    },
+    {
+      "id": "foil",
+      "name": "Woolworths Essentials Aluminium Foil 30m each",
+      "brand": "Woolworths Essentials",
+      "packSize": "30m",
+      "unitsPerPack": 30,
+      "unit": "m",
+      "price": 4.5,
+      "unitPrice": "$0.15 / 1M",
+      "stockcode": "105598",
+      "url": "https://www.woolworths.com.au/shop/productdetails/105598/woolworths-essentials-aluminium-foil-30m",
+      "category": "Papergoods",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [],
+      "fallback": "Multix Heavy Duty Alfoil 15m, $6.60, stockcode 705797."
+    },
+    {
+      "id": "bin_bags",
+      "name": "Armada Garbage Bag Drawstring 56L 20 pack",
+      "brand": "Armada",
+      "packSize": "20 pack",
+      "unitsPerPack": 20,
+      "unit": "bag",
+      "price": 3.8,
+      "unitPrice": "$0.19 / 1EA",
+      "stockcode": "517047",
+      "url": "https://www.woolworths.com.au/shop/productdetails/517047/armada-garbage-bag-drawstring-56l",
+      "category": "Papergoods",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled bin bags found. Cheapest equivalent."
+      ],
+      "fallback": "Glad Wavetop Tie Bin Liner Purple Large 24 pack, $4.40, stockcode 707402."
+    },
+    {
+      "id": "paper_towel",
+      "name": "Strike 2 Ply Paper Towel 2 x 80 pack",
+      "brand": "Strike",
+      "packSize": "2 rolls × 80 sheets",
+      "unitsPerPack": 160,
+      "unit": "sheet",
+      "price": 2.2,
+      "unitPrice": "$1.38 / 100 sheets",
+      "stockcode": "171164",
+      "url": "https://www.woolworths.com.au/shop/productdetails/171164/strike-2-ply-paper-towel-2-ply",
+      "category": "Papergoods",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled paper towel found. Cheapest equivalent."
+      ],
+      "fallback": "Strike Pro 3 Ply Paper Towel 3 x 60 pack, $2.50, stockcode 167699."
+    },
+    {
+      "id": "hand_soap",
+      "name": "The Balnea Body Company Foaming Handwash Zesty Lime & Mint 250mL",
+      "brand": "The Balnea Body Company",
+      "packSize": "250mL pump",
+      "unitsPerPack": 250,
+      "unit": "ml",
+      "price": 2.5,
+      "unitPrice": "$1.00 / 100ML",
+      "stockcode": "262859",
+      "url": "https://www.woolworths.com.au/shop/productdetails/262859/the-balnea-body-company-foaming-handwash-zesty-lime-mint",
+      "category": "Toiletries",
+      "aisle": "Toiletries",
+      "perishable": false,
+      "storage": "Handwash station",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled hand wash found. Cheapest pump pack."
+      ],
+      "fallback": "Palmolive Hand Wash Pump Milk & Honey 250mL, $3.50, stockcode 163936.",
+      "special": "Palmolive Liquid Hand Wash Refill 1L on special at $3.75 (was $7.50) on 19 Oct — no pump."
+    },
+    {
+      "id": "sanitiser",
+      "name": "Palmolive Antibacterial Hand Sanitiser Cherry Blossom 200mL",
+      "brand": "Palmolive",
+      "packSize": "200mL",
+      "unitsPerPack": 200,
+      "unit": "ml",
+      "price": 7.5,
+      "unitPrice": "$3.75 / 100ML",
+      "stockcode": "694538",
+      "url": "https://www.woolworths.com.au/shop/productdetails/694538/palmolive-antibacterial-hand-sanitiser-cherry-blossom",
+      "category": "Toiletries",
+      "aisle": "Toiletries",
+      "perishable": false,
+      "storage": "Cash table + BBQ",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled sanitiser found. Cheapest pack that covers 4 days."
+      ],
+      "fallback": "The Balnea Body Company Hand Sanitiser 50mL, $2.15, stockcode 242696 (buy 2).",
+      "special": "On special at $6.00 (was $7.50) on 19 Oct — costed at the regular $7.50."
+    },
+    {
+      "id": "detergent",
+      "name": "Shine Dishwashing Liquid Lemon 1L",
+      "brand": "Shine",
+      "packSize": "1L",
+      "unitsPerPack": 1000,
+      "unit": "ml",
+      "price": 1.4,
+      "unitPrice": "$0.14 / 100ML",
+      "stockcode": "183858",
+      "url": "https://www.woolworths.com.au/shop/productdetails/183858/shine-dishwashing-liquid-lemon",
+      "category": "Cleansing",
+      "aisle": "Cleaning",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "No Woolworths-labelled detergent found. Cheapest equivalent."
+      ],
+      "fallback": "Earth Choice Dishwashing Liquid 1L, $2.65, stockcode 10432."
+    },
+    {
+      "id": "ice",
+      "name": "Bells Ice 5kg",
+      "brand": "Bells",
+      "packSize": "5kg",
+      "unitsPerPack": 5,
+      "unit": "kg",
+      "price": 6,
+      "unitPrice": "$1.20 / 1KG",
+      "stockcode": "42351",
+      "url": "https://www.woolworths.com.au/shop/productdetails/42351/bells-ice",
+      "category": "Ice Cream",
+      "aisle": "Ice (front-of-store freezer)",
+      "perishable": true,
+      "carryOver": false,
+      "storage": "Esky",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "flags": [
+        "No Woolworths-brand ice. Bag ice availability varies in regional stores — confirm in store; servo ice is the fallback."
+      ],
+      "fallback": "Any 5 kg bag of ice from a Bright service station."
+    },
+    {
+      "id": "gas",
+      "name": "LPG 9 kg BBQ cylinder swap (SWAP'n'GO or similar)",
+      "brand": "—",
+      "packSize": "8.5 kg LPG",
+      "unitsPerPack": 8.5,
+      "unit": "kg",
+      "price": 35,
+      "unitPrice": "estimate",
+      "stockcode": "",
+      "url": "https://www.elgas.com.au/swapngo/",
+      "category": "Not sold at Woolworths",
+      "aisle": "Not at Woolworths",
+      "perishable": false,
+      "storage": "Upright, shaded, away from the kettle/power units",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "notWoolworths": true,
+      "estimate": true,
+      "flags": [
+        "ESTIMATE: not a Woolworths product and no published price — swap prices are set by each dealer. Confirm at a Bright service station and update."
+      ],
+      "fallback": "Bring the spare full bottle (equipment list)."
+    }
+  ],
+  "menu": [
+    {
+      "id": "sausage",
+      "name": "Sausage in bread",
+      "short": "Sausage",
+      "group": "food",
+      "colour": "#b45309",
+      "bom": [
+        {
+          "product": "sausage",
+          "portion": "sausagesPerServe"
+        },
+        {
+          "product": "bread",
+          "portion": "breadSlicesPerServe"
+        },
+        {
+          "product": "onion",
+          "portion": "onionG",
+          "optional": "onionsEnabled"
+        },
+        {
+          "product": "tomato_sauce",
+          "portion": "tomatoSauceMl"
+        },
+        {
+          "product": "bbq_sauce",
+          "portion": "bbqSauceMl"
+        },
+        {
+          "product": "mustard",
+          "portion": "mustardG"
+        },
+        {
+          "product": "serviettes",
+          "portion": "serviettesPerFoodServe"
+        }
+      ]
+    },
+    {
+      "id": "veg_sausage",
+      "name": "Vegetarian sausage in bread",
+      "short": "Veg sausage",
+      "group": "food",
+      "colour": "#15803d",
+      "bom": [
+        {
+          "product": "veg_sausage",
+          "portion": "sausagesPerServe"
+        },
+        {
+          "product": "bread",
+          "portion": "breadSlicesPerServe"
+        },
+        {
+          "product": "onion",
+          "portion": "onionG",
+          "optional": "onionsEnabled"
+        },
+        {
+          "product": "tomato_sauce",
+          "portion": "tomatoSauceMl"
+        },
+        {
+          "product": "bbq_sauce",
+          "portion": "bbqSauceMl"
+        },
+        {
+          "product": "mustard",
+          "portion": "mustardG"
+        },
+        {
+          "product": "serviettes",
+          "portion": "serviettesPerFoodServe"
+        }
+      ]
+    },
+    {
+      "id": "coffee",
+      "name": "Coffee (instant)",
+      "short": "Coffee",
+      "group": "hot",
+      "colour": "#78350f",
+      "bom": [
+        {
+          "product": "coffee",
+          "portion": "coffeeGPerCup"
+        },
+        {
+          "product": "sugar",
+          "portion": "sugarGPerCup"
+        },
+        {
+          "product": "milk",
+          "portion": "milkMlPerCup"
+        },
+        {
+          "product": "hot_cups",
+          "portion": "cupsPerHotDrink"
+        },
+        {
+          "product": "stirrers",
+          "portion": "stirrersPerHotDrink"
+        }
+      ]
+    },
+    {
+      "id": "tea",
+      "name": "Tea",
+      "short": "Tea",
+      "group": "hot",
+      "colour": "#a16207",
+      "bom": [
+        {
+          "product": "tea",
+          "portion": "teaBagsPerCup"
+        },
+        {
+          "product": "sugar",
+          "portion": "sugarGPerCup"
+        },
+        {
+          "product": "milk",
+          "portion": "milkMlPerCup"
+        },
+        {
+          "product": "hot_cups",
+          "portion": "cupsPerHotDrink"
+        },
+        {
+          "product": "stirrers",
+          "portion": "stirrersPerHotDrink"
+        }
+      ]
+    },
+    {
+      "id": "water",
+      "name": "Bottled water 600 mL",
+      "short": "Water",
+      "group": "cold",
+      "colour": "#0369a1",
+      "bom": [
+        {
+          "product": "water",
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "cola",
+      "name": "Cola can 375 mL",
+      "short": "Cola",
+      "group": "cold",
+      "colour": "#7f1d1d",
+      "bom": [
+        {
+          "product": "cola",
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "lemonade",
+      "name": "Lemonade can 375 mL",
+      "short": "Lemonade",
+      "group": "cold",
+      "colour": "#4d7c0f",
+      "bom": [
+        {
+          "product": "lemonade",
+          "qty": 1
+        }
+      ]
+    }
+  ],
+  "equipment": [
+    {
+      "item": "Gas BBQ",
+      "status": "own",
+      "qty": 1,
+      "notes": "Hotplate split into a MEAT zone and a VEG zone."
+    },
+    {
+      "item": "Full spare gas bottle (9 kg)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Swap/fill before the event — see gas estimate."
+    },
+    {
+      "item": "Gazebo (with weights/pegs)",
+      "status": "tbc",
+      "qty": 1
+    },
+    {
+      "item": "Trestle tables",
+      "status": "tbc",
+      "qty": 2,
+      "notes": "One for food service, one for cash/drinks."
+    },
+    {
+      "item": "Dometic CFX (60 or 80 L)",
+      "status": "own",
+      "qty": 1,
+      "notes": "Sausages, onions and opened milk, ≤5 °C, running 24 h."
+    },
+    {
+      "item": "Fridge thermometer (for the Dometic)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Or use the CFX display."
+    },
+    {
+      "item": "Drinks esky",
+      "status": "tbc",
+      "qty": 1,
+      "estCost": 47,
+      "source": "Willow Good Time Cooler Ice Box Blue 25L, Woolworths 800385"
+    },
+    {
+      "item": "Bluetti Elite 300",
+      "status": "own",
+      "qty": 1,
+      "notes": "Kettle only during service."
+    },
+    {
+      "item": "Bluetti Elite 100 V2",
+      "status": "own",
+      "qty": 1,
+      "notes": "Dometic only, via 12 V socket."
+    },
+    {
+      "item": "Bluetti chargers / AC cables (both units)",
+      "status": "own",
+      "qty": 2
+    },
+    {
+      "item": "Kettle, 1.7 L, ≤2,200 W (2,000 W preferred)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Not sold at Woolworths Bright — price TBC (Kmart/Big W/Bunnings)."
+    },
+    {
+      "item": "Tongs — MEAT (40 cm)",
+      "status": "tbc",
+      "qty": 2,
+      "estCost": 6,
+      "source": "Grillworx Long Tongs 40cm, Woolworths 94747"
+    },
+    {
+      "item": "Tongs — VEG ONLY (40 cm, mark with tape)",
+      "status": "tbc",
+      "qty": 1,
+      "estCost": 6,
+      "source": "Grillworx Long Tongs 40cm, Woolworths 94747"
+    },
+    {
+      "item": "BBQ flipper / spatula",
+      "status": "tbc",
+      "qty": 1,
+      "estCost": 10,
+      "source": "Grillworx BBQ Spatula, Woolworths 94745"
+    },
+    {
+      "item": "Hotplate scraper",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Not listed at Woolworths — price TBC."
+    },
+    {
+      "item": "Foil trays, large (holding cooked sausages / onions)",
+      "status": "tbc",
+      "qty": 2,
+      "estCost": 6,
+      "source": "Armada BBQ Foil Trays Large 2 pack, Woolworths 269417 — price is per 2-pack"
+    },
+    {
+      "item": "Food thermometer (probe)",
+      "status": "tbc",
+      "qty": 1,
+      "estCost": 6.5,
+      "source": "MINT Meat Thermometer, Woolworths 6026437"
+    },
+    {
+      "item": "Handwash station: water container with tap (≥10 L)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Not sold at Woolworths — price TBC (camping/hardware store)."
+    },
+    {
+      "item": "Handwash station: liquid soap + paper towel",
+      "status": "buy",
+      "qty": 1,
+      "notes": "On the shopping list."
+    },
+    {
+      "item": "Handwash station: waste-water bucket",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Price TBC."
+    },
+    {
+      "item": "Fire extinguisher (dry powder)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Borrow from a club vehicle/member. Price TBC if bought."
+    },
+    {
+      "item": "Fire blanket",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Price TBC."
+    },
+    {
+      "item": "First aid kit (with burn gel)",
+      "status": "tbc",
+      "qty": 1
+    },
+    {
+      "item": "Bins (×2: general + recycling)",
+      "status": "tbc",
+      "qty": 2,
+      "notes": "Bin bags on the shopping list."
+    },
+    {
+      "item": "Cash box (lockable) + float",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Price TBC."
+    },
+    {
+      "item": "iPad + charger (till)",
+      "status": "tbc",
+      "qty": 1
+    },
+    {
+      "item": "Stripe card device: NFC phone with mobile data (Tap to Pay) OR card reader + phone/iPad",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Logged in to the Stripe Dashboard app with a volunteer-level team login — never the admin login."
+    },
+    {
+      "item": "Charging cable for the Stripe device",
+      "status": "tbc",
+      "qty": 1
+    },
+    {
+      "item": "Power bank (≥10,000 mAh) for the Stripe device",
+      "status": "tbc",
+      "qty": 1
+    },
+    {
+      "item": "Price board (printed, in a plastic sleeve)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Print from the price board PDF."
+    },
+    {
+      "item": "Hot-water air pot / large thermos (optional)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Holds boiled water between rushes so the kettle re-boils less — saves Elite 300 energy."
+    },
+    {
+      "item": "Tub with lid for bread + sauces",
+      "status": "tbc",
+      "qty": 1
+    }
+  ],
+  "compliance": [
+    {
+      "title": "FIRST: phone the Alpine Shire environmental health officer — 4 consecutive days",
+      "detail": "Safe Food Victoria's community-fundraiser guidance applies to food handling at a premises 'for no more than two consecutive days at any one time'. This event trades 4 days in a row (possibly at the same site). Ask the EHO to confirm the class and what to lodge, and note their name and date here. Also ask whether tea/coffee made with hot water stays within Class 4.",
+      "link": "https://www.safefood.vic.gov.au/fundraising-with-food-community-groups",
+      "due": "This week"
+    },
+    {
+      "title": "Class 4 notification via FoodTrader to the club's principal council",
+      "detail": "The principal council is the council where the club is based (its registered address). Notify once for the club; it covers Class 4 events across Victoria.",
+      "link": "https://foodtrader.vic.gov.au",
+      "due": "Before lodging the Statements of Trade"
+    },
+    {
+      "title": "Statement of Trade — Alpine Shire (Mystic Park, Tawonga Gap)",
+      "detail": "Lodge in FoodTrader at least 5 days before trading: by Mon 26 Oct 2026. Covers Sat 31 Oct – Tue 3 Nov.",
+      "link": "https://foodtrader.vic.gov.au",
+      "due": "Mon 26 Oct 2026"
+    },
+    {
+      "title": "Statement of Trade — Indigo Shire (Gundowring)",
+      "detail": "Lodge by Mon 26 Oct 2026 in case we fly at Gundowring. WITHDRAW whichever Statement of Trade is not used.",
+      "link": "https://foodtrader.vic.gov.au",
+      "due": "Mon 26 Oct 2026"
+    },
+    {
+      "title": "Read the Class 4 sausage sizzle rules",
+      "detail": "Class 4 = sausages, onion, sauce, bread + tea, coffee, bottled water, soft drinks only. Nothing else on the stall. (The old health.vic.gov.au Class 4 page now returns 'not found' — Victorian food-safety guidance has moved to Safe Food Victoria.)",
+      "link": "https://www.safefood.vic.gov.au/fundraising-with-food-community-groups"
+    },
+    {
+      "title": "Volunteers: free DoFoodSafely course (recommended)",
+      "detail": "Not mandatory for Class 4, but recommended for anyone cooking or serving.",
+      "link": "https://dofoodsafely.health.vic.gov.au/"
+    },
+    {
+      "title": "FoodTrader user guide",
+      "detail": "How to register the club and lodge/withdraw a Statement of Trade.",
+      "link": "https://foodtrader.vic.gov.au/wp-content/uploads/2023/10/Foodtrader-User-Guide-June-2023-2.pdf"
+    },
+    {
+      "title": "Fire Danger Period / Total Fire Ban — check every morning",
+      "detail": "Check whether Alpine / Indigo is in the Fire Danger Period and whether a Total Fire Ban is declared for the North East district. On a TFB day a gas BBQ may only be used under the CFA's conditions (e.g. clear 3 m around, water/extinguisher at hand, attended at all times) — check the CFA 'Can I or can't I' rules.",
+      "link": "https://www.cfa.vic.gov.au/warnings-restrictions/total-fire-bans-and-ratings"
+    },
+    {
+      "title": "Food safety on the day",
+      "detail": "Raw sausages, onions and opened milk at ≤5 °C in the Dometic. Gloves for handling bread and cooked food. Separate VEG zone on the hotplate and separate VEG tongs. Cook sausages through — probe the thickest sausage (≥75 °C, no pink). Handwash station set up before cooking starts. Throw out cooked leftovers at the end of each day.",
+      "link": "https://www.safefood.vic.gov.au/fundraising-with-food-community-groups"
+    }
+  ]
+}
