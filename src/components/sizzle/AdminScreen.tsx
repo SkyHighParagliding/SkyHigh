@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Lock, PackagePlus, Save } from "lucide-react";
 import { pricingTable, type Qty } from "../../../shared/sizzle/calc.ts";
 import { sha256, type TillSettings } from "@/lib/sizzleStore";
+import { useAuth } from "@/contexts/AuthContext";
 import { BASE, shortName, type Till } from "./useTill";
 
 const UNLOCK_MS = 10 * 60 * 1000;
@@ -17,9 +18,47 @@ function Field({ label, value, onChange, hint }: { label: string; value: string;
   );
 }
 
+/**
+ * Forgotten PIN: prove you're the logged-in admin with your website password.
+ * Volunteers share the iPad's admin session but don't know its password. The
+ * check creates a throwaway session, which is logged out straight away.
+ */
+function PinReset({ till, onDone }: { till: Till; onDone: () => void }) {
+  const { user, token } = useAuth();
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function reset() {
+    setBusy(true);
+    try {
+      if (token !== "dev-bypass") {
+        const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: user?.email, password }) });
+        if (!r.ok) {
+          toast.error(r.status === 401 ? "Wrong password" : "Couldn't check the password — are you online?");
+          return;
+        }
+        const { token: tmp } = await r.json();
+        if (tmp) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${tmp}` } }).catch(() => {});
+      }
+      await till.saveSettings({ ...till.settings, pinHash: null });
+      toast.success("PIN cleared — choose a new one");
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-3 text-left">
+      <p className="text-stone-600">Enter the website password for <b>{user?.email}</b> (the admin logged in on this iPad). Needs signal.</p>
+      <input type="password" autoComplete="current-password" aria-label="Admin website password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && reset()} className="w-full h-14 rounded-xl border-2 border-stone-300 px-3 text-xl" />
+      <button type="button" disabled={busy || !password} onClick={reset} className="w-full h-14 rounded-2xl bg-stone-800 text-white text-xl font-bold disabled:opacity-40">Reset PIN</button>
+    </div>
+  );
+}
+
 function PinGate({ till, onUnlock }: { till: Till; onUnlock: () => void }) {
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
+  const [forgot, setForgot] = useState(false);
   const setting = !till.settings.pinHash;
   async function submit() {
     if (!/^\d{4,8}$/.test(pin)) return toast.error("PIN must be 4–8 digits");
@@ -44,6 +83,8 @@ function PinGate({ till, onUnlock }: { till: Till; onUnlock: () => void }) {
         <input type="password" inputMode="numeric" autoComplete="off" aria-label="PIN" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} onKeyDown={(e) => e.key === "Enter" && submit()} className="w-full h-16 rounded-xl border-2 border-stone-300 text-center text-4xl tracking-[0.5em]" />
         {setting && <input type="password" inputMode="numeric" autoComplete="off" aria-label="Repeat PIN" placeholder="repeat" value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))} className="w-full h-16 rounded-xl border-2 border-stone-300 text-center text-4xl tracking-[0.5em]" />}
         <button type="button" onClick={submit} className="w-full h-16 rounded-2xl bg-amber-700 text-white text-2xl font-bold">{setting ? "Set PIN" : "Unlock"}</button>
+        {!setting && !forgot && <button type="button" onClick={() => setForgot(true)} className="text-stone-600 underline text-lg">Forgot PIN?</button>}
+        {!setting && forgot && <PinReset till={till} onDone={() => setForgot(false)} />}
       </div>
     </div>
   );

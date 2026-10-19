@@ -32,6 +32,8 @@ import {
   Target,
   Search,
   X,
+  Flame,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -574,6 +576,23 @@ export function AdminManual() {
       ]
     },
     {
+      title: "Cameras",
+      icon: <Camera className="w-6 h-6 text-sky-500" />,
+      link: "/admin/webcams",
+      category: "Management",
+      description: "The Flowerdale webcam archive. Every image from the camera operator's feed is copied to the club's own storage in three sizes, so the public Cameras page can show any day, a timelapse, and North/South side by side.",
+      steps: [
+        <span className="flex flex-wrap items-center gap-2"><span>Navigate: Admin Dashboard → 'Cameras'.</span><Link to="/admin/webcams" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Cameras <ExternalLink className="w-3 h-3" /></Link></span>,
+        "Status line: each camera source shows 'Live' (images arriving), 'Overnight, nothing expected', 'Stale, no new images' (the feed has gone quiet during the day) or 'Offline'. 'Last error' explains any failed fetch — if it says the host can't be reached, the operator's site is down or blocking us.",
+        "Facts panel: newest and oldest image, number of images stored, space used, when the last fetch started, the last fetch that stored something (or found nothing new), and whether the first-time 8-day backfill has run.",
+        "Run now: fetches new images immediately instead of waiting for the schedule. The first run backfills the operator's last 8 days over several runs. Automatic fetching only happens on the live site.",
+        "Source settings: name, the camera's time zone, the feed address, the hours to check the feed ('Check feed from/until'), and the hours images are normally expected (used for the status line). Click 'Save source settings'.",
+        "Camera clocks: turn on '<camera> camera clock ignores daylight saving' if that camera's clock stays on standard time all year (Flowerdale North does). Saving re-times the images already stored so North and South line up.",
+        "Storage and retention: how many days of images to keep (minimum 7; the club uses 60) — change it and click 'Save'; it applies at the next nightly cleanup. 'Preview cleanup' shows how many expired images would be removed without deleting anything; if there are some, a red 'Delete N expired images now' button appears. A warning email goes to the admins if the archive passes 25 GB, which would mean the cleanup has stopped working.",
+        <span className="flex flex-wrap items-center gap-2"><span>Hide the public Cameras page: Admin → Site Options → Cameras page switch. Hiding it removes the Community menu link and the weather-card link; the live tiles on weather cards and the archiving carry on.</span><Link to="/admin/site-options" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Site Options <ExternalLink className="w-3 h-3" /></Link></span>,
+      ]
+    },
+    {
       title: "API Settings",
       icon: <Settings className="w-6 h-6 text-blue-500" />,
       link: "/admin/connections",
@@ -612,6 +631,102 @@ export function AdminManual() {
       ]
     },
     {
+      title: "Sizzle Till Setup",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "The Sausage Sizzle Till is a full-screen cash register for the club sausage sizzle (31 Oct – 3 Nov 2026), built for one iPad in landscape. It works without signal: every sale is saved on the iPad first and copied to the club website whenever there's a connection. Card payments are taken on a separate Stripe device — the till never touches card details. The till is behind the admin login, hidden from search engines, and not in any menu; the only link is the Admin Dashboard tile.",
+      steps: [
+        <span className="flex flex-wrap items-center gap-2"><span>Open it: Admin Dashboard → 'Sausage Sizzle Till', or go to /admin/sizzle. You must be logged in as an admin.</span><Link to="/admin/sizzle" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Sizzle Till <ExternalLink className="w-3 h-3" /></Link></span>,
+        "Log the iPad in (each morning): open the website in Safari on the iPad, log in with an admin account, then open the till. Volunteers use the till under that login — never give them the password. The login lasts as long as the 'Admin Session TTL' (Scheduled Tasks → Cache Timers, 24 hours by default), so log in again each morning. If it expires mid-service the till asks for a login; sales already rung up stay safe on the iPad and upload after you log in.",
+        "Add to Home Screen (once): with the till open in Safari, tap Share → 'Add to Home Screen' → Add. A 'Sizzle Till' icon appears; opening it runs the till full-screen with no browser bars. Turn the iPad's rotation lock off and use it landscape.",
+        "Offline start-up: after the till has been opened once with signal, it loads and stays logged in even if the iPad is refreshed with no signal. Don't use a Private Browsing tab and don't clear Safari website data during the event — that is where the sales are stored until they upload.",
+        "Set the admin PIN (once): tap the 'Admin' tab and choose a 4–8 digit PIN (enter it twice). The PIN protects prices, stock and portions from volunteers; it stays unlocked for 10 minutes. Forgot it? Tap 'Forgot PIN?' and enter the website password of the admin logged in on the iPad (needs signal) — that clears the PIN so you can set a new one.",
+        "Check prices before opening: the sell prices come from the costing (cost per serve including the card fee, × 1.10, rounded up to the next whole dollar). If the shop cost something different, or you want a round price, change it under Admin (see 'Sizzle Till Admin & Data').",
+        "Check stock before opening: the till assumes you bought exactly the initial shopping list. If you bought different pack sizes or counts, go to Admin → Stock on hand and use 'Set on-hand' with what is actually in the Dometic, esky and boxes.",
+        "Pick the trading day: the D1–D4 buttons at the top right. The till picks today's date automatically; check it's right each morning. Every sale is tagged with that day.",
+        "Starting float: the recommended float (with the reasoning) is on the printed Float & Cash-up sheet. On the till, the End of day tab shows the float counts — change them to what is actually in the cash box at the start.",
+        "Stripe device: before Day 1 the organiser logs the phone or reader into the Stripe Dashboard app with a volunteer-level team login (never the admin login), checks the account time zone is Melbourne, and does a $1 test payment and refund. Charge it and the power bank overnight.",
+        "Header bar: tabs (Sell, End of day, Admin, Data), the day buttons, and the backup badge. 'Backed up' = every sale has reached the website. 'N to upload' (amber) = sales are safe on the iPad and waiting for signal. A crossed-out cloud = the iPad has no connection. Tap the badge to try uploading straight away.",
+      ]
+    },
+    {
+      title: "Sizzle Till Selling",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "Taking an order and payment. The left side has one big tile per item; the right side is the order and total. Cash and card both end with the sale being recorded and the stock reduced.",
+      steps: [
+        "Build the order: tap an item tile once per item (the white bubble on the tile shows how many). In the Order panel use − and + to fix quantities, or 'Clear' to start again. The big number is the total.",
+        "Cash: tap 'Cash'. Tap the note the customer hands over ($5, $10, $20, $50 — notes smaller than the total are greyed out), 'Exact' for the exact amount, or type another amount in 'Other' and tap OK. The till shows CHANGE in big green numbers with the notes/coins to give (e.g. '1 × $10 + 1 × $2'). Hand over the change, then tap 'Change given — done'. 'Back' returns to the note buttons.",
+        "Card: tap 'Card'. The till shows 'Key this amount into Stripe' with the total in very large numbers. Enter exactly that amount on the Stripe device and let the customer tap. Approved → tap 'Card approved' (only now is the sale recorded and the stock reduced). Declined or no signal on the Stripe device → tap 'Declined — back'; the order stays on screen so you can take cash instead.",
+        "Same price for cash and card, no minimum, no surcharge. Never type an amount into Stripe from memory — always the till total.",
+        "Saved instantly: each sale is written to the iPad the moment you confirm it, before anything else. A green message confirms it. If you ever see 'NOT SAVED', try again — the sale was not recorded.",
+        "Stock on the tiles: the small 'N left' is how many more of that item can be made before its scarcest ingredient runs out (e.g. bread for sausages, cups for coffee), based on the portion sizes. It turns red under 15. An amber 'Low stock' banner lists the ingredients that are running short. 'SOLD OUT?' means the till thinks it's gone — check the real stock; if there's more, correct it in Admin → Stock on hand.",
+        "Undo / void last sale: the dashed tile. It shows the most recent sale of the day (time, items, cash/card, total). 'Void sale' cancels it and puts the stock back. For a cash sale, give the money back from the cash box. For a card sale the till can't refund — take the customer's name and number; only the organiser does refunds in Stripe. Voided sales stay in the records, marked voided, and are excluded from all totals.",
+        "Only the last sale can be voided. If an older sale was wrong, leave it and note it on the cash-up sheet so the variance is explained.",
+        "No signal? Keep selling — nothing is lost. The badge counts sales waiting to upload; they go up automatically when signal returns (it retries every 30 seconds).",
+      ]
+    },
+    {
+      title: "Sizzle Till End of Day",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "Close the day: check sales, count the cash (cash only — card is checked separately against Stripe), count the stock, and get tomorrow's shopping list. Make sure the day buttons show the day you're closing.",
+      steps: [
+        "Sales by item: quantity, cash, card and total for each item, with the count of cash sales, card sales and voided sales.",
+        "Card (Stripe): the till's card total and number of card sales. Open the Stripe Dashboard → Payments, filter to today, and type the GROSS total of successful payments (not payouts — payouts have fees taken out and arrive days later) into 'Stripe Dashboard — gross today'. The variance should be $0.00. A difference usually means a card payment that was approved on Stripe but 'Card approved' wasn't tapped (or the reverse). 'Estimated card fees' is what Stripe will deduct (1.65% + 25c per card sale with Tap to Pay).",
+        "Cash-up: 'Starting float' holds the count of each note/coin put in the box this morning. 'Counted at close' — count everything in the cash box by denomination and type the counts in. The right-hand column shows Float + Cash sales = Expected, then Counted and the Variance. Green = balanced, amber = over, red = short. Card sales are never part of the cash count.",
+        "Stock count: count what's left of each product and type it in, in the units shown ('sausage', 'slice', 'can', 'bottle', 'g', 'ml'…). For sauces and milk, estimate (a half-full 500 mL bottle = 250). Leave a box blank to keep the till's estimate. For everyday supplies (gloves, foil, bin bags, paper towel, soap, sanitiser, detergent, ice) the estimate already assumes one day's use.",
+        "Save count & close Day N: saves the float, cash count, Stripe total and stock count, and sets the stock on hand to your counts. You can correct a count and save again. A 'Closed' badge shows the time it was saved.",
+        "Next-day top-up: below the count, the till builds tomorrow's Woolworths list = what tomorrow needs (plus a small safety margin on sausages, veg sausages, bread and onions) − what you counted, rounded up to whole packs, with the estimated cost. Day 4's list has no safety margin, to minimise leftovers. Ice is always bought fresh (it doesn't carry over).",
+        "2-day top-up: tap '2 days' for a list covering the next two days — use it if we fly at Gundowring and can't get to Bright daily (the Dometic keeps the meat and onions cold). Buy the second day's ice near the site, not a day early.",
+        "PDFs on the iPad: 'End-of-day PDF' (sales, cash-up, card check, stock) and 'Top-up PDF' (same layout as the printed shopping lists, with tick boxes, stockcodes and fallbacks). Each opens a print view: tap 'Print / Save as PDF', then in the iPad print screen tap the Share icon and choose Save to Files, Google Drive, AirDrop, Mail or Messages to send it to whoever does the shop. Tap 'Close' to return to the till.",
+        "Paper backup: also fill in the printed Float & Cash-up sheet (cash and card sections), and have two people sign it.",
+      ]
+    },
+    {
+      title: "Sizzle Till Admin & Data",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "PIN-protected settings (prices, stock, portions, card assumptions) and the Data tab for backups, exports and restoring onto another iPad. Settings changed here apply to this iPad's till; they don't change the printed PDFs.",
+      steps: [
+        "Unlock: tap 'Admin' and enter the PIN. Tap 'Save prices & settings' after changing prices, card assumptions, onions or portions.",
+        "Sell prices: leave blank to use the calculated price (shown underneath with the cost per serve). Type a number to fix the price of that item. The new price shows on the Sell tiles immediately.",
+        "Card assumptions: 'Card share of sales (%)' (planned 70%) and 'Items per card sale' (planned 2). These drive the card fee built into the calculated prices.",
+        "Serve onions: untick if the store had no pre-cut onion (we never use whole onions). Onion is then left out of the stock and costing.",
+        "Portions per serve: sausages, slices, onion grams, sauce mL, mustard grams, serviettes, tea bags, coffee grams, sugar grams, milk mL, cups, stirrers. Sauce, sugar and milk are averages across all customers. Blank = the planned value (shown as 'file'). Portions change the stock depletion and the costing.",
+        "Shelf prices: what Woolworths actually charged, if different from the planned price. Changes flow into the cost per serve and the calculated sell prices.",
+        "Stock on hand: after a top-up shop, type the number of PACKS bought against each product and tap 'Add delivery (packs)'. To correct a count, type the actual UNITS and tap 'Set on-hand (units)'. The table shows the current on-hand estimate; a red number means the till has sold more than it thought you had — recount.",
+        "Data → Server backup: 'Sync now' uploads anything waiting. 'Restore from server' copies every sale and setting from the club website onto this iPad — use it on a replacement iPad (log in, open the till, Data → Restore from server). Nothing is deleted.",
+        "Data → Export: 'Full backup (JSON)' saves everything on the iPad to a file (keep a copy at the end of each day). 'Transactions (CSV)' is one row per item per sale, including cash/card, tendered, change and voided — opens in Excel or Google Sheets. 'Stock (CSV)' is the current on-hand estimate per product.",
+        "Data → Import: 'Import a JSON backup' merges a Full backup file into this iPad (sales with the same id are replaced by the file's copy).",
+        "One till iPad: use one iPad for the till. A second device would keep its own stock count.",
+      ]
+    },
+    {
+      title: "Sizzle Shopping Lists & PDFs",
+      icon: <Flame className="w-6 h-6 text-orange-700" />,
+      link: "/admin/sizzle",
+      category: "Events — Sausage Sizzle",
+      description: "The printed documents for volunteers and the committee, and how prices, quantities and the float were worked out. These are generated on the developer's computer from one data file; regenerate them after any price or quantity change.",
+      steps: [
+        "The documents: 01 Initial shopping list (Day 1 perishables + non-perishables for all four days); 02 Day 2, Day 3 and Day 4 top-up lists, plus 'Days 2–3' and 'Days 3–4' combined lists for when we can't get to Bright daily; 03 Equipment checklist (own/borrow/buy, who's bringing it, est. cost); 04 Compliance checklist (with links); 05 Price board (large print for the stall, 'Cash or card — tap & pay, no minimum'); 06 Float & cash-up sheet (with a card/Stripe section and signatures); 07 Costing & power summary (committee record); 08 Card payments — volunteer quick guide.",
+        "Shopping list layout: grouped by area of the store, with a tick box, the exact shelf name, brand, pack size, number of packs, price, line total, Woolworths stockcode (a link to the product), and notes: 'CONFIRM IN STORE' where the Bright stock or pack contents weren't certain, 'NOT OWN BRAND' where no Woolworths/Essentials product exists, and a fallback to buy if it's missing. Specials are noted but costed at the regular price. Gas isn't sold at Woolworths and is shown separately as an estimate.",
+        "Where prices came from: Woolworths online with the store set to Woolworths Bright (87–91 Gavan St, 03 5732 3900), regular shelf prices, checked 19 Oct 2026. Every PDF says this in its header.",
+        "Onions: the only pre-cut onion Woolworths sells is 'Prep Set Go Frozen Diced Onions'. It thaws in the Dometic overnight. If Bright has none, untick 'Serve onions' on the till and skip them — never use whole onions.",
+        "How sell prices are set: cost per serve = ingredients (e.g. 1 sausage, 1 slice, 20 g onion, sauces, serviette) + a share of the day's supplies (gas, gloves, foil spread over food; ice over cold drinks; bin bags, soap etc. over everything). The Stripe fee is added BEFORE the 10% markup: price = 1.10 × (cost + card share × 25c ÷ items per card sale) ÷ (1 − 1.10 × card share × 1.65%), then rounded UP to the next $1. The costing PDF also shows the worst case (every sale a single-item card sale) and flags any item whose price would change.",
+        "Quantities: customers per day (75, 75, 75, then 62 on Day 4) × the lunch mix (1.3 sausages per customer of which 12% veg, 0.5 hot drinks, 0.6 cold drinks) × portion sizes, rounded up to whole packs. Small perishables carry a safety margin on Days 1–3; Day 4 has none to minimise leftovers.",
+        "Float: worked out from the likely baskets and notes ($20, $10, $50, $5, exact) for the 30% of customers expected to pay cash. Notes cover the lunch rush (they come back in as people pay); $1 and $2 coins cover the whole day (they rarely come back). The reasoning is printed on the Float & Cash-up sheet.",
+        "Power: the Bluetti Elite 300 runs only the kettle (≤ 2,200 W; 2,000 W preferred — the two AC sockets share 10 A). The Elite 100 runs only the Dometic from its 12 V socket. Recharge both every night; the figures are on the costing & power PDF.",
+        "Regenerating (developer task): prices, portions, the lunch mix, customers per day, equipment and compliance items all live in data/sizzle/sizzle-2026.json in the website code. After editing it, run 'npm run sizzle:pdfs'; the PDFs are written to output/sizzle/ on that computer. 'npm run sizzle:simulate' runs a simulated 75-customer lunch to check stock and change.",
+        <span className="flex flex-wrap items-center gap-2"><span>Getting them to the club Drive: PDFs are NOT uploaded automatically. Upload them through Document Management (suggested: 08_Projects → a 'Sausage Sizzle 2026' folder), and re-upload after regenerating so the Drive copies aren't stale.</span><Link to="/admin/documents" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Documents <ExternalLink className="w-3 h-3" /></Link></span>,
+        "Compliance (see the checklist PDF): FoodTrader Class 4 notification to the club's principal council; Statements of Trade for Alpine Shire AND Indigo Shire lodged at least 5 days before trading (by Mon 26 Oct 2026), then withdraw the unused one; confirm with the Alpine Shire environmental health officer because the state fundraiser guidance covers up to two consecutive days and this event is four; check Fire Danger Period / Total Fire Ban each morning before lighting the BBQ.",
+      ]
+    },
+    {
       title: "Troubleshooting",
       icon: <AlertCircle className="w-6 h-6 text-accent" />,
       link: "/admin",
@@ -622,11 +737,14 @@ export function AdminManual() {
         <span className="flex flex-wrap items-center gap-2"><span>Tide Chart Flat Line: The ECMWF weather grid data is stale. In Railway logs, look for 'extractSiteForecast: [datetime] not in grid — fine grid is stale'. Fix: go to Weather Management and click 'Fetch Now'. The chart recovers automatically after the next scraper cycle (15–30 min).</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
         <span className="flex flex-wrap items-center gap-2"><span>Weather Data Stopped Updating: In Railway logs, check for 'Updated ECMWF forecasts for 0/X sites'. This means the ECMWF grid fetch is failing (usually rate limiting or a network timeout). Click 'Fetch Now' in Weather Management. If the problem persists, check Open-Meteo API status — the free tier has no auth and is sometimes temporarily unavailable.</span><Link to="/admin/weather" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Weather Management <ExternalLink className="w-3 h-3" /></Link></span>,
         "Images Not Loading: Check the Cloudflare R2 bucket at dash.cloudflare.com (log in with web@skyhighparagliding.org.au). The bucket is skyhigh-media. Verify CORS settings are still active (should allow GET from any origin). If the public URL returns 403, R2 public access may need to be re-enabled.",
-        "Emails Not Sending: Go to resend.com → log in → check the dashboard for bounced or failed delivery events. Verify the domain skyhighparagliding.org.au is still Verified (green). If DKIM/SPF/DMARC records have been removed from Google Cloud DNS, domain verification will lapse and emails will fail.",
+        "Emails Not Sending: Go to resend.com → log in → check the dashboard for bounced or failed delivery events. Verify the domain skyhighparagliding.org.au is still Verified (green). DNS is at Cloudflare (dash.cloudflare.com, web@ account; all records DNS-only). If the Resend or Gmail DKIM/SPF/DMARC records are removed there, domain verification lapses and emails fail. Plain-language DNS notes: docs/dns-handover.md in the code.",
         <span className="flex flex-wrap items-center gap-2"><span>TidyHQ Sync Not Updating Website: Go to Connections &amp; APIs → TidyHQ. Check the sync log for recent webhook events. If blank, check that the webhook URL is still registered in TidyHQ Admin → API → Webhooks. The webhook fires on membership changes, group changes, and contact updates.</span><Link to="/admin/connections" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open API Settings <ExternalLink className="w-3 h-3" /></Link></span>,
         <span className="flex flex-wrap items-center gap-2"><span>Admin Login Not Working: If an admin can't log in and can't receive a password reset email (email failing), another admin can update the password directly via Admin Contacts → open the contact → enter a new password → Save.</span><Link to="/admin/contacts" className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-ink text-white rounded hover:bg-ink-muted transition-colors">Open Admin Contacts <ExternalLink className="w-3 h-3" /></Link></span>,
         "Site not appearing after Save: Check the browser console for errors. The most common cause is a PostgreSQL type validation error from a partially edited field. Open the site again, check all fields are valid, and save.",
-        "Deployment Failed on Railway: Go to railway.com → skyhigh project → Deployments tab. Click the failed deployment to see build logs. Common causes: npm install failure (check for package version conflicts), TypeScript compile error (the build command runs tsc), or a missing environment variable (Railway Variables tab).",
+        "Sizzle Till shows the login page with no signal: the till can only start offline after it has been opened once with signal on that iPad (that's when it saves itself for offline use). Get signal, open the till once, then it will work offline. Never clear Safari website data or use Private Browsing for the till.",
+        "Sizzle Till badge stays amber ('N to upload'): the sales are safe on the iPad. Check the iPad has signal, then tap the badge. If the Data tab says the login has expired, log in again on the website — uploads resume by themselves.",
+        "Sizzle Till card total doesn't match Stripe: compare the till's card sale times (Data → Transactions CSV) with Stripe's payment list. Usually a payment was approved on the Stripe device but 'Card approved' wasn't tapped, or a declined payment was marked approved. Check the Stripe account time zone is Melbourne.",
+        "Deployment Failed on Railway:Go to railway.com → skyhigh project → Deployments tab. Click the failed deployment to see build logs. Common causes: npm install failure (check for package version conflicts), TypeScript compile error (the build command runs tsc), or a missing environment variable (Railway Variables tab).",
       ]
     },
     {
@@ -709,7 +827,7 @@ export function AdminManual() {
           </Link>
           <div className="flex items-center gap-2 text-ink font-bold">
             <Book className="w-5 h-5" />
-            <span>Admin Manual v15.2</span>
+            <span>Admin Manual v15.3</span>
           </div>
         </div>
 
@@ -827,7 +945,18 @@ export function AdminManual() {
                 ["Public Contacts", "public-contacts"],
                 ["Sponsors", "sponsors"],
                 ["Scheduled Tasks", "scheduled-tasks"],
+                ["Cameras", "cameras"],
                 ["API Settings", "api-settings"],
+              ],
+            },
+            {
+              label: "Events — Sausage Sizzle",
+              entries: [
+                ["Till Setup", "sizzle-till-setup"],
+                ["Selling", "sizzle-till-selling"],
+                ["End of Day", "sizzle-till-end-of-day"],
+                ["Admin & Data", "sizzle-till-admin-&-data"],
+                ["Shopping Lists & PDFs", "sizzle-shopping-lists-&-pdfs"],
               ],
             },
             {
@@ -935,7 +1064,7 @@ export function AdminManual() {
                   <p className="text-xs text-gray-300"><strong className="text-white">Railway (hosting + logs):</strong> <a href="https://railway.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">railway.com</a></p>
                   <p className="text-xs text-gray-300"><strong className="text-white">GitHub (source code):</strong> <a href="https://github.com/SkyHighParagliding" target="_blank" rel="noopener noreferrer" className="text-accent underline">github.com/SkyHighParagliding</a></p>
                   <p className="text-xs text-gray-300"><strong className="text-white">Cloudflare R2 (images):</strong> <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">dash.cloudflare.com</a></p>
-                  <p className="text-xs text-gray-300"><strong className="text-white">Google Cloud DNS:</strong> <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">console.cloud.google.com</a> — Skyhigh DNS Service project</p>
+                  <p className="text-xs text-gray-300"><strong className="text-white">DNS (Cloudflare) + domain (Vodien):</strong> <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">dash.cloudflare.com</a> — DNS records; <a href="https://manage.vodien.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">manage.vodien.com</a> — domain registration</p>
                   <p className="text-xs text-gray-300"><strong className="text-white">Resend (email):</strong> <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">resend.com</a></p>
                   <p className="text-xs text-gray-300"><strong className="text-white">TidyHQ:</strong> <a href="https://skyhigh.tidyhq.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">skyhigh.tidyhq.com</a></p>
                   <p className="text-xs text-gray-300"><strong className="text-white">Google Workspace / Drive:</strong> <a href="https://workspace.google.com" target="_blank" rel="noopener noreferrer" className="text-accent underline">workspace.google.com</a></p>
