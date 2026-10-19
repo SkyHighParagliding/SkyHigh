@@ -94,6 +94,12 @@
         "note": "1 m a day (cover cooked sausages, wrap leftovers)"
       },
       {
+        "product": "foil_trays",
+        "qtyPerDay": 3,
+        "allocateTo": "food",
+        "note": "meat, veg and onion holding trays, fresh each day"
+      },
+      {
         "product": "gas",
         "qtyPerDay": 1.2,
         "allocateTo": "food",
@@ -640,6 +646,29 @@
       "fallback": "Multix Heavy Duty Alfoil 15m, $6.60, stockcode 705797."
     },
     {
+      "id": "foil_trays",
+      "name": "Armada BBQ Foil Trays Large 2 pack",
+      "brand": "Armada",
+      "packSize": "2 pack",
+      "unitsPerPack": 2,
+      "unit": "tray",
+      "price": 6,
+      "unitPrice": "$3.00 each",
+      "stockcode": "269417",
+      "url": "https://www.woolworths.com.au/shop/productdetails/269417/armada-bbq-foil-trays-large",
+      "category": "Domesticware",
+      "aisle": "Paper goods & party",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "flags": [
+        "No Woolworths-labelled foil trays. Tray size not listed online — check they hold a batch of cooked sausages and fit beside the hotplate.",
+        "3 trays a day (meat, veg, onions), fresh each day; throw them out with the cooked leftovers."
+      ],
+      "fallback": "Armada BBQ Foil Trays Medium 3 pack, $5.00, stockcode 75770."
+    },
+    {
       "id": "bin_bags",
       "name": "Armada Garbage Bag Drawstring 56L 20 pack",
       "brand": "Armada",
@@ -1070,10 +1099,9 @@
     },
     {
       "item": "Foil trays, large (holding cooked sausages / onions)",
-      "status": "tbc",
-      "qty": 2,
-      "estCost": 6,
-      "source": "Armada BBQ Foil Trays Large 2 pack, Woolworths 269417 — price is per 2-pack"
+      "status": "buy",
+      "qty": 12,
+      "notes": "On the shopping list: 3 a day (meat, veg, onions), 12 over the event."
     },
     {
       "item": "Food thermometer (probe)",

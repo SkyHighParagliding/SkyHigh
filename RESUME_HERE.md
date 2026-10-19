@@ -1,7 +1,9 @@
 # RESUME_HERE — Last updated: 2026-10-19 (session 76: sausage sizzle costing, PDFs and iPad till)
 
 ## Project: SkyHigh
-## Status: Active — work on branch `feature/sausage-sizzle` (NOT merged; main == origin/main at `8f4dc67`). Railway auto-deploys `main`.
+## Status: Active — branch `feature/sausage-sizzle` PUSHED (head `228c35f`), NOT merged; main == origin/main at `8f4dc67`. Railway auto-deploys `main`.
+
+> **2026-10-20 pause:** Jon approved merging to `main` (option A), but Claude Code auto mode blocked the push as a production deploy. Jon will merge from his computer (or via the GitHub PR). Then: watch the deploy → live DB check with one dummy sale (void it) → Money tab/report check → iPad checklist. Details in memory `sizzle-event-2026.md`.
 
 ```
 branch: feature/sausage-sizzle (local only, not pushed)
