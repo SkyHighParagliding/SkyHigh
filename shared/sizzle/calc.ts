@@ -122,6 +122,12 @@ export interface Config {
   float: FloatConfig;
   lowStockServes: number;
   power: PowerConfig;
+  /**
+   * Customers a day that fixed costs (gas, bin bags…) are spread over when pricing.
+   * Defaults to Day 1's forecast; the till pins it to the plan so re-forecasting
+   * customers mid-event changes quantities, not sell prices.
+   */
+  pricingCustomers?: number;
   /** Set on the iPad (Admin): fixed sell prices that replace the computed ones. */
   priceOverrides?: Record<string, number>;
   [key: string]: unknown;
@@ -238,7 +244,7 @@ export interface ItemCost { item: string; direct: number; allocated: number; tot
  * is spread over the serves of the group it serves (gas → food, ice → cold
  * drinks, bin bags → everything) at the planning day's customer count.
  */
-export function costPerServe(data: SizzleData, customers = data.config.customersPerDay[0]): Record<string, ItemCost> {
+export function costPerServe(data: SizzleData, customers = data.config.pricingCustomers ?? data.config.customersPerDay[0]): Record<string, ItemCost> {
   const products = productIndex(data);
   const serves = servesForCustomers(data.config, customers);
   const groupServes: Record<AllocTarget, number> = { food: 0, hot: 0, cold: 0, all: 0 };

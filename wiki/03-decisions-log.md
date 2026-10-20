@@ -906,3 +906,18 @@ Easy. `enabled` on the source stops fetching; the **Cameras** setting hides the 
 ---
 
 Last updated: 2026-10-08
+
+## DECISION-020: Sizzle Till Goes Multi-Device, Server Is the Master Copy, Documents to Google Drive
+**Date:** 2026-10-20  
+**Context:** Jon wants customer numbers editable per day, event setup in the till, documents saved centrally (not on one person's iPad or phone), and phones selling at the same time as the iPad.  
+**Options considered:**
+- Phone sign-in: (A) QR pairing → till-only, event-scoped, revocable token; (B) full admin login on each phone.
+- Cash on phones: (A) card only; (B) cash into one shared box; (C) a cash bag per phone.
+- PDFs for Drive: (A) Chromium on Railway rendering the existing templates; (B) Apps Script HTML→PDF; (C) rewrite with a PDF library.
+- Filing: (A) money → `03_Financial Records`, planning → `08_Projects`; (B) one folder.
+
+**Chosen:** 2A, 1B, 4A (after a throwaway test build), 5A. All four tasks (TASK-038–041) before the 31 Oct event.  
+**Rationale:** Admin passwords never go on volunteer phones; one cash count keeps the cash-up simple; Chromium reuses the approved PDF layouts; Drive already has the club's filing structure. Live till data stays in Postgres (Drive is too slow as a live store); devices keep a working copy so selling never needs signal.  
+**Pricing rule (TASK-038):** customer re-forecasts change quantities only — `config.pricingCustomers` pins the price basis to the plan's Day 1.  
+**Reversibility:** Medium.  
+**Confirms:** DECISION-019 (Stripe stays outside the till — the phone page only shows and copies the amount).

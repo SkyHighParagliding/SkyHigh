@@ -209,5 +209,25 @@ assert(les.perDay[0].customers === 2 && les.perDay[0].busiestHalfHour === "12:00
 assert(les.suggestedConfig.customersPerDay[0] === 2 && les.suggestedConfig.customersPerDay[2] === 2, "untraded days suggested at the average of traded days");
 assert(les.leftovers.some((l) => l.product === "sausage") && !les.leftovers.some((l) => l.product === "ice"), "leftovers list skips ice (doesn't carry over)");
 
+console.log("\nCustomer re-forecasts");
+{
+  // Day 2 forecast 75 → 150, with prices pinned to the plan's Day 1 (75 customers).
+  const busy = JSON.parse(JSON.stringify(real));
+  busy.config.customersPerDay[1] = 150;
+  busy.config.pricingCustomers = real.config.customersPerDay[0];
+  const before = pricingTable(real).map((r) => r.price).join(",");
+  const after = pricingTable(busy).map((r) => r.price).join(",");
+  assert(before === after, "a bigger Day 2 forecast leaves sell prices alone (pricingCustomers pinned)");
+  // Topping up Day 2 from the same stock needs more sausages when twice the customers are expected.
+  const stock = shoppingPlan(real).openingStock[1];
+  const need = (d) => topUpNeed(d, stock, [1]).sausage ?? 0;
+  assert(need(busy) > need(real), "doubling Day 2 customers raises the Day 2 sausage top-up");
+  // Unpinned, the Day 1 forecast feeds pricing: 10 customers spreads gas over far fewer serves.
+  const quiet = JSON.parse(JSON.stringify(real));
+  quiet.config.customersPerDay[0] = 10;
+  const sausage = (d) => pricingTable(d).find((r) => r.item === "sausage").price;
+  assert(sausage(quiet) > sausage(real), "unpinned, a tiny Day 1 forecast raises the sausage price (gas spread over fewer serves)");
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 if (failed) process.exit(1);

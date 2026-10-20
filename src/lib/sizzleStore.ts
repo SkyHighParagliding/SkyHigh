@@ -38,6 +38,8 @@ export interface TillSettings {
   cardShare: number | null;
   itemsPerTxn: number | null;
   onionsEnabled: boolean | null;
+  /** Customer forecasts by event day number ("1"…), over the plan's customersPerDay. */
+  customersPerDay: Record<string, number>;
 }
 
 /** Stock on hand = baseline at `at`, minus BOM depletion of later sales. */

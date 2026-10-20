@@ -539,10 +539,10 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 
 ---
 
-## Phase 13: Club Sausage Sizzle — 31 Oct–3 Nov 2026 (🔄 Built, awaiting deploy)
+## Phase 13: Club Sausage Sizzle — 31 Oct–3 Nov 2026 (✅ Till live; multi-device work in progress)
 
 ### TASK-037: Sausage sizzle costing, PDFs and iPad till
-- **Status:** 🔄 IN PROGRESS — built and verified locally on branch `feature/sausage-sizzle`; not merged/deployed (needs Jon's go-ahead; Railway auto-deploys `main`).
+- **Status:** ✅ DONE — deployed to production 2026-10-20 (`dd090de`); live check passed (dummy sale synced to Postgres with event `2026-ntvo`, then voided). iPad home-screen icon fixed (`ec6fc90`, server injects the till manifest) and confirmed by Jon; Help popups on Admin/Money (`452bc1e`).
 - **Prerequisites:** None
 - **Estimated effort:** L
 - **Description:** Costed Woolworths Bright shopping lists (initial, Day 2/3/4 top-ups, 2-day versions), equipment/compliance/float/costing/card-guide PDFs, and an offline-first iPad till at `/admin/sizzle` (cash + card via a separate Stripe device), backed up to Postgres.

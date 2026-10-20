@@ -52,6 +52,7 @@ export const EMPTY_SETTINGS: TillSettings = {
   cardShare: null,
   itemsPerTxn: null,
   onionsEnabled: null,
+  customersPerDay: {},
 };
 
 /** The JSON file with the iPad's admin edits laid over it. */
@@ -62,6 +63,8 @@ export function applySettings(base: SizzleData, s: TillSettings): SizzleData {
   if (s.cardShare !== null) d.config.card.share = s.cardShare;
   if (s.itemsPerTxn !== null) d.config.card.itemsPerTxn = s.itemsPerTxn;
   if (s.onionsEnabled !== null) d.config.onionsEnabled = s.onionsEnabled;
+  d.config.pricingCustomers = base.config.pricingCustomers ?? base.config.customersPerDay[0];
+  d.config.customersPerDay = d.config.customersPerDay.map((c, i) => s.customersPerDay?.[String(i + 1)] ?? c);
   d.config.priceOverrides = { ...s.priceOverrides };
   return d;
 }
@@ -252,6 +255,22 @@ export function useTill() {
     [runSync],
   );
 
+  /**
+   * New customer forecasts. Until a stock count is saved, "on hand" is worked out
+   * from the planned initial shop, which itself depends on the forecasts — so once
+   * selling has started, pin that opening stock first so it can't shift under us.
+   */
+  const saveForecasts = useCallback(
+    async (customersPerDay: Record<string, number>) => {
+      if (!baseline && sales.length) {
+        await putSnapshot("stock", "", effectiveBaseline);
+        setBaseline(effectiveBaseline);
+      }
+      await saveSettings({ ...settings, customersPerDay });
+    },
+    [baseline, sales.length, effectiveBaseline, settings, saveSettings],
+  );
+
   const setStock = useCallback(
     async (qty: Qty, reason: string) => {
       const b: StockBaseline = { at: new Date().toISOString(), qty, reason };
@@ -351,6 +370,7 @@ export function useTill() {
     recordSale,
     voidSale,
     saveSettings,
+    saveForecasts,
     setStock,
     saveFloat,
     saveClose,

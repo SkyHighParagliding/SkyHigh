@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FileDown, Save } from "lucide-react";
-import { cardReconcile, denomTotal, summariseSales, tillTopUpList, type Qty } from "../../../shared/sizzle/calc.ts";
+import { cardReconcile, denomTotal, summariseSales, tillTopUpList, type Qty, type SizzleData } from "../../../shared/sizzle/calc.ts";
 import { endOfDayBody, page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 import { openPrintView } from "./printView";
 import { shortName, type Till } from "./useTill";
+import { ForecastRows, customersServed, forecastDraft, forecastOverrides } from "./Forecasts";
 
 const money = (n: number) => `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
 const FLOAT_DENOMS = ["20", "10", "5", "2", "1"];
@@ -65,6 +66,18 @@ export function EndOfDayScreen({ till }: { till: Till }) {
   }, [data, onHand, close]);
   const counts: Qty = Object.fromEntries(data.products.map((p) => [p.id, stock[p.id] !== undefined && stock[p.id] !== "" ? Number(stock[p.id]) : estimated[p.id]]));
 
+  // Tomorrow's (and later) customer estimates, edited here; the top-up follows them as you type.
+  const [forecast, setForecast] = useState<Record<string, string>>(() => forecastDraft(data.config.customersPerDay));
+  const planData: SizzleData = useMemo(() => ({
+    ...data,
+    config: { ...data.config, customersPerDay: data.config.customersPerDay.map((c, i) => (forecast[String(i + 1)] ? Number(forecast[String(i + 1)]) : c)) },
+  }), [data, forecast]);
+  const forecastChanged = JSON.stringify(forecastOverrides(forecast)) !== JSON.stringify(till.settings.customersPerDay ?? {});
+  async function saveForecast() {
+    await till.saveForecasts(forecastOverrides(forecast));
+    toast.success("Customer estimates saved");
+  }
+
   const nextIdx = day; // customersPerDay index of tomorrow (day is 1-based)
   const hasNext = nextIdx < data.config.customersPerDay.length;
   const hasTwo = nextIdx + 1 < data.config.customersPerDay.length;
@@ -72,7 +85,7 @@ export function EndOfDayScreen({ till }: { till: Till }) {
   const nextLabel = hasNext ? data.event.days[nextIdx].label : "";
   const topUp = hasNext
     ? tillTopUpList(
-        data,
+        planData,
         counts,
         topUpDays,
         topUpDays.length === 2 ? `Days ${nextIdx + 1}–${nextIdx + 2} top-up (from the till)` : `Day ${nextIdx + 1} top-up (from the till)`,
@@ -106,7 +119,8 @@ export function EndOfDayScreen({ till }: { till: Till }) {
 
   function printTopUp() {
     if (!topUp) return;
-    openPrintView(page(topUp.title, "landscape", shoppingListBody(data, topUp)), `Sizzle ${topUp.title}`);
+    if (forecastChanged) saveForecast();
+    openPrintView(page(topUp.title, "landscape", shoppingListBody(planData, topUp)), `Sizzle ${topUp.title}`);
   }
 
   const names = Object.fromEntries(data.menu.map((m) => [m.id, m.name]));
@@ -204,6 +218,16 @@ export function EndOfDayScreen({ till }: { till: Till }) {
             <button type="button" onClick={printTopUp} className="h-14 px-5 rounded-xl bg-stone-800 text-white text-lg font-semibold flex items-center gap-2"><FileDown className="w-6 h-6" /> Top-up PDF</button>
           </div>
           <p className="text-stone-600 mb-2">{topUp.subtitle}</p>
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 mb-3">
+            <p className="text-lg mb-1">Today (Day {day}) you served <b>{customersServed(till.sales, day)}</b> customers (completed sales). How many do you expect next?</p>
+            <div className="grid grid-cols-2 gap-x-8">
+              <ForecastRows days={data.event.days} only={data.event.days.filter((d) => d.n > day).map((d) => d.n)} draft={forecast} onChange={(n, v) => setForecast((f) => ({ ...f, [String(n)]: v }))} sales={till.sales} />
+            </div>
+            <div className="flex items-center gap-3 mt-2">
+              <button type="button" disabled={!forecastChanged} onClick={saveForecast} className="h-12 px-4 rounded-xl bg-amber-700 text-white text-lg font-semibold flex items-center gap-2 disabled:opacity-40"><Save className="w-5 h-5" /> Save estimates</button>
+              <span className="text-stone-600">{forecastChanged ? "The list below already uses these numbers — save so the other screens use them too." : "The list below uses these numbers."}</span>
+            </div>
+          </div>
           {topUp.lines.length === 0 ? <p className="text-xl">Nothing to buy — stock covers it.</p> : (
             <table className="w-full text-lg">
               <thead><tr className="text-left text-stone-500"><th>Product</th><th>Pack</th><th className="text-right">Qty</th><th className="text-right">Line total</th></tr></thead>

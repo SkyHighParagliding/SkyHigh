@@ -1,17 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Lock, PackagePlus, Save } from "lucide-react";
+import { FileDown, Lock, PackagePlus, Save, Users } from "lucide-react";
 import { pricingTable, type Qty } from "../../../shared/sizzle/calc.ts";
 import { sha256, type TillSettings } from "@/lib/sizzleStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { BASE, shortName, type Till } from "./useTill";
 import { HelpButton } from "./HelpPopup";
+import { ForecastRows, forecastDraft, forecastOverrides } from "./Forecasts";
+import { openPrintView } from "./printView";
+import { page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 
 function AdminHelp({ markup }: { markup: number }) {
   return (
     <>
       <p><b>Most of the time you don't need to change anything here.</b> Every box can be left blank — blank means "use the planned figure". Only type in a box when you want something different from the plan.</p>
       <p>Nothing changes until you tap <b>Save prices &amp; settings</b> (top right). Stock buttons save straight away. The PIN stays unlocked for 10 minutes.</p>
+
+      <h3>Customers per day</h3>
+      <p>How many customers you expect each day ("plan" is the original estimate; "served so far" is the real count, one completed sale = one customer). The shopping and top-up quantities follow these numbers.</p>
+      <ul>
+        <li><b>Before the event:</b> enter your best guess for every day, tap <b>Save customer numbers</b>, then <b>Initial shopping list</b> to print or save it as a PDF.</li>
+        <li><b>During the event:</b> update the later days at End of day — it shows today's real count and rebuilds tomorrow's top-up as you type.</li>
+        <li>Sell prices do <b>not</b> change when you change these numbers.</li>
+      </ul>
 
       <h3>Sell prices — do I type a price beside "Sausage in bread"?</h3>
       <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next whole dollar, and it's what the printed price board shows.</p>
@@ -160,6 +171,7 @@ function AdminForm({ till }: { till: Till }) {
   const [onions, setOnions] = useState<boolean>(settings.onionsEnabled ?? data.config.onionsEnabled);
   const [stockSet, setStockSet] = useState<Record<string, string>>({});
   const [delivery, setDelivery] = useState<Record<string, string>>({});
+  const [forecast, setForecast] = useState<Record<string, string>>(forecastDraft(data.config.customersPerDay));
 
   const nums = (r: Record<string, string>) => Object.fromEntries(Object.entries(r).filter(([, v]) => v !== "" && Number.isFinite(Number(v))).map(([k, v]) => [k, Number(v)]));
 
@@ -190,6 +202,16 @@ function AdminForm({ till }: { till: Till }) {
     toast.success(mode === "set" ? "Stock on hand updated" : "Delivery added to stock");
   }
 
+  async function saveForecast() {
+    await till.saveForecasts(forecastOverrides(forecast));
+    toast.success("Customer numbers saved — shopping and top-up lists updated");
+  }
+
+  function printInitial() {
+    const list = till.plan.initial;
+    openPrintView(page(list.title, "landscape", shoppingListBody(data, list)), `Sizzle ${list.title}`);
+  }
+
   const short = shortName;
 
   return (
@@ -199,6 +221,18 @@ function AdminForm({ till }: { till: Till }) {
         <HelpButton title="Admin tab — what to do"><AdminHelp markup={data.config.markup} /></HelpButton>
         <button type="button" onClick={saveAll} className="h-14 px-6 rounded-2xl bg-amber-700 text-white text-xl font-bold flex items-center gap-2"><Save className="w-6 h-6" /> Save prices &amp; settings</button>
       </div>
+
+      <section className="rounded-2xl bg-white shadow p-4">
+        <div className="flex flex-wrap items-center gap-3 mb-1">
+          <h3 className="text-2xl font-bold flex-1 flex items-center gap-2"><Users className="w-7 h-7" /> Customers per day</h3>
+          <button type="button" onClick={saveForecast} className="h-12 px-4 rounded-xl bg-amber-700 text-white text-lg font-semibold flex items-center gap-2"><Save className="w-5 h-5" /> Save customer numbers</button>
+          <button type="button" onClick={printInitial} className="h-12 px-4 rounded-xl bg-stone-800 text-white text-lg font-semibold flex items-center gap-2"><FileDown className="w-5 h-5" /> Initial shopping list</button>
+        </div>
+        <p className="text-stone-500 mb-2">How many customers you expect each day. Shopping and top-up quantities follow these numbers; sell prices don't change. Update later days at End of day as you learn the real numbers.</p>
+        <div className="grid grid-cols-2 gap-x-8">
+          <ForecastRows days={data.event.days} draft={forecast} onChange={(n, v) => setForecast((f) => ({ ...f, [String(n)]: v }))} sales={till.sales} />
+        </div>
+      </section>
 
       <div className="grid grid-cols-2 gap-4">
         <section className="rounded-2xl bg-white shadow p-4">
