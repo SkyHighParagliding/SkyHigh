@@ -338,11 +338,11 @@ export function cardGuideBody(data: SizzleData): string {
   return `${header(data, "Card payments — volunteer quick guide", "Cash or card, same price, no minimum, no surcharge.")}
 <h2>Taking a card payment</h2>
 <ol class="steps" style="font-size:14pt">
-<li>Ring up the order on the <b>iPad till</b> as normal, then tap <b>[Card]</b>.</li>
-<li>The iPad shows <b>"Key $X into Stripe"</b> in big numbers.</li>
-<li>On the Stripe device, enter <b>exactly that amount</b> and start the payment.</li>
+<li>Ring up the order on the till (iPad or phone) as normal, then tap <b>[Card]</b>.</li>
+<li>The till shows <b>"Key this amount into Stripe"</b> in big numbers, and copies the amount (the phone says <b>"12.50 copied — paste it in Stripe"</b>).</li>
+<li>In the Stripe app, enter <b>exactly that amount</b>: press and hold the amount box → <b>Paste</b>, or type the big number. Start the payment.</li>
 <li>Customer taps their card or phone.</li>
-<li>Stripe says <b>approved</b> → tap <b>[Card approved]</b> on the iPad. Only now is the sale recorded.</li>
+<li>Stripe says <b>approved</b> → tap <b>[Card approved]</b> on the till. Only now is the sale recorded.</li>
 <li>Stripe says <b>declined</b> → tap <b>[Declined — back]</b> and offer cash.</li>
 </ol>
 <h2>Golden rules</h2>
@@ -361,6 +361,119 @@ export function cardGuideBody(data: SizzleData): string {
 <li>Check the Stripe account's time zone is Melbourne so daily totals line up with the till.</li>
 <li>Test a $1 payment and refund it yourself before Day 1.</li>
 </ul>`;
+}
+
+// ─── 9. Shop assistant how-to ─────────────────────────────────────────────────
+
+export function shopAssistantGuideBody(data: SizzleData): string {
+  return `${header(data, "Shop assistant how-to", "Selling on the till — iPad or phone, the buttons are the same.")}
+<p style="font-size:13pt">Organiser on duty: <span class="blank" style="min-width:200px"></span> &nbsp; Phone: <span class="blank" style="min-width:150px"></span></p>
+<h2>1. Take the order</h2>
+<ol class="steps">
+<li>Tap an item card once for each one the customer wants. The white bubble on the card shows how many.</li>
+<li>Check the <b>Order</b> list. Wrong number? Use <b>−</b> and <b>+</b> on that line. <b>Clear</b> starts again. Nothing is recorded until the customer has paid.</li>
+<li>Tell the customer the <b>Total</b>, then tap <b>Cash</b> or <b>Card</b>.</li>
+</ol>
+<h2>2. Cash</h2>
+<ol class="steps">
+<li>Tap the note they hand you ($5, $10, $20, $50), <b>Exact</b>, or type another amount in <b>Other</b> and tap <b>OK</b>.</li>
+<li>The till shows <b>CHANGE</b> in big green numbers and which notes and coins to give.</li>
+<li>Give the change, then tap <b>Change given — done</b>. (<b>Back</b> if you tapped the wrong note.)</li>
+<li>All cash goes in the <b>one cash box</b>, whichever device you sold on.</li>
+</ol>
+<h2>3. Card (Stripe)</h2>
+<ol class="steps">
+<li>Tap <b>Card</b>. The till shows the amount in big numbers and copies it (the phone says <b>"… copied — paste it in Stripe"</b>).</li>
+<li>In the Stripe app: press and hold the amount → <b>Paste</b>, or type the big number. <b>Always the till total — never from memory.</b></li>
+<li>The customer taps their card or phone on the Stripe phone.</li>
+<li><b>Approved</b> → tap <b>Card approved</b>. Only now is the sale recorded.</li>
+<li><b>Declined</b> or no signal on Stripe → tap <b>Declined — back</b> and offer cash. Don't keep retrying.</li>
+</ol>
+<h2 class="avoid">4. Fixing a mistake</h2>
+<ul class="avoid">
+<li><b>Before they pay:</b> fix it in the Order list with − and +.</li>
+<li><b>Just after a sale:</b> tap <b>Void last sale</b> (the dashed card). It shows your most recent sale — check it, then tap <b>Void sale</b>. It only voids a sale made on <b>your</b> device. Cash: give the money back from the cash box. Card: you can't refund at the stall — take the customer's name and phone number for the organiser.</li>
+<li><b>An older sale was wrong:</b> leave it and tell the organiser, so it can be noted on the cash-up sheet.</li>
+</ul>
+<h2 class="avoid">5. Stock and signal</h2>
+<ul class="avoid">
+<li>Each card shows how many are left. It turns red under ${data.config.lowStockServes}, and an amber <b>Low stock</b> bar names what's running out — tell the organiser. <b>SOLD OUT?</b> means the till thinks it's gone: check the esky and boxes first.</li>
+<li><b>No signal? Keep selling.</b> Every sale is saved on your device first and uploads by itself later. The bar at the top of the phone says <b>Synced</b> or how many sales are waiting.</li>
+<li>Don't close the till by deleting its home-screen icon or clearing Safari data — unsent sales live there.</li>
+</ul>
+<h2 class="avoid">Golden rules</h2>
+<ul class="avoid" style="font-size:13.5pt">
+<li>Same price cash or card. No minimum, no surcharge.</li>
+<li>Never hand the Stripe phone to a customer to type an amount.</li>
+<li>Card money never goes in the cash box; the cash count is cash only.</li>
+<li>Prices and stock are changed by the organiser only (they're PIN-locked).</li>
+<li>Gloves on for handling food; wash hands after cash. Anything odd — ask the organiser.</li>
+</ul>`;
+}
+
+// ─── 10. Admin how-to ─────────────────────────────────────────────────────────
+
+export function adminGuideBody(data: SizzleData): string {
+  return `${header(data, "Admin how-to", "For the organiser and treasurer. Everything below is on the iPad till unless it says otherwise.")}
+<h2>Before the event (once)</h2>
+<ol class="steps">
+<li><b>iPad icon:</b> in Safari open <b>skyhighparagliding.org.au/admin/sizzle</b>, log in with an admin account, then Share → <b>Add to Home Screen</b>. Always use the <b>Sizzle Till</b> icon: it keeps its own login and its own sales, separate from Safari. Never give volunteers the password.</li>
+<li><b>PIN:</b> Admin tab → choose a 4–8 digit PIN. It locks prices, stock and the Money tab (unlocked for 10 minutes at a time). Forgot it? <b>Forgot PIN?</b> and the website password.</li>
+<li><b>Event and customers:</b> Admin → <b>Event</b> shows the current event. Admin → <b>Customers per day</b>: enter the estimate for each day → <b>Save customer numbers</b>. Quantities follow these; sell prices don't.</li>
+<li><b>Shopping:</b> Docs tab → <b>Initial shopping list</b> → View / Print or Save to Drive. After the shop, fix any shelf price that differed (Admin → Shelf prices) and set the real stock if you bought differently (Admin → Stock on hand → <b>Set on-hand (units)</b>).</li>
+<li><b>Phones:</b> Admin → <b>Phones</b> → type a name → <b>Add phone</b>. Scan the QR with that phone's camera and open the link (needs signal; the code works once, for 10 minutes). Then Share → Add to Home Screen. The phone gets a till-only pass — no password on volunteers' phones.</li>
+<li><b>Stripe:</b> log the Stripe phone in with a volunteer-level team login (never the admin login), check the account time zone is Melbourne, and do a $1 test payment and refund.</li>
+<li><b>Paperwork:</b> follow the Compliance checklist (council notifications, Statements of Trade, EHO). Print the Price board, Float & cash-up sheet and the Shop assistant how-to.</li>
+</ol>
+<h2 class="avoid">Each morning</h2>
+<ul class="avoid">
+<li>Open the iPad icon and log in again (the login lasts 24 hours). Check the day buttons (D1–D${data.event.days.length}) show today.</li>
+<li>End of day tab → <b>Starting float</b>: enter what is actually in the cash box.</li>
+<li>Open the till on each phone; its top bar should say <b>Synced</b>. Charge the Stripe phone and power bank overnight.</li>
+</ul>
+<h2 class="avoid">During trading</h2>
+<ul class="avoid">
+<li><b>Backup badge</b> (iPad top right): <b>Backed up</b> = everything is on the website. Amber <b>N to upload</b> = safe on the device, waiting for signal. Tap it to try now.</li>
+<li><b>Top-up arrived:</b> Admin → Stock on hand → type the <b>packs</b> bought → <b>Add delivery (packs)</b>.</li>
+<li><b>Change a price:</b> Admin → Sell prices → <b>Save prices &amp; settings</b>. Phones pick it up within about 15 seconds.</li>
+<li><b>Lost phone or volunteer gone home:</b> Admin → Phones → <b>Cancel</b>. It stops working at once; its uploaded sales are kept.</li>
+<li>Each device can void only its own last sale. Card refunds are done by the organiser in Stripe, never at the stall.</li>
+</ul>
+<h2 class="avoid">End of day (iPad, after the last sale on every device)</h2>
+<ol class="steps avoid">
+<li>Check every phone says <b>Synced</b>, and the day buttons show the day you're closing.</li>
+<li><b>Card:</b> Stripe Dashboard → Payments → today → type the <b>gross</b> total into <b>Stripe Dashboard — gross today</b>. Variance should be $0.00.</li>
+<li><b>Cash:</b> count the cash box by note and coin into <b>Counted at close</b>. Green = balanced, amber = over, red = short.</li>
+<li><b>Stock:</b> count what's left in the units shown. Blank keeps the till's estimate.</li>
+<li><b>Customers:</b> the till shows how many you served today. Type your estimate for each later day → <b>Save estimates</b>. The top-up list changes as you type.</li>
+<li>Tap <b>Save count &amp; close</b>. The end-of-day summary and tomorrow's top-up list are saved to the club Drive automatically. Use <b>2 days</b> for a two-day list if you can't get to Bright tomorrow.</li>
+<li>Fill in and sign the paper Float &amp; cash-up sheet (two people). Bank the takings, leaving the float.</li>
+</ol>
+<h2 class="avoid">Money tab (treasurer, PIN)</h2>
+<ul class="avoid">
+<li><b>Purchases:</b> enter every shop the same day from its receipt — store, total, what for, who paid — and tap <b>Photo</b> for the receipt. The photo is saved to the club Drive.</li>
+<li><b>Cash banked:</b> record each time takings leave the cash box. <b>Cash still to bank</b> should end at $0.00.</li>
+<li><b>After the event:</b> enter Stripe's actual gross, fees and payout, then <b>Report to Drive</b>. Data tab → Transactions CSV for the spreadsheet; Money → next-event planning file.</li>
+</ul>
+<h2 class="avoid">Documents and Google Drive</h2>
+<ul class="avoid">
+<li>Docs tab: every document, built from the till's current numbers. <b>View / Print</b> on the device, or <b>Save to Drive</b>. Re-save after changing customers, prices or stock so Drive has the latest.</li>
+<li>Filing: planning documents → <b>08_Projects / Sizzle ${esc(data.event.title)}</b>; money records (end-of-day summaries, receipts, treasurer's report) → <b>03_Financial Records / Sizzle ${esc(data.event.title)}</b>. Names start with the date and time, so nothing is overwritten.</li>
+<li>Works from any logged-in device — the iPad or a computer at home.</li>
+</ul>
+<h2 class="avoid">Next event</h2>
+<p class="avoid">Admin → Event → <b>Start a new event…</b>: name, first day, number of days, customers per day. Every device switches within a minute; phones need a new QR. Old events and their records are kept, and <b>Switch to …</b> goes back. Ask for a Woolworths Bright price check first — products and prices carry over from the data file.</p>
+<h2 class="avoid">If something goes wrong</h2>
+<table class="avoid"><thead><tr><th style="width:38%">What you see</th><th>What to do</th></tr></thead><tbody>
+<tr><td>Amber "N to upload" that won't clear</td><td>No signal. Keep selling; it retries by itself. Tap the badge when you have signal.</td></tr>
+<tr><td>Till asks for a login mid-service</td><td>The 24-hour login expired. Log in on the icon; sales already rung up are safe.</td></tr>
+<tr><td>Phone says "Till pass cancelled" or "set up for a different event"</td><td>Its pass was cancelled or expired, or a new event was started. Add the phone again (Admin → Phones) and scan the new QR. Sales already on the phone are kept.</td></tr>
+<tr><td>"SOLD OUT?" but there's stock</td><td>Admin → Stock on hand → <b>Set on-hand (units)</b> with the real count.</td></tr>
+<tr><td>Save to Drive didn't work</td><td>Usually no signal. Nothing is lost — save again later from the Docs tab.</td></tr>
+<tr><td>Card variance not $0.00</td><td>A payment approved in Stripe without <b>Card approved</b> tapped (or the reverse). Note it on the cash-up sheet.</td></tr>
+<tr><td>Replacement iPad</td><td>Log in on the new iPad, open the till, Data → <b>Restore from server</b>.</td></tr>
+</tbody></table>
+<p class="note">The full manual is on the website: Admin → Admin Manual → Events — Sausage Sizzle. Each Admin and Money screen also has a blue <b>Help</b> button.</p>`;
 }
 
 // ─── Till: end-of-day summary ─────────────────────────────────────────────────
@@ -417,5 +530,7 @@ export function allDocs(data: SizzleData, lists: { initial: ShopList; topUps: Sh
   add("06-float-and-cash-up.pdf", "Float & cash-up sheet", "portrait", floatSheetBody(data));
   add("07-costing-and-power.pdf", "Costing & power summary", "landscape", costingBody(data));
   add("08-card-payments-guide.pdf", "Card payments — volunteer quick guide", "portrait", cardGuideBody(data));
+  add("09-shop-assistant-how-to.pdf", "Shop assistant how-to", "portrait", shopAssistantGuideBody(data));
+  add("10-admin-how-to.pdf", "Admin how-to", "portrait", adminGuideBody(data));
   return docs;
 }
