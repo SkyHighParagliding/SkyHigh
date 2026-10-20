@@ -567,7 +567,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Acceptance criteria:** a new event can be created and its documents land in Drive with dated names; NTVO unaffected.
 
 ### TASK-040: Multi-device sync + phone pairing
-- **Status:** ✅ DONE 2026-10-20 — verified: 31-check API scenario against the real router on PGlite (Postgres in WASM; pairing single-use/expiry, phone scope, PIN hash stripped, void sticky + only the originating device can change a sale, paging past seq 1000 — caught a text-sort bug), and iPad + phone end to end in the browser. Still to check on the live site with a real iPhone.
+- **Status:** ✅ DONE 2026-10-20 — verified: 31-check API scenario against the real router on PGlite (Postgres in WASM; pairing single-use/expiry, phone scope, PIN hash stripped, void sticky + only the originating device can change a sale, paging past seq 1000 — caught a text-sort bug), and iPad + phone end to end in the browser. Live fix `70be5b5` (migration 053: `createdBy` TEXT — admin ids are `con-…`); real iPhone pairing + sync confirmed by Jon 2026-10-20.
 - **Prerequisites:** TASK-038
 - **Estimated effort:** L
 - **Description:** Server is the master copy: devices pull every device's sales/snapshots (`GET /api/sizzle/pull?event=&since=`, change numbers from `sizzle_change_seq`) every 15 s and on reconnect; settings/prices/PIN shared; "void last sale" is per device; cash-up and stock cover all devices (one shared cash box). Phones join by scanning a QR on the iPad Admin tab → one-time code (10 min) → till-only, event-scoped, revocable `till_` token (SHA-256 hashes only, `sizzle_devices`).
