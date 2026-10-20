@@ -5,6 +5,48 @@ import { pricingTable, type Qty } from "../../../shared/sizzle/calc.ts";
 import { sha256, type TillSettings } from "@/lib/sizzleStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { BASE, shortName, type Till } from "./useTill";
+import { HelpButton } from "./HelpPopup";
+
+function AdminHelp({ markup }: { markup: number }) {
+  return (
+    <>
+      <p><b>Most of the time you don't need to change anything here.</b> Every box can be left blank — blank means "use the planned figure". Only type in a box when you want something different from the plan.</p>
+      <p>Nothing changes until you tap <b>Save prices &amp; settings</b> (top right). Stock buttons save straight away. The PIN stays unlocked for 10 minutes.</p>
+
+      <h3>Sell prices — do I type a price beside "Sausage in bread"?</h3>
+      <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next whole dollar, and it's what the printed price board shows.</p>
+      <p>Only type a number to <b>override</b> it — e.g. type <b>3</b> to sell sausages at $3. Then tap Save. The Sell buttons change at once; sales already rung up keep the price they were sold at.</p>
+      <ul>
+        <li>To go back to the calculated price, clear the box and Save.</li>
+        <li>The printed price board does <b>not</b> change — write the new price on it.</li>
+        <li>Whole dollars only make change easy; avoid cents.</li>
+      </ul>
+
+      <h3>Card assumptions</h3>
+      <p>Used only to work out how much card fee to build into the calculated prices. Blank = the plan (70% of sales on card, 2 items per card sale). Change them only if the real mix is very different after Day 1 — but this can move calculated prices, so check the Sell prices after saving.</p>
+
+      <h3>Serve onions</h3>
+      <p>Untick if the store had no pre-cut onions. Onions then stop being counted out of stock and costed. Tick it again if you get some.</p>
+
+      <h3>Portions per serve</h3>
+      <p>How much of each ingredient one sale uses — this drives stock counts and costs. Blank = the planned amount (shown as "file: …"). Sauce, mustard, sugar and milk are averages over everyone, not a full squirt each. Change one only if stock is running out much faster or slower than the till says.</p>
+
+      <h3>Shelf prices (what Woolworths charged)</h3>
+      <p>Blank = the price we planned with. If the receipt price for a pack was different, type the <b>pack price</b> here and Save. Costs, profit and the calculated sell prices then use it — so check Sell prices afterwards. (Receipts themselves go in the Money tab → Purchases.)</p>
+
+      <h3>Stock on hand</h3>
+      <p>The "On hand" column is what the till thinks is left, counted down by every sale.</p>
+      <ol>
+        <li><b>After a top-up shop:</b> type the number of <b>packs</b> bought in "Packs bought" (e.g. 2 packs of sausages), then tap <b>Add delivery (packs)</b>. The till adds the right number of units.</li>
+        <li><b>To correct a count</b> (you counted what's really there): type the actual <b>units</b> in "Set units" (sausages, slices, ml, g…) and tap <b>Set on-hand (units)</b>. This replaces the figure.</li>
+      </ol>
+      <p>Only the rows you filled in are changed. A red number means the till thinks you've used more than you had — do a count and Set it.</p>
+
+      <h3>Where does this save?</h3>
+      <p>On this iPad, and it's backed up to the website when there's signal. Prices and settings don't change the printed PDFs — those come from the plan.</p>
+    </>
+  );
+}
 
 const UNLOCK_MS = 10 * 60 * 1000;
 let unlockedUntil = 0;
@@ -154,6 +196,7 @@ function AdminForm({ till }: { till: Till }) {
     <div className="h-full overflow-auto p-4 space-y-4">
       <div className="flex items-center gap-3">
         <h2 className="text-3xl font-bold flex-1">Admin</h2>
+        <HelpButton title="Admin tab — what to do"><AdminHelp markup={data.config.markup} /></HelpButton>
         <button type="button" onClick={saveAll} className="h-14 px-6 rounded-2xl bg-amber-700 text-white text-xl font-bold flex items-center gap-2"><Save className="w-6 h-6" /> Save prices &amp; settings</button>
       </div>
 

@@ -10,6 +10,48 @@ import { openPrintView } from "./printView";
 import { PinProtected } from "./AdminScreen";
 import { Modal } from "./SellScreen";
 import { EVENT_ID, type Till } from "./useTill";
+import { HelpButton } from "./HelpPopup";
+
+function MoneyHelp() {
+  return (
+    <>
+      <p>This tab is the treasurer's record of the event. The sales figures fill in by themselves from the till — you only enter <b>money that went out</b> (purchases), <b>money that left the cash box</b> (banking) and, after the event, <b>Stripe's real figures</b>.</p>
+
+      <h3>The six boxes at the top</h3>
+      <ul>
+        <li><b>Sales</b> — everything rung up (voided sales left out), split cash / card.</li>
+        <li><b>Purchases</b> — the receipts entered below, against the planned shopping spend.</li>
+        <li><b>Stripe fees</b> — an estimate until you enter the actual fees at the bottom.</li>
+        <li><b>Net result</b> — sales − purchases − fees.</li>
+        <li><b>Cash still to bank</b> — cash taken minus cash banked. It should be $0 at the end (the float is not counted).</li>
+        <li><b>Leftover stock at cost</b> — what's left on the shelf, valued at what we paid.</li>
+      </ul>
+      <p>"By day" shows each day's sales and whether End of day was done ("not closed" means it wasn't).</p>
+
+      <h3>Purchases (receipts) — every shop</h3>
+      <ol>
+        <li>Tap <b>Photo</b> and photograph the receipt (optional, but it's the record).</li>
+        <li>Type the <b>receipt total</b>, who paid (so they can be paid back), and what it was for.</li>
+        <li>Tap <b>Add</b>. Wrong one? Tap the bin icon on its row.</li>
+      </ol>
+      <p>If a pack cost more or less than planned, you can also put the pack price in Admin → Shelf prices so costings match.</p>
+
+      <h3>Cash banked</h3>
+      <p>Each time takings leave the cash box — banked, or handed to the treasurer — add the amount here. Leave the float in the box; don't record it.</p>
+
+      <h3>Stripe — actual figures (after the event)</h3>
+      <p>In the Stripe Dashboard → Balances / Payouts (or Reports) for 31 Oct – 3 Nov, copy the <b>gross</b> card payments, total <b>fees</b> and <b>net</b> paid to the club, then Save. The line underneath compares Stripe's gross with the till's card total — a difference usually means a card sale was rung up as cash, or a declined card was kept.</p>
+
+      <h3>Reports</h3>
+      <ul>
+        <li><b>Treasurer's report PDF</b> — opens a print view; tap Print → Save to Files for a PDF.</li>
+        <li><b>CSV</b> — the same figures for a spreadsheet.</li>
+        <li><b>Next-event planning file</b> — real customer numbers, buying mix and card share to plan the next sizzle from.</li>
+      </ul>
+      <p>Everything here is saved on this iPad and backed up to the website when there's signal.</p>
+    </>
+  );
+}
 
 const money = (n: number | null | undefined) => (n === null || n === undefined ? "—" : `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`);
 const todayYmd = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne" }).format(new Date());
@@ -58,6 +100,7 @@ function Money({ till }: { till: Till }) {
     <div className="h-full overflow-y-auto overflow-x-hidden p-4 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-3xl font-bold flex-1">Money — {data.event.title}</h2>
+        <HelpButton title="Money tab — what to do"><MoneyHelp /></HelpButton>
         <button type="button" onClick={printReport} className="h-14 px-5 rounded-xl bg-stone-800 text-white text-lg font-semibold flex items-center gap-2"><FileDown className="w-6 h-6" /> Treasurer's report PDF</button>
         <button type="button" onClick={() => download(`${EVENT_ID}-treasurer-report-${stamp()}.csv`, reportCsv(r), "text/csv")} className="h-14 px-5 rounded-xl bg-white border-2 border-stone-800 text-lg font-semibold flex items-center gap-2"><Download className="w-6 h-6" /> Report CSV</button>
         <button type="button" onClick={() => download(`${EVENT_ID}-lessons-for-next-event-${stamp()}.json`, JSON.stringify(lessons, null, 2), "application/json")} className="h-14 px-5 rounded-xl bg-white border-2 border-amber-700 text-lg font-semibold flex items-center gap-2"><Download className="w-6 h-6" /> Next-event planning file</button>
