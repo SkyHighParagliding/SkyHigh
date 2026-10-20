@@ -9,6 +9,7 @@ import { HelpButton } from "./HelpPopup";
 import { ForecastRows, forecastDraft, forecastOverrides } from "./Forecasts";
 import { openPrintView } from "./printView";
 import { PhonesPanel } from "./PhonesPanel";
+import { EventPanel } from "./EventPanel";
 import { page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 
 function AdminHelp({ markup }: { markup: number }) {
@@ -27,6 +28,9 @@ function AdminHelp({ markup }: { markup: number }) {
 
       <h3>Phones</h3>
       <p>To let a volunteer's phone sell: type a name, tap <b>Add phone</b>, and scan the QR code with that phone's camera, then tap the link. The QR works once, for 10 minutes. The phone can only ring up sales (cash or card) — it can't change prices or see the money. Its sales appear here within about 15 seconds when there's signal. <b>Cancel</b> stops a phone straight away.</p>
+
+      <h3>Event</h3>
+      <p>Shows which event the till is selling for. <b>Start a new event…</b> is for the next sizzle (e.g. 2027): name, first day, number of days and customers per day. Every device switches over and the old event's records are kept. Started one by mistake? <b>Switch to …</b> goes back.</p>
 
       <h3>Sell prices — do I type a price beside "Sausage in bread"?</h3>
       <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next whole dollar, and it's what the printed price board shows.</p>
@@ -239,6 +243,8 @@ function AdminForm({ till }: { till: Till }) {
       </section>
 
       <PhonesPanel till={till} />
+
+      <EventPanel till={till} />
 
       <div className="grid grid-cols-2 gap-4">
         <section className="rounded-2xl bg-white shadow p-4">

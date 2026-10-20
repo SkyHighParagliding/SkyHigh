@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Cloud, CloudOff, Loader2, QrCode } from "lucide-react";
-import { EVENT_ID, useTill } from "@/components/sizzle/useTill";
+import { useTill } from "@/components/sizzle/useTill";
 import { SellScreen } from "@/components/sizzle/SellScreen";
 import { kvGet, kvSet, setDeviceId } from "@/lib/sizzleStore";
 import { useTillServiceWorker } from "@/components/sizzle/useTillServiceWorker";
+import { EventGate } from "@/components/sizzle/EventGate";
 
 /**
  * Sausage sizzle till on a volunteer's phone (TASK-041). No admin login: the
@@ -56,17 +57,26 @@ export function SizzlePhone() {
   }, []);
 
   if (pass === undefined) return <Centre><Loader2 className="w-12 h-12 animate-spin text-amber-700" /></Centre>;
-  if (!pass || pass.event !== EVENT_ID) {
-    return (
-      <Centre>
-        <QrCode className="w-16 h-16 text-amber-700 mx-auto" />
-        <h1 className="text-2xl font-bold mt-3">Sizzle phone till</h1>
-        {error && <p className="mt-3 rounded-xl bg-red-100 text-red-800 p-3">{error}</p>}
-        <p className="mt-3 text-lg">{pass ? "This phone was set up for a different event." : "This phone isn't set up yet."} On the iPad, open the till → <b>Admin</b> → <b>Phones</b>, add this phone, then scan the QR code with the phone's camera.</p>
-      </Centre>
-    );
-  }
-  return <PhoneTill pass={pass} onForget={async () => { await kvSet(PASS_KEY, null); setPass(null); }} />;
+  if (!pass) return <NotSetUp error={error} />;
+  // The server says which event this phone's pass is for; the till then sells for exactly that event.
+  return (
+    <EventGate token={pass.token}>
+      {(eventId) => eventId === pass.event
+        ? <PhoneTill key={eventId} pass={pass} onForget={async () => { await kvSet(PASS_KEY, null); setPass(null); }} />
+        : <NotSetUp error={error} otherEvent />}
+    </EventGate>
+  );
+}
+
+function NotSetUp({ error, otherEvent }: { error: string | null; otherEvent?: boolean }) {
+  return (
+    <Centre>
+      <QrCode className="w-16 h-16 text-amber-700 mx-auto" />
+      <h1 className="text-2xl font-bold mt-3">Sizzle phone till</h1>
+      {error && <p className="mt-3 rounded-xl bg-red-100 text-red-800 p-3">{error}</p>}
+      <p className="mt-3 text-lg">{otherEvent ? "This phone was set up for a different event." : "This phone isn't set up yet."} On the iPad, open the till → <b>Admin</b> → <b>Phones</b>, add this phone, then scan the QR code with the phone's camera.</p>
+    </Centre>
+  );
 }
 
 function PhoneTill({ pass, onForget }: { pass: Pass; onForget: () => void }) {

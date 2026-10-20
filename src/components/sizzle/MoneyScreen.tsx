@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Camera, Download, FileDown, Plus, Receipt, Save, Trash2 } from "lucide-react";
+import { Camera, CloudUpload, Download, FileDown, Plus, Receipt, Save, Trash2 } from "lucide-react";
 import type { Banking, Purchase } from "../../../shared/sizzle/report.ts";
 import { reportCsv } from "../../../shared/sizzle/report.ts";
 import { page } from "../../../shared/sizzle/templates.ts";
@@ -10,6 +10,8 @@ import { openPrintView } from "./printView";
 import { PinProtected } from "./AdminScreen";
 import { Modal } from "./SellScreen";
 import { EVENT_ID, type Till } from "./useTill";
+import { saveDocToDrive, saveImageToDrive, saveQuietly } from "./driveSave";
+import { useAuth } from "@/contexts/AuthContext";
 import { HelpButton } from "./HelpPopup";
 
 function MoneyHelp() {
@@ -83,13 +85,17 @@ export function MoneyScreen({ till }: { till: Till }) {
 }
 
 function Money({ till }: { till: Till }) {
+  const { token } = useAuth();
   const { data, report: r, lessons } = till;
   const [viewReceipt, setViewReceipt] = useState<string | null>(null);
   const stamp = () => new Date().toISOString().slice(0, 10);
 
+  const reportHtml = () => page(`Treasurer's report ${data.event.title}`, "portrait", eventReportBody(data, r, lessons, new Date().toLocaleString("en-AU", { timeZone: "Australia/Melbourne" })));
   function printReport() {
-    const at = new Date().toLocaleString("en-AU", { timeZone: "Australia/Melbourne" });
-    openPrintView(page(`Treasurer's report ${data.event.title}`, "portrait", eventReportBody(data, r, lessons, at)), `${data.event.title} sizzle treasurer report`);
+    openPrintView(reportHtml(), `${data.event.title} sizzle treasurer report`);
+  }
+  function reportToDrive() {
+    saveQuietly("Treasurer's report", () => saveDocToDrive(token, { html: reportHtml(), docTitle: `Treasurer's report ${data.event.title}`, folder: "money", landscape: false }));
   }
 
   const Stat = ({ label, value, tone }: { label: string; value: string; tone?: string }) => (
@@ -102,6 +108,7 @@ function Money({ till }: { till: Till }) {
         <h2 className="text-3xl font-bold flex-1">Money — {data.event.title}</h2>
         <HelpButton title="Money tab — what to do"><MoneyHelp /></HelpButton>
         <button type="button" onClick={printReport} className="h-14 px-5 rounded-xl bg-stone-800 text-white text-lg font-semibold flex items-center gap-2"><FileDown className="w-6 h-6" /> Treasurer's report PDF</button>
+        <button type="button" onClick={reportToDrive} className="h-14 px-5 rounded-xl bg-white border-2 border-stone-800 text-lg font-semibold flex items-center gap-2"><CloudUpload className="w-6 h-6" /> Report to Drive</button>
         <button type="button" onClick={() => download(`${EVENT_ID}-treasurer-report-${stamp()}.csv`, reportCsv(r), "text/csv")} className="h-14 px-5 rounded-xl bg-white border-2 border-stone-800 text-lg font-semibold flex items-center gap-2"><Download className="w-6 h-6" /> Report CSV</button>
         <button type="button" onClick={() => download(`${EVENT_ID}-lessons-for-next-event-${stamp()}.json`, JSON.stringify(lessons, null, 2), "application/json")} className="h-14 px-5 rounded-xl bg-white border-2 border-amber-700 text-lg font-semibold flex items-center gap-2"><Download className="w-6 h-6" /> Next-event planning file</button>
       </div>
@@ -145,6 +152,7 @@ function Money({ till }: { till: Till }) {
 }
 
 function Purchases({ till, onView }: { till: Till; onView: (src: string) => void }) {
+  const { token } = useAuth();
   const days = till.data.event.days;
   const blank = (): Purchase => ({ id: newId("purchase"), date: todayYmd(), day: till.day, store: "Woolworths Bright", amount: 0, purpose: "Top-up shop", paidBy: "", note: "", receipt: null });
   const [form, setForm] = useState<Purchase>(blank);
@@ -157,6 +165,12 @@ function Purchases({ till, onView }: { till: Till; onView: (src: string) => void
     if (!form.paidBy.trim()) return toast.error("Who paid? (for reimbursement)");
     await till.savePurchase({ ...form, amount: Math.round(a * 100) / 100 });
     toast.success("Purchase saved");
+    // The receipt photo also goes to the club Drive (03_Financial Records) for the treasurer.
+    if (form.receipt) {
+      const receipt = form.receipt;
+      const docTitle = `Receipt ${form.date} ${form.store} ${a.toFixed(2)} paid by ${form.paidBy.trim()}`;
+      saveQuietly("Receipt photo", () => saveImageToDrive(token, { dataUrl: receipt, docTitle }));
+    }
     setForm(blank());
     setAmount("");
   }

@@ -4,6 +4,9 @@ import rateLimit from "express-rate-limit";
 import { execute, query, queryOne, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { getAppScriptUrl } from "../googleDrive.js";
+import { DriveNotConnectedError, driveStamp, uploadToDrive, type SizzleFolder } from "../sizzle/drive.js";
+import { PdfUnavailableError, htmlToPdf, pdfStatus } from "../sizzle/pdf.js";
 
 /**
  * Sausage sizzle till (/admin/sizzle on the iPad, /sizzle/phone on paired
@@ -245,6 +248,109 @@ router.post("/pair", pairLimiter, asyncHandler(async (req, res) => {
   );
   if (!device) return res.status(410).json({ error: "This QR code has expired or was already used — make a new one on the iPad" });
   res.json({ token, deviceId: device.id, event: device.event, name: device.name, expiresAt: device.expiresAt });
+}));
+
+// ─── Events (TASK-039) ─────────────────────────────────────────────────────────
+
+interface EventRow { id: string; title: string; days: { n: number; date: string; label: string }[]; customersPerDay: number[]; active: boolean; createdAt: string }
+const EVENT_COLS = `id, title, days, "customersPerDay", active, "createdAt"`;
+
+/** The active event (admin), or this phone's event. null = use the event in the JSON file. */
+router.get("/event", requireTill, asyncHandler(async (req, res) => {
+  const phone = tillDevice(req);
+  const row = phone
+    ? await queryOne<EventRow>(`SELECT ${EVENT_COLS} FROM sizzle_events WHERE id = $1`, [phone.event])
+    : await queryOne<EventRow>(`SELECT ${EVENT_COLS} FROM sizzle_events WHERE active`);
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ event: row ?? null });
+}));
+
+router.get("/events", requireAuth, asyncHandler(async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ events: await query<EventRow>(`SELECT ${EVENT_COLS} FROM sizzle_events ORDER BY "createdAt" DESC`) });
+}));
+
+const isYmd = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+
+/** Start a new event: it becomes the active one on every device. Earlier events and their records are kept. */
+router.post("/events", requireAuth, asyncHandler(async (req, res) => {
+  const title = typeof req.body?.eventTitle === "string" ? req.body.eventTitle.replace(/[<>]/g, "").trim().slice(0, 60) : "";
+  const days = req.body?.days;
+  const customers = req.body?.customersPerDay;
+  const okDays = Array.isArray(days) && days.length >= 1 && days.length <= 14 &&
+    days.every((d: any, i: number) => d && d.n === i + 1 && isYmd(d.date) && typeof d.label === "string" && d.label.length <= 30);
+  const okCustomers = Array.isArray(customers) && customers.length === days?.length && customers.every((c: unknown) => Number.isInteger(c) && (c as number) >= 0 && (c as number) <= 5000);
+  if (!title || !okDays || !okCustomers) return res.status(400).json({ error: "Need a title, 1–14 days (n, date, label) and customers for each day" });
+
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "event";
+  const row = await transaction(async (client) => {
+    const taken = new Set((await client.query(`SELECT id FROM sizzle_events WHERE id LIKE $1`, [`${slug}%`])).rows.map((r: { id: string }) => r.id));
+    let id = slug;
+    for (let k = 2; taken.has(id) || id === "2026-ntvo"; k++) id = `${slug}-${k}`;
+    await client.query(`UPDATE sizzle_events SET active = FALSE WHERE active`);
+    const r = await client.query(
+      `INSERT INTO sizzle_events (id, title, days, "customersPerDay", active, "createdBy") VALUES ($1, $2, $3, $4, TRUE, $5) RETURNING ${EVENT_COLS}`,
+      [id, title, JSON.stringify(days.map((d: any) => ({ n: d.n, date: d.date, label: d.label.replace(/[<>]/g, "") }))), JSON.stringify(customers), (req as any).user?.id ?? null],
+    );
+    return r.rows[0] as EventRow;
+  });
+  res.status(201).json({ event: row });
+}));
+
+/** Switch back to an earlier event ({ id }), or to the JSON file's own event ({ id: null }). */
+router.post("/events/activate", requireAuth, asyncHandler(async (req, res) => {
+  const id = req.body?.id ?? null;
+  if (id !== null && !isEvent(id)) return res.status(400).json({ error: "bad event id" });
+  const row = await transaction(async (client) => {
+    if (id !== null && !(await client.query(`SELECT 1 FROM sizzle_events WHERE id = $1`, [id])).rows.length) return undefined;
+    await client.query(`UPDATE sizzle_events SET active = FALSE WHERE active`);
+    if (id === null) return null;
+    return (await client.query(`UPDATE sizzle_events SET active = TRUE WHERE id = $1 RETURNING ${EVENT_COLS}`, [id])).rows[0] as EventRow;
+  });
+  if (row === undefined) return res.status(404).json({ error: "No such event" });
+  res.json({ event: row });
+}));
+
+// ─── Google Drive (TASK-039) ───────────────────────────────────────────────────
+
+/** Is Drive connected, and can this server make PDFs? */
+router.get("/drive/status", requireAuth, asyncHandler(async (_req, res) => {
+  const [appScriptUrl, pdf] = await Promise.all([getAppScriptUrl(), pdfStatus()]);
+  res.json({ drive: !!appScriptUrl, pdf: pdf.ok, detail: pdf.detail });
+}));
+
+const isFolder = (v: unknown): v is SizzleFolder => v === "money" || v === "planning";
+const driveError = (res: Response, err: unknown) => {
+  if (err instanceof PdfUnavailableError) return res.status(503).json({ error: "This server can't make PDFs yet — print on the iPad instead", code: "pdf-unavailable" });
+  if (err instanceof DriveNotConnectedError) return res.status(503).json({ error: err.message, code: "drive-not-connected" });
+  return res.status(502).json({ error: err instanceof Error ? err.message : String(err) });
+};
+
+/** One document: the A4 HTML the till rendered → PDF → Drive. */
+router.post("/drive/doc", requireAuth, asyncHandler(async (req, res) => {
+  const { html, docTitle, eventTitle, folder, landscape } = req.body ?? {};
+  if (typeof html !== "string" || html.length > 2_000_000 || !/^<!doctype html>/i.test(html)) return res.status(400).json({ error: "html must be a whole A4 document" });
+  if (typeof docTitle !== "string" || typeof eventTitle !== "string" || !isFolder(folder)) return res.status(400).json({ error: "docTitle, eventTitle and folder (money|planning) required" });
+  try {
+    const pdf = await htmlToPdf(html, !!landscape);
+    const saved = await uploadToDrive({ folder, eventTitle, fileName: `${driveStamp()} ${docTitle}.pdf`, mimeType: "application/pdf", data: pdf });
+    res.status(201).json(saved);
+  } catch (err) {
+    driveError(res, err);
+  }
+}));
+
+/** A receipt photo (JPEG data URL from the Money tab) → Drive, next to the money records. */
+router.post("/drive/image", requireAuth, asyncHandler(async (req, res) => {
+  const { dataUrl, docTitle, eventTitle } = req.body ?? {};
+  const m = typeof dataUrl === "string" ? /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl) : null;
+  if (!m || m[2].length > 8_000_000 || typeof docTitle !== "string" || typeof eventTitle !== "string") return res.status(400).json({ error: "JPEG/PNG data URL, docTitle and eventTitle required" });
+  try {
+    const saved = await uploadToDrive({ folder: "money", eventTitle, fileName: `${driveStamp()} ${docTitle}.${m[1] === "png" ? "png" : "jpg"}`, mimeType: `image/${m[1]}`, data: Buffer.from(m[2], "base64") });
+    res.status(201).json(saved);
+  } catch (err) {
+    driveError(res, err);
+  }
 }));
 
 export default router;

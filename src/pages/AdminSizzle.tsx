@@ -8,6 +8,9 @@ import { AdminScreen } from "@/components/sizzle/AdminScreen";
 import { DataScreen } from "@/components/sizzle/DataScreen";
 import { MoneyScreen } from "@/components/sizzle/MoneyScreen";
 import { useTillServiceWorker } from "@/components/sizzle/useTillServiceWorker";
+import { EventGate } from "@/components/sizzle/EventGate";
+import { DocsScreen } from "@/components/sizzle/DocsScreen";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Sausage sizzle till — iPad, landscape. Admin login required (AdminRoute);
@@ -15,11 +18,12 @@ import { useTillServiceWorker } from "@/components/sizzle/useTillServiceWorker";
  * See wiki/03-decisions-log.md DECISION-019.
  */
 
-type Tab = "sell" | "eod" | "money" | "admin" | "data";
+type Tab = "sell" | "eod" | "money" | "docs" | "admin" | "data";
 const TABS: { id: Tab; label: string }[] = [
   { id: "sell", label: "Sell" },
   { id: "eod", label: "End of day" },
   { id: "money", label: "Money" },
+  { id: "docs", label: "Docs" },
   { id: "admin", label: "Admin" },
   { id: "data", label: "Data" },
 ];
@@ -59,10 +63,16 @@ function useTillHead() {
 }
 
 export function AdminSizzle() {
-  const till = useTill();
-  const [tab, setTab] = useState<Tab>("sell");
+  const { token } = useAuth();
   useTillHead();
   useTillServiceWorker();
+  // Remount the whole till when the event changes, so nothing from the old event lingers.
+  return <EventGate token={token}>{(eventId) => <TillApp key={eventId} />}</EventGate>;
+}
+
+function TillApp() {
+  const till = useTill();
+  const [tab, setTab] = useState<Tab>("sell");
 
   if (!till.ready) {
     return <div className="fixed inset-0 flex items-center justify-center bg-orange-50"><Loader2 className="w-12 h-12 animate-spin text-amber-700" /></div>;
@@ -96,6 +106,7 @@ export function AdminSizzle() {
         {tab === "sell" && <SellScreen till={till} />}
         {tab === "eod" && <EndOfDayScreen till={till} />}
         {tab === "money" && <MoneyScreen till={till} />}
+        {tab === "docs" && <DocsScreen till={till} />}
         {tab === "admin" && <AdminScreen till={till} />}
         {tab === "data" && <DataScreen till={till} />}
       </main>

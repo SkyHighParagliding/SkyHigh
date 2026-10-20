@@ -6,6 +6,8 @@ import { endOfDayBody, page, shoppingListBody } from "../../../shared/sizzle/tem
 import { openPrintView } from "./printView";
 import { shortName, type Till } from "./useTill";
 import { ForecastRows, customersServed, forecastDraft, forecastOverrides } from "./Forecasts";
+import { saveDocToDrive, saveQuietly } from "./driveSave";
+import { useAuth } from "@/contexts/AuthContext";
 
 const money = (n: number) => `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
 const FLOAT_DENOMS = ["20", "10", "5", "2", "1"];
@@ -25,6 +27,7 @@ function NumIn({ value, onChange, label, wide }: { value: string; onChange: (v: 
 }
 
 export function EndOfDayScreen({ till }: { till: Till }) {
+  const { token } = useAuth();
   const { data, day, daySales, products, onHand, closes } = till;
   const dayInfo = data.event.days.find((d) => d.n === day)!;
   const summary = useMemo(() => summariseSales(daySales), [daySales]);
@@ -100,9 +103,12 @@ export function EndOfDayScreen({ till }: { till: Till }) {
     await till.saveClose({ day, closedAt: new Date().toISOString(), floatCounts: floatNums, countedCounts: countedNums, counted: countedTotal, stripeTotal, stockCounted });
     await till.setStock(counts, `Counted at close of Day ${day}`);
     toast.success(`Day ${day} closed and saved — stock set from the count`);
+    // File the day's records in the club Drive too (money → 03, tomorrow's shopping → 08).
+    saveQuietly(`Day ${day} end-of-day summary`, () => saveDocToDrive(token, { html: summaryHtml(), docTitle: `Day ${day} end of day`, folder: "money", landscape: false }));
+    if (topUp) saveQuietly(topUp.title, () => saveDocToDrive(token, { html: topUpHtml(), docTitle: topUp.title, folder: "planning", landscape: true }));
   }
 
-  function printSummary() {
+  function summaryHtml() {
     const body = endOfDayBody(data, {
       dayLabel: `Day ${day} · ${dayInfo.label}`,
       summary,
@@ -114,13 +120,19 @@ export function EndOfDayScreen({ till }: { till: Till }) {
       stockRows: data.products.filter((p) => !p.notWoolworths).map((p) => ({ name: p.name, unit: p.unit, estimated: estimated[p.id], counted: stock[p.id] ? Number(stock[p.id]) : null })),
       generatedAt: new Date().toLocaleString("en-AU", { timeZone: "Australia/Melbourne" }),
     });
-    openPrintView(page(`End of day ${day}`, "portrait", body), `Sizzle end of day ${day}`);
+    return page(`End of day ${day}`, "portrait", body);
   }
+
+  function printSummary() {
+    openPrintView(summaryHtml(), `Sizzle end of day ${day}`);
+  }
+
+  const topUpHtml = () => page(topUp!.title, "landscape", shoppingListBody(planData, topUp!));
 
   function printTopUp() {
     if (!topUp) return;
     if (forecastChanged) saveForecast();
-    openPrintView(page(topUp.title, "landscape", shoppingListBody(planData, topUp)), `Sizzle ${topUp.title}`);
+    openPrintView(topUpHtml(), `Sizzle ${topUp.title}`);
   }
 
   const names = Object.fromEntries(data.menu.map((m) => [m.id, m.name]));

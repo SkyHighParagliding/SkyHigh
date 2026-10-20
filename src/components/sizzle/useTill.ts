@@ -37,10 +37,32 @@ import {
 } from "@/lib/sizzleStore";
 
 export const BASE = baseData as unknown as SizzleData;
+const FILE_EVENT = { ...BASE.event };
+/** The JSON file's own event (2026 NTVO), fixed even after applyEvent switches BASE. */
+export const FILE_EVENT_ID = FILE_EVENT.id;
+export const FILE_EVENT_TITLE = FILE_EVENT.title;
+const FILE_CUSTOMERS = [...BASE.config.customersPerDay];
 
-/** Every sale and record is tagged with this event (e.g. "2026-ntvo"). */
-export const EVENT_ID = BASE.event.id;
+/** Every sale and record is tagged with this event (e.g. "2026-ntvo"). Live binding — changed by applyEvent. */
+export let EVENT_ID = BASE.event.id;
 setEvent(EVENT_ID);
+
+/** An event started from the till (server table sizzle_events, TASK-039). */
+export interface ServerEvent { id: string; title: string; days: { n: number; date: string; label: string }[]; customersPerDay: number[] }
+
+/**
+ * Point the till at an event before it mounts: its name, days and customer
+ * estimates over the products and prices in the JSON file. null = the JSON
+ * file's own event (2026 NTVO). See EventGate.
+ */
+export function applyEvent(ev: ServerEvent | null): void {
+  BASE.event = ev
+    ? { ...FILE_EVENT, id: ev.id, title: ev.title, name: `${ev.title} — ${FILE_EVENT.club} Sausage Sizzle`, days: ev.days }
+    : { ...FILE_EVENT };
+  BASE.config.customersPerDay = ev ? [...ev.customersPerDay] : [...FILE_CUSTOMERS];
+  EVENT_ID = BASE.event.id;
+  setEvent(EVENT_ID);
+}
 
 /** This event's sales only; records made before tagging belong to it. */
 const ofThisEvent = (all: StoredSale[]) => all.filter((s) => (s.event ?? EVENT_ID) === EVENT_ID);
@@ -130,7 +152,7 @@ export function useTill(opts: { token?: string | null; phone?: boolean } = {}) {
     setBanking(await latestOfKind<Banking>("banking"));
     setStripeActual((await latestSnapshot<StripeActual>("stripe-actual"))?.data ?? null);
     setBaseline(base?.data ?? null);
-    setDayState(savedDay ?? todayEventDay(BASE));
+    setDayState(savedDay && savedDay <= BASE.event.days.length ? savedDay : todayEventDay(BASE));
     const c: Record<number, DayClose> = {};
     const f: Record<number, Record<string, number>> = {};
     for (const d of BASE.event.days) {
