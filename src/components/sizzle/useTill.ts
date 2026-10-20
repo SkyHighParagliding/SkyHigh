@@ -29,6 +29,7 @@ import {
   latestOfKind,
   latestSnapshot,
   newId,
+  pullNow,
   putSale,
   putSnapshot,
   setEvent,
@@ -82,10 +83,17 @@ function todayEventDay(data: SizzleData): number {
   return data.event.days.find((d) => d.date === ymd)?.n ?? 1;
 }
 
-export type SyncState = { pending: number; ok: boolean; error?: string; at?: string };
+export type SyncState = { pending: number; ok: boolean; error?: string; at?: string; unauthorised?: boolean };
 
-export function useTill() {
-  const { token } = useAuth();
+/**
+ * The till's state. The iPad uses the admin login; a paired phone passes its
+ * till-only token and `phone: true` (it only sends its own sales and reads
+ * prices/stock — TASK-040).
+ */
+export function useTill(opts: { token?: string | null; phone?: boolean } = {}) {
+  const auth = useAuth();
+  const token = opts.token !== undefined ? opts.token : auth.token;
+  const phone = !!opts.phone;
   const [ready, setReady] = useState(false);
   const [deviceId, setDeviceId] = useState("");
   const [settings, setSettings] = useState<TillSettings>(EMPTY_SETTINGS);
@@ -143,12 +151,22 @@ export function useTill() {
   // ─── Sync to the server ────────────────────────────────────────────────────
   const tokenRef = useRef(token);
   tokenRef.current = token;
+  // Push this device's records, then pull every other device's (sales, prices, stock).
   const runSync = useCallback(async () => {
-    const res = await syncNow((body) => api.post<{ sales: string[]; snapshots: string[] }>("/api/sizzle/sync", body, tokenRef.current));
+    const res: SyncState = await syncNow((body) => api.post<{ sales: string[]; snapshots: string[] }>("/api/sizzle/sync", body, tokenRef.current), { salesOnly: phone });
+    let changed = 0;
+    try {
+      changed = await pullNow((since) => api.get(`/api/sizzle/pull?event=${EVENT_ID}&since=${since}`, tokenRef.current));
+    } catch (err) {
+      res.ok = false;
+      res.error = err instanceof Error ? err.message : String(err);
+      res.unauthorised = (err as { status?: number }).status === 401;
+    }
     setSync({ ...res, at: new Date().toISOString() });
-    if (res.ok) setSales(ofThisEvent(await allSales()));
+    if (changed) await reload();
+    else if (res.ok) setSales(ofThisEvent(await allSales()));
     return res;
-  }, []);
+  }, [phone, reload]);
 
   useEffect(() => {
     const up = () => {
@@ -158,7 +176,7 @@ export function useTill() {
     const down = () => setOnline(false);
     window.addEventListener("online", up);
     window.addEventListener("offline", down);
-    const timer = window.setInterval(() => runSync(), 30_000);
+    const timer = window.setInterval(() => runSync(), 15_000);
     return () => {
       window.removeEventListener("online", up);
       window.removeEventListener("offline", down);

@@ -16,7 +16,7 @@ export function LocationConsentBanner() {
   }, []);
 
   // The sausage sizzle till is a full-screen kiosk; no location prompt over it.
-  if (!visible || pathname.startsWith("/admin/sizzle")) return null;
+  if (!visible || pathname.startsWith("/admin/sizzle") || pathname.startsWith("/sizzle/")) return null;
 
   const handleAllow = () => {
     setLocationConsent("granted");

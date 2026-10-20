@@ -116,6 +116,16 @@ export async function deviceId(): Promise<string> {
   return id;
 }
 
+/**
+ * A paired phone takes the device id the server gave it, so its sales are accepted.
+ * Sales it hadn't uploaded under an earlier pass move to the new id, or the
+ * server would refuse them for ever.
+ */
+export async function setDeviceId(id: string): Promise<void> {
+  await kvSet("deviceId", id);
+  for (const s of await allSales()) if (!s.synced && s.deviceId !== id) await putSale({ ...s, deviceId: id });
+}
+
 // ─── Sales ────────────────────────────────────────────────────────────────────
 
 export async function putSale(sale: StoredSale): Promise<void> {
@@ -177,11 +187,13 @@ export interface SyncResult {
 let syncing: Promise<SyncResult> | null = null;
 
 /** Push every unsynced sale and snapshot. Safe to call often; concurrent calls share one run. */
-export function syncNow(post: (body: unknown) => Promise<{ sales: string[]; snapshots: string[] }>): Promise<SyncResult> {
+export function syncNow(post: (body: unknown) => Promise<{ sales: string[]; snapshots: string[] }>, opts: { salesOnly?: boolean } = {}): Promise<SyncResult> {
   if (syncing) return syncing;
   syncing = (async () => {
-    const sales = (await allSales()).filter((s) => !s.synced);
-    const snaps = (await allSnapshots()).filter((s) => !s.synced);
+    // A paired phone may only send its own sales (the server refuses anything else).
+    const me = opts.salesOnly ? await deviceId() : null;
+    const sales = (await allSales()).filter((s) => !s.synced && (!me || s.deviceId === me));
+    const snaps = opts.salesOnly ? [] : (await allSnapshots()).filter((s) => !s.synced);
     if (!sales.length && !snaps.length) return { ok: true, pending: 0 };
     try {
       const strip = <T extends { synced: boolean }>({ synced: _s, ...rest }: T) => rest;
@@ -200,6 +212,69 @@ export function syncNow(post: (body: unknown) => Promise<{ sales: string[]; snap
     syncing = null;
   });
   return syncing;
+}
+
+// ─── Pull other devices' changes (TASK-040) ───────────────────────────────────
+
+/** Re-ask from this far before the last change number, so a late commit isn't missed (merging is idempotent). */
+const PULL_OVERLAP = 200;
+
+interface PullPage {
+  sales: Omit<StoredSale, "synced">[];
+  snapshots: Omit<Snapshot, "synced">[];
+  next: number;
+  more: boolean;
+}
+
+/** Store one sale from the server. A void wins; this device's unsent edits are kept. */
+async function mergeSale(incoming: Omit<StoredSale, "synced">): Promise<boolean> {
+  const sale = { ...incoming, createdAt: new Date(incoming.createdAt).toISOString(), voidedAt: incoming.voidedAt ? new Date(incoming.voidedAt).toISOString() : null };
+  const cur = await tx<StoredSale>("sales", "readonly", (s) => s.get(sale.id));
+  if (!cur) {
+    await putSale({ ...sale, synced: true });
+    return true;
+  }
+  if (sale.voided && !cur.voided) {
+    await putSale({ ...cur, voided: true, voidedAt: sale.voidedAt, synced: cur.synced });
+    return true;
+  }
+  return false;
+}
+
+/** Store one snapshot from the server and move the "latest" pointer if it's newer. */
+async function mergeSnapshot(incoming: Omit<Snapshot, "synced">): Promise<boolean> {
+  const snap = { ...incoming, createdAt: new Date(incoming.createdAt).toISOString(), synced: true };
+  const cur = await tx<Snapshot>("snapshots", "readonly", (s) => s.get(snap.id));
+  if (cur) return false;
+  await tx("snapshots", "readwrite", (st) => st.put(snap));
+  const key = latestKey(snap.event ?? currentEvent, snap.kind, snap.key);
+  const latest = await kvGet<Snapshot>(key);
+  if (!latest || latest.createdAt < snap.createdAt) await kvSet(key, snap);
+  return true;
+}
+
+let pulling: Promise<number> | null = null;
+
+/** Fetch every device's changes since last time; returns how many records were new or changed here. */
+export function pullNow(get: (since: number) => Promise<PullPage>): Promise<number> {
+  if (pulling) return pulling;
+  pulling = (async () => {
+    const cursorKey = `pull:${currentEvent}`;
+    let since = Math.max(0, ((await kvGet<number>(cursorKey)) ?? 0) - PULL_OVERLAP);
+    let changed = 0;
+    for (let page = 0; page < 20; page++) {
+      const r = await get(since);
+      for (const s of r.sales) if (await mergeSale(s)) changed++;
+      for (const s of r.snapshots) if (await mergeSnapshot(s)) changed++;
+      await kvSet(cursorKey, Math.max(r.next, (await kvGet<number>(cursorKey)) ?? 0));
+      if (!r.more || r.next <= since) break;
+      since = r.next;
+    }
+    return changed;
+  })().finally(() => {
+    pulling = null;
+  });
+  return pulling;
 }
 
 // ─── Export / import ──────────────────────────────────────────────────────────
@@ -223,7 +298,7 @@ export async function exportBackup(): Promise<Backup> {
     deviceId: await deviceId(),
     sales: await allSales(),
     snapshots: await allSnapshots(),
-    kv: Object.fromEntries(kvRows.filter((r) => r.key !== "deviceId").map((r) => [r.key, r.value])),
+    kv: Object.fromEntries(kvRows.filter((r) => r.key !== "deviceId" && r.key !== "phonePass").map((r) => [r.key, r.value])),
   };
 }
 

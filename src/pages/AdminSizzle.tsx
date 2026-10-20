@@ -7,6 +7,7 @@ import { EndOfDayScreen } from "@/components/sizzle/EndOfDayScreen";
 import { AdminScreen } from "@/components/sizzle/AdminScreen";
 import { DataScreen } from "@/components/sizzle/DataScreen";
 import { MoneyScreen } from "@/components/sizzle/MoneyScreen";
+import { useTillServiceWorker } from "@/components/sizzle/useTillServiceWorker";
 
 /**
  * Sausage sizzle till — iPad, landscape. Admin login required (AdminRoute);
@@ -54,25 +55,6 @@ function useTillHead() {
     document.title = "Sizzle Till";
     restore.push(() => (document.title = prevTitle));
     return () => restore.reverse().forEach((f) => f());
-  }, []);
-}
-
-/** Offline shell: register the till's scoped worker and hand it what this page already loaded. */
-function useTillServiceWorker() {
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker
-      .register("/sizzle-sw.js", { scope: "/admin/sizzle" })
-      .then(async (reg) => {
-        await navigator.serviceWorker.ready;
-        const urls = performance
-          .getEntriesByType("resource")
-          .map((e) => new URL(e.name))
-          .filter((u) => u.origin === location.origin && u.pathname.startsWith("/assets/"))
-          .map((u) => u.pathname);
-        (reg.active ?? reg.waiting ?? reg.installing)?.postMessage({ type: "precache", urls });
-      })
-      .catch((err) => console.warn("[sizzle] service worker registration failed", err));
   }, []);
 }
 

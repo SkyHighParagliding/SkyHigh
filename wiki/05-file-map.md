@@ -99,12 +99,13 @@ Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)
 - `scripts/sizzle/sample-report.ts` — `npm run sizzle:sample-report`: renders the treasurer's report from a simulated 4-day event to check its layout.
 - Event key: `data.event.id` (`2026-ntvo`) tags every sale and snapshot (IndexedDB and Postgres `event` column); the till only reads its own event.
 - `src/components/sizzle/MoneyScreen.tsx` — Money tab (PIN): purchases with receipt photos, cash banked, Stripe actuals, report PDF/CSV, next-event planning JSON.
-- `shared/sizzle/sizzle.test.mjs` — 49 tests (`npm run test:sizzle`, also part of `npm test`).
+- `shared/sizzle/sizzle.test.mjs` — 71 tests (`npm run test:sizzle`, also part of `npm test`).
 - `scripts/sizzle/build-pdfs.ts` — `npm run sizzle:pdfs [-- --html]` → `output/sizzle/*.pdf` (gitignored), printed with the installed Edge via `playwright-core`.
 - `scripts/sizzle/simulate.ts` — `npm run sizzle:simulate -- <customers> <seed>`: lunch simulation with a real cash drawer.
-- `server/pg_migrations/050_sizzle.sql`, `server/routes/sizzle.ts` — `/api/sizzle/sync` (admin, upsert by client id) and `/api/sizzle/export` (restore).
+- `server/pg_migrations/050_sizzle.sql`, `051_sizzle_multi_device.sql`, `server/routes/sizzle.ts` — `/sync` (upsert by client id; only the originating device may change a sale), `/pull?event=&since=` (every device's changes by change number `seq`), `/export` (restore), `/devices` (admin: add phone → one-time pairing code, list, cancel) and `/pair` (phone swaps code for a `till_` token; hashes only in `sizzle_devices`). Phone tokens can only sync their own sales and read settings (PIN hash stripped) + stock (TASK-040, DECISION-020).
+- `src/pages/SizzlePhone.tsx` — `/sizzle/phone`: pairing from the QR link (`#pair=`) and the compact Sell screen (TASK-041). `src/components/sizzle/PhonesPanel.tsx` — Admin → Phones (QR via `qrcode.react`). `Forecasts.tsx` — customers-per-day boxes (TASK-038). `useTillServiceWorker.ts` registers `sizzle-sw.js` for either scope.
 - `src/pages/AdminSizzle.tsx` + `src/components/sizzle/*` — the till (Sell, End of day, Admin (PIN), Data). `useTill.ts` holds state; `src/lib/sizzleStore.ts` is the IndexedDB layer + outbox; `printView.ts` prints templates in-page.
-- `public/sizzle-sw.js`, `public/sizzle.webmanifest`, `public/images/sizzle-icon-*.png` — offline shell scoped to `/admin/sizzle` and add-to-home-screen. Root `public/sw.js` keeps `skyhigh-sizzle*` caches.
+- `public/sizzle-sw.js`, `public/sizzle.webmanifest`, `public/sizzle-phone.webmanifest`, `public/images/sizzle-icon-*.png` — offline shell (registered for `/admin/sizzle` and `/sizzle/`) and add-to-home-screen. `server.ts` writes the right manifest into the HTML for both paths. Root `public/sw.js` keeps `skyhigh-sizzle*` caches.
 - Route sits outside `Layout` in `src/App.tsx`; only link is the Admin dashboard tile. `server.ts` sends `X-Robots-Tag: noindex` for `/admin/sizzle`.
 
 ## Camera Archive (`server/webcams/`, `server/routes/webcams.ts`, `src/components/webcams/`)

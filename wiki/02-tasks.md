@@ -550,6 +550,36 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Treasurer + history (added 2026-10-19):** event id `2026-ntvo` on every record; Money tab (purchases with receipt photos, cash banked, Stripe actuals, net result, treasurer report PDF/CSV, next-event planning JSON). 68 sizzle tests.
 - **Details:** data `data/sizzle/sizzle-2026.json`; logic `shared/sizzle/`; PDFs `npm run sizzle:pdfs` → `output/sizzle/`; simulation `npm run sizzle:simulate -- 75 1`; DECISION-019.
 
+> **Plan agreed 2026-10-20 (Jon: 1B, 2A, all four phases before the event; 4A/5A taken as recommended):** build order 038 → 040 → 041 → 039, all live before a rehearsal (iPad + 2 phones) on Tue 27 Oct. Phones take cash too, into one shared cash box. See DECISION-020.
+
+### TASK-038: Editable customer numbers per day
+- **Status:** ✅ DONE 2026-10-20 (`9fb0f0e`, deployed)
+- **Prerequisites:** TASK-037
+- **Estimated effort:** S
+- **Description:** Customers per day are editable in the till (Admin → Customers per day; End of day shows today's served count and edits later days, top-up recalculates live). Sell prices stay pinned to the plan (`config.pricingCustomers`). Admin can print the initial shopping list from the iPad.
+- **Acceptance criteria:** 71 sizzle tests pass (3 new: re-forecast keeps prices, raises top-up; unpinned basis moves price); browser check on the production build with a mock API (Admin save → reload persists; End of day Day 2 = 100 → $12 top-up, 200 → 5 packs sausages / $119.50).
+
+### TASK-039: Event setup + documents saved to Google Drive
+- **Status:** ⬜ TODO
+- **Prerequisites:** TASK-038
+- **Estimated effort:** L
+- **Description:** "New event" screen (name, start date, days, day labels, customers per day) stored on the server (new `sizzle_events` table) so every device uses it; event id derived from it. Documents page rendering every PDF from the server's event data; "Save to Drive" (and automatic save at End of day) through the existing Apps Script bridge (`server/googleDrive.ts`, `/api/documents/upload`, one subfolder level). PDFs rendered server-side with Chromium on Railway — test build first (4A). Filing (5A): money records → `03_Financial Records/Sizzle <event>`, planning docs → `08_Projects/Sizzle <event>`; receipt photos to Drive too.
+- **Acceptance criteria:** a new event can be created and its documents land in Drive with dated names; NTVO unaffected.
+
+### TASK-040: Multi-device sync + phone pairing
+- **Status:** ✅ DONE 2026-10-20 — verified: 31-check API scenario against the real router on PGlite (Postgres in WASM; pairing single-use/expiry, phone scope, PIN hash stripped, void sticky + only the originating device can change a sale, paging past seq 1000 — caught a text-sort bug), and iPad + phone end to end in the browser. Still to check on the live site with a real iPhone.
+- **Prerequisites:** TASK-038
+- **Estimated effort:** L
+- **Description:** Server is the master copy: devices pull every device's sales/snapshots (`GET /api/sizzle/pull?event=&since=`, change numbers from `sizzle_change_seq`) every 15 s and on reconnect; settings/prices/PIN shared; "void last sale" is per device; cash-up and stock cover all devices (one shared cash box). Phones join by scanning a QR on the iPad Admin tab → one-time code (10 min) → till-only, event-scoped, revocable `till_` token (SHA-256 hashes only, `sizzle_devices`).
+- **Acceptance criteria:** iPad + phones show the same totals and stock within ~15 s; offline device catches up; a phone token can't reach any other admin API; tokens can be cancelled.
+
+### TASK-041: Phone till page
+- **Status:** ✅ DONE 2026-10-20 — compact Sell screen checked at 390×844; Card copies the amount inside the tap (Safari only allows clipboard writes during the tap). Jon to test pasting into the Stripe app.
+- **Prerequisites:** TASK-040
+- **Estimated effort:** M
+- **Description:** `/sizzle/phone`: portrait page with no top menus — item cards, void card, order list (−/+), Cash and Card, plus a slim status line (phone name, day, synced). Configuration comes from the iPad via the server.
+- **Acceptance criteria:** usable one-handed on an iPhone; sales reach the iPad's totals; rehearsal on 27 Oct.
+
 ---
 
 **Task Summary:**

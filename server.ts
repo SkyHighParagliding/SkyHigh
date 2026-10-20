@@ -343,12 +343,14 @@ async function startServer() {
           res.setHeader('Expires', '0');
           // The till's home-screen icon must open the till, so its manifest is in the HTML itself:
           // iOS reads the manifest at page load, before the till's JS can swap it.
-          if (req.path.startsWith('/admin/sizzle')) {
-            const tillHead = '<link rel="manifest" href="/sizzle.webmanifest"><link rel="apple-touch-icon" href="/images/sizzle-icon-180.png">'
+          const phoneTill = req.path.startsWith('/sizzle/');
+          if (req.path.startsWith('/admin/sizzle') || phoneTill) {
+            const title = phoneTill ? 'Sizzle Phone' : 'Sizzle Till';
+            const tillHead = `<link rel="manifest" href="${phoneTill ? '/sizzle-phone.webmanifest' : '/sizzle.webmanifest'}"><link rel="apple-touch-icon" href="/images/sizzle-icon-180.png">`
               + '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
-              + '<meta name="apple-mobile-web-app-title" content="Sizzle Till"><meta name="theme-color" content="#7c2d12">'
+              + `<meta name="apple-mobile-web-app-title" content="${title}"><meta name="theme-color" content="#7c2d12">`
               + '<meta name="robots" content="noindex, nofollow">';
-            res.type('html').send(fs.readFileSync(indexPath, 'utf8').replace('<title>SkyHigh</title>', `<title>Sizzle Till</title>${tillHead}`));
+            res.type('html').send(fs.readFileSync(indexPath, 'utf8').replace('<title>SkyHigh</title>', `<title>${title}</title>${tillHead}`));
             return;
           }
           res.sendFile(indexPath);

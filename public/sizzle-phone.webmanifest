@@ -1,0 +1,14 @@
+{
+  "name": "SkyHigh Sizzle Phone Till",
+  "short_name": "Sizzle Phone",
+  "start_url": "/sizzle/phone",
+  "scope": "/sizzle/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7ed",
+  "theme_color": "#7c2d12",
+  "icons": [
+    { "src": "/images/sizzle-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/images/sizzle-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

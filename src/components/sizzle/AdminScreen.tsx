@@ -8,6 +8,7 @@ import { BASE, shortName, type Till } from "./useTill";
 import { HelpButton } from "./HelpPopup";
 import { ForecastRows, forecastDraft, forecastOverrides } from "./Forecasts";
 import { openPrintView } from "./printView";
+import { PhonesPanel } from "./PhonesPanel";
 import { page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 
 function AdminHelp({ markup }: { markup: number }) {
@@ -23,6 +24,9 @@ function AdminHelp({ markup }: { markup: number }) {
         <li><b>During the event:</b> update the later days at End of day — it shows today's real count and rebuilds tomorrow's top-up as you type.</li>
         <li>Sell prices do <b>not</b> change when you change these numbers.</li>
       </ul>
+
+      <h3>Phones</h3>
+      <p>To let a volunteer's phone sell: type a name, tap <b>Add phone</b>, and scan the QR code with that phone's camera, then tap the link. The QR works once, for 10 minutes. The phone can only ring up sales (cash or card) — it can't change prices or see the money. Its sales appear here within about 15 seconds when there's signal. <b>Cancel</b> stops a phone straight away.</p>
 
       <h3>Sell prices — do I type a price beside "Sausage in bread"?</h3>
       <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next whole dollar, and it's what the printed price board shows.</p>
@@ -233,6 +237,8 @@ function AdminForm({ till }: { till: Till }) {
           <ForecastRows days={data.event.days} draft={forecast} onChange={(n, v) => setForecast((f) => ({ ...f, [String(n)]: v }))} sales={till.sales} />
         </div>
       </section>
+
+      <PhonesPanel till={till} />
 
       <div className="grid grid-cols-2 gap-4">
         <section className="rounded-2xl bg-white shadow p-4">

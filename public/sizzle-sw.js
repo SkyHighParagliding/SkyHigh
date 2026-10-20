@@ -1,6 +1,6 @@
-// fallow-ignore-file unused-file — registered at runtime by src/pages/AdminSizzle.tsx, not imported.
+// fallow-ignore-file unused-file — registered at runtime by src/pages/AdminSizzle.tsx and SizzlePhone.tsx, not imported.
 //
-// Offline shell for the sausage sizzle till, scoped to /admin/sizzle only. It
+// Offline shell for the sausage sizzle till (/admin/sizzle and /sizzle/ only). It
 // sits beside the site-wide /sw.js (scope "/"); the more specific scope wins
 // for till pages, so nothing here affects the rest of the site.
 //
@@ -16,14 +16,17 @@
 // The site-wide /sw.js deletes unknown caches on activate; it keeps any cache
 // whose name starts with "skyhigh-sizzle".
 
-const CACHE = "skyhigh-sizzle-v1";
-const SHELL = "/admin/sizzle";
+// Registered twice: scope /admin/sizzle (iPad till) and /sizzle/ (phone till, TASK-041).
+const PHONE = !self.registration.scope.includes("/admin/sizzle");
+const CACHE = "skyhigh-sizzle-v2";
+const SHELL = PHONE ? "/sizzle/phone" : "/admin/sizzle";
+const MANIFEST = PHONE ? "/sizzle-phone.webmanifest" : "/sizzle.webmanifest";
 const AUTH_PATHS = ["/api/dev-mode", "/api/auth/me", "/api/csrf-token"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll([SHELL, "/sizzle.webmanifest", "/images/sizzle-icon-192.png"]).catch(() => {}))
+      .then((c) => c.addAll([SHELL, MANIFEST, "/images/sizzle-icon-192.png"]).catch(() => {}))
       .then(() => self.skipWaiting())
   );
 });
@@ -78,7 +81,7 @@ self.addEventListener("fetch", (event) => {
 
   if (req.mode === "navigate") {
     event.respondWith(networkFirst(req, SHELL));
-  } else if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/images/sizzle-icon") || url.pathname === "/sizzle.webmanifest") {
+  } else if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/images/sizzle-icon") || url.pathname === MANIFEST) {
     event.respondWith(cacheFirst(req));
   } else if (AUTH_PATHS.includes(url.pathname)) {
     event.respondWith(networkFirst(req, url.pathname));
