@@ -1,14 +1,19 @@
-# RESUME_HERE — Last updated: 2026-10-19 (session 76: sausage sizzle costing, PDFs and iPad till)
+# RESUME_HERE — Last updated: 2026-10-20 (session 77: sizzle till multi-device, events, Drive)
 
 ## Project: SkyHigh
-## Status: Active — branch `feature/sausage-sizzle` PUSHED (head `228c35f`), NOT merged; main == origin/main at `8f4dc67`. Railway auto-deploys `main`.
+## Status: Active — sizzle till LIVE. `main` = `70be5b5` (deployed); `feature/sausage-sizzle` = `39173f2` (main + wiki-only commits). Railway auto-deploys `main`.
 
-> **2026-10-20 pause:** Jon approved merging to `main` (option A), but Claude Code auto mode blocked the push as a production deploy. Jon will merge from his computer (or via the GitHub PR). Then: watch the deploy → live DB check with one dummy sale (void it) → Money tab/report check → iPad checklist. Details in memory `sizzle-event-2026.md`.
+> **⏰ REMIND JON AT THE START OF THE NEXT SESSION (asked 2026-10-20):**
+> 1. **Test pasting the Card amount into the Stripe app** (Tap to Pay amount box, ideally in Stripe test mode). The till's copy already works on iPhone (pasted into Notes).
+> 2. **Get a quote for the dongle** — Jon now has the credentials.
+> Remove these lines once Jon has done them.
 
-```
-branch: feature/sausage-sizzle (local only, not pushed)
-latest: e664828 (till + server) ← b05cb55 (data, maths, PDFs, tests) ← 8f4dc67 (main)
-```
+## Session 77 (2026-10-20) — sizzle till, all four phases live (DECISION-020)
+- TASK-038 customers per day (`9fb0f0e`), TASK-040/041 phones + shared sync + `/sizzle/phone` (`6a019bd`, fix `70be5b5` migration 053), TASK-039 events + Docs tab + Google Drive saves (`0e53333`). All ✅ in `wiki/02-tasks.md`.
+- Chromium on Railway: service variable `RAILPACK_DEPLOY_APT_PACKAGES=chromium` (Railpack builder). Live `pdf:true`; a real Initial shopping list PDF landed in the club Drive.
+- Railway CLI logged in (web@) and linked to SkyHigh / production / SkyHigh service. gh CLI installed, not logged in.
+- Jon confirmed: iPad home-screen icon opens the till; real iPhone pairs and syncs.
+- Next: Stripe paste test + dongle quote (above); rehearsal with iPad + 2 phones Tue 27 Oct; EHO call, FoodTrader + Statements of Trade by Mon 26 Oct; gas price + Cup Day hours.
 
 ## Session 76 (2026-10-19) — sausage sizzle (TASK-037, DECISION-019)
 
