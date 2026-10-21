@@ -94,7 +94,7 @@ Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)
 
 - `data/sizzle/sizzle-2026.json` — **the database**: event, Bright shelf prices (stockcode, URL, flags, fallbacks), portions, lunch mix, card-fee/float/power assumptions, equipment and compliance lists. Edit this, then regenerate the PDFs.
 - `shared/sizzle/calc.ts` — all maths (costing, card-fee pricing, pack rounding, shopping plan + top-ups, depletion, change, cash-up, card reconciliation, float, power). Pure; used by PDFs, till and tests.
-- `shared/sizzle/templates.ts` — A4 HTML templates for every document (shared by Node and the iPad).
+- `shared/sizzle/templates.ts` — A4 HTML templates for every document (shared by Node, the till and the server PDF renderer), incl. 09 Shop assistant how-to and 10 Admin how-to.
 - `shared/sizzle/report.ts` — treasurer maths: `eventReport` (by day, by item, purchases, banking, Stripe actual vs estimate, net result, cash to bank, leftover stock at cost), `reportCsv`, `planningLessons` (actual mix per customer, card share, half-hour sales, leftovers, `suggestedConfig` for the next event). `reportTemplate.ts` renders the treasurer's report PDF.
 - `scripts/sizzle/sample-report.ts` — `npm run sizzle:sample-report`: renders the treasurer's report from a simulated 4-day event to check its layout.
 - Event key: `data.event.id` (`2026-ntvo`) tags every sale and snapshot (IndexedDB and Postgres `event` column); the till only reads its own event.

@@ -1,7 +1,7 @@
-# RESUME_HERE — Last updated: 2026-10-20 (session 77: sizzle till multi-device, events, Drive)
+# RESUME_HERE — Last updated: 2026-10-21 (session 77: sizzle till multi-device, events, Drive, how-to guides)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `70be5b5` (deployed); `feature/sausage-sizzle` = `39173f2` (main + wiki-only commits). Railway auto-deploys `main`.
+## Status: Active — sizzle till LIVE. `main` = `a90f3a1` (deployed); `feature/sausage-sizzle` = main + docs-only commits. Railway auto-deploys `main`.
 
 > **⏰ REMIND JON AT THE START OF THE NEXT SESSION (asked 2026-10-20):**
 > 1. **Test pasting the Card amount into the Stripe app** (Tap to Pay amount box, ideally in Stripe test mode). The till's copy already works on iPhone (pasted into Notes).
@@ -12,7 +12,8 @@
 - TASK-038 customers per day (`9fb0f0e`), TASK-040/041 phones + shared sync + `/sizzle/phone` (`6a019bd`, fix `70be5b5` migration 053), TASK-039 events + Docs tab + Google Drive saves (`0e53333`). All ✅ in `wiki/02-tasks.md`.
 - Chromium on Railway: service variable `RAILPACK_DEPLOY_APT_PACKAGES=chromium` (Railpack builder). Live `pdf:true`; a real Initial shopping list PDF landed in the club Drive.
 - Railway CLI logged in (web@) and linked to SkyHigh / production / SkyHigh service. gh CLI installed, not logged in.
-- Jon confirmed: iPad home-screen icon opens the till; real iPhone pairs and syncs.
+- Jon confirmed: iPad home-screen icon opens the till; real iPhone pairs and syncs; Card copy pastes (into Notes).
+- `a90f3a1`: Docs tab adds **09 Shop assistant how-to** and **10 Admin how-to** (`shared/sizzle/templates.ts`); card guide + Admin Manual updated for phones. All 14 planning docs saved to club Drive `08_Projects / Sizzle 2026 NTVO` (treasurer's report not saved — empty until after the event).
 - Next: Stripe paste test + dongle quote (above); rehearsal with iPad + 2 phones Tue 27 Oct; EHO call, FoodTrader + Statements of Trade by Mon 26 Oct; gas price + Cup Day hours.
 
 ## Session 76 (2026-10-19) — sausage sizzle (TASK-037, DECISION-019)
