@@ -23,7 +23,7 @@ export function PhonesPanel({ till }: { till: Till }) {
   const { token } = useAuth();
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [name, setName] = useState("");
-  const [qr, setQr] = useState<{ url: string; code: string; name: string; until: string } | null>(null);
+  const [qr, setQr] = useState<{ id: string; url: string; code: string; name: string; until: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -36,13 +36,27 @@ export function PhonesPanel({ till }: { till: Till }) {
   useEffect(() => {
     load();
   }, [load]);
+  // While a phone is waiting to be set up, check every 10 s so the list (and the QR) catch up by themselves.
+  const waiting = (devices ?? []).some((d) => !d.revokedAt && !d.pairedAt && !!d.pairExpiresAt && Date.parse(d.pairExpiresAt) > Date.now());
+  useEffect(() => {
+    if (!waiting && !qr) return;
+    const t = setInterval(load, 10_000);
+    return () => clearInterval(t);
+  }, [waiting, qr, load]);
+  // The phone on the QR has set itself up: close the QR.
+  useEffect(() => {
+    if (qr && devices?.find((d) => d.id === qr.id)?.pairedAt) {
+      toast.success(`${qr.name} is set up`);
+      setQr(null);
+    }
+  }, [devices, qr]);
 
   async function add() {
     const n = name.trim() || `Phone ${(devices?.length ?? 0) + 1}`;
     const lastDay = till.data.event.days.at(-1)!.date;
     try {
-      const r = await api.post<{ code: string; pairExpiresAt: string }>("/api/sizzle/devices", { event: EVENT_ID, name: n, until: `${lastDay}T23:59:00+11:00` }, token);
-      setQr({ url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: n, until: r.pairExpiresAt });
+      const r = await api.post<{ id: string; code: string; pairExpiresAt: string }>("/api/sizzle/devices", { event: EVENT_ID, name: n, until: `${lastDay}T23:59:00+11:00` }, token);
+      setQr({ id: r.id, url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: n, until: r.pairExpiresAt });
       setName("");
       load();
     } catch (err) {
@@ -54,7 +68,8 @@ export function PhonesPanel({ till }: { till: Till }) {
   async function newCode(d: Device) {
     try {
       const r = await api.post<{ code: string; pairExpiresAt: string }>(`/api/sizzle/devices/${d.id}/code`, {}, token);
-      setQr({ url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: d.name, until: r.pairExpiresAt });
+      setDevices((ds) => ds && ds.map((x) => (x.id === d.id ? { ...x, pairedAt: null } : x))); // or the old "set up" closes the new QR at once
+      setQr({ id: d.id, url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: d.name, until: r.pairExpiresAt });
       load();
     } catch (err) {
       toast.error(`Couldn't make a new code — ${err instanceof Error ? err.message : err}. Needs signal.`);
