@@ -55,7 +55,7 @@ type: wiki
 | 006 | Hosting | Railway | Low ops, committee-manageable, auto-deploy on push |
 | 007 | Cache bypass | Bypass when `?limit`/`?offset` present | Prevents stale paginated results |
 | 008 | Scheduled closures | `site_closure_dates` table + unified calendar | Auto-banners 7 days before closure |
-| 009 | Credentials | 1Password → `draw-env.ps1` → `.env`, wiped on exit | Raw secrets never persist on disk between sessions |
+| 009 | Credentials | 1Password → `draw-env.ps1` → `.env`, wiped on exit | Raw secrets never persist on disk between sessions. **Superseded 2026-10-21:** scripts deleted; secrets in a gitignored `.env`. |
 | 010 | Live weather dispatch | Station-ID prefix routing | Each source identified by prefix; WU is catch-all |
 | 011 | Terrain elevation | Client-side terrarium-tile sampling (server route as fallback) | No API key, ~0.2 ms vs ~465 ms; GA CC BY 4.0 attribution required |
 | 012 | `@openmeteo/file-reader` (GPL-2.0-only) | Accepted — hosted-only, never distributed | Any future source release must revisit first |

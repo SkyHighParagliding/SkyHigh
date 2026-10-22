@@ -26,7 +26,7 @@ This section is filled in ONCE when the project starts, then remains stable. Eve
 - Wind map renders via Canvas + D3 (not SVG or WebGL) — see DECISION-004
 - Deployed on Railway with PostgreSQL — see DECISION-006
 - Scheduled closure calendar: `site_closure_dates` table, unified admin calendar UI (replaces Status dropdown), auto-generated home-page banners 7 days before closure — see DECISION-008
-- 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009
+- 1Password automated credential lifecycle integration: credentials stored in local 1Password vault (`op`), drawn into `.env` at startup (via `draw-env.ps1`), and securely wiped on session end (via `wipe-env.ps1`), keeping raw secrets off disk — see DECISION-009 (**Superseded 2026-10-21:** the draw/wipe scripts (`Ai System Projects\scripts\`) were deleted. Secrets now live in a gitignored `.env` per project. Never run `wipe-env`.)
 - Ground elevation is sampled client-side from AWS terrarium tiles (no API key), with the server route retained as fallback — see DECISION-011. The Geoscience Australia CC BY 4.0 attribution is a licence obligation; do not remove it.
 - `@openmeteo/file-reader` is GPL-2.0-only, accepted because SkyHigh is **hosted-only and never distributed as code or binaries** — see DECISION-012. Any future source release must revisit that decision first.
 - Base-map legibility under the overlay is fixed by darkening the base (a `multiply` re-pass in `MapCanvas`), not by fading the overlay; town names use `light_only_labels` drawn on top. Pilot slider + labels toggle live in the readout; the slider's range is an admin per-map floor/ceiling band — see DECISION-015.
@@ -201,7 +201,7 @@ SkyHigh/
 
 1. Read CLAUDE.md (Section 0 especially — project context)
 2. Read .claude/settings.json — check what hooks, permissions, and env vars are configured
-3. **Verify credentials have been drawn**: The automated 1Password `SessionStart` hook or shell profile trigger should have already run `draw-env.ps1` to populate your local gitignored `.env` file from your 1Password vault. Check that `.env` exists and contains secrets.
+3. **Verify credentials have been drawn**: The automated 1Password `SessionStart` hook or shell profile trigger should have already run `draw-env.ps1` to populate your local gitignored `.env` file from your 1Password vault. Check that `.env` exists and contains secrets. (**Superseded 2026-10-21:** the draw/wipe scripts (`Ai System Projects\scripts\`) were deleted. Secrets now live in a gitignored `.env` per project. Never run `wipe-env`.)
 4. Read RESUME_HERE.md — understand where you left off
 5. Read memory/MEMORY.md — load session history and feedback
 6. Read tasks/todo.md — check what's queued for this session
@@ -210,7 +210,7 @@ SkyHigh/
 9. Then ask: "What should we work on?"
 
 **At session end:**
-- **Securely wipe `.env` file**: The automated `SessionEnd` hook or shell profile trigger will run `wipe-env.ps1` to securely delete the `.env` file containing raw credentials from disk.
+- **Securely wipe `.env` file**: The automated `SessionEnd` hook or shell profile trigger will run `wipe-env.ps1` to securely delete the `.env` file containing raw credentials from disk. (**Superseded 2026-10-21:** the draw/wipe scripts (`Ai System Projects\scripts\`) were deleted. Secrets now live in a gitignored `.env` per project. Never run `wipe-env`.)
 - Update RESUME_HERE.md with current state (where you left off, what's next)
 - Update memory/feedback.md with any lessons learned this session
 - Update memory/project.md if project scope/decisions changed

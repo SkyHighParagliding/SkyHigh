@@ -337,6 +337,8 @@ Sites can be closed in two ways: (1) permanently (`sites.status = 'closed'`), pr
 
 ## DECISION-009: Automated 1Password Lifecycle Integration (.env draw/wipe)
 
+> **Superseded 2026-10-21:** the draw/wipe scripts (`Ai System Projects\scripts\`) were deleted. Secrets now live in a gitignored `.env` per project. Never run `wipe-env`.
+
 **Date:** 2026-05-27  
 **Owner:** Jon Pamment  
 **Status:** Locked (implemented)
