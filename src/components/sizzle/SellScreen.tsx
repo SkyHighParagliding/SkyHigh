@@ -123,7 +123,7 @@ export function SellScreen({ till, compact = false }: { till: Till; compact?: bo
             <button type="button" disabled={!lines.length} onClick={() => setPay({ mode: "cash", tendered: null, custom: "" })} className={`${c ? "h-16" : "h-20"} rounded-2xl bg-emerald-600 text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-30 active:bg-emerald-700`}>
               <Banknote className="w-8 h-8" /> Cash
             </button>
-            <button type="button" disabled={!lines.length} onClick={() => { setCopied(copyAmount(total)); setPay({ mode: "card" }); }} className={`${c ? "h-16" : "h-20"} rounded-2xl bg-blue-700 text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-30 active:bg-blue-800`}>
+            <button type="button" disabled={!lines.length} onClick={() => { setCopied(c ? copyAmount(total) : null); setPay({ mode: "card" }); }} className={`${c ? "h-16" : "h-20"} rounded-2xl bg-blue-700 text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-30 active:bg-blue-800`}>
               <CreditCard className="w-8 h-8" /> Card
             </button>
           </div>
@@ -143,7 +143,7 @@ export function SellScreen({ till, compact = false }: { till: Till; compact?: bo
       )}
       {pay?.mode === "card" && (
         <Modal onClose={() => setPay(null)}>
-          <CardPay total={total} busy={busy} copied={copied} onCopy={() => setCopied(copyAmount(total))} onDeclined={() => { setPay(null); toast.info("Declined — offer cash"); }} onApproved={() => confirm("card", null)} />
+          <CardPay total={total} busy={busy} canCopy={c} copied={copied} onCopy={() => setCopied(copyAmount(total))} onDeclined={() => { setPay(null); toast.info("Declined — offer cash"); }} onApproved={() => confirm("card", null)} />
         </Modal>
       )}
       {voidOpen && lastSale && (
@@ -164,8 +164,12 @@ function copyAmount(total: number): Promise<boolean> {
   return navigator.clipboard.writeText(total.toFixed(2)).then(() => true, () => false);
 }
 
-/** Card: show the amount big, with the copy result from the Card tap and a button to copy again. */
-function CardPay({ total, busy, copied, onCopy, onDeclined, onApproved }: { total: number; busy: boolean; copied: Promise<boolean> | null; onCopy: () => void; onDeclined: () => void; onApproved: () => void }) {
+/**
+ * Card: show the amount big. On a phone (`canCopy`) Stripe is on the same device, so
+ * show the copy result from the Card tap and a button to copy again. The iPad has no
+ * Stripe (no NFC), so the amount is typed into the Stripe phone by hand.
+ */
+function CardPay({ total, busy, canCopy, copied, onCopy, onDeclined, onApproved }: { total: number; busy: boolean; canCopy: boolean; copied: Promise<boolean> | null; onCopy: () => void; onDeclined: () => void; onApproved: () => void }) {
   const amount = total.toFixed(2);
   const [ok, setOk] = useState(false);
   useEffect(() => {
@@ -178,12 +182,14 @@ function CardPay({ total, busy, copied, onCopy, onDeclined, onApproved }: { tota
   }, [copied]);
   return (
     <div className="text-center">
-      <p className="text-xl sm:text-3xl text-stone-600">Key this amount into Stripe</p>
+      <p className="text-xl sm:text-3xl text-stone-600">{canCopy ? "Key this amount into Stripe" : "Type this amount into the Stripe phone"}</p>
       <p className="text-[72px] sm:text-[120px] leading-none font-extrabold my-4 sm:my-6 tracking-tight">{money(total)}</p>
-      <button type="button" onClick={onCopy} className="mx-auto mb-3 h-12 px-4 rounded-xl border-2 border-blue-700 text-blue-800 text-lg font-semibold flex items-center gap-2">
-        {ok ? <><Check className="w-5 h-5" /> {amount} copied — paste it in Stripe</> : <><Copy className="w-5 h-5" /> Copy {amount}</>}
-      </button>
-      <p className="text-base sm:text-xl text-stone-600 mb-6 sm:mb-8">Enter exactly this total in the Stripe app, then wait for approved or declined.</p>
+      {canCopy && (
+        <button type="button" onClick={onCopy} className="mx-auto mb-3 h-12 px-4 rounded-xl border-2 border-blue-700 text-blue-800 text-lg font-semibold flex items-center gap-2">
+          {ok ? <><Check className="w-5 h-5" /> {amount} copied — paste it in Stripe</> : <><Copy className="w-5 h-5" /> Copy {amount}</>}
+        </button>
+      )}
+      <p className="text-base sm:text-xl text-stone-600 mb-6 sm:mb-8">{canCopy ? "Enter exactly this total in the Stripe app, then wait for approved or declined." : "Type exactly this total into the Stripe app on the Stripe phone, then wait for approved or declined."}</p>
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <button type="button" disabled={busy} onClick={onDeclined} className="h-20 sm:h-24 rounded-2xl bg-stone-200 text-xl sm:text-2xl font-bold active:bg-stone-300">Declined — back</button>
         <button type="button" disabled={busy} onClick={onApproved} className="h-20 sm:h-24 rounded-2xl bg-blue-700 text-white text-2xl sm:text-3xl font-bold active:bg-blue-800">Card approved</button>

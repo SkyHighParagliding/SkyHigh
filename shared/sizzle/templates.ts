@@ -342,8 +342,9 @@ export function cardGuideBody(data: SizzleData): string {
 <h2>Taking a card payment</h2>
 <ol class="steps" style="font-size:14pt">
 <li>Ring up the order on the till (iPad or phone) as normal, then tap <b>[Card]</b>.</li>
-<li>The till shows <b>"Key this amount into Stripe"</b> in big numbers, and copies the amount (the phone says <b>"12.50 copied — paste it in Stripe"</b>).</li>
-<li>In the Stripe app, enter <b>exactly that amount</b>: press and hold the amount box → <b>Paste</b>, or type the big number. Start the payment.</li>
+<li><b>On a phone</b> (with the Stripe app on it): the till shows the amount in big numbers and copies it — <b>"12.50 copied — paste it in Stripe"</b>. Open the Stripe app, press and hold the amount box → <b>Paste</b>.</li>
+<li><b>On the iPad</b> (no Stripe — iPads can't take tap payments): the till shows <b>"Type this amount into the Stripe phone"</b>. Whoever has the Stripe phone types <b>exactly that amount</b> into the Stripe app.</li>
+<li>Check the Stripe amount matches the till, then start the payment.</li>
 <li>Customer taps their card or phone.</li>
 <li>Stripe says <b>approved</b> → tap <b>[Card approved]</b> on the till. Only now is the sale recorded.</li>
 <li>Stripe says <b>declined</b> → tap <b>[Declined — back]</b> and offer cash.</li>
@@ -386,8 +387,9 @@ export function shopAssistantGuideBody(data: SizzleData): string {
 </ol>
 <h2>3. Card (Stripe)</h2>
 <ol class="steps">
-<li>Tap <b>Card</b>. The till shows the amount in big numbers and copies it (the phone says <b>"… copied — paste it in Stripe"</b>).</li>
-<li>In the Stripe app: press and hold the amount → <b>Paste</b>, or type the big number. <b>Always the till total — never from memory.</b></li>
+<li>Tap <b>Card</b>. The till shows the amount in big numbers.</li>
+<li><b>On a phone with Stripe:</b> the till has already copied it (<b>"… copied — paste it in Stripe"</b>). Open the Stripe app, press and hold the amount → <b>Paste</b>.</li>
+<li><b>On the iPad:</b> there's no copy — the iPad can't run Stripe. Read the amount to whoever has the Stripe phone, and they type it in. <b>Always the till total — never from memory.</b></li>
 <li>The customer taps their card or phone on the Stripe phone.</li>
 <li><b>Approved</b> → tap <b>Card approved</b>. Only now is the sale recorded.</li>
 <li><b>Declined</b> or no signal on Stripe → tap <b>Declined — back</b> and offer cash. Don't keep retrying.</li>
@@ -425,7 +427,7 @@ export function adminGuideBody(data: SizzleData): string {
 <li><b>Event and customers:</b> Admin → <b>Event</b> shows the current event. Admin → <b>Customers per day</b>: enter the estimate for each day → <b>Save customer numbers</b>. Quantities follow these; sell prices don't.</li>
 <li><b>Shopping:</b> Docs tab → <b>Initial shopping list</b> → View / Print or Save to Drive. After the shop, fix any shelf price that differed (Admin → Shelf prices) and set the real stock if you bought differently (Admin → Stock on hand → <b>Set on-hand (units)</b>).</li>
 <li><b>Phones:</b> Admin → <b>Phones</b> → type a name → <b>Add phone</b>. Scan the QR with that phone's camera and open the link (needs signal; the code works once, for 10 minutes). Then Share → Add to Home Screen. The phone gets a till-only pass — no password on volunteers' phones.</li>
-<li><b>Stripe:</b> log the Stripe phone in with a volunteer-level team login (never the admin login), check the account time zone is Melbourne, and do a $1 test payment and refund.</li>
+<li><b>Stripe:</b> log the Stripe phone in with a volunteer-level team login (never the admin login), check the account time zone is Melbourne, and do a $1 test payment and refund. Stripe's Tap to Pay runs on an iPhone, not the iPad — so pair the Stripe phone as a till too: card sales are quickest rung up on that phone (copy → paste). On the iPad, card amounts have to be typed into the Stripe phone.</li>
 <li><b>Paperwork:</b> follow the Compliance checklist (council notifications, Statements of Trade, EHO). Print the Price board, Float & cash-up sheet and the Shop assistant how-to.</li>
 </ol>
 <h2 class="avoid">Each morning</h2>
