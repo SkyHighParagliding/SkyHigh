@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { Smartphone, Trash2 } from "lucide-react";
+import { KeyRound, Smartphone, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { Modal } from "./SellScreen";
@@ -42,11 +42,22 @@ export function PhonesPanel({ till }: { till: Till }) {
     const lastDay = till.data.event.days.at(-1)!.date;
     try {
       const r = await api.post<{ code: string; pairExpiresAt: string }>("/api/sizzle/devices", { event: EVENT_ID, name: n, until: `${lastDay}T23:59:00+11:00` }, token);
-      setQr({ url: `${location.origin}/sizzle/phone#pair=${r.code}`, code: r.code, name: n, until: r.pairExpiresAt });
+      setQr({ url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: n, until: r.pairExpiresAt });
       setName("");
       load();
     } catch (err) {
       toast.error(`Couldn't add the phone — ${err instanceof Error ? err.message : err}. Needs signal.`);
+    }
+  }
+
+  // Redo a phone without cancelling it: fresh QR + code; any pass it had stops working.
+  async function newCode(d: Device) {
+    try {
+      const r = await api.post<{ code: string; pairExpiresAt: string }>(`/api/sizzle/devices/${d.id}/code`, {}, token);
+      setQr({ url: `${location.origin}/sizzle/phone?pair=${r.code}`, code: r.code, name: d.name, until: r.pairExpiresAt });
+      load();
+    } catch (err) {
+      toast.error(`Couldn't make a new code — ${err instanceof Error ? err.message : err}. Needs signal.`);
     }
   }
 
@@ -60,7 +71,8 @@ export function PhonesPanel({ till }: { till: Till }) {
     }
   }
 
-  const live = (devices ?? []).filter((d) => !d.revokedAt && (d.pairedAt || (d.pairExpiresAt && Date.parse(d.pairExpiresAt) > Date.now())));
+  const live = (devices ?? []).filter((d) => !d.revokedAt && Date.parse(d.expiresAt) > Date.now());
+  const codeLive = (d: Device) => !!d.pairExpiresAt && Date.parse(d.pairExpiresAt) > Date.now();
 
   return (
     <section className="rounded-2xl bg-white shadow p-4">
@@ -76,8 +88,8 @@ export function PhonesPanel({ till }: { till: Till }) {
             {live.map((d) => (
               <tr key={d.id} className="border-t">
                 <td className="py-2">{d.name}</td>
-                <td className="text-stone-600">{d.pairedAt ? (d.lastSeenAt ? `last synced ${ago(d.lastSeenAt)}` : "set up") : "waiting for the QR scan"}</td>
-                <td className="text-right"><button type="button" onClick={() => cancel(d)} className="h-11 px-3 rounded-lg border-2 border-red-600 text-red-700 font-semibold flex items-center gap-1 ml-auto"><Trash2 className="w-5 h-5" /> Cancel</button></td>
+                <td className="text-stone-600">{d.pairedAt ? (d.lastSeenAt ? `last synced ${ago(d.lastSeenAt)}` : "set up") : codeLive(d) ? "waiting to be set up" : "code expired — tap New code"}</td>
+                <td className="text-right whitespace-nowrap"><button type="button" onClick={() => newCode(d)} className="h-11 px-3 rounded-lg border-2 border-amber-700 text-amber-800 font-semibold inline-flex items-center gap-1 mr-2"><KeyRound className="w-5 h-5" /> New code</button><button type="button" onClick={() => cancel(d)} className="h-11 px-3 rounded-lg border-2 border-red-600 text-red-700 font-semibold inline-flex items-center gap-1"><Trash2 className="w-5 h-5" /> Cancel</button></td>
               </tr>
             ))}
           </tbody>

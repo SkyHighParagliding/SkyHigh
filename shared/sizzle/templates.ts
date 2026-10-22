@@ -373,14 +373,13 @@ export function cardGuideBody(data: SizzleData): string {
 const PHONE_SETUP = `<ol class="steps">
 <li>Organiser: on the iPad, <b>Admin</b> → <b>Phones</b> → type the volunteer's name → <b>Add phone</b>.</li>
 <li>Point the phone's camera at the QR code. Tap the link.</li>
-<li>The phone shows a code. Leave it on the screen.</li>
 <li><b>iPhone:</b> tap <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.<br><b>Android:</b> tap <b>⋮</b> (top right) → <b>Add to Home screen</b> or <b>Install app</b>.</li>
-<li>Open the new <b>Sizzle Phone</b> icon. Type the code. Tap <b>Set up</b>.</li>
+<li>Open the new <b>Sizzle Phone</b> icon. It sets itself up. If it asks for a code, type the code from the page you just left.</li>
 <li>The top bar says <b>Synced</b>. Ready to sell.</li>
 </ol>
 <ul class="note">
 <li>Camera won't scan? Open the icon and type the code shown on the iPad.</li>
-<li>Code says expired or used? It works once, for 10 minutes. Ask for a new one.</li>
+<li>Code wrong, expired or used? On the iPad tap <b>New code</b> next to that phone. Codes work once, for 10 minutes.</li>
 <li>No icon wanted? Tap <b>Use in Safari instead</b> (Android: <b>Use in the browser instead</b>).</li>
 </ul>`;
 

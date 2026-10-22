@@ -230,6 +230,20 @@ router.get("/devices", requireAuth, asyncHandler(async (req, res) => {
   res.json({ devices });
 }));
 
+/** Admin: a fresh one-time code for an existing phone. Any pass it already had stops working. */
+router.post("/devices/:id/code", requireAuth, asyncHandler(async (req, res) => {
+  if (!isId(req.params.id)) return res.status(400).json({ error: "bad id" });
+  const code = pairCode();
+  const pairExpiresAt = new Date(Date.now() + PAIR_MINUTES * 60_000);
+  const device = await queryOne<{ id: string }>(
+    `UPDATE sizzle_devices SET "pairCodeHash" = $2, "pairExpiresAt" = $3, "tokenHash" = NULL, "pairedAt" = NULL
+     WHERE id = $1 AND "revokedAt" IS NULL AND "expiresAt" > NOW() RETURNING id`,
+    [req.params.id, sha(code), pairExpiresAt],
+  );
+  if (!device) return res.status(404).json({ error: "That phone was cancelled or its pass has ended — add it again" });
+  res.json({ id: device.id, code, pairExpiresAt });
+}));
+
 /** Admin: cancel a phone's pass straight away. */
 router.delete("/devices/:id", requireAuth, asyncHandler(async (req, res) => {
   if (!isId(req.params.id)) return res.status(400).json({ error: "bad id" });
@@ -248,7 +262,7 @@ router.post("/pair", pairLimiter, asyncHandler(async (req, res) => {
      RETURNING id, event, name, "expiresAt"`,
     [sha(code), sha(token)],
   );
-  if (!device) return res.status(410).json({ error: "This code has expired or was already used — add the phone again on the iPad" });
+  if (!device) return res.status(410).json({ error: "That code is wrong, expired (10 minutes) or already used — on the iPad tap New code next to this phone" });
   res.json({ token, deviceId: device.id, event: device.event, name: device.name, expiresAt: device.expiresAt });
 }));
 

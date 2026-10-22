@@ -3,6 +3,7 @@ import express from "express";
 import compression from "compression";
 import fs from "fs";
 import path from "path";
+import { normalizePairCode } from "./shared/sizzle/pairCode.js";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 import "./server/db.js";
@@ -325,6 +326,15 @@ async function startServer() {
         maxAge: '1y',
         immutable: true,
       }));
+      // A phone opened from the iPad's QR (/sizzle/phone?pair=CODE) gets a manifest whose
+      // start_url carries the code, so the home-screen icon sets itself up (TASK-040).
+      app.get('/sizzle-phone.webmanifest', (req, res, next) => {
+        const code = typeof req.query.pair === 'string' ? normalizePairCode(req.query.pair) : null;
+        if (!code) return next();
+        const manifest = JSON.parse(fs.readFileSync(path.join(publicPath, 'sizzle-phone.webmanifest'), 'utf8'));
+        res.setHeader('Cache-Control', 'no-store');
+        res.type('application/manifest+json').send(JSON.stringify({ ...manifest, start_url: `/sizzle/phone?pair=${code}` }));
+      });
       app.use(express.static(publicPath, {
         maxAge: '1h',
         setHeaders: (res, filePath) => {
@@ -346,7 +356,9 @@ async function startServer() {
           const phoneTill = req.path.startsWith('/sizzle/');
           if (req.path.startsWith('/admin/sizzle') || phoneTill) {
             const title = phoneTill ? 'Sizzle Phone' : 'Sizzle Till';
-            const tillHead = `<link rel="manifest" href="${phoneTill ? '/sizzle-phone.webmanifest' : '/sizzle.webmanifest'}"><link rel="apple-touch-icon" href="/images/sizzle-icon-180.png">`
+            const pair = phoneTill && typeof req.query.pair === 'string' ? normalizePairCode(req.query.pair) : null;
+            const manifest = phoneTill ? `/sizzle-phone.webmanifest${pair ? `?pair=${pair}` : ''}` : '/sizzle.webmanifest';
+            const tillHead = `<link rel="manifest" href="${manifest}"><link rel="apple-touch-icon" href="/images/sizzle-icon-180.png">`
               + '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
               + `<meta name="apple-mobile-web-app-title" content="${title}"><meta name="theme-color" content="#7c2d12">`
               + '<meta name="robots" content="noindex, nofollow">';

@@ -14,8 +14,10 @@ import { formatPairCode, normalizePairCode } from "../../shared/sizzle/pairCode.
  * screen — prices, stock and the event come from the iPad via the server.
  *
  * A home-screen icon has its own storage, separate from Safari, so the QR link
- * doesn't use the code in Safari straight away: it shows the code to type into
- * the icon, with "Use in Safari instead" for anyone who doesn't add one.
+ * (/sizzle/phone?pair=CODE) doesn't use the code in Safari. The server puts the
+ * code in this page's manifest start_url (server.ts), so the icon opens with it
+ * and sets itself up; typing the code is the fallback. "Use in Safari instead"
+ * is for anyone who doesn't add an icon.
  */
 
 interface Pass { token: string; name: string; event: string; expiresAt: string }
@@ -24,12 +26,13 @@ const PASS_KEY = "phonePass";
 const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 const standalone = () => matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
-/** The code from the QR link, taken out of the address bar (it's single-use). */
-function codeFromHash(): string | null {
-  const code = normalizePairCode(new URLSearchParams(location.hash.slice(1)).get("pair") ?? "");
-  if (location.hash) history.replaceState(null, "", location.pathname);
-  return code;
+/** The code from the QR link or the icon's start URL (?pair=, or #pair= from older QRs). */
+function codeFromUrl(): string | null {
+  const raw = new URLSearchParams(location.search).get("pair") ?? new URLSearchParams(location.hash.slice(1)).get("pair");
+  return raw ? normalizePairCode(raw) : null;
 }
+/** Take the code out of the address bar once it's used (or not needed). */
+const stripCode = () => history.replaceState(null, "", location.pathname);
 
 async function pair(code: string): Promise<Pass> {
   const r = await fetch("/api/sizzle/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
@@ -44,45 +47,54 @@ async function pair(code: string): Promise<Pass> {
 function usePhoneHead() {
   useEffect(() => {
     document.title = "Sizzle Phone";
-    let link = document.head.querySelector("link[rel='manifest']") as HTMLLinkElement | null;
-    if (!link) {
-      link = Object.assign(document.createElement("link"), { rel: "manifest" });
-      document.head.appendChild(link);
+    // The server writes the manifest link (with the pairing code); only add one if it's missing.
+    if (!document.head.querySelector("link[rel='manifest']")) {
+      document.head.appendChild(Object.assign(document.createElement("link"), { rel: "manifest", href: "/sizzle-phone.webmanifest" }));
     }
-    link.href = "/sizzle-phone.webmanifest";
   }, []);
 }
 
 export function SizzlePhone() {
   const [pass, setPass] = useState<Pass | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-  const [hashCode] = useState(codeFromHash);
+  const [urlCode] = useState(codeFromUrl);
   const [busy, setBusy] = useState(false);
   const [claimed, setClaimed] = useState(false);
   usePhoneHead();
   useTillServiceWorker("/sizzle/");
 
   useEffect(() => {
-    kvGet<Pass>(PASS_KEY).then((p) => setPass(p ?? null));
-  }, []);
+    kvGet<Pass>(PASS_KEY).then(async (p) => {
+      // Opened from the home-screen icon with the code in its start URL: set up straight away.
+      if (urlCode && standalone()) {
+        stripCode();
+        if (!p) return setPass((await claim(urlCode)) ?? null);
+      }
+      setPass(p ?? null);
+    });
+  }, [urlCode]);
 
-  async function claim(code: string) {
+  async function claim(code: string): Promise<Pass | null> {
     setBusy(true);
     setError(null);
     try {
-      setPass(await pair(code));
+      const p = await pair(code);
+      setPass(p);
       setClaimed(true);
+      stripCode();
+      return p;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      return null;
     } finally {
       setBusy(false);
     }
   }
 
   if (pass === undefined) return <Centre><Loader2 className="w-12 h-12 animate-spin text-amber-700" /></Centre>;
-  // Fresh QR link in Safari: offer the home-screen icon first (the code is typed in there).
-  if (hashCode && !standalone() && !claimed) return <InstallFirst code={hashCode} busy={busy} error={error} onSafari={() => claim(hashCode)} />;
-  if (!pass) return <NotSetUp error={error} busy={busy} initial={hashCode ?? ""} onCode={claim} />;
+  // Fresh QR link in Safari: offer the home-screen icon first (it picks the code up itself).
+  if (urlCode && !standalone() && !claimed) return <InstallFirst code={urlCode} busy={busy} error={error} onSafari={() => claim(urlCode)} />;
+  if (!pass) return <NotSetUp error={error} busy={busy} initial="" onCode={claim} />;
   // The server says which event this phone's pass is for; the till then sells for exactly that event.
   return (
     <EventGate token={pass.token}>
@@ -93,20 +105,21 @@ export function SizzlePhone() {
   );
 }
 
-/** Safari, just opened from the QR: show the code to type into the home-screen icon. */
+/** Safari, just opened from the QR: add the icon (it sets itself up), code shown as a fallback. */
 function InstallFirst({ code, busy, error, onSafari }: { code: string; busy: boolean; error: string | null; onSafari: () => void }) {
   return (
     <Centre>
       <h1 className="text-2xl font-bold">Sizzle phone till</h1>
-      <p className="mt-2 text-lg">Your code (works once, for 10 minutes):</p>
-      <p className="mt-2 text-5xl font-extrabold tracking-widest">{formatPairCode(code)}</p>
-      <ol className="mt-4 text-left text-lg list-decimal pl-6 space-y-1">
+      <p className="mt-2 text-lg">Put the till on your home screen:</p>
+      <ol className="mt-3 text-left text-xl list-decimal pl-6 space-y-2">
         {isIos()
           ? <li>Tap <Share className="inline w-5 h-5 -mt-1" /> <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.</li>
           : <li>Tap <b>⋮</b> (top right) → <b>Add to Home screen</b> or <b>Install app</b>.</li>}
-        <li>Open the new <b>Sizzle Phone</b> icon.</li>
-        <li>Type this code and tap <b>Set up</b>.</li>
+        <li>Open the new <b>Sizzle Phone</b> icon. It sets itself up.</li>
       </ol>
+      <p className="mt-4 text-stone-600">If the icon asks for a code, type:</p>
+      <p className="text-3xl font-extrabold tracking-widest">{formatPairCode(code)}</p>
+      <p className="text-sm text-stone-500">Works once, within 10 minutes.</p>
       {error && <p className="mt-3 rounded-xl bg-red-100 text-red-800 p-3">{error}</p>}
       <button type="button" disabled={busy} onClick={onSafari} className="mt-5 h-12 px-4 rounded-xl border-2 border-amber-700 text-amber-800 text-lg font-semibold">{isIos() ? "Use in Safari instead" : "Use in the browser instead"}</button>
     </Centre>
@@ -137,7 +150,7 @@ function PhoneTill({ pass, onForget }: { pass: Pass; onForget: () => void }) {
     return (
       <Centre>
         <h1 className="text-2xl font-bold">Till pass cancelled</h1>
-        <p className="mt-3 text-lg">This phone's till pass has expired or been cancelled on the iPad. Sales already rung up here are kept. Add the phone again on the iPad (Admin → Phones) and scan the new QR code.</p>
+        <p className="mt-3 text-lg">This phone's till pass has ended, been cancelled, or been replaced by a new code. Sales already rung up here are kept. On the iPad (Admin → Phones) tap <b>New code</b> next to this phone, then tap <b>Set up again</b> and type it.</p>
         <button type="button" onClick={onForget} className="mt-5 h-14 px-6 rounded-2xl bg-amber-700 text-white text-xl font-bold">Set up again</button>
       </Centre>
     );
