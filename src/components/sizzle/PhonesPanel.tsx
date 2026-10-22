@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/apiClient";
 import { Modal } from "./SellScreen";
 import { EVENT_ID, type Till } from "./useTill";
+import { formatPairCode } from "../../../shared/sizzle/pairCode.ts";
 
 interface Device { id: string; name: string; pairedAt: string | null; pairExpiresAt: string | null; expiresAt: string; revokedAt: string | null; lastSeenAt: string | null }
 
@@ -22,7 +23,7 @@ export function PhonesPanel({ till }: { till: Till }) {
   const { token } = useAuth();
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [name, setName] = useState("");
-  const [qr, setQr] = useState<{ url: string; name: string; until: string } | null>(null);
+  const [qr, setQr] = useState<{ url: string; code: string; name: string; until: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -41,7 +42,7 @@ export function PhonesPanel({ till }: { till: Till }) {
     const lastDay = till.data.event.days.at(-1)!.date;
     try {
       const r = await api.post<{ code: string; pairExpiresAt: string }>("/api/sizzle/devices", { event: EVENT_ID, name: n, until: `${lastDay}T23:59:00+11:00` }, token);
-      setQr({ url: `${location.origin}/sizzle/phone#pair=${r.code}`, name: n, until: r.pairExpiresAt });
+      setQr({ url: `${location.origin}/sizzle/phone#pair=${r.code}`, code: r.code, name: n, until: r.pairExpiresAt });
       setName("");
       load();
     } catch (err) {
@@ -86,9 +87,10 @@ export function PhonesPanel({ till }: { till: Till }) {
         <Modal onClose={() => setQr(null)}>
           <div className="text-center">
             <h2 className="text-3xl font-bold">Scan with {qr.name}</h2>
-            <p className="text-lg text-stone-600 mt-1">Open the phone's camera and point it at the code, then tap the link. Works once, for 10 minutes.</p>
+            <p className="text-lg text-stone-600 mt-1">Open the phone's camera and point it at the code, then tap the link. The phone shows what to do next. Works once, for 10 minutes.</p>
             <div className="inline-block bg-white p-4 mt-4 rounded-2xl border"><QRCodeSVG value={qr.url} size={320} /></div>
-            <p className="text-stone-600 mt-3">On the phone: Share → <b>Add to Home Screen</b> to keep the till one tap away.</p>
+            <p className="text-lg text-stone-600 mt-3">Or type this code into the phone's <b>Sizzle Phone</b> icon:</p>
+            <p className="text-4xl font-extrabold tracking-widest mt-1">{formatPairCode(qr.code)}</p>
           </div>
         </Modal>
       )}

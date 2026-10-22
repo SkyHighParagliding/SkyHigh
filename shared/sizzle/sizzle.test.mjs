@@ -240,5 +240,16 @@ console.log("\nCustomer re-forecasts");
   assert(sausage(quiet) > sausage(real), "unpinned, a tiny Day 1 forecast raises the sausage price (gas spread over fewer serves)");
 }
 
+// Phone pairing codes: typed into the home-screen icon, so forgiving about case, spaces and the dash.
+{
+  const { normalizePairCode, formatPairCode } = await import("./pairCode.ts");
+  assert(normalizePairCode("k7qm-3xrp") === "K7QM3XRP", "pair code: lower case with a dash is accepted");
+  assert(normalizePairCode(" K7QM 3XRP ") === "K7QM3XRP", "pair code: spaces are ignored");
+  assert(normalizePairCode("K7QM3XR") === null, "pair code: 7 characters is refused");
+  assert(normalizePairCode("K7QM3XR0") === null, "pair code: 0 isn't in the alphabet (no 0/O mix-ups)");
+  assert(normalizePairCode("pair_abcdefghijklmnopqrstuvwxyz") === null, "pair code: the old long QR format is refused");
+  assert(formatPairCode("K7QM3XRP") === "K7QM-3XRP", "pair code: shown as 4-4");
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 if (failed) process.exit(1);

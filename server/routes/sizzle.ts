@@ -7,6 +7,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { getAppScriptUrl } from "../googleDrive.js";
 import { DriveNotConnectedError, driveStamp, uploadToDrive, type SizzleFolder } from "../sizzle/drive.js";
 import { PdfUnavailableError, htmlToPdf, pdfStatus } from "../sizzle/pdf.js";
+import { PAIR_ALPHABET, PAIR_LENGTH, normalizePairCode } from "../../shared/sizzle/pairCode.js";
 
 /**
  * Sausage sizzle till (/admin/sizzle on the iPad, /sizzle/phone on paired
@@ -63,6 +64,7 @@ const isNum = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 const isIso = (v: unknown) => typeof v === "string" && !Number.isNaN(Date.parse(v));
 const sha = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
 const secret = (prefix: string) => `${prefix}${crypto.randomBytes(32).toString("base64url")}`;
+const pairCode = () => Array.from({ length: PAIR_LENGTH }, () => PAIR_ALPHABET[crypto.randomInt(PAIR_ALPHABET.length)]).join("");
 const tillDevice = (req: Request): TillDevice | undefined => (req as any).tillDevice;
 
 function validSale(s: any): s is SaleIn {
@@ -198,7 +200,7 @@ router.get("/export", requireAuth, asyncHandler(async (req, res) => {
 
 // ─── Phones ──────────────────────────────────────────────────────────────────
 
-/** Admin: new phone slot + one-time pairing code (shown as a QR, valid 10 minutes). */
+/** Admin: new phone slot + one-time pairing code (shown as a QR and typed into the home-screen app, valid 10 minutes). */
 router.post("/devices", requireAuth, asyncHandler(async (req, res) => {
   const event = req.body?.event;
   const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 40) : "";
@@ -207,7 +209,7 @@ router.post("/devices", requireAuth, asyncHandler(async (req, res) => {
   const lastDay = isIso(req.body?.until) ? Date.parse(req.body.until) : Date.now() + 7 * 864e5;
   const expiresAt = new Date(Math.min(lastDay + 2 * 864e5, Date.now() + MAX_DEVICE_DAYS * 864e5));
   const id = `phone-${crypto.randomUUID()}`;
-  const code = secret("pair_");
+  const code = pairCode();
   const pairExpiresAt = new Date(Date.now() + PAIR_MINUTES * 60_000);
   await execute(
     `INSERT INTO sizzle_devices (id, event, name, "pairCodeHash", "pairExpiresAt", "expiresAt", "createdBy") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -235,10 +237,10 @@ router.delete("/devices/:id", requireAuth, asyncHandler(async (req, res) => {
   res.json({ revoked: r.rowCount });
 }));
 
-/** Phone: swap the one-time code from the QR for this phone's till-only token. */
+/** Phone: swap the one-time code (from the QR, or typed) for this phone's till-only token. */
 router.post("/pair", pairLimiter, asyncHandler(async (req, res) => {
-  const code = typeof req.body?.code === "string" ? req.body.code : "";
-  if (!/^pair_[\w-]{20,80}$/.test(code)) return res.status(400).json({ error: "Not a till pairing code" });
+  const code = typeof req.body?.code === "string" ? normalizePairCode(req.body.code) : null;
+  if (!code) return res.status(400).json({ error: "That isn't a till code — it's 8 letters and numbers, like K7QM-3XRP" });
   const token = secret("till_");
   const device = await queryOne<TillDevice & { expiresAt: string }>(
     `UPDATE sizzle_devices SET "tokenHash" = $2, "pairCodeHash" = NULL, "pairedAt" = NOW(), "lastSeenAt" = NOW()
@@ -246,7 +248,7 @@ router.post("/pair", pairLimiter, asyncHandler(async (req, res) => {
      RETURNING id, event, name, "expiresAt"`,
     [sha(code), sha(token)],
   );
-  if (!device) return res.status(410).json({ error: "This QR code has expired or was already used — make a new one on the iPad" });
+  if (!device) return res.status(410).json({ error: "This code has expired or was already used — add the phone again on the iPad" });
   res.json({ token, deviceId: device.id, event: device.event, name: device.name, expiresAt: device.expiresAt });
 }));
 
