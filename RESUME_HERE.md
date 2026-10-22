@@ -1,12 +1,17 @@
-# RESUME_HERE — Last updated: 2026-10-21 (session 77: sizzle till multi-device, events, Drive, how-to guides)
+# RESUME_HERE — Last updated: 2026-10-23 (session 79: sizzle phone set-up, security patches, new stall items)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `a90f3a1` (deployed); `feature/sausage-sizzle` = main + docs-only commits. Railway auto-deploys `main`.
+## Status: Active — sizzle till LIVE. `main` = `9a2b680` (deployed, live-checked). `feature/sausage-sizzle` = main + `d25ea7c` (wiki), `6594bad` (wiki), `73fa95b` (**new shopping/equipment/fire-ban items — NOT pushed; waiting for Jon's "push"**). Railway auto-deploys `main`. Resume: `claude --resume 0cd8e773-b573-4070-8efd-7b0eaefd9458`
 
-> **⏰ REMIND JON AT THE START OF THE NEXT SESSION (asked 2026-10-20):**
-> 1. **Test pasting the Card amount into the Stripe app** (Tap to Pay amount box, ideally in Stripe test mode). The till's copy already works on iPhone (pasted into Notes).
-> 2. **Get a quote for the dongle** — Jon now has the credentials.
-> Remove these lines once Jon has done them.
+## Session 79 (2026-10-22/23) — Railway outage, sizzle phone set-up, security patches
+- **Railway** paused builds (outage + security incident 21 Oct). Hobby builds back 23 Oct. Railway now advises rotating ALL env vars and checking GitHub/Google/DB access. **Jon is waiting for Railway to say who was affected** before changing keys; method (1Password → `railway variable set --stdin`) is in `tasks/todo.md`. The Railway CLI login is invalid (tokens reset) — Jon runs `! railway login` when needed.
+- **Deployed and live-checked:** `f766f43` 50c change hint + float (live: $20 on $3.50 → $10+$5+$1+50c); `03bc6c8` iPad Card says "Type this amount into the Stripe phone", phones keep Copy; `993aea2`/`c250648`/`59c2693` phone set-up — 8-char codes, QR is `/sizzle/phone?pair=CODE`, the server puts the code in the manifest `start_url` (server.ts) so the home-screen icon sets itself up (**Jon confirmed on his iPhone**), Android steps, **New code** button per phone; `1412317` Phones list refreshes every 10 s and closes the QR when set up; `9a2b680` security patches (npm audit 30 → 2 build-only; sharp 0.35.5, express 4.22.3, multer 2.5 …; live: health DB 1 ms, elevation 309 m at Bright via sharp).
+- **Stripe:** Jon installed and tested it — Tap to Pay phone-to-card/phone, copy/paste from the phone till works. **No dongle needed.** Unknown: several phones on one Stripe account at once (docs suggest yes) — test at the rehearsal.
+- **Drive:** 08 Card guide, 09 Shop assistant, 10 Admin how-to re-saved after the deploys (save ONE at a time — parallel saves hung once).
+- **Not pushed (`73fa95b`):** cooking spray, food-safe sanitiser (not at Woolworths, estimate), cloths, scourers, 4× paper towel, GF loaf, oat milk, decaf, peppermint tea; 13 equipment items (fire-safety water, drinking water, fly nets, drip tray, drip mat, lighter, leak-test spray, wash-up tub, GF + spare tongs, float coins, USB cables); compliance "Total Fire Ban days" (CFA rules). GF serves are beef only (vegie sausages contain wheat/barley). Initial shop $507.25 → $539.20 (+$10 elsewhere). After pushing: re-save docs 01, 03, 04, 09 to Drive.
+- **Security report** (MUST/SHOULD/COULD) is in `tasks/todo.md`: SHOULD = X-Forwarded-For fix in `submissions.ts:168`, confirm `ALLOW_PLAINTEXT_PASSWORDS` unset on Railway, pin Node, Dependabot. `/health` "unhealthy" is a false memory alarm (pre-existing).
+- **Ideas inbox:** store price check at any Woolworths/Coles + trolley list, after the event — `wiki/future/sizzle-store-prices.md`.
+- **Next:** Jon's "push" for `73fa95b` → Drive re-saves; rehearsal Tue 27 Oct (iPad + 2 phones, $1 Stripe test on two phones at once); Railway key change when Railway says.
 
 ## Session 78 (2026-10-22) — PHP flaw check
 - Checked the critical PHP flaws disclosed 21 Oct 2026. SkyHigh is not exposed: Node/Express on Railway, no PHP anywhere; old Google Sites is private and Google-run; the Vodien IP is only a parking page. Logged in `tasks/todo.md`. No code changes.
