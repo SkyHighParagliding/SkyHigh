@@ -425,6 +425,8 @@ ${PHONE_SETUP}
 <h2 class="avoid">Golden rules</h2>
 <ul class="avoid" style="font-size:13.5pt">
 <li>Same price cash or card. No minimum, no surcharge.</li>
+<li><b>Gluten free?</b> Beef sausage only (the vegie sausages contain gluten), on bread from the sealed gluten-free loaf, using the gluten-free tongs and fresh gloves. Ring it up as a normal <b>Sausage</b>.</li>
+<li><b>Plant milk, decaf and peppermint tea</b> are there if asked. Same price: ring up decaf as <b>Coffee</b>, peppermint as <b>Tea</b>.</li>
 <li>Never hand the Stripe phone to a customer to type an amount.</li>
 <li>Card money never goes in the cash box; the cash count is cash only.</li>
 <li>Prices and stock are changed by the organiser only (they're PIN-locked).</li>

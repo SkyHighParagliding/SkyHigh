@@ -118,9 +118,9 @@
       },
       {
         "product": "paper_towel",
-        "qtyPerDay": 20,
+        "qtyPerDay": 140,
         "allocateTo": "all",
-        "note": "sheets; handwash station + spills"
+        "note": "sheets; handwash station, spills and wiping down — ≈4 packs over 4 days"
       },
       {
         "product": "hand_soap",
@@ -139,6 +139,52 @@
         "qtyPerDay": 30,
         "allocateTo": "all",
         "note": "ml; washing tongs/utensils"
+      },
+      {
+        "product": "cooking_oil",
+        "qtyPerDay": 30,
+        "allocateTo": "food",
+        "note": "g; a light spray on the hotplate"
+      },
+      {
+        "product": "gf_bread",
+        "qtyPerDay": 3,
+        "allocateTo": "food",
+        "note": "slices; ≈3 gluten-free serves a day (beef sausage only) — one loaf covers the event"
+      },
+      {
+        "product": "plant_milk",
+        "qtyPerDay": 250,
+        "allocateTo": "hot",
+        "note": "ml"
+      },
+      {
+        "product": "decaf",
+        "qtyPerDay": 4,
+        "allocateTo": "hot",
+        "note": "g; ≈2 cups a day"
+      },
+      {
+        "product": "herbal_tea",
+        "qtyPerDay": 3,
+        "allocateTo": "hot",
+        "note": "bags"
+      },
+      {
+        "product": "surface_sanitiser",
+        "qtyPerDay": 100,
+        "allocateTo": "all",
+        "note": "ml; benches and surfaces, after spills"
+      },
+      {
+        "product": "cloths",
+        "qtyPerDay": 2,
+        "allocateTo": "all"
+      },
+      {
+        "product": "scourers",
+        "qtyPerDay": 1,
+        "allocateTo": "all"
       }
     ],
     "card": {
@@ -311,6 +357,30 @@
       "bufferUnits": 20
     },
     {
+      "id": "gf_bread",
+      "name": "Woolworths Free From Gluten White Bread Loaf 440g",
+      "brand": "Woolworths",
+      "packSize": "440g (≈12 slices)",
+      "unitsPerPack": 12,
+      "unit": "slice",
+      "price": 5.5,
+      "unitPrice": "$1.25 / 100G",
+      "stockcode": "277578",
+      "url": "https://www.woolworths.com.au/shop/productdetails/277578/woolworths-free-from-gluten-white-bread-loaf",
+      "category": "Proprietary Bakery",
+      "aisle": "Bakery (gluten-free shelf)",
+      "perishable": false,
+      "storage": "Kept sealed in its own bag, apart from the normal bread — its own tongs",
+      "ownBrand": true,
+      "confirmInStore": true,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright.",
+        "Gluten-free serves are BEEF sausage only: the Market Value beef sausages, both sauces and the mustard are listed gluten free, but the vegie sausages contain gluten (wheat, barley).",
+        "Slices per loaf is an estimate."
+      ],
+      "fallback": "Wonder Gluten Free Soft White Sliced Bread 470g, $7, stockcode 236078."
+    },
+    {
       "id": "onion",
       "name": "Woolworths Prep Set Go Frozen Diced Onions 500g",
       "brand": "Woolworths",
@@ -414,6 +484,28 @@
       "fallback": "Tetley Tea Bags 100 pack, $4.30, stockcode 574821."
     },
     {
+      "id": "herbal_tea",
+      "name": "Woolworths Peppermint Tea 40 pack",
+      "brand": "Woolworths",
+      "packSize": "40 tea bags",
+      "unitsPerPack": 40,
+      "unit": "bag",
+      "price": 1.75,
+      "unitPrice": "$0.04 / 1EA",
+      "stockcode": "690091",
+      "url": "https://www.woolworths.com.au/shop/productdetails/690091/woolworths-peppermint-tea",
+      "category": "Beverages",
+      "aisle": "Tea",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright."
+      ],
+      "fallback": "Any peppermint or camomile tea bags under $3."
+    },
+    {
       "id": "coffee",
       "name": "Woolworths Essentials Instant Coffee Granulated 200g",
       "brand": "Woolworths Essentials",
@@ -432,6 +524,28 @@
       "confirmInStore": false,
       "flags": [],
       "fallback": "Nescafe Blend 43 Instant Coffee Jar 150g, $14.50, stockcode 33835."
+    },
+    {
+      "id": "decaf",
+      "name": "Woolworths Freeze Dried Coffee Decaf 100g",
+      "brand": "Woolworths",
+      "packSize": "100g jar",
+      "unitsPerPack": 100,
+      "unit": "g",
+      "price": 5,
+      "unitPrice": "$5.00 / 100G",
+      "stockcode": "347035",
+      "url": "https://www.woolworths.com.au/shop/productdetails/347035/woolworths-freeze-dried-coffee-decaf",
+      "category": "Beverages",
+      "aisle": "Coffee",
+      "perishable": false,
+      "storage": "Dry",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright."
+      ],
+      "fallback": "Any decaf instant coffee jar under $6."
     },
     {
       "id": "sugar",
@@ -472,6 +586,29 @@
       "confirmInStore": false,
       "flags": [],
       "fallback": "Devondale Pure Full Cream Long Life Milk 1L, $2.20, stockcode 33557."
+    },
+    {
+      "id": "plant_milk",
+      "name": "Macro Organic Oat Unsweetened Long Life Milk 1L",
+      "brand": "Macro (Woolworths)",
+      "packSize": "1L UHT",
+      "unitsPerPack": 1000,
+      "unit": "ml",
+      "price": 2.4,
+      "unitPrice": "$2.40 / 1L",
+      "stockcode": "150166",
+      "url": "https://www.woolworths.com.au/shop/productdetails/150166/macro-organic-oat-unsweetened-long-life-milk",
+      "category": "Beverages",
+      "aisle": "Long-life milk",
+      "perishable": false,
+      "storage": "Dry until opened, then the Dometic",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright.",
+        "Oat chosen because it works best in coffee."
+      ],
+      "fallback": "So Good Soy Regular Long Life Milk 1L, $2.40, stockcode 24318; or Woolworths Unsweetened Almond Long Life Milk 1L, $1.85, stockcode 779134."
     },
     {
       "id": "water",
@@ -669,6 +806,28 @@
       "fallback": "Armada BBQ Foil Trays Medium 3 pack, $5.00, stockcode 75770."
     },
     {
+      "id": "cooking_oil",
+      "name": "Woolworths Canola Cooking Spray 400g",
+      "brand": "Woolworths",
+      "packSize": "400g spray can",
+      "unitsPerPack": 400,
+      "unit": "g",
+      "price": 3,
+      "unitPrice": "$0.75 / 100G",
+      "stockcode": "346864",
+      "url": "https://www.woolworths.com.au/shop/productdetails/346864/woolworths-canola-cooking-spray",
+      "category": "Cooking Needs",
+      "aisle": "Oils (cooking needs)",
+      "perishable": false,
+      "storage": "Dry, away from the BBQ flame",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright."
+      ],
+      "fallback": "Woolworths Canola Oil 750mL, $4, stockcode 750736 (bottle; use a brush or a small squeeze bottle)."
+    },
+    {
       "id": "bin_bags",
       "name": "Armada Jumbo Trolley Liner Garbage Bags 4 pack",
       "brand": "Armada",
@@ -779,6 +938,76 @@
         "No Woolworths-labelled detergent found. Cheapest equivalent."
       ],
       "fallback": "Earth Choice Dishwashing Liquid 1L, $2.65, stockcode 10432."
+    },
+    {
+      "id": "surface_sanitiser",
+      "name": "Food-safe surface sanitiser spray 750mL (no-rinse, food-contact)",
+      "brand": "—",
+      "packSize": "750mL spray",
+      "unitsPerPack": 750,
+      "unit": "ml",
+      "price": 10,
+      "unitPrice": "estimate",
+      "stockcode": "",
+      "url": "",
+      "category": "Not sold at Woolworths",
+      "aisle": "Not at Woolworths",
+      "perishable": false,
+      "storage": "Wash-up area, away from food",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "notWoolworths": true,
+      "estimate": true,
+      "flags": [
+        "ESTIMATE: Woolworths sells household disinfectant sprays and wipes, but none labelled safe for food-contact surfaces. Buy a food-safe (no-rinse) sanitiser at Bunnings, a hospitality supplier or a chemist. Household sprays such as Pine O Cleen are not for food-prep surfaces."
+      ],
+      "fallback": "Wash with hot soapy water, then wipe with a dilute unscented bleach solution made up as the label says, then air dry."
+    },
+    {
+      "id": "cloths",
+      "name": "Chux Original Superwipes 10 pack",
+      "brand": "Chux",
+      "packSize": "10 cloths",
+      "unitsPerPack": 10,
+      "unit": "cloth",
+      "price": 4.9,
+      "unitPrice": "$0.49 / 1EA",
+      "stockcode": "32011",
+      "url": "https://www.woolworths.com.au/shop/productdetails/32011/chux-original-superwipes",
+      "category": "Household Cleaning",
+      "aisle": "Cleaning",
+      "perishable": false,
+      "storage": "Wash-up area",
+      "ownBrand": false,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright.",
+        "No Woolworths-brand cloth checked."
+      ],
+      "fallback": "Chux Original Superwipes 20 pack, $6.50, stockcode 32192."
+    },
+    {
+      "id": "scourers",
+      "name": "Woolworths Essentials Sponge Scourer 6 pack",
+      "brand": "Woolworths Essentials",
+      "packSize": "6 sponge scourers",
+      "unitsPerPack": 6,
+      "unit": "sponge",
+      "price": 2.8,
+      "unitPrice": "$0.47 / 1EA",
+      "stockcode": "250145",
+      "url": "https://www.woolworths.com.au/shop/productdetails/250145/woolworths-essentials-sponge-scourer",
+      "category": "Household Cleaning",
+      "aisle": "Cleaning",
+      "perishable": false,
+      "storage": "Wash-up area",
+      "ownBrand": true,
+      "confirmInStore": false,
+      "flags": [
+        "Online price 23 Oct 2026 — not yet checked at Bright.",
+        "Sponge on one side, scourer on the other — covers both."
+      ],
+      "fallback": "Woolworths Essentials Scourer 6 pack, $1, stockcode 731253, plus Household Sponge 5 pack, $1.80, stockcode 25724."
     },
     {
       "id": "ice",
@@ -1085,6 +1314,22 @@
       "source": "Grillworx Long Tongs 40cm, Woolworths 94747"
     },
     {
+      "item": "Tongs — GLUTEN-FREE ONLY (mark with tape)",
+      "status": "tbc",
+      "qty": 1,
+      "estCost": 6,
+      "source": "Grillworx Long Tongs 40cm, Woolworths 94747",
+      "notes": "For the sealed gluten-free loaf and the beef sausage on gluten-free serves."
+    },
+    {
+      "item": "Spare tongs",
+      "status": "tbc",
+      "qty": 2,
+      "estCost": 6,
+      "source": "Grillworx Long Tongs 40cm, Woolworths 94747",
+      "notes": "In case a pair is dropped or mixed up."
+    },
+    {
       "item": "BBQ flipper / spatula",
       "status": "tbc",
       "qty": 1,
@@ -1098,10 +1343,40 @@
       "notes": "Not listed at Woolworths — price TBC."
     },
     {
+      "item": "Drip tray for grease + sealed container to take the waste fat away",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Never pour fat on the ground. Take it home in the sealed container."
+    },
+    {
+      "item": "Drip mat / ground sheet under the BBQ",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Protects the farmers' paddocks from fat and spills."
+    },
+    {
+      "item": "Lighter or long matches",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "For when the BBQ igniter fails."
+    },
+    {
+      "item": "Spray bottle of soapy water (gas leak test)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "After connecting the cylinder, spray the valve and hose joints: bubbles mean a leak — turn the gas off and refit."
+    },
+    {
       "item": "Foil trays, large (holding cooked sausages / onions)",
       "status": "buy",
       "qty": 12,
       "notes": "On the shopping list: 3 a day (meat, veg, onions), 12 over the event."
+    },
+    {
+      "item": "Fly nets / food covers for the holding trays",
+      "status": "tbc",
+      "qty": 3,
+      "notes": "Meat, veg and onion trays."
     },
     {
       "item": "Food thermometer (probe)",
@@ -1127,6 +1402,24 @@
       "status": "tbc",
       "qty": 1,
       "notes": "Price TBC."
+    },
+    {
+      "item": "Wash-up tub (tongs and utensils)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Hot water from the kettle + detergent. Separate from the handwash station."
+    },
+    {
+      "item": "Drinking water: about 20 L a day (kettle + handwash)",
+      "status": "tbc",
+      "qty": 2,
+      "notes": "2 × 10 L jerry cans filled at a tap each day, or Mt Ossa Australian Natural Spring Water 10 L casks ($4.75, Woolworths 912380)."
+    },
+    {
+      "item": "Fire-safety water: 10 L kept separate (or a hose on a tap)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Required on Total Fire Ban days (see the Compliance checklist). Label it; never use it for handwash or the kettle."
     },
     {
       "item": "Fire extinguisher (dry powder)",
@@ -1158,6 +1451,12 @@
       "notes": "Price TBC."
     },
     {
+      "item": "Float: coins and small notes",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "How many of each: the Float & cash-up sheet (Docs) or End of day → Starting float. Get coins from the bank before the event — including 50c coins, now that sausages are $3.50."
+    },
+    {
       "item": "iPad + charger (till)",
       "status": "tbc",
       "qty": 1
@@ -1172,6 +1471,12 @@
       "item": "Charging cable for the Stripe device",
       "status": "tbc",
       "qty": 1
+    },
+    {
+      "item": "USB charging cables for the till phones and iPad",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "A set: USB-C to USB-C, USB-A to USB-C and Lightning (older iPhones and iPads), plus a multi-port USB charger. Charge from the Bluetti — the Elite 100 V2's USB ports, or the Elite 300 outside the lunch rush."
     },
     {
       "item": "Power bank (≥10,000 mAh) for the Stripe device",
@@ -1225,6 +1530,12 @@
       "title": "Read the Class 4 sausage sizzle rules",
       "detail": "Class 4 = sausages, onion, sauce, bread + tea, coffee, bottled water, soft drinks only. Nothing else on the stall. (The old health.vic.gov.au Class 4 page now returns 'not found' — Victorian food-safety guidance has moved to Safe Food Victoria.)",
       "link": "https://www.safefood.vic.gov.au/fundraising-with-food-community-groups"
+    },
+    {
+      "title": "Total Fire Ban days: rules for the gas BBQ",
+      "detail": "Check cfa.vic.gov.au each morning. On a Total Fire Ban day a commercially made portable gas BBQ may still be used if it sits stable, the ground within 3 m is clear of anything flammable, a hose connected to a water supply or at least 10 L of water is ready for immediate use (the fire-safety water — not the handwash water), and an adult stays with it while it's alight and until it's fully off. Also check the local council's rules.",
+      "link": "https://www.cfa.vic.gov.au/plan-prepare/fires-in-the-home/barbecue-fire-safety",
+      "due": "Each morning of the event"
     },
     {
       "title": "Volunteers: free DoFoodSafely course (recommended)",
