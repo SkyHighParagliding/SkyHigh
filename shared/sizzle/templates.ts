@@ -369,9 +369,26 @@ export function cardGuideBody(data: SizzleData): string {
 
 // ─── 9. Shop assistant how-to ─────────────────────────────────────────────────
 
+/** Phone set-up steps, shared by the shop assistant and admin how-tos. */
+const PHONE_SETUP = `<ol class="steps">
+<li>Organiser: on the iPad, <b>Admin</b> → <b>Phones</b> → type the volunteer's name → <b>Add phone</b>.</li>
+<li>Point the phone's camera at the QR code. Tap the link.</li>
+<li>The phone shows a code. Leave it on the screen.</li>
+<li><b>iPhone:</b> tap <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.<br><b>Android:</b> tap <b>⋮</b> (top right) → <b>Add to Home screen</b> or <b>Install app</b>.</li>
+<li>Open the new <b>Sizzle Phone</b> icon. Type the code. Tap <b>Set up</b>.</li>
+<li>The top bar says <b>Synced</b>. Ready to sell.</li>
+</ol>
+<ul class="note">
+<li>Camera won't scan? Open the icon and type the code shown on the iPad.</li>
+<li>Code says expired or used? It works once, for 10 minutes. Ask for a new one.</li>
+<li>No icon wanted? Tap <b>Use in Safari instead</b> (Android: <b>Use in the browser instead</b>).</li>
+</ul>`;
+
 export function shopAssistantGuideBody(data: SizzleData): string {
   return `${header(data, "Shop assistant how-to", "Selling on the till — iPad or phone, the buttons are the same.")}
 <p style="font-size:13pt">Organiser on duty: <span class="blank" style="min-width:200px"></span> &nbsp; Phone: <span class="blank" style="min-width:150px"></span></p>
+<h2>Selling on your own phone? Set it up once</h2>
+${PHONE_SETUP}
 <h2>1. Take the order</h2>
 <ol class="steps">
 <li>Tap an item card once for each one the customer wants. The white bubble on the card shows how many.</li>
@@ -426,10 +443,12 @@ export function adminGuideBody(data: SizzleData): string {
 <li><b>PIN:</b> Admin tab → choose a 4–8 digit PIN. It locks prices, stock and the Money tab (unlocked for 10 minutes at a time). Forgot it? <b>Forgot PIN?</b> and the website password.</li>
 <li><b>Event and customers:</b> Admin → <b>Event</b> shows the current event. Admin → <b>Customers per day</b>: enter the estimate for each day → <b>Save customer numbers</b>. Quantities follow these; sell prices don't.</li>
 <li><b>Shopping:</b> Docs tab → <b>Initial shopping list</b> → View / Print or Save to Drive. After the shop, fix any shelf price that differed (Admin → Shelf prices) and set the real stock if you bought differently (Admin → Stock on hand → <b>Set on-hand (units)</b>).</li>
-<li><b>Phones:</b> Admin → <b>Phones</b> → type a name → <b>Add phone</b>. Scan the QR with that phone's camera and open the link (needs signal; the code works once, for 10 minutes). The phone shows a code: Share → <b>Add to Home Screen</b>, open the new <b>Sizzle Phone</b> icon and type the code (the icon keeps its own storage, so Safari's set-up doesn't carry over). Or tap <b>Use in Safari instead</b>. The phone gets a till-only pass — no password on volunteers' phones.</li>
-<li><b>Stripe:</b> log the Stripe phone in with a volunteer-level team login (never the admin login), check the account time zone is Melbourne, and do a $1 test payment and refund. Stripe's Tap to Pay runs on an iPhone, not the iPad — so pair the Stripe phone as a till too: card sales are quickest rung up on that phone (copy → paste). On the iPad, card amounts have to be typed into the Stripe phone.</li>
+<li><b>Phones:</b> iPhone or Android. Follow <b>Setting up a phone</b> below. Needs signal. The phone gets a till-only pass — no password on volunteers' phones.</li>
+<li><b>Stripe:</b> Tap to Pay needs an iPhone XS or newer, or an Android phone with NFC — not the iPad. Install the <b>Stripe Dashboard</b> app, log in with a volunteer-level team login (never the admin login), check the time zone is Melbourne, and do a $1 test payment and refund. Set the Stripe phone up as a till too: card sales are quickest on that phone (copy → paste).</li>
 <li><b>Paperwork:</b> follow the Compliance checklist (council notifications, Statements of Trade, EHO). Print the Price board, Float & cash-up sheet and the Shop assistant how-to.</li>
 </ol>
+<h2 class="avoid">Setting up a phone</h2>
+${PHONE_SETUP}
 <h2 class="avoid">Each morning</h2>
 <ul class="avoid">
 <li>Open the iPad icon and log in again (the login lasts 24 hours). Check the day buttons (D1–D${data.event.days.length}) show today.</li>

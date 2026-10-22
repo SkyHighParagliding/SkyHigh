@@ -21,6 +21,7 @@ import { formatPairCode, normalizePairCode } from "../../shared/sizzle/pairCode.
 interface Pass { token: string; name: string; event: string; expiresAt: string }
 const PASS_KEY = "phonePass";
 
+const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 const standalone = () => matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
 /** The code from the QR link, taken out of the address bar (it's single-use). */
@@ -100,12 +101,14 @@ function InstallFirst({ code, busy, error, onSafari }: { code: string; busy: boo
       <p className="mt-2 text-lg">Your code (works once, for 10 minutes):</p>
       <p className="mt-2 text-5xl font-extrabold tracking-widest">{formatPairCode(code)}</p>
       <ol className="mt-4 text-left text-lg list-decimal pl-6 space-y-1">
-        <li>Tap <Share className="inline w-5 h-5 -mt-1" /> <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.</li>
+        {isIos()
+          ? <li>Tap <Share className="inline w-5 h-5 -mt-1" /> <b>Share</b> → <b>Add to Home Screen</b> → <b>Add</b>.</li>
+          : <li>Tap <b>⋮</b> (top right) → <b>Add to Home screen</b> or <b>Install app</b>.</li>}
         <li>Open the new <b>Sizzle Phone</b> icon.</li>
         <li>Type this code and tap <b>Set up</b>.</li>
       </ol>
       {error && <p className="mt-3 rounded-xl bg-red-100 text-red-800 p-3">{error}</p>}
-      <button type="button" disabled={busy} onClick={onSafari} className="mt-5 h-12 px-4 rounded-xl border-2 border-amber-700 text-amber-800 text-lg font-semibold">Use in Safari instead</button>
+      <button type="button" disabled={busy} onClick={onSafari} className="mt-5 h-12 px-4 rounded-xl border-2 border-amber-700 text-amber-800 text-lg font-semibold">{isIos() ? "Use in Safari instead" : "Use in the browser instead"}</button>
     </Centre>
   );
 }
