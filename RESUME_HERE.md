@@ -8,6 +8,9 @@
 > 2. **Get a quote for the dongle** — Jon now has the credentials.
 > Remove these lines once Jon has done them.
 
+## Session 78 (2026-10-22) — PHP flaw check
+- Checked the critical PHP flaws disclosed 21 Oct 2026. SkyHigh is not exposed: Node/Express on Railway, no PHP anywhere; old Google Sites is private and Google-run; the Vodien IP is only a parking page. Logged in `tasks/todo.md`. No code changes.
+
 ## Session 77 (2026-10-20) — sizzle till, all four phases live (DECISION-020)
 - TASK-038 customers per day (`9fb0f0e`), TASK-040/041 phones + shared sync + `/sizzle/phone` (`6a019bd`, fix `70be5b5` migration 053), TASK-039 events + Docs tab + Google Drive saves (`0e53333`). All ✅ in `wiki/02-tasks.md`.
 - Chromium on Railway: service variable `RAILPACK_DEPLOY_APT_PACKAGES=chromium` (Railpack builder). Live `pdf:true`; a real Initial shopping list PDF landed in the club Drive.
