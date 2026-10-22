@@ -522,22 +522,28 @@ export function tillTopUpList(data: SizzleData, onHand: Qty, days: number[], tit
 
 // ─── Till: change, cash-up, card reconciliation ───────────────────────────────
 
-export const NOTES_AND_COINS = [100, 50, 20, 10, 5, 2, 1];
+export const NOTES_AND_COINS = [100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05];
+
+/** "$20", "$1", "50c". */
+export function denomLabel(d: number): string {
+  return d >= 1 ? `$${d}` : `${Math.round(d * 100)}c`;
+}
 
 export function changeDue(total: number, tendered: number): number | null {
   const c = roundCents(tendered - total);
   return c < 0 ? null : c;
 }
 
-/** Greedy breakdown of a whole-dollar amount into notes/coins. */
+/** Greedy breakdown of an amount into notes/coins, worked in cents so 50c prices don't drift. */
 export function breakdown(amount: number, denoms = NOTES_AND_COINS): Record<number, number> {
   const out: Record<number, number> = {};
-  let left = Math.round(amount);
+  let left = Math.round(amount * 100);
   for (const d of denoms) {
-    const n = Math.floor(left / d);
+    const c = Math.round(d * 100);
+    const n = Math.floor(left / c);
     if (n > 0) {
       out[d] = n;
-      left -= n * d;
+      left -= n * c;
     }
   }
   return out;
@@ -653,7 +659,8 @@ export interface FloatPlan {
   reasoning: string[];
 }
 
-const FLOAT_DENOMS = [20, 10, 5, 2, 1];
+/** 50c only gets a count when a price has 50c in it; otherwise it stays 0. */
+export const FLOAT_DENOMS = [20, 10, 5, 2, 1, 0.5];
 const TENDER_NOTES = [5, 10, 20, 50];
 
 /**
@@ -715,13 +722,13 @@ export function recommendFloat(data: SizzleData, customers = data.config.custome
   // Coins rarely do (people pay with notes), so they cover the whole day.
   for (const d of FLOAT_DENOMS) counts[d] = Math.ceil((d <= 2 ? cashCustomers * coinSafety : rush * safety) * perCustomer[d] - EPS);
   for (const [d, min] of Object.entries(fc.minimum)) counts[Number(d)] = Math.max(counts[Number(d)] ?? 0, min);
-  for (const d of [2, 1]) counts[d] = ceilTo(counts[d], fc.coinRoundTo);
+  for (const d of [2, 1, 0.5]) counts[d] = ceilTo(counts[d], fc.coinRoundTo);
 
-  const likely = [...dist].filter(([v]) => v > 0).sort((a, z) => z[1] - a[1]).slice(0, 4).map(([v, p]) => `$${v} (${Math.round(p * 100)}%)`).join(", ");
-  const per = FLOAT_DENOMS.map((d) => `${perCustomer[d].toFixed(2)}×$${d}`).join(", ");
+  const likely = [...dist].filter(([v]) => v > 0).sort((a, z) => z[1] - a[1]).slice(0, 4).map(([v, p]) => `$${v.toFixed(v % 1 ? 2 : 0)} (${Math.round(p * 100)}%)`).join(", ");
+  const per = FLOAT_DENOMS.filter((d) => d >= 1 || perCustomer[d] > 0).map((d) => `${perCustomer[d].toFixed(2)}×${denomLabel(d)}`).join(", ");
   const reasoning = [
     `${customers} customers × ${Math.round((1 - config.card.share) * 100)}% paying cash ≈ ${cashCustomers.toFixed(0)} cash customers a day; average spend $${spend.toFixed(2)}.`,
-    `Most likely baskets: ${likely}. Odd totals ($3, $5, $7…) need $1 coins in the change.`,
+    `Most likely baskets: ${likely}. Odd totals ($3, $5, $7…) need $1 coins in the change${perCustomer[0.5] > 0 ? "; totals ending in 50c need 50c coins" : ""}.`,
     `Tenders assumed: ${fc.tenders.map((t) => `${t.note ? `$${t.note}` : "exact"} ${Math.round(t.share * 100)}%`).join(", ")} (a note smaller than the basket is bumped to the next note up).`,
     `Average change per cash customer ≈ $${changeOut.toFixed(2)}, made of ${per}.`,
     `Notes: that × the first ${rush} cash customers (the ${Math.round(fc.rushShare * 100)}% who arrive before notes come back in). Coins: × all ${cashCustomers.toFixed(0)} cash customers, because people pay with notes and coins rarely come back. Safety margin × ${safety} on notes, × ${coinSafety} on coins (small numbers swing a lot); rounded up; coins to multiples of ${fc.coinRoundTo}.`,

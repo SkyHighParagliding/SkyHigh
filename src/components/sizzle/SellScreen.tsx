@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Check, Copy, CreditCard, Minus, Plus, RotateCcw, Banknote, X } from "lucide-react";
-import { changeDue, breakdown, saleTotal, type SaleLine } from "../../../shared/sizzle/calc.ts";
+import { changeDue, breakdown, denomLabel, saleTotal, type SaleLine } from "../../../shared/sizzle/calc.ts";
 import type { StoredSale } from "@/lib/sizzleStore";
 import { shortName, type Till } from "./useTill";
 
@@ -201,7 +201,7 @@ function CashPay({ total, pay, setPay, busy, onConfirm }: {
 }) {
   const change = pay.tendered === null ? null : changeDue(total, pay.tendered);
   if (pay.tendered !== null && change !== null) {
-    const parts = Object.entries(breakdown(change)).sort((a, b) => Number(b[0]) - Number(a[0])).map(([d, n]) => `${n} × $${d}`).join(" + ");
+    const parts = Object.entries(breakdown(change)).sort((a, b) => Number(b[0]) - Number(a[0])).map(([d, n]) => `${n} × ${denomLabel(Number(d))}`).join(" + ");
     return (
       <div className="text-center">
         <p className="text-lg sm:text-2xl text-stone-600">Total {money(total)} · Given {money(pay.tendered)}</p>

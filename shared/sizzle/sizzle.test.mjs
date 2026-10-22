@@ -62,6 +62,10 @@ const b13 = breakdown(13);
 assert(b13[10] === 1 && b13[2] === 1 && b13[1] === 1 && Object.keys(b13).length === 3, "$13 = $10 + $2 + $1");
 const b45 = breakdown(45);
 assert(b45[20] === 2 && b45[5] === 1, "$45 = 2×$20 + $5");
+const b165 = breakdown(changeDue(3.5, 20));
+assert(b165[10] === 1 && b165[5] === 1 && b165[1] === 1 && b165[0.5] === 1 && Object.keys(b165).length === 4, "$20 for a $3.50 sausage → $10 + $5 + $1 + 50c (not rounded to $17)");
+const b07 = breakdown(0.7);
+assert(b07[0.5] === 1 && b07[0.2] === 1 && Object.keys(b07).length === 2, "70c = 50c + 20c");
 
 // ─── Depletion via the bill of materials ───────────────────────────────────
 console.log("\nDepletion");
@@ -165,6 +169,13 @@ assert(f.cashCustomers < real.config.customersPerDay[0], "float sized on cash cu
 const lessCash = clone(real);
 lessCash.config.card.share = 0.9;
 assert(recommendFloat(lessCash).total <= f.total, "higher card share → float no bigger");
+assert(!f.counts[0.5], "whole-dollar prices → no 50c coins in the float");
+const halves = clone(real);
+halves.config.priceOverrides = { ...halves.config.priceOverrides, sausage: 3.5, veg_sausage: 3.5 };
+const fh = recommendFloat(halves);
+const totH = Object.entries(fh.counts).reduce((a, [d, n]) => a + Number(d) * n, 0);
+assert(fh.counts[0.5] > 0 && fh.counts[0.5] % 5 === 0, `$3.50 sausages → ${fh.counts[0.5]} × 50c in the float (multiple of 5)`);
+assert(Math.abs(fh.total - totH) < 0.005, `50c float total $${fh.total} = sum of denominations`);
 
 // ─── Treasurer report + lessons ────────────────────────────────────────────
 console.log("\nTreasurer report");

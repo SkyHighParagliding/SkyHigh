@@ -13,9 +13,11 @@ import {
   type PriceRow,
   type ShopList,
   type SizzleData,
+  FLOAT_DENOMS,
   cardFixed,
   costPerServe,
   dayForecasts,
+  denomLabel,
   powerBudget,
   pricingTable,
   productIndex,
@@ -240,14 +242,15 @@ export function priceBoardBody(data: SizzleData, rows: PriceRow[] = pricingTable
 const SHEET_DENOMS = [100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05];
 
 export function floatSheetBody(data: SizzleData, plan: FloatPlan = recommendFloat(data)): string {
-  const floatRows = [20, 10, 5, 2, 1].map((d) => `<tr class="tight"><td>$${d}</td><td class="c" style="font-size:15pt;font-weight:700">${plan.counts[d] ?? 0}</td><td class="num">${money((plan.counts[d] ?? 0) * d, 0)}</td><td class="c">${box}</td></tr>`).join("");
-  const countRows = SHEET_DENOMS.map((d) => `<tr class="tight"><td>${d >= 1 ? `$${d}` : `${Math.round(d * 100)}c`}</td><td class="c"><span class="blank" style="min-width:60px"></span></td><td class="num"><span class="blank"></span></td></tr>`).join("");
+  const cash = (n: number) => money(n, n % 1 ? 2 : 0);
+  const floatRows = FLOAT_DENOMS.filter((d) => d >= 1 || plan.counts[d]).map((d) => `<tr class="tight"><td>${denomLabel(d)}</td><td class="c" style="font-size:15pt;font-weight:700">${plan.counts[d] ?? 0}</td><td class="num">${cash((plan.counts[d] ?? 0) * d)}</td><td class="c">${box}</td></tr>`).join("");
+  const countRows = SHEET_DENOMS.map((d) => `<tr class="tight"><td>${denomLabel(d)}</td><td class="c"><span class="blank" style="min-width:60px"></span></td><td class="num"><span class="blank"></span></td></tr>`).join("");
   const day = data.event.days.map((d) => d.label).join(" ☐  ");
   return `${header(data, "Float & cash-up sheet", "One sheet per trading day. Cash only in this section — card sales are reconciled separately below.")}
 <p style="font-size:13pt">Day: ☐ ${esc(day)}</p>
 <div class="cols">
 <div class="avoid"><h2>Starting float</h2>
-<table><thead><tr><th>Denomination</th><th class="c">Count</th><th class="num">Value</th><th class="c">✓</th></tr></thead><tbody>${floatRows}<tr class="total"><td>Total float</td><td></td><td class="num">${money(plan.total, 0)}</td><td></td></tr></tbody></table>
+<table><thead><tr><th>Denomination</th><th class="c">Count</th><th class="num">Value</th><th class="c">✓</th></tr></thead><tbody>${floatRows}<tr class="total"><td>Total float</td><td></td><td class="num">${cash(plan.total)}</td><td></td></tr></tbody></table>
 <div class="note small"><b>Why this float:</b><ul style="margin:2px 0;padding-left:18px">${plan.reasoning.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>
 </div>
 <div class="avoid"><h2>End-of-day cash count</h2>
@@ -256,7 +259,7 @@ export function floatSheetBody(data: SizzleData, plan: FloatPlan = recommendFloa
 <div class="cols avoid">
 <div><h2>Cash reconciliation</h2>
 <table><tbody>
-<tr><td>A. Starting float</td><td class="num">${money(plan.total, 0)}</td></tr>
+<tr><td>A. Starting float</td><td class="num">${cash(plan.total)}</td></tr>
 <tr><td>B. Cash sales (till end-of-day — CASH only)</td><td class="num"><span class="blank" style="min-width:80px"></span></td></tr>
 <tr class="total"><td>C. Expected cash = A + B</td><td class="num"><span class="blank" style="min-width:80px"></span></td></tr>
 <tr><td>D. Counted cash (count above)</td><td class="num"><span class="blank" style="min-width:80px"></span></td></tr>

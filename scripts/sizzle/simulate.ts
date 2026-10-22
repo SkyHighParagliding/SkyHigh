@@ -46,7 +46,7 @@ const { mix, card, float: fc } = data.config;
 const prices = priceMap(data);
 const floatPlan = recommendFloat(data);
 const drawer: Record<number, number> = { 50: 0, ...floatPlan.counts };
-const DENOMS = [50, 20, 10, 5, 2, 1];
+const DENOMS = [50, 20, 10, 5, 2, 1, 0.5];
 const NOTES = [5, 10, 20, 50];
 
 const missing: Record<number, number> = {};

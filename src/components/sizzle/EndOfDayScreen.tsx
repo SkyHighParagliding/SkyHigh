@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FileDown, Save } from "lucide-react";
-import { cardReconcile, denomTotal, summariseSales, tillTopUpList, type Qty, type SizzleData } from "../../../shared/sizzle/calc.ts";
+import { FLOAT_DENOMS as FLOAT_DENOM_VALUES, cardReconcile, denomTotal, summariseSales, tillTopUpList, type Qty, type SizzleData } from "../../../shared/sizzle/calc.ts";
 import { endOfDayBody, page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 import { openPrintView } from "./printView";
 import { shortName, type Till } from "./useTill";
@@ -10,7 +10,7 @@ import { saveDocToDrive, saveQuietly } from "./driveSave";
 import { useAuth } from "@/contexts/AuthContext";
 
 const money = (n: number) => `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
-const FLOAT_DENOMS = ["20", "10", "5", "2", "1"];
+const FLOAT_DENOMS = FLOAT_DENOM_VALUES.map(String);
 const COUNT_DENOMS = ["100", "50", "20", "10", "5", "2", "1", "0.5", "0.2", "0.1", "0.05"];
 const denomLabel = (d: string) => (Number(d) >= 1 ? `$${d}` : `${Math.round(Number(d) * 100)}c`);
 
