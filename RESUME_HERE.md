@@ -3,6 +3,16 @@
 ## Project: SkyHigh
 ## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `96c5283`+ (deployed 23 Oct, incl. `73fa95b` new items; docs 01/03/04/09 re-saved to Drive). Railway auto-deploys `main`. Resume: `claude --resume 0cd8e773-b573-4070-8efd-7b0eaefd9458`
 
+## 2026-10-23 — TASK-042 dev safe mode + production copy, deployed (session "Docker Transfer")
+- **Dev safe mode** (DECISION-021): dev skips emails, R2 and Drive writes (`[SAFE] Skipped` in the log) unless `npm run live` (60 min, auto back to safe; `npm run safe`, `npm run devmode`). Badge bottom-left on /admin. Claude's SessionEnd hook resets `DEV_LIVE`. Production ignores it.
+- **`npm run db:pull-prod`** copies production into dev (dev must be safe, dev server stopped; backs up dev first; compares row counts). First run: all 53 tables match. Railway CLI signed in again (web@) and linked to SkyHigh / production; remote sign-in: `! railway login --browserless`.
+- **Dev Postgres is now 18** (matches production). Old 16 volume `skyhigh_skyhigh_pg_data` kept unused + `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`.
+- **Deployed `60665cd`** (main and feature/sausage-sizzle both fast-forwarded). Production checked: mode `production`, sizzle pages up.
+- Status line above is older: `main` = `feature/sausage-sizzle` = `60665cd` now.
+
+## 2026-10-23 — dev Postgres moved from the Surface to this PC (session "Docker Transfer")
+- Docker Desktop now runs here (autostart). `skyhigh-pg-dev` on 5432 holds the restored Surface DB (47 tables, counts match; migrations v47–v53 applied on first run). `.env` built with `op inject -i .env.template -o .env`. `npm run dev` checked: health DB connected, Vite and `/api/sites` OK. Surface Docker fully removed. Details in `tasks/todo.md`. WU scraper "Failed primary" on every station — check the WU key.
+
 ## Session 79 (2026-10-22/23) — Railway outage, sizzle phone set-up, security patches
 - **Railway** paused builds (outage + security incident 21 Oct). Hobby builds back 23 Oct. Railway now advises rotating ALL env vars and checking GitHub/Google/DB access. **Jon is waiting for Railway to say who was affected** before changing keys; method (1Password → `railway variable set --stdin`) is in `tasks/todo.md`. The Railway CLI login is invalid (tokens reset) — Jon runs `! railway login` when needed.
 - **Deployed and live-checked:** `f766f43` 50c change hint + float (live: $20 on $3.50 → $10+$5+$1+50c); `03bc6c8` iPad Card says "Type this amount into the Stripe phone", phones keep Copy; `993aea2`/`c250648`/`59c2693` phone set-up — 8-char codes, QR is `/sizzle/phone?pair=CODE`, the server puts the code in the manifest `start_url` (server.ts) so the home-screen icon sets itself up (**Jon confirmed on his iPhone**), Android steps, **New code** button per phone; `1412317` Phones list refreshes every 10 s and closes the QR when set up; `9a2b680` security patches (npm audit 30 → 2 build-only; sharp 0.35.5, express 4.22.3, multer 2.5 …; live: health DB 1 ms, elevation 309 m at Bright via sharp).

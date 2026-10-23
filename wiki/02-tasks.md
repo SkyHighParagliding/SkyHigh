@@ -581,7 +581,7 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Acceptance criteria:** usable one-handed on an iPhone; sales reach the iPad's totals; rehearsal on 27 Oct.
 
 ### TASK-042: Dev safe mode + copy production DB into dev
-- **Status:** 🔄 IN PROGRESS 2026-10-23 — safe mode done on branch `feat/dev-safe-mode` (27 tests, live-checked); production copy (`npm run db:pull-prod`) waits for Railway access.
+- **Status:** ✅ DONE 2026-10-23 — deployed in `60665cd` (production unchanged: `/api/dev-safety` → `production`; sizzle pages 200). Production copied into dev: all 53 tables match. Dev Postgres moved 16 → 18 to match production.
 - **Prerequisites:** dev Postgres on the hub (done 2026-10-23)
 - **Estimated effort:** M
 - **Description:** DECISION-021 dev safe mode (`DEV_LIVE`, `npm run live/safe/devmode`, admin badge, session-end reset), then a repeatable command that copies the production database into dev and refuses to run while dev is live.

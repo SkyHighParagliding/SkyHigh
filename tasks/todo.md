@@ -22,12 +22,21 @@
 - Two critical PHP flaws (found with AI tools) were disclosed and patched on 21 Oct 2026. Government sites, Wikipedia and others went offline as a precaution, and attacks have been reported (ABC News 22 Oct 2026).
 - **Result: SkyHigh not exposed.** The live site is Node/Express on Railway (`x-powered-by: Express`), and the repo and lockfile contain no PHP. The domain's DNS is Cloudflare → Railway. The old Google Sites site is private in the club Google account and Google runs it, with no PHP. The old Vodien A record (103.11.189.189) is Vodien's shared parking page, and our domain doesn't point there. No action needed.
 
-### ⬜ Bring the dev Postgres over from the Surface (added 2026-10-22)
-- The SkyHigh dev database runs in Docker (Postgres) on the Microsoft Surface. Jon will copy or move it to this PC so dev can run here. Not now; he'll do it in a separate Claude Code session.
-- **In progress 2026-10-23 (session "Docker Transfer", `claude --resume 61cca968-dde8-4ffc-93fb-aabdc4d0a9b2`).** Approved plan A–E, EatRight too, Surface clean-out as soon as checks pass.
-  - ✅ A: dumps + raw volume tarballs in `db_backups\2026-10-23-surface\` (SkyHigh and EatRight), SHA256 matched. Row counts in `skyhigh_counts.txt` / `eatright_counts.txt`. Surface staging copy at `C:\Users\User\dbmove`.
-  - ✅ B part 1: Docker Desktop 4.96.2 installed, WSL + VirtualMachinePlatform features enabled, `~\.wslconfig` memory=8GB. **Garage restart still needed to apply** (held back 2026-10-23 because 4 other Claude Code sessions were open).
-  - ⬜ B part 2: start Docker Desktop, set autostart. ⬜ C: restore + verify counts, `.env` from template, `npm run dev`. ⬜ EatRight restore on 5433. ⬜ D: Surface clean-out (rm containers/volumes/images, uninstall Docker Desktop, unregister docker-desktop WSL, delete dbmove). ⬜ E: notes.
+### ✅ TASK-042 Dev safe mode + copy production into dev (2026-10-23, session "Docker Transfer")
+- ✅ Safe mode (DECISION-021) on branch `feat/dev-safe-mode` (`3d2087a`, `184598a`): `DEV_LIVE` in `.env`, `npm run live` (60 min) / `safe` / `devmode`, admin badge, SessionEnd hook reset. 27 tests + full suite pass; live-checked against the running dev server.
+- ✅ `npm run db:pull-prod` written; refusals tested (dev live, dev server running, no URL).
+- ✅ Production copied into dev (23 Oct): Railway CLI signed in as web@ and this folder linked to project SkyHigh / production. All 53 tables match production. Dev moved to **Postgres 18** to match production (`docker-compose.dev.yml`, new volume `skyhigh_skyhigh_pg18_data`; the old 16 volume `skyhigh_skyhigh_pg_data` is kept, unused, plus `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`). Script fix: `railway` runs through the shell on Windows. Remote sign-in: `! railway login --browserless`.
+- ⬜ Seen once on dev start: weather scraper `wport` duplicate key on `weather_observations` insert (startup race between scrapers?). Check whether prod logs show it too.
+- ⬜ After a while, if dev on 18 is fine: delete the old volume (`docker volume rm skyhigh_skyhigh_pg_data`), with Jon's OK.
+- ✅ Merged and deployed 23 Oct (Jon: "A"): `main` = `feature/sausage-sizzle` = `60665cd`, Railway SUCCESS; production `/api/dev-safety` → `production`, /, /admin/sizzle, /sizzle/phone 200, 50 sites. Last fix before deploy: devMode reads `.env` every check (mtime cache missed quick flips → flaky test).
+- Note: production logs also show the `wport`/`wu` duplicate-key on `weather_observations` in the first weather run after restart only (2 Phillip Island sites); no weather code changed in this release.
+
+### ✅ Dev Postgres moved from the Surface to this PC (done 2026-10-23, session "Docker Transfer")
+- Docker Desktop on Garage (WSL2, autostart on, `~\.wslconfig` memory=8GB). `skyhigh-pg-dev` runs from `docker-compose.dev.yml` on 5432 (restart unless-stopped).
+- Restored from `db_backups\2026-10-23-surface\skyhigh_dev.dump`: all 47 tables match the Surface row counts. On first `npm run dev` migrations v47–v53 applied (Surface DB was behind).
+- `.env` now exists on this PC, built with `op inject -i .env.template -o .env` (1Password `Private/SkyHigh`). Re-run that after the Railway key change. `WEATHER_API_KEY` / `OPEN_METEO_API_KEY` are blank in the template.
+- Checked: `/health` DB connected, Vite 5173 serves, `/api/sites` via proxy returns data. WU scraper logs "Failed primary" for every station — not caused by the move; check the WU key.
+- Surface: containers, volumes, images, Docker Desktop, its WSL distro and data folders removed; WSL + VirtualMachinePlatform disabled (finishes on the Surface's next restart). Backups (dump + raw volume tarball) stay in `db_backups\`.
 - Decide: copy (keep the Surface's as a backup) or move. Afterwards point this PC's `.env` `DATABASE_URL` at the local container and check `npm run dev` starts and migrations run.
 
 ### ⬜ Retire the 1Password draw/wipe docs (added 2026-10-21, workspace cleanup)
