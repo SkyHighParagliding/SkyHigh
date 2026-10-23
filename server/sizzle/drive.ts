@@ -22,8 +22,21 @@ export function driveStamp(d = new Date()): string {
   return `${p.year}-${p.month}-${p.day} ${p.hour}${p.minute}`;
 }
 
-/** Drive-safe file/folder name: no slashes or control characters, at most 120 characters. */
-export const driveName = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+/**
+ * Drive-safe file/folder name: plain ASCII, no slashes or control characters,
+ * at most 120 characters. ASCII because the Apps Script reads the query string
+ * as Latin-1, so "Days 2–3" arrived in Drive as "Days 2â€“3".
+ */
+export const driveName = (s: string) =>
+  s
+    .normalize("NFKD")
+    .replace(/[‐-―−]/g, "-")
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[^\x20-\x7e]/g, "")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
 
 export async function uploadToDrive(opts: { folder: SizzleFolder; eventTitle: string; fileName: string; mimeType: string; data: Buffer }): Promise<{ id: string; url: string; name: string; folder: string }> {
   const appScriptUrl = await getAppScriptWriteUrl(`upload ${opts.fileName}`);
