@@ -6,7 +6,7 @@
 ## 2026-10-23 — TASK-042 dev safe mode + production copy, deployed (session "Docker Transfer")
 - **Dev safe mode** (DECISION-021): dev skips emails, R2 and Drive writes (`[SAFE] Skipped` in the log) unless `npm run live` (60 min, auto back to safe; `npm run safe`, `npm run devmode`). Badge bottom-left on /admin. Claude's SessionEnd hook resets `DEV_LIVE`. Production ignores it.
 - **`npm run db:pull-prod`** copies production into dev (dev must be safe, dev server stopped; backs up dev first; compares row counts). First run: all 53 tables match. Railway CLI signed in again (web@) and linked to SkyHigh / production; remote sign-in: `! railway login --browserless`.
-- **Dev Postgres is now 18** (matches production). Old 16 volume `skyhigh_skyhigh_pg_data` kept unused + `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`.
+- **Dev Postgres is now 18** (matches production). Old 16 volume deleted 23 Oct; its data is in `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`.
 - **Deployed `60665cd`** (main and feature/sausage-sizzle both fast-forwarded). Production checked: mode `production`, sizzle pages up.
 - Status line above is older: `main` = `feature/sausage-sizzle` = `60665cd` now.
 

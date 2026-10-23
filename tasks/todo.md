@@ -27,7 +27,7 @@
 - ✅ `npm run db:pull-prod` written; refusals tested (dev live, dev server running, no URL).
 - ✅ Production copied into dev (23 Oct): Railway CLI signed in as web@ and this folder linked to project SkyHigh / production. All 53 tables match production. Dev moved to **Postgres 18** to match production (`docker-compose.dev.yml`, new volume `skyhigh_skyhigh_pg18_data`; the old 16 volume `skyhigh_skyhigh_pg_data` is kept, unused, plus `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`). Script fix: `railway` runs through the shell on Windows. Remote sign-in: `! railway login --browserless`.
 - ⬜ Seen once on dev start: weather scraper `wport` duplicate key on `weather_observations` insert (startup race between scrapers?). Check whether prod logs show it too.
-- ⬜ After a while, if dev on 18 is fine: delete the old volume (`docker volume rm skyhigh_skyhigh_pg_data`), with Jon's OK.
+- ✅ Old Postgres 16 volume `skyhigh_skyhigh_pg_data` deleted 23 Oct (Jon's OK). Its data survives in `db_backups/dev-pg16-before-upgrade-2026-10-23.dump`.
 - ✅ Merged and deployed 23 Oct (Jon: "A"): `main` = `feature/sausage-sizzle` = `60665cd`, Railway SUCCESS; production `/api/dev-safety` → `production`, /, /admin/sizzle, /sizzle/phone 200, 50 sites. Last fix before deploy: devMode reads `.env` every check (mtime cache missed quick flips → flaky test).
 - Note: production logs also show the `wport`/`wu` duplicate-key on `weather_observations` in the first weather run after restart only (2 Phillip Island sites); no weather code changed in this release.
 
