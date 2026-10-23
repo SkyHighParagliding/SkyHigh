@@ -31,6 +31,10 @@ export interface Product {
   carryOver?: boolean;
   /** Safety stock (base units) added to par on every day except the last, for lumpy small-number demand. */
   bufferUnits?: number;
+  /** Low-stock warning when this many serves or fewer are left; replaces config.lowStockServes for this product. */
+  warnAt?: number;
+  /** Stock to open each day with, except the last (Day 4 is sized to minimise leftovers). */
+  minOnHand?: number;
   storage: string;
   ownBrand: boolean;
   confirmInStore: boolean;
@@ -240,6 +244,16 @@ export function dailyUsage(data: SizzleData, customers: number): Qty {
   return out;
 }
 
+/** Low stock means fewer serves left than this. */
+export function lowStockBelow(product: Product | undefined, config: Config): number {
+  return product?.warnAt !== undefined ? product.warnAt + 1 : config.lowStockServes;
+}
+
+/** Low-stock trigger for a menu item: the lowest of its components' triggers. */
+export function itemLowStockBelow(item: MenuItem, data: SizzleData, products = productIndex(data)): number {
+  return Math.min(...Object.keys(itemBom(item, data.config)).map((pid) => lowStockBelow(products[pid], data.config)));
+}
+
 // ─── Costing and pricing ──────────────────────────────────────────────────────
 
 export interface CostLine { product: string; qty: number; cost: number }
@@ -443,6 +457,19 @@ export function parLevel(data: SizzleData, days: number[]): Qty {
   const endsOnLastDay = days.includes(data.config.customersPerDay.length - 1);
   if (!endsOnLastDay) {
     for (const p of data.products) if (p.bufferUnits && par[p.id]) par[p.id] += p.bufferUnits;
+  }
+  // minOnHand: every day but the last opens with at least that much, even when
+  // one shop covers two days.
+  const last = data.config.customersPerDay.length - 1;
+  for (const p of data.products) {
+    if (!p.minOnHand) continue;
+    let used = 0;
+    let need = 0;
+    for (const d of days) {
+      if (d !== last) need = Math.max(need, used + p.minOnHand);
+      used += dailyUsage(data, data.config.customersPerDay[d])[p.id] ?? 0;
+    }
+    par[p.id] = Math.max(need, used);
   }
   return par;
 }

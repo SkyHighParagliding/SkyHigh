@@ -19,6 +19,7 @@ import {
   dayForecasts,
   denomLabel,
   powerBudget,
+  FRUIT,
   pricingTable,
   productIndex,
   recommendFloat,
@@ -394,6 +395,7 @@ const PHONE_SETUP = `<ol class="steps">
 </ul>`;
 
 export function shopAssistantGuideBody(data: SizzleData): string {
+  const fruitWarn = data.products.find((p) => FRUIT.includes(p.id))?.warnAt;
   return `${header(data, "Shop assistant how-to", "Selling on the till — iPad or phone, the buttons are the same.")}
 <p style="font-size:13pt">Organiser on duty: <span class="blank" style="min-width:200px"></span> &nbsp; Phone: <span class="blank" style="min-width:150px"></span></p>
 <h2>Selling on your own phone? Set it up once</h2>
@@ -428,7 +430,7 @@ ${PHONE_SETUP}
 </ul>
 <h2 class="avoid">5. Stock and signal</h2>
 <ul class="avoid">
-<li>Each card shows how many are left. It turns red under ${data.config.lowStockServes}, and an amber <b>Low stock</b> bar names what's running out — tell the organiser. <b>SOLD OUT?</b> means the till thinks it's gone: check the esky and boxes first.</li>
+<li>Each card shows how many are left. It turns red under ${data.config.lowStockServes}${fruitWarn !== undefined ? ` (fruit at ${fruitWarn} left)` : ""}, and an amber <b>Low stock</b> bar names what's running out — tell the organiser. <b>SOLD OUT?</b> means the till thinks it's gone: check the esky and boxes first.</li>
 <li><b>No signal? Keep selling.</b> Every sale is saved on your device first and uploads by itself later. The bar at the top of the phone says <b>Synced</b> or how many sales are waiting.</li>
 <li>Don't close the till by deleting its home-screen icon or clearing Safari data — unsent sales live there.</li>
 </ul>

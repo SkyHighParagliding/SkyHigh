@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Check, Copy, CreditCard, Minus, Plus, RotateCcw, Banknote, X } from "lucide-react";
-import { changeDue, breakdown, denomLabel, saleTotal, type SaleLine } from "../../../shared/sizzle/calc.ts";
+import { changeDue, breakdown, denomLabel, itemLowStockBelow, saleTotal, type SaleLine } from "../../../shared/sizzle/calc.ts";
 import type { StoredSale } from "@/lib/sizzleStore";
 import { shortName, type Till } from "./useTill";
 
@@ -66,7 +66,7 @@ export function SellScreen({ till, compact = false }: { till: Till; compact?: bo
         <div className={c ? "grid grid-cols-2 gap-2 auto-rows-[76px]" : "grid grid-cols-3 gap-3 flex-1 auto-rows-fr"}>
           {data.menu.map((m) => {
             const left = servesLeft[m.id];
-            const low = left < data.config.lowStockServes;
+            const low = left < itemLowStockBelow(m, data);
             return (
               <button
                 key={m.id}

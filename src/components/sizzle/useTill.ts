@@ -6,6 +6,7 @@ import {
   type SizzleData,
   type PayMethod,
   itemBom,
+  lowStockBelow,
   priceMap,
   productIndex,
   recommendFloat,
@@ -232,14 +233,13 @@ export function useTill(opts: { token?: string | null; phone?: boolean } = {}) {
   }, [data, onHand]);
 
   const lowStock = useMemo(() => {
-    const threshold = data.config.lowStockServes;
     const warn: { product: string; name: string; left: number; unit: string; serves: number }[] = [];
     for (const p of data.products) {
       if (p.notWoolworths) continue;
       const uses = data.menu.map((m) => itemBom(m, data.config)[p.id]).filter((q): q is number => !!q);
       if (!uses.length) continue;
       const serves = Math.floor((onHand[p.id] ?? 0) / Math.max(...uses));
-      if (serves < threshold) warn.push({ product: p.id, name: p.name, left: onHand[p.id] ?? 0, unit: p.unit, serves });
+      if (serves < lowStockBelow(p, data.config)) warn.push({ product: p.id, name: p.name, left: onHand[p.id] ?? 0, unit: p.unit, serves });
     }
     return warn;
   }, [data, onHand]);

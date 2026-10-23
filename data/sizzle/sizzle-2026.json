@@ -697,7 +697,8 @@
         "Price checked at Woolworths Bright (Direct to boot) 24 Oct 2026."
       ],
       "fallback": "Fresh Pink Lady Apples each, $1.31, stockcode 105919.",
-      "bufferUnits": 2
+      "warnAt": 5,
+      "minOnHand": 10
     },
     {
       "id": "orange",
@@ -721,7 +722,8 @@
         "Price checked at Woolworths Bright (Direct to boot) 24 Oct 2026."
       ],
       "fallback": "Orange Navel each, $1.49, stockcode 259450.",
-      "bufferUnits": 2
+      "warnAt": 5,
+      "minOnHand": 10
     },
     {
       "id": "banana",
@@ -745,7 +747,8 @@
         "Price checked at Woolworths Bright (Direct to boot) 24 Oct 2026."
       ],
       "fallback": "Eat Later Cavendish Bananas each, $0.88, stockcode 157649 (greener; ripen by Day 2–3).",
-      "bufferUnits": 2
+      "warnAt": 5,
+      "minOnHand": 10
     },
     {
       "id": "hot_cups",

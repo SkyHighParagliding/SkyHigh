@@ -16,7 +16,10 @@ import {
   ceilTo,
   changeDue,
   depletion,
+  itemLowStockBelow,
+  lowStockBelow,
   packsFor,
+  productIndex,
   pricingTable,
   rawPrice,
   recommendFloat,
@@ -219,6 +222,20 @@ assert(les.cardShare.actual === 0.333 && les.itemsPerCardSale.actual === 2, "car
 assert(les.perDay[0].customers === 2 && les.perDay[0].busiestHalfHour === "12:00" && les.perDay[0].firstSale === "12:05", "per-day customers, first sale and busiest half-hour");
 assert(les.suggestedConfig.customersPerDay[0] === 2 && les.suggestedConfig.customersPerDay[2] === 2, "untraded days suggested at the average of traded days");
 assert(les.leftovers.some((l) => l.product === "sausage") && !les.leftovers.some((l) => l.product === "ice"), "leftovers list skips ice (doesn't carry over)");
+
+console.log("\nFruit");
+{
+  const products = productIndex(real);
+  const menu = (id) => real.menu.find((m) => m.id === id);
+  const plan = shoppingPlan(real);
+  const fruit = ["apple", "orange", "banana"];
+  assert(plan.initial.lines.filter((l) => fruit.includes(l.product.id)).every((l) => l.packs * l.product.unitsPerPack === 10), "initial shop buys 10 of each fruit");
+  assert(fruit.every((f) => plan.openingStock.slice(0, -1).every((s) => s[f] >= 10)), "every day but the last opens with at least 10 of each fruit");
+  const onHand = { apple: 3 };
+  assert(topUpNeed(real, onHand, [2, 3]).apple >= topUpNeed(real, onHand, [2]).apple, "Days 3–4 combined buys at least the Day 3 fruit");
+  assert(lowStockBelow(products.apple, real.config) === 6 && itemLowStockBelow(menu("apple"), real) === 6, "fruit warns at 5 left");
+  assert(lowStockBelow(products.bread, real.config) === real.config.lowStockServes && itemLowStockBelow(menu("sausage"), real) === real.config.lowStockServes, "everything else still warns under lowStockServes");
+}
 
 console.log("\nCustomer re-forecasts");
 {
