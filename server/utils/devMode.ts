@@ -8,12 +8,13 @@
  *   .env  DEV_LIVE=0                      safe (default; also when the key is missing)
  *         DEV_LIVE=1 + DEV_LIVE_SINCE=…   live, for at most LIVE_MINUTES
  *
- * `npm run live` / `npm run safe` flip it. The file is re-read on every check (cached
- * by mtime), so flipping it takes effect without a restart, and an expired live
+ * `npm run live` / `npm run safe` flip it. The file is re-read on every check (no mtime
+ * cache: Windows can give two quick writes the same mtime, which would miss a flip back
+ * to safe), so flipping it takes effect without a restart, and an expired live
  * window is written back to DEV_LIVE=0 by the server itself. Production
  * (NODE_ENV=production) ignores all of this and is always live.
  */
-import { readFileSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import createLogger from "./logger.js";
 
@@ -62,7 +63,6 @@ export function evaluate(text: string, nowMs: number, isProduction: boolean): { 
 }
 
 const envPath = () => path.resolve(process.cwd(), ".env");
-let cached: { mtimeMs: number; text: string } | null = null;
 let lastLogged = "";
 
 function describe(s: DevMode): string {
@@ -73,25 +73,22 @@ function describe(s: DevMode): string {
   return s.mode === "safe" ? "DEV MODE: SAFE — emails and outside writes are logged, not sent" : "production";
 }
 
-/** Current mode. Cheap: re-reads .env only when its mtime changes. */
+/** Current mode. Reads .env each time (a few hundred bytes). */
 export function getDevMode(nowMs = Date.now()): DevMode {
   const isProduction = process.env.NODE_ENV === "production";
   if (isProduction) return { mode: "production" };
 
   let text = "";
   try {
-    const { mtimeMs } = statSync(envPath());
-    if (!cached || cached.mtimeMs !== mtimeMs) cached = { mtimeMs, text: readFileSync(envPath(), "utf8") };
-    text = cached.text;
+    text = readFileSync(envPath(), "utf8");
   } catch {
-    cached = null; // no .env → safe
+    // no .env → safe
   }
 
   const { state, rewrite } = evaluate(text, nowMs, false);
   if (rewrite !== undefined) {
     try {
       writeFileSync(envPath(), rewrite);
-      cached = null;
       if (state.mode === "safe") log.warn(`Dev live expired after ${LIVE_MINUTES} min — .env set back to DEV_LIVE=0`);
     } catch (e: any) {
       log.error(`Could not update .env: ${e.message}`);
