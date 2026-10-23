@@ -9,6 +9,7 @@ import {
   type Qty,
   type Sale,
   type SizzleData,
+  FRUIT,
   cardReconcile,
   dayForecasts,
   denomTotal,
@@ -283,6 +284,7 @@ export function planningLessons(data: SizzleData, sales: Sale[], report: EventRe
         coldDrinksPerCustomer: r3(cold / n),
         waterShareOfCold: share(qty("water"), cold, plannedMix.waterShareOfCold),
         colaShareOfCans: share(qty("cola"), cans, plannedMix.colaShareOfCans),
+        fruitPerCustomer: r3(FRUIT.reduce((a, f) => a + qty(f), 0) / n),
       }
     : { ...plannedMix };
 

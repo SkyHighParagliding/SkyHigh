@@ -229,7 +229,17 @@ export function complianceBody(data: SizzleData): string {
 
 export function priceBoardBody(data: SizzleData, rows: PriceRow[] = pricingTable(data)): string {
   const names: Record<string, string> = Object.fromEntries(data.menu.map((m) => [m.id, m.name]));
-  const items = rows.map((r) => `<tr><td style="font-size:24pt;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">${esc(names[r.item])}</td><td style="font-size:32pt;font-weight:700;text-align:right;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">$${r.price.toFixed(0)}</td></tr>`).join("");
+  // Fruit at one price shares a line ("Fruit — apple, orange or banana").
+  const fruit = rows.filter((r) => data.menu.find((m) => m.id === r.item)?.group === "fruit");
+  let board: { name: string; price: number }[] = rows.map((r) => ({ name: names[r.item], price: r.price }));
+  if (fruit.length > 1 && fruit.every((r) => r.price === fruit[0].price)) {
+    const list = fruit.map((r) => names[r.item].toLowerCase());
+    const line = { name: `Fruit — ${list.slice(0, -1).join(", ")} or ${list[list.length - 1]}`, price: fruit[0].price };
+    board = rows.flatMap((r) => (r === fruit[0] ? [line] : fruit.includes(r) ? [] : [{ name: names[r.item], price: r.price }]));
+  }
+  // The landscape page holds 7 lines at full size; shrink to fit more.
+  const k = Math.min(1, 7 / board.length);
+  const items = board.map((r) => `<tr><td style="font-size:${(24 * k).toFixed(1)}pt;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">${esc(r.name)}</td><td style="font-size:${(32 * k).toFixed(1)}pt;font-weight:700;text-align:right;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">$${r.price.toFixed(0)}</td></tr>`).join("");
   const onion = data.config.onionsEnabled ? "with fried onion, " : "";
   return `<div class="note" style="display:flex;justify-content:space-between;border-bottom:1px solid #ddd;margin-bottom:4px"><span>${esc(data.event.name)} · ${esc(dateRange(data))}</span><span>Prices checked at Woolworths Bright on ${esc(longDate(data.pricesChecked.date))}</span></div><div style="text-align:center;margin:0 0 4px"><div style="font-size:16pt;color:#555">${esc(data.event.club)}</div><div style="font-size:34pt;font-weight:700;color:#7c2d12;line-height:1.05">SAUSAGE SIZZLE</div></div>
 <table style="border:0;margin:0 auto;width:92%">${items}</table>

@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright-core";
-import { type Sale, priceMap, salesDepletion, shoppingPlan, subtractQty, type SizzleData } from "../../shared/sizzle/calc.ts";
+import { FRUIT, type Sale, priceMap, salesDepletion, shoppingPlan, subtractQty, type SizzleData } from "../../shared/sizzle/calc.ts";
 import { eventReport, planningLessons } from "../../shared/sizzle/report.ts";
 import { eventReportBody } from "../../shared/sizzle/reportTemplate.ts";
 import { page } from "../../shared/sizzle/templates.ts";
@@ -27,6 +27,7 @@ for (const [i, d] of data.event.days.entries()) {
     const lines = [{ item: rand() < 0.12 ? "veg_sausage" : "sausage", qty: rand() < 0.3 ? 2 : 1, unitPrice: 0 }];
     if (rand() < 0.5) lines.push({ item: rand() < 0.6 ? "coffee" : "tea", qty: 1, unitPrice: 0 });
     if (rand() < 0.6) lines.push({ item: rand() < 0.4 ? "water" : rand() < 0.6 ? "cola" : "lemonade", qty: 1, unitPrice: 0 });
+    if (rand() < 0.1) lines.push({ item: FRUIT[Math.floor(rand() * FRUIT.length)], qty: 1, unitPrice: 0 });
     for (const l of lines) l.unitPrice = prices[l.item];
     const total = lines.reduce((a, l) => a + l.qty * l.unitPrice, 0);
     const card = rand() < 0.7;

@@ -66,7 +66,7 @@ ${summary}
 <ul>${lessons.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
 <div class="cols avoid">
 <div><h3>Buying per customer</h3><table><thead><tr><th>Per customer</th><th class="num">Planned</th><th class="num">Actual</th></tr></thead><tbody>
-${mixRow("Sausages (incl. veg)", "sausageServesPerCustomer")}${mixRow("Veg share of sausages", "vegShare")}${mixRow("Hot drinks", "hotDrinksPerCustomer")}${mixRow("Coffee share of hot", "coffeeShareOfHot")}${mixRow("Cold drinks", "coldDrinksPerCustomer")}${mixRow("Water share of cold", "waterShareOfCold")}${mixRow("Cola share of cans", "colaShareOfCans")}
+${mixRow("Sausages (incl. veg)", "sausageServesPerCustomer")}${mixRow("Veg share of sausages", "vegShare")}${mixRow("Hot drinks", "hotDrinksPerCustomer")}${mixRow("Coffee share of hot", "coffeeShareOfHot")}${mixRow("Cold drinks", "coldDrinksPerCustomer")}${mixRow("Water share of cold", "waterShareOfCold")}${mixRow("Cola share of cans", "colaShareOfCans")}${mixRow("Fruit", "fruitPerCustomer")}
 <tr><td>Card share of sales</td><td class="num">${lessons.cardShare.planned}</td><td class="num">${lessons.cardShare.actual ?? "—"}</td></tr>
 <tr><td>Items per card sale</td><td class="num">${lessons.itemsPerCardSale.planned}</td><td class="num">${lessons.itemsPerCardSale.actual ?? "—"}</td></tr>
 </tbody></table></div>

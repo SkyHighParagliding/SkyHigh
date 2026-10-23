@@ -61,8 +61,9 @@
       "hotDrinksPerCustomer": 0.5,
       "coffeeShareOfHot": 0.6,
       "coldDrinksPerCustomer": 0.6,
-      "waterShareOfCold": 0.4,
-      "colaShareOfCans": 0.6
+      "waterShareOfCold": 0.5,
+      "colaShareOfCans": 0.5,
+      "fruitPerCustomer": 0.1
     },
     "portions": {
       "sausagesPerServe": 1,
@@ -675,6 +676,81 @@
       "fallback": "Solo Original Lemon Soft Drink Cans 375mL x 30 pack, $26.00, stockcode 773142."
     },
     {
+      "id": "apple",
+      "name": "Pink Lady Apples each",
+      "brand": "Woolworths",
+      "packSize": "each",
+      "unitsPerPack": 1,
+      "unit": "piece",
+      "price": 1.1,
+      "unitPrice": "",
+      "stockcode": "",
+      "url": "https://www.woolworths.com.au/shop/search/products?searchTerm=Pink%20Lady%20Apples",
+      "category": "Fruit",
+      "aisle": "Fruit & Veg",
+      "perishable": true,
+      "storage": "Shade, in a bowl on the counter",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "estimate": true,
+      "flags": [
+        "Price is an estimate — check the shelf price at Bright.",
+        "Sell whole and uncut: cut fruit is not covered by a Class 4 notification."
+      ],
+      "fallback": "Royal Gala apples if none.",
+      "bufferUnits": 2
+    },
+    {
+      "id": "orange",
+      "name": "Navel Oranges each",
+      "brand": "Woolworths",
+      "packSize": "each",
+      "unitsPerPack": 1,
+      "unit": "piece",
+      "price": 1,
+      "unitPrice": "",
+      "stockcode": "",
+      "url": "https://www.woolworths.com.au/shop/search/products?searchTerm=Navel%20Oranges",
+      "category": "Fruit",
+      "aisle": "Fruit & Veg",
+      "perishable": true,
+      "storage": "Shade, in a bowl on the counter",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "estimate": true,
+      "flags": [
+        "Price is an estimate — check the shelf price at Bright.",
+        "Sell whole and uncut: cut fruit is not covered by a Class 4 notification."
+      ],
+      "fallback": "Valencia oranges if none.",
+      "bufferUnits": 2
+    },
+    {
+      "id": "banana",
+      "name": "Cavendish Bananas each",
+      "brand": "Woolworths",
+      "packSize": "each",
+      "unitsPerPack": 1,
+      "unit": "piece",
+      "price": 0.8,
+      "unitPrice": "",
+      "stockcode": "",
+      "url": "https://www.woolworths.com.au/shop/search/products?searchTerm=Cavendish%20Bananas",
+      "category": "Fruit",
+      "aisle": "Fruit & Veg",
+      "perishable": true,
+      "storage": "Shade, in a bowl on the counter",
+      "ownBrand": false,
+      "confirmInStore": true,
+      "estimate": true,
+      "flags": [
+        "Price is an estimate — check the shelf price at Bright.",
+        "Sell whole and uncut: cut fruit is not covered by a Class 4 notification."
+      ],
+      "fallback": "Any ripe yellow bananas if none.",
+      "bufferUnits": 2
+    },
+    {
       "id": "hot_cups",
       "name": "Armada Coffee Cups With Lid 16 pack",
       "brand": "Armada",
@@ -1228,6 +1304,45 @@
       "bom": [
         {
           "product": "lemonade",
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "apple",
+      "name": "Apple",
+      "short": "Apple",
+      "group": "fruit",
+      "colour": "#be123c",
+      "bom": [
+        {
+          "product": "apple",
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "short": "Orange",
+      "group": "fruit",
+      "colour": "#ea580c",
+      "bom": [
+        {
+          "product": "orange",
+          "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "banana",
+      "name": "Banana",
+      "short": "Banana",
+      "group": "fruit",
+      "colour": "#ca8a04",
+      "bom": [
+        {
+          "product": "banana",
           "qty": 1
         }
       ]

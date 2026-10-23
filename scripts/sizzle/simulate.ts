@@ -14,6 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  FRUIT,
   type Sale,
   breakdown,
   cardReconcile,
@@ -97,6 +98,7 @@ for (let c = 0; c < customers; c++) {
   for (let i = 0; i < sausages; i++) add(rand() < mix.vegShare ? "veg_sausage" : "sausage");
   if (rand() < mix.hotDrinksPerCustomer) add(rand() < mix.coffeeShareOfHot ? "coffee" : "tea");
   if (rand() < mix.coldDrinksPerCustomer) add(rand() < mix.waterShareOfCold ? "water" : rand() < mix.colaShareOfCans ? "cola" : "lemonade");
+  if (rand() < (mix.fruitPerCustomer ?? 0)) add(FRUIT[Math.floor(rand() * FRUIT.length)]);
 
   const lines = Object.entries(qty).map(([item, n]) => ({ item, qty: n, unitPrice: prices[item] }));
   const total = saleTotal(lines);

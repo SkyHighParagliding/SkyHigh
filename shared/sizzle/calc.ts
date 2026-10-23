@@ -10,7 +10,7 @@
  * Money is AUD dollars as plain numbers.
  */
 
-export type Group = "food" | "hot" | "cold";
+export type Group = "food" | "hot" | "cold" | "fruit";
 export type AllocTarget = Group | "all";
 
 export interface Product {
@@ -106,6 +106,8 @@ export interface Mix {
   coldDrinksPerCustomer: number;
   waterShareOfCold: number;
   colaShareOfCans: number;
+  /** Whole fruit per customer, split evenly across the fruit menu items. */
+  fruitPerCustomer: number;
 }
 
 export interface Config {
@@ -198,10 +200,14 @@ export function itemBom(item: MenuItem, config: Config): Qty {
   return q;
 }
 
+export const FRUIT = ["apple", "orange", "banana"];
+
 /** Serves of each menu item per customer, from the editable lunch mix. */
 export function demandPerCustomer(mix: Mix): Qty {
   const cans = mix.coldDrinksPerCustomer * (1 - mix.waterShareOfCold);
+  const fruit = (mix.fruitPerCustomer ?? 0) / FRUIT.length;
   return {
+    ...Object.fromEntries(FRUIT.map((f) => [f, fruit])),
     sausage: mix.sausageServesPerCustomer * (1 - mix.vegShare),
     veg_sausage: mix.sausageServesPerCustomer * mix.vegShare,
     coffee: mix.hotDrinksPerCustomer * mix.coffeeShareOfHot,
@@ -247,7 +253,7 @@ export interface ItemCost { item: string; direct: number; allocated: number; tot
 export function costPerServe(data: SizzleData, customers = data.config.pricingCustomers ?? data.config.customersPerDay[0]): Record<string, ItemCost> {
   const products = productIndex(data);
   const serves = servesForCustomers(data.config, customers);
-  const groupServes: Record<AllocTarget, number> = { food: 0, hot: 0, cold: 0, all: 0 };
+  const groupServes: Record<AllocTarget, number> = { food: 0, hot: 0, cold: 0, fruit: 0, all: 0 };
   for (const item of data.menu) {
     groupServes[item.group] += serves[item.id] ?? 0;
     groupServes.all += serves[item.id] ?? 0;
@@ -686,6 +692,8 @@ export function basketDistribution(data: SizzleData): Map<number, number> {
   const cold = mix.coldDrinksPerCustomer;
   const cans = cold * (1 - mix.waterShareOfCold);
   convolve([[0, 1 - cold], [prices.water, cold * mix.waterShareOfCold], [prices.cola, cans * mix.colaShareOfCans], [prices.lemonade, cans * (1 - mix.colaShareOfCans)]]);
+  const fruit = mix.fruitPerCustomer ?? 0;
+  if (fruit > 0) convolve([[0, 1 - fruit], ...FRUIT.map((f) => [prices[f], fruit / FRUIT.length] as [number, number])]);
   return dist;
 }
 
