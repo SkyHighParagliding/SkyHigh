@@ -29,8 +29,8 @@ function fail(msg: string): never {
   console.error(`\n  ✗ ${msg}\n`);
   process.exit(1);
 }
-function run(cmd: string, args: string[], opts: { env?: NodeJS.ProcessEnv; allowFail?: boolean } = {}): string {
-  const r = spawnSync(cmd, args, { encoding: "utf8", env: { ...process.env, ...opts.env }, maxBuffer: 64 * 1024 * 1024 });
+function run(cmd: string, args: string[], opts: { env?: NodeJS.ProcessEnv; allowFail?: boolean; shell?: boolean } = {}): string {
+  const r = spawnSync(cmd, args, { encoding: "utf8", env: { ...process.env, ...opts.env }, maxBuffer: 64 * 1024 * 1024, shell: opts.shell });
   if (r.status !== 0 && !opts.allowFail) fail(`${cmd} ${args.slice(0, 3).join(" ")} … failed:\n${(r.stderr || r.stdout || "").trim().slice(0, 800)}`);
   return (r.stdout || "").trim();
 }
@@ -53,7 +53,8 @@ console.log("  ✓ dev is SAFE, dev server stopped, dev Postgres running");
 step("Finding the production database");
 let prodUrl = envText.match(/^[ \t]*PROD_DATABASE_URL[ \t]*=[ \t]*"?([^"\r\n]+)"?/m)?.[1];
 if (!prodUrl) {
-  const out = run("railway", ["variables", "--service", "Postgres", "--json"], { allowFail: true });
+  // railway is an npm .cmd shim on Windows, which spawnSync only runs through a shell (fixed string, no user input)
+  const out = run("railway variables --service Postgres --json", [], { allowFail: true, shell: true });
   try { prodUrl = JSON.parse(out).DATABASE_PUBLIC_URL; } catch { /* handled below */ }
 }
 if (!prodUrl) fail("No production URL. Either add PROD_DATABASE_URL=\"postgresql://…\" to .env (Railway → Postgres → Connect → Public URL), or run `railway login` and link this folder.");

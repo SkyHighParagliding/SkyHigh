@@ -1,7 +1,7 @@
 # docker-compose.dev.yml — local dev only, not deployed
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine    # match production (Railway runs 18)
     container_name: skyhigh-pg-dev
     restart: unless-stopped
     environment:
@@ -11,7 +11,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - skyhigh_pg_data:/var/lib/postgresql/data
+      # Postgres 18 images keep data under /var/lib/postgresql/18/; the old 16 volume (skyhigh_pg_data) is kept, unused
+      - skyhigh_pg18_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U skyhigh -d skyhigh_dev"]
       interval: 5s
@@ -19,4 +20,4 @@ services:
       retries: 5
 
 volumes:
-  skyhigh_pg_data:
+  skyhigh_pg18_data:
