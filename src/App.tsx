@@ -167,6 +167,35 @@ function DevModeBanner() {
   );
 }
 
+// Dev safe/live badge on admin pages (DECISION-021). Hidden in production.
+function DevSafetyBadge() {
+  const { pathname } = useLocation();
+  const [state, setState] = useState<{ mode: string; liveUntil?: string } | null>(null);
+  useEffect(() => {
+    const load = () => fetch("/api/dev-safety").then(r => r.json()).then(setState).catch(() => {});
+    load();
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, []);
+  if (!pathname.startsWith("/admin") || !state || state.mode === "production") return null;
+  const live = state.mode === "live";
+  const until = live && state.liveUntil
+    ? new Date(state.liveUntil).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })
+    : "";
+  return (
+    <div className="fixed bottom-2 left-2 z-[10001]">
+      <span
+        title={live
+          ? "Emails, image uploads/deletes and Google Drive saves are REAL. Back to safe: npm run safe"
+          : "Emails, image uploads/deletes and Google Drive saves are logged, not done. Go live for 1 hour: npm run live"}
+        className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md ${live ? "bg-red-600 text-white animate-pulse" : "bg-emerald-600 text-white opacity-90"}`}
+      >
+        {live ? `DEV LIVE until ${until}` : "DEV SAFE"}
+      </span>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -175,6 +204,7 @@ export default function App() {
         <PilotAuthProvider>
         <Router>
           <DevModeBanner />
+          <DevSafetyBadge />
           <ScrollToTop />
           <LocationConsentBanner />
           <Suspense fallback={null}><SOProximityDetector /></Suspense>

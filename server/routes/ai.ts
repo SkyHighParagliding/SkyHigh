@@ -13,7 +13,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { generateTextWithFallback, getTextModels, getImageModels, setTextModels, setImageModels, DEFAULT_TEXT_MODELS, DEFAULT_IMAGE_MODELS } from "../utils/aiModels.js";
 import { extractEssentialInfo, isAllowedScrapeUrl } from "../utils/essentialInfo.js";
 import { scrapeSiteguidePage, extractResponsibleClub } from "../utils/siteScraper.js";
-import { getAppScriptUrl } from "../googleDrive.js";
+import { getAppScriptWriteUrl } from "../googleDrive.js";
 import { validateURLSafety } from "../utils/urlValidator.js";
 import { applyWatermark, normalizePosition } from "../utils/watermark.js";
 import { saveFile, readFile, fileExists, keyFromUrl, isR2Configured, StorageKey } from "../storage.js";
@@ -137,7 +137,7 @@ function uniqueFilename(dir: string, prefix: string, name: string, dimensions: s
 
 async function copyToDriveMarketingFolder(fileBuffer: Buffer, fileName: string): Promise<void> {
   try {
-    const appScriptUrl = await getAppScriptUrl();
+    const appScriptUrl = await getAppScriptWriteUrl(`copy ${fileName} to 07_Marketing & Photos`);
     if (appScriptUrl) {
       const base64Data = fileBuffer.toString("base64");
       const res = await fetch(

@@ -1,4 +1,4 @@
-import { CATEGORY_FOLDERS, getAppScriptUrl } from "../googleDrive.js";
+import { CATEGORY_FOLDERS, DRIVE_WRITE_OFF, getAppScriptWriteUrl } from "../googleDrive.js";
 
 /**
  * Save a sizzle document or receipt photo into the club Google Drive through
@@ -26,8 +26,8 @@ export function driveStamp(d = new Date()): string {
 export const driveName = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
 
 export async function uploadToDrive(opts: { folder: SizzleFolder; eventTitle: string; fileName: string; mimeType: string; data: Buffer }): Promise<{ id: string; url: string; name: string; folder: string }> {
-  const appScriptUrl = await getAppScriptUrl();
-  if (!appScriptUrl) throw new DriveNotConnectedError("Google Drive isn't connected (Admin → Connections)");
+  const appScriptUrl = await getAppScriptWriteUrl(`upload ${opts.fileName}`);
+  if (!appScriptUrl) throw new DriveNotConnectedError(`${DRIVE_WRITE_OFF} — Admin → Connections`);
   const folderName = CATEGORY_FOLDERS.find((c) => c.code === CATEGORY[opts.folder])!.name;
   const subfolder = driveName(`Sizzle ${opts.eventTitle}`);
   const name = driveName(opts.fileName);

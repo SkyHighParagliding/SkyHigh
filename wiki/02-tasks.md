@@ -580,6 +580,13 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 - **Description:** `/sizzle/phone`: portrait page with no top menus — item cards, void card, order list (−/+), Cash and Card, plus a slim status line (phone name, day, synced). Configuration comes from the iPad via the server.
 - **Acceptance criteria:** usable one-handed on an iPhone; sales reach the iPad's totals; rehearsal on 27 Oct.
 
+### TASK-042: Dev safe mode + copy production DB into dev
+- **Status:** 🔄 IN PROGRESS 2026-10-23 — safe mode done on branch `feat/dev-safe-mode` (27 tests, live-checked); production copy (`npm run db:pull-prod`) waits for Railway access.
+- **Prerequisites:** dev Postgres on the hub (done 2026-10-23)
+- **Estimated effort:** M
+- **Description:** DECISION-021 dev safe mode (`DEV_LIVE`, `npm run live/safe/devmode`, admin badge, session-end reset), then a repeatable command that copies the production database into dev and refuses to run while dev is live.
+- **Acceptance criteria:** in safe mode no email, R2 or Drive write leaves dev (tests prove no network call); live expires after 60 min without a restart; dev opens with the same data as production.
+
 ---
 
 **Task Summary:**

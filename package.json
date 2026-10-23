@@ -26,10 +26,14 @@
     "test:webcams": "node --import tsx/esm server/webcams/webcams.test.mjs",
     "test:webcamtime": "node --import tsx/esm src/lib/webcamTime.test.mjs",
     "test:grib2": "node --import tsx/esm server/grid/grib2.test.mjs",
-    "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator && npm run test:webcams && npm run test:webcamtime && npm run test:sizzle",
+    "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator && npm run test:webcams && npm run test:webcamtime && npm run test:sizzle && npm run test:devmode",
     "sizzle:pdfs": "node --import tsx/esm scripts/sizzle/build-pdfs.ts",
     "sizzle:simulate": "node --import tsx/esm scripts/sizzle/simulate.ts",
     "test:sizzle": "node --import tsx/esm shared/sizzle/sizzle.test.mjs",
+    "test:devmode": "node --import tsx/esm server/utils/devMode.test.mjs",
+    "live": "node --import tsx/esm scripts/dev-mode.ts live",
+    "safe": "node --import tsx/esm scripts/dev-mode.ts safe",
+    "devmode": "node --import tsx/esm scripts/dev-mode.ts status",
     "sizzle:sample-report": "node --import tsx/esm scripts/sizzle/sample-report.ts"
   },
   "dependencies": {

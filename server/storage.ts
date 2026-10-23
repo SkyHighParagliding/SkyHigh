@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import path from "path";
+import { allowOutsideWrite, isDevLive } from "./utils/devMode.js";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
@@ -10,6 +11,11 @@ const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
 
 export function isR2Configured(): boolean {
   return !!(R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET_NAME && R2_PUBLIC_URL);
+}
+
+/** R2 keys present AND outside writes allowed. In dev safe mode new files go to local /uploads instead. */
+function useR2(): boolean {
+  return isR2Configured() && isDevLive();
 }
 
 let _client: S3Client | null = null;
@@ -85,7 +91,7 @@ export async function saveFile(
   key: string,
   contentType = "image/jpeg",
 ): Promise<string> {
-  if (isR2Configured()) {
+  if (useR2()) {
     await withRetryR2(
       () => getClient().send(
         new PutObjectCommand({
@@ -137,8 +143,8 @@ export async function readFile(urlOrPath: string): Promise<Buffer> {
 export async function deleteFile(urlOrPath: string): Promise<void> {
   if (!urlOrPath) return;
   if (urlOrPath.startsWith("http://") || urlOrPath.startsWith("https://")) {
-    if (!isR2Configured()) return;
     const key = new URL(urlOrPath).pathname.slice(1);
+    if (!isR2Configured() || !allowOutsideWrite(`R2 delete ${key}`)) return;
     try {
       await withRetryR2(
         () => getClient().send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME!, Key: key })),
@@ -170,7 +176,7 @@ export function fileExists(urlOrPath: string): boolean {
 
 /** Public URL for a storage key (R2 public URL in prod, /uploads/... locally). */
 export function publicUrl(key: string): string {
-  return isR2Configured() ? `${R2_PUBLIC_URL}/${key}` : `/uploads/${key}`;
+  return useR2() ? `${R2_PUBLIC_URL}/${key}` : `/uploads/${key}`;
 }
 
 /**

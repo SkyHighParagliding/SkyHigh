@@ -3,7 +3,7 @@ import multer from "multer";
 import { query, queryOne, execute, transaction } from "../pg.js";
 import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
-import { getAppScriptUrl } from "../googleDrive.js";
+import { getAppScriptUrl, getAppScriptWriteUrl } from "../googleDrive.js";
 import createLogger from "../utils/logger.js";
 
 const log = createLogger("projects");
@@ -146,7 +146,7 @@ router.post("/:id/documents/upload", requireAuth, upload.single("file"), asyncHa
   if (!req.file) return res.status(400).json({ error: "No file provided" });
 
   const safeName = project.driveFolderName || project.name.replace(/[^a-zA-Z0-9 _\-&]/g, "").trim() || `Project-${req.params.id}`;
-  const appScriptUrl = await getAppScriptUrl();
+  const appScriptUrl = await getAppScriptWriteUrl(`upload ${req.file.originalname} to 08_Projects`);
 
   if (appScriptUrl) {
     try {
@@ -282,7 +282,7 @@ router.delete("/:id/documents/:docId", requireAuth, asyncHandler(async (req, res
   // Delete from Drive before touching the DB (external call outside transaction).
   if (shouldDeleteDocRecord && docToDelete?.driveFileId) {
     let driveDeleted = false;
-    const appScriptUrl = await getAppScriptUrl();
+    const appScriptUrl = await getAppScriptWriteUrl(`delete file ${docToDelete.driveFileId}`);
     if (appScriptUrl) {
       try {
         const delRes = await fetch(`${appScriptUrl}?action=delete&fileId=${encodeURIComponent(docToDelete.driveFileId)}`, { method: "POST" });

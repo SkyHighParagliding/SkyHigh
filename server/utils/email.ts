@@ -1,4 +1,5 @@
 import createLogger from "./logger.js";
+import { allowOutsideWrite } from "./devMode.js";
 
 const log = createLogger("email");
 
@@ -11,6 +12,9 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
+  // Dev safe mode: log instead of sending, and report success so flows (e.g. password reset) carry on.
+  if (!allowOutsideWrite(`email to ${options.to}: "${options.subject}"`)) return { success: true };
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     log.error("RESEND_API_KEY not configured");

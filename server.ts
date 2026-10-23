@@ -56,6 +56,7 @@ import populateBannersRouter from "./server/routes/admin/populate-banners.js";
 import searchLogsRouter from "./server/routes/searchLogs.js";
 import { injectServices } from "./server/services/index.js";
 import { getHealthStatus } from "./server/utils/health.js";
+import { getDevMode, startDevModeWatch } from "./server/utils/devMode.js";
 import { errorHandlerMiddleware } from "./server/utils/errorHandler.js";
 
 const log = createLogger("server");
@@ -257,6 +258,10 @@ async function startServer() {
   app.get("/api/dev-mode", (_req, res) => {
     res.json({ active: isDevBypassActive() });
   });
+  // Dev safe/live state for the admin badge (DECISION-021). Production always reports "production".
+  app.get("/api/dev-safety", (_req, res) => {
+    res.json(getDevMode());
+  });
   app.use("/api/auth", authRouter);
   app.use("/api/pageviews", pageviewsRouter);
   app.use("/api/procedures", proceduresRouter);
@@ -384,7 +389,8 @@ async function startServer() {
   const server = app.listen(Number(PORT), "0.0.0.0", () => {
     log.info(`API server listening on http://0.0.0.0:${PORT}`);
     try {
-      startWeatherScrapers();
+      startDevModeWatch();
+  startWeatherScrapers();
     } catch (e: any) {
       log.error("Fetch weather data error", e?.message);
     }

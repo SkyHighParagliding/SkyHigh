@@ -5,7 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import createLogger from "../utils/logger.js";
 import { invalidateSearchCaches } from "../utils/searchCacheInvalidation.js";
-import { CATEGORY_FOLDERS, getAppScriptUrl } from "../googleDrive.js";
+import { CATEGORY_FOLDERS, DRIVE_WRITE_OFF, getAppScriptUrl, getAppScriptWriteUrl } from "../googleDrive.js";
 
 const router = Router();
 const log = createLogger("document-index");
@@ -254,7 +254,7 @@ router.post("/upload", requireAuth, upload.single("file"), asyncHandler(async (r
     return res.status(400).json({ error: "Category is required" });
   }
 
-  const appScriptUrl = await getAppScriptUrl();
+  const appScriptUrl = await getAppScriptWriteUrl(`upload ${req.file.originalname}`);
   if (appScriptUrl) {
     const folderName = CATEGORY_FOLDERS.find(c => c.code === category)?.name || category;
     try {
@@ -300,7 +300,7 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   );
 
   if (!doc) {
-    const appScriptUrl = await getAppScriptUrl();
+    const appScriptUrl = await getAppScriptWriteUrl(`delete file ${req.params.id}`);
     if (appScriptUrl) {
       try {
         const response = await fetch(
@@ -342,9 +342,9 @@ router.post("/move", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Invalid destination category" });
   }
 
-  const appScriptUrl = await getAppScriptUrl();
+  const appScriptUrl = await getAppScriptWriteUrl(`move file ${fileId}`);
   if (!appScriptUrl) {
-    return res.status(503).json({ error: "Google Drive not connected" });
+    return res.status(503).json({ error: DRIVE_WRITE_OFF });
   }
 
   const folderName = CATEGORY_FOLDERS.find(c => c.code === destCategory)?.name || "";
@@ -374,9 +374,9 @@ router.post("/copy", requireAuth, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Invalid destination category" });
   }
 
-  const appScriptUrl = await getAppScriptUrl();
+  const appScriptUrl = await getAppScriptWriteUrl(`copy file ${fileId}`);
   if (!appScriptUrl) {
-    return res.status(503).json({ error: "Google Drive not connected" });
+    return res.status(503).json({ error: DRIVE_WRITE_OFF });
   }
 
   const folderName = CATEGORY_FOLDERS.find(c => c.code === destCategory)?.name || "";

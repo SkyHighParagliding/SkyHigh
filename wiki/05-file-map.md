@@ -79,7 +79,10 @@ Because Weather Underground is the **catch-all**, adding a source means register
 **Read this to understand DECISION-010.**
 
 ### `server/storage.ts`
-**Media storage abstraction.** Routes file uploads to local `/uploads/` (dev) or Cloudflare R2 (prod). **Read this to understand DECISION-002.**
+**Media storage abstraction.** Routes file uploads to local `/uploads/` (dev) or Cloudflare R2 (prod). In dev, R2 is only used while dev safe mode is LIVE (DECISION-021). **Read this to understand DECISION-002.**
+
+### `server/utils/devMode.ts`  
+**Dev safe mode (DECISION-021).** `getDevMode()`, `isDevLive()`, `allowOutsideWrite(what)`, `startDevModeWatch()`; pure `evaluate()`/`setKey()` for tests and `scripts/dev-mode.ts` (`npm run live / safe / devmode`). Tests: `server/utils/devMode.test.mjs`. Badge: `DevSafetyBadge` in `src/App.tsx` via `GET /api/dev-safety`.
 
 Exports: `upload()`, `download()`, `delete()`, `getPublicUrl()`, `publicUrl(key)` (key to public URL; used by the camera archive).
 

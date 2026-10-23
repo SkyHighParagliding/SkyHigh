@@ -1,4 +1,5 @@
 import { queryOne } from "./pg.js";
+import { allowOutsideWrite } from "./utils/devMode.js";
 
 const CATEGORY_FOLDERS = [
   { code: "01", name: "01_Governance & Manuals" },
@@ -25,3 +26,12 @@ export async function getAppScriptUrl(): Promise<string> {
   } catch {}
   return "";
 }
+
+/** Apps Script URL for a Drive WRITE (upload, delete, move, copy): "" in dev safe mode, so callers act as if Drive isn't connected. Reads use getAppScriptUrl(). */
+export async function getAppScriptWriteUrl(what: string): Promise<string> {
+  const url = await getAppScriptUrl();
+  if (!url || !allowOutsideWrite(`Google Drive ${what}`)) return "";
+  return url;
+}
+
+export const DRIVE_WRITE_OFF = "Google Drive not connected (or dev safe mode is on: npm run live)";
