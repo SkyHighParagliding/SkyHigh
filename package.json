@@ -34,6 +34,7 @@
     "live": "node --import tsx/esm scripts/dev-mode.ts live",
     "safe": "node --import tsx/esm scripts/dev-mode.ts safe",
     "devmode": "node --import tsx/esm scripts/dev-mode.ts status",
+    "db:pull-prod": "node --import tsx/esm scripts/db-pull-prod.ts",
     "sizzle:sample-report": "node --import tsx/esm scripts/sizzle/sample-report.ts"
   },
   "dependencies": {
