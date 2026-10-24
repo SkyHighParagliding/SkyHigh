@@ -173,7 +173,10 @@ assert(f.cashCustomers < real.config.customersPerDay[0], "float sized on cash cu
 const lessCash = clone(real);
 lessCash.config.card.share = 0.9;
 assert(recommendFloat(lessCash).total <= f.total, "higher card share → float no bigger");
-assert(!f.counts[0.5], "whole-dollar prices → no 50c coins in the float");
+const wholeDollar = clone(real);
+wholeDollar.config.priceStep = 1;
+assert(!recommendFloat(wholeDollar).counts[0.5], "whole-dollar prices → no 50c coins in the float");
+assert(pricingTable(real).every((r) => Math.abs(r.price * 2 - Math.round(r.price * 2)) < 1e-9), "calculated prices step in 50c");
 const halves = clone(real);
 halves.config.priceOverrides = { ...halves.config.priceOverrides, sausage: 3.5, veg_sausage: 3.5 };
 const fh = recommendFloat(halves);

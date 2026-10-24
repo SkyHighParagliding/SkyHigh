@@ -48,6 +48,12 @@ export function money(n: number, dp = 2): string {
   return `${sign}$${Math.abs(n).toFixed(dp)}`;
 }
 
+/** A sell price: "$2", "$3.50" (prices step in 50c, so cents only when needed). */
+export const price = (n: number) => `${n.toFixed(n % 1 ? 2 : 0)}`;
+
+/** A rounding step: 0.5 → "50c", 1 → "$1". */
+const stepText = (s: number) => (s < 1 ? `${Math.round(s * 100)}c` : `${s}`);
+
 function qtyText(n: number, unit: string): string {
   const v = Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 1 : 0);
   return `${v} ${unit}${unit.endsWith("s") || unit === "g" || unit === "ml" || unit === "kg" || unit === "m" ? "" : n === 1 ? "" : "s"}`;
@@ -243,7 +249,7 @@ export function priceBoardBody(data: SizzleData, rows: PriceRow[] = pricingTable
   }
   // The landscape page holds 7 lines at full size; shrink to fit more.
   const k = Math.min(1, 7 / board.length);
-  const items = board.map((r) => `<tr><td style="font-size:${(24 * k).toFixed(1)}pt;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">${esc(r.name)}</td><td style="font-size:${(32 * k).toFixed(1)}pt;font-weight:700;text-align:right;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">$${r.price.toFixed(0)}</td></tr>`).join("");
+  const items = board.map((r) => `<tr><td style="font-size:${(24 * k).toFixed(1)}pt;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">${esc(r.name)}</td><td style="font-size:${(32 * k).toFixed(1)}pt;font-weight:700;text-align:right;padding:2px 14px;border:0;border-bottom:2px solid #e7e5e4">${price(r.price)}</td></tr>`).join("");
   const onion = data.config.onionsEnabled ? "with fried onion, " : "";
   return `<div class="note" style="display:flex;justify-content:space-between;border-bottom:1px solid #ddd;margin-bottom:4px"><span>${esc(data.event.name)} · ${esc(dateRange(data))}</span><span>Prices checked at Woolworths Bright on ${esc(longDate(data.pricesChecked.date))}</span></div><div style="text-align:center;margin:0 0 4px"><div style="font-size:16pt;color:#555">${esc(data.event.club)}</div><div style="font-size:34pt;font-weight:700;color:#7c2d12;line-height:1.05">SAUSAGE SIZZLE</div></div>
 <table style="border:0;margin:0 auto;width:92%">${items}</table>
@@ -299,7 +305,7 @@ export function costingBody(data: SizzleData): string {
   const { config } = data;
   const card = config.card;
   const fixed = cardFixed(card);
-  const table = rows.map((r) => `<tr><td>${esc(r.name)}${r.overridden ? ` <span class="tag">OVERRIDE</span>` : ""}</td><td class="num">${money(r.cost, 3)}</td><td class="num">${money(r.cardFee, 3)}</td><td class="num">${money(r.costInclFee, 3)}</td><td class="num">${money(r.raw)}</td><td class="num" style="font-weight:700">${money(r.price, 0)}</td><td class="num">${money(r.margin)}</td><td class="num">${money(r.worstPrice, 0)}${r.worstChanges ? ` <span class="tag red">CHANGES</span>` : ""}</td></tr>`).join("");
+  const table = rows.map((r) => `<tr><td>${esc(r.name)}${r.overridden ? ` <span class="tag">OVERRIDE</span>` : ""}</td><td class="num">${money(r.cost, 3)}</td><td class="num">${money(r.cardFee, 3)}</td><td class="num">${money(r.costInclFee, 3)}</td><td class="num">${money(r.raw)}</td><td class="num" style="font-weight:700">${price(r.price)}</td><td class="num">${money(r.margin)}</td><td class="num">${price(r.worstPrice)}${r.worstChanges ? ` <span class="tag red">CHANGES</span>` : ""}</td></tr>`).join("");
   const bom = data.menu.map((m) => {
     const c = costs[m.id];
     const lines = c.lines.map((l) => `<b>${esc(l.product.replace(/_/g, " "))}</b> ${l.qty < 1 ? l.qty.toFixed(3) : l.qty.toFixed(l.qty % 1 ? 1 : 0)} ${esc(products[l.product].unit)} = ${money(l.cost, 3)}`).join("; ");
@@ -315,9 +321,9 @@ export function costingBody(data: SizzleData): string {
 
   return `${header(data, "Costing & power summary", "For committee records. All figures regenerate from data/sizzle/sizzle-2026.json.")}
 <h2>Cost per serve and sell price</h2>
-<p class="note">Sell price = (food + allocated consumables + card fee) × ${config.markup.toFixed(2)}, rounded UP to the nearest $${config.priceStep}. Card fee per serve = s × ($${fixed.toFixed(2)} / n + ${(card.pct * 100).toFixed(2)}% × P), with s = ${(card.share * 100).toFixed(0)}% card share and n = ${card.itemsPerTxn} items per card sale. So P = ${config.markup.toFixed(2)} × (C + s × ${fixed.toFixed(2)}/n) / (1 − ${config.markup.toFixed(2)} × s × ${card.pct}).</p>
+<p class="note">Sell price = (food + allocated consumables + card fee) × ${config.markup.toFixed(2)}, rounded UP to the nearest ${stepText(config.priceStep)}. Card fee per serve = s × ($${fixed.toFixed(2)} / n + ${(card.pct * 100).toFixed(2)}% × P), with s = ${(card.share * 100).toFixed(0)}% card share and n = ${card.itemsPerTxn} items per card sale. So P = ${config.markup.toFixed(2)} × (C + s × ${fixed.toFixed(2)}/n) / (1 − ${config.markup.toFixed(2)} × s × ${card.pct}).</p>
 <table><thead><tr><th>Item</th><th class="num">Cost/serve (C)</th><th class="num">Card fee/serve</th><th class="num">Cost incl. card fee</th><th class="num">× ${config.markup.toFixed(2)} (unrounded P)</th><th class="num">Sell price</th><th class="num">Margin</th><th class="num">Worst case (s=100%, n=1)</th></tr></thead><tbody>${table}</tbody></table>
-<p class="note">Items marked CHANGES would need the next $1 up if every sale were a single-item card sale. Margin = sell price − cost − card fee.</p>
+<p class="note">Items marked CHANGES would need the next ${stepText(config.priceStep)} up if every sale were a single-item card sale. Margin = sell price − cost − card fee.</p>
 <h2 class="avoid">Bill of materials (per serve, Day 1 allocation at ${config.customersPerDay[0]} customers)</h2>
 <table><thead><tr><th>Item</th><th>Components and cost</th><th class="num">Direct</th><th class="num">Allocated consumables</th></tr></thead><tbody>${bom}</tbody></table>
 <p class="note"><b>Portions (editable):</b> ${portions}. ${esc(config.portionsNote)}</p>

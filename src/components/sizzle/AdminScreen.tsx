@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FileDown, Lock, PackagePlus, Save, Users } from "lucide-react";
-import { pricingTable, type Qty } from "../../../shared/sizzle/calc.ts";
+import { ceilTo, pricingTable, type Qty } from "../../../shared/sizzle/calc.ts";
 import { sha256, type TillSettings } from "@/lib/sizzleStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { BASE, shortName, type Till } from "./useTill";
@@ -10,7 +10,7 @@ import { ForecastRows, forecastDraft, forecastOverrides } from "./Forecasts";
 import { openPrintView } from "./printView";
 import { PhonesPanel } from "./PhonesPanel";
 import { EventPanel } from "./EventPanel";
-import { page, shoppingListBody } from "../../../shared/sizzle/templates.ts";
+import { page, price, shoppingListBody } from "../../../shared/sizzle/templates.ts";
 
 function AdminHelp({ markup }: { markup: number }) {
   return (
@@ -33,8 +33,8 @@ function AdminHelp({ markup }: { markup: number }) {
       <p>Shows which event the till is selling for. <b>Start a new event…</b> is for the next sizzle (e.g. 2027): name, first day, number of days and customers per day. Every device switches over and the old event's records are kept. Started one by mistake? <b>Switch to …</b> goes back.</p>
 
       <h3>Sell prices — do I type a price beside "Sausage in bread"?</h3>
-      <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next whole dollar, and it's what the printed price board shows.</p>
-      <p>Only type a number to <b>override</b> it — e.g. type <b>3</b> to sell sausages at $3. Then tap Save. The Sell buttons change at once; sales already rung up keep the price they were sold at.</p>
+      <p><b>No — leave it blank.</b> Blank uses the calculated price, shown in grey under each item ("calculated $2 · cost $1.13"). The calculated price is the cost per serve including the card fee, × {markup}, rounded up to the next 50c, and it's what the printed price board shows.</p>
+      <p>Only type a number to <b>override</b> it — e.g. type <b>3</b> to sell sausages at $3, or <b>3.50</b> for $3.50. Then tap Save. The Sell buttons change at once; sales already rung up keep the price they were sold at.</p>
       <ul>
         <li>To go back to the calculated price, clear the box and Save.</li>
         <li>The printed price board does <b>not</b> change — write the new price on it.</li>
@@ -250,7 +250,7 @@ function AdminForm({ till }: { till: Till }) {
         <section className="rounded-2xl bg-white shadow p-4">
           <h3 className="text-2xl font-bold">Sell prices</h3>
           <p className="text-stone-500 mb-2">Blank = calculated price (cost incl. card fee × {data.config.markup}, rounded up).</p>
-          {rows.map((r) => <Field key={r.item} label={r.name} hint={`calculated $${(r.overridden ? Math.ceil(r.raw) : r.price).toFixed(0)} · cost $${r.cost.toFixed(2)}`} value={sell[r.item] ?? ""} onChange={(v) => setSell((s) => ({ ...s, [r.item]: v }))} />)}
+          {rows.map((r) => <Field key={r.item} label={r.name} hint={`calculated ${price(r.overridden ? ceilTo(r.raw, data.config.priceStep) : r.price)} · cost $${r.cost.toFixed(2)}`} value={sell[r.item] ?? ""} onChange={(v) => setSell((s) => ({ ...s, [r.item]: v }))} />)}
           <h3 className="text-2xl font-bold mt-4">Card assumptions</h3>
           <Field label="Card share of sales (%)" hint={`file: ${Math.round(BASE.config.card.share * 100)}%`} value={share} onChange={setShare} />
           <Field label="Items per card sale" hint={`file: ${BASE.config.card.itemsPerTxn}`} value={items} onChange={setItems} />
