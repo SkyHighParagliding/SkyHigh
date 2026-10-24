@@ -227,7 +227,7 @@ export function complianceBody(data: SizzleData): string {
 <ul class="avoid">
 <li>${box} Raw sausages, onions and opened milk at <b>≤5 °C</b> in the Dometic — check the display each morning.</li>
 <li>${box} <b>Gloves</b> on for bread and cooked food; change after handling money or raw sausages.</li>
-<li>${box} <b>Separate VEG zone</b> on the hotplate and <b>separate VEG tongs</b> (marked).</li>
+<li>${box} <b>Veg sausages in their own frying pan</b> on the BBQ (the VEG zone) with <b>separate VEG tongs</b> (marked).</li>
 <li>${box} Cook sausages <b>right through</b> — probe the thickest one with the food thermometer (≥75 °C, no pink).</li>
 <li>${box} Handwash station (water with tap, soap, paper towel, waste bucket) set up <b>before</b> cooking starts.</li>
 <li>${box} <b>Throw out cooked leftovers</b> at the end of each day (raw stock goes back in the Dometic).</li>

@@ -1371,13 +1371,13 @@
       "item": "Gas BBQ",
       "status": "own",
       "qty": 1,
-      "notes": "Hotplate split into a MEAT zone and a VEG zone."
+      "notes": "Hotplate for the meat sausages. The frying pan on the BBQ is the VEG zone."
     },
     {
       "item": "Frying pan (for the vegetarian sausages on the BBQ)",
       "status": "tbc",
       "qty": 1,
-      "notes": "Keeps the veg sausages off the meat hotplate."
+      "notes": "The VEG zone: keeps the veg sausages off the meat hotplate."
     },
     {
       "item": "Full spare gas bottle (9 kg)",
@@ -1705,7 +1705,7 @@
     },
     {
       "title": "Food safety on the day",
-      "detail": "Raw sausages, onions and opened milk at ≤5 °C in the Dometic. Gloves for handling bread and cooked food. Separate VEG zone on the hotplate and separate VEG tongs. Cook sausages through — probe the thickest sausage (≥75 °C, no pink). Handwash station set up before cooking starts. Throw out cooked leftovers at the end of each day.",
+      "detail": "Raw sausages, onions and opened milk at ≤5 °C in the Dometic. Gloves for handling bread and cooked food. Veg sausages in their own frying pan (the VEG zone) with separate VEG tongs. Cook sausages through — probe the thickest sausage (≥75 °C, no pink). Handwash station set up before cooking starts. Throw out cooked leftovers at the end of each day.",
       "link": "https://www.safefood.vic.gov.au/fundraising-with-food-community-groups"
     }
   ]
