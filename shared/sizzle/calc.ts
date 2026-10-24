@@ -98,6 +98,8 @@ export interface PowerConfig {
   /** Hot water urn: one fill heated each morning, kept hot through service. */
   urn: { name: string; watts: number; litres: number; cupMl: number; washUpLitres: number; inletC: number; holdC: number; efficiency: number; keepWarmW: number; serviceHours: number; note: string };
   elite300: { name: string; capacityWh: number; usableWh: number; maxOutputW: number; socketsSharedA: number; volts: number; inverterEfficiency: number };
+  /** Solar on the Elite 300: planning output, not the panels' rating. */
+  solar?: { name: string; panels: number; panelW: number; peakShare: number; peakFrom: number; peakTo: number; shoulderShare: number; shoulderHours: number; chargeEfficiency: number; inputMaxW: number; inputMaxV: number; inputMaxA: number; note: string };
   elite100: { name: string; capacityWh: number; usableWh: number };
   fridge: { name: string; volts: number; avgA: number; hotDayA: number; note: string };
   overnight: { device: string; wh: number }[];
@@ -791,6 +793,16 @@ export function powerBudget(data: SizzleData, customers = data.config.customersP
   const amps = u.watts / e3.volts;
   const spareWh = e3.usableWh - keepWarmWh - u.litres * whPerLitre;
 
+  // Solar: peakShare of the rating between peakFrom and peakTo, shoulderShare
+  // for shoulderHours either side, after charging losses; capped at the input limit.
+  const sol = power.solar;
+  const solarW = sol ? Math.min(sol.panels * sol.panelW, sol.inputMaxW) : 0;
+  const peakHours = sol ? sol.peakTo - sol.peakFrom : 0;
+  const solarWh = sol ? solarW * (sol.peakShare * peakHours + sol.shoulderShare * 2 * sol.shoulderHours) * sol.chargeEfficiency : 0;
+  // Battery left at the end of a sunny day, starting full (it can't go above full,
+  // and the urn's morning heat-up comes before most of the sun).
+  const endOfDayWh = Math.min(e3.usableWh, e3.usableWh - urnWh + solarWh);
+
   const f = power.fridge;
   const fridgeWh = f.avgA * f.volts * 24;
   const fridgeHotWh = f.hotDayA * f.volts * 24;
@@ -808,6 +820,10 @@ export function powerBudget(data: SizzleData, customers = data.config.customersP
     heatUpMin,
     urnShare: urnWh / e3.usableWh,
     urnOk: u.watts <= e3.maxOutputW && amps <= e3.socketsSharedA,
+    solarW,
+    solarWh,
+    solarShare: solarWh / urnWh,
+    endOfDayWh,
     amps,
     // First fill, keep-warm, then every extra cup reheated from cold.
     maxCupsOnCharge: cupsPerFill + Math.max(0, Math.floor((spareWh / whPerLitre) * (1000 / u.cupMl))),

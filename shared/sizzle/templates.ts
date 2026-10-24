@@ -40,6 +40,9 @@ export function esc(s: unknown): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
+/** 11 → "11 am", 15 → "3 pm". */
+const hour = (h: number) => `${h % 12 || 12} ${h < 12 ? "am" : "pm"}`;
+
 export function money(n: number, dp = 2): string {
   const sign = n < 0 ? "−" : "";
   return `${sign}$${Math.abs(n).toFixed(dp)}`;
@@ -333,6 +336,8 @@ export function costingBody(data: SizzleData): string {
 <li>Keeping it hot: ~${p.urn.keepWarmW} W × ${p.urn.serviceHours} h ≈ ${(pw.keepWarmWh / 1000).toFixed(2)} kWh. ${esc(p.urn.note)}</li>
 <li><b>≈ ${(pw.urnWh / 1000).toFixed(2)} kWh/day of ${(p.elite300.usableWh / 1000).toFixed(1)} kWh usable (${Math.round(pw.urnShare * 100)}%).</b> One full charge covers about ${pw.maxCupsOnCharge} hot drinks.</li>
 <li>Switch the urn off as soon as service ends: keeping it hot is the part that's easy to waste.</li>
+${p.solar ? `<li><b>Solar:</b> ${esc(p.solar.name)}, ${p.solar.panels * p.solar.panelW} W rated. Planned on ${Math.round(p.solar.peakShare * 100)}% (${(p.solar.panels * p.solar.panelW * p.solar.peakShare).toFixed(0)} W) from ${hour(p.solar.peakFrom)} to ${hour(p.solar.peakTo)} and ${Math.round(p.solar.shoulderShare * 100)}% for ${p.solar.shoulderHours} h either side, after ${Math.round((1 - p.solar.chargeEfficiency) * 100)}% charging losses: <b>≈ ${(pw.solarWh / 1000).toFixed(2)} kWh on a sunny day</b>, ${pw.solarWh >= pw.urnWh ? "more than" : `${Math.round(pw.solarShare * 100)}% of`} the urn's daily use. Battery at the end of a sunny day ≈ ${Math.round((pw.endOfDayWh / p.elite300.usableWh) * 100)}% (with no sun: ${Math.round(((p.elite300.usableWh - pw.urnWh) / p.elite300.usableWh) * 100)}%). Wire the panels in parallel: the input takes ${p.solar.inputMaxV} V and ${p.solar.inputMaxA} A at most.</li>
+<li>${esc(p.solar.note)}</li>` : ""}
 </ul></div>
 <div><h3>${esc(p.elite100.name)} — Dometic only (12 V socket)</h3>
 <ul>
@@ -342,7 +347,7 @@ export function costingBody(data: SizzleData): string {
 </ul></div></div>
 <h3 class="avoid">Overnight recharge plan</h3>
 <ul class="avoid">
-<li><b>Elite 300:</b> recharge to 100% from mains every night — a day's urn use takes ~${Math.round(pw.urnShare * 100)}% of it. Also charge the Stripe device, power bank and iPad from it (≈${pw.overnightWh} Wh).</li>
+<li><b>Elite 300:</b> recharge to 100% from mains every night if you can — a day's urn use takes ~${Math.round(pw.urnShare * 100)}% of it${p.solar ? `, and the solar puts back about ${(pw.solarWh / 1000).toFixed(1)} kWh on a sunny day. With no mains, solar alone keeps it going on sunny days; after a cloudy day, charge from mains before the next service` : ""}. Also charge the Stripe device, power bank and iPad from it (≈${pw.overnightWh} Wh).</li>
 <li><b>Elite 100:</b> recharge every night. It could stretch ${Math.floor(pw.fridgeHotDays)} days on a hot run, but don't rely on it. If there's mains overnight, run the Dometic from its AC lead and keep the battery full.</li>
 <li>If hot drinks look like passing ~${pw.maxCupsOnCharge} in a day, run the urn from mains if the site has power, or switch it off between rushes.</li>
 </ul>`;

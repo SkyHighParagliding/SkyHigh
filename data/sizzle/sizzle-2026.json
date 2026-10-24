@@ -260,6 +260,21 @@
         "volts": 230,
         "inverterEfficiency": 0.9
       },
+      "solar": {
+        "name": "Solar panels, 2 × 400 W (Jon's)",
+        "panels": 2,
+        "panelW": 400,
+        "peakShare": 0.5,
+        "peakFrom": 11,
+        "peakTo": 15,
+        "shoulderShare": 0.25,
+        "shoulderHours": 1,
+        "chargeEfficiency": 0.9,
+        "inputMaxW": 1200,
+        "inputMaxV": 60,
+        "inputMaxA": 22,
+        "note": "Planning assumption (Jon, 24 Oct): no more than 50% of the panels' rating from 11 am to 3 pm, and half that (25%) for 1 hour either side. Cloudy days can give far less, so the plan still works with no sun at all."
+      },
       "elite100": {
         "name": "Bluetti Elite 100 V2",
         "capacityWh": 1024,
@@ -1410,6 +1425,18 @@
       "item": "Bluetti chargers / AC cables (both units)",
       "status": "own",
       "qty": 2
+    },
+    {
+      "item": "Solar panels, 400 W",
+      "status": "own",
+      "qty": 2,
+      "notes": "Jon is bringing them. Charge the Elite 300. Wire the two panels in PARALLEL, not series: the Elite 300's solar input takes 12–60 V and up to 22 A (1,200 W). Check each panel's open-circuit voltage (Voc) is under 60 V."
+    },
+    {
+      "item": "Solar leads: MC4 parallel Y-connector + MC4-to-XT60 cable for the Elite 300",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Check what comes with the panels before buying."
     },
     {
       "item": "Hot water urn, 10 L, 2,000 W",

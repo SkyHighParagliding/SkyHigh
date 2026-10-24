@@ -246,6 +246,12 @@ console.log("\nHot water urn");
   assert(pw.urnWh < real.config.power.elite300.usableWh, "a day's urn use fits one Elite 300 charge");
   assert(!real.equipment.some((e) => /kettle|thermos|air pot/i.test(e.item)), "kettle and thermos are off the equipment list");
   assert(real.equipment.some((e) => /urn/i.test(e.item) && e.status === "own"), "the urn is on the list as club-owned");
+  const sol = real.config.power.solar;
+  const rated = sol.panels * sol.panelW;
+  const expected = rated * (0.5 * 4 + 0.25 * 2) * sol.chargeEfficiency;
+  assert(Math.abs(pw.solarWh - expected) < 0.01, "solar = 50% of rating 11 am–3 pm + 25% for an hour either side, after losses");
+  assert(rated <= sol.inputMaxW && pw.endOfDayWh <= real.config.power.elite300.usableWh, "solar is within the Elite 300's input and the battery can't go over full");
+  assert(real.equipment.some((e) => /solar panels/i.test(e.item) && e.qty === 2), "two solar panels are on the equipment list");
 }
 
 console.log("\nCustomer re-forecasts");
