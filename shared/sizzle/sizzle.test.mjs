@@ -229,7 +229,7 @@ console.log("\nFruit");
   const products = productIndex(real);
   const menu = (id) => real.menu.find((m) => m.id === id);
   const plan = shoppingPlan(real);
-  const fruit = ["apple", "orange", "banana"];
+  const fruit = ["apple", "mandarin", "banana"];
   assert(plan.initial.lines.filter((l) => fruit.includes(l.product.id)).every((l) => l.packs * l.product.unitsPerPack === 10), "initial shop buys 10 of each fruit");
   assert(fruit.every((f) => plan.openingStock.slice(0, -1).every((s) => s[f] >= 10)), "every day but the last opens with at least 10 of each fruit");
   const onHand = { apple: 3 };

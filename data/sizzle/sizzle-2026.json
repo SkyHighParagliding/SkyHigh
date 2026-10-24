@@ -719,16 +719,16 @@
       "minOnHand": 10
     },
     {
-      "id": "orange",
-      "name": "Orange Navel 5 pack",
+      "id": "mandarin",
+      "name": "Mandarin Afourer each",
       "brand": "Woolworths",
-      "packSize": "5 pack",
-      "unitsPerPack": 5,
+      "packSize": "each",
+      "unitsPerPack": 1,
       "unit": "piece",
-      "price": 4.5,
-      "unitPrice": "$0.90 / 1EA",
-      "stockcode": "751431",
-      "url": "https://www.woolworths.com.au/shop/productdetails/751431",
+      "price": 0.46,
+      "unitPrice": "$0.46 / 1EA",
+      "stockcode": "314075",
+      "url": "https://www.woolworths.com.au/shop/productdetails/314075",
       "category": "Fruit",
       "aisle": "Fruit & Veg",
       "perishable": true,
@@ -737,9 +737,9 @@
       "confirmInStore": false,
       "flags": [
         "Sell whole and uncut: cut fruit is not covered by a Class 4 notification.",
-        "Price checked at Woolworths Bright (Direct to boot) 24 Oct 2026."
+        "Price checked at Woolworths online 24 Oct 2026 (swapped in for navel oranges). Check at Bright when shopping."
       ],
-      "fallback": "Orange Navel each, $1.49, stockcode 259450.",
+      "fallback": "Mandarin Delite Seedless each, $0.59, stockcode 731091.",
       "warnAt": 5,
       "minOnHand": 10
     },
@@ -1340,14 +1340,14 @@
       ]
     },
     {
-      "id": "orange",
-      "name": "Orange",
-      "short": "Orange",
+      "id": "mandarin",
+      "name": "Mandarin",
+      "short": "Mandarin",
       "group": "fruit",
       "colour": "#ea580c",
       "bom": [
         {
-          "product": "orange",
+          "product": "mandarin",
           "qty": 1
         }
       ]

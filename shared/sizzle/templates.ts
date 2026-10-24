@@ -233,7 +233,7 @@ export function complianceBody(data: SizzleData): string {
 
 export function priceBoardBody(data: SizzleData, rows: PriceRow[] = pricingTable(data)): string {
   const names: Record<string, string> = Object.fromEntries(data.menu.map((m) => [m.id, m.name]));
-  // Fruit at one price shares a line ("Fruit — apple, orange or banana").
+  // Fruit at one price shares a line ("Fruit — apple, mandarin or banana").
   const fruit = rows.filter((r) => data.menu.find((m) => m.id === r.item)?.group === "fruit");
   let board: { name: string; price: number }[] = rows.map((r) => ({ name: names[r.item], price: r.price }));
   if (fruit.length > 1 && fruit.every((r) => r.price === fruit[0].price)) {

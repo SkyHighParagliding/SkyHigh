@@ -207,7 +207,7 @@ export function itemBom(item: MenuItem, config: Config): Qty {
   return q;
 }
 
-export const FRUIT = ["apple", "orange", "banana"];
+export const FRUIT = ["apple", "mandarin", "banana"];
 
 /** Serves of each menu item per customer, from the editable lunch mix. */
 export function demandPerCustomer(mix: Mix): Qty {
