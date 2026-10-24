@@ -95,7 +95,8 @@ export interface FloatConfig {
 }
 
 export interface PowerConfig {
-  kettle: { maxW: number; recommendW: number; litres: number; usableLitresPerBoil: number; cupMl: number; inletC: number; efficiency: number; reboilAllowance: number };
+  /** Hot water urn: one fill heated each morning, kept hot through service. */
+  urn: { name: string; watts: number; litres: number; cupMl: number; washUpLitres: number; inletC: number; holdC: number; efficiency: number; keepWarmW: number; serviceHours: number; note: string };
   elite300: { name: string; capacityWh: number; usableWh: number; maxOutputW: number; socketsSharedA: number; volts: number; inverterEfficiency: number };
   elite100: { name: string; capacityWh: number; usableWh: number };
   fridge: { name: string; volts: number; avgA: number; hotDayA: number; note: string };
@@ -775,16 +776,20 @@ export function recommendFloat(data: SizzleData, customers = data.config.custome
 
 export function powerBudget(data: SizzleData, customers = data.config.customersPerDay[0]) {
   const { power, mix } = data.config;
-  const k = power.kettle;
+  const u = power.urn;
   const e3 = power.elite300;
   const hotDrinks = customers * mix.hotDrinksPerCustomer;
-  const litres = (hotDrinks * k.cupMl) / 1000;
-  const boilWh = (k.usableLitresPerBoil * 4186 * (100 - k.inletC)) / k.efficiency / 3600 / e3.inverterEfficiency;
-  const fullBoils = ceilTo(litres / k.usableLitresPerBoil);
-  const boils = fullBoils * (1 + k.reboilAllowance);
-  const kettleWh = boils * boilWh;
-  const cupsPerBoil = Math.floor((k.usableLitresPerBoil * 1000) / k.cupMl);
-  const amps = k.maxW / e3.volts;
+  const litres = (hotDrinks * u.cupMl) / 1000 + u.washUpLitres;
+  // The urn is filled full each morning; anything over one fill is topped up and reheated.
+  const heatedLitres = Math.max(litres, u.litres);
+  const whPerLitre = (4186 * (u.holdC - u.inletC)) / u.efficiency / 3600 / e3.inverterEfficiency;
+  const heatWh = heatedLitres * whPerLitre;
+  const keepWarmWh = (u.keepWarmW * u.serviceHours) / e3.inverterEfficiency;
+  const urnWh = heatWh + keepWarmWh;
+  const heatUpMin = (u.litres * 4186 * (u.holdC - u.inletC)) / (u.watts * u.efficiency) / 60;
+  const cupsPerFill = Math.floor((u.litres * 1000) / u.cupMl);
+  const amps = u.watts / e3.volts;
+  const spareWh = e3.usableWh - keepWarmWh - u.litres * whPerLitre;
 
   const f = power.fridge;
   const fridgeWh = f.avgA * f.volts * 24;
@@ -795,15 +800,17 @@ export function powerBudget(data: SizzleData, customers = data.config.customersP
   return {
     hotDrinks,
     litres,
-    cupsPerBoil,
-    boilWh,
-    fullBoils,
-    boils,
-    kettleWh,
-    kettleShare: kettleWh / e3.usableWh,
-    kettleOk: k.maxW <= e3.maxOutputW && amps <= e3.socketsSharedA,
+    heatedLitres,
+    cupsPerFill,
+    heatWh,
+    keepWarmWh,
+    urnWh,
+    heatUpMin,
+    urnShare: urnWh / e3.usableWh,
+    urnOk: u.watts <= e3.maxOutputW && amps <= e3.socketsSharedA,
     amps,
-    maxCupsOnCharge: Math.floor((e3.usableWh / (boilWh * (1 + k.reboilAllowance))) * cupsPerBoil),
+    // First fill, keep-warm, then every extra cup reheated from cold.
+    maxCupsOnCharge: cupsPerFill + Math.max(0, Math.floor((spareWh / whPerLitre) * (1000 / u.cupMl))),
     fridgeWh,
     fridgeHotWh,
     fridgeDays: e1.usableWh / fridgeWh,

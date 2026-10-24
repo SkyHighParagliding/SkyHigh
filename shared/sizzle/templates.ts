@@ -325,12 +325,14 @@ export function costingBody(data: SizzleData): string {
 <p class="note">Stripe AU fees checked ${esc(longDate(card.checked))} at <a href="${esc(card.source)}">${esc(card.source)}</a>: ${esc(card.checkedNote)}</p>
 <h2 class="avoid">Power budget</h2>
 <div class="cols avoid">
-<div><h3>${esc(p.elite300.name)} — kettle only</h3>
+<div><h3>${esc(p.elite300.name)} — hot water urn only</h3>
 <ul>
-<li>Kettle: <b>${p.kettle.litres} L, ${p.kettle.recommendW} W recommended</b> (must be ≤ ${p.kettle.maxW} W). ${p.kettle.maxW} W ÷ ${p.elite300.volts} V = ${pw.amps.toFixed(1)} A — under the ${p.elite300.socketsSharedA} A shared by the two AC sockets, so ${pw.kettleOk ? "OK" : "NOT OK"}. Plug nothing else into the Elite 300 while boiling.</li>
-<li>${pw.hotDrinks.toFixed(0)} hot drinks/day × ${p.kettle.cupMl} mL = ${pw.litres.toFixed(1)} L → ${pw.fullBoils} boils of ${p.kettle.usableLitresPerBoil} L (${pw.cupsPerBoil} cups each), +${Math.round(p.kettle.reboilAllowance * 100)}% re-boils = ${pw.boils.toFixed(1)} boils.</li>
-<li>Each boil ≈ ${pw.boilWh.toFixed(0)} Wh from the battery (${p.kettle.inletC} °C water, ${Math.round(p.kettle.efficiency * 100)}% kettle, ${Math.round(p.elite300.inverterEfficiency * 100)}% inverter).</li>
-<li><b>≈ ${(pw.kettleWh / 1000).toFixed(2)} kWh/day of ${(p.elite300.usableWh / 1000).toFixed(1)} kWh usable (${Math.round(pw.kettleShare * 100)}%).</b> One full charge covers about ${pw.maxCupsOnCharge} hot drinks.</li>
+<li>${esc(p.urn.name)}: ${p.urn.watts} W ÷ ${p.elite300.volts} V = ${pw.amps.toFixed(1)} A — under the ${p.elite300.socketsSharedA} A shared by the two AC sockets and the ${p.elite300.maxOutputW} W limit, so ${pw.urnOk ? "OK" : "NOT OK"}. Plug nothing else into the Elite 300 while it heats.</li>
+<li>${pw.hotDrinks.toFixed(0)} hot drinks/day × ${p.urn.cupMl} mL + ${p.urn.washUpLitres} L for the wash-up tub = ${pw.litres.toFixed(1)} L. One ${p.urn.litres} L fill holds ${pw.cupsPerFill} cups${pw.litres > p.urn.litres ? `; top up ${(pw.litres - p.urn.litres).toFixed(1)} L during the day` : ""}.</li>
+<li>Heating ${pw.heatedLitres.toFixed(1)} L from ${p.urn.inletC} °C to ${p.urn.holdC} °C ≈ ${(pw.heatWh / 1000).toFixed(2)} kWh (${Math.round(p.urn.efficiency * 100)}% urn, ${Math.round(p.elite300.inverterEfficiency * 100)}% inverter). A full urn takes about ${Math.round(pw.heatUpMin)} min to heat: switch on about 40 min before opening.</li>
+<li>Keeping it hot: ~${p.urn.keepWarmW} W × ${p.urn.serviceHours} h ≈ ${(pw.keepWarmWh / 1000).toFixed(2)} kWh. ${esc(p.urn.note)}</li>
+<li><b>≈ ${(pw.urnWh / 1000).toFixed(2)} kWh/day of ${(p.elite300.usableWh / 1000).toFixed(1)} kWh usable (${Math.round(pw.urnShare * 100)}%).</b> One full charge covers about ${pw.maxCupsOnCharge} hot drinks.</li>
+<li>Switch the urn off as soon as service ends: keeping it hot is the part that's easy to waste.</li>
 </ul></div>
 <div><h3>${esc(p.elite100.name)} — Dometic only (12 V socket)</h3>
 <ul>
@@ -340,9 +342,9 @@ export function costingBody(data: SizzleData): string {
 </ul></div></div>
 <h3 class="avoid">Overnight recharge plan</h3>
 <ul class="avoid">
-<li><b>Elite 300:</b> recharge to 100% from mains every night — a day's kettle use takes ~${Math.round(pw.kettleShare * 100)}% of it. Also charge the Stripe device, power bank and iPad from it (≈${pw.overnightWh} Wh).</li>
+<li><b>Elite 300:</b> recharge to 100% from mains every night — a day's urn use takes ~${Math.round(pw.urnShare * 100)}% of it. Also charge the Stripe device, power bank and iPad from it (≈${pw.overnightWh} Wh).</li>
 <li><b>Elite 100:</b> recharge every night. It could stretch ${Math.floor(pw.fridgeHotDays)} days on a hot run, but don't rely on it. If there's mains overnight, run the Dometic from its AC lead and keep the battery full.</li>
-<li>If hot drinks exceed ~${pw.maxCupsOnCharge} in a day, keep boiled water in an air pot / thermos between rushes rather than re-boiling.</li>
+<li>If hot drinks look like passing ~${pw.maxCupsOnCharge} in a day, run the urn from mains if the site has power, or switch it off between rushes.</li>
 </ul>`;
 }
 

@@ -19,6 +19,7 @@ import {
   itemLowStockBelow,
   lowStockBelow,
   packsFor,
+  powerBudget,
   productIndex,
   pricingTable,
   rawPrice,
@@ -235,6 +236,16 @@ console.log("\nFruit");
   assert(topUpNeed(real, onHand, [2, 3]).apple >= topUpNeed(real, onHand, [2]).apple, "Days 3–4 combined buys at least the Day 3 fruit");
   assert(lowStockBelow(products.apple, real.config) === 6 && itemLowStockBelow(menu("apple"), real) === 6, "fruit warns at 5 left");
   assert(lowStockBelow(products.bread, real.config) === real.config.lowStockServes && itemLowStockBelow(menu("sausage"), real) === real.config.lowStockServes, "everything else still warns under lowStockServes");
+}
+
+console.log("\nHot water urn");
+{
+  const pw = powerBudget(real);
+  assert(pw.urnOk && pw.amps < real.config.power.elite300.socketsSharedA, "urn is within the Elite 300's output and socket limit");
+  assert(pw.heatedLitres >= real.config.power.urn.litres, "the urn is heated full each morning even on a quiet day");
+  assert(pw.urnWh < real.config.power.elite300.usableWh, "a day's urn use fits one Elite 300 charge");
+  assert(!real.equipment.some((e) => /kettle|thermos|air pot/i.test(e.item)), "kettle and thermos are off the equipment list");
+  assert(real.equipment.some((e) => /urn/i.test(e.item) && e.status === "own"), "the urn is on the list as club-owned");
 }
 
 console.log("\nCustomer re-forecasts");

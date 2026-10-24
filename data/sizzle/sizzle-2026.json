@@ -238,15 +238,18 @@
     },
     "lowStockServes": 15,
     "power": {
-      "kettle": {
-        "maxW": 2200,
-        "recommendW": 2000,
-        "litres": 1.7,
-        "usableLitresPerBoil": 1.5,
+      "urn": {
+        "name": "Hot water urn, 10 L, 2,000 W (club property)",
+        "watts": 2000,
+        "litres": 10,
         "cupMl": 250,
+        "washUpLitres": 2,
         "inletC": 15,
-        "efficiency": 0.85,
-        "reboilAllowance": 0.3
+        "holdC": 95,
+        "efficiency": 0.9,
+        "keepWarmW": 60,
+        "serviceHours": 4,
+        "note": "The keep-hot figure is an estimate for a typical stainless urn (its thermostat switches the element on and off). Check the Elite 300's watt reading on Day 1 and update."
       },
       "elite300": {
         "name": "Bluetti Elite 300",
@@ -1123,7 +1126,7 @@
       "category": "Not sold at Woolworths",
       "aisle": "Not at Woolworths",
       "perishable": false,
-      "storage": "Upright, shaded, away from the kettle/power units",
+      "storage": "Upright, shaded, away from the urn/power units",
       "ownBrand": false,
       "confirmInStore": true,
       "notWoolworths": true,
@@ -1395,7 +1398,7 @@
       "item": "Bluetti Elite 300",
       "status": "own",
       "qty": 1,
-      "notes": "Kettle only during service."
+      "notes": "Hot water urn only during service."
     },
     {
       "item": "Bluetti Elite 100 V2",
@@ -1409,10 +1412,10 @@
       "qty": 2
     },
     {
-      "item": "Kettle, 1.7 L, ≤2,200 W (2,000 W preferred)",
-      "status": "tbc",
+      "item": "Hot water urn, 10 L, 2,000 W",
+      "status": "own",
       "qty": 1,
-      "notes": "Not sold at Woolworths Bright — price TBC (Kmart/Big W/Bunnings)."
+      "notes": "Club property (bought Oct 2026). Replaces the kettle and thermos. On the Elite 300 only; fill and switch on about 40 min before opening."
     },
     {
       "item": "Tongs — MEAT (40 cm)",
@@ -1522,19 +1525,19 @@
       "item": "Wash-up tub (tongs and utensils)",
       "status": "tbc",
       "qty": 1,
-      "notes": "Hot water from the kettle + detergent. Separate from the handwash station."
+      "notes": "Hot water from the urn + detergent. Separate from the handwash station."
     },
     {
-      "item": "Drinking water: about 20 L a day (kettle + handwash)",
+      "item": "Drinking water: about 20 L a day (urn + handwash)",
       "status": "tbc",
       "qty": 2,
-      "notes": "2 × 10 L jerry cans filled at a tap each day, or Mt Ossa Australian Natural Spring Water 10 L casks ($4.75, Woolworths 912380)."
+      "notes": "2 × 10 L jerry cans filled at a tap each day, or Mt Ossa Australian Natural Spring Water 10 L casks ($4.75, Woolworths 912380). The urn takes a full 10 L fill each morning."
     },
     {
       "item": "Fire-safety water: 10 L kept separate (or a hose on a tap)",
       "status": "tbc",
       "qty": 1,
-      "notes": "Required on Total Fire Ban days (see the Compliance checklist). Label it; never use it for handwash or the kettle."
+      "notes": "Required on Total Fire Ban days (see the Compliance checklist). Label it; never use it for handwash or the urn."
     },
     {
       "item": "Fire extinguisher (dry powder)",
@@ -1603,12 +1606,6 @@
       "status": "tbc",
       "qty": 1,
       "notes": "Print from the price board PDF."
-    },
-    {
-      "item": "Hot-water air pot / large thermos (optional)",
-      "status": "tbc",
-      "qty": 1,
-      "notes": "Holds boiled water between rushes so the kettle re-boils less — saves Elite 300 energy."
     },
     {
       "item": "Tub with lid for bread + sauces",
