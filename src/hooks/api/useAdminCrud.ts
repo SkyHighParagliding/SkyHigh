@@ -13,6 +13,7 @@ export const adminCrudKeys = {
   news: () => ['admin', 'news'] as const,
   pages: () => ['admin', 'pages'] as const,
   checkins: () => ['admin', 'checkins'] as const,
+  qrLinks: () => ['admin', 'qrLinks'] as const,
 };
 
 function useCrudMutation(
@@ -116,4 +117,21 @@ export function useNewsMutation() {
     adminCrudKeys.news(),
     newsKeys.all,
   ]);
+}
+
+export interface QrLink {
+  slug: string; title: string; destination: string; enabled: boolean; note: string;
+  scans: number; lastScanAt: string | null; createdAt: string; updatedAt: string;
+}
+
+export function useAdminQrLinks() {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: adminCrudKeys.qrLinks(),
+    queryFn: () => api.get<QrLink[]>('/api/qr-links', token),
+  });
+}
+
+export function useQrLinkMutation() {
+  return useCrudMutation('/api/qr-links', 'QR link', [adminCrudKeys.qrLinks()]);
 }

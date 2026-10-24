@@ -77,6 +77,7 @@ const AdminImages = lazy(() => import("./pages/AdminImages").then(m => ({ defaul
 const AdminAIModels = lazy(() => import("./pages/AdminAIModels").then(m => ({ default: m.AdminAIModels })));
 const AdminBranding = lazy(() => import("./pages/AdminBranding").then(m => ({ default: m.AdminBranding })));
 const AdminConnections = lazy(() => import("./pages/AdminConnections").then(m => ({ default: m.AdminConnections })));
+const AdminQrLinks = lazy(() => import("./pages/AdminQrLinks").then(m => ({ default: m.AdminQrLinks })));
 const AdminSponsors = lazy(() => import("./pages/AdminSponsors").then(m => ({ default: m.AdminSponsors })));
 const AdminBusinessDirectory = lazy(() => import("./pages/AdminBusinessDirectory").then(m => ({ default: m.AdminBusinessDirectory })));
 const AdminScheduledTasks = lazy(() => import("./pages/AdminScheduledTasks").then(m => ({ default: m.AdminScheduledTasks })));
@@ -268,6 +269,7 @@ export default function App() {
               <Route path="admin/ai-models" element={<AdminRoute><AdminAIModels /></AdminRoute>} />
               <Route path="admin/branding" element={<AdminRoute><AdminBranding /></AdminRoute>} />
               <Route path="admin/connections" element={<AdminRoute><AdminConnections /></AdminRoute>} />
+              <Route path="admin/qr-links" element={<AdminRoute><AdminQrLinks /></AdminRoute>} />
               <Route path="admin/sponsors" element={<AdminRoute><AdminSponsors /></AdminRoute>} />
               <Route path="admin/business-directory" element={<AdminRoute><AdminBusinessDirectory /></AdminRoute>} />
               <Route path="admin/scheduled-tasks" element={<AdminRoute><AdminScheduledTasks /></AdminRoute>} />

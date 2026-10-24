@@ -589,6 +589,15 @@ sounding is at `SkewTChart.tsx`; meteogram at `SiteMeteogramChart.tsx`. See also
 
 ---
 
+### TASK-043: QR Links — general redirectable QR codes
+- **Status:** 🔄 Built and tested locally 2026-10-24; deploy for the NTVO gazebo banner
+- **Prerequisites:** None
+- **Estimated effort:** S
+- **Description:** Admin → QR Links (`/admin/qr-links`). Named links in table `qr_links` (migration 054). Each printed QR encodes `/go/<slug>`, and the server redirects it to the link's destination (an in-site path or an https address). The slug is fixed once created; the destination, title, note and on/off can change at any time. Off or unknown links go to the home page. Each link counts its scans and has SVG/PNG QR downloads (encoded with the live domain even on dev). Seeded `banner-left` → `/` and `banner-right` → `/sites/mystic` for the gazebo banner. Separate from the per-site QR redirects (migration 047), which are unchanged. Route: `server/routes/qrLinks.ts`; page: `src/pages/AdminQrLinks.tsx`.
+- **Acceptance criteria:** both banner links redirect; editing a destination changes the redirect with no reprint; switching a link off sends scans to the home page; new links (e.g. Voyager) can be added from Admin.
+
+---
+
 **Task Summary:**
 - **Completed:** Phases 0, 1, 2, 3, 6, 7, 9, 10, 11 (TERRAIN-001–003) + Tasks 026, 027, 035, 036 from Phase 4/5 + Review A–E, G
 - **Partial (1):** Task 029 (env var loaded, no setup script yet)

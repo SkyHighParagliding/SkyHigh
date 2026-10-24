@@ -6,6 +6,7 @@ export { useCompetitions, useBusinessDirectory, useSafetyOfficers } from './useP
 export type { Competition, BusinessListing, SafetyOfficer } from './usePublicData';
 export {
   useAdminSponsors, useSponsorMutation,
+  useAdminQrLinks, useQrLinkMutation,
   useAdminCompetitions, useCompetitionMutation,
   useAdminBusinessDirectory, useBusinessDirectoryMutation,
   useNewsMutation,

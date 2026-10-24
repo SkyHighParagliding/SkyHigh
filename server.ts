@@ -44,6 +44,7 @@ import groundHandlingRouter from "./server/routes/groundHandling.js";
 import businessDirectoryRouter from "./server/routes/businessDirectory.js";
 import webcamsRouter from "./server/routes/webcams.js";
 import sizzleRouter from "./server/routes/sizzle.js";
+import qrLinksRouter, { goRedirect } from "./server/routes/qrLinks.js";
 import competitionsRouter from "./server/routes/competitions.js";
 import pilotAuthRouter from "./server/routes/pilotAuth.js";
 import flightsRouter from "./server/routes/flights.js";
@@ -277,6 +278,7 @@ async function startServer() {
   app.use("/api/business-directory", businessDirectoryRouter);
   app.use("/api/webcams", webcamsRouter);
   app.use("/api/sizzle", sizzleRouter);
+  app.use("/api/qr-links", qrLinksRouter);
   app.use("/api/competitions", competitionsRouter);
   app.use("/api/pilot-auth", pilotAuthRouter);
   app.use("/api/public-contacts", publicContactsRouter);
@@ -317,6 +319,9 @@ async function startServer() {
       icons,
     });
   });
+
+  // Printed QR codes (banners, posters) point here; Admin → QR Links sets where they go (TASK-043).
+  app.get("/go/:slug", goRedirect);
 
   app.get("/health", async (req, res) => {
     const health = await getHealthStatus();
