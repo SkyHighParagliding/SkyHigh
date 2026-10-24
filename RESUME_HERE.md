@@ -5,7 +5,7 @@
 
 ## Session 81 (2026-10-24) — sizzle equipment: frying pan + tarps
 - `1e1a64f` (deployed): equipment list gains "Frying pan (for the vegetarian sausages on the BBQ)" ×1 and "Tarps (to cover up if it rains)" ×2. Sizzle tests 97/97.
-- Club Drive is **H:** on the hub (`H:/My Drive/SkyHigh Club Documents/08_Projects/Sizzle 2026 NTVO`). Doc 03 re-saved from the till Docs tab as `2026-10-24 2236 Equipment checklist.pdf` (checked: lists the pan and tarps); the `2026-10-24 1149` copy was removed (in Drive's trash). No other doc lists equipment.
+- Club Drive is **H:** on the hub (`H:/My Drive/SkyHigh Club Documents/08_Projects/Sizzle 2026 NTVO`). `01f8ec4` (deployed): the frying pan is the VEG zone (BBQ note, pan note, compliance food-safety lines). Docs 03 + 04 re-saved from the till Docs tab as `2026-10-24 2243 …` (checked); superseded 24 Oct copies (1149, 2235, 2236) are in Drive's trash.
 
 ## Session 80 (2026-10-24) — sizzle: mandarins replace oranges, prices step in 50c
 - **Mandarins** (`22b81c3`): product/menu id `orange` → `mandarin`; Mandarin Afourer each $0.46 (Woolworths online 24 Oct, [314075](https://www.woolworths.com.au/shop/productdetails/314075); fallback Delite Seedless $0.59, [731091](https://www.woolworths.com.au/shop/productdetails/731091)). Sells at $1. Check the price at Bright when shopping.
