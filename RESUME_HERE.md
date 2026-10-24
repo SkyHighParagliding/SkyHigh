@@ -1,7 +1,15 @@
-# RESUME_HERE — Last updated: 2026-10-23 (session 79: sizzle phone set-up, security patches, new stall items)
+# RESUME_HERE — Last updated: 2026-10-24 22:15 (session 80: sizzle mandarins + 50c prices)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `96c5283`+ (deployed 23 Oct, incl. `73fa95b` new items; docs 01/03/04/09 re-saved to Drive). Railway auto-deploys `main`. Resume: `claude --resume 0cd8e773-b573-4070-8efd-7b0eaefd9458`
+## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `e4fd551`+ (deployed 24 Oct). Railway auto-deploys `main`.
+
+## Session 80 (2026-10-24) — sizzle: mandarins replace oranges, prices step in 50c
+- **Mandarins** (`22b81c3`): product/menu id `orange` → `mandarin`; Mandarin Afourer each $0.46 (Woolworths online 24 Oct, [314075](https://www.woolworths.com.au/shop/productdetails/314075); fallback Delite Seedless $0.59, [731091](https://www.woolworths.com.au/shop/productdetails/731091)). Sells at $1. Check the price at Bright when shopping.
+- **50c prices** (`cfae07e`, `$` fix `082b4b7`): `priceStep` 0.5; `price()` in `shared/sizzle/templates.ts` used by the price board, costing PDF and Admin hint. Live till: only Banana moved ($2 → $1.50); everything else is an admin override (sausage + veg $3.50).
+- **Drive** (club Drive mounted at `I:/My Drive/SkyHigh Club Documents/08_Projects/Sizzle 2026 NTVO`): re-saved via the till Docs tab — `2026-10-24 2135` shopping list + all top-ups; `2026-10-24 2204` Price board, Float & cash-up, Costing. The `2147` copies of those three lack `$` signs: ignore/delete.
+- **Railway** ([service](https://railway.com/project/ebcf7ad4-eb48-46b0-bc58-a675e82ce819/service/8f103c7a-5797-4ef8-8a4d-40fe2952be31?environmentId=a54cc7f7-c0f0-45a2-b69b-2b95240174e2)): the `082b4b7` build hung 10 min at "All aboard, next stop: builder v4" (builder queue, not our code). Jon aborted it; empty commit `4985730` built in ~1 min.
+- **Not done:** Bright-store price check for mandarins; PIN-protected Admin tab hint not eyeballed (type-checked only). Local `npm run build` fails on this Surface (Vite can't resolve its config deps on Z:); Railway builds fine.
+- **Next:** rehearsal Tue 27 Oct; QR Links admin (~26 Oct, gazebo banner); XC map simple view (due 29 Oct).
 
 ## 2026-10-23 — TASK-042 dev safe mode + production copy, deployed (session "Docker Transfer")
 - **Dev safe mode** (DECISION-021): dev skips emails, R2 and Drive writes (`[SAFE] Skipped` in the log) unless `npm run live` (60 min, auto back to safe; `npm run safe`, `npm run devmode`). Badge bottom-left on /admin. Claude's SessionEnd hook resets `DEV_LIVE`. Production ignores it.
