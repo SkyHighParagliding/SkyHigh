@@ -1374,6 +1374,12 @@
       "notes": "Hotplate split into a MEAT zone and a VEG zone."
     },
     {
+      "item": "Frying pan (for the vegetarian sausages on the BBQ)",
+      "status": "tbc",
+      "qty": 1,
+      "notes": "Keeps the veg sausages off the meat hotplate."
+    },
+    {
       "item": "Full spare gas bottle (9 kg)",
       "status": "tbc",
       "qty": 1,
@@ -1383,6 +1389,12 @@
       "item": "Gazebo (with weights/pegs)",
       "status": "tbc",
       "qty": 1
+    },
+    {
+      "item": "Tarps (to cover up if it rains)",
+      "status": "tbc",
+      "qty": 2,
+      "notes": "One or two."
     },
     {
       "item": "Trestle tables",
