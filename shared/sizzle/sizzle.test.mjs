@@ -30,6 +30,7 @@ import {
   summariseSales,
   topUpNeed,
 } from "./calc.ts";
+import { price } from "./templates.ts";
 
 const real = JSON.parse(fs.readFileSync(new URL("../../data/sizzle/sizzle-2026.json", import.meta.url), "utf8"));
 const clone = (x) => JSON.parse(JSON.stringify(x));
@@ -176,6 +177,7 @@ assert(recommendFloat(lessCash).total <= f.total, "higher card share → float n
 const wholeDollar = clone(real);
 wholeDollar.config.priceStep = 1;
 assert(!recommendFloat(wholeDollar).counts[0.5], "whole-dollar prices → no 50c coins in the float");
+assert(price(3.5) === "$3.50" && price(2) === "$2", "price shows $ and cents only when needed");
 assert(pricingTable(real).every((r) => Math.abs(r.price * 2 - Math.round(r.price * 2)) < 1e-9), "calculated prices step in 50c");
 const halves = clone(real);
 halves.config.priceOverrides = { ...halves.config.priceOverrides, sausage: 3.5, veg_sausage: 3.5 };

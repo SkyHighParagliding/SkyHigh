@@ -49,10 +49,10 @@ export function money(n: number, dp = 2): string {
 }
 
 /** A sell price: "$2", "$3.50" (prices step in 50c, so cents only when needed). */
-export const price = (n: number) => `${n.toFixed(n % 1 ? 2 : 0)}`;
+export const price = (n: number) => `$${n.toFixed(n % 1 ? 2 : 0)}`;
 
 /** A rounding step: 0.5 → "50c", 1 → "$1". */
-const stepText = (s: number) => (s < 1 ? `${Math.round(s * 100)}c` : `${s}`);
+const stepText = (s: number) => (s < 1 ? `${Math.round(s * 100)}c` : `$${s}`);
 
 function qtyText(n: number, unit: string): string {
   const v = Number.isInteger(n) ? String(n) : n.toFixed(n < 10 ? 1 : 0);
