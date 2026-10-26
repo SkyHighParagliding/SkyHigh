@@ -1,7 +1,15 @@
-# RESUME_HERE — Last updated: 2026-10-24 22:50 (session 81: sizzle frying pan + tarps)
+# RESUME_HERE — Last updated: 2026-10-26 21:00 (session 82: WU weather stations)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `01f8ec4` (deployed 24 Oct); `feature/sausage-sizzle` is ahead only by notes commits. Railway auto-deploys `main`.
+## Status: Active — sizzle till LIVE. `main` = `fc422de` (deployed 26 Oct); `feature/sausage-sizzle` is ahead by `da18b2f` (logger fix) + notes. Railway auto-deploys `main`.
+
+## Session 82 (2026-10-26) — Weather Underground stations all failing (FGC)
+- `fc422de` (deployed, Railway SUCCESS, pages 200): `normalizeStationId()` in `server/weather-utils.ts`, used by site create/update in `server/routes/sites/crud.ts`: WU IDs uppercased, prefixed IDs keep case, blank → null.
+- **All WU stations fail with `401 API key is throttled`** since 22 Oct 05:19 Melbourne (last WU row in `weather_history`). Not a quota or our call volume. Jon has asked the Flinders Golf Club (FGC, IFLINDER3) station operator for help; nothing to do until he replies. Full detail + next steps: `tasks/todo.md` (FGC item).
+- `da18b2f` (not deployed): `server/utils/logger.ts` printed Errors as `{}` (JSON.stringify), hiding the 401. Now prints `err.message`. Deploy: `! git push origin feature/sausage-sizzle:main`.
+- Prod DB from the hub: `docker exec -i skyhigh-pg-dev psql <DATABASE_PUBLIC_URL from railway variables --service Postgres>`.
+- **Still waiting:** `BRIEF.md` (Apps Script bridge lockdown, due before Tue 27 Oct rehearsal) not started. Uncommitted: siteguide data files, `.claude/settings.local.json`, `.lnk`, `ecmwf-strip-after.png`.
+- Resume this session: `claude --resume 11060a62-53d2-4770-bf42-3c24563343e0`.
 
 ## Session 81 (2026-10-24) — sizzle equipment: frying pan + tarps
 - `1e1a64f` (deployed): equipment list gains "Frying pan (for the vegetarian sausages on the BBQ)" ×1 and "Tarps (to cover up if it rains)" ×2. Sizzle tests 97/97.
