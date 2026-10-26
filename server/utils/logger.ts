@@ -22,7 +22,8 @@ function formatMessage(level: LogLevel, context: string, message: string, data?:
   const ts = formatTimestamp();
   const prefix = `[${ts}] [${level.toUpperCase()}] [${context}]`;
   if (data !== undefined) {
-    return `${prefix} ${message} ${JSON.stringify(data)}`;
+    // JSON.stringify turns an Error into "{}", which hid "API key is throttled" from the WU scraper logs for days.
+    return `${prefix} ${message} ${data instanceof Error ? data.message : JSON.stringify(data)}`;
   }
   return `${prefix} ${message}`;
 }
