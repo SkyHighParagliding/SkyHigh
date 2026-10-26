@@ -8,6 +8,7 @@ import {
   normaliseWindDir, normaliseWindSpeed, normalisePgRating, getDefaultSiteImage,
 } from "./helpers.js";
 import { getPaginationParams, createPaginatedResponse } from "../../utils/pagination.js";
+import { normalizeStationId } from "../../weather-utils.js";
 
 const safeJsonParse = (json: string | null, fallback: any = []): any => {
   try {
@@ -149,8 +150,8 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
           JSON.stringify(rules || []),                                 // $16 rules
           image || await getDefaultSiteImage(type),                   // $17 image
           useLiveWeather || 'false',                                   // $18 useLiveWeather
-          liveStationId || null,                                       // $19 liveStationId
-          liveStationIdAlt || null,                                    // $20 liveStationIdAlt
+          normalizeStationId(liveStationId),                           // $19 liveStationId
+          normalizeStationId(liveStationIdAlt),                        // $20 liveStationIdAlt
           siteguideUrl || null,                                        // $21 siteguideUrl
           siteContact || null,                                         // $22 siteContact
           siteContactPhone || null,                                    // $23 siteContactPhone
@@ -265,8 +266,8 @@ router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
           JSON.stringify(rules || []),                                 // $15 rules
           image,                                                       // $16 image
           useLiveWeather || 'false',                                   // $17 useLiveWeather
-          liveStationId || null,                                       // $18 liveStationId
-          liveStationIdAlt || null,                                    // $19 liveStationIdAlt
+          normalizeStationId(liveStationId),                           // $18 liveStationId
+          normalizeStationId(liveStationIdAlt),                        // $19 liveStationIdAlt
           siteguideUrl || null,                                        // $20 siteguideUrl
           siteContact || null,                                         // $21 siteContact
           siteContactPhone || null,                                    // $22 siteContactPhone

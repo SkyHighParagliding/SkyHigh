@@ -136,6 +136,13 @@ export function isWuStationId(stationId: string): boolean {
   return !NON_WU_STATION_PREFIXES.some(prefix => stationId.startsWith(prefix));
 }
 
+// WU IDs are bare alphanumerics and must be uppercase; every other source uses a "prefix-" ID whose case matters.
+export function normalizeStationId(stationId: string | null | undefined): string | null {
+  const id = stationId?.trim();
+  if (!id) return null;
+  return /^[a-z0-9]+$/i.test(id) ? id.toUpperCase() : id;
+}
+
 export function degreesToDirection(degrees: number): string {
   const val = Math.floor((degrees / 22.5) + 0.5);
   const arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
