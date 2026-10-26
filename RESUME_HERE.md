@@ -1,14 +1,15 @@
 # RESUME_HERE — Last updated: 2026-10-26 21:00 (session 82: WU weather stations)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `fc422de` (deployed 26 Oct); `feature/sausage-sizzle` is ahead by `da18b2f` (logger fix) + notes. Railway auto-deploys `main`.
+## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `0af64bc` (deployed 26 Oct 21:09, Railway SUCCESS). Railway auto-deploys `main`.
 
 ## Session 82 (2026-10-26) — Weather Underground stations all failing (FGC)
 - `fc422de` (deployed, Railway SUCCESS, pages 200): `normalizeStationId()` in `server/weather-utils.ts`, used by site create/update in `server/routes/sites/crud.ts`: WU IDs uppercased, prefixed IDs keep case, blank → null.
 - **All WU stations fail with `401 API key is throttled`** since 22 Oct 05:19 Melbourne (last WU row in `weather_history`). Not a quota or our call volume. Jon has asked the Flinders Golf Club (FGC, IFLINDER3) station operator for help; nothing to do until he replies. Full detail + next steps: `tasks/todo.md` (FGC item).
-- `da18b2f` (not deployed): `server/utils/logger.ts` printed Errors as `{}` (JSON.stringify), hiding the 401. Now prints `err.message`. Deploy: `! git push origin feature/sausage-sizzle:main`.
+- `da18b2f` (deployed): `server/utils/logger.ts` printed Errors as `{}` (JSON.stringify), hiding the 401. Now prints `err.message`.
+- `0af64bc` (deployed): bundled SAFA site-guide zones/OpenAir refreshed (16 Oct download, 355 zones; the server re-downloads them daily anyway).
 - Prod DB from the hub: `docker exec -i skyhigh-pg-dev psql <DATABASE_PUBLIC_URL from railway variables --service Postgres>`.
-- **Still waiting:** `BRIEF.md` (Apps Script bridge lockdown, due before Tue 27 Oct rehearsal) not started. Uncommitted: siteguide data files, `.claude/settings.local.json`, `.lnk`, `ecmwf-strip-after.png`.
+- **Still waiting:** `BRIEF.md` (Apps Script bridge lockdown, due before Tue 27 Oct rehearsal) not started. Left uncommitted on purpose (local only): `.claude/settings.local.json`, `.lnk`, `ecmwf-strip-after.png`.
 - Resume this session: `claude --resume 11060a62-53d2-4770-bf42-3c24563343e0`.
 
 ## Session 81 (2026-10-24) — sizzle equipment: frying pan + tarps
