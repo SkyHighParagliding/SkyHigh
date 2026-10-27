@@ -531,12 +531,23 @@ export function useConnectionsConfig() {
   };
 
   const groupSyncRoleLabels: Record<string, string> = {
-    isCommittee: "Committee",
-    isSafetyCommittee: "Safety Committee",
+    isCommittee: "Committee member",
+    isPosition: "Position title (the group name becomes their title)",
+    isSafetyCommittee: "Safety Committee member",
+    "safetyOfficerType:SO": "SO (and Safety Committee member)",
+    "safetyOfficerType:SSO": "SSO (and Safety Committee member)",
     isContractor: "Contractor",
     isParksVic: "Parks Vic",
-    isPosition: "Position Title",
   };
+
+  // Which Contact Manager button reads which mappings (matches SET_FLAGS in
+  // server/services/committeeSync.ts). "other" is only listed when it has rows.
+  const groupSyncSets: Array<{ key: string; title: string; help: string; flags: string[] }> = [
+    { key: "committee", title: "Update SH Committee", help: "Everyone in these groups is marked as committee (with admin login) and gets the titles of the position groups they're in. Committee members not in any of them are removed from the committee.", flags: ["isCommittee", "isPosition"] },
+    { key: "safety", title: "Update Safety Committee", help: "Everyone in these groups is marked as Safety Committee, with SO or SSO from those groups. Members not in any of them are removed from the Safety Committee.", flags: ["isSafetyCommittee", "safetyOfficerType:SO", "safetyOfficerType:SSO"] },
+    { key: "other", title: "Other groups", help: "Not used by either button.", flags: ["isContractor", "isParksVic"] },
+  ];
+  const [addMappingSet, setAddMappingSet] = useState("committee");
 
   const groupSyncActionColors: Record<string, string> = {
     role_added: "bg-green-100 text-green-700",
@@ -559,7 +570,8 @@ export function useConnectionsConfig() {
     }
   };
 
-  const openAddMappingModal = () => {
+  const openAddMappingModal = (set: string) => {
+    setAddMappingSet(set);
     setShowAddMapping(true);
     setSelectedGroupId("");
     setSelectedRole("");
@@ -782,7 +794,7 @@ export function useConnectionsConfig() {
     loadIndexStatus, syncDocumentIndex, clearDocumentIndex,
     setupDriveFolders, disconnectDrive,
     openDriveScript, copyDriveScript, openAssetScript, copyAssetScript,
-    testTidyhqConnection, groupSyncRoleLabels, groupSyncActionColors,
+    testTidyhqConnection, groupSyncRoleLabels, groupSyncSets, addMappingSet, groupSyncActionColors,
     openAddMappingModal, handleAddMapping, handleDeleteMapping,
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
     searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,

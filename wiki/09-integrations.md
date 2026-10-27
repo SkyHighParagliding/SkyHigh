@@ -93,17 +93,20 @@ How to connect TidyHQ to the SkyHigh website for contact import, shop products, 
 
 ## Step 4: Configure Group Mappings
 
-1. Log in as admin → **API Settings** page → scroll to **TidyHQ Group Sync**
-2. Click **Add Mapping**
-3. Select a TidyHQ group and assign a role:
+The groups are read by the two buttons in **Contact Manager**: **Update SH Committee** and **Update Safety Committee** (`server/services/committeeSync.ts`, since 2026-10-27; they replaced Quick Import and Import THQ Group). Each button shows a confirm list first, then makes the site match TidyHQ: members of the groups get the flags and titles, old titles are replaced (hand-typed titles that aren't group names are kept), and anyone flagged locally but in none of the groups is taken off. Leaving the SH committee also removes admin login unless "Keep admin login" is ticked; it never removes the last admin or the person pressing the button. Contacts are matched by email.
+
+1. Log in as admin → **Connections** page → **TidyHQ Group Sync** (or the "Change groups" link in either confirm box)
+2. Click **Add group** in the list for the right button
+3. Select a TidyHQ group and what its members get:
 
 | UI Label | Internal Flag | Effect |
 |---|---|---|
-| **Committee** | `isCommittee` | Marks the contact as a committee member |
-| **Safety Committee** | `isSafetyCommittee` | Marks as safety committee (shows on Safety page) |
-| **Position Title** | `isPosition` | Sets the contact's position to the group name (e.g. "President", "Treasurer") |
-| **Contractor** | `isContractor` | Marks as a contractor |
-| **Parks Vic** | `isParksVic` | Marks as Parks Victoria contact |
+| **Committee member** (SH Committee) | `isCommittee` | Marks the contact as a committee member, with admin login |
+| **Position title** (SH Committee) | `isPosition` | Sets the contact's position to the group name (e.g. "President", "Treasurer") |
+| **Safety Committee member** (Safety) | `isSafetyCommittee` | Marks as safety committee (shows on Safety page) |
+| **SO / SSO** (Safety) | `safetyOfficerType:SO` / `:SSO` | Safety committee + SO or SSO (SSO wins if in both) |
+| **Contractor** (neither button) | `isContractor` | Marks as a contractor (webhook only) |
+| **Parks Vic** (neither button) | `isParksVic` | Marks as Parks Victoria contact (webhook only) |
 
 4. Repeat for each group
 

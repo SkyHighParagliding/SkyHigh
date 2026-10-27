@@ -98,7 +98,7 @@ export function AdminConnections() {
     loadIndexStatus, syncDocumentIndex, clearDocumentIndex,
     setupDriveFolders, disconnectDrive,
     openDriveScript, copyDriveScript, openAssetScript, copyAssetScript,
-    testTidyhqConnection, groupSyncRoleLabels, groupSyncActionColors,
+    testTidyhqConnection, groupSyncRoleLabels, groupSyncSets, addMappingSet, groupSyncActionColors,
     openAddMappingModal, handleAddMapping, handleDeleteMapping,
     handleToggleGroupSync, fetchGroupMappings, fetchWebhookLogs,
     searchLogEnabled, searchLogStats, showSearchLogs, setShowSearchLogs,
@@ -780,7 +780,7 @@ export function AdminConnections() {
                   <div className="min-w-0">
                     <CardTitle className="text-ink text-lg">TidyHQ Group Sync</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Configure group-to-role mappings for automatic webhook sync and view the sync log.
+                      Choose which TidyHQ groups the Update SH Committee and Update Safety Committee buttons (Contact Manager) read.
                       {tidyhqStatus && (
                         <span className="ml-1 text-xs">
                           ({tidyhqStatus.mappingCount} mapping{tidyhqStatus.mappingCount !== 1 ? "s" : ""}, {tidyhqStatus.recentWebhooks} webhook{tidyhqStatus.recentWebhooks !== 1 ? "s" : ""} in 7d)
@@ -802,57 +802,61 @@ export function AdminConnections() {
 
           {groupSyncExpanded && (
             <CardContent className="border-t border-border-subtle pt-4 space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-ink">Group → Role Mappings</h3>
-                  <Button onClick={openAddMappingModal} className="bg-ink hover:bg-ink-muted text-white" size="sm">
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Mapping
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  When a TidyHQ webhook fires for one of these groups, the matching local contact's role flag will be automatically set or cleared.
-                </p>
-
-                {groupMappings.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    No mappings configured yet. Click "Add Mapping" to get started.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-muted border-b border-border-subtle">
-                          <th className="p-3 font-semibold text-ink text-sm">TidyHQ Group</th>
-                          <th className="p-3 font-semibold text-ink text-sm">Local Role Flag</th>
-                          <th className="p-3 font-semibold text-ink text-sm text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(Array.isArray(groupMappings) ? groupMappings : []).map(m => (
-                          <tr key={m.id} className="border-b border-border-faint hover:bg-background">
-                            <td className="p-3 font-medium">{m.tidyhqGroupName}</td>
-                            <td className="p-3">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                {groupSyncRoleLabels[m.localRoleFlag] || m.localRoleFlag}
-                              </span>
-                            </td>
-                            <td className="p-3 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleDeleteMapping(m.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              {groupSyncSets
+                .filter(set => set.key !== "other" || groupMappings.some(m => set.flags.includes(m.localRoleFlag)))
+                .map(set => {
+                  const rows = (Array.isArray(groupMappings) ? groupMappings : []).filter(m => set.flags.includes(m.localRoleFlag));
+                  return (
+                    <div key={set.key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-sm font-semibold text-ink">Groups used by {set.title}</h3>
+                        <Button onClick={() => openAddMappingModal(set.key)} className="bg-ink hover:bg-ink-muted text-white" size="sm">
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Add group
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">{set.help}</p>
+                      {rows.length === 0 ? (
+                        <div className="text-center py-4 text-muted-foreground text-sm border border-dashed border-border rounded-lg">
+                          No groups yet.
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-muted border-b border-border-subtle">
+                                <th className="p-3 font-semibold text-ink text-sm">TidyHQ group</th>
+                                <th className="p-3 font-semibold text-ink text-sm">Members get</th>
+                                <th className="p-3 font-semibold text-ink text-sm text-right">Remove</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map(m => (
+                                <tr key={m.id} className="border-b border-border-faint hover:bg-background">
+                                  <td className="p-3 font-medium">{m.tidyhqGroupName}</td>
+                                  <td className="p-3">
+                                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                      {groupSyncRoleLabels[m.localRoleFlag] || m.localRoleFlag}
+                                    </span>
+                                  </td>
+                                  <td className="p-3 text-right">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => handleDeleteMapping(m.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -862,7 +866,7 @@ export function AdminConnections() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Recent webhook events processed from TidyHQ.
+                  Changes TidyHQ sends by itself (webhooks), if webhooks are set up in TidyHQ. The Update buttons in Contact Manager don't depend on this.
                 </p>
 
                 {webhookLogs.length === 0 ? (
@@ -1279,7 +1283,9 @@ export function AdminConnections() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-ink">Add Group Mapping</h3>
+              <h3 className="text-xl font-bold text-ink">
+                Add group to {groupSyncSets.find(x => x.key === addMappingSet)?.title}
+              </h3>
               <button onClick={() => setShowAddMapping(false)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
@@ -1309,15 +1315,15 @@ export function AdminConnections() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground-label mb-1">Local Role Flag</label>
+                <label className="block text-sm font-medium text-foreground-label mb-1">Members get</label>
                 <select
                   value={selectedRole}
                   onChange={e => setSelectedRole(e.target.value)}
                   className="w-full p-2 border border-border rounded-md focus:ring-1 focus:ring-accent focus:border-accent"
                 >
-                  <option value="">Select a role...</option>
-                  {Object.entries(groupSyncRoleLabels).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  <option value="">Select...</option>
+                  {(groupSyncSets.find(x => x.key === addMappingSet)?.flags || []).map(key => (
+                    <option key={key} value={key}>{groupSyncRoleLabels[key] || key}</option>
                   ))}
                 </select>
               </div>
@@ -1328,7 +1334,7 @@ export function AdminConnections() {
                   onClick={handleAddMapping}
                   disabled={savingMapping}
                 >
-                  {savingMapping ? "Saving..." : "Add Mapping"}
+                  {savingMapping ? "Saving..." : "Add group"}
                 </Button>
               </div>
             </div>

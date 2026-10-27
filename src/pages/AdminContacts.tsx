@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useToggleSelection } from "@/hooks/useToggleSelection";
 import { Link, useLocation } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, X, Search, Download, Users, CheckSquare, Camera, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/apiClient";
@@ -9,12 +9,26 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
-interface TidyHQGroup {
-  id: string;
-  label: string;
-  size: number;
-  description: string;
+interface SyncChange {
+  kind: "create" | "update" | "remove";
+  contactId: string | null;
+  name: string;
+  email: string;
+  details: string[];
+  removesAdmin: boolean;
 }
+
+interface SyncPreview {
+  set: SyncSet;
+  groups: string[];
+  unchanged: number;
+  skippedNoEmail: string[];
+  photos: number;
+  changes: SyncChange[];
+}
+
+type SyncSet = "committee" | "safety";
+const syncLabels: Record<SyncSet, string> = { committee: "SH Committee", safety: "Safety Committee" };
 
 interface Contact {
   id: string;
@@ -112,23 +126,11 @@ export function AdminContacts() {
   const [tidyResults, setTidyResults] = useState<TidyHQContact[]>([]);
   const [tidySearching, setTidySearching] = useState(false);
   const [tidyError, setTidyError] = useState("");
-  const [showGroupImport, setShowGroupImport] = useState(false);
-  const [showQuickImport, setShowQuickImport] = useState(false);
-  const [quickImporting, setQuickImporting] = useState<string | null>(null);
-  const [quickImportResult, setQuickImportResult] = useState<{ groupName: string; created: number; updated: number; skipped: number; imagesSynced: number; total: number } | null>(null);
-  const [quickImportError, setQuickImportError] = useState("");
-  const [tidyGroups, setTidyGroups] = useState<TidyHQGroup[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
-  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
-  const [groupContacts, setGroupContacts] = useState<TidyHQContact[]>([]);
-  const [loadingGroupContacts, setLoadingGroupContacts] = useState(false);
-  const [contactsLoaded, setContactsLoaded] = useState(false);
-  const [contactGroupMap, setContactGroupMap] = useState<Record<string, string[]>>({});
-  const { selectedIds: selectedContactIds, setSelectedIds: setSelectedContactIds, toggleId: toggleContactSelection, toggleSelectAll: _toggleContactSelectAll } = useToggleSelection<string>();
-  const [importRoles, setImportRoles] = useState<Record<string, boolean>>({});
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; total: number } | null>(null);
-  const [groupError, setGroupError] = useState("");
+  const [syncLoading, setSyncLoading] = useState<SyncSet | null>(null);
+  const [syncPreview, setSyncPreview] = useState<SyncPreview | null>(null);
+  const [syncKeepAdmin, setSyncKeepAdmin] = useState<Set<string>>(new Set());
+  const [syncApplying, setSyncApplying] = useState(false);
+  const [syncError, setSyncError] = useState("");
 
   const fetchContacts = () => {
     api.get<{ data: Contact[] }>("/api/contacts", token)
@@ -337,138 +339,40 @@ export function AdminContacts() {
     }
   };
 
-  const handleQuickImport = async (groupId: string, groupName: string) => {
-    setQuickImporting(groupId);
-    setQuickImportError("");
-    setQuickImportResult(null);
+  const startSync = async (set: SyncSet) => {
+    setSyncLoading(set);
+    setSyncError("");
+    setSyncKeepAdmin(new Set());
     try {
-      const result = await api.post<{ created: number; updated: number; skipped: number; imagesSynced: number; total: number }>(
-        "/api/contacts/tidyhq-smart-import", { groupId }, token
+      setSyncPreview(await api.post<SyncPreview>(`/api/contacts/tidyhq-sync/${set}/preview`, {}, token));
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : `Couldn't read ${syncLabels[set]} from TidyHQ`);
+    } finally {
+      setSyncLoading(null);
+    }
+  };
+
+  const applySync = async () => {
+    if (!syncPreview) return;
+    setSyncApplying(true);
+    setSyncError("");
+    try {
+      const r = await api.post<{ created: number; updated: number; removed: number; imagesSynced: number }>(
+        `/api/contacts/tidyhq-sync/${syncPreview.set}/apply`, { keepAdmin: [...syncKeepAdmin] }, token
       );
-      setQuickImportResult({ groupName, ...result });
+      const parts = [
+        r.created && `${r.created} added`, r.updated && `${r.updated} updated`,
+        r.removed && `${r.removed} removed`, r.imagesSynced && `${r.imagesSynced} photos`,
+      ].filter(Boolean);
+      toast.success(`${syncLabels[syncPreview.set]} updated${parts.length ? `: ${parts.join(", ")}` : ""}`);
+      setSyncPreview(null);
       fetchContacts();
       queryClient.invalidateQueries({ queryKey: ['contacts', 'public', 'committee'] });
       queryClient.invalidateQueries({ queryKey: ['officers'] });
     } catch (e: unknown) {
-      setQuickImportError(e instanceof Error ? e.message : `Failed to import ${groupName}`);
+      setSyncError(e instanceof Error ? e.message : "Update failed");
     } finally {
-      setQuickImporting(null);
-    }
-  };
-
-  const openGroupImport = async () => {
-    setShowGroupImport(true);
-    setSelectedGroupIds(new Set());
-    setGroupContacts([]);
-    setSelectedContactIds(new Set());
-    setImportRoles({});
-    setImportResult(null);
-    setGroupError("");
-    setContactsLoaded(false);
-    setLoadingGroups(true);
-    try {
-      const data = await api.get<TidyHQGroup[]>("/api/contacts/tidyhq-groups", token);
-      setTidyGroups(data);
-    } catch (e: unknown) {
-      setGroupError(e instanceof Error ? e.message : "Failed to load groups");
-    } finally {
-      setLoadingGroups(false);
-    }
-  };
-
-  const toggleGroupSelection = (groupId: string | number) => {
-    const gid = String(groupId);
-    setSelectedGroupIds(prev => {
-      const next = new Set(prev);
-      if (next.has(gid)) next.delete(gid);
-      else next.add(gid);
-      return next;
-    });
-  };
-
-  const loadSelectedGroupContacts = async () => {
-    if (selectedGroupIds.size === 0) {
-      setGroupError("Select at least one group");
-      return;
-    }
-    setGroupContacts([]);
-    setSelectedContactIds(new Set());
-    setImportResult(null);
-    setGroupError("");
-    setLoadingGroupContacts(true);
-    try {
-      const allContacts: TidyHQContact[] = [];
-      const seen = new Set<string>();
-      const cgMap: Record<string, string[]> = {};
-      for (const gid of selectedGroupIds) {
-        const group = tidyGroups.find(g => String(g.id) === gid);
-        const groupLabel = group?.label || gid;
-        const data = await api.get<any[]>(`/api/contacts/tidyhq-groups/${gid}/contacts`, token);
-        for (const c of data) {
-          if (!seen.has(c.tidyhqId)) {
-            seen.add(c.tidyhqId);
-            allContacts.push(c);
-            cgMap[c.tidyhqId] = [groupLabel];
-          } else {
-            cgMap[c.tidyhqId].push(groupLabel);
-          }
-        }
-      }
-      allContacts.sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
-      setGroupContacts(allContacts);
-      setSelectedContactIds(new Set(allContacts.map(c => c.tidyhqId)));
-      setContactGroupMap(cgMap);
-      setContactsLoaded(true);
-    } catch (e: unknown) {
-      setGroupError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoadingGroupContacts(false);
-    }
-  };
-
-  const toggleSelectAll = () => _toggleContactSelectAll(groupContacts.map(c => c.tidyhqId));
-
-  const handleGroupImport = async () => {
-    const selected = groupContacts.filter(c => selectedContactIds.has(c.tidyhqId));
-    if (selected.length === 0) {
-      setGroupError("No contacts selected");
-      return;
-    }
-    setImporting(true);
-    setGroupError("");
-    try {
-      const selectedGroups = tidyGroups.filter(g => selectedGroupIds.has(String(g.id)));
-      let totalCreated = 0, totalUpdated = 0, totalSkipped = 0;
-
-      if (selectedGroups.length <= 1) {
-        const groupName = selectedGroups[0]?.label || "";
-        const data = await api.post<{ created: number; updated: number; skipped: number }>("/api/contacts/tidyhq-import-group", { contacts: selected, roles: importRoles, groupName }, token);
-        totalCreated = data.created;
-        totalUpdated = data.updated;
-        totalSkipped = data.skipped;
-      } else {
-        for (const group of selectedGroups) {
-          const groupContactTids = new Set(
-            Object.entries(contactGroupMap)
-              .filter(([, labels]) => labels.includes(group.label))
-              .map(([tid]) => tid)
-          );
-          const groupSelected = selected.filter(c => groupContactTids.has(String(c.tidyhqId)));
-          if (groupSelected.length === 0) continue;
-          const data = await api.post<{ created: number; updated: number; skipped: number }>("/api/contacts/tidyhq-import-group", { contacts: groupSelected, roles: importRoles, groupName: group.label }, token);
-          totalCreated += data.created;
-          totalUpdated += data.updated;
-          totalSkipped += data.skipped;
-        }
-      }
-
-      setImportResult({ created: totalCreated, updated: totalUpdated, skipped: totalSkipped, total: selected.length });
-      toast.success("Contacts imported");
-      fetchContacts();
-    } catch (e: unknown) {
-      setGroupError(e instanceof Error ? e.message : "Import failed");
-    } finally {
-      setImporting(false);
+      setSyncApplying(false);
     }
   };
 
@@ -559,12 +463,14 @@ export function AdminContacts() {
                   <Button variant="outline" onClick={() => { setBulkSelectMode(true); setBulkSelectedIds(new Set()); }}>
                     <CheckSquare className="w-4 h-4 mr-2" /> Bulk Select
                   </Button>
-                  <Button variant="outline" onClick={() => { setShowQuickImport(true); setQuickImportResult(null); setQuickImportError(""); }}>
-                    <Users className="w-4 h-4 mr-2" /> Imp Committees
-                  </Button>
-                  <Button variant="outline" onClick={openGroupImport}>
-                    <Users className="w-4 h-4 mr-2" /> Imp THQ Group
-                  </Button>
+                  {(["committee", "safety"] as SyncSet[]).map(set => (
+                    <Button key={set} variant="outline" disabled={!!syncLoading} onClick={() => startSync(set)}>
+                      {syncLoading === set
+                        ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        : <Users className="w-4 h-4 mr-2" />}
+                      Update {syncLabels[set]}
+                    </Button>
+                  ))}
                   <Button variant="outline" onClick={() => { setShowTidyHQ(true); setTidySearch(""); setTidyResults([]); setTidyError(""); }}>
                     <Download className="w-4 h-4 mr-2" /> Imp from THQ
                   </Button>
@@ -1049,263 +955,82 @@ export function AdminContacts() {
         </div>
       )}
 
-      {showQuickImport && (
+      {syncPreview && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-ink">Quick Import from TidyHQ</h3>
-              <button onClick={() => setShowQuickImport(false)} className="p-2 hover:bg-muted rounded-lg">
+          <div className="bg-card p-6 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-ink">Update {syncLabels[syncPreview.set]}</h3>
+              <button onClick={() => setSyncPreview(null)} className="p-2 hover:bg-muted rounded-lg">
                 <X className="w-5 h-5 text-foreground-faint" />
               </button>
             </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              From TidyHQ groups: {syncPreview.groups.join(", ")}.{" "}
+              <Link to="/admin/connections#tidyhq-group-sync" className="text-accent hover:underline">Change groups</Link>
+            </p>
 
-            {quickImportError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">{quickImportError}</div>
+            {syncError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">{syncError}</div>
             )}
 
-            {quickImportResult ? (
-              <div>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
-                  <p className="text-green-800 font-semibold mb-2">{quickImportResult.groupName} imported</p>
-                  <div className="grid grid-cols-2 gap-3 text-center">
-                    <div><div className="text-2xl font-bold text-green-700">{quickImportResult.created}</div><div className="text-sm text-green-600">Created</div></div>
-                    <div><div className="text-2xl font-bold text-blue-700">{quickImportResult.updated}</div><div className="text-sm text-blue-600">Updated</div></div>
-                    <div><div className="text-2xl font-bold text-gray-500">{quickImportResult.skipped}</div><div className="text-sm text-gray-500">Skipped</div></div>
-                    <div><div className="text-2xl font-bold text-purple-700">{quickImportResult.imagesSynced}</div><div className="text-sm text-purple-600">Photos Synced</div></div>
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setQuickImportResult(null)}>Import Another</Button>
-                  <Button onClick={() => setShowQuickImport(false)} className="bg-ink hover:bg-ink-muted text-white">Done</Button>
-                </div>
+            {syncPreview.changes.length === 0 ? (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm mb-4">
+                Already up to date ({syncPreview.unchanged} contact{syncPreview.unchanged !== 1 ? "s" : ""} checked).
+                {syncPreview.photos > 0 && ` ${syncPreview.photos} photo${syncPreview.photos !== 1 ? "s" : ""} can be copied from TidyHQ.`}
               </div>
             ) : (
-              <div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Fetches contacts directly from TidyHQ, auto-detects all roles from embedded group memberships, and syncs profile photos.
+              <>
+                <p className="text-sm text-ink mb-2">These changes will be made:</p>
+                <div className="space-y-2 mb-3">
+                  {syncPreview.changes.map(c => (
+                    <div key={c.contactId || c.email} className={`p-3 rounded-lg border text-sm ${
+                      c.kind === "remove" ? "border-red-200 bg-red-50" : c.kind === "create" ? "border-green-200 bg-green-50" : "border-border-faint bg-background"
+                    }`}>
+                      <div className="font-semibold text-ink">
+                        {c.name}
+                        {c.kind === "create" && <span className="ml-2 text-xs font-normal text-green-700">new contact</span>}
+                      </div>
+                      <ul className="mt-1 text-muted-foreground list-disc pl-5">
+                        {c.details.map(d => <li key={d}>{d}</li>)}
+                      </ul>
+                      {c.removesAdmin && c.contactId && (
+                        <label className="mt-2 flex items-center gap-2 text-xs text-ink cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={syncKeepAdmin.has(c.contactId)}
+                            onChange={e => setSyncKeepAdmin(prev => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(c.contactId!); else next.delete(c.contactId!);
+                              return next;
+                            })}
+                            className="rounded border-border text-accent focus:ring-accent"
+                          />
+                          Keep admin login
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {syncPreview.unchanged} other contact{syncPreview.unchanged !== 1 ? "s are" : " is"} already correct.
+                  {" "}Removed people stay in Contact Manager; only their committee details change.
                 </p>
-                <div className="flex flex-col gap-3">
-                  <Button
-                    className="bg-ink hover:bg-ink-muted text-white justify-start"
-                    disabled={!!quickImporting}
-                    onClick={() => handleQuickImport("143877", "Safety Committee")}
-                  >
-                    {quickImporting === "143877" ? (
-                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Importing Safety Committee...</>
-                    ) : (
-                      <><Users className="w-4 h-4 mr-2" /> Import Safety Committee</>
-                    )}
-                  </Button>
-                  <Button
-                    className="bg-ink hover:bg-ink-muted text-white justify-start"
-                    disabled={!!quickImporting}
-                    onClick={() => handleQuickImport("139632", "Skyhigh Committee")}
-                  >
-                    {quickImporting === "139632" ? (
-                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> Importing Skyhigh Committee...</>
-                    ) : (
-                      <><Users className="w-4 h-4 mr-2" /> Import Skyhigh Committee</>
-                    )}
-                  </Button>
-                </div>
-              </div>
+              </>
             )}
-          </div>
-        </div>
-      )}
-
-      {showGroupImport && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-ink">
-                {importResult ? "Import Complete" : contactsLoaded ? `${groupContacts.length} Contacts from ${selectedGroupIds.size} Group${selectedGroupIds.size !== 1 ? "s" : ""}` : "Import from TidyHQ Group"}
-              </h3>
-              <button onClick={() => setShowGroupImport(false)} className="p-2 hover:bg-muted rounded-lg">
-                <X className="w-5 h-5 text-foreground-faint" />
-              </button>
-            </div>
-
-            {groupError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">{groupError}</div>
+            {syncPreview.skippedNoEmail.length > 0 && (
+              <p className="text-xs text-amber-700 mb-4">
+                Skipped (no email in TidyHQ): {syncPreview.skippedNoEmail.join(", ")}
+              </p>
             )}
 
-            {importResult ? (
-              <div>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
-                  <p className="text-green-800 font-semibold text-lg mb-2">
-                    {importResult.total} contacts imported
-                  </p>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-green-700">{importResult.created}</div>
-                      <div className="text-sm text-green-600">Created</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-blue-700">{importResult.updated}</div>
-                      <div className="text-sm text-blue-600">Updated</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-500">{importResult.skipped}</div>
-                      <div className="text-sm text-gray-500">Skipped</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={() => setShowGroupImport(false)} className="bg-ink hover:bg-ink-muted text-white">
-                    Done
-                  </Button>
-                </div>
-              </div>
-            ) : !contactsLoaded ? (
-              <div>
-                <p className="text-sm text-muted-foreground mb-4">Select one or more TidyHQ groups to import contacts from.</p>
-                {loadingGroups ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
-                  </div>
-                ) : loadingGroupContacts ? (
-                  <div className="flex flex-col items-center justify-center py-8 gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
-                    <p className="text-sm text-muted-foreground">Loading contacts from {selectedGroupIds.size} group{selectedGroupIds.size !== 1 ? "s" : ""}...</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2 mb-4">
-                      {tidyGroups.map(group => (
-                        <label
-                          key={group.id}
-                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedGroupIds.has(String(group.id)) ? "border-accent bg-sky-50" : "border-border-subtle hover:bg-sky-50"}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedGroupIds.has(String(group.id))}
-                            onChange={() => toggleGroupSelection(group.id)}
-                            className="rounded border-border text-accent focus:ring-accent"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-ink">{group.label}</div>
-                            {group.description && <div className="text-xs text-muted-foreground">{group.description}</div>}
-                          </div>
-                          <span className="text-sm text-muted-foreground">{group.size} members</span>
-                        </label>
-                      ))}
-                      {tidyGroups.length === 0 && !groupError && (
-                        <p className="text-center text-muted-foreground py-4">No groups found.</p>
-                      )}
-                    </div>
-                    {tidyGroups.length > 0 && (
-                      <div className="flex justify-end gap-3">
-                        <Button variant="outline" onClick={() => setShowGroupImport(false)}>Cancel</Button>
-                        <Button
-                          className="bg-ink hover:bg-ink-muted text-white"
-                          onClick={loadSelectedGroupContacts}
-                          disabled={selectedGroupIds.size === 0}
-                        >
-                          Load {selectedGroupIds.size > 0 ? `${selectedGroupIds.size} Group${selectedGroupIds.size !== 1 ? "s" : ""}` : "Contacts"}
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : (
-              <div>
-                <Button variant="outline" size="sm" className="mb-4" onClick={() => { setContactsLoaded(false); setGroupContacts([]); }}>
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back to Groups
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSyncPreview(null)}>Cancel</Button>
+              {(syncPreview.changes.length > 0 || syncPreview.photos > 0) && (
+                <Button onClick={applySync} disabled={syncApplying} className="bg-ink hover:bg-ink-muted text-white">
+                  {syncApplying ? "Updating..." : syncPreview.changes.length > 0 ? "Confirm changes" : "Copy photos"}
                 </Button>
-
-                {loadingGroupContacts ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-foreground-label mb-2">Apply role flags to imported contacts:</label>
-                      <div className="flex flex-wrap gap-3">
-                        {roleKeys.filter(k => k !== "isAdmin").map(key => (
-                          <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={!!importRoles[key]}
-                              onChange={e => setImportRoles(prev => ({ ...prev, [key]: e.target.checked }))}
-                              className="rounded border-border text-accent focus:ring-accent"
-                            />
-                            {roleLabels[key]}
-                          </label>
-                        ))}
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!importRoles["isPosition"]}
-                            onChange={e => setImportRoles(prev => ({ ...prev, isPosition: e.target.checked }))}
-                            className="rounded border-border text-accent focus:ring-accent"
-                          />
-                          Position Title
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedContactIds.size === groupContacts.length && groupContacts.length > 0}
-                          onChange={toggleSelectAll}
-                          className="rounded border-border text-accent focus:ring-accent"
-                        />
-                        Select All ({selectedContactIds.size}/{groupContacts.length})
-                      </label>
-                    </div>
-
-                    <div className="border border-border rounded-lg max-h-[300px] overflow-y-auto mb-4">
-                      {groupContacts.map(tc => (
-                        <label
-                          key={tc.tidyhqId}
-                          className="flex items-center gap-3 p-3 border-b border-border-faint last:border-0 hover:bg-sky-50 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedContactIds.has(tc.tidyhqId)}
-                            onChange={() => toggleContactSelection(tc.tidyhqId)}
-                            className="rounded border-border text-accent focus:ring-accent"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-ink text-sm">{tc.displayName}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {tc.email && <span className="mr-3">{tc.email}</span>}
-                              {tc.phone && <span>{tc.phone}</span>}
-                            </div>
-                            {selectedGroupIds.size > 1 && contactGroupMap[tc.tidyhqId] && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {contactGroupMap[tc.tidyhqId].map(g => (
-                                  <span key={g} className="inline-block px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[10px] rounded">{g}</span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </label>
-                      ))}
-                      {groupContacts.length === 0 && (
-                        <p className="p-4 text-center text-muted-foreground text-sm">No contacts in this group.</p>
-                      )}
-                    </div>
-
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" onClick={() => setShowGroupImport(false)}>Cancel</Button>
-                      <Button
-                        className="bg-ink hover:bg-ink-muted text-white"
-                        onClick={handleGroupImport}
-                        disabled={importing || selectedContactIds.size === 0}
-                      >
-                        {importing ? "Importing..." : `Import ${selectedContactIds.size} Contact${selectedContactIds.size !== 1 ? "s" : ""}`}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
