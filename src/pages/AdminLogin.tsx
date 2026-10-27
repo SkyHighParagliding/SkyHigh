@@ -3,12 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, LogIn, Mail, ArrowLeft, UserPlus, Camera } from "lucide-react";
+import { Lock, LogIn, Mail, ArrowLeft, Camera } from "lucide-react";
 import { api } from "@/lib/apiClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { PhotoUploadDialog } from "@/components/PhotoUploadDialog";
 
-type View = "login" | "forgot" | "first-time" | "provider-signup" | "photo-upload";
+type View = "login" | "forgot" | "first-time" | "photo-upload";
 
 export function AdminLogin() {
   const { login, isAuthenticated } = useAuth();
@@ -21,8 +21,6 @@ export function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [failCount, setFailCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
-  const [providerName, setProviderName] = useState("");
-  const [providerEmail, setProviderEmail] = useState("");
   const [showPhotoDialog, setShowPhotoDialog] = useState(false);
   const [photoEmail, setPhotoEmail] = useState("");
   const [photoPassword, setPhotoPassword] = useState("");
@@ -56,22 +54,6 @@ export function AdminLogin() {
     try {
       const data = await api.post<{ message?: string }>("/api/auth/request-password-reset", { email, mode: view === "first-time" ? "first-time" : "forgot" });
       setSuccessMessage(data.message || "If an account exists with that email, a password reset link has been sent.");
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProviderSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMessage("");
-    setLoading(true);
-
-    try {
-      const data = await api.post<{ message?: string }>("/api/auth/register-provider", { name: providerName, email: providerEmail });
-      setSuccessMessage(data.message || "Account created! Check your email to set your password.");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -168,7 +150,7 @@ export function AdminLogin() {
 
                 {view === "first-time" && (
                   <p className="text-xs text-muted-foreground">
-                    This is for existing members whose accounts were created by an admin or synced from TidyHQ. If you don't have an account, use the Provider Sign Up option instead.
+                    This is for existing members whose accounts were created by an admin or synced from TidyHQ. If you don't have an account, contact the committee.
                   </p>
                 )}
 
@@ -182,97 +164,6 @@ export function AdminLogin() {
                   ) : (
                     <>
                       <Mail className="w-5 h-5 mr-2" /> Send Reset Link
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={() => switchView("login")}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (view === "provider-signup") {
-    return (
-      <div className="bg-background min-h-screen flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-ink">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-ink/10 rounded-full flex items-center justify-center mb-4">
-              <UserPlus className="w-8 h-8 text-ink" />
-            </div>
-            <CardTitle className="text-2xl text-ink">Sign Up as Provider</CardTitle>
-            <p className="text-muted-foreground text-sm mt-1">
-              Create a provider account to get started
-            </p>
-          </CardHeader>
-          <CardContent>
-            {successMessage ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                  {successMessage}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => switchView("login")}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleProviderSignup} className="space-y-4">
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                    {error}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground-label">Full Name</label>
-                  <input
-                    type="text"
-                    value={providerName}
-                    onChange={(e) => setProviderName(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
-                    placeholder="Your full name"
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground-label">Email</label>
-                  <input
-                    type="email"
-                    value={providerEmail}
-                    onChange={(e) => setProviderEmail(e.target.value)}
-                    className="w-full p-3 border border-border rounded-lg focus:ring-accent focus:border-accent"
-                    placeholder="your@email.com"
-                    required
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-ink hover:bg-ink-muted text-white h-12 text-base"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                  ) : (
-                    <>
-                      <UserPlus className="w-5 h-5 mr-2" /> Create Account
                     </>
                   )}
                 </Button>
@@ -456,13 +347,6 @@ export function AdminLogin() {
                 onClick={() => switchView("first-time")}
               >
                 First time? Set your password
-              </button>
-              <button
-                type="button"
-                className="w-full text-sm text-muted-foreground hover:text-ink transition-colors py-1"
-                onClick={() => switchView("provider-signup")}
-              >
-                Sign up as Provider
               </button>
               <button
                 type="button"

@@ -461,53 +461,6 @@ router.post("/request-password-reset", asyncHandler(async (req, res) => {
   res.json({ success: true, message: "If an account exists with that email, a password reset link has been sent." });
 }));
 
-router.post("/register-provider", asyncHandler(async (req, res) => {
-  const { name, email } = req.body;
-  if (!name || typeof name !== "string" || !name.trim()) {
-    return res.status(400).json({ error: "Name is required" });
-  }
-  if (!email || typeof email !== "string" || !email.trim()) {
-    return res.status(400).json({ error: "Email is required" });
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const trimmedName = name.trim();
-
-  if (!checkRateLimit(`register:${normalizedEmail}`)) {
-    return res.status(429).json({ error: "Too many requests. Please try again later." });
-  }
-
-  const existing = await queryOne<{ id: string }>(
-    `SELECT id FROM contacts WHERE LOWER(email) = $1`,
-    [normalizedEmail]
-  );
-  if (existing) {
-    return res.status(400).json({ error: "An account with that email already exists. Try using 'Forgot password?' to reset your password." });
-  }
-
-  const nameParts = trimmedName.split(/\s+/);
-  const firstName = nameParts[0];
-  const surname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
-
-  const id = `con-${Math.random().toString(36).substr(2, 9)}`;
-  await execute(
-    `INSERT INTO contacts (id, name, surname, email, "isAdmin", "isCommittee", "isSafetyCommittee") VALUES ($1, $2, $3, $4, 0, 0, 0)`,
-    [id, firstName, surname, normalizedEmail]
-  );
-
-  log.info(`New provider account created: email_hash:${Buffer.from(normalizedEmail).toString('base64').substring(0, 10)} (contact: ${id})`);
-
-  const contact = { id, name: firstName, surname, email: normalizedEmail };
-  const result = await sendPasswordResetEmail(contact);
-
-  if (!result.success) {
-    await execute(`DELETE FROM contacts WHERE id = $1`, [id]);
-    return res.status(500).json({ error: "Account created but failed to send setup email. Please try again." });
-  }
-
-  res.status(201).json({ success: true, message: "Account created! Check your email to set your password." });
-}));
-
 router.post("/send-pilot-password-reset", requireAuth, asyncHandler(async (req, res) => {
   const { pilotId } = req.body;
   if (!pilotId) return res.status(400).json({ error: "Pilot ID required" });

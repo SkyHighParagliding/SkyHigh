@@ -210,12 +210,6 @@
 - **How (the mechanism):** `bulkOperationLimiter = rateLimit({ windowMs: 60*60*1000, max: 20 })`. `server.ts:117–127`.
 - **Principles:** Refuse rather than improvise at the edges.
 
-### Public registration rate limit — 3 per hour per IP
-- **What it is:** Provider (XC retrieval) account registration via `/api/auth/register-provider` is limited to 3 per IP per hour.
-- **Why (the decisions):** [inferred] Prevents automated account creation spam; legitimate use rarely exceeds 1 registration per session.
-- **How (the mechanism):** `publicRegistrationLimiter = rateLimit({ windowMs: 60*60*1000, max: 3 })`. `server.ts:129–136, 230`.
-- **Principles:** Refuse rather than improvise at the edges.
-
 ### Password-reset rate limit — 5 per hour per IP (express-rate-limit layer)
 - **What it is:** `/api/auth/request-password-reset` and `/api/auth/request-pilot-password-reset` are limited to 5 requests per IP per hour.
 - **Why (the decisions):** Each reset attempt sends an email; unlimited requests would allow email-bombing victims.
