@@ -7,6 +7,7 @@ import { parseWdlStationId, fetchWdlObservation, parseWportStationId, fetchWport
 import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
 import { isGridFetchActive } from "./grid/pipeline.js";
+import { isDevLive } from "./utils/devMode.js";
 
 const log = createLogger("weather");
 
@@ -174,7 +175,15 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
   const hour = getMelbourneHour();
 
   if (!isManual && !runContinuously && (hour < startHour || hour >= endHour)) {
-    console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour % 24}pm). Melbourne hour: ${hour}`);
+    console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour > 12 ? endHour - 12 : endHour}pm). Melbourne hour: ${hour}`);
+    scheduleSourceFetch(type, min, max);
+    return 0;
+  }
+
+  // WU's limit (1,500 calls/day, 30/min) is per key and dev shares prod's key, so dev only
+  // polls WU when switched live (npm run live) or on a manual scrape.
+  if (type === 'wu' && !isManual && !isDevLive()) {
+    console.log(`Weather scraper [wu]: [SAFE] Skipped in dev (shares the production WU key; npm run live to poll)`);
     scheduleSourceFetch(type, min, max);
     return 0;
   }
