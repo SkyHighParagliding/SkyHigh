@@ -1,7 +1,15 @@
-# RESUME_HERE — Last updated: 2026-10-26 21:00 (session 82: WU weather stations)
+# RESUME_HERE — Last updated: 2026-10-30 (session 83: XC Maps tiles + iPhone zoom freeze)
 
 ## Project: SkyHigh
 ## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `0af64bc` (deployed 26 Oct 21:09, Railway SUCCESS). Railway auto-deploys `main`.
+
+## Session 83 (2026-10-30) — XC Maps: tiles blocked by CSP, iPhone zoom freeze
+- `bd8d11a` (deployed): CSP `connect-src` now allows `tile.openstreetmap.org`, `*.tile.openstreetmap.org`, `tile.opentopomap.org`, `*.tile.opentopomap.org`, `server.arcgisonline.com`. `public/sw.js` re-fetches those tiles with `fetch()` (and `tileCache.ts` prefetches them), so they need connect-src, not just img-src.
+- `06cff70` (deployed): `SW_VERSION` added to `public/sw.js`. An installed service worker keeps the CSP it was installed with until sw.js's bytes change, so Jon's browser still blocked tiles after `bd8d11a`. **Bump `SW_VERSION` whenever the CSP changes.** Jon confirmed tiles load.
+- `8058094` (deployed): distance rings in `src/components/xcmap/DistanceRingsOverlay.tsx` are closed 360-point polylines, not `<Circle>`s. Leaflet doesn't clip circles; zoomed in, dashed 50–200 km rings froze iOS Safari 20–30 s. Headless test: redraw at z17 208 ms → 17 ms, flat across zooms. Jon confirmed fixed on iPhone.
+- Not found: `xc-map-zoom-freeze-fix-prompt.md` (another session's brief) was not on the hub, Drives or Drive connector; Jon described the bug instead.
+- Still waiting: `BRIEF.md` (Apps Script bridge lockdown) not started. Uncommitted on purpose: `.claude/settings.local.json`, `.lnk`, `ecmwf-strip-after.png`.
+- Resume this session: `claude --resume ce897216-0aa9-466d-bf08-e907940f7cdd`.
 
 ## Session 82 (2026-10-26) — Weather Underground stations all failing (FGC)
 - `fc422de` (deployed, Railway SUCCESS, pages 200): `normalizeStationId()` in `server/weather-utils.ts`, used by site create/update in `server/routes/sites/crud.ts`: WU IDs uppercased, prefixed IDs keep case, blank → null.
