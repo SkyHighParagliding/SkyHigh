@@ -180,7 +180,11 @@ async function startServer() {
       // api.rainviewer.com: the rain-radar frame index (useRainviewer.ts) — a JSON
       // fetch, so it needs connect-src; the radar tiles themselves load as images
       // and are already covered by img-src https:.
-      "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com https://api.rainviewer.com https://skyhighvoyagers-production.up.railway.app",
+      // OSM / OpenTopoMap / ArcGIS: the Leaflet basemaps (XC Maps, retrieval, etc.).
+      // public/sw.js intercepts these tiles and re-fetches them with fetch(), and the
+      // offline prefetch (tileCache.ts) fetches them too — both need connect-src,
+      // even though a plain <img> tile would only need img-src.
+      "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com https://api.rainviewer.com https://skyhighvoyagers-production.up.railway.app https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://tile.opentopomap.org https://*.tile.opentopomap.org https://server.arcgisonline.com",
       // frame-src: legitimate third-party embeds — Google My Maps (Ground Handling
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
