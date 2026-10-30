@@ -184,6 +184,8 @@ async function startServer() {
       // public/sw.js intercepts these tiles and re-fetches them with fetch(), and the
       // offline prefetch (tileCache.ts) fetches them too — both need connect-src,
       // even though a plain <img> tile would only need img-src.
+      // Changing connect-src? Bump SW_VERSION in public/sw.js too — an installed
+      // worker keeps the CSP it was installed with until sw.js itself changes.
       "connect-src 'self' https://s3.amazonaws.com https://basemaps.cartocdn.com https://api.rainviewer.com https://skyhighvoyagers-production.up.railway.app https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://tile.opentopomap.org https://*.tile.opentopomap.org https://server.arcgisonline.com",
       // frame-src: legitimate third-party embeds — Google My Maps (Ground Handling
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
