@@ -206,6 +206,26 @@ export function XCMaps() {
       mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lon], 14, { duration: 0.8 });
     }
   }, [userLocation]);
+  const trackerActive = tracker.state === "recording" || tracker.state === "pre-recording";
+  const [orientationMsg, setOrientationMsg] = useState<string | null>(null);
+  const orientationMsgTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flashOrientationMsg = useCallback((msg: string) => {
+    setOrientationMsg(msg);
+    clearTimeout(orientationMsgTimer.current);
+    orientationMsgTimer.current = setTimeout(() => setOrientationMsg(null), 5000);
+  }, []);
+  const handleToggleOrientation = useCallback(async () => {
+    if (mapOrientation === 'north-up') {
+      if (!(await requestCompassPermission())) {
+        flashOrientationMsg('Track-up needs Motion & Orientation access. Allow it for this site in Safari settings, then reload.');
+        return;
+      }
+      if (!userLocation && !trackerActive) {
+        flashOrientationMsg('Waiting for your location — the map will turn with the compass meanwhile.');
+      }
+    }
+    setMapOrientation(o => o === 'north-up' ? 'track-up' : 'north-up');
+  }, [mapOrientation, userLocation, trackerActive, setMapOrientation, flashOrientationMsg]);
   const handleCycleBasemap = useCallback(() => {
     setActiveBasemap(prev => {
       const idx = BASEMAPS.findIndex(b => b.id === prev);
@@ -276,9 +296,6 @@ export function XCMaps() {
           width: 100% !important;
           height: 100% !important;
           border-radius: 0 !important;
-        }
-        .fullscreen-map .leaflet-container[style*="rotate"] {
-          overflow: visible !important;
         }
         .wind-arrow-icon {
           background: none !important;
@@ -471,9 +488,9 @@ export function XCMaps() {
                         trailWidth={Number(settings.ftTrailWidth) || 3}
                         splineTension={Number(settings.ftSplineTension) || 0.5}
                         isRecording={(settings.flightTrackerEnabled || isDemo) && tracker.state === "recording"}
-                        followPilot={followPilot && (tracker.state === "recording" || tracker.state === "pre-recording")}
+                        followPilot={(followPilot && trackerActive) || mapOrientation === 'track-up'}
                         mapOrientation={mapOrientation}
-                        pilotPosition={tracker.currentPosition}
+                        pilotPosition={trackerActive ? tracker.currentPosition : userLocation}
                         verticalSpeed={tracker.liveStats.verticalSpeed}
                         proximityThresholdFt={proximityThresholdFt}
                         onProximityEnter={isDemo ? undefined : handleProximityEnter}
@@ -649,36 +666,27 @@ export function XCMaps() {
                       >
                         <MapIcon className="w-[18px] h-[18px]" />
                       </button>
-                      {isFullscreen && (
-                        <button
-                          onClick={async () => {
-                            if (mapOrientation === 'north-up') {
-                              const granted = await requestCompassPermission();
-                              if (!granted) return;
-                            }
-                            setMapOrientation(o => o === 'north-up' ? 'track-up' : 'north-up');
-                          }}
-                          onTouchEnd={async (e) => {
-                            e.preventDefault();
-                            if (mapOrientation === 'north-up') {
-                              const granted = await requestCompassPermission();
-                              if (!granted) return;
-                            }
-                            setMapOrientation(o => o === 'north-up' ? 'track-up' : 'north-up');
-                          }}
-                          className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg shadow-md transition-all"
-                          style={{
-                            background: mapOrientation === 'track-up' ? '#007aff' : 'rgba(255,255,255,0.95)',
-                            color: mapOrientation === 'track-up' ? 'white' : '#1d1d1f',
-                            border: mapOrientation === 'track-up' ? '1px solid #007aff' : '1px solid rgba(0,0,0,0.1)',
-                            touchAction: 'manipulation',
-                          }}
-                          title={mapOrientation === 'track-up' ? 'Switch to north-up' : 'Switch to track-up'}
-                        >
-                          <Compass className="w-[18px] h-[18px]" />
-                        </button>
-                      )}
+                      <button
+                        onClick={handleToggleOrientation}
+                        onTouchEnd={(e) => { e.preventDefault(); handleToggleOrientation(); }}
+                        className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg shadow-md transition-all"
+                        style={{
+                          background: mapOrientation === 'track-up' ? '#007aff' : 'rgba(255,255,255,0.95)',
+                          color: mapOrientation === 'track-up' ? 'white' : '#1d1d1f',
+                          border: mapOrientation === 'track-up' ? '1px solid #007aff' : '1px solid rgba(0,0,0,0.1)',
+                          touchAction: 'manipulation',
+                        }}
+                        title={mapOrientation === 'track-up' ? 'Switch to north-up' : 'Switch to track-up (direction of travel)'}
+                      >
+                        <Compass className="w-[18px] h-[18px]" />
+                      </button>
                     </div>
+
+                    {orientationMsg && (
+                      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1003] max-w-[80%] rounded-lg px-3 py-2 shadow text-xs text-center" style={{ background: 'rgba(255,255,255,0.97)', color: '#1d1d1f' }}>
+                        {orientationMsg}
+                      </div>
+                    )}
 
                     {tileCacheProgress && !tileCacheProgress.done && (
                       <div className="absolute bottom-2 right-2 z-[1000] rounded-lg px-3 py-1.5 shadow text-xs" style={{ background: 'rgba(255,255,255,0.95)', color: '#6b7280' }}>
@@ -701,18 +709,15 @@ export function XCMaps() {
                           onToggleFullscreen={toggleFullscreen}
                           onStart={(autoStart) => {
                             setFollowPilot(true);
-                            setMapOrientation('north-up');
                             tracker.startTracking(autoStart, selectedSite?.id, selectedSite?.name);
                           }}
                           onStop={() => {
                             tracker.stopTracking();
                             setFollowPilot(false);
-                            setMapOrientation('north-up');
                           }}
                           onReset={() => {
                             tracker.reset();
                             setFollowPilot(false);
-                            setMapOrientation('north-up');
                           }}
                           isDemo={isDemo}
                           retrievalRequested={inFlightRetrievalRequested}

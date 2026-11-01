@@ -90,7 +90,7 @@ export function XCMap({ site, showAirspace, altitudeFt, disabledTypes, windData,
         url={currentBasemap.url}
       />
       <MapResizer />
-      <PilotFollower breadcrumbs={breadcrumbs} followPilot={followPilot} mapOrientation={mapOrientation} pilotPosition={pilotPosition} />
+      <PilotFollower breadcrumbs={isRecording ? breadcrumbs : undefined} followPilot={followPilot} mapOrientation={mapOrientation} pilotPosition={pilotPosition} />
       <MapFitter lat={lat} lon={lon} />
       <BearingLabels lat={lat} lon={lon} distanceRings={distanceRings} />
 

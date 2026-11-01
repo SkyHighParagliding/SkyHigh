@@ -63,7 +63,8 @@ export function useXCMapState() {
     cycleThreshold, handleProximityEnter, handleProximityExit, handleActiveProximityIds,
     handleDismissAlerts, setAlertsDismissed, setDismissedSectorIds,
   } = useProximityAlerts(pilot?.id ?? null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  // speed (km/h) + heading (°) feed track-up when no flight is recording.
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; speed?: number; heading?: number } | null>(null);
 
   const tracker = useFlightTracker();
 
@@ -160,7 +161,12 @@ export function useXCMapState() {
     }
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      (pos) => setUserLocation({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        speed: pos.coords.speed != null ? pos.coords.speed * 3.6 : undefined,
+        heading: pos.coords.heading ?? undefined,
+      }),
       () => {},
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );

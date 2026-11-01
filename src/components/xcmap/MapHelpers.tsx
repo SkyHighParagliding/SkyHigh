@@ -83,6 +83,12 @@ function teardownRotationWrapper(mapContainer: HTMLElement) {
 }
 
 const MOVING_SPEED_THRESHOLD = 5;
+// Compass jitters; ignore changes smaller than this when rotating from it.
+const COMPASS_MIN_CHANGE_DEG = 2;
+
+function angleDiff(a: number, b: number): number {
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
 
 function getCompassHeading(e: DeviceOrientationEvent): number | null {
   const wk = (e as any).webkitCompassHeading;
@@ -105,6 +111,10 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
   mapOrientationRef.current = mapOrientation;
   const lastTrackBearingRef = useRef(0);
   const lastPanRef = useRef<{ lat: number; lon: number } | null>(null);
+  // True while the heading comes from GPS movement; the compass then stays out of it.
+  const usingTrackRef = useRef(false);
+  const followPilotRef = useRef(followPilot);
+  followPilotRef.current = followPilot;
 
   useEffect(() => {
     if (mapOrientation !== 'track-up') {
@@ -120,15 +130,28 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
       return;
     }
 
+    // Standing still (e.g. at launch) the compass turns the map directly,
+    // at most once per frame, rather than waiting for the next GPS fix.
+    let frame = 0;
     const handler = (e: DeviceOrientationEvent) => {
       const heading = getCompassHeading(e);
       if (heading === null) return;
       compassHeadingRef.current = heading;
+      if (frame || usingTrackRef.current || !followPilotRef.current) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const h = compassHeadingRef.current;
+        if (h === null || usingTrackRef.current) return;
+        if (angleDiff(-h, lastRotationRef.current) < COMPASS_MIN_CHANGE_DEG) return;
+        lastRotationRef.current = -h;
+        applyMapRotation(map.getContainer(), -h);
+      });
     };
     orientationListenerRef.current = handler;
     window.addEventListener('deviceorientation', handler);
     return () => {
       window.removeEventListener('deviceorientation', handler);
+      if (frame) cancelAnimationFrame(frame);
       orientationListenerRef.current = null;
     };
   }, [map, mapOrientation]);
@@ -164,6 +187,14 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
         }
       }
 
+      // Not recording: no breadcrumbs, so use the GPS course when moving.
+      if (!useTrack && pilotPosition && (pilotPosition.speed ?? 0) >= MOVING_SPEED_THRESHOLD &&
+          typeof pilotPosition.heading === 'number' && isFinite(pilotPosition.heading)) {
+        heading = pilotPosition.heading;
+        lastTrackBearingRef.current = heading;
+        useTrack = true;
+      }
+
       if (!useTrack) {
         if (compassHeadingRef.current !== null) {
           heading = compassHeadingRef.current;
@@ -171,9 +202,10 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
           heading = lastTrackBearingRef.current;
         }
       }
+      usingTrackRef.current = useTrack;
 
       const rotation = -heading;
-      const rotChanged = Math.abs(rotation - lastRotationRef.current) > 0.5;
+      const rotChanged = angleDiff(rotation, lastRotationRef.current) > 0.5;
       const prevPan = lastPanRef.current;
       const posChanged = !prevPan ||
         Math.abs(centerLat - prevPan.lat) > 0.000005 ||
