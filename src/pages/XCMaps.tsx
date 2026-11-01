@@ -259,13 +259,14 @@ export function XCMaps() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--body-bg)' }}>
       <style>{`
+        /* inset: 0, not 100vw/100dvh: if anything makes the page wider than the
+           screen, iOS zooms out and 100vw no longer reaches the right edge,
+           exposing the page behind (seen on iPhone 16 Pro). */
         .fullscreen-map {
           position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          height: 100dvh !important;
+          inset: 0 !important;
+          width: auto !important;
+          height: auto !important;
           z-index: 10001 !important;
           border-radius: 0 !important;
           border: none !important;
@@ -333,7 +334,7 @@ export function XCMaps() {
           <p className="text-base sm:text-lg max-w-2xl whitespace-pre-line" style={{ color: '#86868b' }}>
             {settings.xcMapsDescription || "XC distance rings, Bearing Lines, Switchable Airspace Overlay, Switchable Proximity alerts with audio/haptic warnings, off & online GPS track logging, offline tile caching. Ride share style retrieval driver app.\nYou need to allow \"location\" for most features to work.\nPilots, please sign in on map below or create a login\nDrivers use the link then sign in or create a login\nHistory & track log export a future feature. (Take a screen shot to save statistics)"}
           </p>
-          <div className="flex items-center gap-3 mt-3">
+          <div className="flex flex-wrap items-center gap-3 mt-3">
             <button
               onClick={() => setShowPilotLogin(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
