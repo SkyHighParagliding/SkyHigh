@@ -23,63 +23,107 @@ function bearingBetween(lat1: number, lon1: number, lat2: number, lon2: number):
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
-const dimensionCache = new WeakMap<HTMLElement, { w: number; h: number }>();
+// Track-up rotation. The map pane is rotated inside a wrapper. So no angle
+// leaves blank corners, the Leaflet container is enlarged to a square the size
+// of the visible area's diagonal, centred on it with negative margins (page
+// layout doesn't move) and clipped by its parent; Leaflet then loads tiles for
+// the whole square. The control container (attribution) is pinned back over
+// the visible area so it stays upright and on screen.
+interface RotationState {
+  wrapper: HTMLElement;
+  savedStyle: string;
+  savedParentOverflow: string;
+  observer: ResizeObserver | null;
+}
+const rotationState = new WeakMap<HTMLElement, RotationState>();
 
-function getOrCreateWrapper(mapContainer: HTMLElement): HTMLElement | null {
-  let wrapper = wrapperCache.get(mapContainer);
-  if (wrapper && wrapper.parentElement) return wrapper;
+function enlargeContainer(map: L.Map, st: RotationState) {
+  const c = map.getContainer();
+  // Visible area = the parent box (XCMap's container has min-height 400px and
+  // can hang below a short landscape screen; the parent is what's clipped to).
+  const box = c.parentElement ?? c;
+  const w = box.clientWidth || c.clientWidth;
+  const h = box.clientHeight || c.clientHeight;
+  const d = Math.ceil(Math.hypot(w, h));
+  // !important: XCMaps' fullscreen CSS forces the container to 100% !important.
+  const set = (prop: string, value: string) => c.style.setProperty(prop, value, 'important');
+  set('width', `${d}px`); set('height', `${d}px`); set('min-height', '0');
+  set('margin-left', `${(w - d) / 2}px`); set('margin-right', `${(w - d) / 2}px`);
+  set('margin-top', `${(h - d) / 2}px`); set('margin-bottom', `${(h - d) / 2}px`);
+  const controls = c.querySelector('.leaflet-control-container') as HTMLElement | null;
+  if (controls) controls.style.cssText = `position:absolute;left:${(d - w) / 2}px;top:${(d - h) / 2}px;width:${w}px;height:${h}px;pointer-events:none;`;
+  st.wrapper.style.transformOrigin = `${d / 2}px ${d / 2}px`;
+  map.invalidateSize({ animate: false });
+}
 
-  const mapPane = mapContainer.querySelector('.leaflet-map-pane') as HTMLElement | null;
+function restoreContainer(map: L.Map, st: RotationState) {
+  const c = map.getContainer();
+  c.style.cssText = st.savedStyle;
+  const controls = c.querySelector('.leaflet-control-container') as HTMLElement | null;
+  if (controls) controls.style.cssText = '';
+}
+
+function getRotationState(map: L.Map): RotationState | null {
+  const c = map.getContainer();
+  const existing = rotationState.get(c);
+  if (existing && existing.wrapper.parentElement) return existing;
+
+  const mapPane = c.querySelector('.leaflet-map-pane') as HTMLElement | null;
   if (!mapPane || !mapPane.parentElement) return null;
 
-  wrapper = document.createElement('div');
+  const wrapper = document.createElement('div');
   wrapper.className = 'leaflet-rotate-wrapper';
   wrapper.style.position = 'absolute';
   wrapper.style.inset = '0';
   wrapper.style.willChange = 'transform';
   mapPane.parentElement.insertBefore(wrapper, mapPane);
   wrapper.appendChild(mapPane);
-  mapContainer.style.overflow = 'hidden';
-  wrapperCache.set(mapContainer, wrapper);
-  return wrapper;
+
+  const parent = c.parentElement;
+  const st: RotationState = {
+    wrapper,
+    savedStyle: c.style.cssText,
+    savedParentOverflow: parent?.style.overflow ?? '',
+    observer: null,
+  };
+  if (parent) parent.style.overflow = 'hidden';
+  enlargeContainer(map, st);
+
+  // Re-fit when the visible area changes (fullscreen toggle, phone turned).
+  if (parent && typeof ResizeObserver !== 'undefined') {
+    let last = `${parent.clientWidth}x${parent.clientHeight}`;
+    st.observer = new ResizeObserver(() => {
+      const now = `${parent.clientWidth}x${parent.clientHeight}`;
+      if (now === last) return;
+      last = now;
+      restoreContainer(map, st);
+      enlargeContainer(map, st);
+    });
+    st.observer.observe(parent);
+  }
+  rotationState.set(c, st);
+  return st;
 }
 
-function getCachedCenter(mapContainer: HTMLElement): { cx: number; cy: number } {
-  let cached = dimensionCache.get(mapContainer);
-  const w = mapContainer.clientWidth;
-  const h = mapContainer.clientHeight;
-  if (!cached || cached.w !== w || cached.h !== h) {
-    cached = { w, h };
-    dimensionCache.set(mapContainer, cached);
-  }
-  return { cx: cached.w / 2, cy: cached.h / 2 };
+function applyMapRotation(map: L.Map, rotation: number) {
+  const st = getRotationState(map);
+  if (st) st.wrapper.style.transform = `rotate(${rotation}deg)`;
 }
 
-function applyMapRotation(mapContainer: HTMLElement, rotation: number) {
-  const wrapper = getOrCreateWrapper(mapContainer);
-  if (!wrapper) return;
-
-  if (rotation === 0) {
-    wrapper.style.transform = 'none';
-  } else {
-    const { cx, cy } = getCachedCenter(mapContainer);
-    wrapper.style.transformOrigin = `${cx}px ${cy}px`;
-    wrapper.style.transform = `rotate(${rotation}deg) scale(1.42)`;
+function teardownRotationWrapper(map: L.Map) {
+  const c = map.getContainer();
+  const st = rotationState.get(c);
+  if (!st) return;
+  st.observer?.disconnect();
+  const mapPane = st.wrapper.querySelector('.leaflet-map-pane') as HTMLElement | null;
+  if (mapPane && st.wrapper.parentElement) {
+    st.wrapper.parentElement.insertBefore(mapPane, st.wrapper);
+    st.wrapper.remove();
   }
-}
-
-function teardownRotationWrapper(mapContainer: HTMLElement) {
-  const wrapper = wrapperCache.get(mapContainer);
-  if (!wrapper) return;
-  const mapPane = wrapper.querySelector('.leaflet-map-pane') as HTMLElement | null;
-  if (mapPane && wrapper.parentElement) {
-    wrapper.parentElement.insertBefore(mapPane, wrapper);
-    wrapper.remove();
-  }
-  mapContainer.style.overflow = '';
-  wrapperCache.delete(mapContainer);
-  dimensionCache.delete(mapContainer);
+  restoreContainer(map, st);
+  if (c.parentElement) c.parentElement.style.overflow = st.savedParentOverflow;
+  rotationState.delete(c);
+  try { map.invalidateSize({ animate: false }); } catch { /* map already removed on unmount */ }
 }
 
 const MOVING_SPEED_THRESHOLD = 5;
@@ -123,8 +167,7 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
         orientationListenerRef.current = null;
       }
       compassHeadingRef.current = null;
-      const mapContainer = map.getContainer();
-      teardownRotationWrapper(mapContainer);
+      teardownRotationWrapper(map);
       lastRotationRef.current = 0;
       lastPanRef.current = null;
       return;
@@ -144,7 +187,7 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
         if (h === null || usingTrackRef.current) return;
         if (angleDiff(-h, lastRotationRef.current) < COMPASS_MIN_CHANGE_DEG) return;
         lastRotationRef.current = -h;
-        applyMapRotation(map.getContainer(), -h);
+        applyMapRotation(map, -h);
       });
     };
     orientationListenerRef.current = handler;
@@ -212,11 +255,10 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
         Math.abs(centerLon - prevPan.lon) > 0.000005;
 
       if (posChanged || rotChanged) {
-        applyMapRotation(mapContainer, 0);
         map.panTo([centerLat, centerLon], { animate: false });
         lastPanRef.current = { lat: centerLat, lon: centerLon };
         lastRotationRef.current = rotation;
-        applyMapRotation(mapContainer, rotation);
+        applyMapRotation(map, rotation);
       }
     } else {
       const containerHeight = mapContainer.clientHeight;
@@ -231,7 +273,7 @@ export function PilotFollower({ breadcrumbs, followPilot, mapOrientation, pilotP
 
   useEffect(() => {
     return () => {
-      teardownRotationWrapper(map.getContainer());
+      teardownRotationWrapper(map);
     };
   }, [map]);
 
@@ -309,8 +351,7 @@ export function DriverFollower({ driverPosition, mapOrientation }: {
         orientationListenerRef.current = null;
       }
       compassHeadingRef.current = null;
-      const mapContainer = map.getContainer();
-      teardownRotationWrapper(mapContainer);
+      teardownRotationWrapper(map);
       lastRotationRef.current = 0;
       return;
     }
@@ -330,7 +371,6 @@ export function DriverFollower({ driverPosition, mapOrientation }: {
 
   useEffect(() => {
     if (mapOrientation !== 'track-up' || !driverPosition) return;
-    const mapContainer = map.getContainer();
 
     let heading = 0;
     let useTrack = false;
@@ -360,16 +400,15 @@ export function DriverFollower({ driverPosition, mapOrientation }: {
       Math.abs(driverPosition.lon - prev.lon) > 0.000005;
 
     if (posChanged || rotChanged) {
-      applyMapRotation(mapContainer, 0);
       map.panTo([driverPosition.lat, driverPosition.lon], { animate: false });
       lastRotationRef.current = rotation;
-      applyMapRotation(mapContainer, rotation);
+      applyMapRotation(map, rotation);
     }
   }, [map, driverPosition, mapOrientation]);
 
   useEffect(() => {
     return () => {
-      teardownRotationWrapper(map.getContainer());
+      teardownRotationWrapper(map);
     };
   }, [map]);
 
