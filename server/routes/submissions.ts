@@ -305,8 +305,13 @@ router.get("/:id/image", requireAuth, asyncHandler(async (req, res) => {
   const submission = await queryOne<ImageSubmissionRow>("SELECT * FROM image_submissions WHERE id = $1", [req.params.id]);
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
+  // Serve R2 images through this route rather than redirecting: the admin page
+  // fetch()es this URL, and a redirect to the R2 host is blocked by CSP connect-src.
   if (submission.filePath.startsWith("http")) {
-    return res.redirect(submission.filePath);
+    const buffer = await readFile(submission.filePath);
+    res.set("Content-Type", submission.mimeType || "image/jpeg");
+    res.set("Cache-Control", "private, max-age=3600");
+    return res.send(buffer);
   }
 
   const fullPath = resolveSubmissionPath(submission.filePath);
