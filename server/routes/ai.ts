@@ -767,7 +767,9 @@ router.post("/submission-to-library", requireAuth, asyncHandler(async (req, res)
 
   const wideBuf = await resizeAndCompress(source, 1920, 1080, 550);
   const wideName = sanitized ? uniqueFilename(uploadsDir, "hero", sanitized, "1920x1080", ".jpg") : `site-${crypto.randomBytes(8).toString("hex")}-1920x1080.jpg`;
-  const wide = await saveFile(wideBuf, StorageKey.hero(wideName), "image/jpeg");
+  // The enhancer watermarks the hero too (watermark-existing at the end of the
+  // wizard); the Drive marketing copy below stays clean, as it does there.
+  const wide = await saveFile(await applyWatermark(wideBuf, credit), StorageKey.hero(wideName), "image/jpeg");
 
   const bannerBuf = await applyWatermark(await resizeAndCompress(source, 1920, 600, 550), credit);
   const bannerName = sanitized ? uniqueFilename(uploadsDir, "banner", sanitized, "1920x600", ".jpg") : `site-${crypto.randomBytes(8).toString("hex")}-1920x600.jpg`;
