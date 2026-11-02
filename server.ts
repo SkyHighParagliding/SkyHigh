@@ -172,7 +172,7 @@ async function startServer() {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",  // unsafe-inline needed for React/Vite — replace with nonces when feasible
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
+      "img-src 'self' data: blob: https:",  // blob: admin previews of auth-fetched images (e.g. community submissions)
       "font-src 'self' data:",
       // s3.amazonaws.com: terrarium elevation tiles fetched client-side for the
       // Ground AMSL readout (terrainTiles.ts). basemaps.cartocdn.com: CARTO wind/

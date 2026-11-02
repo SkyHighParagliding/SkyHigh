@@ -23,7 +23,7 @@
 // A worker keeps the CSP it was installed with, and the browser only reinstalls
 // when this file's bytes change. Bump SW_VERSION whenever server.ts's CSP changes
 // (e.g. a new connect-src host), or existing visitors keep the old, stricter policy.
-const SW_VERSION = "2026-10-30-csp-tiles";
+const SW_VERSION = "2026-11-02-csp-img-blob";
 
 const TILE_CACHE = "skyhigh-offline-tiles";
 
