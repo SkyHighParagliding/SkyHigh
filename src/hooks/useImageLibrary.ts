@@ -297,6 +297,36 @@ export function useImageLibrary() {
     }
   };
 
+  // One-click "Add to wall": the server makes the hero/banner/slider crops
+  // (centred, no AI); we append each entry to the library. Sequential, so each
+  // save builds on the last and a failure part-way keeps what was added.
+  const [addingToWall, setAddingToWall] = useState<{ done: number; total: number } | null>(null);
+  const handleAddSubmissionsToWall = async (ids: string[]) => {
+    if (!token || ids.length === 0 || addingToWall) return;
+    let library = images;
+    let added = 0;
+    let failed = 0;
+    setAddingToWall({ done: 0, total: ids.length });
+    for (const id of ids) {
+      try {
+        const { entry } = await api.post<{ entry: ImagePair }>("/api/ai/submission-to-library", { submissionId: id }, token);
+        library = [...library, entry];
+        await updateSettings({ imageLibrary: JSON.stringify(library) });
+        await api.post(`/api/submissions/${id}/approve`, {}, token);
+        setImages(library);
+        setSavedImages(library);
+        setSubmissions(prev => prev.filter(s => s.id !== id));
+        added++;
+      } catch {
+        failed++;
+      }
+      setAddingToWall({ done: added + failed, total: ids.length });
+    }
+    setAddingToWall(null);
+    showSaveMessage(failed ? "error" : "success",
+      failed ? `Added ${added} to the wall; ${failed} failed — try those again` : `Added ${added} photo${added === 1 ? "" : "s"} to the wall`, 5000);
+  };
+
   const handleSubmissionEnhancerAccept = async (wideImage: string, bannerImage?: string, name?: string, sliderData?: SliderData) => {
     if (!submissionForEnhancer || !token) return;
     const submissionId = submissionForEnhancer.submissionId;
@@ -667,6 +697,7 @@ export function useImageLibrary() {
     ssSearch, setSsSearch, copiedTag, ssFileInputRef,
     submissions, loadingSubmissions, submissionPreview, setSubmissionPreview,
     submissionImageUrls, processingSubmission, submissionForEnhancer, setSubmissionForEnhancer,
+    addingToWall, handleAddSubmissionsToWall,
     bannedIps, showBannedIps, setShowBannedIps,
     newBanIp, setNewBanIp, newBanReason, setNewBanReason,
     submissionNotifyEnabled, setSubmissionNotifyEnabled,

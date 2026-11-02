@@ -741,6 +741,61 @@ router.post("/crop-single", requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// One-click "Add to wall" for a community submission: the same outputs as the
+// enhancer's Use Original + crop wizard (hero, banner, three slider sizes), but
+// with automatic centre crops and no AI. Returns the library entry; the client
+// appends it to imageLibrary and marks the submission approved.
+router.post("/submission-to-library", requireAuth, asyncHandler(async (req, res) => {
+  const { submissionId, name } = req.body;
+  if (!submissionId || typeof submissionId !== "string") {
+    return res.status(400).json({ error: "No submission id provided" });
+  }
+  const sub = await queryOne<{ filePath: string; originalFilename: string; photographerCredit: string | null; status: string }>(
+    `SELECT "filePath", "originalFilename", "photographerCredit", status FROM image_submissions WHERE id = $1`,
+    [submissionId]
+  );
+  if (!sub) return res.status(404).json({ error: "Submission not found" });
+  if (sub.status !== "pending" && sub.status !== "quarantined") {
+    return res.status(400).json({ error: `Cannot add a submission with status '${sub.status}'` });
+  }
+
+  // .rotate() applies the EXIF orientation so phone photos aren't sideways.
+  const source = await sharp(await readFile(sub.filePath)).rotate().toBuffer();
+  const displayName = (typeof name === "string" && name.trim()) ? name.trim() : sub.originalFilename.replace(/\.[^/.]+$/, "");
+  const sanitized = sanitizeName(displayName);
+  const credit = sub.photographerCredit || "";
+
+  const wideBuf = await resizeAndCompress(source, 1920, 1080, 550);
+  const wideName = sanitized ? uniqueFilename(uploadsDir, "hero", sanitized, "1920x1080", ".jpg") : `site-${crypto.randomBytes(8).toString("hex")}-1920x1080.jpg`;
+  const wide = await saveFile(wideBuf, StorageKey.hero(wideName), "image/jpeg");
+
+  const bannerBuf = await applyWatermark(await resizeAndCompress(source, 1920, 600, 550), credit);
+  const bannerName = sanitized ? uniqueFilename(uploadsDir, "banner", sanitized, "1920x600", ".jpg") : `site-${crypto.randomBytes(8).toString("hex")}-1920x600.jpg`;
+  const banner = await saveFile(bannerBuf, StorageKey.banner(bannerName), "image/jpeg");
+
+  const sliders = await generateSliderImages(source, sanitized, uploadsDir, credit);
+
+  if (sanitized) {
+    copyToDriveMarketingFolder(wideBuf, wideName).catch(() => {});
+    copyToDriveMarketingFolder(bannerBuf, bannerName).catch(() => {});
+  }
+
+  res.json({
+    entry: {
+      wide,
+      banner,
+      name: displayName,
+      sliderEnabled: true,
+      sliderLgEnabled: true,
+      sliderSmEnabled: true,
+      sliderPortraitEnabled: true,
+      sliderLg: sliders.sliderLg,
+      sliderSm: sliders.sliderSm,
+      sliderPortrait: sliders.sliderPortrait,
+    },
+  });
+}));
+
 router.post("/generate-slider-images", requireAuth, asyncHandler(async (req, res) => {
   const { imagePath, name, photographerCredit, watermarkSize, watermarkPosition } = req.body;
   if (!imagePath || typeof imagePath !== "string") {

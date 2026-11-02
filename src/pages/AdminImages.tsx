@@ -33,6 +33,7 @@ export function AdminImages() {
     ssSearch, setSsSearch, copiedTag, ssFileInputRef,
     submissions, loadingSubmissions, submissionPreview, setSubmissionPreview,
     submissionImageUrls, processingSubmission, submissionForEnhancer, setSubmissionForEnhancer,
+    addingToWall, handleAddSubmissionsToWall,
     bannedIps, showBannedIps, setShowBannedIps,
     newBanIp, setNewBanIp, newBanReason, setNewBanReason,
     submissionNotifyEnabled, setSubmissionNotifyEnabled,
@@ -662,9 +663,22 @@ export function AdminImages() {
                         <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-200 text-emerald-800 rounded-full">{submissions.length} {submissionFilter}</span>
                       )}
                     </div>
-                    <button type="button" onClick={() => setUploadBranch("")} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                      <X className="w-3 h-3" /> Cancel
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {submissions.some(s => s.status === "pending" || s.status === "quarantined") && (
+                        <button
+                          type="button"
+                          disabled={!!addingToWall}
+                          onClick={() => handleAddSubmissionsToWall(submissions.filter(s => s.status === "pending" || s.status === "quarantined").map(s => s.id))}
+                          className="text-xs font-medium px-2.5 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 flex items-center gap-1"
+                          title="Add every photo shown here to the Image Wall (centred crops, no AI)"
+                        >
+                          {addingToWall ? <><Loader2 className="w-3 h-3 animate-spin" /> Adding {addingToWall.done}/{addingToWall.total}…</> : <><Plus className="w-3 h-3" /> Add all to wall</>}
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setUploadBranch("")} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                        <X className="w-3 h-3" /> Cancel
+                      </button>
+                    </div>
                   </div>
                   <div className="flex gap-2 mb-2">
                     {(["pending", "quarantined", "all"] as const).map(f => (
@@ -711,6 +725,17 @@ export function AdminImages() {
                             </div>
                           )}
                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+                            {(sub.status === "pending" || sub.status === "quarantined") && (
+                              <button
+                                type="button"
+                                disabled={!!addingToWall}
+                                onClick={() => handleAddSubmissionsToWall([sub.id])}
+                                className="mb-1 w-full text-[11px] font-medium py-1 rounded bg-emerald-600/90 text-white hover:bg-emerald-600 disabled:opacity-60 flex items-center justify-center gap-1"
+                                title="Add to the Image Wall (centred crops, no AI)"
+                              >
+                                <Plus className="w-3 h-3" /> Add to wall
+                              </button>
+                            )}
                             <p className="text-white text-[10px] truncate">{sub.originalFilename}</p>
                             <p className="text-white/70 text-[9px]">{new Date(sub.submittedAt).toLocaleDateString()} &middot; {(sub.fileSize / 1024).toFixed(0)}KB</p>
                           </div>
