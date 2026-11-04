@@ -157,7 +157,10 @@ async function startServer() {
   app.set("trust proxy", 1);
   app.use(compression({ level: 6, threshold: 1024 }));
   app.use((_req, res, next) => {
-    res.setHeader('X-Frame-Options', 'DENY');
+    // The XC Maps demo (/xc/maps/demo) shows each simulated phone as a same-origin
+    // iframe of /xc/demo/*, so only those pages may be framed, and only by us.
+    const frameableBySelf = _req.path.startsWith('/xc/demo/');
+    res.setHeader('X-Frame-Options', frameableBySelf ? 'SAMEORIGIN' : 'DENY');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -191,7 +194,7 @@ async function startServer() {
       // page) and Instagram post embeds (Insta Wall). Without this, default-src
       // 'self' blocks them. YouTube is not framed (thumbnails + links only).
       "frame-src 'self' https://www.google.com https://www.instagram.com https://skyhighvoyagers.streamlit.app https://skyhighvoyagers-production.up.railway.app/",
-      "frame-ancestors 'none'",
+      frameableBySelf ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
     ].join('; '));
