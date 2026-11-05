@@ -80,6 +80,8 @@ export function RaspChart({
 }) {
   const { units, toggleUnits } = useUnits();
   const [svgW, setSvgW] = useState(520);
+  // Tapped point on the chart: nearest hour column + the altitude under the finger.
+  const [tap, setTap] = useState<{ i: number; zM: number; x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -164,6 +166,15 @@ export function RaspChart({
     flush();
     return runs;
   }
+  // W* at an altitude: the same mid-BL-peaked profile the contour bands use
+  // (W(f) = peak·(1 − ((f − 0.4)/0.55)²), f = fraction of BL depth).
+  const wstarAt = (i: number, zM: number): number | null => {
+    const { blTop, peak } = info[i];
+    if (blTop === null || zM < groundAmsl || zM > blTop) return null;
+    const f = (zM - groundAmsl) / Math.max(1, blTop - groundAmsl);
+    return Math.max(0, peak * (1 - ((f - 0.4) / 0.55) ** 2));
+  };
+
   const contourFills: ReactNode[] = [];
   WSTAR_BANDS.forEach((band, bi) => {
     contourRuns(band.min).forEach((run, ri) => {
@@ -248,8 +259,57 @@ export function RaspChart({
   const axisStyle = { fill: '#86868b', fontFamily: 'system-ui,sans-serif' } as const;
   const LINE_LABEL = { fontSize: '9px', fontWeight: 700, fontFamily: 'system-ui,sans-serif' } as const;
 
+  // Tap → nearest hour + altitude under the pointer (inverse of toX / toY).
+  const onTap = (e: React.PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (x < PAD_L || x > PAD_L + PLOT_W || y < plotTop || y > plotBot) { setTap(null); return; }
+    const i = Math.max(0, Math.min(n - 1, Math.round(((x - PAD_L - INNER_X) / spanW) * (n - 1))));
+    const disp = dispBot + ((plotBot - y) / PLOT_H) * (dispTop - dispBot);
+    const zM = units === 'imperial' ? disp / M_TO_FT : disp;
+    setTap(t => (t && t.i === i && Math.abs(t.y - y) < 6 ? null : { i, zM, x: toX(i), y }));
+  };
+
+  const tapBox = (() => {
+    if (!tap || tap.i >= n) return null;
+    const s = slots[tap.i];
+    const fmtAlt = (m: number) => units === 'imperial' ? `${Math.round(m * M_TO_FT).toLocaleString()} ft` : `${Math.round(m).toLocaleString()} m`;
+    const w = windAtAltitude(s.levels, tap.zM, 250);
+    const ws = wstarAt(tap.i, tap.zM);
+    const grade = ws !== null ? [...WSTAR_BANDS].reverse().find(b => ws >= b.min) : undefined;
+    const cuBase = s.ccl !== null ? s.ccl + groundAmsl : null;
+    const rows: [string, string][] = [
+      ['Height', `${fmtAlt(tap.zM)} AMSL`],
+      ['', `${fmtAlt(Math.max(0, tap.zM - groundAmsl))} AGL`],
+      ['Wind', w ? `${Math.round(w.spd)} kt from ${Math.round(w.dir)}°` : '–'],
+      ['Thermal', tap.zM < groundAmsl ? 'below ground' : ws === null ? 'above BL top – none' : grade ? `${ws.toFixed(1)} m/s · ${grade.label}` : `${ws.toFixed(1)} m/s · too weak`],
+      ['BL top', s.ceilingAmsl !== null ? fmtAlt(s.ceilingAmsl) : '–'],
+      ['Cu base', cuBase !== null && s.ceilingAmsl !== null && cuBase < s.ceilingAmsl ? fmtAlt(cuBase) : 'no cumulus'],
+      ['Cloud', s.cloud !== null ? `${Math.round(s.cloud)}%` : '–'],
+    ];
+    const BOX_W = 196;
+    const left = tap.x + 12 + BOX_W > svgW ? Math.max(4, tap.x - 12 - BOX_W) : tap.x + 12;
+    const top = Math.max(4, Math.min(SVG_H - 150, tap.y - 60));
+    return (
+      <div className="absolute z-10 rounded-lg bg-white/95 shadow-lg border border-black/10 px-2.5 py-2 text-[11px] text-slate-700 pointer-events-auto"
+        style={{ left, top, width: BOX_W }} onPointerDown={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-semibold text-ink">{fmtMelbTime(s.time)}</span>
+          <button onClick={() => setTap(null)} className="text-slate-400 hover:text-slate-700 leading-none px-1" aria-label="Close">×</button>
+        </div>
+        {rows.map(([k, v], ri) => (
+          <div key={ri} className="flex gap-2 leading-snug">
+            <span className="w-14 shrink-0 text-slate-400">{k}</span>
+            <span className="tabular-nums">{v}</span>
+          </div>
+        ))}
+      </div>
+    );
+  })();
+
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${svgW} ${SVG_H}`} width="100%" height={SVG_H} style={{ touchAction: 'none', userSelect: 'none' }}>
+    <div className="relative">
+    <svg ref={svgRef} viewBox={`0 0 ${svgW} ${SVG_H}`} width="100%" height={SVG_H} style={{ touchAction: 'none', userSelect: 'none', cursor: 'crosshair' }} onPointerDown={onTap}>
       {/* Plot background */}
       <rect x={PAD_L} y={plotTop} width={PLOT_W} height={PLOT_H} fill="#eff6ff" />
 
@@ -336,6 +396,16 @@ export function RaspChart({
       {slots.map((s, i) => (i % 2 === 0 ? (
         <text key={`t${i}`} x={toX(i)} y={SVG_H - 6} textAnchor="middle" style={{ ...axisStyle, fontSize: '10px' }}>{fmtMelbTime(s.time)}</text>
       ) : null))}
+
+      {/* Tapped-point marker: hour column + crosshair dot */}
+      {tap && tap.i < n && (
+        <g pointerEvents="none">
+          <line x1={tap.x} y1={plotTop} x2={tap.x} y2={plotBot} stroke="#0f172a" strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+          <circle cx={tap.x} cy={tap.y} r={4.5} fill="#fff" stroke="#0f172a" strokeWidth={1.5} />
+        </g>
+      )}
     </svg>
+    {tapBox}
+    </div>
   );
 }
