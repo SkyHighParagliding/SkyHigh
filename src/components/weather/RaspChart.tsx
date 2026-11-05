@@ -25,6 +25,19 @@ export interface RaspHour {
   cloud: number | null;       // total cloud %
   cloudLow: number | null;
   levels: { zAmsl: number; windSpd: number; windDir: number }[];
+  // Surface fields for the table under the chart (RaspTable).
+  windSpeed?: number | null;  // kt
+  windDir?: number | null;    // deg FROM
+  windGust?: number | null;   // kt
+  temp?: number | null;       // °C
+  dewPoint?: number | null;   // °C
+}
+
+/** The hours the RASP chart and table show: the first day, 8am–8pm. */
+export function raspDaySlots(hours: RaspHour[]): RaspHour[] {
+  if (!hours.length) return [];
+  const day = hours[0].time.slice(0, 10);
+  return hours.filter(h => h.time.slice(0, 10) === day && getMelbHour(h.time) >= 8 && getMelbHour(h.time) <= 20);
 }
 
 const M_TO_FT = 3.280839895;
@@ -76,9 +89,7 @@ export function RaspChart({
   }, []);
 
   // Today's daytime window.
-  const slots = hours.length
-    ? hours.filter(h => h.time.slice(0, 10) === hours[0].time.slice(0, 10) && getMelbHour(h.time) >= 8 && getMelbHour(h.time) <= 20)
-    : [];
+  const slots = raspDaySlots(hours);
 
   if (slots.length < 2) {
     return <div className="flex items-center justify-center h-48 text-sm text-muted-foreground italic">No RASP data for today.</div>;

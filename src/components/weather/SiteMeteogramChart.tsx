@@ -32,6 +32,11 @@ export interface MeteogramHour {
   cloudLow: number | null;
   windSpeed: number | null;
   windDir: number | null;
+  /** Surface gust, knots. Optional: absent from servers before the RASP table. */
+  windGust?: number | null;
+  /** 2 m temperature / dewpoint, °C. Optional (same reason). */
+  temp?: number | null;
+  dewPoint?: number | null;
   precip: number | null;
   precipProb: number | null;
   weatherCode: number | null;

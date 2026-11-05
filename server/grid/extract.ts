@@ -70,11 +70,15 @@ export function getTimeWindow(allTimes: string[], windowHours = 36): { startIdx:
 // Nearest-point lookup
 // ---------------------------------------------------------------------------
 
-export function findNearestPoint(grid: VictoriaGrid, lat: number, lon: number): GridPoint | null {
-  let bestPoint: GridPoint | null = null;
+export function findNearestPoint<P extends { lat: number; lon: number } = GridPoint>(
+  grid: { points: P[] } | VictoriaGrid,
+  lat: number,
+  lon: number,
+): P | null {
+  let bestPoint: P | null = null;
   let bestDist = Infinity;
 
-  for (const p of grid.points) {
+  for (const p of grid.points as P[]) {
     const dlat = p.lat - lat;
     const dlon = p.lon - lon;
     const dist = dlat * dlat + dlon * dlon;

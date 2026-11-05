@@ -4,6 +4,7 @@ import { Loader2, X, Wind } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
 import { RaspChart, WSTAR_BANDS, type RaspHour } from './RaspChart';
 import { ScaleToggle } from './ScaleToggle';
+import { RaspTable } from './RaspTable';
 import type { MeteogramHour } from './SiteMeteogramChart';
 import type { PointSounding } from './SkewTChart';
 
@@ -57,6 +58,11 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleSca
           cloud: h.cloud,
           cloudLow: h.cloudLow,
           levels: byKey.get(h.time.slice(0, 13))?.levels ?? [],
+          windSpeed: h.windSpeed,
+          windDir: h.windDir,
+          windGust: h.windGust ?? null,
+          temp: h.temp ?? null,
+          dewPoint: h.dewPoint ?? null,
         }));
         setHours(joined);
         setLaunch(mg.launchElevation);
@@ -102,6 +108,7 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleSca
               fullScale={fullScale}
               overcastPct={numSetting(settings.thermalOvercastOnsetPct, 70)}
             />
+            <RaspTable hours={hours} launchElevation={launch} />
             <div className="mt-3 flex flex-col items-center gap-2">
               <div className="flex items-center gap-4 text-[10px] text-slate-500 flex-wrap justify-center">
                 <span className="flex items-center">

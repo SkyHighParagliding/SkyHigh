@@ -17,6 +17,7 @@
 import { getCachedThermalGrid, fetchThermalGrid } from "./thermalGrid.js";
 import { getCachedFineGrid } from "./fineGrid.js";
 import { extractThermalGrid, findNearestPoint, type ThermalCell, type ThermalOverlay } from "./extract.js";
+import type { ThermalPoint } from "./bounds.js";
 
 export interface MeteogramHour {
   /** Melbourne-local `YYYY-MM-DDTHH:mm`, matching both grids' time axes. */
@@ -40,6 +41,12 @@ export interface MeteogramHour {
   windSpeed: number | null;
   /** Surface wind direction, degrees FROM. */
   windDir: number | null;
+  /** Surface (10 m) gust, knots. */
+  windGust: number | null;
+  /** 2 m temperature, °C (thermal grid, nearest point). */
+  temp: number | null;
+  /** 2 m dewpoint, °C (thermal grid, nearest point). */
+  dewPoint: number | null;
   /** Precipitation, mm/hr. */
   precip: number | null;
   /** Precipitation probability, %. */
@@ -96,6 +103,13 @@ export async function buildSiteMeteogram(
   const nearestFine = fine ? findNearestPoint(fine, lat, lon) : null;
   const fineHourly = nearestFine?.hourly ?? null;
 
+  // Surface temp + dewpoint come from the nearest raw thermal-grid point (the
+  // overlay cells keep only the derived fields).
+  const nearestThermal = findNearestPoint<ThermalPoint>(thermal, lat, lon);
+  const thermalHourly = nearestThermal?.hourly ?? null;
+  const thermalTimeIdx = new Map<string, number>();
+  thermalHourly?.time.forEach((t, i) => thermalTimeIdx.set(t, i));
+
   const fineTimeIdx = new Map<string, number>();
   fineHourly?.time.forEach((t, i) => fineTimeIdx.set(t, i));
 
@@ -104,6 +118,8 @@ export async function buildSiteMeteogram(
     const blh = cell ? num(cell.blh) : null;
     const fi = fineTimeIdx.get(time);
     const hasFine = fi !== undefined && fineHourly != null;
+    const ti = thermalTimeIdx.get(time);
+    const hasThermal = ti !== undefined && thermalHourly != null;
 
     return {
       time,
@@ -117,6 +133,9 @@ export async function buildSiteMeteogram(
       cloudLow: cell ? num(cell.cloudLow) : null,
       windSpeed: hasFine ? num(fineHourly!.wind_speed_10m[fi!]) : null,
       windDir: hasFine ? num(fineHourly!.wind_direction_10m[fi!]) : null,
+      windGust: hasFine ? num(fineHourly!.wind_gusts_10m?.[fi!]) : null,
+      temp: hasThermal ? num(thermalHourly!.temperature_2m?.[ti!]) : null,
+      dewPoint: hasThermal ? num(thermalHourly!.dew_point_2m?.[ti!]) : null,
       precip: hasFine ? num(fineHourly!.precipitation[fi!]) : null,
       precipProb: hasFine ? num(fineHourly!.precipitation_probability[fi!]) : null,
       weatherCode: hasFine ? num(fineHourly!.weather_code[fi!]) : null,
