@@ -79,8 +79,10 @@ map, tap again to hide. Skips FIR/OCA/ground-obstacles.
 
 ### 6. Forecast time — four step pills in the card (supersedes the slider, 2026-11-07)
 The tapped-point card steps the forecast with four pill buttons: **-15m / +15m**, then
-**-1D / +1D** (no day pill: the day is in the Fcst line, which is 11.5px so its longest
-form matches the pills' width; 7-day times read "Wed 11, 11:00 am", no month). The slider was too fiddly on a phone. There is no
+**-1D / +1D** (no day pill). Above them the readout is three lines at one size
+(`READOUT_FONT_PX`, 21.5px): the day/date/time ("Sat 1:52 pm"; 7-day "Wed 11, 11:00 am",
+no month), then "Fcst 12.0 kt / SW", then "Live 5 kt WSW". The size is set so the widest
+worst case ("Fcst 28.1 mph / WNW") matches the pills' width (212px on a phone). The slider was too fiddly on a phone. There is no
 1 Day / 7 Days toggle any more: days 1–3 use the hourly grid (15-min interpolated steps),
 and stepping past its end switches the wind map to the 7-day grid automatically (and back
 when you step before it). The 7-day grid only has daytime times every 4 h, so there the

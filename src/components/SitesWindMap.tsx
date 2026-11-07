@@ -33,6 +33,9 @@ const AIRSPACE_WARN_SKIP = new Set(['FIR', 'OCA', 'OTHER', 'TIZ', 'GLIDING_SECTO
 // a subtle sky tint so it reads as tappable, distinct from the plain white/75
 // readings — without shouting like the red airspace-conflict words.
 const CLICKABLE = 'text-sky-500 hover:text-sky-400';
+// Tapped-point readout lines (time / Fcst / Live): one size, chosen so the widest
+// worst case of the three is about the width of the four time pills (212px).
+const READOUT_FONT_PX = 21.5; // widest: "Fcst 28.1 mph / WNW" = 210px
 
 // Switchable speed/direction display. Speed cycles kt→mph→kph; direction toggles
 // compass↔degrees. Both persist per browser and are shown on one line ("4.9 kt / S").
@@ -1028,37 +1031,34 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
         <div className="relative bg-black/75 backdrop-blur-sm rounded-lg px-2.5 py-2 min-w-[232px] max-w-[calc(100vw-1.5rem)]">
             <div className="space-y-0.5">
               <div className="text-[10px] text-white/75 font-semibold tracking-wide">Tapped point</div>
-              {/* Forecast time this readout is for (the scrubber's selected time),
-                  with the wind speed/direction on the same line (wind mode). The
-                  Radar panel has no forecast reading, so this header is hidden there —
-                  its time lives on the Live line. Tap time = 12/24h; speed = units;
-                  dir = compass/degrees. 11.5px: sized so the longest form (7-day
-                  date + kph + 3-letter compass, "Fcst Wed 11, 11:00 am  45.3 kph / WNW",
-                  210px) ≈ the width of the four time pills (212px on a phone). */}
+              {/* Forecast time this readout is for (the stepper's selected time) on
+                  its own line; the forecast wind and the Live reading go on the
+                  next two lines (wind panel). All three share READOUT_FONT_PX, sized
+                  so the widest worst case matches the four time pills. Hidden in
+                  Radar (no forecast reading there). Tap time = 12/24h; speed =
+                  units; dir = compass/degrees. */}
               {!radarEnabled && (
-              <div className="flex items-baseline gap-2 flex-wrap text-[11.5px] font-semibold leading-tight">
-                <span className="flex items-baseline gap-1">
+                <button
+                  onClick={() => setUse24h(v => !v)}
+                  className="block text-left font-semibold leading-tight text-sky-500 hover:text-sky-400"
+                  style={{ fontSize: READOUT_FONT_PX }}
+                  title="Tap to switch 12-hour / 24-hour clock"
+                  data-readout="time"
+                >
+                  {formattedTime}
+                </button>
+              )}
+              {!radarEnabled && viewMode === 'wind' && sitesWindInfo && (
+                <div className="flex items-baseline gap-1 font-semibold leading-tight" style={{ fontSize: READOUT_FONT_PX }} data-readout="fcst">
                   <span className="text-white/75">Fcst</span>
-                  <button
-                    onClick={() => setUse24h(v => !v)}
-                    className="text-sky-500 hover:text-sky-400 text-left"
-                    title="Tap to switch 12-hour / 24-hour clock"
-                  >
-                    {formattedTime}
+                  <button onClick={cycleSpeedUnit} className="text-sky-500 hover:text-sky-400" title="Tap to change speed units (kt / mph / kph)">
+                    {fmtSpeed(sitesWindInfo.speed, speedUnit)}
                   </button>
-                </span>
-                {viewMode === 'wind' && sitesWindInfo && (
-                  <span className="flex items-center gap-1">
-                    <button onClick={cycleSpeedUnit} className="text-sky-500 hover:text-sky-400" title="Tap to change speed units (kt / mph / kph)">
-                      {fmtSpeed(sitesWindInfo.speed, speedUnit)}
-                    </button>
-                    <span className="text-white/40 font-normal">/</span>
-                    <button onClick={toggleDirMode} className="text-sky-500 hover:text-sky-400 tracking-wide" title="Tap to switch compass / degrees">
-                      {fmtDir(sitesWindInfo.direction, dirMode)}
-                    </button>
-                  </span>
-                )}
-              </div>
+                  <span className="text-white/40 font-normal">/</span>
+                  <button onClick={toggleDirMode} className="text-sky-500 hover:text-sky-400 tracking-wide" title="Tap to switch compass / degrees">
+                    {fmtDir(sitesWindInfo.direction, dirMode)}
+                  </button>
+                </div>
               )}
               {radarEnabled ? (
                 /* RADAR PANEL — rain at the tapped point. Its time + scrubber are the
@@ -1194,7 +1194,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
                 sitesWindInfo ? (
                   <>
                     {liveWind && (
-                      <div className="text-[10px] text-white/75"><span className="font-semibold tracking-wide">Live</span> {fmtSpeed(liveWind.speedKt, speedUnit, 0)} <span className="font-semibold tracking-wide">{liveWind.directionDeg != null ? fmtDir(liveWind.directionDeg, dirMode) : liveWind.direction}</span></div>
+                      <div className="leading-tight text-white/75" style={{ fontSize: READOUT_FONT_PX }} data-readout="live"><span className="font-semibold tracking-wide">Live</span> {fmtSpeed(liveWind.speedKt, speedUnit, 0)} <span className="font-semibold tracking-wide">{liveWind.directionDeg != null ? fmtDir(liveWind.directionDeg, dirMode) : liveWind.direction}</span></div>
                     )}
                     {typeof sitesWindInfo.groundAmsl === 'number' && (
                       <div className="text-[10px] text-white/75">Ground <Altitude metres={sitesWindInfo.groundAmsl} step={10} className="text-sky-500 hover:text-sky-400" /> AMSL</div>
