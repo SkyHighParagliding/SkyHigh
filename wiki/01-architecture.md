@@ -143,7 +143,7 @@ src/
 │   ├── windmap/                # WindCanvas, ThermalCanvas, MapCanvas, particleRenderer,
 │   │                           #   thermalRenderer, windInterpolation, thermalInterpolation,
 │   │                           #   cumulusField, terrainTiles, elevationPoint, landMask.ts,
-│   │                           #   LayerSelector, RadarCardControls, radarTiles, ThermalLegend,
+│   │                           #   LayerSelector, radarTiles, ThermalLegend,
 │   │                           #   MapScaleBar, ThermalHelpModal, siteMarkerRenderer,
 │   │                           #   groundRegistration, mapExtent
 │   ├── xcmap/                  # AirspaceLayer, PilotMarkers, DistanceRingsOverlay,

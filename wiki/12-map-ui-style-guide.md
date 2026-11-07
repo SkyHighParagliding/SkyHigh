@@ -77,23 +77,33 @@ map, tap again to hide. Skips FIR/OCA/ground-obstacles.
   (viewport-culled, faint fill 0.08); the tapped conflict still draws emphasised
   (0.22) on top. State lives in the surface (`showAllAirspace`).
 
-### 6. Forecast time — four step pills in the card (supersedes the slider, 2026-11-07)
-The tapped-point card steps the forecast with four pill buttons: **-15m / +15m**, then
-**-1D / +1D** (no day pill). Above them the readout is three lines at one size
-(`READOUT_FONT_PX`, 21.5px): the day/date/time ("Sat 1:52 pm"; 7-day "Wed 11, 11:00 am",
-no month), then "Fcst 12.0 kt / SW", then "Live 5 kt WSW". The size is set so the widest
-worst case ("Fcst 28.1 mph / WNW") matches the pills' width (212px on a phone). The slider was too fiddly on a phone. There is no
-1 Day / 7 Days toggle any more: days 1–3 use the hourly grid (15-min interpolated steps),
-and stepping past its end switches the wind map to the 7-day grid automatically (and back
-when you step before it). The 7-day grid only has daytime times every 4 h, so there the
-small-step pills jump to the next/previous available time and are **labelled with the real
-gap** (-4h / +4h, +12h overnight). Thermal only has the 3-day grid and stops at its end.
-Radar returns the map to the 3-day grid. A grid switch keeps the current map on screen
-(no loading screen) until the new grid arrives. Code: `forecastSlider` in
-`SitesWindMap.tsx`; `setTime` in `useWindPlayback`. The radar loop keeps its own
-"Play" + timeline. The other in-card sliders (base map, radar opacity) still share
-`SLIDER_INPUT_CLS`. The old `WindMapScrubberTray`/`WindMapModeToggle`/`ModeSwitchPill`
-are deleted.
+### 6. Tapped-point card — one layout for all three layers, folded by default on phones (2026-11-07)
+Wind, Thermal and Radar use the **same card, same order**; only the contents change.
+
+| Part | Wind | Thermal | Radar |
+|---|---|---|---|
+| Line 1 (time, sky) | "Sat 2:26 pm" | same | radar frame time + LIVE / FORECAST tag |
+| Line 2 (main reading) | Fcst 12.0 kt / SSW | strength label (its colour) or overcast | "No rain here" / "Rain ≈ x mm/hr" |
+| Line 3 | Live 4 kt S (when a station is near) | BL 1900m · Cu 1200m | Observed 9 min ago / Forecast, in 20 min |
+| Time pills | -15m +15m -1D +1D | same | play/pause, -10m, +10m, Now |
+| Pull tab | grabber + chevron | same | same |
+| Details (open) | Live station, distance, gust | BL Top/Cu Base + airspace class, airspace list, rain, Wind line (wind-flow toggle) | radar loop bar (sky observed, amber nowcast) |
+| then, on all | Ground → Scale/Chart/SkewT/RASP → legend (+ radar opacity) → Base map (+ © RainViewer) | | |
+
+- Lines 1–3 share `READOUT_FONT_PX` (15px). No "Tapped point" title.
+- **Fold:** tap the tab, or swipe down/up on the card's top part. Default folded on a phone
+  with the map embedded in the page (`max-width: 639px` and not fullscreen), open in
+  fullscreen and on wider screens; the choice is remembered per situation
+  (`skyhigh.cardOpen.compact` / `.roomy` in localStorage). Folded ≈ 134px on a 358px phone map.
+- **Forecast pills:** days 1–3 step 15 min on the hourly grid; stepping past it switches the
+  wind map to the 7-day grid (daytime every 4 h), where the small steps jump to the next
+  available time and are labelled with the real gap (+4h, +12h overnight). Thermal stops at
+  its 3-day end; radar returns to the 3-day grid. 7-day times read "Wed 11, 11:00 am".
+- **Radar pills** step one RainViewer frame (labelled with the real gap); Now = newest observed frame.
+- Code: all in `SitesWindMap.tsx` (`forecastSlider`, `radarPills`, `radarTimeline`, the card
+  IIFE). `RadarCardControls.tsx`, `WindMapScrubberTray`, `WindMapModeToggle` and
+  `ModeSwitchPill` are deleted. The remaining sliders (base map, radar opacity) share
+  `SLIDER_INPUT_CLS`.
 
 ### 7. Fullscreen == embedded (decision 6A)
 Fullscreen shows the **identical chrome** — same pill, card, scrubber, legend — just larger.

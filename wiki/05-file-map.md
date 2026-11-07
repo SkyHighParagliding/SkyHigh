@@ -310,7 +310,7 @@ Used by WindMap component to restore viewport on page load.
 One map component serves every map: `src/components/SitesWindMap.tsx` (`SitesWindMapProto`) — the Flying Sites page, the weather-card "Map" button (fullscreen, pre-tapped via `focusSite`) and the AdminWeather preview. It owns the Wind | Thermal | Radar layer state and the tapped-point card, and mounts one canvas at a time:
 - `MapCanvas.tsx` — shared base: the D3 tile loop (CARTO base + labels, RainViewer radar overlay with overzoom) and the tapped-point pin.
 - `WindCanvas.tsx` / `ThermalCanvas.tsx` — wind-particle and thermal overlays on `MapCanvas`; both skip their overlay when radar is on.
-- `LayerSelector.tsx` — segmented Wind | Thermal | Radar pill. `RadarCardControls.tsx` — radar status, Play and timeline. `radarTiles.ts` — RainViewer tile URL, legend and point sampling. `ThermalLegend.tsx`, `ThermalHelpModal.tsx` — legends and (i) explainers.
+- `LayerSelector.tsx` — segmented Wind | Thermal | Radar pill. (The radar Play/timeline used to be `RadarCardControls.tsx`; since 2026-11-07 the radar pills live in `SitesWindMap.tsx`.) `radarTiles.ts` — RainViewer tile URL, legend and point sampling. `ThermalLegend.tsx`, `ThermalHelpModal.tsx` — legends and (i) explainers.
 - Renderers/maths: `particleRenderer.ts`, `windInterpolation.ts`, `thermalRenderer.ts`, `thermalInterpolation.ts`, `cumulusField.ts`, `siteMarkerRenderer.ts`, `groundRegistration.ts`, `mapExtent.ts`, `MapScaleBar.tsx`.
 
 Removed — don't look for them: `windmap/WindMap.tsx`, `windmapUtils.ts`, `handleZoom.ts`, and (2026-10-04, `e949172`) `WindMapProto`, `WindMap`, `SiteThermalPanel`, `WindMapScrubberTray`, `WindMapModeToggle`, `ModeSwitchPill`. See `wiki/12-map-ui-style-guide.md`.
