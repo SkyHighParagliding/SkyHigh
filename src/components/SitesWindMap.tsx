@@ -725,17 +725,15 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   const stepFwd = () => goToTime(onLongGrid ? (nextLong ?? currentTime) : currentTime + QUARTER_H, 1);
   const backLabel = onLongGrid && prevLong !== undefined ? `-${fmtGap(currentTime - prevLong)}` : '-15m';
   const fwdLabel = onLongGrid && nextLong !== undefined ? `+${fmtGap(nextLong - currentTime)}` : '+15m';
-  const dayLabel = new Date(currentTime).toLocaleDateString('en-AU', { weekday: 'short' });
   const PILL = 'h-7 min-w-[44px] px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-sky-500/40 text-[11px] font-semibold text-sky-400 tabular-nums disabled:opacity-30 disabled:pointer-events-none';
   const forecastSlider = (
-    <div className="flex items-center justify-between gap-1.5" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center gap-3" data-time-pills onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-1.5">
         <button className={PILL} onClick={stepBack} disabled={atStart} title="Earlier">{backLabel}</button>
         <button className={PILL} onClick={stepFwd} disabled={atEnd} title="Later">{fwdLabel}</button>
       </div>
       <div className="flex items-center gap-1.5">
         <button className={PILL} onClick={() => goToTime(currentTime - DAY, 0)} disabled={atStart} title="Previous day">-1D</button>
-        <span className="h-7 min-w-[48px] px-2.5 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold text-white/85 uppercase tracking-wide">{loading ? '…' : dayLabel}</span>
         <button className={PILL} onClick={() => goToTime(currentTime + DAY, 0)} disabled={atEnd} title="Next day">+1D</button>
       </div>
     </div>
@@ -1034,9 +1032,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
                   with the wind speed/direction on the same line (wind mode). The
                   Radar panel has no forecast reading, so this header is hidden there —
                   its time lives on the Live line. Tap time = 12/24h; speed = units;
-                  dir = compass/degrees. */}
+                  dir = compass/degrees. 11px: sized so the longest form (7-day
+                  date + kph + degrees, "Fcst Wed, 11 Nov, 11:00 am  45.3 kph / 315°")
+                  ≈ the width of the four time pills (212px on a phone). */}
               {!radarEnabled && (
-              <div className="flex items-baseline gap-2 flex-wrap text-[10px] font-semibold leading-tight">
+              <div className="flex items-baseline gap-2 flex-wrap text-[11px] font-semibold leading-tight">
                 <span className="flex items-baseline gap-1">
                   <span className="text-white/75">Fcst</span>
                   <button
