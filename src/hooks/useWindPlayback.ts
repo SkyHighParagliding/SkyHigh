@@ -89,8 +89,10 @@ export function useWindPlayback(
           const end = new Date(data.times[data.times.length - 1]).getTime();
           gridBoundsRef.current = { start, end };
           setWindGrid(data);
-          const now = Date.now();
-          let target = now >= start && now <= end ? now : start;
+          // Open on the nearest whole hour: the forecast is hourly and the pills step ±1 h.
+          const HOUR = 60 * 60 * 1000;
+          const now = Math.round(Date.now() / HOUR) * HOUR;
+          let target = Math.min(Math.max(now, start), end);
           const dh = defaultHourRef.current;
           if (dh != null && Number.isFinite(dh)) {
             const d = new Date();
@@ -109,7 +111,7 @@ export function useWindPlayback(
       });
   }, [mapMode, todayFetcher]);
 
-  const timeStep = mapMode === '7day' ? 4 * 60 * 60 * 1000 : 15 * 60 * 1000;
+  const timeStep = mapMode === '7day' ? 4 * 60 * 60 * 1000 : 60 * 60 * 1000;
 
   useEffect(() => {
     if (isPlaying && windGrid) {

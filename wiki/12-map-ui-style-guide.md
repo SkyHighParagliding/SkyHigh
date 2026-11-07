@@ -85,7 +85,7 @@ Wind, Thermal and Radar use the **same card, same order**; only the contents cha
 | Line 1 (time, sky) | "Sat 2:26 pm" | same | radar frame time + LIVE / FORECAST tag |
 | Line 2 (main reading) | Fcst 12.0 kt / SSW | strength label (its colour) or overcast | "No rain here" / "Rain ≈ x mm/hr" |
 | Line 3 | Live 4 kt S (when a station is near) | BL 1900m · Cu 1200m | Observed 9 min ago / Forecast, in 20 min |
-| Time pills | -15m +15m -1D +1D | same | play/pause, -10m, +10m, Now |
+| Time pills | -1h +1h -1D +1D | same | play/pause, -10m, +10m, Now |
 | Pull tab | grabber + chevron | same | same |
 | Details (open) | Live station, distance, gust | BL Top/Cu Base + airspace class, airspace list, rain, Wind line (wind-flow toggle) | radar loop bar (sky observed, amber nowcast) |
 | then, on all | Ground → Scale/Chart/SkewT/RASP → legend (+ radar opacity) → Base map (+ © RainViewer) | | |
@@ -95,7 +95,7 @@ Wind, Thermal and Radar use the **same card, same order**; only the contents cha
   with the map embedded in the page (`max-width: 639px` and not fullscreen), open in
   fullscreen and on wider screens; the choice is remembered per situation
   (`skyhigh.cardOpen.compact` / `.roomy` in localStorage). Folded ≈ 134px on a 358px phone map.
-- **Forecast pills:** days 1–3 step 15 min on the hourly grid; stepping past it switches the
+- **Forecast pills:** days 1–3 step 1 h on the hourly grid (the map opens on the nearest whole hour); stepping past it switches the
   wind map to the 7-day grid (daytime every 4 h), where the small steps jump to the next
   available time and are labelled with the real gap (+4h, +12h overnight). Thermal stops at
   its 3-day end; radar returns to the 3-day grid. 7-day times read "Wed 11, 11:00 am".

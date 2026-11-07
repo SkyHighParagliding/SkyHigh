@@ -417,7 +417,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   }, [radarEnabled, tappedLat, tappedLon, radarFrames, radarClampedIndex, radarHost]);
 
   useEffect(() => {
-    const isNow = Math.abs(currentTime - Date.now()) < timeStep; // within one frame of real "now"
+    const isNow = Math.abs(currentTime - Date.now()) <= timeStep / 2; // the step nearest real "now"
     if (!isNow || tappedLat == null || tappedLon == null) { setLiveWind(null); return; }
 
     // Convert the on-screen tolerance to km at the live map scale (k = 256·2^zoom,
@@ -680,12 +680,12 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   );
 
   // Forecast time stepper — four pill buttons in the card (a slider over 3–7 days
-  // was too fiddly on a phone). Days 1–3 use the hourly grid (15-min steps,
-  // interpolated); stepping past its end switches to the 7-day grid, which only
+  // was too fiddly on a phone). Days 1–3 use the hourly grid (1 h steps on
+  // the hour); stepping past its end switches to the 7-day grid, which only
   // has daytime times every 4 h, so the small-step buttons then jump to the
   // next/previous available time and are labelled with the real gap. Thermal
   // only has the 3-day grid, so it stops at its end.
-  const QUARTER_H = 15 * 60 * 1000, DAY = 24 * 60 * 60 * 1000;
+  const HOUR = 60 * 60 * 1000, DAY = 24 * 60 * 60 * 1000;
   const gridTimes = useMemo(() => (windGrid?.times ?? []).map(t => new Date(t).getTime()), [windGrid]);
   const shortRangeRef = useRef<{ start: number; end: number } | null>(null);
   if (mapMode === 'today' && windGrid && gridTimes.length) {
@@ -725,10 +725,10 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   const atStart = mapMode === 'today' && currentTime <= forecastStart;
   // + is open on the hourly grid while wind can roll on to the 7-day grid.
   const atEnd = mapMode === '7day' ? nextLong === undefined : currentTime >= forecastEnd && viewMode !== 'wind';
-  const stepBack = () => goToTime(onLongGrid ? (prevLong ?? short?.end ?? currentTime) : currentTime - QUARTER_H, -1);
-  const stepFwd = () => goToTime(onLongGrid ? (nextLong ?? currentTime) : currentTime + QUARTER_H, 1);
-  const backLabel = onLongGrid && prevLong !== undefined ? `-${fmtGap(currentTime - prevLong)}` : '-15m';
-  const fwdLabel = onLongGrid && nextLong !== undefined ? `+${fmtGap(nextLong - currentTime)}` : '+15m';
+  const stepBack = () => goToTime(onLongGrid ? (prevLong ?? short?.end ?? currentTime) : currentTime - HOUR, -1);
+  const stepFwd = () => goToTime(onLongGrid ? (nextLong ?? currentTime) : currentTime + HOUR, 1);
+  const backLabel = onLongGrid && prevLong !== undefined ? `-${fmtGap(currentTime - prevLong)}` : '-1h';
+  const fwdLabel = onLongGrid && nextLong !== undefined ? `+${fmtGap(nextLong - currentTime)}` : '+1h';
   const PILL = 'h-7 min-w-[44px] px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-sky-500/40 text-[11px] font-semibold text-sky-400 tabular-nums disabled:opacity-30 disabled:pointer-events-none';
   const forecastSlider = (
     <div className="flex items-center gap-3" data-time-pills onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
