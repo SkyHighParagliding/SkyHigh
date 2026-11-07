@@ -354,7 +354,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   const {
     windGrid, loading, error,
     currentTime, timeStep, forecastStart, forecastEnd,
-    formattedTime, handleSliderChange, seekTo,
+    formattedTime, seekTo, setTime,
   } = useWindPlayback(
     mapMode,
     todayFetcher,
@@ -371,9 +371,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   // reading and the radar image are for the same moment (follows radar scrubbing too).
   useEffect(() => {
     if (!radarEnabled) return;
+    // Radar is "now" — come back from the 7-day grid (it only starts tomorrow).
+    if (mapMode === '7day') { setMapMode('today'); return; }
     const f = radarFrames[radarClampedIndex];
     if (f) seekTo(f.time * 1000);
-  }, [radarEnabled, radarFrames, radarClampedIndex, seekTo]);
+  }, [radarEnabled, radarFrames, radarClampedIndex, seekTo, mapMode]);
 
   // Lazy-load thermal grid when user switches to thermal mode
   useEffect(() => {
@@ -673,28 +675,68 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     0, showMapLabels, () => setShowMapLabels(v => !v),
   );
 
-  // Forecast time scrubber — moved out of the bottom tray into the card. Same look
-  // as the other sliders. The label is the span the slider covers and toggles
-  // 1-day↔7-day (wind only; thermal is 1-day). No play button or time readout —
-  // the time is in the card header.
+  // Forecast time stepper — four pill buttons in the card (a slider over 3–7 days
+  // was too fiddly on a phone). Days 1–3 use the hourly grid (15-min steps,
+  // interpolated); stepping past its end switches to the 7-day grid, which only
+  // has daytime times every 4 h, so the small-step buttons then jump to the
+  // next/previous available time and are labelled with the real gap. Thermal
+  // only has the 3-day grid, so it stops at its end.
+  const QUARTER_H = 15 * 60 * 1000, DAY = 24 * 60 * 60 * 1000;
+  const gridTimes = useMemo(() => (windGrid?.times ?? []).map(t => new Date(t).getTime()), [windGrid]);
+  const shortRangeRef = useRef<{ start: number; end: number } | null>(null);
+  if (mapMode === 'today' && windGrid && gridTimes.length) {
+    shortRangeRef.current = { start: gridTimes[0], end: gridTimes[gridTimes.length - 1] };
+  }
+  // A time to apply once the other grid has loaded (after a 3-day ↔ 7-day switch).
+  // `from` is the grid on screen when the switch was asked for: wait for a new one.
+  const pendingSeekRef = useRef<{ t: number; dir: -1 | 0 | 1; from: WindGrid | null } | null>(null);
+  /** Snap `t` onto the current grid: continuous (clamped) on the hourly grid; on
+   *  the 7-day grid, the first time at/after (dir 1), at/before (dir -1) or nearest. */
+  const snapTime = useCallback((t: number, dir: -1 | 0 | 1): number => {
+    if (!gridTimes.length) return t;
+    const first = gridTimes[0], last = gridTimes[gridTimes.length - 1];
+    if (mapMode === 'today') return Math.min(Math.max(t, first), last);
+    if (dir > 0) return gridTimes.find(x => x >= t) ?? last;
+    if (dir < 0) return [...gridTimes].reverse().find(x => x <= t) ?? first;
+    return gridTimes.reduce((b, x) => (Math.abs(x - t) < Math.abs(b - t) ? x : b), first);
+  }, [gridTimes, mapMode]);
+  const goToTime = useCallback((t: number, dir: -1 | 0 | 1) => {
+    const short = shortRangeRef.current;
+    const want: 'today' | '7day' = viewMode === 'wind' && short && t > short.end ? '7day' : 'today';
+    if (want !== mapMode) { pendingSeekRef.current = { t, dir, from: windGrid }; setMapMode(want); return; }
+    setTime(snapTime(t, dir));
+  }, [viewMode, mapMode, windGrid, setTime, snapTime]);
+  useEffect(() => {
+    const p = pendingSeekRef.current;
+    if (!p || !windGrid || loading || windGrid === p.from) return;
+    pendingSeekRef.current = null;
+    setTime(snapTime(p.t, p.dir));
+  }, [windGrid, loading, setTime, snapTime]);
+
+  const fmtGap = (ms: number) => (ms % 3600000 === 0 ? `${ms / 3600000}h` : `${Math.round(ms / 60000)}m`);
+  const onLongGrid = mapMode === '7day' && gridTimes.length > 0;
+  const nextLong = onLongGrid ? gridTimes.find(x => x > currentTime) : undefined;
+  const prevLong = onLongGrid ? [...gridTimes].reverse().find(x => x < currentTime) : undefined;
+  const short = shortRangeRef.current;
+  const atStart = mapMode === 'today' && currentTime <= forecastStart;
+  // + is open on the hourly grid while wind can roll on to the 7-day grid.
+  const atEnd = mapMode === '7day' ? nextLong === undefined : currentTime >= forecastEnd && viewMode !== 'wind';
+  const stepBack = () => goToTime(onLongGrid ? (prevLong ?? short?.end ?? currentTime) : currentTime - QUARTER_H, -1);
+  const stepFwd = () => goToTime(onLongGrid ? (nextLong ?? currentTime) : currentTime + QUARTER_H, 1);
+  const backLabel = onLongGrid && prevLong !== undefined ? `-${fmtGap(currentTime - prevLong)}` : '-15m';
+  const fwdLabel = onLongGrid && nextLong !== undefined ? `+${fmtGap(nextLong - currentTime)}` : '+15m';
+  const dayLabel = new Date(currentTime).toLocaleDateString('en-AU', { weekday: 'short' });
+  const PILL = 'h-7 min-w-[44px] px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-sky-500/40 text-[11px] font-semibold text-sky-400 tabular-nums disabled:opacity-30 disabled:pointer-events-none';
   const forecastSlider = (
-    <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()} title="Forecast time — drag to scrub">
-      {viewMode === 'wind' ? (
-        <button onClick={() => setMapMode(m => (m === 'today' ? '7day' : 'today'))} className="text-[10px] tracking-wide shrink-0 w-14 text-left text-sky-500 hover:text-sky-400" title="Tap to switch 1-day / 7-day forecast span">
-          {mapMode === '7day' ? '7 Days' : '1 Day'}
-        </button>
-      ) : (
-        <span className="text-[10px] tracking-wide shrink-0 w-14 text-left text-white/75">1 Day</span>
-      )}
-      <div className="relative flex-1 flex items-center">
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-sky-500/70 pointer-events-none" />
-        <input
-          type="range" min={forecastStart} max={forecastEnd} step={timeStep}
-          value={currentTime}
-          onChange={handleSliderChange}
-          onClick={(e) => e.stopPropagation()}
-          className={SLIDER_INPUT_CLS}
-        />
+    <div className="flex items-center justify-between gap-1.5" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1.5">
+        <button className={PILL} onClick={stepBack} disabled={atStart} title="Earlier">{backLabel}</button>
+        <button className={PILL} onClick={stepFwd} disabled={atEnd} title="Later">{fwdLabel}</button>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button className={PILL} onClick={() => goToTime(currentTime - DAY, 0)} disabled={atStart} title="Previous day">-1D</button>
+        <span className="w-9 text-center text-[11px] font-semibold text-white/85">{loading ? '…' : dayLabel}</span>
+        <button className={PILL} onClick={() => goToTime(currentTime + DAY, 0)} disabled={atEnd} title="Next day">+1D</button>
       </div>
     </div>
   );
@@ -756,7 +798,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     </div>
   );
 
-  if (loading) {
+  // Full loading screen only for the first load; a 3-day ↔ 7-day switch keeps
+  // the current map (and the tapped point) on screen until the next grid arrives.
+  if (loading && !windGrid) {
     return (
       <div className="w-full h-full relative flex items-center justify-center bg-[#0a0a0a] rounded-xl">
         <div className="absolute top-3 left-3 z-30">{layerSelector}</div>

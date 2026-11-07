@@ -21,6 +21,8 @@ export interface UseWindPlaybackResult {
   /** Jump the forecast time to the nearest available grid time to `t` (ms). Used
    *  to keep the forecast in step with the displayed radar frame. */
   seekTo: (t: number) => void;
+  /** Set the forecast time directly (ms) and stop playback. The caller snaps it. */
+  setTime: (t: number) => void;
   togglePlay: () => void;
   cycleSpeed: () => void;
 }
@@ -145,6 +147,8 @@ export function useWindPlayback(
     setCurrentTime(prev => (prev === best ? prev : best));
   }, [windGrid]);
 
+  const setTime = useCallback((t: number) => { setIsPlaying(false); setCurrentTime(t); }, []);
+
   const togglePlay = useCallback(() => setIsPlaying(p => !p), []);
 
   const cycleSpeed = useCallback(() => {
@@ -180,6 +184,7 @@ export function useWindPlayback(
     formattedTime,
     handleSliderChange,
     seekTo,
+    setTime,
     togglePlay,
     cycleSpeed,
   };

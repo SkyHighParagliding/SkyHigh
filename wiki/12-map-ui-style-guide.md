@@ -52,7 +52,7 @@ and (thermal) the point actions + airspace toggle. Before a tap: just the map + 
   **`sky-500` (hover `sky-400`) = tappable**. Tap-to-cycle idioms: speed units (kt→mph→kph),
   direction (compass↔degrees), the 12/24h clock. Zone dividers = `border-t border-white/10`.
 - **Lines, in order.** Wind: Fcst time + speed/dir → Live (if within range at "now") → Ground
-  → scrubber → scale/legend → base-map. Thermal: Fcst time → strength → BL Top / Cu Base /
+  → time pills → scale/legend → base-map. Thermal: Fcst time → strength → BL Top / Cu Base /
   Ground / (Rain) → actions (Scale · Chart · SkewT · RASP) → scale/legend → base-map. Radar:
   Ground → Rain-radar loop (Play + two-tone timeline) + opacity → scale → base-map + © RainViewer.
 - **Base-map controls** (last zone, every layer): a **town-names toggle** + **base-map detail
@@ -77,13 +77,20 @@ map, tap again to hide. Skips FIR/OCA/ground-obstacles.
   (viewport-culled, faint fill 0.08); the tapped conflict still draws emphasised
   (0.22) on top. State lives in the surface (`showAllAirspace`).
 
-### 6. Time scrubber — in-card slider (supersedes the pull-out tray, 2026-10-04)
-The scrubber is a **slider inside the tapped-point card**, not a pull-out tray. The label
-at its start is the span toggle — **"1 Day" ↔ "7 Days"** (wind only; thermal stays 1 Day) —
-tappable (`sky-500`). Drag-only: **no play button** on the forecast scrubber (the radar loop
-is the one exception — it has an in-card "Play" word + two-tone timeline). All sliders share
-one style (`SLIDER_INPUT_CLS`: transparent track, white `w-4` thumb) so they line up. The old
-`WindMapScrubberTray`/`WindMapModeToggle`/`ModeSwitchPill` are deleted.
+### 6. Forecast time — four step pills in the card (supersedes the slider, 2026-11-07)
+The tapped-point card steps the forecast with four pill buttons: **-15m / +15m**, then
+**-1D · day label (Mon, Tue…) · +1D**. The slider was too fiddly on a phone. There is no
+1 Day / 7 Days toggle any more: days 1–3 use the hourly grid (15-min interpolated steps),
+and stepping past its end switches the wind map to the 7-day grid automatically (and back
+when you step before it). The 7-day grid only has daytime times every 4 h, so there the
+small-step pills jump to the next/previous available time and are **labelled with the real
+gap** (-4h / +4h, +12h overnight). Thermal only has the 3-day grid and stops at its end.
+Radar returns the map to the 3-day grid. A grid switch keeps the current map on screen
+(no loading screen) until the new grid arrives. Code: `forecastSlider` in
+`SitesWindMap.tsx`; `setTime` in `useWindPlayback`. The radar loop keeps its own
+"Play" + timeline. The other in-card sliders (base map, radar opacity) still share
+`SLIDER_INPUT_CLS`. The old `WindMapScrubberTray`/`WindMapModeToggle`/`ModeSwitchPill`
+are deleted.
 
 ### 7. Fullscreen == embedded (decision 6A)
 Fullscreen shows the **identical chrome** — same pill, card, scrubber, legend — just larger.
