@@ -735,7 +735,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
       </div>
       <div className="flex items-center gap-1.5">
         <button className={PILL} onClick={() => goToTime(currentTime - DAY, 0)} disabled={atStart} title="Previous day">-1D</button>
-        <span className="w-9 text-center text-[11px] font-semibold text-white/85">{loading ? '…' : dayLabel}</span>
+        <span className="h-7 min-w-[48px] px-2.5 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold text-white/85 uppercase tracking-wide">{loading ? '…' : dayLabel}</span>
         <button className={PILL} onClick={() => goToTime(currentTime + DAY, 0)} disabled={atEnd} title="Next day">+1D</button>
       </div>
     </div>
