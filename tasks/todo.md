@@ -3,6 +3,7 @@
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## 🟡 Open / on hold
+- ✅ **Forecast pills ±1h, map opens on the nearest hour (2026-11-07, `4946731`, pushed).** Forecast data is hourly ECMWF; 15-min steps were blends. Jon: glance at it on the phone.
 - ⬜ **Jon: check on his phone (added 2026-11-07).** (1) Flying Sites map card: swipe down/up on the card opens/folds it (only tested with a simulated drag); (2) XC Maps demo `/xc/maps/demo` shows maps in every phone frame (fix `f35469d`, headers checked live).
 - ✅ **Map tapped-point card redesign (2026-11-07, `08cf50d`…`e43794f`, deployed).** Forecast pills replace the slider; one card layout for Wind/Thermal/Radar, folded on phone-embedded; Chart/SkewT/RASP on all layers; radar pills. Spec `wiki/12-map-ui-style-guide.md` §6.
 - ✅ **RASP table + tap box (2026-11-06, `c1292a5`, `03b524c`, deployed).**

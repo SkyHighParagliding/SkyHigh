@@ -1,7 +1,14 @@
-# RESUME_HERE — Last updated: 2026-11-07 (session 84: XC demo fix, RASP table + tap box, map card redesign)
+# RESUME_HERE — Last updated: 2026-11-07 (session 85: forecast pills ±1h, map opens on the hour)
 
 ## Project: SkyHigh
-## Status: Active. `main` = `e43794f`, pushed and deployed (Railway auto-deploys `main`).
+## Status: Active. `main` = `4946731`, pushed (Railway auto-deploys `main`).
+
+## Session 85 (2026-11-07) — forecast steps are hourly
+- Checked: the map's 3-day grid (`fine_grid_*`, ECMWF IFS HRES 9 km from Open-Meteo S3) has 72 real hourly values (not filled in from 3-hourly). The old 15-min steps were only straight-line blends between hours (`windInterpolation.ts`, `thermalInterpolation.ts`). Lifted index is 3-hourly (0.25°), blended to hourly on the server.
+- `4946731` (pushed): time pills step -1h/+1h (`SitesWindMap.tsx`); the map opens on the nearest whole hour, not the exact time (`useWindPlayback.ts`; the admin default hour still wins); play steps 1 h; the live station reading shows only on the hour nearest now (`<= timeStep/2`). Style guide §6 updated. Checked headless at 9:52 pm: card opened "Sat 10:00 pm", +1h → 11:00 pm. Phone layout not checked.
+- Also pushed: `f93e888` (session 84 summary) was only local until this push.
+- Still waiting: `BRIEF.md` (Apps Script bridge lockdown) not started. Uncommitted, not mine: siteguide data files, `.gitignore`, `.lnk`, `.claude/settings.local.json`, `ecmwf-strip-after.png`.
+- Resume this session: `claude --resume be86eec4-7fcd-48d8-a991-94595389bf9f`.
 
 ## Session 84 (2026-11-05 to 07) — XC demo, RASP table, one tapped-point card
 - `f35469d` (deployed, headers checked live): the XC Maps demo (`/xc/maps/demo`) showed no maps. Each phone is a same-origin iframe of `/xc/demo/*`, and every page sent `X-Frame-Options: DENY` + `frame-ancestors 'none'` (since the 12 Oct GitHub edit of `server.ts`). Only `/xc/demo/*` now gets `SAMEORIGIN` / `'self'`. Jon hasn't confirmed the demo by eye.
