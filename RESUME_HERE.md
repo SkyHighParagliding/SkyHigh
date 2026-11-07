@@ -1,7 +1,17 @@
-# RESUME_HERE — Last updated: 2026-10-30 (session 83: XC Maps tiles + iPhone zoom freeze)
+# RESUME_HERE — Last updated: 2026-11-07 (session 84: XC demo fix, RASP table + tap box, map card redesign)
 
 ## Project: SkyHigh
-## Status: Active — sizzle till LIVE. `main` = `feature/sausage-sizzle` = `0af64bc` (deployed 26 Oct 21:09, Railway SUCCESS). Railway auto-deploys `main`.
+## Status: Active. `main` = `e43794f`, pushed and deployed (Railway auto-deploys `main`).
+
+## Session 84 (2026-11-05 to 07) — XC demo, RASP table, one tapped-point card
+- `f35469d` (deployed, headers checked live): the XC Maps demo (`/xc/maps/demo`) showed no maps. Each phone is a same-origin iframe of `/xc/demo/*`, and every page sent `X-Frame-Options: DENY` + `frame-ancestors 'none'` (since the 12 Oct GitHub edit of `server.ts`). Only `/xc/demo/*` now gets `SAMEORIGIN` / `'self'`. Jon hasn't confirmed the demo by eye.
+- `c1292a5` (deployed, API checked live): SkySight-style hour table under the RASP chart (`RaspTable.tsx`): soarable height AMSL/AGL (BL top capped by Cu base), W*, cloud, surface temp/dewpoint, wind, gusts, wind at soarable height. Point meteogram now returns `windGust`, `temp`, `dewPoint`.
+- `03b524c` (deployed): tap the RASP chart → box with height, wind, estimated W* (same mid-BL profile as the bands), BL top, Cu base, cloud.
+- `08cf50d` → `e43794f` (deployed): the forecast time slider became pills (-15m +15m -1D +1D; past day 3 the wind map switches to the 7-day grid by itself, steps show the real gap +4h/+12h; 1 Day/7 Days toggle gone). Then Wind, Thermal and Radar got **one card layout**: 15px headline (time + 2 readings), time pills (radar: ▶ -10m +10m Now), pull tab, then details → Ground → Scale/Chart/SkewT/RASP (now on all layers) → legend → base map. Folded by default on a phone with the map embedded (134 px of a 358 px map), open in fullscreen/desktop; tap the tab or swipe; remembered. 7-day time reads "Wed 11, 11:00 am". `RadarCardControls.tsx` deleted. Spec: `wiki/12-map-ui-style-guide.md` §6.
+- **Jon to check on his phone:** the swipe on the card (tested only with a simulated drag), and the XC demo maps.
+- Not mine, left uncommitted: `server/data/siteguide_airspace.txt` + `siteguide_zones.json` (changed by the server's daily download), `.claude/settings.local.json`, `.lnk`, `.gitignore`, `ecmwf-strip-after.png`.
+- Still waiting: `BRIEF.md` (Apps Script bridge lockdown) not started.
+- Resume this session: `claude --resume 2a4dbd84-e9ea-4a2d-9f4b-3b5a04037686` (named "SkyHigh").
 
 ## Session 83 (2026-10-30) — XC Maps: tiles blocked by CSP, iPhone zoom freeze
 - `bd8d11a` (deployed): CSP `connect-src` now allows `tile.openstreetmap.org`, `*.tile.openstreetmap.org`, `tile.opentopomap.org`, `*.tile.opentopomap.org`, `server.arcgisonline.com`. `public/sw.js` re-fetches those tiles with `fetch()` (and `tileCache.ts` prefetches them), so they need connect-src, not just img-src.
