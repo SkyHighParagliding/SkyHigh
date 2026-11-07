@@ -1032,11 +1032,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
                   with the wind speed/direction on the same line (wind mode). The
                   Radar panel has no forecast reading, so this header is hidden there —
                   its time lives on the Live line. Tap time = 12/24h; speed = units;
-                  dir = compass/degrees. 11px: sized so the longest form (7-day
-                  date + kph + degrees, "Fcst Wed, 11 Nov, 11:00 am  45.3 kph / 315°")
-                  ≈ the width of the four time pills (212px on a phone). */}
+                  dir = compass/degrees. 11.5px: sized so the longest form (7-day
+                  date + kph + 3-letter compass, "Fcst Wed 11, 11:00 am  45.3 kph / WNW",
+                  210px) ≈ the width of the four time pills (212px on a phone). */}
               {!radarEnabled && (
-              <div className="flex items-baseline gap-2 flex-wrap text-[11px] font-semibold leading-tight">
+              <div className="flex items-baseline gap-2 flex-wrap text-[11.5px] font-semibold leading-tight">
                 <span className="flex items-baseline gap-1">
                   <span className="text-white/75">Fcst</span>
                   <button

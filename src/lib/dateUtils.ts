@@ -12,11 +12,15 @@ export function formatDisplayTime(timestamp: string | Date): string {
 }
 
 export function formatWindMapTime(unixMs: number, is7Day: boolean, use24h = false): string {
-  return new Intl.DateTimeFormat('en-AU', {
+  const parts = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne',
-    hour: 'numeric', minute: 'numeric', hour12: !use24h, weekday: 'short',
-    ...(is7Day ? { day: 'numeric', month: 'short' } : {}),
-  }).format(unixMs);
+    hour: 'numeric', minute: 'numeric', hour12: !use24h, weekday: 'short', day: 'numeric',
+  }).formatToParts(unixMs);
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? '';
+  const clock = `${get('hour')}:${get('minute')}${use24h ? '' : ` ${get('dayPeriod')}`}`;
+  // 7-day: "Wed 11, 11:00 am" — the date (no month) tells next Sat from this Sat;
+  // the comma keeps "11 11:00" from reading as one number. 3-day: "Sat 1:18 pm".
+  return is7Day ? `${get('weekday')} ${get('day')}, ${clock}` : `${get('weekday')} ${clock}`;
 }
 
 /** Clock-only Melbourne time (no weekday) for compact labels like the radar frame. */
