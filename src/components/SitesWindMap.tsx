@@ -92,7 +92,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   // Point-aware Chart / SkewT: tapped point opens a full-screen modal.
   const [chartPoint, setChartPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
   const [skewtPoint, setSkewtPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
-  const [raspPoint, setRaspPoint] = useState<{ lat: number; lon: number; ground?: number } | null>(null);
+  const [raspPoint, setRaspPoint] = useState<{ lat: number; lon: number; ground?: number; time: number } | null>(null);
   const { fullScale, toggle: toggleScale } = useChartScale();
 
   const [zoomK, setZoomK] = useState(INITIAL_K);
@@ -1237,7 +1237,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
                     </button>
                   )}
                   {meteogramEnabled && (
-                    <button onClick={() => setRaspPoint({ lat: tl.lat!, lon: tl.lon!, ground: tappedGround })} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="RASP — winds & thermals aloft (time × altitude)">
+                    <button onClick={() => setRaspPoint({ lat: tl.lat!, lon: tl.lon!, ground: tappedGround, time: currentTime })} className={`flex items-center gap-1 text-[10px] ${CLICKABLE}`} title="RASP — winds & thermals aloft (time × altitude)">
                       <Wind className="w-3 h-3" /> RASP
                     </button>
                   )}
@@ -1326,6 +1326,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
           lat={raspPoint.lat}
           lon={raspPoint.lon}
           groundAmsl={raspPoint.ground}
+          time={raspPoint.time}
           fullScale={fullScale}
           onToggleScale={toggleScale}
           onClose={() => setRaspPoint(null)}

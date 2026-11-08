@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, X, Wind } from 'lucide-react';
 import { useSettings } from '@/contexts/SettingsContext';
-import { RaspChart, WSTAR_BANDS, type RaspHour } from './RaspChart';
+import { RaspChart, WSTAR_BANDS, raspDaySlots, type RaspHour } from './RaspChart';
 import { ScaleToggle } from './ScaleToggle';
 import { RaspTable } from './RaspTable';
 import type { MeteogramHour } from './SiteMeteogramChart';
@@ -12,6 +12,8 @@ interface RaspModalProps {
   lat: number;
   lon: number;
   groundAmsl?: number;
+  /** Epoch ms of the map's selected time; RASP shows that Melbourne day. */
+  time: number;
   /** true = full profile altitude scale; false = PG working band. */
   fullScale?: boolean;
   /** Flip the shared PG/Full scale — enables the on-display toggle. */
@@ -24,13 +26,22 @@ function numSetting(v: unknown, d: number): number {
   return Number.isFinite(n) && v !== '' && v != null ? n : d;
 }
 
+/** "Sunday 8 November 2026" from a Melbourne-local ISO time. Formatted as UTC so
+ *  the viewer's own timezone can't shift the date. */
+function fmtRaspDay(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const opts = (o: Intl.DateTimeFormatOptions) => date.toLocaleDateString('en-AU', { ...o, timeZone: 'UTC' });
+  return `${opts({ weekday: 'long' })} ${d} ${opts({ month: 'long' })} ${y}`;
+}
+
 /**
  * RASP-style time × altitude chart for a tapped point: wind barbs at every level,
  * a W* thermal-strength heatmap, BL Top / Cu Base lines and cloud shading. Joins
  * the meteogram (BL Top / W* / cloud per hour) with the pressure-level sounding
  * (winds aloft) — the same two endpoints the Chart and SkewT already use.
  */
-export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleScale, onClose }: RaspModalProps) {
+export function RaspModal({ lat, lon, groundAmsl, time, fullScale = false, onToggleScale, onClose }: RaspModalProps) {
   const { settings } = useSettings();
   const [hours, setHours] = useState<RaspHour[] | null>(null);
   const [launch, setLaunch] = useState<number | null>(null);
@@ -78,12 +89,20 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleSca
     return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
+  const day = new Date(time).toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }); // YYYY-MM-DD
+  const dayLabel = fmtRaspDay(day);
+  const dayHours = hours?.filter(h => h.time.startsWith(day)) ?? null;
+  const hasDay = !!dayHours && raspDaySlots(dayHours).length >= 2;
+
   return createPortal(
     <div className="fixed inset-0 z-[10001] h-[100dvh] w-screen bg-white flex flex-col" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between px-3 py-2 border-b border-black/10 shrink-0">
         <div className="flex items-center gap-2">
           <Wind className="w-4 h-4 text-amber-500" />
-          <span className="text-[13px] font-semibold text-ink">RASP · winds &amp; thermals aloft</span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-[13px] font-semibold text-ink">RASP · winds &amp; thermals aloft</span>
+            <span className="text-[13px] font-semibold text-amber-600">{dayLabel}</span>
+          </div>
         </div>
         <div className="flex items-center gap-1.5">
           {onToggleScale && <ScaleToggle fullScale={fullScale} onToggle={onToggleScale} />}
@@ -100,15 +119,17 @@ export function RaspModal({ lat, lon, groundAmsl, fullScale = false, onToggleSca
           </div>
         ) : error || !hours ? (
           <div className="h-full flex items-center justify-center"><span className="text-xs text-red-500">Failed to load RASP</span></div>
+        ) : !hasDay ? (
+          <div className="h-full flex items-center justify-center px-6 text-center"><span className="text-sm text-muted-foreground">No RASP for this day. The forecast doesn't reach that far yet.</span></div>
         ) : (
           <div className="max-w-3xl mx-auto">
             <RaspChart
-              hours={hours}
+              hours={dayHours!}
               launchElevation={launch}
               fullScale={fullScale}
               overcastPct={numSetting(settings.thermalOvercastOnsetPct, 70)}
             />
-            <RaspTable hours={hours} launchElevation={launch} />
+            <RaspTable hours={dayHours!} launchElevation={launch} />
             <div className="mt-3 flex flex-col items-center gap-2">
               <div className="flex items-center gap-4 text-[10px] text-slate-500 flex-wrap justify-center">
                 <span className="flex items-center">
