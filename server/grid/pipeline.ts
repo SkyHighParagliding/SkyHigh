@@ -50,6 +50,28 @@ const RETAIN_DAYS = 7;
 // spans whatever range the stored grid holds, so this is the only lever needed.
 export const FORECAST_DAYS = 3;
 
+/**
+ * A fetch whose time axis covers fewer hours than this is "short". The
+ * orchestrator trims the axis to the hours every point covers, so one source
+ * caught mid-upload can cut 72 h to 14 h while every point is still "present"
+ * (2026-11-10: the 5am wind grid ended at 13:00 the same day, and the map
+ * dropped to the 4-hourly 7-day grid from tomorrow on). A short grid is only
+ * stored when no earlier grid reaches further ahead, and the scheduler retries.
+ */
+export const MIN_FORECAST_HOURS = 48;
+
+/** Hours on a persisted grid's time axis (0 when it has none). */
+export function gridHours(grid: { points: unknown[] } | null | undefined): number {
+  const first = grid?.points?.[0] as { hourly?: { time?: string[] } } | undefined;
+  return first?.hourly?.time?.length ?? 0;
+}
+
+/** Last hour on a persisted grid's time axis, as stored ("YYYY-MM-DDTHH:00", Melbourne). */
+function gridEndTime(grid: { points: unknown[] } | null | undefined): string {
+  const first = grid?.points?.[0] as { hourly?: { time?: string[] } } | undefined;
+  return first?.hourly?.time?.at(-1) ?? "";
+}
+
 /** The persisted grid shape for a kind: an envelope plus an array of points. */
 export type PersistedGrid<P> = GridEnvelope & { points: P[] };
 
@@ -362,7 +384,10 @@ async function runFetch<P>(
   // Sits here rather than in the scheduler so that a manual admin fetch is held
   // to the same account as the 5am cron. A fallback to tier 4 is equally worth
   // knowing about whoever asked for the data.
-  await reportGridHealth(kind.healthKey, kind.label, merged.provenance);
+  await reportGridHealth(kind.healthKey, kind.label, merged.provenance, {
+    got: merged.time.length,
+    wanted: FORECAST_DAYS * 24,
+  });
 
   const { requested, missing } = merged.provenance;
   const completeness = requested > 0 ? (requested - missing) / requested : 0;
@@ -380,6 +405,23 @@ async function runFetch<P>(
     }
     // No previous cache to fall back to — a sparse grid still beats nothing.
     log.warn(`${kind.baseKey}: no previous cache available — storing the sparse grid`);
+  }
+
+  // Short time axis: keep whichever stored grid reaches further ahead. Today's
+  // row may itself be an earlier short run, so yesterday's is checked too.
+  if (merged.time.length < MIN_FORECAST_HOURS) {
+    const newEnd = merged.time.at(-1) ?? "";
+    const previous = await loadFurthestPrevious<G>(kind.baseKey);
+    if (previous && gridEndTime(previous) > newEnd) {
+      log.warn(
+        `${kind.baseKey}: forecast only ${merged.time.length}h (ends ${newEnd}) — keeping previous grid (ends ${gridEndTime(previous)})`,
+      );
+      lastFreshByKey.set(kind.baseKey, false);
+      state.memGrid = previous;
+      state.memGridAt = Date.now();
+      return previous;
+    }
+    log.warn(`${kind.baseKey}: forecast only ${merged.time.length}h — no stored grid reaches further, storing it`);
   }
 
   const grid: G = {
@@ -468,6 +510,21 @@ async function loadPrevious<G>(baseKey: string): Promise<G | null> {
     const today = await readGrid<G>(baseKey);
     if (today) return today.grid;
     return await readLatestGrid<G>(baseKey);
+  } catch (err) {
+    log.error(`${baseKey}: fallback cache read failed`, err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+/** Of today's and yesterday's stored grids, the one whose time axis ends latest. */
+async function loadFurthestPrevious<G extends { points: unknown[] }>(baseKey: string): Promise<G | null> {
+  try {
+    const yesterday = new Date(Date.now() - 86_400_000)
+      .toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+    const rows = await Promise.all([readGrid<G>(baseKey), readGrid<G>(baseKey, yesterday)]);
+    const grids = rows.map(r => r?.grid ?? null).filter((g): g is G => g !== null);
+    if (grids.length === 0) return await readLatestGrid<G>(baseKey);
+    return grids.reduce((best, g) => (gridEndTime(g) > gridEndTime(best) ? g : best));
   } catch (err) {
     log.error(`${baseKey}: fallback cache read failed`, err instanceof Error ? err.message : err);
     return null;

@@ -96,6 +96,26 @@ console.log("\nTEST 8: missing provenance does not throw");
   check("summary explains why", h.summary.includes("no provenance"));
 }
 
+console.log("\nTEST 9: all-ECMWF but short time axis is degraded (2026-11-10: 14h of 72h)");
+{
+  const h = classifyGridHealth(provenance([S3_ECMWF]), { got: 14, wanted: 72 });
+  check("severity is degraded", h.severity === "degraded");
+  check("summary names the hours", h.summary.includes("14h of 72h"));
+}
+
+console.log("\nTEST 10: full time axis stays ok");
+{
+  const h = classifyGridHealth(provenance([S3_ECMWF]), { got: 72, wanted: 72 });
+  check("severity is ok", h.severity === "ok");
+}
+
+console.log("\nTEST 11: short axis never lowers critical");
+{
+  const h = classifyGridHealth(provenance([NOMADS]), { got: 10, wanted: 72 });
+  check("severity stays critical", h.severity === "critical");
+  check("summary keeps the NOMADS text and adds the hours", h.summary.includes("NOMADS") && h.summary.includes("10h of 72h"));
+}
+
 console.log("\n" + "─".repeat(50));
 console.log(`Results: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

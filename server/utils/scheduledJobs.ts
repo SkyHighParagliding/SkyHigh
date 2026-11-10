@@ -159,14 +159,43 @@ async function runDriveSync() {
   }
 }
 
-async function fetchFineGridDaily() {
+// Retry delays when the wind grid comes back short (fewer than MIN_FORECAST_HOURS).
+// A source caught mid-upload at 5:00 is normally complete within the hour.
+const FINE_RETRY_DELAYS_MS = [30 * 60_000, 60 * 60_000, 120 * 60_000];
+let fineRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function fetchFineGridDaily(retryRound = 0) {
+  if (fineRetryTimer !== null) {
+    clearTimeout(fineRetryTimer);
+    fineRetryTimer = null;
+  }
   const ts = new Date().toISOString();
   try {
-    const { fetchFineGrid } = await import("../grid/fineGrid.js");
-    await fetchFineGrid(true);
+    const { fetchFineGrid, FINE_GRID_CACHE_KEY } = await import("../grid/fineGrid.js");
+    const { gridHours, wasLastFetchFresh, MIN_FORECAST_HOURS, FORECAST_DAYS } = await import("../grid/pipeline.js");
+    const grid = await fetchFineGrid(true);
+    // Retry when the run was short (stored anyway, nothing better) or when the
+    // pipeline kept an older grid instead (short or sparse) — either way today's
+    // fetch did not give a full fresh forecast.
+    const hours = gridHours(grid);
+    const fresh = wasLastFetchFresh(FINE_GRID_CACHE_KEY);
+    let result = "ok";
+    if (hours < MIN_FORECAST_HOURS || !fresh) {
+      const what = fresh ? `short — ${hours}h of ${FORECAST_DAYS * 24}h` : "incomplete — showing the previous grid";
+      if (retryRound < FINE_RETRY_DELAYS_MS.length) {
+        const delayMin = Math.round(FINE_RETRY_DELAYS_MS[retryRound] / 60_000);
+        result = `${what}, retry ${retryRound + 1}/${FINE_RETRY_DELAYS_MS.length} in ${delayMin}min`;
+        fineRetryTimer = setTimeout(() => fetchFineGridDaily(retryRound + 1), FINE_RETRY_DELAYS_MS[retryRound]);
+      } else {
+        result = `${what} after ${FINE_RETRY_DELAYS_MS.length} retries`;
+        const { emailShortForecast } = await import("./gridAlerts.js");
+        await emailShortForecast("fineGridHealth", "Wind Grid", `Last run: ${what}. The served grid covers ${hours}h.`);
+      }
+      log.warn(`Fine grid: ${result}`);
+    }
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastRun", ts]);
-    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", "ok"]);
-    log.info("Fine grid daily fetch completed");
+    await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", result]);
+    log.info(`Fine grid daily fetch completed (${result})`);
   } catch (e: any) {
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastRun", ts]);
     await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["fineGridLastResult", e.message || "Unknown error"]);
@@ -223,7 +252,7 @@ async function fetchThermalGridDaily(retryRound = 0) {
   const roundLabel = retryRound > 0 ? ` (retry ${retryRound}/${THERMAL_RETRY_DELAYS_MS.length})` : '';
   try {
     const { fetchThermalGrid, THERMAL_GRID_CACHE_KEY } = await import("../grid/thermalGrid.js");
-    const { wasLastFetchFresh, isGridFetchCancelled } = await import("../grid/pipeline.js");
+    const { wasLastFetchFresh, isGridFetchCancelled, gridHours, MIN_FORECAST_HOURS } = await import("../grid/pipeline.js");
 
     let grid;
     try {
@@ -247,20 +276,24 @@ async function fetchThermalGridDaily(retryRound = 0) {
 
     const missing = grid.provenance?.missing ?? 0;
     await setThermalGapCount(missing);
+    // A short time axis (a source caught mid-upload) is retried like missing points.
+    const hours = gridHours(grid);
+    const short = hours < MIN_FORECAST_HOURS;
+    const problem = [missing > 0 ? `${missing} points` : "", short ? `only ${hours}h` : ""].filter(Boolean).join(", ");
 
-    if (missing > 0 && retryRound < THERMAL_RETRY_DELAYS_MS.length) {
+    if ((missing > 0 || short) && retryRound < THERMAL_RETRY_DELAYS_MS.length) {
       const delayMs = THERMAL_RETRY_DELAYS_MS[retryRound];
       const delayMin = Math.round(delayMs / 60_000);
-      const resultMsg = `partial — ${missing} points, retry ${retryRound + 1}/${THERMAL_RETRY_DELAYS_MS.length} in ${delayMin}min`;
+      const resultMsg = `partial — ${problem}, retry ${retryRound + 1}/${THERMAL_RETRY_DELAYS_MS.length} in ${delayMin}min`;
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
-      log.info(`Thermal grid${roundLabel}: ${missing} points missing — retry ${retryRound + 1} scheduled in ${delayMin}min`);
+      log.info(`Thermal grid${roundLabel}: ${problem} — retry ${retryRound + 1} scheduled in ${delayMin}min`);
       thermalRetryTimer = setTimeout(() => fetchThermalGridDaily(retryRound + 1), delayMs);
-    } else if (missing > 0) {
-      const resultMsg = `partial — ${missing} points unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries`;
+    } else if (missing > 0 || short) {
+      const resultMsg = `partial — ${problem} unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries`;
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastResult", resultMsg]);
-      log.warn(`Thermal grid: ${missing} points still missing after ${THERMAL_RETRY_DELAYS_MS.length} retries — 7:30am cron is the final backstop`);
+      log.warn(`Thermal grid: ${problem} still unresolved after ${THERMAL_RETRY_DELAYS_MS.length} retries — 7:30am cron is the final backstop`);
     } else {
       const resultMsg = isFresh ? "ok" : "ok (rate limited — showing cached data)";
       await execute("INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ["thermalGridLastRun", ts]);

@@ -21,7 +21,7 @@
 import createLogger from "./logger.js";
 import { execute, query, queryOne } from "../pg.js";
 import { sendEmail } from "./email.js";
-import { classifyGridHealth, type GridHealth } from "../grid/health.js";
+import { classifyGridHealth, type GridHealth, type HorizonCoverage } from "../grid/health.js";
 import type { Provenance } from "../grid/types.js";
 
 const log = createLogger("grid:alerts");
@@ -130,9 +130,10 @@ export async function reportGridHealth(
   healthKey: string,
   gridLabel: string,
   provenance: Provenance | undefined,
+  hours?: HorizonCoverage,
 ): Promise<void> {
   try {
-    const health = classifyGridHealth(provenance);
+    const health = classifyGridHealth(provenance, hours);
     const record: GridHealthRecord = { ...health, at: new Date().toISOString() };
     await setSetting(healthKey, JSON.stringify(record));
 
@@ -173,6 +174,41 @@ export async function reportGridHealth(
     }
   } catch (err) {
     log.error(`${gridLabel}: health reporting failed`, err instanceof Error ? err.message : err);
+  }
+}
+
+/**
+ * Emails the admins that a grid is still short (or not refreshed) after its retries. Sent by the
+ * scheduler only once the retry chain is exhausted, so a 5am short run that a
+ * 5:30 retry fixes stays quiet. At most once per Melbourne day per grid. Never throws.
+ */
+export async function emailShortForecast(healthKey: string, gridLabel: string, detail: string): Promise<void> {
+  try {
+    const sentKey = `gridShortAlertLastEmailed:${healthKey}`;
+    const today = melbourneToday();
+    if ((await getSetting(sentKey)) === today) return;
+
+    const recipients = await resolveRecipients();
+    if (recipients.length === 0) {
+      log.error(`${gridLabel}: short forecast, but no alert recipients are configured`);
+      return;
+    }
+    const subject = `SkyHigh: ${gridLabel} did not refresh fully today`;
+    const html = `
+      <div style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
+        <h2 style="margin:0 0 8px">${gridLabel}: today's fetch came back short or incomplete</h2>
+        <p style="margin:0 0 16px;color:#444">${detail}</p>
+        <p style="margin:0 0 16px;color:#444">
+          A source returned only part of the forecast, and the automatic retries did not
+          fix it. The site keeps serving whichever stored grid reaches furthest ahead.
+          Where that ends early, the map switches to the 4-hourly 7-day grid early.
+        </p>
+        <p style="margin:0;color:#444">Admin → Weather → Fetch now retries by hand. The run's notes are in the provenance panel.</p>
+      </div>`;
+    const results = await Promise.all(recipients.map(async to => (await sendEmail({ to, subject, html })).success));
+    if (results.some(Boolean)) await setSetting(sentKey, today);
+  } catch (err) {
+    log.error(`${gridLabel}: short-forecast alert failed`, err instanceof Error ? err.message : err);
   }
 }
 

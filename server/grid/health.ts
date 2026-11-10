@@ -15,6 +15,8 @@
  *             when ECMWF fell below the orchestrator's 98% family threshold, so
  *             both Open-Meteo paths were failing at once. The rendered field may
  *             show a seam, and GFS is ~28 km against ECMWF's 9 km.
+ *             Also used when the time axis came back shorter than requested
+ *             (one source caught mid-upload trims every point's forecast).
  *
  *   critical  NOAA NOMADS (tier 4) contributed. That is the last resort: every
  *             Open-Meteo path, REST and S3 alike, failed. Worth waking someone.
@@ -39,7 +41,28 @@ const TIER_BY_SOURCE = new Map<SourceId, number>(PROVIDERS.map(p => [p.id, p.tie
 /** The tier that means every Open-Meteo route failed. */
 const LAST_RESORT: SourceId = "nomads-gfs";
 
-export function classifyGridHealth(provenance: Provenance | undefined): GridHealth {
+/** Hours the fetched time axis covers against the hours asked for. */
+export interface HorizonCoverage {
+  got: number;
+  wanted: number;
+}
+
+export function classifyGridHealth(provenance: Provenance | undefined, hours?: HorizonCoverage): GridHealth {
+  const health = classifyBySource(provenance);
+  // A short forecast is at least "degraded" even when every point came from
+  // ECMWF: the map loses its hourly days and drops to the 4-hourly 7-day grid.
+  if (hours && hours.wanted > 0 && hours.got < hours.wanted) {
+    const shortNote = `forecast covers only ${hours.got}h of ${hours.wanted}h — a source did not reach the full horizon`;
+    return {
+      ...health,
+      severity: health.severity === "ok" ? "degraded" : health.severity,
+      summary: health.severity === "ok" ? shortNote : `${health.summary}; ${shortNote}`,
+    };
+  }
+  return health;
+}
+
+function classifyBySource(provenance: Provenance | undefined): GridHealth {
   if (!provenance) {
     return { severity: "ok", summary: "no provenance recorded", fallbackSources: [] };
   }
