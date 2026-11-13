@@ -1,7 +1,27 @@
-# RESUME_HERE — Last updated: 2026-11-07 (session 85: forecast pills ±1h, map opens on the hour)
+# RESUME_HERE — Last updated: 2026-11-13 (session 87: live stations overlay; deployed)
 
 ## Project: SkyHigh
-## Status: Active. `main` = `4946731`, pushed (Railway auto-deploys `main`).
+## Status: Active. `main` = `8add72c`, pushed from Claude's shell 13 Nov and deployed (Railway SUCCESS 17:07; live `/api/weather/stations/live` returns 114 stations). Railway auto-deploys `main`.
+
+**Flight log (raised 8 Nov):** Jon wants recording to become a flight log for XC and coastal sites that records on the phone and uploads when signal returns. Needs planning, nothing built: `wiki/future/flight-log-plan.md`. Flight History and IGC/GPX/KML export already exist at XC → Flight History (`/xc/flights`).
+
+## Session 87 (2026-11-13) — live stations overlay (WeatherWatcher-style)
+- `8add72c` (pushed, deployed): a **Stations** switch beside Wind | Thermal | Radar shows observed wind as `9 G12` arrow boxes (point downwind, speed colours) over any layer, remembered per browser. Sources: BOM per-station JSON direct (~84–100 VIC stations) + our own site stations (~25). Tap a box → station card (Obs vs Fcst, temp/pressure, site link, attribution) + 6 h wind/gust chart with the forecast as a dotted line. Map off "now" → boxes at 60% and "· Observed: now".
+- Server: `server/stations/` polls BOM only while someone has asked in the last 30 min (10 min refresh, memory only); routes `/api/weather/stations/live` + `/history`. Contract `shared/stations.ts`. DECISION-022.
+- **"Possibly stuck"** (Jon's idea): LiveWind has no per-station time, so a dead mast never goes stale. A site station whose windy reading is identical for 75+ min over 4+ saved readings gets an amber dashed box + "Unchanged" in the card. Threshold from 48 h of prod history (healthy ≤ ~45–60 min; Sandringham YC 99, Fawkner Beacon 95, Mt Elliot 85). Calm is never flagged.
+- Checked: tsc, 3 test suites (31 + markers + 32), build, headless E2E desktop + phone (all 10 checks pass), prod endpoint after deploy.
+- **Jon to check on his phone:** Stations switch, tap a box, and tap a site that has its own station (site popup should win; that fix wasn't browser-tested). Amber "stuck" look only appears when a station is actually stuck.
+- **Next (tasks 5–6 of `wiki/future/station-overlay-plan.md`):** community ("adhoc") stations: WeatherWatcher directory daily, then parsers WDL clientraw → WU (our key) → WeatherLink → Cumulus → VicPorts, WW fallback for the rest. Never use WW's embedded Weather.com key. Then task 7 (attribution/legend polish). Jon's review list: `wiki/future/station-overlay-decisions.md`.
+- Uncommitted, not from this session: `BRIEF.md` (Apps Script bridge lockdown, not started), siteguide data files, `.gitignore`, `.lnk`, `.claude/settings.local.json`, `ecmwf-strip-after.png`, `wiki/future/flight-log-plan.md`.
+- Resume this session: `claude --resume 5aa38b9b-fd76-4de3-8260-85dc4250090b`.
+
+## Session 86 (2026-11-08) — RASP shows and follows the selected day
+- `47a945d` (pushed and deployed 8 Nov): the RASP button ignored the map's day and always drew the first forecast day. It now takes the map's `currentTime`, shows that Melbourne day, and the header names it ("Sunday 8 November 2026"). A day outside the forecast says "No RASP for this day…" (not seen on screen; the Thermal map stops at the last day). `RaspModal.tsx`, `SitesWindMap.tsx`. Checked headless on dev with live forecast data: today, +1, +2 days all correct; tsc clean; phone-width header checked.
+- **Next step: push.** Git on the hub has no login usable from Claude's shell (Credential Manager can't prompt; `gh` was logged out). Jon started `! gh auth login` on 8 Nov; not finished when the session was saved. Once `gh auth status` is OK: `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push origin main` (sends `a274ff5` session 85 notes + `47a945d`), then check `git rev-list --left-right --count origin/main...HEAD` is `0 0` and `railway deployment list --service SkyHigh` shows a new SUCCESS. Jon has already approved this push.
+- Live winds-aloft (`/api/weather/sounding/point`) gave 503 around 7 pm, 200 a few minutes later. When it fails, RASP silently has no barbs. Cause not looked into.
+- Early morning: the grid refreshes about 5:30 am, so before that today's RASP may be missing or partial. Not tested.
+- These notes are uncommitted. Still waiting: `BRIEF.md` (Apps Script bridge lockdown) not started. Uncommitted, not from this session: siteguide data files, `.gitignore`, `.lnk`, `.claude/settings.local.json`, `ecmwf-strip-after.png`.
+- Resume this session: `claude --resume 2d9f0082-a7e4-4ff6-9329-8ec5c6545654`.
 
 ## Session 85 (2026-11-07) — forecast steps are hourly
 - Checked: the map's 3-day grid (`fine_grid_*`, ECMWF IFS HRES 9 km from Open-Meteo S3) has 72 real hourly values (not filled in from 3-hourly). The old 15-min steps were only straight-line blends between hours (`windInterpolation.ts`, `thermalInterpolation.ts`). Lifted index is 3-hourly (0.25°), blended to hourly on the server.
