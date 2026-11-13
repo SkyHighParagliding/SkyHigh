@@ -1,8 +1,12 @@
-# Current Tasks — Last updated: 2026-11-07
+# Current Tasks — Last updated: 2026-11-08
 
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## 🟡 Open / on hold
+- 🔄 **Live stations overlay on the Flying Sites map: tasks 1–4 built 2026-11-13 (BOM + our stations, boxes, card + 6 h chart), tests + browser check pass; not committed yet.** Next: commit, Jon pushes; then tasks 5–6 (community stations: WDL clientraw, WU, WeatherLink, Cumulus, VicPorts, WW fallback). Plan: `wiki/future/station-overlay-plan.md`; decisions to review: `wiki/future/station-overlay-decisions.md`.
+- ⬜ **Flight log redesign: needs planning, Jon thinking it through (added 2026-11-08).** Recording becomes a flight log for XC and coastal sites, not tied to XC Maps; records locally and uploads when signal returns (no signal on beach/valley landings). Findings, gaps, phone limits and the 5 questions to decide: `wiki/future/flight-log-plan.md`. First decision: website or native app. No build until Jon approves a plan.
+- ✅ **RASP follows the map's day and shows the day and date (2026-11-08, `47a945d`, deployed).** Tested on dev; live bundle checked.
+- ⬜ **Look into RASP with no wind barbs (added 2026-11-08).** `/api/weather/sounding/point` returned 503 briefly on 8 Nov; RASP then shows no barbs and no error. Consider a visible note.
 - ✅ **Forecast pills ±1h, map opens on the nearest hour (2026-11-07, `4946731`, pushed).** Forecast data is hourly ECMWF; 15-min steps were blends. Jon: glance at it on the phone.
 - ⬜ **Jon: check on his phone (added 2026-11-07).** (1) Flying Sites map card: swipe down/up on the card opens/folds it (only tested with a simulated drag); (2) XC Maps demo `/xc/maps/demo` shows maps in every phone frame (fix `f35469d`, headers checked live).
 - ✅ **Map tapped-point card redesign (2026-11-07, `08cf50d`…`e43794f`, deployed).** Forecast pills replace the slider; one card layout for Wind/Thermal/Radar, folded on phone-embedded; Chart/SkewT/RASP on all layers; radar pills. Spec `wiki/12-map-ui-style-guide.md` §6.
@@ -109,6 +113,11 @@
 > **No incomplete *backlog* tasks remain** beyond the training initiative. See wiki/02-tasks.md for the full log.
 
 ## ✅ Done
+
+### Short wind-grid forecast fix (2026-11-10, `b0f6081`, push pending)
+- 5am fetch on 10 Nov stored 14h instead of 72h (ECMWF S3 caught mid-upload); map went 4-hourly from tomorrow. Re-fetched prod by hand (72h stored 12:03 UTC).
+- Code: short run (<48h) keeps the stored grid that reaches further; health "degraded" on short axis; wind grid retries +30m/+1h/+2h, thermal retries a short axis too; one email/day if still short.
+- ⬜ Jon to push; then check Admin → Weather health after the next 5am run.
 
 ### Flowerdale camera archive (ingest, 90-day retention, tiles, /cameras, admin)
 - **Completed:** 2026-10-08 (local commits; push pending)

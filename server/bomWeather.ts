@@ -151,7 +151,7 @@ export function getBomStationId(station: BomStation): string {
   return `bom-${station.productCode}-${station.stationNum}`;
 }
 
-function parseBomTimestamp(localDateTimeFull: string): string {
+export function parseBomTimestamp(localDateTimeFull: string): string {
   // BOM local_date_time_full format: YYYYMMDDHHMMSS in Melbourne local time
   const y = localDateTimeFull.slice(0, 4);
   const mo = localDateTimeFull.slice(4, 6);

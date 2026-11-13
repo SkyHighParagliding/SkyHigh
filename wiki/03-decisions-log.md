@@ -937,3 +937,17 @@ Last updated: 2026-10-08
 **Not gated (read-only or paid reads):** Gemini, YouTube, Open-Meteo, TidyHQ (all GETs; the OAuth token exchange only runs from the callback). Webcam ingest keeps its own `WEBCAM_INGEST` guard.  
 **Reversibility:** Easy.  
 **Confirms:** DECISION-002 (R2 in prod, local `/uploads` in dev) — now enforced in dev even when R2 keys are present.
+
+
+## DECISION-022: Live Stations Overlay — BOM Direct + Our Stations, On/Off Over Any Layer
+**Date:** 2026-11-13  
+**Context:** Jon wants WeatherWatcher-style observed wind on the Flying Sites map to compare with the forecast.  
+**Options considered:**
+- (A) Read BOM per-station JSON directly, plus our own site stations; community stations later from their own sources.
+- (B) Use WeatherWatcher's API for everything: quicker, but depends on a third party for BOM data.
+- Layer model: a 4th peer layer vs an on/off switch over any layer.
+
+**Chosen:** A, as an on/off switch. Arrow-box markers (`9 G12`, point downwind), tap → station card + 6 h chart. Victoria only. The server polls BOM only while someone has asked for the overlay in the last 30 min; cache in memory, nothing new in the DB. WeatherWatcher is approved only as a fallback for community stations we can't parse yet (tasks 5–6). We never use WeatherWatcher's embedded Weather.com key.  
+**Detail:** `wiki/future/station-overlay-plan.md`, judgement calls in `wiki/future/station-overlay-decisions.md`.  
+**Reversibility:** Easy (switch off by default; self-contained module).  
+**Confirms:** DECISION-016 (three peer layers unchanged).

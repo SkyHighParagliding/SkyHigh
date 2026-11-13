@@ -9,6 +9,9 @@ import type { SiteMarker } from '../windMapTypes';
 import { toMelbourneDate } from '@/utils/closureStatus';
 import { tileCoordsFor, prefetchTile } from './terrainTiles';
 import { RADAR_MAX_Z, radarTileUrl } from './radarTiles';
+import type { LiveStation } from '../../../shared/stations';
+import { drawStationMarkers, hitTestStation } from './stationMarkerRenderer';
+import type { StationBox } from './stationMarkerRenderer';
 
 // Bumped from 200 to hold several radar frames (each ~a dozen tiles) alongside
 // the basemap + label tiles during a radar loop without thrashing the FIFO.
@@ -111,6 +114,16 @@ interface MapCanvasProps {
   /** The frame to draw this instant: tile host + `/v2/radar/…` path, or null when
    *  radar is off / not yet loaded. Updated by the host as the loop advances. */
   radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
+  /** Live stations to draw; null or [] = overlay off. */
+  stationsRef?: React.MutableRefObject<LiveStation[] | null>;
+  /** 'kt' | 'mph' | 'kph' for the box labels. */
+  speedUnitRef?: React.MutableRefObject<'kt' | 'mph' | 'kph'>;
+  /** Highlighted station id. */
+  selectedStationIdRef?: React.MutableRefObject<string | null>;
+  /** True when the map time isn't "now": draw faded. */
+  stationsFadedRef?: React.MutableRefObject<boolean>;
+  /** Tap on a station box. When it fires, the map does NOT drop its tapped-point pin. */
+  onStationClick?: (station: LiveStation) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +227,11 @@ export const MapCanvas = memo(function MapCanvas({
   radarEnabledRef,
   radarOpacityRef,
   radarFrameRef,
+  stationsRef,
+  speedUnitRef,
+  selectedStationIdRef,
+  stationsFadedRef,
+  onStationClick,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -258,6 +276,12 @@ export const MapCanvas = memo(function MapCanvas({
 
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
+
+  // Station overlay: boxes drawn last frame (for tap hit-testing) and the click
+  // callback, both held in refs so neither re-runs the setup effect.
+  const stationBoxesRef = useRef<StationBox[]>([]);
+  const onStationClickRef = useRef(onStationClick);
+  onStationClickRef.current = onStationClick;
 
   const initialTransformApplied = useRef(false);
   const canvasSizeRef = useRef({ width: 0, height: 0 });
@@ -564,6 +588,23 @@ export const MapCanvas = memo(function MapCanvas({
         }
       }
 
+      // Live-station boxes, on top of everything (radar and town labels included).
+      const stations = stationsRef?.current;
+      if (stations && stations.length) {
+        stationBoxesRef.current = drawStationMarkers(
+          ctx, stations,
+          (lon, lat) => { const pr = projection([lon, lat]); return pr ? currentTransform.apply(pr) : null; },
+          {
+            unit: speedUnitRef?.current ?? 'kt',
+            selectedId: selectedStationIdRef?.current ?? null,
+            faded: stationsFadedRef?.current ?? false,
+            width: w, height: h,
+          },
+        );
+      } else if (stationBoxesRef.current.length) {
+        stationBoxesRef.current = [];
+      }
+
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -595,9 +636,9 @@ export const MapCanvas = memo(function MapCanvas({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const pin = () => { setPinnedCrosshair({ x, y }); onPinChange?.({ x, y }); };
-    if (!markerHitSuppressesPin) pin();
-
+    // Site markers come first: our site stations often sit right on their site,
+    // so a station box there must not steal the site tap.
+    let hitSite: SiteMarker | null = null;
     if (projectionRef.current && siteMarkersRef.current && onSiteClick) {
       const currentTransform = transformRef.current;
       for (const site of siteMarkersRef.current) {
@@ -605,13 +646,19 @@ export const MapCanvas = memo(function MapCanvas({
         if (!proj) continue;
         const sp = currentTransform.apply(proj);
         const dist = Math.sqrt((sp[0] - x) ** 2 + (sp[1] - y) ** 2);
-        if (dist < 12) {
-          onSiteClick(site, x, y);
-          return;
-        }
+        if (dist < 12) { hitSite = site; break; }
       }
     }
 
+    // Then station boxes: no pin.
+    if (!hitSite && stationBoxesRef.current.length && onStationClickRef.current) {
+      const hit = hitTestStation(stationBoxesRef.current, x, y, 6);
+      if (hit) { onStationClickRef.current(hit); return; }
+    }
+
+    const pin = () => { setPinnedCrosshair({ x, y }); onPinChange?.({ x, y }); };
+    if (!markerHitSuppressesPin) pin();
+    if (hitSite && onSiteClick) { onSiteClick(hitSite, x, y); return; }
     if (markerHitSuppressesPin) pin();
   }, [onSiteClick, onPinChange, markerHitSuppressesPin]);
 

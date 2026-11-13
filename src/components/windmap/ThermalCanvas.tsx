@@ -15,6 +15,7 @@ import { createParticlePool, updateAndDrawParticles } from './particleRenderer';
 import { drawSiteMarkers } from './siteMarkerRenderer';
 import { getAirspaceColor } from '@/lib/xcMapUtils';
 import { MapCanvas } from './MapCanvas';
+import type { LiveStation } from '../../../shared/stations';
 import type { MapLayer, MapPin } from './MapCanvas';
 
 /**
@@ -70,6 +71,17 @@ interface ThermalCanvasProps {
   radarEnabledRef?: React.MutableRefObject<boolean>;
   radarOpacityRef?: React.MutableRefObject<number>;
   radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
+  /** Live-station overlay refs/callback, forwarded to MapCanvas. */
+  /** Live stations to draw; null or [] = overlay off. */
+  stationsRef?: React.MutableRefObject<LiveStation[] | null>;
+  /** 'kt' | 'mph' | 'kph' for the box labels. */
+  speedUnitRef?: React.MutableRefObject<'kt' | 'mph' | 'kph'>;
+  /** Highlighted station id. */
+  selectedStationIdRef?: React.MutableRefObject<string | null>;
+  /** True when the map time isn't "now": draw faded. */
+  stationsFadedRef?: React.MutableRefObject<boolean>;
+  /** Tap on a station box. When it fires, the map does NOT drop its tapped-point pin. */
+  onStationClick?: (station: LiveStation) => void;
 }
 
 export const ThermalCanvas = memo(function ThermalCanvas({
@@ -79,6 +91,7 @@ export const ThermalCanvas = memo(function ThermalCanvas({
   onTransformChange, windGrid, showWind, zoomSetpoints = DEFAULT_ZOOM_SETPOINTS,
   basemapIntensityRef, showLabelsRef,
   radarEnabledRef, radarOpacityRef, radarFrameRef,
+  stationsRef, speedUnitRef, selectedStationIdRef, stationsFadedRef, onStationClick,
 }: ThermalCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -385,6 +398,11 @@ export const ThermalCanvas = memo(function ThermalCanvas({
       radarEnabledRef={radarEnabledRef}
       radarOpacityRef={radarOpacityRef}
       radarFrameRef={radarFrameRef}
+      stationsRef={stationsRef}
+      speedUnitRef={speedUnitRef}
+      selectedStationIdRef={selectedStationIdRef}
+      stationsFadedRef={stationsFadedRef}
+      onStationClick={onStationClick}
     />
   );
 });

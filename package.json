@@ -23,10 +23,11 @@
     "test:pipeline": "node --import tsx/esm server/grid/gridPipeline.test.mjs",
     "test:health": "node --import tsx/esm server/grid/health.test.mjs",
     "test:orchestrator": "node --import tsx/esm server/grid/orchestrator.test.mjs",
+    "test:stations": "node --import tsx/esm server/stations/stations.test.mjs",
     "test:webcams": "node --import tsx/esm server/webcams/webcams.test.mjs",
     "test:webcamtime": "node --import tsx/esm src/lib/webcamTime.test.mjs",
     "test:grib2": "node --import tsx/esm server/grid/grib2.test.mjs",
-    "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator && npm run test:webcams && npm run test:webcamtime && npm run test:sizzle && npm run test:devmode",
+    "test": "npm run test:landmask && npm run test:mapextent && npm run test:extended && npm run test:extract && npm run test:pipeline && npm run test:health && npm run test:orchestrator && npm run test:webcams && npm run test:stations && npm run test:webcamtime && npm run test:sizzle && npm run test:devmode && npm run test:stationmarkers && npm run test:stationcard",
     "sizzle:pdfs": "node --import tsx/esm scripts/sizzle/build-pdfs.ts",
     "sizzle:simulate": "node --import tsx/esm scripts/sizzle/simulate.ts",
     "test:sizzle": "node --import tsx/esm shared/sizzle/sizzle.test.mjs",
@@ -35,7 +36,9 @@
     "safe": "node --import tsx/esm scripts/dev-mode.ts safe",
     "devmode": "node --import tsx/esm scripts/dev-mode.ts status",
     "db:pull-prod": "node --import tsx/esm scripts/db-pull-prod.ts",
-    "sizzle:sample-report": "node --import tsx/esm scripts/sizzle/sample-report.ts"
+    "sizzle:sample-report": "node --import tsx/esm scripts/sizzle/sample-report.ts",
+    "test:stationmarkers": "node --import tsx/esm src/components/windmap/stationMarkerRenderer.test.mjs",
+    "test:stationcard": "node --import tsx/esm src/components/windmap/stationCard.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1034.0",

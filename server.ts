@@ -19,6 +19,7 @@ import { precomputeWindGridIfNeeded } from "./server/extendedForecast.js";
 
 import sitesRouter, { externalSitesRouter } from "./server/routes/sites/index.js";
 import weatherRouter from "./server/routes/weather.js";
+import stationsRouter from "./server/routes/stations.js";
 import aiRouter from "./server/routes/ai.js";
 import pagesRouter from "./server/routes/pages.js";
 import newsRouter from "./server/routes/news.js";
@@ -256,6 +257,7 @@ async function startServer() {
   app.post("/api/contacts/bulk-delete", bulkOperationLimiter);
 
   app.use("/api/sites", sitesRouter);
+  app.use("/api/weather/stations", stationsRouter); // before weatherRouter: its /:siteId/history would swallow /stations/history
   app.use("/api/weather", weatherRouter);
   app.use("/api/ai", aiRouter);
   app.use("/api/pages", pagesRouter);

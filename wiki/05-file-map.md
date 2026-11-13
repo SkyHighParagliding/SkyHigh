@@ -76,6 +76,23 @@ fetch-and-normalise function; `server/weather.ts` dispatches to them by station-
 
 Because Weather Underground is the **catch-all**, adding a source means registering its prefix in
 `NON_WU_STATION_PREFIXES` (`server/weather-utils.ts`) or WU will try to fetch its IDs.
+
+### Live stations overlay (2026-11-13, DECISION-022)
+Observed wind boxes on the Flying Sites map. Plan: `wiki/future/station-overlay-plan.md`; review list: `wiki/future/station-overlay-decisions.md`.
+
+| File | What |
+|---|---|
+| `shared/stations.ts` | Contract shared by server + client (`LiveStation`, history types, `STALE_AFTER_MIN`, `compassToDeg`) |
+| `server/stations/index.ts` | Demand-driven BOM poller (10 min, idles after 30 min), `getLiveStations`, `getStationHistory` |
+| `server/stations/bomParse.ts` | BOM per-station JSON → `LiveStation` + history |
+| `server/stations/siteStations.ts` | Our site stations (latest saved reading per live site) |
+| `server/routes/stations.ts` | `GET /api/weather/stations/live`, `GET /api/weather/stations/history?id=&hours=` (mounted before `/api/weather`) |
+| `src/hooks/useLiveStations.ts` | react-query hooks (5 min refetch) |
+| `src/components/windmap/stationMarkerRenderer.ts` | Canvas arrow boxes (`9 G12`), declutter, hit test |
+| `src/components/windmap/StationCard.tsx` | Station card in the tapped-point slot |
+| `src/components/windmap/StationHistoryChart.tsx` | 6 h wind/gust chart with forecast line; also holds `SpeedUnit`/`SPEED_FACTOR` |
+
+Tests: `npm run test:stations`, `test:stationmarkers`, `test:stationcard`.
 **Read this to understand DECISION-010.**
 
 ### `server/storage.ts`

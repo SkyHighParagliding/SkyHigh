@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Altitude } from '@/components/Altitude';
-import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, CloudRain, Play, Pause, ChevronDown } from 'lucide-react';
+import { Loader2, Maximize2, Minimize2, Crosshair, Wind, Thermometer, Info, X, LineChart, ChartLine, CloudRain, Play, Pause, ChevronDown, RadioTower } from 'lucide-react';
+import { useLiveStations } from '@/hooks/useLiveStations';
+import { StationCard } from './windmap/StationCard';
+import { SPEED_FACTOR, type SpeedUnit } from './windmap/StationHistoryChart';
+import type { LiveStation } from '../../shared/stations';
 import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
 import { RaspModal } from './weather/RaspModal';
@@ -39,9 +43,9 @@ const READOUT_FONT_PX = 15; // headline lines (time + two readings), all three l
 
 // Switchable speed/direction display. Speed cycles kt→mph→kph; direction toggles
 // compass↔degrees. Both persist per browser and are shown on one line ("4.9 kt / S").
-type SpeedUnit = 'kt' | 'mph' | 'kph';
+// (SpeedUnit + SPEED_FACTOR live in StationHistoryChart so the station card and
+// chart share them.)
 const SPEED_UNITS: SpeedUnit[] = ['kt', 'mph', 'kph'];
-const SPEED_FACTOR: Record<SpeedUnit, number> = { kt: 1, mph: 1.15078, kph: 1.852 };
 const fmtSpeed = (kt: number, unit: SpeedUnit, dp = 1) => `${(kt * SPEED_FACTOR[unit]).toFixed(dp)} ${unit}`;
 type DirMode = 'compass' | 'deg';
 const fmtDir = (deg: number, mode: DirMode) => (mode === 'deg' ? `${Math.round(deg)}°` : getCompassDirection(deg));
@@ -231,13 +235,44 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   const rememberGeo = (info: { lat?: number; lon?: number } | null) => {
     if (info && info.lat != null && info.lon != null) carriedGeoRef.current = { lat: info.lat, lon: info.lon };
   };
+  // ── Live stations overlay (wiki/future/station-overlay-plan.md) ───────────
+  // An on/off overlay on top of whichever layer is active (not a 4th layer).
+  // React state drives the toggle + card; refs feed the memoised canvases.
+  const [stationsOn, setStationsOn] = useState<boolean>(() => {
+    try { return localStorage.getItem('skyhigh.stationsOverlay') === 'true'; } catch { return false; }
+  });
+  const [selectedStation, setSelectedStation] = useState<LiveStation | null>(null);
+  const stationsQuery = useLiveStations(stationsOn);
+  const stationsRef = useRef<LiveStation[] | null>(null);
+  const selectedStationIdRef = useRef<string | null>(null);
+  const stationsFadedRef = useRef(false);
+  useEffect(() => {
+    try { localStorage.setItem('skyhigh.stationsOverlay', String(stationsOn)); } catch { /* private mode */ }
+    if (!stationsOn) setSelectedStation(null);
+  }, [stationsOn]);
+  useEffect(() => {
+    stationsRef.current = stationsOn ? (stationsQuery.data?.stations ?? []) : null;
+  }, [stationsOn, stationsQuery.data]);
+  useEffect(() => { selectedStationIdRef.current = selectedStation?.id ?? null; }, [selectedStation]);
+
+  // A real map tap (a readout with a point) brings the normal card back. The
+  // pin is dismissed when a station is picked (handleStationClick), so any later
+  // non-null readout means the pilot tapped the map again. The short grace
+  // period swallows one last readout frame the canvas may emit before the pin
+  // dismissal has committed.
+  const stationPickedAtRef = useRef(0);
+  const clearStationOnTap = (info: unknown) => {
+    if (info && Date.now() - stationPickedAtRef.current > 500) setSelectedStation(null);
+  };
   const handleWindInfo = useCallback((info: WindTapInfo | null) => {
     setSitesWindInfo(info);
     rememberGeo(info);
+    clearStationOnTap(info);
   }, []);
   const handleThermalInfo = useCallback((info: ThermalTapInfo | null) => {
     setThermalInfo(info);
     rememberGeo(info);
+    clearStationOnTap(info);
   }, []);
 
   // Airspace conflict warning (thermal mode): same zones + logic as the site panel.
@@ -350,6 +385,9 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     try { return localStorage.getItem('skyhigh.dirMode') === 'deg' ? 'deg' : 'compass'; } catch { return 'compass'; }
   });
   useEffect(() => { try { localStorage.setItem('skyhigh.speedUnit', speedUnit); } catch { /* private */ } }, [speedUnit]);
+  // Station boxes on the canvas are labelled in the same unit.
+  const speedUnitRef = useRef<SpeedUnit>(speedUnit);
+  useEffect(() => { speedUnitRef.current = speedUnit; }, [speedUnit]);
   useEffect(() => { try { localStorage.setItem('skyhigh.dirMode', dirMode); } catch { /* private */ } }, [dirMode]);
   const cycleSpeedUnit = useCallback(() => setSpeedUnit(u => SPEED_UNITS[(SPEED_UNITS.indexOf(u) + 1) % SPEED_UNITS.length]), []);
   const toggleDirMode = useCallback(() => setDirMode(m => (m === 'compass' ? 'deg' : 'compass')), []);
@@ -623,6 +661,30 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     }
   }, [viewMode]);
 
+  // Station tapped on the canvas: show its card in the tapped-point slot. The
+  // map doesn't pin on a station tap, and the existing pin is dismissed so only
+  // one card shows and the next map tap is recognisable (see clearStationOnTap).
+  const dismissReadingRef = useRef(dismissReading);
+  dismissReadingRef.current = dismissReading;
+  const handleStationClick = useCallback((station: LiveStation) => {
+    stationPickedAtRef.current = Date.now();
+    dismissReadingRef.current();
+    setSelectedStation(station);
+  }, []);
+  const closeStation = useCallback(() => {
+    setSelectedStation(null);
+    setSitesWindInfo(null);
+    setThermalInfo(null);
+  }, []);
+
+  // Stations are always observed "now". Off "now" on the scrubber, the boxes
+  // fade and the toggle/card say so. Radar is "now" by definition.
+  const mapIsNow = radarEnabled || Math.abs(currentTime - Date.now()) <= timeStep / 2;
+  useEffect(() => { stationsFadedRef.current = !mapIsNow; }, [mapIsNow]);
+  // Prefer the freshest copy of the selected station from the 5-min refetch.
+  const shownStation = selectedStation
+    ? (stationsQuery.data?.stations.find(s => s.id === selectedStation.id) ?? selectedStation)
+    : null;
 
   // The layer selector (Wind | Thermal | Radar). Rendered top-left in the loaded
   // state AND in the loading/error states, so the control is in place before the
@@ -642,7 +704,35 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     isThermalEnabled ? { value: 'thermal', label: 'Thermal', icon: Thermometer, colorClass: 'text-amber-400' } : null,
     { value: 'radar', label: 'Radar', icon: CloudRain, colorClass: 'text-sky-300' },
   ] as (LayerOption<'wind' | 'thermal' | 'radar'> | null)[]).filter(Boolean) as LayerOption<'wind' | 'thermal' | 'radar'>[];
-  const layerSelector = <LayerSelector options={layerOptions} value={activeLayer} onChange={handleLayerChange} />;
+  const layerSelectorPill = <LayerSelector options={layerOptions} value={activeLayer} onChange={handleLayerChange} />;
+  // "Stations" overlay switch beside the layer pill — same black-glass 9px look.
+  const stationsFirstLoad = stationsOn && stationsQuery.isLoading;
+  const stationsError = stationsOn && stationsQuery.isError;
+  const stationsToggle = (
+    <div className="inline-flex items-center bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-0.5">
+      <button
+        type="button"
+        onClick={() => setStationsOn(v => !v)}
+        aria-pressed={stationsOn}
+        title={stationsError ? 'Live stations unavailable — tap to turn off' : stationsOn ? 'Hide live weather stations' : 'Show live weather stations (observed now)'}
+        className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide transition-colors ${stationsOn ? 'bg-white/15 text-emerald-400' : 'text-white/55 hover:text-white/85'}`}
+        data-stations-toggle
+      >
+        {stationsFirstLoad
+          ? <Loader2 aria-hidden="true" className="w-2.5 h-2.5 animate-spin" />
+          : <RadioTower aria-hidden="true" className="w-2.5 h-2.5" />}
+        Stations
+        {stationsError && <span className="w-1.5 h-1.5 rounded-full bg-red-500" aria-label="error" />}
+        {stationsOn && !mapIsNow && <span className="font-semibold text-white/60">· Observed: now</span>}
+      </button>
+    </div>
+  );
+  const layerSelector = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {layerSelectorPill}
+      {stationsToggle}
+    </div>
+  );
 
   // One slider style for the whole card: a label (optionally a toggle) +
   // full-width track. All sliders share this so their tracks line up and match in
@@ -946,6 +1036,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
                 radarEnabledRef={radarEnabledRef}
                 radarOpacityRef={radarOpacityRef}
                 radarFrameRef={radarFrameRef}
+                stationsRef={stationsRef}
+                speedUnitRef={speedUnitRef}
+                selectedStationIdRef={selectedStationIdRef}
+                stationsFadedRef={stationsFadedRef}
+                onStationClick={handleStationClick}
               />
             </Suspense>
           ) : null
@@ -978,6 +1073,11 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
               radarEnabledRef={radarEnabledRef}
               radarOpacityRef={radarOpacityRef}
               radarFrameRef={radarFrameRef}
+              stationsRef={stationsRef}
+              speedUnitRef={speedUnitRef}
+              selectedStationIdRef={selectedStationIdRef}
+              stationsFadedRef={stationsFadedRef}
+              onStationClick={handleStationClick}
             />
           </Suspense>
         )}
@@ -1101,8 +1201,31 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
               time      pills (forecast stepper, or the radar loop pills)
               tab       tap / swipe down for the rest, swipe up to fold
               details   layer details → Ground → point tools → legend → base map
-            ✕ closes it (clears the pin). */}
-        {((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (() => {
+            ✕ closes it (clears the pin).
+            A tapped live station takes the same slot (StationCard); only one
+            card shows at a time. */}
+        {shownStation && (
+          <StationCard
+            station={shownStation}
+            sites={sites}
+            windGrid={windGrid}
+            currentTime={currentTime}
+            mapIsNow={mapIsNow}
+            formattedTime={formattedTime}
+            speedUnit={speedUnit}
+            dirMode={dirMode}
+            use24h={use24h}
+            onCycleSpeedUnit={cycleSpeedUnit}
+            onToggleDirMode={toggleDirMode}
+            onToggleClock={() => setUse24h(v => !v)}
+            open={cardOpen}
+            onSetOpen={setCardOpen}
+            swipeHandlers={swipeHandlers}
+            timeControls={radarEnabled ? radarPills : forecastSlider}
+            onClose={closeStation}
+          />
+        )}
+        {!shownStation && ((viewMode === 'thermal' && thermalInfo) || (viewMode === 'wind' && sitesWindInfo)) && (() => {
           const fs = { fontSize: READOUT_FONT_PX };
           const strength = thermalInfo ? getThermalStrength(effectiveWstar(thermalInfo.wstar, thermalInfo.cape)) : null;
           const ground = typeof thermalInfo?.groundAmsl === 'number' ? thermalInfo.groundAmsl : undefined;

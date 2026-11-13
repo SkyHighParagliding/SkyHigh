@@ -158,6 +158,12 @@ levers in `MapCanvas` fix this without a React re-render of the map:
   our Canvas 2D + D3 stack, so it's a rebuild, not a swap. Deferred; see
   [[future/vector-basemaps]].
 
+### 12. Live stations overlay (2026-11-13)
+- A **Stations** switch beside the Wind | Thermal | Radar pill turns observed-wind boxes on over any layer (remembered per browser). It is not a 4th layer (DECISION-016 stands).
+- Box: rounded note box reading `9 G12` in the map's speed unit, point facing **downwind**, station at the flat tail (white dot). Text never reads upside down. Fill uses the wind-particle speed colours; stale (> 90 min) = grey dashed; possibly stuck (our site stations: same windy reading for 75+ min) = amber dashed outline plus an "Unchanged" note in the card; calm/no direction = round pill.
+- Map time off "now": boxes drawn at 60% and the switch says "· Observed: now".
+- Tap order: site marker (12 px) → station box (6 px slop) → map pin. A station tap opens the station card in the tapped-point slot (same layout as §6) with a 6 h chart; tapping elsewhere returns the normal card.
+
 ## History
 The 2026-09-16 rollout (Stages 1–3b) brought AMSL/airspace readouts and the shared
 pull-out-tray chrome onto the picker, the site wind map (`WindMapProto`) and the thermal

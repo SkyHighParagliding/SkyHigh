@@ -9,6 +9,7 @@ import { createParticlePool, updateAndDrawParticles, createSpeedOverlay, maybeRe
 import { drawSiteMarkers, drawSingleSiteMarker } from './siteMarkerRenderer';
 import { fetchElevationAt } from './elevationPoint';
 import { MapCanvas } from './MapCanvas';
+import type { LiveStation } from '../../../shared/stations';
 import type { MapLayer, MapPin } from './MapCanvas';
 
 interface WindCanvasProps {
@@ -46,6 +47,17 @@ interface WindCanvasProps {
   radarEnabledRef?: React.MutableRefObject<boolean>;
   radarOpacityRef?: React.MutableRefObject<number>;
   radarFrameRef?: React.MutableRefObject<{ host: string; path: string } | null>;
+  /** Live-station overlay refs/callback, forwarded to MapCanvas. */
+  /** Live stations to draw; null or [] = overlay off. */
+  stationsRef?: React.MutableRefObject<LiveStation[] | null>;
+  /** 'kt' | 'mph' | 'kph' for the box labels. */
+  speedUnitRef?: React.MutableRefObject<'kt' | 'mph' | 'kph'>;
+  /** Highlighted station id. */
+  selectedStationIdRef?: React.MutableRefObject<string | null>;
+  /** True when the map time isn't "now": draw faded. */
+  stationsFadedRef?: React.MutableRefObject<boolean>;
+  /** Tap on a station box. When it fires, the map does NOT drop its tapped-point pin. */
+  onStationClick?: (station: LiveStation) => void;
 }
 
 export const WindCanvas = memo(function WindCanvas({
@@ -55,6 +67,7 @@ export const WindCanvas = memo(function WindCanvas({
   sizeKey, initialZoomK, savedCenterLat, savedCenterLon, savedZoom,
   onTransformChange, siteStatus, siteUpcomingClosureDates, basemapIntensityRef, showLabelsRef,
   radarEnabledRef, radarOpacityRef, radarFrameRef,
+  stationsRef, speedUnitRef, selectedStationIdRef, stationsFadedRef, onStationClick,
 }: WindCanvasProps) {
   const siteMarkersRef = useRef(siteMarkers);
   siteMarkersRef.current = siteMarkers;
@@ -241,6 +254,11 @@ export const WindCanvas = memo(function WindCanvas({
       radarEnabledRef={radarEnabledRef}
       radarOpacityRef={radarOpacityRef}
       radarFrameRef={radarFrameRef}
+      stationsRef={stationsRef}
+      speedUnitRef={speedUnitRef}
+      selectedStationIdRef={selectedStationIdRef}
+      stationsFadedRef={stationsFadedRef}
+      onStationClick={onStationClick}
     />
   );
 });
