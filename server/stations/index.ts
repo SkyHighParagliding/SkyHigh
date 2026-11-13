@@ -62,8 +62,9 @@ async function refreshBom(): Promise<void> {
           station: {
             id,
             name: parsed.name || s.name,
-            lat: s.lat, // static list has 2 dp; BOM rows are rounded to 1 dp
+            lat: s.lat, // from BOM's station list (4 dp); the feed rounds to 1 dp
             lon: s.lon,
+            ...(s.elevation !== undefined && { elevation: s.elevation }),
             source: "bom",
             speedKt: r.speedKt,
             gustKt: r.gustKt,

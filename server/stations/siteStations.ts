@@ -48,12 +48,15 @@ export function siteAttribution(stationId: string): string {
   return "Weather Underground";
 }
 
-/** Keep a site station only if it isn't a BOM id and isn't within NEAR_BOM_KM of a BOM station. */
+/** Keep a site station only if it isn't a BOM id, isn't LiveWind's copy of a BOM station
+ *  (`livewind-<WMO>`), and isn't within NEAR_BOM_KM of a BOM station. */
 export function keepSiteStation(
   s: { id: string; lat: number; lon: number },
-  bom: { lat: number; lon: number }[],
+  bom: { lat: number; lon: number; stationNum?: string }[],
 ): boolean {
   if (s.id.startsWith("bom-")) return false;
+  const lw = s.id.match(/^livewind-(\d+)$/);
+  if (lw && bom.some(b => b.stationNum === lw[1])) return false;
   return !bom.some(b => haversineKm(s.lat, s.lon, b.lat, b.lon) < NEAR_BOM_KM);
 }
 
@@ -70,7 +73,7 @@ interface ObsRow { siteId: string; windSpeed: number | null; windGust: number | 
 let cache: { at: number; key: number; list: SiteStationInternal[] } | null = null;
 
 /** Our own live-enabled site stations with a fresh (<6 h) observation. Cached 2 min. */
-export async function loadSiteStations(bom: { lat: number; lon: number }[]): Promise<SiteStationInternal[]> {
+export async function loadSiteStations(bom: { lat: number; lon: number; stationNum?: string }[]): Promise<SiteStationInternal[]> {
   if (cache && cache.key === bom.length && Date.now() - cache.at < 120_000) return cache.list;
   const sites = await query<SiteRow>(
     `SELECT id, name, lat, lon, "liveStationId", "liveStationIdAlt" FROM sites WHERE "useLiveWeather" = 'true' AND "liveStationId" IS NOT NULL`,

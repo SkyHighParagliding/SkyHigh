@@ -19,7 +19,9 @@ These are the judgement calls made while building tasks 1–4 of [[station-overl
 - **Station tap is handled before the map pin:** tapping a box opens the station card and does not drop the forecast pin. Tapping anywhere else on the map goes back to the normal card.
 
 ## Server (`server/stations/`, `server/routes/stations.ts`)
-- **BOM coordinates come from our static list (2 decimals):** BOM's own files only give 1 decimal place, which is about 10 km out.
+- **BOM coordinates come from BOM's station list (4 decimals, matched by WMO number), not the old hand-typed list (fixed 13 Nov):** Jon asked why South Channel Island was missing. It was drawn 20 km east, on land near Merricks. A check of all 100 found 29 more than 8 km out, the worst 44 km (Hunters Hill, Ben Nevis, Mt Gellibrand, Combienbar). Now `server/bomWeather.ts` holds BOM's coordinates plus the station height (shown in the card). The 7 stations not in BOM's list (CFA fire-weather stations, Mt Hotham Airport) use their feed's 1-decimal coordinates where ours were more than 6 km out. The site-weather station picker uses the same list, so it's fixed there too.
+- **LiveWind's copies of BOM stations are dropped by number:** `livewind-95872` is BOM's Fawkner Beacon (WMO 95872), so it's dropped when `bom-…-95872` is shown. The 0.5 km distance check stays for other sources.
+- **11 BOM stations return no readings right now** (Kerang, Scoresby, Echuca, Strathbogie, Benalla, Yarrawonga, Lake Eildon, Maryborough, Lakes Entrance, Ballan CFA, 94834): their BOM files are empty. They're kept in the list and simply don't show. Scoresby closed in 2026.
 - **No elevation:** BOM's JSON doesn't include it.
 - **Calm (0 kt) → no direction.** Unknown direction strings → no direction, but the speed is kept. Readings with no speed are skipped.
 - **Gust is shown as BOM reports it:** not clamped when it's below the speed. The box drops the `G` part in that case.

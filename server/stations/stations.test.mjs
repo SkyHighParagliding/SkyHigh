@@ -49,6 +49,8 @@ assert(Math.abs(haversineKm(-37.0, 145.0, -38.0, 145.0) - 111.2) < 0.5, "haversi
 assert(keepSiteStation({ id: "livewind-1", lat: -37.4, lon: 145.001 }, bom) === false, "~90 m from BOM dropped");
 assert(keepSiteStation({ id: "livewind-1", lat: -37.4, lon: 145.01 }, bom) === true, "~900 m from BOM kept");
 assert(keepSiteStation({ id: "bom-IDV60801-94860", lat: -30, lon: 140 }, bom) === false, "bom- prefix dropped");
+assert(keepSiteStation({ id: "livewind-94853", lat: -30, lon: 140 }, [{ lat: -38.3, lon: 144.8, stationNum: "94853" }]) === false, "livewind copy of a BOM station dropped by number");
+assert(keepSiteStation({ id: "livewind-2010", lat: -30, lon: 140 }, [{ lat: -38.3, lon: 144.8, stationNum: "94853" }]) === true, "livewind non-BOM station kept");
 assert(siteAttribution("livewind-9") === "LiveWind" && siteAttribution("IFLINDER3") === "Weather Underground", "attribution by prefix");
 
 console.log("Unchanged (possibly stuck) readings");
