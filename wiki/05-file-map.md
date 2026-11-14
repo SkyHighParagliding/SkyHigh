@@ -62,6 +62,9 @@ Key functions:
 
 Key: On startup, checks `victoriaGridLastRun` and `wideGridLastRun` settings. If > 12 hours ago, triggers fresh fetch after delay.
 
+### `server/scraperSchedule.ts`
+Pure rule for the gap before each live-weather poll: daytime = random min..max per source; outside operating hours = about every `weatherScraperNightIntervalMin` (default 60, 0 = off), capped so the first daytime poll is on time. Tests: `server/scraperSchedule.test.mjs` (`npm run test:scraperschedule`). See DECISION-023.
+
 ### Live weather source modules
 Each live observation source is a self-contained module exposing a station registry plus a
 fetch-and-normalise function; `server/weather.ts` dispatches to them by station-ID prefix.

@@ -8,6 +8,7 @@ import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationI
 import createLogger from "./utils/logger.js";
 import { isGridFetchActive } from "./grid/pipeline.js";
 import { isDevLive } from "./utils/devMode.js";
+import { nextPollMinutes, minutesUntilHour, DEFAULT_NIGHT_INTERVAL_MIN } from "./scraperSchedule.js";
 
 const log = createLogger("weather");
 
@@ -90,37 +91,58 @@ export interface WeatherScrapeResult {
   skippedOutsideHours: boolean;
 }
 
-function getMelbourneHour(): number {
-  return parseInt(new Intl.DateTimeFormat('en-AU', {
+function getMelbourneTime(): { hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne',
     hour: 'numeric',
-    hour12: false,
-  }).format(new Date()));
+    minute: 'numeric',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const get = (t: string) => parseInt(parts.find(p => p.type === t)?.value ?? '0', 10);
+  return { hour: get('hour') % 24, minute: get('minute') };
 }
 
 async function getSourceSettings(type: SourceType) {
   const key = SOURCE_KEY[type];
   const def = SOURCE_DEFAULTS[type];
   const rows = await query<{ key: string; value: string }>(
-    `SELECT key, value FROM settings WHERE key IN ($1, $2, $3, $4, $5)`,
-    [`weatherScraper_${key}_min`, `weatherScraper_${key}_max`, 'weatherScraperStartHour', 'weatherScraperEndHour', 'weatherScraperRunContinuously']
+    `SELECT key, value FROM settings WHERE key IN ($1, $2, $3, $4, $5, $6)`,
+    [`weatherScraper_${key}_min`, `weatherScraper_${key}_max`, 'weatherScraperStartHour', 'weatherScraperEndHour', 'weatherScraperRunContinuously', 'weatherScraperNightIntervalMin']
   );
   const cfg = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  const night = cfg['weatherScraperNightIntervalMin'];
   return {
     min:             parseInt(cfg[`weatherScraper_${key}_min`] || String(def.min)),
     max:             parseInt(cfg[`weatherScraper_${key}_max`] || String(def.max)),
     startHour:       parseInt(cfg['weatherScraperStartHour'] || '7'),
     endHour:         parseInt(cfg['weatherScraperEndHour']   || '20'),
     runContinuously: cfg['weatherScraperRunContinuously'] === 'true',
+    // Overnight poll gap in minutes (outside operating hours); 0 = off.
+    nightIntervalMin: night != null && night !== '' ? (parseInt(night, 10) || 0) : DEFAULT_NIGHT_INTERVAL_MIN,
   };
 }
 
-function scheduleSourceFetch(type: SourceType, min: number, max: number) {
+type SourceSettings = Awaited<ReturnType<typeof getSourceSettings>>;
+
+/** True when the scheduler should poll at the daytime rate. */
+function inOperatingHours(cfg: SourceSettings, hour: number): boolean {
+  return cfg.runContinuously || (hour >= cfg.startHour && hour < cfg.endHour);
+}
+
+function scheduleSourceFetch(type: SourceType, cfg: SourceSettings) {
   const existing = scraperTimeouts[type];
   if (existing) clearTimeout(existing);
-  const minutes = Math.floor(Math.random() * (max - min + 1)) + min;
+  const { hour, minute } = getMelbourneTime();
+  const inHours = inOperatingHours(cfg, hour);
+  const minutes = nextPollMinutes({
+    inHours,
+    min: cfg.min,
+    max: cfg.max,
+    nightIntervalMin: cfg.nightIntervalMin,
+    minutesToStart: minutesUntilHour(hour, minute, cfg.startHour),
+  });
   scraperNextRun[type] = Date.now() + minutes * 60 * 1000;
-  console.log(`Weather scraper [${type}]: Next fetch in ${minutes} minutes.`);
+  console.log(`Weather scraper [${type}]: Next fetch in ${minutes} minutes${inHours ? '' : ' (overnight rate)'}.`);
   scraperTimeouts[type] = setTimeout(() => runSourceScrape(type), minutes * 60 * 1000);
 }
 
@@ -171,12 +193,15 @@ async function updateForecasts(isManual: boolean): Promise<{ forecastsUpdated: n
 }
 
 async function runSourceScrape(type: SourceType, isManual = false): Promise<number> {
-  const { min, max, startHour, endHour, runContinuously } = await getSourceSettings(type);
-  const hour = getMelbourneHour();
+  const cfg = await getSourceSettings(type);
+  const { startHour, endHour } = cfg;
+  const { hour } = getMelbourneTime();
 
-  if (!isManual && !runContinuously && (hour < startHour || hour >= endHour)) {
-    console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour > 12 ? endHour - 12 : endHour}pm). Melbourne hour: ${hour}`);
-    scheduleSourceFetch(type, min, max);
+  // Outside operating hours we still poll, at the slower overnight rate
+  // (scheduleSourceFetch picks the gap), unless that rate is set to 0.
+  if (!isManual && !inOperatingHours(cfg, hour) && !(cfg.nightIntervalMin > 0)) {
+    console.log(`Weather scraper [${type}]: Outside operating hours (${startHour}am-${endHour > 12 ? endHour - 12 : endHour}pm), overnight polling off. Melbourne hour: ${hour}`);
+    scheduleSourceFetch(type, cfg);
     return 0;
   }
 
@@ -184,13 +209,13 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
   // polls WU when switched live (npm run live) or on a manual scrape.
   if (type === 'wu' && !isManual && !isDevLive()) {
     console.log(`Weather scraper [wu]: [SAFE] Skipped in dev (shares the production WU key; npm run live to poll)`);
-    scheduleSourceFetch(type, min, max);
+    scheduleSourceFetch(type, cfg);
     return 0;
   }
 
   if (!isManual && isGridFetchActive()) {
     console.log(`Weather scraper [${type}]: Grid fetch in progress — skipping this cycle`);
-    scheduleSourceFetch(type, min, max);
+    scheduleSourceFetch(type, cfg);
     return 0;
   }
 
@@ -370,7 +395,7 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
     log.error(`Weather scraper [${type}]: CRITICAL ERROR:`, err);
   }
 
-  scheduleSourceFetch(type, min, max);
+  scheduleSourceFetch(type, cfg);
   return updated;
 }
 

@@ -303,6 +303,9 @@ export function AdminWeather() {
   const schedStartHour = parseInt(settings.weatherScraperStartHour ?? "7", 10);
   const schedEndHour = parseInt(settings.weatherScraperEndHour ?? "20", 10);
   const schedContinuous = settings.weatherScraperRunContinuously === "true";
+  const schedNightRaw = settings.weatherScraperNightIntervalMin;
+  const schedNightMin = schedNightRaw == null || schedNightRaw === "" ? 60 : (parseInt(schedNightRaw, 10) || 0);
+  const schedNightText = schedNightMin > 0 ? `, then about every ${schedNightMin} minutes overnight` : "";
 
   // Grid fetches: fire-and-forget — HTTP responds immediately, background fetch runs
   const handleGridFetch = async (endpoint: string, type: GridType) => {
@@ -368,8 +371,8 @@ export function AdminWeather() {
                   </CardTitle>
                   <CardDescription>
                     {schedContinuous
-                      ? "Live weather observations fetched automatically every 15–30 minutes, continuously (no time restriction)."
-                      : `Live weather observations fetched automatically every 15–30 minutes between ${formatHour(schedStartHour)} and ${formatHour(schedEndHour)} Melbourne time.`
+                      ? "Live weather observations fetched automatically at each source's interval, continuously (no time restriction)."
+                      : `Live weather observations fetched automatically at each source's interval between ${formatHour(schedStartHour)} and ${formatHour(schedEndHour)} Melbourne time${schedNightText}.`
                     }
                     {settings.weatherScraperLastRun && (
                       <span className="block mt-1 text-emerald-600 font-medium">
@@ -406,8 +409,8 @@ export function AdminWeather() {
                 <p className="text-sm text-muted-foreground">
                   {schedContinuous
                     ? "Running continuously (24 hours)."
-                    : `Operating ${formatHour(schedStartHour)} – ${formatHour(schedEndHour)} Melbourne time.`}{" "}
-                  Operating hours and per-source intervals are set in{" "}
+                    : `Operating ${formatHour(schedStartHour)} – ${formatHour(schedEndHour)} Melbourne time${schedNightMin > 0 ? `; overnight one poll about every ${schedNightMin} minutes` : "; no polling overnight"}.`}{" "}
+                  Operating hours, the overnight interval and per-source intervals are set in{" "}
                   <Link to="/admin/scheduled-tasks" className="text-accent hover:underline">Scheduled Tasks</Link>.
                 </p>
               </div>

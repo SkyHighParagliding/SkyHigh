@@ -951,3 +951,16 @@ Last updated: 2026-10-08
 **Detail:** `wiki/future/station-overlay-plan.md`, judgement calls in `wiki/future/station-overlay-decisions.md`.  
 **Reversibility:** Easy (switch off by default; self-contained module).  
 **Confirms:** DECISION-016 (three peer layers unchanged).
+
+## DECISION-023: Overnight Live-Weather Polling at One Poll an Hour
+**Date:** 2026-11-14  
+**Context:** Live-weather polling stopped completely outside operating hours (5 am – 9 pm) to save API calls and database growth. Jon asked whether polling once an hour overnight would be safe.  
+**Options considered:**
+- (A) Keep overnight polling off: no overnight readings, dawn boxes hours old.
+- (B) Run continuously at the daytime rate: about 50% more calls (FreeFlightWx every 1–2 min all night).
+- (C) One poll an hour per source overnight: about 72 extra WU calls/day (of 1,500), +1% FreeFlightWx, +4–5% history rows, which are deleted after 48 h anyway.
+
+**Chosen:** C. New setting `weatherScraperNightIntervalMin` (default 60, 0 = off) on Admin → Scheduled Tasks. Overnight gap is random 55–60 min and is capped so the first daytime poll lands just after the start hour. "Run continuously" still overrides. Rule in `server/scraperSchedule.ts` (tested).  
+**Detail:** Q&A and numbers in `wiki/decisions/2026-11-14-overnight-weather-polling.md`.  
+**Reversibility:** Easy (set the interval to 0).  
+**Confirms:** DECISION-022 (map station boxes stay fresh overnight; the 90 min fade isn't reached).

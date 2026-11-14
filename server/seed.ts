@@ -126,6 +126,7 @@ let seedSettings: [string, string][] = [
   ['weatherScraperStartHour', '7'],
   ['weatherScraperEndHour', '20'],
   ['weatherScraperRunContinuously', 'false'],
+  ['weatherScraperNightIntervalMin', '60'],
   ['weatherScraper_ffwx_min', '2'],
   ['weatherScraper_ffwx_max', '3'],
   ['weatherScraper_wu_min', '14'],

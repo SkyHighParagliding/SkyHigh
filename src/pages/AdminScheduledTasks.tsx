@@ -26,6 +26,7 @@ interface ScheduleSettings {
   weatherScraperStartHour: string;
   weatherScraperEndHour: string;
   weatherScraperRunContinuously: string;
+  weatherScraperNightIntervalMin: string;
   weatherScraper_ffwx_min: string;
   weatherScraper_ffwx_max: string;
   weatherScraper_wu_min: string;
@@ -65,6 +66,7 @@ const DEFAULTS: ScheduleSettings = {
   weatherScraperStartHour: "7",
   weatherScraperEndHour: "20",
   weatherScraperRunContinuously: "false",
+  weatherScraperNightIntervalMin: "60",
   weatherScraper_ffwx_min: "2",
   weatherScraper_ffwx_max: "3",
   weatherScraper_wu_min: "14",
@@ -366,6 +368,10 @@ export function AdminScheduledTasks() {
                   <label className="text-sm font-medium text-foreground-label block mb-1">Operating end hour</label>
                   <HourInput hour={settings.weatherScraperEndHour} onChange={(h) => updateField("weatherScraperEndHour", h)} />
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground-label block mb-1">Overnight interval (min)</label>
+                  <Input type="number" min="0" max="240" className="w-24" value={settings.weatherScraperNightIntervalMin} onChange={(e) => updateField("weatherScraperNightIntervalMin", e.target.value)} />
+                </div>
               </div>
               <Switch
                 checked={settings.weatherScraperRunContinuously === "true"}
@@ -373,7 +379,7 @@ export function AdminScheduledTasks() {
                 label="Run continuously (ignore operating hours)"
                 className="pt-1"
               />
-              <p className="text-xs text-muted-foreground">All scrapers sleep outside operating hours (Melbourne time) unless "run continuously" is on. Random interval between min and max prevents predictable API patterns.</p>
+              <p className="text-xs text-muted-foreground">Inside operating hours (Melbourne time) each source polls at a random gap between its min and max, which avoids predictable API patterns. Outside them every source polls once per overnight interval (0 = no overnight polling), and the first poll of the day lands just after the start hour. "Run continuously" uses the daytime rate all night.</p>
             </CardContent>
           </Card>
 

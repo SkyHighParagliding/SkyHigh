@@ -24,6 +24,7 @@
     "test:health": "node --import tsx/esm server/grid/health.test.mjs",
     "test:orchestrator": "node --import tsx/esm server/grid/orchestrator.test.mjs",
     "test:stations": "node --import tsx/esm server/stations/stations.test.mjs",
+    "test:scraperschedule": "node --import tsx/esm server/scraperSchedule.test.mjs",
     "test:webcams": "node --import tsx/esm server/webcams/webcams.test.mjs",
     "test:webcamtime": "node --import tsx/esm src/lib/webcamTime.test.mjs",
     "test:grib2": "node --import tsx/esm server/grid/grib2.test.mjs",

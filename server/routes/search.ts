@@ -1420,7 +1420,7 @@ router.post("/admin", requireAuth, asyncHandler(async (req, res) => {
       }
     }
 
-    const schedKeys = ["schedSiteguideHour", "schedSiteguideMinute", "schedExtendedForecastHour", "schedExtendedForecastMinute", "submissionNotifyHour", "submissionNotifyEnabled", "weatherScraperMinInterval", "weatherScraperMaxInterval", "weatherScraperStartHour", "weatherScraperEndHour", "schedDriveSyncHour", "schedDriveSyncMinute", "driveSyncEnabled", "driveSyncLastRun", "weatherScraperLastRun"];
+    const schedKeys = ["schedSiteguideHour", "schedSiteguideMinute", "schedExtendedForecastHour", "schedExtendedForecastMinute", "submissionNotifyHour", "submissionNotifyEnabled", "weatherScraperMinInterval", "weatherScraperMaxInterval", "weatherScraperStartHour", "weatherScraperEndHour", "weatherScraperNightIntervalMin", "schedDriveSyncHour", "schedDriveSyncMinute", "driveSyncEnabled", "driveSyncLastRun", "weatherScraperLastRun"];
     const schedPlaceholders = schedKeys.map((_, i) => `$${i + 1}`).join(",");
     const schedSettings = await query<SettingRow>(`SELECT key, value FROM settings WHERE key IN (${schedPlaceholders})`, schedKeys);
     if (schedSettings.length > 0) {
