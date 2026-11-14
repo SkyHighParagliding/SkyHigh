@@ -130,6 +130,19 @@ export function deriveWeatherPresentation(
  * Weather Underground is the catch-all — any ID *without* one of these prefixes is a WU
  * station ID. Adding a new source means adding its prefix here, or WU will try to fetch it.
  */
+/**
+ * Our own positions for stations whose feed gives a wrong one. Applied when a
+ * reading is saved and when the stations overlay reads it.
+ * livewind-2010 "Flinders West Head": Ports Victoria / LiveWind deliberately
+ * publish -38.4825, 145.025 (on land in Flinders). The station is on the
+ * Oc.WRG.6s beacon in Flinders Bight; position measured off the nautical chart
+ * Jon supplied (2026-11-14), scaled from Flinders pier end and West Head (OSM),
+ * about ±150 m.
+ */
+export const STATION_POSITION_OVERRIDES: Record<string, { lat: number; lon: number }> = {
+  "livewind-2010": { lat: -38.4664, lon: 145.0541 },
+};
+
 export const NON_WU_STATION_PREFIXES = ['livewind-', 'freeflightwx-', 'bom-', 'davis-'];
 
 export function isWuStationId(stationId: string): boolean {

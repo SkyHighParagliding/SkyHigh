@@ -4,7 +4,7 @@ import { fetchFreeFlightWxData, getSlugFromStationId } from "./freeflightwx.js";
 import { parseBomStationId, fetchBomObservation } from "./bomWeather.js";
 import { parseDavisStationId, fetchDavisObservation } from "./davisWeather.js";
 import { parseWdlStationId, fetchWdlObservation, parseWportStationId, fetchWportObservation } from "./wdlWeather.js";
-import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId } from "./weather-utils.js";
+import { fetchWithRetry, getWeatherCodeSummary, degreesToDirection, isWuStationId, STATION_POSITION_OVERRIDES } from "./weather-utils.js";
 import createLogger from "./utils/logger.js";
 import { isGridFetchActive } from "./grid/pipeline.js";
 import { isDevLive } from "./utils/devMode.js";
@@ -246,7 +246,8 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
           const lon = typeof stationData.lon === 'number'
             ? stationData.lon
             : (stationData.lon ? parseFloat(String(stationData.lon)) || null : null);
-          await saveObservation(dbKey, windSpeed, windGust, direction, siteName, lat, lon, new Date().toISOString(), siteId);
+          const fixed = STATION_POSITION_OVERRIDES[stationId];
+          await saveObservation(dbKey, windSpeed, windGust, direction, siteName, fixed?.lat ?? lat, fixed?.lon ?? lon, new Date().toISOString(), siteId);
           console.log(`Weather scraper [livewind]: Updated ${siteId}${dbKey !== siteId ? ' (alt)' : ''} - ${windSpeed}kt (Gust ${windGust}kt) ${direction} from ${siteName}`);
         }
       } else if (stationId.startsWith('freeflightwx-')) {

@@ -1,4 +1,5 @@
 import { query } from "../pg.js";
+import { STATION_POSITION_OVERRIDES } from "../weather-utils.js";
 import {
   compassToDeg, STALE_AFTER_MIN, UNCHANGED_MIN_READINGS, UNCHANGED_SUSPECT_MIN,
   type LiveStation, type StationHistoryPoint,
@@ -104,8 +105,9 @@ export async function loadSiteStations(bom: { lat: number; lon: number; stationN
       if (!o || o.windSpeed == null) continue;
       const ts = new Date(o.timestamp).getTime();
       if (!Number.isFinite(ts) || Date.now() - ts > MAX_OBS_AGE_MS) continue;
-      const lat = Number(o.stationLat) || Number(s.lat);
-      const lon = Number(o.stationLon) || Number(s.lon);
+      const fixed = STATION_POSITION_OVERRIDES[stationId];
+      const lat = fixed?.lat ?? (Number(o.stationLat) || Number(s.lat));
+      const lon = fixed?.lon ?? (Number(o.stationLon) || Number(s.lon));
       if (!Number.isFinite(lat) || !Number.isFinite(lon) || (!lat && !lon)) continue;
       if (!keepSiteStation({ id: stationId, lat, lon }, bom)) continue;
       const speed = Number(o.windSpeed);

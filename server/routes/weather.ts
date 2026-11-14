@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { query, queryOne, execute } from "../pg.js";
 import { fetchWeatherData, LIVE_WIND_VIC_URL, getScraperNextRun } from "../weather.js";
-import { fetchWithRetry, degreesToDirection, isWuStationId } from "../weather-utils.js";
+import { fetchWithRetry, degreesToDirection, isWuStationId, STATION_POSITION_OVERRIDES } from "../weather-utils.js";
+
+/** LiveWind rows with our own position where its feed gives a wrong one. */
+function fixLiveWindPositions(rows: any[]): any[] {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map(r => {
+    const fixed = r && STATION_POSITION_OVERRIDES[`livewind-${r.wmoid}`];
+    return fixed ? { ...r, lat: String(fixed.lat), lon: String(fixed.lon) } : r;
+  });
+}
 import { OPEN_METEO_URL } from "../utils/openMeteo.js";
 import { getFreeFlightWxStations, getStationIdFromSlug } from "../freeflightwx.js";
 import { getBomStations, getBomStationId, parseBomStationId } from "../bomWeather.js";
@@ -137,7 +146,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
     });
     clearTimeout(timeoutId);
     if (liveWindResponse.ok) {
-      const liveWindData = await liveWindResponse.json();
+      const liveWindData = fixLiveWindPositions(await liveWindResponse.json());
       for (const station of liveWindData) {
         if (station.lat && station.lon) {
           const distance = getDistance(targetLat, targetLon, parseFloat(station.lat), parseFloat(station.lon));
@@ -234,7 +243,7 @@ router.get("/stations/nearby", asyncHandler(async (req, res) => {
         });
         clearTimeout(timeoutId);
         if (liveWindResponse.ok) {
-          const liveWindData = await liveWindResponse.json();
+          const liveWindData = fixLiveWindPositions(await liveWindResponse.json());
           const wmoid = currentStationId.replace('livewind-', '');
           const station = liveWindData.find((s: any) => String(s.wmoid) === wmoid);
           if (station && station.lat && station.lon) {
