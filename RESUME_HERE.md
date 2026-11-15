@@ -1,9 +1,15 @@
-# RESUME_HERE — Last updated: 2026-11-13 (session 87: live stations overlay; deployed)
+# RESUME_HERE — Last updated: 2026-11-14 (session 87 cont.: overnight live-weather polling)
 
 ## Project: SkyHigh
-## Status: Active. `main` = `8add72c`, pushed from Claude's shell 13 Nov and deployed (Railway SUCCESS 17:07; live `/api/weather/stations/live` returns 114 stations). Railway auto-deploys `main`.
+## Status: Active. `main` pushed from Claude's shell 16 Nov (overnight polling + grid-busy retry). Railway auto-deploys `main`.
 
 **Flight log (raised 8 Nov):** Jon wants recording to become a flight log for XC and coastal sites that records on the phone and uploads when signal returns. Needs planning, nothing built: `wiki/future/flight-log-plan.md`. Flight History and IGC/GPX/KML export already exist at XC → Flight History (`/xc/flights`).
+
+## Session 87, continued (2026-11-14)
+- `5c1be99` (deployed): BOM station coordinates now come from BOM's own station list (29 of 100 hand-typed ones were >8 km off; South Channel Island was 20 km east, on land).
+- `c8d4a8b` (deployed): Flinders West Head (`livewind-2010`) drawn on its beacon in Flinders Bight (-38.4664, 145.0541) from Jon's chart; Ports Victoria publishes a deliberately wrong spot. Override in `STATION_POSITION_OVERRIDES` (`server/weather-utils.ts`).
+- `33bab81`: **overnight live-weather polling.** Outside 5 am – 9 pm every source polls about once an hour (random 55–60 min, first morning poll just after the start hour) instead of stopping. Setting `weatherScraperNightIntervalMin` (default 60, 0 = off) on Admin → Scheduled Tasks. About +72 WU calls/day (of 1,500), +4–5% history rows (kept 48 h). DECISION-023; Jon's Q&A kept in `wiki/decisions/2026-11-14-overnight-weather-polling.md`. Checked on prod over the night of 15–16 Nov: hourly readings 9 pm – 5 am, daytime resumed 5:00 am.
+- Follow-up fix: a poll that meets a grid download (one runs about 12:02 am) now retries in 3 min instead of losing its turn; LiveWind had missed its midnight reading both nights.
 
 ## Session 87 (2026-11-13) — live stations overlay (WeatherWatcher-style)
 - `8add72c` (pushed, deployed): a **Stations** switch beside Wind | Thermal | Radar shows observed wind as `9 G12` arrow boxes (point downwind, speed colours) over any layer, remembered per browser. Sources: BOM per-station JSON direct (~84–100 VIC stations) + our own site stations (~25). Tap a box → station card (Obs vs Fcst, temp/pressure, site link, attribution) + 6 h wind/gust chart with the forecast as a dotted line. Map off "now" → boxes at 60% and "· Observed: now".

@@ -78,3 +78,17 @@ on the map less than an hour old.
    while. It now says each source's interval, and the overnight rate.
 10. **Dev database left as it was:** dev has "Run continuously" on; it was switched off for one test
     run to see the overnight path and switched back.
+
+## Checked on production
+
+- **14 Nov, 11:28 pm** (deploy of `33bab81`): all 7 sources polled, saved 35 readings across 30
+  sites, and each logged "Next fetch in 55–59 minutes (overnight rate)". The 12:25 am round ran too.
+- **Night of 15–16 Nov:** readings every hour from 9 pm to 5 am (20–54 rows an hour against about
+  430 an hour by day); daytime polling resumed at 5:00 am. Example poll times: Locksley Field (WU)
+  21:01 22:01 22:57 23:57 00:53 01:48 02:44 03:44 04:45 05:00; Manny's (FreeFlightWx) hourly then
+  every 2 min from 05:01.
+- **One gap found:** LiveWind skipped its poll just after midnight (Portsea 23:03 → 01:02; same on
+  the first night). Its turn fell during the wind-grid download that runs at about 12:02 am, and a
+  poll that meets a grid download is skipped until the next normal gap, which overnight is an hour.
+  **Fix (11):** a poll skipped for a grid download now retries in 3 minutes, day and night
+  (`GRID_BUSY_RETRY_MIN` in `server/weather.ts`). Grid downloads take about a minute.

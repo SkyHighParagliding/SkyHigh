@@ -1,8 +1,10 @@
-# Current Tasks — Last updated: 2026-11-13
+# Current Tasks — Last updated: 2026-11-14
 
 > Companion file: `RESUME_HERE.md` has the same info in a different format.
 
 ## 🟡 Open / on hold
+- ✅ **Overnight live-weather polling (2026-11-14, `33bab81`).** One poll an hour per source outside 5 am – 9 pm; setting "Overnight interval (min)" on Admin → Scheduled Tasks (0 = off). DECISION-023, Q&A `wiki/decisions/2026-11-14-overnight-weather-polling.md`. Prod-checked night of 15–16 Nov. Follow-up: grid-busy skips retry in 3 min (LiveWind lost its midnight reading).
+- ✅ **Station positions (2026-11-14, `5c1be99`, `c8d4a8b`, deployed).** BOM coords from BOM's station list; Flinders West Head on its beacon.
 - ✅ **Live stations overlay, tasks 1–4 (2026-11-13, `8add72c`, deployed).** BOM + our site stations as `9 G12` arrow boxes, Stations switch, station card + 6 h chart, "possibly stuck" amber flag. ⬜ Jon: check on phone (tap a box; tap a site with its own station). ⬜ Next: tasks 5–6 community stations (WW directory + WDL/WU/WeatherLink/Cumulus/VicPorts parsers, WW fallback), then task 7. Plan: `wiki/future/station-overlay-plan.md`; review list: `wiki/future/station-overlay-decisions.md`.
 - ⬜ **Flight log redesign: needs planning, Jon thinking it through (added 2026-11-08).** Recording becomes a flight log for XC and coastal sites, not tied to XC Maps; records locally and uploads when signal returns (no signal on beach/valley landings). Findings, gaps, phone limits and the 5 questions to decide: `wiki/future/flight-log-plan.md`. First decision: website or native app. No build until Jon approves a plan.
 - ✅ **RASP follows the map's day and shows the day and date (2026-11-08, `47a945d`, deployed).** Tested on dev; live bundle checked.

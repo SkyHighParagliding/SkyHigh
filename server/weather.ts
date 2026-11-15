@@ -129,12 +129,16 @@ function inOperatingHours(cfg: SourceSettings, hour: number): boolean {
   return cfg.runContinuously || (hour >= cfg.startHour && hour < cfg.endHour);
 }
 
-function scheduleSourceFetch(type: SourceType, cfg: SourceSettings) {
+/** Gap before retrying a poll that was skipped because a grid fetch was running
+ *  (grid fetches take about a minute; overnight, waiting the full hour lost a reading). */
+const GRID_BUSY_RETRY_MIN = 3;
+
+function scheduleSourceFetch(type: SourceType, cfg: SourceSettings, retryMin?: number) {
   const existing = scraperTimeouts[type];
   if (existing) clearTimeout(existing);
   const { hour, minute } = getMelbourneTime();
   const inHours = inOperatingHours(cfg, hour);
-  const minutes = nextPollMinutes({
+  const minutes = retryMin ?? nextPollMinutes({
     inHours,
     min: cfg.min,
     max: cfg.max,
@@ -142,7 +146,7 @@ function scheduleSourceFetch(type: SourceType, cfg: SourceSettings) {
     minutesToStart: minutesUntilHour(hour, minute, cfg.startHour),
   });
   scraperNextRun[type] = Date.now() + minutes * 60 * 1000;
-  console.log(`Weather scraper [${type}]: Next fetch in ${minutes} minutes${inHours ? '' : ' (overnight rate)'}.`);
+  console.log(`Weather scraper [${type}]: Next fetch in ${minutes} minutes${retryMin != null ? ' (retry)' : inHours ? '' : ' (overnight rate)'}.`);
   scraperTimeouts[type] = setTimeout(() => runSourceScrape(type), minutes * 60 * 1000);
 }
 
@@ -214,8 +218,8 @@ async function runSourceScrape(type: SourceType, isManual = false): Promise<numb
   }
 
   if (!isManual && isGridFetchActive()) {
-    console.log(`Weather scraper [${type}]: Grid fetch in progress — skipping this cycle`);
-    scheduleSourceFetch(type, cfg);
+    console.log(`Weather scraper [${type}]: Grid fetch in progress — retrying in ${GRID_BUSY_RETRY_MIN} minutes`);
+    scheduleSourceFetch(type, cfg, GRID_BUSY_RETRY_MIN);
     return 0;
   }
 
