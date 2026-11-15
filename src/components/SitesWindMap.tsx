@@ -9,7 +9,11 @@ import { PointMeteogramModal } from './weather/PointMeteogramModal';
 import { SkewTModal } from './weather/SkewTModal';
 import { RaspModal } from './weather/RaspModal';
 import { LayerSelector, type LayerOption } from './windmap/LayerSelector';
-import { RADAR_LEGEND_CSS, sampleRadarAt, formatMmhr, type RadarSample } from './windmap/radarTiles';
+import { RADAR_LEGEND_CSS, RADAR_TICKS, sampleRadarAt, formatMmhr, type RadarSample } from './windmap/radarTiles';
+
+import { RadarTicks } from './windmap/RadarTicks';
+
+const RADAR_OPACITY_KEY = 'skyhigh.radarOpacity.v2';
 import { useRainviewer } from '@/hooks/useRainviewer';
 import { MapScaleBar } from './windmap/MapScaleBar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -166,7 +170,8 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
     try { return localStorage.getItem('skyhigh.radarEnabled') === 'true'; } catch { return false; }
   });
   const [radarOpacity, setRadarOpacity] = useState<number>(() => {
-    try { const v = localStorage.getItem('skyhigh.radarOpacity'); const n = v == null ? NaN : Number(v); return Number.isFinite(n) ? Math.min(1, Math.max(0.1, n)) : 0.75; } catch { return 0.75; }
+    // New key (16 Nov 2026): the old one held the former 0.75 default for everyone.
+    try { const v = localStorage.getItem(RADAR_OPACITY_KEY); const n = v == null ? NaN : Number(v); return Number.isFinite(n) ? Math.min(1, Math.max(0.1, n)) : 0.9; } catch { return 0.9; }
   });
   const [radarIndex, setRadarIndex] = useState(0);
   const [radarPlaying, setRadarPlaying] = useState(false);
@@ -192,7 +197,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
   }, [radarEnabled]);
   useEffect(() => {
     radarOpacityRef.current = radarOpacity;
-    try { localStorage.setItem('skyhigh.radarOpacity', String(radarOpacity)); } catch { /* private mode */ }
+    try { localStorage.setItem(RADAR_OPACITY_KEY, String(radarOpacity)); } catch { /* private mode */ }
   }, [radarOpacity]);
 
   // When a fresh index arrives (first load or a 5-min refetch), jump the scrubber
@@ -873,7 +878,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
       <div className="relative h-2">
         <div className="absolute top-0 -translate-x-1/2 w-2 h-2 rounded-full bg-white" style={{ left: `${(radarClampedIndex / (radarFrames.length - 1)) * 100}%` }} />
       </div>
-      <div className="text-[9px] text-white/40">Radar loop{radarNowIndex < radarFrames.length - 1 ? ' · amber = forecast' : ''}</div>
+      <div className="text-[9px] text-white/40">Radar loop{radarNowIndex < radarFrames.length - 1 ? ' · amber = forecast' : ' · radar forecast not available'}</div>
     </div>
   ) : null;
 
@@ -931,7 +936,7 @@ export function SitesWindMapProto({ sites, isAuthenticated, zoomSetpoints, focus
               <div className="absolute top-0 w-px bg-white shadow-[0_0_3px_rgba(255,255,255,0.8)]" style={{ left: `${Math.min(100, Math.max(0, radarPoint.pos * 100))}%`, height: 'calc(100% + 2px)' }} />
             )}
           </div>
-          <div className="flex justify-between mt-1 text-[10px] font-mono text-white/75 px-0.5"><span>Light</span><span>Moderate</span><span>Heavy</span></div>
+          <RadarTicks className="text-white/75" />
         </>
       ) : viewMode === 'thermal' ? (
         <>

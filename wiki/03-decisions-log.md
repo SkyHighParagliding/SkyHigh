@@ -964,3 +964,16 @@ Last updated: 2026-10-08
 **Detail:** Q&A and numbers in `wiki/decisions/2026-11-14-overnight-weather-polling.md`.  
 **Reversibility:** Easy (set the interval to 0).  
 **Confirms:** DECISION-022 (map station boxes stay fresh overnight; the 90 min fade isn't reached).
+
+## DECISION-024: Rain Radar Recoloured into Our Own Palette
+**Date:** 2026-11-16  
+**Context:** Jon compared Windy and SkyHigh radar: Windy was far clearer. Checked: RainViewer now serves only "Universal Blue" whatever scheme the URL asks for (schemes 1/2/3/4/8 identical); its weak echoes are a translucent grey-beige haze; our legend and tap reading still assumed scheme 1 ("Original", chosen in session 72 simply as RainViewer's standard rainbow; no comparison was recorded). RainViewer's feed also has no nowcast frames now.  
+**Options considered:**
+- (A) Accept RainViewer's colours, fix the legend to match: still pale blue on white, haze stays.
+- (B) Decode each pixel to dBZ with RainViewer's published table and recolour in our own palette. ✅
+- (C) Change radar provider: more work, no clear free Victorian alternative.
+
+**Chosen:** B, plus: light slate wash on the base while Radar is on (follows DECISION-015), default opacity 75% → 90%, server smoothing on (side-by-side renders: smoothed reads cleaner), mm/hr scale ticks, "radar forecast not available" when there's no nowcast. Not done (Jon): muting station boxes on Radar.  
+**Detail:** `wiki/12-map-ui-style-guide.md` §13; `src/components/windmap/radarTiles.ts`.  
+**Reversibility:** Easy (draw the raw tile again).  
+**Confirms:** DECISION-015, DECISION-016.

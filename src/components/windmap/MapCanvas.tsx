@@ -8,7 +8,10 @@ import { tile as d3tile } from 'd3-tile';
 import type { SiteMarker } from '../windMapTypes';
 import { toMelbourneDate } from '@/utils/closureStatus';
 import { tileCoordsFor, prefetchTile } from './terrainTiles';
-import { RADAR_MAX_Z, radarTileUrl } from './radarTiles';
+import { RADAR_MAX_Z, radarTileUrl, recolourRadarTile } from './radarTiles';
+
+/** Slate wash over the base map while the rain radar is shown. */
+const RADAR_BASE_DIM = 'rgba(40, 50, 64, 0.18)';
 import type { LiveStation } from '../../../shared/stations';
 import { drawStationMarkers, hitTestStation } from './stationMarkerRenderer';
 import type { StationBox } from './stationMarkerRenderer';
@@ -532,8 +535,14 @@ export const MapCanvas = memo(function MapCanvas({
       // whatever the host's loop has parked in radarFrameRef this instant.
       const radarFrame = radarEnabledRef?.current ? radarFrameRef?.current : null;
       if (radarFrame) {
+        // Dim the near-white base a little so rain colour stands out (DECISION-015:
+        // darken the base, don't fade the overlay). Radar only; Wind/Thermal unchanged.
         ctx.save();
-        ctx.globalAlpha = radarOpacityRef?.current ?? 0.75;
+        ctx.fillStyle = RADAR_BASE_DIM;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = radarOpacityRef?.current ?? 0.9;
         for (const d of tiles) {
           const z = d[2];
           // Overzoom above RainViewer's z7 data cap: use the z7 ancestor tile and
@@ -545,8 +554,10 @@ export const MapCanvas = memo(function MapCanvas({
           const ay = d[1] >> dz;
           const rKey = `R${radarFrame.path}/${az}/${ax}/${ay}`;
           const rUrl = radarTileUrl(radarFrame.host, radarFrame.path, az, ax, ay);
-          const rImg = loadTile(rKey, rUrl);
-          if (rImg && rImg.complete && rImg.naturalWidth > 0) {
+          const rRaw = loadTile(rKey, rUrl);
+          // Drawn in our own rain palette (radarTiles.ts), not RainViewer's colours.
+          const rImg = rRaw ? recolourRadarTile(rKey, rRaw) : null;
+          if (rImg) {
             const x = (d[0] + tiles.translate[0]) * tiles.scale;
             const y = (d[1] + tiles.translate[1]) * tiles.scale;
             const sub = Math.max(1, 256 >> dz);      // source crop size in the ancestor

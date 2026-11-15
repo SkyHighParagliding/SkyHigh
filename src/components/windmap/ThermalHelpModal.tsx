@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { RADAR_LEGEND_CSS } from './radarTiles';
+import { RadarTicks } from './RadarTicks';
 
 /** Cumulus glyph — the exact three-dome-on-a-flat-base shape the map draws (traceCumulus). */
 const CumulusGlyph = () => (
@@ -198,17 +199,17 @@ export function ThermalHelpModal({ onClose, variant = 'map' }: { onClose: () => 
           {variant === 'radar' && (<>
             <section>
               <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">What it shows</div>
-              <p className="text-white/70">Live rain radar over the base map — the last hour of observed scans plus a short nowcast. <span className="text-white/90">Colour is rain intensity.</span></p>
+              <p className="text-white/70">Live rain radar over the base map — the last hour or so of observed scans, plus a short nowcast when RainViewer provides one. <span className="text-white/90">Colour is rain rate</span> (mm/hr): blue light, green steady, yellow and orange heavy, red and purple very heavy. Drizzle under 0.1 mm/hr isn't shown.</p>
               <div className="mt-2 h-1.5 w-full rounded-full" style={{ background: RADAR_LEGEND_CSS }} />
-              <div className="flex justify-between mt-1 text-[10px] font-mono text-white/50"><span>Light</span><span>Moderate</span><span>Heavy</span></div>
+              <RadarTicks className="text-white/50" />
             </section>
             <section>
               <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">Live vs forecast</div>
-              <p className="text-white/70">Press <span className="text-white/90">Play</span> to run the loop: observed scans (sky on the timeline) into a ~30-minute <span className="text-white/90">nowcast</span> (amber). The <span className="text-white/90">Live / Forecast</span> word by the time says which you're viewing.</p>
+              <p className="text-white/70">Press <span className="text-white/90">Play</span> to run the loop: observed scans (sky on the timeline) into a ~30-minute <span className="text-white/90">nowcast</span> (amber) when one is available. The <span className="text-white/90">Live / Forecast</span> word by the time says which you're viewing. RainViewer currently sends no nowcast, so the loop is observed scans only and says "radar forecast not available".</p>
             </section>
             <section>
               <div className="text-sky-400 font-bold uppercase tracking-wide text-[10px] mb-1">Tap a point</div>
-              <p className="text-white/70">Reads the approximate <span className="text-white/90">rain rate (mm/hr)</span> at that spot and marks it on the scale — inferred from the radar colour, so a close estimate, not a gauge. <span className="text-white/90">Opacity</span> fades the overlay; <span className="text-white/90">Base map</span> darkens the map underneath.</p>
+              <p className="text-white/70">Reads the approximate <span className="text-white/90">rain rate (mm/hr)</span> at that spot and marks it on the scale — decoded from the radar strength (dBZ) with the usual Marshall-Palmer rule, so a close estimate, not a gauge. <span className="text-white/90">Opacity</span> fades the overlay; <span className="text-white/90">Base map</span> darkens the map underneath.</p>
             </section>
             <section className="border-t border-white/10 pt-3">
               <p className="text-white/40 text-[10px]">Radar © RainViewer. A nowcast is a forecast — always make your own assessment before flying.</p>

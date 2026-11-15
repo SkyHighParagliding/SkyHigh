@@ -100,7 +100,7 @@ Wind, Thermal and Radar use the **same card, same order**; only the contents cha
   available time and are labelled with the real gap (+4h, +12h overnight). Thermal stops at
   its 3-day end; radar returns to the 3-day grid. 7-day times read "Wed 11, 11:00 am".
 - **Radar pills** step one RainViewer frame (labelled with the real gap); Now = newest observed frame.
-- Code: all in `SitesWindMap.tsx` (`forecastSlider`, `radarPills`, `radarTimeline`, the card
+- Code: all in `SitesWindMap.tsx` (`forecastSlider`, `radarPills`, `RadarTicks.tsx` — mm/hr ticks under the rain scale. `radarTimeline`, the card
   IIFE). `RadarCardControls.tsx`, `WindMapScrubberTray`, `WindMapModeToggle` and
   `ModeSwitchPill` are deleted. The remaining sliders (base map, radar opacity) share
   `SLIDER_INPUT_CLS`.
@@ -163,6 +163,14 @@ levers in `MapCanvas` fix this without a React re-render of the map:
 - Box: rounded note box reading `9 G12` in the map's speed unit, point facing **downwind**, station at the flat tail (white dot). Text never reads upside down. Fill uses the wind-particle speed colours; stale (> 90 min) = grey dashed; possibly stuck (our site stations: same windy reading for 75+ min) = amber dashed outline plus an "Unchanged" note in the card; calm/no direction = round pill.
 - Map time off "now": boxes drawn at 60% and the switch says "· Observed: now".
 - Tap order: site marker (12 px) → station box (6 px slop) → map pin. A station tap opens the station card in the tapped-point slot (same layout as §6) with a 6 h chart; tapping elsewhere returns the normal card.
+
+### 13. Rain radar colours (2026-11-16)
+- Radar is drawn in **our own palette**, not RainViewer's: each RainViewer pixel is decoded to dBZ with their published Universal Blue table, converted to mm/hr (Marshall-Palmer), and recoloured. RainViewer now ignores the colour scheme in the URL, so this keeps the look under our control. Code: `windmap/radarTiles.ts` (`recolourRadarTile`, `sampleRadarAt`). DECISION-024.
+- Scale: log 0.1 → 100 mm/hr, ticks 0.1 / 1 / 10 / 100 (`RadarTicks.tsx`). Blue light, green steady, yellow/orange heavy, red/purple very heavy. Under 0.1 mm/hr not drawn; 0.1–0.3 fades in.
+- Tiles fetched with server smoothing on (`1_0`): clean rain areas, close to Windy. Default opacity 90% (stored as `skyhigh.radarOpacity.v2`).
+- While Radar is on the base map gets a light slate wash (`RADAR_BASE_DIM` in `MapCanvas.tsx`, 18%) so colour stands out; Wind and Thermal are unchanged. Town labels stay on top.
+- Station boxes keep their wind colours on Radar (Jon, 16 Nov: don't mute them).
+- No RainViewer nowcast: the loop says "radar forecast not available" when the feed has none.
 
 ## History
 The 2026-09-16 rollout (Stages 1–3b) brought AMSL/airspace readouts and the shared

@@ -1,11 +1,21 @@
-// Shared RainViewer radar tile config + colour palette, used by three places that
-// must agree: the map draw (MapCanvas), the Key scale (SitesWindMap), and the
-// point sampler below. RainViewer only serves colour per pixel (no raw value), so
-// the tapped-point intensity is read back from the rendered tile and mapped
-// through the same palette the legend shows.
+// Shared RainViewer radar tile config + our own rain palette, used by three places
+// that must agree: the map draw (MapCanvas), the scale (SitesWindMap / help), and
+// the point sampler below.
+//
+// RainViewer now serves only its "Universal Blue" colour scheme, whatever scheme
+// the URL asks for (checked 2026-11-16: schemes 1/2/3/4/8 return identical tiles).
+// Its weakest echoes are a translucent grey-beige that washes over the map. So we
+// decode each pixel back to radar strength (dBZ) with RainViewer's published colour
+// table, and redraw it in our own palette: one rain scale we control, independent
+// of RainViewer's styling, and the legend and tap reading match what is drawn.
 
-// Scheme 1 = "Original", snow folded into the rain ramp (snow=1 tints blue).
-export const RADAR_COLOR_SCHEME = 1;
+// Colour scheme in the URL is ignored by RainViewer (always Universal Blue), kept
+// at 2 so the request says what we actually get.
+export const RADAR_COLOR_SCHEME = 2;
+// `{smooth}_{snow}`. Smoothing on: compared side by side on 16 Nov 2026, the
+// smoothed tiles read as clean rain areas (close to Windy) while unsmoothed ones
+// are speckly. Smoothed edge pixels are blends; they decode to the nearest table
+// colour, which is fine at the edges.
 export const RADAR_OPTIONS = '1_0';
 // RainViewer radar data stops at zoom 7 (z8+ returns a "Zoom Level Not Supported"
 // placeholder); sampling and overzoom both anchor to this.
@@ -15,17 +25,41 @@ export function radarTileUrl(host: string, path: string, z: number, x: number, y
   return `${host}${path}/256/${z}/${x}/${y}/${RADAR_COLOR_SCHEME}/${RADAR_OPTIONS}.png`;
 }
 
-// Palette stops (light → heavy). The CSS gradient (legend) and the LUT (sampling)
-// are both built from these so a sampled colour lands on the matching legend spot.
+// RainViewer "Universal Blue" rain colours, dBZ -10..64 in steps of 1 (#RRGGBBAA),
+// from https://www.rainviewer.com/files/rainviewer_api_colors_table.csv (2026-11-16).
+// Below -10 is transparent; 65+ (white, green) are flags/clutter, treated as 64.
+const UB_MIN_DBZ = -10;
+const UB_RAIN = (
+  '63615914 66635a19 69665c1e 6c685d24 6f6b5f29 726e612e 75706234 78736439 7c75653e 7f786744 ' + // -10..-1
+  '827b6949 857d6a4e 88806c54 8b826d59 8e856f5e 92887164 9e93756e aa9e7978 b6a97e82 c2b4828c ' + //   0..9
+  'cec08796 d2c48ba0 d6c88faa dacc93b4 ded097be 88ddeeff 6cd1ebff 51c5e8ff 36bae5ff 1baee2ff ' + //  10..19
+  '00a3e0ff 009ad5ff 0091caff 0088bfff 007fb4ff 0077aaff 0070a3ff 00699cff 006295ff 005b8eff ' + //  20..29
+  '005588ff 005180ff 004e78ff 004a70ff 004768ff ffee00ff ffe000ff ffd200ff ffc500ff ffb700ff ' + //  30..39
+  'ffaa00ff ff9f00ff ff9500ff ff8b00ff ff8100ff ff4400ff f23600ff e62800ff d91b00ff cd0d00ff ' + //  40..49
+  'c10000ff a80000ff 8f0000ff 760000ff 5d0000ff ffaaffff ff9fffff ff95ffff ff8bffff ff81ffff ' + //  50..59
+  'ff77ffff ff6cffff ff62ffff ff58ffff ff4effff'                                                 //  60..64
+).split(' ').map(h => [0, 2, 4, 6].map(i => parseInt(h.slice(i, i + 2), 16)));
+
+/** Radar strength (dBZ) → rain rate (mm/hr), Marshall-Palmer Z = 200 R^1.6. */
+export function dbzToMmhr(dbz: number): number {
+  return Math.pow(Math.pow(10, dbz / 10) / 200, 1 / 1.6);
+}
+
+// Our palette: position 0..1 on a log scale from 0.1 to 100 mm/hr (0.1, 1, 10, 100
+// sit at 0, 1/3, 2/3, 1). Light → heavy, deep enough to read on the light base map.
 const RADAR_STOPS: [number, string][] = [
-  [0, '#6ba3e5'], [1 / 6, '#3b6fd4'], [2 / 6, '#35c15a'],
-  [3 / 6, '#e6df3b'], [4 / 6, '#f09a2c'], [5 / 6, '#e23b2b'], [1, '#a01f8f'],
+  [0, '#5b8def'], [1 / 6, '#2f5fd0'], [2 / 6, '#17a84a'],
+  [3 / 6, '#f2d22e'], [4 / 6, '#f08a24'], [5 / 6, '#d7261e'], [1, '#9b1b8e'],
 ];
 export const RADAR_LEGEND_CSS = `linear-gradient(to right, ${RADAR_STOPS.map(([p, c]) => `${c} ${Math.round(p * 100)}%`).join(', ')})`;
+/** Tick labels for the scale: value + position (0..1). */
+export const RADAR_TICKS: { label: string; pos: number }[] = [
+  { label: '0.1', pos: 0 }, { label: '1', pos: 1 / 3 }, { label: '10', pos: 2 / 3 }, { label: '100 mm/hr', pos: 1 },
+];
 
-// Palette position (0..1) → approximate rain rate. Marshall-Palmer-shaped log ramp
-// tuned so the standard bands line up: light <2.5, moderate 2.5–10, heavy 10–50,
-// violent >50 mm/hr. Approximate — RainViewer gives colour buckets, not raw dBZ.
+export function mmhrToPosition(mmhr: number): number {
+  return Math.min(1, Math.max(0, Math.log10(Math.max(mmhr, 1e-6) / 0.1) / 3));
+}
 export function positionToMmhr(pos: number): number {
   return 0.1 * Math.pow(10, 3 * Math.min(1, Math.max(0, pos)));
 }
@@ -34,7 +68,18 @@ export function formatMmhr(mmhr: number): string {
   return mmhr < 10 ? mmhr.toFixed(1) : String(Math.round(mmhr));
 }
 
-// 256-entry RGB lookup rendered from the gradient, built once.
+// Rain under 0.1 mm/hr (about 7 dBZ) is not drawn: mostly noise and clutter.
+// 0.1–0.3 mm/hr (drizzle) fades in; 0.3 mm/hr and up is fully opaque.
+const DRAW_MIN_MMHR = 0.1;
+const FULL_ALPHA_MMHR = 0.3;
+function alphaFor(mmhr: number): number {
+  if (mmhr < DRAW_MIN_MMHR) return 0;
+  if (mmhr >= FULL_ALPHA_MMHR) return 255;
+  const f = Math.log(mmhr / DRAW_MIN_MMHR) / Math.log(FULL_ALPHA_MMHR / DRAW_MIN_MMHR);
+  return Math.round(255 * (0.4 + 0.6 * f));
+}
+
+// 256-entry RGB lookup rendered from our gradient, built once.
 let lut: Uint8ClampedArray | null = null;
 function getLut(): Uint8ClampedArray | null {
   if (lut) return lut;
@@ -51,17 +96,66 @@ function getLut(): Uint8ClampedArray | null {
   return lut;
 }
 
-// Nearest palette position (0..1) for an RGB colour, by squared distance in the LUT.
-function colourToPosition(r: number, g: number, b: number): number {
-  const t = getLut();
-  if (!t) return 0;
+// RainViewer pixel → dBZ. Exact table colours hit the map; anything else (edge
+// blends) goes to the nearest table colour by RGBA distance, cached.
+const exact = new Map<number, number>();
+UB_RAIN.forEach(([r, g, b, a], i) => exact.set(((r << 24) | (g << 16) | (b << 8) | a) >>> 0, UB_MIN_DBZ + i));
+const nearestCache = new Map<number, number>();
+export function decodeDbz(r: number, g: number, b: number, a: number): number | null {
+  if (a < 8) return null;
+  const key = ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+  const hit = exact.get(key) ?? nearestCache.get(key);
+  if (hit !== undefined) return hit;
   let best = 0, bestD = Infinity;
-  for (let i = 0; i < 256; i++) {
-    const dr = r - t[i * 4], dg = g - t[i * 4 + 1], db = b - t[i * 4 + 2];
-    const d = dr * dr + dg * dg + db * db;
+  for (let i = 0; i < UB_RAIN.length; i++) {
+    const c = UB_RAIN[i];
+    const d = (r - c[0]) ** 2 + (g - c[1]) ** 2 + (b - c[2]) ** 2 + (a - c[3]) ** 2;
     if (d < bestD) { bestD = d; best = i; }
   }
-  return best / 255;
+  const dbz = UB_MIN_DBZ + best;
+  if (nearestCache.size > 4096) nearestCache.clear();
+  nearestCache.set(key, dbz);
+  return dbz;
+}
+
+// Recoloured tiles, keyed like the raw tile cache. Each is a 256×256 canvas.
+const recoloured = new Map<string, HTMLCanvasElement>();
+const RECOLOURED_MAX = 400;
+
+/**
+ * Our-palette copy of a loaded RainViewer tile (cached by key), or null if it
+ * can't be read yet. Synchronous: about 1–2 ms per tile, once per tile.
+ */
+export function recolourRadarTile(key: string, img: HTMLImageElement): HTMLCanvasElement | null {
+  const hit = recoloured.get(key);
+  if (hit) return hit;
+  const t = getLut();
+  if (!t || !img.complete || img.naturalWidth === 0) return null;
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0);
+  let id: ImageData;
+  try { id = ctx.getImageData(0, 0, c.width, c.height); } catch { return null; }
+  const d = id.data;
+  const byDbz = new Map<number, [number, number, number, number]>();
+  for (let i = 0; i < d.length; i += 4) {
+    const dbz = decodeDbz(d[i], d[i + 1], d[i + 2], d[i + 3]);
+    if (dbz == null) { d[i + 3] = 0; continue; }
+    let out = byDbz.get(dbz);
+    if (!out) {
+      const mm = dbzToMmhr(dbz);
+      const li = Math.round(mmhrToPosition(mm) * 255) * 4;
+      out = [t[li], t[li + 1], t[li + 2], alphaFor(mm)];
+      byDbz.set(dbz, out);
+    }
+    d[i] = out[0]; d[i + 1] = out[1]; d[i + 2] = out[2]; d[i + 3] = out[3];
+  }
+  ctx.putImageData(id, 0, 0);
+  if (recoloured.size >= RECOLOURED_MAX) recoloured.delete(recoloured.keys().next().value!);
+  recoloured.set(key, c);
+  return c;
 }
 
 // Web-mercator tile + in-tile pixel for a lat/lon at zoom z.
@@ -95,9 +189,9 @@ let scratch: HTMLCanvasElement | null = null;
 export interface RadarSample { pos: number; mmhr: number }
 
 /**
- * Read the rain intensity at a lat/lon from the given radar frame. Returns null
- * when there's no rain (transparent pixel) or the tile can't be read. `pos` is the
- * 0..1 position on the legend; `mmhr` the approximate rate.
+ * Rain rate at a lat/lon in the given radar frame, decoded from the raw tile pixel.
+ * Null when there's no drawn rain there (under 0.1 mm/hr) or the tile can't be
+ * read. `pos` is the 0..1 position on the scale; `mmhr` the approximate rate.
  */
 export async function sampleRadarAt(lat: number, lon: number, host: string, path: string): Promise<RadarSample | null> {
   if (typeof document === 'undefined') return null;
@@ -111,7 +205,9 @@ export async function sampleRadarAt(lat: number, lon: number, host: string, path
   ctx.drawImage(img, 0, 0);
   let d: Uint8ClampedArray;
   try { d = ctx.getImageData(px, py, 1, 1).data; } catch { return null; }
-  if (d[3] < 20) return null; // transparent → no rain
-  const pos = colourToPosition(d[0], d[1], d[2]);
-  return { pos, mmhr: positionToMmhr(pos) };
+  const dbz = decodeDbz(d[0], d[1], d[2], d[3]);
+  if (dbz == null) return null;
+  const mmhr = dbzToMmhr(dbz);
+  if (mmhr < DRAW_MIN_MMHR) return null;
+  return { pos: mmhrToPosition(mmhr), mmhr };
 }
