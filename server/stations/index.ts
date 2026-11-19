@@ -110,7 +110,9 @@ function tick() {
   timer.unref();
 }
 
-/** Mark demand; starts polling if idle. Cold cache waits (max ~10 s) for the first fill. */
+/** Mark demand; starts polling if idle. If the cache is empty or out of date
+ *  (polling was idle, so it can be hours old and every reading stale), wait
+ *  (max ~10 s) for the refresh rather than hand back the old readings. */
 async function touch(): Promise<void> {
   lastRequestAt = Date.now();
   if (!timer) {
@@ -119,7 +121,8 @@ async function touch(): Promise<void> {
     timer.unref();
     void refresh();
   }
-  if (bomCache.size === 0 && inflight) {
+  const outOfDate = !updatedAt || Date.now() - Date.parse(updatedAt) > REFRESH_MS + 60_000;
+  if ((bomCache.size === 0 || outOfDate) && inflight) {
     await Promise.race([inflight, new Promise(r => setTimeout(r, COLD_WAIT_MS))]);
   }
 }

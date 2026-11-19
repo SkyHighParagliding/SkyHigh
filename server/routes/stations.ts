@@ -6,7 +6,9 @@ const router = Router();
 
 router.get("/live", asyncHandler(async (_req, res) => {
   const body = await getLiveStations();
-  res.setHeader("Cache-Control", "public, max-age=120");
+  // no-cache: a browser-cached copy taken while the server was waking up kept
+  // showing every station stale across page refreshes. The body is in-memory, so cheap.
+  res.setHeader("Cache-Control", "no-cache");
   res.json(body);
 }));
 
